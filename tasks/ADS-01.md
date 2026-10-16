@@ -7,7 +7,7 @@ order: 178
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [HOME-09, HOME-01, ADS-04, ADS-05, EVENTS-01]
 decisions: [R-15, R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -18,9 +18,18 @@ artboards: [H33]
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/ADS-01.md.
+- **Status:** verifying. Builder done (Sonnet builder, mobile branch `wmt/ADS-01` on main 3117807). Backend and wawu-id unchanged (ADS-03 to ADS-06 serve everything the card needs; no migration).
+- **What is built:** `src/features/ads/` (`api.ts`, `useAd.ts`, `SponsoredStep.tsx`, `SponsoredSlot.tsx`, `look.ts`, 4 test files).
+  - H33: the TGIF reader asks `GET /ads?placement=tgif_card` and, when a card comes, shows it as a sixth step before the takeaway (`readerSteps(true)`). Words, picture and button word are the Hub's. Get tickets opens the event (`/events/[id]`, E2) and stays on the card for the way back. Skip goes on to the takeaway.
+  - H36: with TGIF off, Today asks `GET /ads?placement=today_slot` and draws `SponsoredSlot` in TGIF's place; the whole card opens the event.
+  - Counting: one view when the card is on screen (Today: only while that tab is in front), one tap, one skip, each sent once per screen; the Hub keeps one of each per person per day. A report that fails is dropped without a word.
+  - No campaign, loading, error, a destination this build cannot open: nothing is drawn, no frame, no message (V6: the real cause enters each, tested).
+- **Left out on purpose (R-47, task file's "figures are not facts"):** "Ads keep TGIF free" (G-760). The reader offers no card unless the route gives it `onOpenEvent`, so there is never a button that does nothing.
+- **Not backend work:** the contract copy was refreshed from backend main 3797fb2 (SHARED-CHANGES ADS-01 #1); the two calls live in `src/features/ads/api.ts`, not in fenced `src/api/`.
+- **Checks:** full local check EXIT 0 (159 suites, 2878 tests; gates 0 fail, 5 warn, 0 accepted, the same 5 warns as main). GitHub cannot run mobile CI now.
+- **Evidence (builder's, for the verifier to repeat):** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ads-01-b/shots/` (H33 and H36, dark and light, each beside its artboard as `*-compare.png`; E2 reached from the card).
+- **Open for the owner (in BACKEND_GAPS.md):** G-760 (the "Ads keep TGIF free" line), G-761 (a campaign with no artwork).
+- **Next:** a verifier, passes V1, V4, V5, V6, V9. History: `tasks/history/ADS-01.md`.
 
 ## Read first
 
@@ -74,13 +83,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/ADS-01.md](history/ADS-01.md).
 
 ## Owner sign-off
 
