@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 8, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** nothing (every source task is merged).
+- **Open lows:** 10, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** nothing for the other rows (their source tasks are merged); the two FIX-15 rows wait for FIX-15 to merge, because the code they name is on its branch only.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -55,6 +55,8 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SCHOOLS-03 | V2-2 | The Kiritimati date-test label is wrong (UTC+14 is never behind UTC). Note. | `tasks/SCHOOLS-03.md`, Verifier report, round 2, line 255 |
 | CHECK-1 | F-1 | A production web export shows Expo's default "Unmatched Route" page for any unknown route and `/_sitemap` lists every route file. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 49 |
 | CHECK-1 | F-7 | M8's `wawu/<handle>` preview is hidden for a handle with a hyphen, which the Hub would also refuse. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 55 |
+| FIX-15 | 3 | `POST /uploads/confirm` can answer `abandoned` while the row is already `confirmed`: the file lands after confirm's check and the sweep confirms the row before confirm's guarded write. The space is counted right; only the answer is stale. Fix: read the row again before answering (`settleUpload`, `src/storage/storage.service.ts`). | `tasks/history/FIX-15.md`, Verifier report, finding 3 |
+| FIX-15 | 4 | A confirm sent while the person's own upload is still running past the URL's life plus a minute (6 minutes) leaves the file uncounted until confirm is called again. A confirm inside those 6 minutes now answers `pending` and the file stays counted (round 2), so this needs a very slow upload. No screen calls the route yet. | `tasks/history/FIX-15.md`, Verifier report, finding 4 |
 
 ## Builder report
 
