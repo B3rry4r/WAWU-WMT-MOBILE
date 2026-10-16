@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** merging (lead). Round 1 verified: the money path held; no way to move money twice, lose it or send it to the wrong person. By the 15 Oct rule the verdict is merge. Stacked on NUV-06 (this branch contains `wmt/NUV-06`, which contains `wmt/MONEY-16`).
-- **Branches:** mobile `wmt/WALLET-07` (this branch; NUV-06's mobile head merged, API types regenerated from backend `wmt/WALLET-07`). Backend `wmt/WALLET-07` `75c862d` (NUV-06 `4fc31b6` merged; migration renamed to `20261021290000_wallet_transfers`, contents unchanged). No PRs yet.
+- **Branches:** mobile `wmt/WALLET-07` (this branch; NUV-06's mobile head merged, main `3117807` with it, API types regenerated from backend `wmt/WALLET-07`). Backend `wmt/WALLET-07` `75c862d` (NUV-06 `4fc31b6` merged; migration renamed to `20261021290000_wallet_transfers`, contents unchanged). No PRs yet.
 - **Merged and live:** nothing of this task.
 - **Open findings:** blocker 0, high 0, medium 0. D1, D2 and D3 (all low) and the PushStoppedAccount item are in tasks/SWEEP-MONEY.md.
   - Known limits: the Nuvion book transfer has no field for WAWU's fee (N10), so a send completes at the quote unless the owner sets Nuvion's fee; a lost answer completes at the quote whatever the provider took (G-717).
