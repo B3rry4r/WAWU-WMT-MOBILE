@@ -18,10 +18,11 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done; backend `wmt/FIX-35` (one spec file, no product code).
-- **Next:** a verifier checks the branch against the Capability checks below.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-34.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-34` (this branch contains it); API types regenerated from backend `wmt/FIX-35` (8199f34).
 - **Id and order:** filed after-launch at order 286, the way FIX-34 (order 285) is.
 - **History:** none yet.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: 4 (a pre-existing parallel-request flake in the documents spec, a compressed copy the new check cannot see, an entry written into an existing folder, task text vs code on depth). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
@@ -44,18 +45,9 @@ The listing compare is replaced by `tmpEntriesHolding(before, needles)`: an entr
 - [ ] `git diff` is one file: the helper, one import, the snapshot line and the one assertion.
 - [ ] Backend `tsc --noEmit` and eslint on the file exit 0; CI gates show the same FAIL lines as main.
 
-## Builder report
+## History
 
-Sonnet builder. Backend `wmt/FIX-35` `0d5acda`, from main `3797fb2`. One file.
-- **Red (the fix still catches a write):** a write of the uploaded front image to `os.tmpdir()` planted in `documents.service.ts` (a scratch edit, put back from a saved copy; `git status` showed only the spec afterwards) fails the case: `Expected: []`, `Received: ["planted-...bin", "planted-...bin"]` (the two uploads of the run that reached the planted line).
-- **Red (the defect, before):** main's spec with another process creating and removing entries in the temporary folder during the run (a loop making `runc-process-*` folders and `*.log` files and leaving one file) fails the case on the listing compare (`fix35-other-21.log` in the before list, `fix35-other-29.log` in the after list, the kept file in both).
-- **Green:** the changed spec with the same churn running throughout passes, and passes alone with none. 10 runs in a row green (130 of 130 tests each) on the local stack `fix_35` with the churn running for all ten.
-- **Checks:** `tsc --noEmit` EXIT 0; eslint on the file EXIT 0; prettier check clean.
-- **CI on `0d5acda`:** all 3 suite shards, netns, contract, deploy-test-in-sync, the baseline check and the protected route suite green. Executable gates red with the same 16 FAIL lines as on main (`gates run: 1249 files scanned, 16 fail`, the same as `3797fb2`; none in this spec).
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-35.md](history/FIX-35.md).
 
 ## Owner sign-off
 
