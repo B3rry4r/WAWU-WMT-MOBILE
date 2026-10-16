@@ -20,9 +20,7 @@ artboards: []
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
 - **Open lows:** 10, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the other rows' source tasks are merged.
-- **Open lows:** 4, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** nothing (every source task is merged).
+- **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the INBOX-12 rows wait for batch 4 to merge; the other rows' source tasks are merged.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
