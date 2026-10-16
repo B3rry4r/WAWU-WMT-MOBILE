@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
-import { Money } from '@/components/Money';
+import { Money, formatMoney } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
 import { Switch } from '@/features/settings/Switch';
@@ -138,7 +138,7 @@ function Preset({ kobo, chosen, locked, onPress }: { kobo: number; chosen: boole
     <Pressable
       testID={`paid-preset-${kobo}`}
       accessibilityRole="button"
-      accessibilityLabel={`Set the price to ${kobo / 100} naira`}
+      accessibilityLabel={`Set the price to ${formatMoney(kobo, { decimals: false })}`}
       accessibilityState={{ selected: chosen, disabled: locked }}
       disabled={locked}
       onPress={onPress}

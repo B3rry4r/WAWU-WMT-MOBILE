@@ -244,6 +244,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/settings/earn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the creator keeps of one message at a price they are typing (I21, R-21). Read only; saves nothing. */
+        get: operations["PaidDmController_earn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/paid-dm/creators/{wawuId}/availability": {
         parameters: {
             query?: never;
@@ -8280,6 +8297,11 @@ export interface components {
             options: components["schemas"]["PaidDmSettingsOptions"];
             standing: components["schemas"]["PaidDmStanding"];
         };
+        PaidDmEarn: {
+            priceKobo: number;
+            creatorSharePct: number;
+            earnPerMessageKobo: number;
+        };
         PaidDmAvailability: {
             creatorWawuId: string;
             paused: boolean;
@@ -11362,6 +11384,42 @@ export interface operations {
                 content?: never;
             };
             /** @description The caller is not a creator account, or paid messages are paused (reason.code paid_messages_paused). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_earn: {
+        parameters: {
+            query: {
+                /** @description The price to price a message at, in kobo. */
+                priceKobo: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmEarn"];
+                };
+            };
+            /** @description The price is missing, not an integer, outside the bounds, or not a whole number of naira. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller is not a creator account. */
             403: {
                 headers: {
                     [name: string]: unknown;

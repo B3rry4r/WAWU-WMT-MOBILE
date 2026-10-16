@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 3, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 4, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** nothing (every source task is merged).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -50,6 +50,7 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | INBOX-05 | 34 | I25: when the first POST is stored but its answer is lost, the live socket delivers the stored message while the pending copy still reads "Not sent", so the same words show twice. | `tasks/INBOX-05.md`, Verifier report, finding 34, line 439 |
 | INBOX-05 | 36 | The read-on's `!isFetching` is the value from the last render; a refresh landing between a page committing and its effect running is not seen. Shared with FIX-30. Very low. | `tasks/INBOX-05.md`, Verifier report, round 6 findings, line 493 |
 | INBOX-05 | 37 | Test gap: nothing pins "a refused next page is asked for once, then the list's Try again" (mutant Dc survives). Very low. | `tasks/INBOX-05.md`, Verifier report, round 6 findings, line 494 |
+| INBOX-12 | 4 | I21: a reply time saved off the list (the web allows 1 to 336 hours, for example 36) shows no selected window on the reply-time tabs. Save still works and keeps it. Needs a ruling: show the saved value as an extra tab, or none selected. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-12.md`, finding 4 (picture `inbox-12-v/shots/off36-dark.png`) |
 
 ## Builder report
 

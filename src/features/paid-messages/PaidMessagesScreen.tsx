@@ -13,14 +13,14 @@ import { Text } from '@/components/Text';
 import { Toast, type ToastTone } from '@/components/Toast';
 import { CreatorGate } from '@/features/pro-listing/ApplyScreen';
 import { ProFrame } from '@/features/pro-listing/ProFrame';
+import { useDebounced } from '@/features/schools/useDebounced';
 import { space } from '@/theme';
 
-import { PAUSED_CODE, fetchSettings, saveSettings, settingsKey, type PaidMessageSettings } from './api';
+import { PAUSED_CODE, earnKey, fetchEarn, fetchSettings, saveSettings, settingsKey, type PaidMessageSettings } from './api';
 import {
   canSave,
   digitsFromKobo,
   digitsOf,
-  earnKobo,
   formOf,
   lockedBody,
   lockedTitle,
@@ -40,6 +40,8 @@ import { Note, PriceField, Presets, Raise, SwitchCard } from './parts';
 export const PAID_MESSAGES_TITLE = 'Paid messages';
 /** How long "Saved" (or why a save was refused) stays over the screen. */
 export const NOTICE_MS = 2400;
+/** How long the typed price rests before the Hub is asked what it earns (a key per digit would be a call per digit). */
+export const EARN_DELAY_MS = 350;
 
 /** design/_gen/inbox.js line 62: the parts of the screen are 18 apart, and a label sits 10 above what it names. */
 const screenMetrics = { parts: 18, labelGap: 10, rowMin: 50, rowBetween: 14, rowPadV: 12 } as const;
@@ -162,11 +164,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
       </View>
       <GroupedList testID="paid-figures">
         <Figure label="You earn per message">
-          {priceKobo === null || problem !== null ? (
-            <Text variant="kvValue">-</Text>
-          ) : (
-            <Money minorUnits={earnKobo(priceKobo, data.creatorSharePct)} size={14.5} weight={600} decimals={false} testID="paid-earn" />
-          )}
+          <Earn data={data} priceKobo={priceKobo} valid={problem === null} />
         </Figure>
         <Figure label="Your share">
           <Text variant="kvValue" testID="paid-share">{`${data.creatorSharePct}%`}</Text>
@@ -179,6 +177,28 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
       </GroupedList>
     </ProFrame>
   );
+}
+
+/**
+ * "You earn per message": the Hub's figure for the typed price, never one worked out here (R-21). The saved price
+ * already has its figure in the settings read; any other price is asked of `GET /paid-dm/settings/earn` once the
+ * typing rests. Until the Hub has answered for the price that is typed, there is no figure to show: a dash.
+ */
+function Earn({ data, priceKobo, valid }: { data: PaidMessageSettings; priceKobo: number | null; valid: boolean }) {
+  const typed = priceKobo !== null && valid ? priceKobo : null;
+  const { settled } = useDebounced(typed === null ? '' : String(typed), EARN_DELAY_MS);
+  const isSaved = typed !== null && typed === data.priceKobo;
+  // The Hub is asked about the price that is typed and has rested, never about an older one the typing left behind.
+  const rested = typed !== null && settled === String(typed);
+  const read = useQuery({
+    queryKey: earnKey(Number(settled)),
+    queryFn: () => fetchEarn(Number(settled)),
+    enabled: rested && !isSaved,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  const kobo = typed === null ? null : isSaved ? data.earnPerMessageKobo : rested ? (read.data ?? null) : null;
+  return kobo === null ? <Text variant="kvValue">-</Text> : <Money minorUnits={kobo} size={14.5} weight={600} decimals={false} testID="paid-earn" />;
 }
 
 /** I22's warning with Raise, or I23's lock. Nothing in the standing that is fine. */

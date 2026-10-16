@@ -20,7 +20,7 @@ jest.mock('@/api/tokenStore', () => ({
 }));
 
 type Answer = { status: number; body: unknown } | 'offline' | 'hang';
-type Sent = { method: string; path: string; body: unknown };
+type Sent = { method: string; path: string; body: unknown; query?: string };
 let answers: Record<string, Answer | Answer[]> = {};
 let sent: Sent[] = [];
 
@@ -28,7 +28,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   const text = request.method === 'GET' ? '' : await request.text();
-  sent.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : undefined });
+  sent.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : undefined, ...(url.search ? { query: url.search } : {}) });
   const queued = answers[`${request.method} ${url.pathname}`];
   const answer = Array.isArray(queued) ? (queued.length > 1 ? queued.shift()! : queued[0]) : queued;
   if (!answer) return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
@@ -41,6 +41,7 @@ const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, m
 const refusal = (status: number, message: string, extra: object = {}): Answer => ({ status, body: { statusCode: status, message, data: null, ...extra } });
 
 const SETTINGS = '/api/hub/paid-dm/settings';
+const EARN = '/api/hub/paid-dm/settings/earn';
 
 const standing = (over: Record<string, unknown> = {}) => ({
   state: 'ok',
@@ -90,6 +91,9 @@ const price = () => screen.getByTestId('paid-price');
 const saveButton = () => screen.getByTestId('paid-save');
 const isDisabled = (node: { props: { accessibilityState?: { disabled?: boolean }; disabled?: boolean } }) => Boolean(node.props.accessibilityState?.disabled ?? node.props.disabled);
 const puts = () => sent.filter((s) => s.method === 'PUT');
+const earnAsks = () => sent.filter((s) => s.path === EARN).map((s) => s.query);
+/** The Hub's answer to the earn read. The figures are the test's own, so a screen that worked them out itself would show another. */
+const earnIs = (priceKobo: number, earnPerMessageKobo: number) => ok({ priceKobo, creatorSharePct: 85, earnPerMessageKobo });
 
 beforeEach(() => {
   answers = {};
@@ -124,7 +128,7 @@ describe('Paid messages (I21)', () => {
 
   it('shows only what the Hub sends: other presets, other reply times and another share', async () => {
     answers[`GET ${SETTINGS}`] = ok(
-      settings({ creatorSharePct: 80, options: { minPriceKobo: 5_000, maxPriceKobo: 1_000_000_000, pricePresets: [{ priceKobo: 20_000 }, { priceKobo: 30_000 }], responseWindowHours: [12, 36] } }),
+      settings({ creatorSharePct: 80, earnPerMessageKobo: 120_000, options: { minPriceKobo: 5_000, maxPriceKobo: 1_000_000_000, pricePresets: [{ priceKobo: 20_000 }, { priceKobo: 30_000 }], responseWindowHours: [12, 36] } }),
     );
     await open();
     await screen.findByText('Take paid messages');
@@ -137,18 +141,83 @@ describe('Paid messages (I21)', () => {
     expect(screen.getByTestId('paid-share').props.children).toBe('80%');
   });
 
-  it('a user can type a price and see what they would earn, and pick a preset', async () => {
+  it('a user can type a price and see what the Hub says they would earn, and pick a preset', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${EARN}`] = [earnIs(200_000, 199_000), earnIs(50_000, 49_000)];
     await open();
     await screen.findByText('Take paid messages');
     await fireEvent.changeText(price(), '₦2,000');
     expect(price().props.value).toBe('₦2,000');
     expect(screen.getByText('On · ₦2,000 a message')).toBeTruthy();
-    expect(screen.getByLabelText('1,700 naira')).toBeTruthy();
+    // Nothing is shown for the typed price until the Hub has answered for it: the saved price's figure does not stay on.
+    expect(screen.queryByTestId('paid-earn')).toBeNull();
+    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
+    expect(earnAsks()).toEqual(['?priceKobo=200000']);
     await fireEvent.press(screen.getByTestId('paid-preset-50000'));
     expect(price().props.value).toBe('₦500');
     expect(screen.getByTestId('paid-preset-50000').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByLabelText('425 naira')).toBeTruthy();
+    expect(await screen.findByLabelText('490 naira')).toBeTruthy();
+    expect(earnAsks()).toEqual(['?priceKobo=200000', '?priceKobo=50000']);
+  });
+
+  it('asks the Hub once when the typing rests, not once per digit', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${EARN}`] = earnIs(200_000, 199_000);
+    await open();
+    await screen.findByText('Take paid messages');
+    for (const typed of ['2', '20', '200', '2000']) await fireEvent.changeText(price(), typed);
+    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
+    expect(earnAsks()).toEqual(['?priceKobo=200000']);
+  });
+
+  it('shows the saved price\'s figure from the settings read without asking, and again when the person types it back', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${EARN}`] = earnIs(200_000, 199_000);
+    await open();
+    await screen.findByText('Take paid messages');
+    expect(screen.getByLabelText('1,275 naira')).toBeTruthy();
+    await fireEvent.changeText(price(), '2000');
+    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
+    await fireEvent.changeText(price(), '1500');
+    expect(screen.getByLabelText('1,275 naira')).toBeTruthy();
+    expect(earnAsks()).toEqual(['?priceKobo=200000']);
+  });
+
+  it('shows a dash, not a guess, when the Hub cannot say what a typed price earns', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${EARN}`] = 'offline';
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.changeText(price(), '2000');
+    await waitFor(() => expect(earnAsks().length).toBeGreaterThan(0), { timeout: 3000 });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByTestId('paid-earn')).toBeNull();
+    expect(screen.getByText('-')).toBeTruthy();
+    // The price is still saveable: what it earns is only shown, never needed.
+    expect(isDisabled(saveButton())).toBe(false);
+  });
+
+  it('asks nothing for an empty price or one under the lowest, and shows a dash', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.changeText(price(), '49');
+    await fireEvent.changeText(price(), '');
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+    expect(earnAsks()).toEqual([]);
+    expect(screen.queryByTestId('paid-earn')).toBeNull();
+  });
+
+  it('names a preset in the shared money words, whole naira', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    await open();
+    await screen.findByText('Take paid messages');
+    expect(screen.getByLabelText('Set the price to ₦500')).toBeTruthy();
+    expect(screen.getByLabelText('Set the price to ₦2,500')).toBeTruthy();
   });
 
   it('a user can switch off, pick a reply time and save, and the Hub gets exactly that in kobo', async () => {
@@ -218,11 +287,12 @@ describe('Paid messages, warned (I22)', () => {
 
   it('a user can raise the price and save it', async () => {
     answers[`GET ${SETTINGS}`] = ok(warned());
+    answers[`GET ${EARN}`] = earnIs(250_000, 212_500);
     answers[`PUT ${SETTINGS}`] = ok({ ...warned(), priceKobo: 250_000, raiseToKobo: null });
     await open();
     await fireEvent.press(await screen.findByTestId('paid-raise'));
     expect(price().props.value).toBe('₦2,500');
-    expect(screen.getByLabelText('2,125 naira')).toBeTruthy();
+    expect(await screen.findByLabelText('2,125 naira')).toBeTruthy();
     await fireEvent.press(saveButton());
     await waitFor(() => expect(puts()).toHaveLength(1));
     expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 24 });

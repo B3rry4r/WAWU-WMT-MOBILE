@@ -4,7 +4,6 @@ import {
   dayMonth,
   digitsFromKobo,
   digitsOf,
-  earnKobo,
   formOf,
   lockedBody,
   lockedTitle,
@@ -66,13 +65,6 @@ describe('the paid message settings model', () => {
     expect(digitsOf('0075')).toBe('75');
     expect(digitsOf('abc')).toBe('');
     expect(digitsOf('123456789012')).toBe('1234567890');
-  });
-
-  it('works out what the creator keeps, rounded down, from the share the Hub sends', () => {
-    expect(earnKobo(150_000, 85)).toBe(127_500);
-    expect(earnKobo(5_100, 85)).toBe(4_335);
-    expect(earnKobo(5_001, 85)).toBe(4_250);
-    expect(earnKobo(150_000, 80)).toBe(120_000);
   });
 
   it('writes a share as a whole percent, never over the line it is under', () => {

@@ -44,11 +44,6 @@ export function priceKoboOf(form: Form): number | null {
   return form.digits === '' ? null : nairaToKobo(Number(form.digits));
 }
 
-/** What the creator keeps of one message, in kobo, rounded down. The Hub rounds the same way. */
-export function earnKobo(priceKobo: number, sharePct: number): number {
-  return Math.floor((priceKobo * sharePct) / 100);
-}
-
 /** "22%". Rounded down, so a share under a line never reads as on it. */
 export function percentText(pct: number): string {
   return `${Math.floor(pct)}%`;
