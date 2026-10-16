@@ -72,28 +72,28 @@ function Pages({ source, outside, testID }: PagesProps) {
   const [pagesShown, setPagesShown] = useState(false);
   // True once the first load is done: after it, a link inside the file does not take the reader anywhere else.
   const firstLoadDone = useRef(false);
-  // True once the file has been handed to the phone's own viewer, so a failure and the timeout below never both open it.
+  // True once the file has been handed to the phone's own viewer, so a failure, an error and the timeout below never open it twice, in whatever order they come.
   const handedOver = useRef(false);
+  const handOver = useCallback(() => {
+    if (handedOver.current) return;
+    handedOver.current = true;
+    outside();
+  }, [outside]);
 
   // Android's page answers by message. If it answers neither way in time (the script did not load, the file never comes),
   // the file opens in the phone's own viewer, as every other failure does. iOS's web view reports its own load.
   useEffect(() => {
     if (Platform.OS !== 'android' || pagesShown) return undefined;
-    const timer = setTimeout(() => {
-      if (handedOver.current) return;
-      handedOver.current = true;
-      outside();
-    }, PDF_LOAD_TIMEOUT_MS);
+    const timer = setTimeout(handOver, PDF_LOAD_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [pagesShown, outside]);
+  }, [pagesShown, handOver]);
 
   const onMessage = (event: WebViewMessageEvent) => {
     const message = event.nativeEvent.data;
     if (message === READY) {
       setPagesShown(true);
     } else if (message === FAILED) {
-      handedOver.current = true;
-      outside();
+      handOver();
     }
   };
 
@@ -112,8 +112,8 @@ function Pages({ source, outside, testID }: PagesProps) {
           firstLoadDone.current = true;
           if (Platform.OS !== 'android') setPagesShown(true);
         }}
-        onError={outside}
-        onHttpError={outside}
+        onError={handOver}
+        onHttpError={handOver}
         onShouldStartLoadWithRequest={() => !firstLoadDone.current}
       />
       {pagesShown ? null : (

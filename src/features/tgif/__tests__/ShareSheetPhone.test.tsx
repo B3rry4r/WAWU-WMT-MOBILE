@@ -41,7 +41,8 @@ const FILE = 'file:///cache/TGIF-2025-09-26.png';
 const clients: QueryClient[] = [];
 let open: jest.SpyInstance;
 
-async function boot() {
+/** Opens the sheet. By default it waits for the phone's answer on sharing a picture (Story and Save are drawn once it is in). */
+async function boot({ waitForAnswer = true } = {}) {
   const { ShareSheet } = require('../ShareSheet') as typeof import('../ShareSheet');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
   clients.push(client);
@@ -51,6 +52,7 @@ async function boot() {
     </QueryClientProvider>,
   );
   await rtl.screen.findByTestId('tgif-share-chat');
+  if (waitForAnswer) await rtl.screen.findByTestId('tgif-share-save');
 }
 
 const press = async (id: string) => {
@@ -89,7 +91,7 @@ describe('H35 · share the verse on a phone with a share sheet', () => {
 
   it('draws no Story or Save when the phone has no share sheet', async () => {
     mockFile.canShareCard.mockResolvedValue(false);
-    await boot();
+    await boot({ waitForAnswer: false });
     await rtl.act(async () => undefined);
     expect(rtl.screen.queryByTestId('tgif-share-story')).toBeNull();
     expect(rtl.screen.queryByTestId('tgif-share-save')).toBeNull();
@@ -146,6 +148,20 @@ describe('H35 · share the verse on a phone with a share sheet', () => {
   it('WhatsApp posts the picture through the share sheet, not the verse as text, and counts the share once', async () => {
     await boot();
     await press('tgif-share-whatsapp');
+    await rtl.waitFor(() => expect(mockFile.shareCardFile).toHaveBeenCalledWith(FILE, 'Share on WhatsApp'));
+    await rtl.waitFor(() => expect(mockCount).toHaveBeenCalledTimes(1));
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('a WhatsApp tap before the phone has answered still posts the picture once the answer is in', async () => {
+    let answer: (can: boolean) => void = () => undefined;
+    mockFile.canShareCard.mockReturnValue(new Promise<boolean>((resolve) => (answer = resolve)));
+    await boot({ waitForAnswer: false });
+    expect(rtl.screen.queryByTestId('tgif-share-save')).toBeNull();
+    await press('tgif-share-whatsapp');
+    expect(mockFile.shareCardFile).not.toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
+    await rtl.act(async () => answer(true));
     await rtl.waitFor(() => expect(mockFile.shareCardFile).toHaveBeenCalledWith(FILE, 'Share on WhatsApp'));
     await rtl.waitFor(() => expect(mockCount).toHaveBeenCalledTimes(1));
     expect(open).not.toHaveBeenCalled();

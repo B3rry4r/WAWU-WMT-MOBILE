@@ -120,9 +120,12 @@ function ShareBody({ onClose, date, day, onOpenInbox }: ShareBodyProps) {
     else setProblem(COULD_NOT_OPEN_WHATSAPP);
   };
 
+  /** The phone's answer, waited for: a tap that comes before the first answer is in still sends the picture, never the verse by accident. */
+  const sharesPicture = () => client.ensureQueryData({ queryKey: SHARE_QUERY, queryFn: canShareCard, staleTime: Infinity });
+
   const whatsapp = () =>
     once(async () => {
-      if (asPicture) {
+      if (await sharesPicture()) {
         try {
           await shareCardFile(await cardUri(), 'Share on WhatsApp');
           counted.mutate();

@@ -165,6 +165,27 @@ describe('H4 · the phone reads the free pages in place', () => {
         expect(open).toHaveBeenCalledTimes(1);
       });
 
+      it('opens the phone viewer once when the wait runs out first and the page says it failed afterwards', async () => {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await tick(PDF_LOAD_TIMEOUT_MS);
+        await rtl.waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+        await message(FAILED);
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+
+      it('opens the phone viewer once when the wait runs out first and the web view reports an error afterwards', async () => {
+        const onClose = jest.fn();
+        await rtl.render(reader({ onClose }));
+        await tick(PDF_LOAD_TIMEOUT_MS);
+        await rtl.waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+        await rtl.act(async () => web().props.onError());
+        await rtl.act(async () => web().props.onHttpError({ nativeEvent: { statusCode: 500 } }));
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+
       it('does not wait for a reader that is closed', async () => {
         const onClose = jest.fn();
         const view = await rtl.render(reader({ onClose }));
