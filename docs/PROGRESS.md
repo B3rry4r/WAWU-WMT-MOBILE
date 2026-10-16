@@ -9,7 +9,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 110 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 24 | 0 | 0 | 0 |
+| verifying | 25 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
