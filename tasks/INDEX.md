@@ -259,6 +259,7 @@ Builder and verifier are always different sessions.
 27. [FIX-28](FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break
 28. [SWEEP-WEB](SWEEP-WEB.md) Web sweep: the low findings of the website tasks
 29. [SWEEP-APP](SWEEP-APP.md) App sweep: test gaps and small differences across the app
+30. [FIX-35](FIX-35.md) The documents spec checks the temporary folder only for what could be a document, so it stops failing at random
 
 ## Developer
 
