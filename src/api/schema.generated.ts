@@ -4253,6 +4253,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * The caller's `recentSearches` are filled only when the request carries
+         *     `include=recent` (the app sends it); without it the answer is what the
+         *     web has always had, with `recentSearches` empty.
+         */
         get: operations["SearchResponseController_suggestions"];
         put?: never;
         post?: never;
@@ -5455,6 +5460,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/points/convert/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * PT6 before the PIN: the rate (1,000 points for so many kobo, from the
+         *     config), the fewest points one conversion takes, the balance, and the
+         *     cash for `points` (the whole balance when none is asked). WAWU pays the
+         *     provider's charge, so the person pays nothing to convert (R-31).
+         *     `canConvert` and `blockedBy` say when the points asked cannot be
+         *     converted as they are (below the minimum, more than the balance, more
+         *     than one move carries), with the figures, instead of refusing. Nothing is
+         *     held. A person billed in dollars is `409 currency_not_supported`; with no
+         *     wallet, `409 wallet_not_open`.
+         */
+        get: operations["PointsConvertController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/points/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turns points into cash in the wallet, once. The cash is worked out at the
+         *     config's rate and rounded down; the points are held (soonest-ending lots
+         *     first) and the cash is paid from WAWU's own account into the person's
+         *     wallet; the points are spent only when the provider has confirmed it, and
+         *     go back to their lots if it did not move. Answers 201 with the
+         *     conversion: `completed`, `pending` while the provider has not confirmed
+         *     the cash yet (the points stay on hold; poll `GET /points/convert/{id}`;
+         *     it is never sent again), or `failed` when the cash did not move and the
+         *     points are back. The same Idempotency-Key and body answer the first
+         *     result again (`Idempotent-Replayed: true`) without checking the PIN.
+         *     Before the PIN, and changing nothing: `422 below_minimum`, `402
+         *     insufficient_points`, `400 amount_out_of_range` (more than one move
+         *     carries), `409 currency_not_supported`, `409 wallet_not_open`, `503
+         *     fees_not_set`.
+         */
+        post: operations["PointsConvertController_convertPoints"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/points/convert/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One conversion as it stands now: what the app polls after `pending`.
+         *     Only its owner reads it; another person's conversion and an id nobody
+         *     holds are the same `404 not_found`. It reads our own records only and
+         *     never asks the provider.
+         */
+        get: operations["PointsConvertController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -6302,7 +6388,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -6329,6 +6415,14 @@ export interface components {
              * @enum {string}
              */
             limit?: "per_transaction" | "daily" | "monthly";
+            /** @description below_minimum: the fewest points one conversion to cash takes (POINTS-04). */
+            minimumPoints?: number;
+            /** @description below_minimum, insufficient_points: the points the person has now. */
+            balancePoints?: number;
+            /** @description insufficient_points: the points asked for. */
+            neededPoints?: number;
+            /** @description insufficient_points: neededPoints minus balancePoints. */
+            shortfallPoints?: number;
             /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
             message: string;
             /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
@@ -6507,7 +6601,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -7280,6 +7374,9 @@ export interface components {
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this purchase, and not past its end. */
             quoteToken: string;
         };
+        PointsConvertDto: {
+            points: number;
+        };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
             offerId: string;
@@ -7447,7 +7544,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
         };
@@ -7513,6 +7610,38 @@ export interface components {
             fileName: string;
             rowCount: number;
             sentAt: string;
+        };
+        PaginationMeta: {
+            currentPage: number;
+            nextPage: number | null;
+            perPage: number;
+            total: number;
+        };
+        NotificationsResponse: {
+            unreadCount: number;
+            items: {
+                /** @enum {number} */
+                statusCode: 200;
+                message: string;
+                data: {
+                    id: string;
+                    userWawuId: string;
+                    kind: string;
+                    title: string;
+                    body: string;
+                    tone: string;
+                    amount: number | null;
+                    creditsCount: number | null;
+                    actionLabel: string | null;
+                    read: boolean;
+                    /** Format: date-time */
+                    createdAt: string;
+                    imageUrl: string | null;
+                    actionHref: string | null;
+                    campaignId: string | null;
+                }[];
+                pagination: components["schemas"]["PaginationMeta"];
+            };
         };
         FeeQuotePartView: {
             /** @enum {string} */
@@ -7695,7 +7824,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -7713,7 +7842,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -7731,7 +7860,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -7855,38 +7984,6 @@ export interface components {
             accessToken: string;
             refreshToken: string;
             expiresIn: number;
-        };
-        PaginationMeta: {
-            currentPage: number;
-            nextPage: number | null;
-            perPage: number;
-            total: number;
-        };
-        NotificationsResponse: {
-            unreadCount: number;
-            items: {
-                /** @enum {number} */
-                statusCode: 200;
-                message: string;
-                data: {
-                    id: string;
-                    userWawuId: string;
-                    /** Format: date-time */
-                    createdAt: string;
-                    kind: string;
-                    title: string;
-                    body: string;
-                    tone: string;
-                    amount: number | null;
-                    creditsCount: number | null;
-                    actionLabel: string | null;
-                    read: boolean;
-                    imageUrl: string | null;
-                    actionHref: string | null;
-                    campaignId: string | null;
-                }[];
-                pagination: components["schemas"]["PaginationMeta"];
-            };
         };
         StorageUsage: {
             usedBytes: number;
@@ -8296,11 +8393,11 @@ export interface components {
         };
         ContentPieceResponse: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8325,11 +8422,11 @@ export interface components {
         };
         MyContentItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8409,11 +8506,11 @@ export interface components {
         };
         FeedItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8547,9 +8644,9 @@ export interface components {
         };
         DirectMessage: {
             id: string;
+            amount: number;
             /** @enum {string} */
             status: "refunded" | "awaiting_response" | "responded";
-            amount: number;
             creatorWawuId: string;
             senderWawuId: string;
             text: string;
@@ -9903,11 +10000,11 @@ export interface components {
         };
         LearnGuideResponse: {
             id: string;
-            /** Format: date-time */
-            updatedAt: string | null;
             /** @enum {string} */
             kind: "template" | "country" | "article";
             title: string;
+            /** Format: date-time */
+            updatedAt: string | null;
             /** Format: date-time */
             updated: string;
             country: string | null;
@@ -9928,9 +10025,9 @@ export interface components {
         };
         PlaybookResponse: {
             id: string;
+            title: string;
             /** Format: date-time */
             updatedAt: string | null;
-            title: string;
             description: string;
             format: string;
             fileUrl: string | null;
@@ -11063,6 +11160,38 @@ export interface components {
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
+        };
+        PointsConvertQuoteView: {
+            /** @enum {string} */
+            currency: "NGN";
+            balancePoints: number;
+            minimumPoints: number;
+            maximumPoints: number | null;
+            rate: {
+                points: number;
+                kobo: number;
+            };
+            points: number;
+            cashKobo: number;
+            feeKobo: number;
+            wawuPaysProviderCharge: boolean;
+            canConvert: boolean;
+            /** @enum {string|null} */
+            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | null;
+        };
+        PointsConversionView: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed";
+            /** @enum {string} */
+            currency: "NGN";
+            points: number;
+            cashKobo: number;
+            reference: string;
+            statusMessage: string | null;
+            failureReason: string | null;
+            createdAt: string;
+            completedAt: string | null;
         };
         AdminWaitlistRegistrationView: {
             id: string;
@@ -14328,10 +14457,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14366,10 +14495,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14436,10 +14565,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14476,10 +14605,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14516,10 +14645,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14556,10 +14685,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -16576,7 +16705,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -18036,11 +18165,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -18098,11 +18227,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -18282,9 +18411,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -18305,9 +18434,9 @@ export interface operations {
                         items: {
                             name: string;
                             id: string;
+                            imageUrl: string | null;
                             /** @enum {string} */
                             status: "live" | "coming";
-                            imageUrl: string | null;
                             slug: string;
                             category: string | null;
                             featured: boolean;
@@ -18352,9 +18481,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -18438,9 +18567,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        title: string;
                         /** Format: date-time */
                         updatedAt: string | null;
-                        title: string;
                         description: string;
                         format: string;
                         fileUrl: string | null;
@@ -19468,9 +19597,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** Format: date-time */
                         createdAt: string;
+                        status: string;
                         topics: string[];
                         mentorId: string;
                         requesterWawuId: string;
@@ -20212,6 +20341,12 @@ export interface operations {
             query: {
                 q: string;
                 tab?: "all" | "content" | "creators" | "communities" | "schools";
+                /**
+                 * @description Send `communities` to have `communities` filled with the rooms whose name
+                 *     matches `q` (tab `all` or `communities`). Left out, `communities` is an
+                 *     empty array on every tab, as it always was for the web. The app sends it.
+                 */
+                include?: "communities";
             };
             header?: never;
             path?: never;
@@ -20231,7 +20366,10 @@ export interface operations {
     };
     SearchResponseController_suggestions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Send `recent` to have `recentSearches` filled with the signed-in caller's own recent searches. Left out, `recentSearches` is empty, as it always was for the web. */
+                include?: "recent";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -22145,6 +22283,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_quote: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The points to quote. Left out, the quote is for the whole balance.
+                 *     Digits only: `1e3` or `1,000` is a 400, never read as some other number.
+                 */
+                points?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConvertQuoteView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, currency_not_supported */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_convertPoints: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PointsConvertDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConversionView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds, insufficient_points */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, currency_not_supported */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: below_minimum */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConversionView"];
                 };
             };
             /** @description reason.code: not_found */

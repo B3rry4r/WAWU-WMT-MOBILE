@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 8, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 10, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** nothing (every source task is merged).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -36,7 +36,7 @@ Every low finding in the table is fixed, or ruled "no" with the reason written i
 
 ## Scope
 
-Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, and the CHECK-1 audit's shell and profile lows. Mobile only. Only the rows in the table; nothing else is touched. A row whose task is not merged yet waits for that merge (or is fixed on that task's branch if the lead says so).
+Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, and the CHECK-1 audit's shell and profile lows. Mobile only, except the two EXPLORE-05 rows, which are in `wawu-backend` (`src/search-response/`). Only the rows in the table; nothing else is touched. A row whose task is not merged yet waits for that merge (or is fixed on that task's branch if the lead says so).
 
 ## Capability checks
 
@@ -55,6 +55,8 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SCHOOLS-03 | V2-2 | The Kiritimati date-test label is wrong (UTC+14 is never behind UTC). Note. | `tasks/SCHOOLS-03.md`, Verifier report, round 2, line 255 |
 | CHECK-1 | F-1 | A production web export shows Expo's default "Unmatched Route" page for any unknown route and `/_sitemap` lists every route file. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 49 |
 | CHECK-1 | F-7 | M8's `wawu/<handle>` preview is hidden for a handle with a hyphen, which the Hub would also refuse. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 55 |
+| EXPLORE-05 | V1-4 | The cap of 20 recent searches is not held under parallel `POST /search/recent` (18 at once after 19 rows left 27; the next single POST trims to 20, Recent shows 10 regardless). Fix: a per-person advisory lock in the transaction, as `PushTokenService.register` does. Backend. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`, finding 4 |
+| EXPLORE-05 | V1-5 | Blocked accounts are counted in the global `GET /search/popular` list (one list for everybody, no per-viewer filter, as designed). Rule it "no" or filter per viewer. Backend. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`, finding 5 |
 
 ## Builder report
 
