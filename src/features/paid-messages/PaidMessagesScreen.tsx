@@ -42,7 +42,7 @@ export const PAID_MESSAGES_TITLE = 'Paid messages';
 export const NOTICE_MS = 2400;
 
 /** design/_gen/inbox.js line 62: the parts of the screen are 18 apart, and a label sits 10 above what it names. */
-const screenMetrics = { gap: 18, labelGap: 10, rowMin: 50, rowGap: 14, rowPadV: 12 } as const;
+const screenMetrics = { parts: 18, labelGap: 10, rowMin: 50, rowBetween: 14, rowPadV: 12 } as const;
 
 export type PaidMessagesScreenProps = { onBack: () => void };
 
@@ -107,7 +107,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
     <ProFrame
       title={PAID_MESSAGES_TITLE}
       onBack={onBack}
-      gap={screenMetrics.gap}
+      gap={screenMetrics.parts}
       testID="paid-messages"
       foot={
         <>
@@ -216,5 +216,5 @@ function Figure({ label, children }: { label: string; children: ReactNode }) {
 
 const styles = StyleSheet.create({
   section: { gap: screenMetrics.labelGap },
-  figure: { minHeight: screenMetrics.rowMin, paddingVertical: screenMetrics.rowPadV, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: screenMetrics.rowGap },
+  figure: { minHeight: screenMetrics.rowMin, paddingVertical: screenMetrics.rowPadV, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: screenMetrics.rowBetween },
 });

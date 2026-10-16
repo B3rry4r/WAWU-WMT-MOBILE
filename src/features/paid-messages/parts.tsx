@@ -13,7 +13,7 @@ import { font, radius, space, useWawu } from '@/theme';
 import { priceInput } from './model';
 
 /** design/_gen/inbox.js line 62, `setBase`: the switch card is 14 by 16 inside with 12 between the words and the switch; the title is 15.5 at 600, the line 13 muted, 2 under it. */
-const switchMetrics = { padV: 14, gap: 12, title: 15.5, line: 13, lineGap: 2 } as const;
+const switchMetrics = { padV: 14, toSwitch: 12, title: 15.5, line: 13, lineGap: 2 } as const;
 
 type SwitchCardProps = { title: string; line: string; on: boolean; locked: boolean; onToggle: () => void; testID?: string };
 
@@ -117,7 +117,7 @@ export function PriceField({ digits, onChangeDigits, locked, invalid, testID }: 
 }
 
 /** inbox.js line 61, `presets`: pills 40 tall, 8 apart, sharing the row; the chosen one fills with the text colour. */
-const presetMetrics = { height: 40, gap: 8, font: 14 } as const;
+const presetMetrics = { height: 40, between: 8, font: 14 } as const;
 
 type PresetsProps = { presetsKobo: readonly number[]; priceKobo: number | null; locked: boolean; onPick: (kobo: number) => void };
 
@@ -164,7 +164,7 @@ export function Raise({ label, onPress }: RaiseProps) {
 }
 
 const styles = StyleSheet.create({
-  switchCard: { flexDirection: 'row', alignItems: 'center', gap: switchMetrics.gap, paddingVertical: switchMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.card },
+  switchCard: { flexDirection: 'row', alignItems: 'center', gap: switchMetrics.toSwitch, paddingVertical: switchMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.card },
   switchWords: { flex: 1 },
   switchTitle: { ...font(600), fontSize: switchMetrics.title },
   switchLine: { fontSize: switchMetrics.line, marginTop: switchMetrics.lineGap },
@@ -174,6 +174,6 @@ const styles = StyleSheet.create({
   noteAction: { marginTop: noteMetrics.actionTop, alignSelf: 'flex-start' },
   field: { height: fieldMetrics.height, borderRadius: fieldMetrics.radius, paddingHorizontal: priceMetrics.padH, justifyContent: 'center' },
   input: { ...font(500), fontSize: priceMetrics.fontSize, padding: 0 },
-  presets: { flexDirection: 'row', gap: presetMetrics.gap },
+  presets: { flexDirection: 'row', gap: presetMetrics.between },
   preset: { flex: 1, height: presetMetrics.height, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
 });
