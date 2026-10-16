@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 37, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 38, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -84,6 +84,7 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | TIER-02 | T14 | No route-level test reaches a tier the config does not name (mutant M1 survives all 125 tests). Info. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 919 |
 | TIER-02 | N18 | The new ended-plan sentence drops "Everything you published stays up." Wording; the owner may want it back. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 920 |
 | TIER-02 | N19 | An ended tier that held extras: the sentence says a bigger plan has room and does not say to renew. Never false. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 921 |
+| WALLET-35 | V-5 | A statement mail that fails (503 `statement_email_failed`) still uses one of the 5 a minute / 30 an hour statement slots (`limiter.take` runs before the send and only `statement_too_large` gives it back). Low; no code changed in round 2. | branch `wmt/WALLET-35`, report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-35.md`, finding 5 |
 
 ## Builder report
 

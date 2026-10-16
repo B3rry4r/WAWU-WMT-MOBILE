@@ -2567,7 +2567,9 @@ export interface paths {
          *     person's own confirmed address: the request carries none, so a statement
          *     cannot be sent to anyone else. No confirmed email is `409
          *     email_not_verified`; a mail that could not be handed to WAWU ID's sender
-         *     is `503 statement_email_failed`. The limits of `GET /money/statements`
+         *     (or whose file WAWU ID did not confirm taking) is `503
+         *     statement_email_failed`; a file over 12 MiB, WAWU ID's cap, is `400
+         *     statement_too_large` before anything is sent. The limits of `GET /money/statements`
          *     apply and are shared with it: an emailed statement is one statement.
          *     An optional `Idempotency-Key` makes a repeat answer the first mail
          *     instead of sending a second.
@@ -2683,6 +2685,59 @@ export interface paths {
          *     read as an id.
          */
         get: operations["MoneyPaymentsController_payment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transfers/wawu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send to a WAWU user (W10 to W12): one wallet-to-wallet transfer from the
+         *     sender's wallet to the receiver's. The sender's balance falls by the
+         *     quoted total (the amount, the provider's charge and WAWU's fee on top,
+         *     R-10); the receiver's rises by exactly the amount. Answers 201 with the
+         *     send: completed, pending when the provider has not confirmed it yet (it
+         *     is never sent again blindly; poll `GET /money/transfers/{id}`), or failed
+         *     when the provider refused it and nothing moved. The same Idempotency-Key
+         *     and body answer the first result again (`Idempotent-Replayed: true`)
+         *     without checking the PIN. Who the money goes to (yourself, a closed
+         *     account, a block, no wallet) is answered before the PIN is looked at.
+         *     fees_not_set comes before the wallet gate, the key and the PIN;
+         *     limit_reached (WAWU's limit or the provider's) before anything is sent.
+         */
+        post: operations["MoneyTransfersController_sendToWawuUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One send as it stands now (W12 receipt, W14 failed): what the app polls
+         *     after `pending`. Only the sender reads it: another person's send is the
+         *     same `404 not_found` as one nobody holds. It reads our record only,
+         *     never the provider, and moves nothing, so it is not behind the fee
+         *     settings, the key or the PIN.
+         */
+        get: operations["MoneyTransfersController_transfer"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5654,26 +5709,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/transfers/wawu": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send to a WAWU user (W10 to W12). Completes at once or is refused; never pending.
-         * @description Declared by MONEY-04, not served yet: WALLET-07 serves it.
-         */
-        post: operations["MoneyTransferController_sendToWawuUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/money/transfers/bank": {
         parameters: {
             query?: never;
@@ -5690,26 +5725,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: WALLET-09 serves it.
          */
         post: operations["MoneyTransferController_sendToBank"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transfers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One send, as it stands now (W12 receipt, W14 failed, W19 timeline). Only the sender can read it.
-         * @description Declared by MONEY-04, not served yet: WALLET-07 serves it.
-         */
-        get: operations["MoneyTransferController_transfer"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6466,6 +6481,23 @@ export interface components {
              */
             quoteToken: string;
             /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
+            note?: string;
+        };
+        WawuTransferDto: {
+            /** @description What the recipient gets, in kobo. */
+            amountKobo: number;
+            /** @description `totalKobo` from the fee quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** Format: uuid */
+            recipientWawuUserId: string;
+            /**
+             * @description `quoteToken` from that fee quote (`GET /money/fees/quote?kind=
+             *     wawu_transfer`; BACKEND_GAPS G-64): the server checks it is its own, for
+             *     this person and this amount, and not past `expiresAt`; otherwise `409
+             *     quote_changed` with the new quote.
+             */
+            quoteToken: string;
+            /** @description W9's optional note, 100 characters at most. */
             note?: string;
         };
         MoneyPlainErrorEnvelope: {
@@ -7339,16 +7371,6 @@ export interface components {
             bankCode: string;
             accountNumber: string;
         };
-        WawuTransferDto: {
-            /** @description What the recipient gets, in kobo. */
-            amountKobo: number;
-            /** @description `totalKobo` from the fee quote the person saw. A different server total is `quote_changed`. */
-            expectedTotalKobo: number;
-            /** Format: uuid */
-            recipientWawuUserId: string;
-            /** @description W9's optional note. */
-            note?: string;
-        };
         BankTransferDto: {
             bankCode: string;
             accountNumber: string;
@@ -7680,6 +7702,36 @@ export interface components {
             failureReason: string | null;
             delivered: boolean;
             statusMessage: string | null;
+            createdAt: string;
+            completedAt: string | null;
+        };
+        TransferTimelineEntry: {
+            /** @enum {string} */
+            step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
+        };
+        TransferReversalView: {
+            returnedKobo: number;
+            keptKobo: number;
+            reversedAt: string;
+        };
+        TransferView: {
+            id: string;
+            /** @enum {string} */
+            kind: "wawu_user" | "bank_account";
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            amountKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            note: string | null;
+            reference: string;
+            toWawuUser: components["schemas"]["MoneyPartyView"] | null;
+            toBankAccount: components["schemas"]["BankAccountView"] | null;
+            timeline: components["schemas"]["TransferTimelineEntry"][];
+            failureReason: string | null;
+            reversal: components["schemas"]["TransferReversalView"] | null;
+            statusMessage: string | null;
+            transactionId: string | null;
             createdAt: string;
             completedAt: string | null;
         };
@@ -11298,34 +11350,6 @@ export interface components {
             bankName: string;
             accountNumber: string;
             accountName: string;
-        };
-        TransferTimelineEntry: {
-            /** @enum {string} */
-            step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
-        };
-        TransferReversalView: {
-            returnedKobo: number;
-            keptKobo: number;
-            reversedAt: string;
-        };
-        TransferView: {
-            id: string;
-            /** @enum {string} */
-            kind: "wawu_user" | "bank_account";
-            /** @enum {string} */
-            status: "pending" | "completed" | "failed" | "reversed";
-            amountKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            note: string | null;
-            reference: string;
-            toWawuUser: components["schemas"]["MoneyPartyView"] | null;
-            toBankAccount: components["schemas"]["BankAccountView"] | null;
-            timeline: components["schemas"]["TransferTimelineEntry"][];
-            failureReason: string | null;
-            reversal: components["schemas"]["TransferReversalView"] | null;
-            createdAt: string;
-            completedAt: string | null;
         };
     };
     responses: never;
@@ -16685,6 +16709,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyTransfersController_sendToWawuUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WawuTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range, self_transfer */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded, recipient_blocked */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, recipient_has_no_wallet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyTransfersController_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferView"];
                 };
             };
             /** @description reason.code: not_found */
@@ -22353,97 +22518,6 @@ export interface operations {
             };
         };
     };
-    MoneyTransferController_sendToWawuUser: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WawuTransferDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: idempotency_key_required, amount_out_of_range, self_transfer */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, recipient_blocked */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: recipient_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, recipient_has_no_wallet */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable, fees_not_set */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
     MoneyTransferController_sendToBank: {
         parameters: {
             query?: never;
@@ -22526,54 +22600,6 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_transfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
                 headers: {
                     [name: string]: unknown;
                 };
