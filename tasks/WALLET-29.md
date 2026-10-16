@@ -15,6 +15,13 @@ artboards: []
 ---
 # WALLET-29 · Move existing creators off Flutterwave
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): RELEASE-02.
+- **History:** none yet. Reports go to tasks/history/WALLET-29.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

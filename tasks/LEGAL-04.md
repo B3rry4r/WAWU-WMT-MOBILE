@@ -15,7 +15,12 @@ artboards: [S18, S19, S20, S25]
 ---
 # LEGAL-04 · Legal: book and pay a consultation
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-05.
+- **History:** none yet. Reports go to tasks/history/LEGAL-04.md.
 
 ## Read first
 

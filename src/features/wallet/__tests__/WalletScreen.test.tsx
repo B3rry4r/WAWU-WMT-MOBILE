@@ -165,27 +165,38 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 /** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. The settings icon is built since WALLET-06 (W35) and is drawn in every state. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Send', 'Add money', 'Swap', 'WAWU card', 'See all transactions', 'Airtime', 'Data', 'TV'];
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Send', 'Add money', 'Swap', 'WAWU card', 'Airtime', 'Data', 'TV'];
 /**
  * The bills tiles that are built, drawn on every state of the tab, each opening Pay a bill (S2). The canvas draws Airtime, Data and TV
  * too; their screens are BILLS-03's, so until it adds them they are not drawn (R-47, U1).
  */
 const BILL_TILES = ['Power', 'More'];
 const NOT_BUILT_IDS = [
-  'wallet-scan', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row', 'wallet-see-all',
+  'wallet-scan', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
   'wallet-loading-tabs', 'wallet-loading-actions',
   'wallet-bill-airtime', 'wallet-bill-data', 'wallet-bill-tv',
 ];
-/** Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. */
-const expectNothingUnbuilt = (app: Awaited<ReturnType<typeof boot>>) => {
+/**
+ * Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. See all and a row's
+ * detail are built since WALLET-04 (W26 and W27), so they are drawn with the heading, which stands only when there are rows
+ * (`rows`); W4, W5 and the states without a balance draw neither.
+ */
+const expectNothingUnbuilt = (app: Awaited<ReturnType<typeof boot>>, { rows = false }: { rows?: boolean } = {}) => {
   for (const name of NOT_BUILT_BUTTONS) expect(app.screen.queryByRole('button', { name })).toBeNull();
   for (const id of NOT_BUILT_IDS) expect(app.screen.queryByTestId(id)).toBeNull();
   expect(app.screen.queryAllByRole('tab')).toHaveLength(0);
-  expect(app.screen.queryByText('See all')).toBeNull();
+  if (!rows) {
+    expect(app.screen.queryByText('See all')).toBeNull();
+    expect(app.screen.queryByTestId('wallet-see-all')).toBeNull();
+  }
   expect(app.screen.queryByText(/Dollar|Crypto|Swap/)).toBeNull();
 };
 /** The names of every button on screen: what a person can press. */
 const buttonNames = (app: Awaited<ReturnType<typeof boot>>) => app.screen.queryAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+/** A recent row is a button too (WALLET-04): its name is the row read aloud, so the lists below leave the two seeded rows out and count them apart. */
+const ROW_BUTTON = /Amaka Nwosu|Chidinma Okoro/;
+const apartFromRows = (names: string[]) => names.filter((name) => !ROW_BUTTON.test(name));
+const rowButtons = (names: string[]) => names.filter((name) => ROW_BUTTON.test(name));
 const asked = (path: string) => sent.filter((s) => s.path === `/api/hub${path}`).length;
 
 beforeEach(() => {
@@ -254,16 +265,19 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.getByText('Transactions')).toBeTruthy();
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-bills', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    // Scan, settings, the Dollar and Crypto tabs, Swap, Send, Add money, the WAWU card row and See all are not drawn.
-    expectNothingUnbuilt(app);
+    // Scan, the Dollar and Crypto tabs, Swap, Send, Add money and the WAWU card row are not drawn; See all is, with the rows.
+    expectNothingUnbuilt(app, { rows: true });
+    expect(app.screen.getByText('See all')).toBeTruthy();
     // The canvas's one person's card details are not invented for anyone else: no digits, no status, no brand.
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the settings icon, the eye, Copy and the two bills tiles, and each one works', async () => {
+  it('every button on W1 does something: the settings icon, the eye, Copy, the two bills tiles, See all and the two rows, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
-    expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
+    expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(rowButtons(buttonNames(app))).toHaveLength(2);
     const asks = sent.length;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Hide balance' }));
     expect(app.screen.getByLabelText('Balance hidden')).toBeTruthy();
@@ -314,18 +328,33 @@ describe('W1 · Wallet · Naira', () => {
     }
   });
 
-  it('a transaction row says who, what, how much and when, and is not pressable because its detail is not built', async () => {
+  it('a transaction row says who, what, how much and when, and a user can tap it to open that transaction (W27)', async () => {
     const app = await boot();
     const row = await app.screen.findByTestId('wallet-row-r2');
     expect(row.props.accessibilityLabel).toContain('Chidinma Okoro');
     expect(row.props.accessibilityLabel).toContain('−₦25,065.00');
     for (const r of ROWS) {
-      const shown = app.screen.getByTestId(`wallet-row-${r.id}`);
-      expect(shown.props.accessibilityRole).toBeUndefined();
-      expect(shown.props.onPress).toBeUndefined();
-      expect(shown.props.onClick).toBeUndefined();
+      expect(app.screen.getByTestId(`wallet-row-${r.id}`).props.accessibilityRole).toBe('button');
     }
-    expect(buttonNames(app).some((name) => name.includes('Chidinma'))).toBe(false);
+    await app.fireEvent.press(row);
+    expect(mockPushed).toEqual([{ pathname: '/transactions/[id]', params: { id: 'r2' } }]);
+  });
+
+  it('a user can tap See all to open the history (W26), and it sits at the far end of the Transactions heading', async () => {
+    const app = await boot();
+    const seeAll = await app.screen.findByTestId('wallet-see-all');
+    expect(seeAll.props.accessibilityLabel).toBe('See all transactions');
+    expect(app.screen.getByRole('header', { name: 'Transactions' })).toBeTruthy();
+    await app.fireEvent.press(seeAll);
+    expect(mockPushed).toEqual(['/transactions']);
+  });
+
+  it('a user with no transactions yet sees no See all and no row to open (W5)', async () => {
+    fallback['GET /money/transactions'] = page([]);
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-no-transactions')).toBeTruthy();
+    expect(app.screen.queryByTestId('wallet-see-all')).toBeNull();
+    expect(app.screen.queryByRole('button', { name: 'See all transactions' })).toBeNull();
   });
 
   it('a user can copy the account number: its digits as sent go on the clipboard', async () => {
@@ -648,7 +677,7 @@ describe('W1 · the recent rows while their read is out (round 2, defect 2)', ()
     expect(app.screen.queryByTestId('wallet-transactions-loading')).toBeNull();
     const stands = ['wallet-balance-card', 'wallet-bills', 'wallet-transactions', 'wallet-row-r1'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    expectNothingUnbuilt(app);
+    expectNothingUnbuilt(app, { rows: true });
   });
 
   it('a refresh keeps the rows on screen while it asks again, and never goes back to the shapes', async () => {
@@ -680,9 +709,10 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-bills', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    expectNothingUnbuilt(app);
-    // The settings icon, the card's own two buttons and the two bills tiles are the only ones pressable.
-    expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
+    expectNothingUnbuilt(app, { rows: true });
+    // The settings icon, the card's own two buttons, the two bills tiles, See all and the two rows are the only ones pressable.
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(rowButtons(buttonNames(app))).toHaveLength(2);
   });
 
   it('the loading shapes are the bar, the card, two bills tiles and three rows at 320, and nothing else', async () => {

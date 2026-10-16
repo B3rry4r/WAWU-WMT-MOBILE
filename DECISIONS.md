@@ -398,6 +398,9 @@ registration link, like a wait list .... dont mess with the sign up page").*
   the plan's days start when the person joins the app (the claim, JOIN-03); the link stays open until the owner says
   (no `open_until`; closing is a config change). The page shows no offer card, no plan length and no start date
   ("Don't write the plans time there"); the price appears only on the Pay button.
+- Owner, 12 Oct 2026: the landing page at wawuafrica.com shows too; its sign-up buttons go to /join and nothing on it leads into the closed parts of the site.
+- Owner, 12 Oct 2026: the ₦2,000 event offer gives a full year of verification (365 days); the page says so.
+- Owner, 14 Oct 2026: /join takes referral codes. Each code names a community and sets the price its users pay (₦0 to the standard price) with an optional limit; past the limit, or when switched off, a person pays the standard price and is not counted under the code. LOGOART: ₦1,200 for the first 4,000.
 
 **Carried out by:** JOIN-01 (backend routes and payment), JOIN-02 (the website page), JOIN-03 (claim in the app, filed
 next).
@@ -407,7 +410,7 @@ next).
 leave the web tasks and proceed with all app full integrations ... claim all other dev tasks as their subscriptions
 are up ... never use opus agents again to do tasks").*
 - The app and the backend it needs are the work. Website tasks are paused: WEBPAY-01 to WEBPAY-05, FIX-23, the web
-  half of FIX-25 and of FIX-16. The website serves only the registration link (R-48), and stays that way until the
+  half of FIX-25 and of FIX-16. The website serves only the registration link and the landing page (R-48, owner, 12 Oct 2026), and stays that way until the
   owner says otherwise. This reverses the 9 Oct "the website wallet comes first".
 - Every open task owned by Developer 2 or Developer 3 is taken over by the lead's agents (owner `YOU`, with a
   "Taken over" line). Their half-built branches are continued, never restarted.

@@ -15,8 +15,12 @@ artboards: [X8, X9, X10, X11, X12]
 ---
 # EXPLORE-04 · Search: creators, communities, no results, failed
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): EXPLORE-05.
+- **History:** none yet. Reports go to tasks/history/EXPLORE-04.md.
 
 ## Read first
 

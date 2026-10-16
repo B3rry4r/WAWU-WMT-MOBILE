@@ -15,6 +15,13 @@ artboards: []
 ---
 # WEBPAY-05 · Buy points on the website
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): POINTS-02, TIER-05, WEBPAY-03.
+- **History:** none yet. Reports go to tasks/history/WEBPAY-05.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

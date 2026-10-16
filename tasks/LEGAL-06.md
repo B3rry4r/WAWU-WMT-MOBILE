@@ -15,7 +15,12 @@ artboards: [S21, S22, S23, S24, S26]
 ---
 # LEGAL-06 · Legal: quote, pay to start, delivery, fixed price
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-04, LEGAL-05.
+- **History:** none yet. Reports go to tasks/history/LEGAL-06.md.
 
 ## Read first
 

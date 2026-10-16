@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-28 · The schools order spec tells lower from upper, and the communities list has a tie-break
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-28.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md`, `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`

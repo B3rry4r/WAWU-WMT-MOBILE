@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-14 · Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-14.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files)

@@ -25,7 +25,7 @@ export type WalletState = WalletView['state'];
 export type WalletTransaction = components['schemas']['TransactionView'];
 
 /** The Hub's success body; the contract types only its `data` (SHARED-CHANGES.md row 11). */
-type Envelope<T> = { statusCode: number; message: string; data: T | null };
+export type Envelope<T> = { statusCode: number; message: string; data: T | null };
 
 /** W1 draws three recent rows; the contract names the first page with limit 3 as W1's (MONEY-15). */
 export const RECENT_ROWS = 3;
@@ -39,7 +39,7 @@ export type WalletHome = {
 const states: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
-function unreadable(what: string): ApiError {
+export function unreadable(what: string): ApiError {
   return new ApiError('unknown', 200, `Your ${what} could not be read. Try again.`);
 }
 
@@ -62,7 +62,7 @@ export async function fetchWalletHome(): Promise<WalletHome> {
 
 const directions: readonly WalletTransaction['direction'][] = ['in', 'out'];
 
-function readRow(value: unknown): WalletTransaction {
+export function readRow(value: unknown): WalletTransaction {
   const v = value as Partial<WalletTransaction> | null;
   if (
     !v ||

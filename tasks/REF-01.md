@@ -7,13 +7,21 @@ order: 215
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: done
 depends_on: [POINTS-01, TIER-03]
 decisions: [R-43]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # REF-01 · Referral points
+
+## Current state
+
+As of 16 Oct 2026, from the lead's log (14 Oct) and the lead's answers (16 Oct).
+- **Status:** done (the lead, 16 Oct 2026). Live since 14 Oct. This file holds no builder or verifier report; the record is the lead's log.
+- **Merged and live:** mobile record in main 77b7943. Backend PR #130 (26d2fd4), deployed 14 Oct. Web PR #31 (8ce31c7), Vercel production ready. Referral codes on /join work: LOGOART applies (₦1,200, the first 4,000), an unknown code answers 404, /admin/referrals answers 200.
+- **Open findings:** blocker 0, high 0, medium 0. D1 and D2 were fixed in round 2 (web 4d0ab7f). Round 2 fixed /join's phone-width overflow and hid write controls from read-only admins. Lows are in tasks/SWEEP-JOIN.md: D3 (held places can be spammed on a limited code), D4 (a guessable free code can be found with the public check), D5 and the 320 px number.
+- **Next:** nothing for this task itself; the sweep takes the lows.
 
 ## Read first
 

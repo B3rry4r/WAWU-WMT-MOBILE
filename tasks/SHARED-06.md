@@ -15,6 +15,13 @@ artboards: []
 ---
 # SHARED-06 · Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SHARED-05.
+- **History:** none yet. Reports go to tasks/history/SHARED-06.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files: this task IS the lead's shared-change pass, so it may edit the fenced files its rows name, and nothing else that is fenced)

@@ -7,13 +7,17 @@ order: 113
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: done
 depends_on: [MONEY-15, UI-02, BILLS-01]
 decisions: [R-10, R-33]
 passes: [V1, V4, V5, V6, V9]
 artboards: [W26, W27, W28]
 ---
 # WALLET-04 · Transaction history and detail
+
+## Current state
+
+merged to main 3117807, 16 Oct 2026
 
 ## Read first
 
@@ -84,17 +88,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The WALLET-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-04.md](history/WALLET-04.md).
 
 ## Owner sign-off
 

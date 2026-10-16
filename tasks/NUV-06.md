@@ -7,13 +7,23 @@ order: 205
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: review
 depends_on: [NUV-01, WALLET-14]
 decisions: [R-39, R-42, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # NUV-06 · Send to a bank and pay out, with the account name check
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** merging (lead). Round 2 verified, no blocker, no defect above low. Stacked on MONEY-16 (this branch contains `wmt/MONEY-16`); WALLET-07 stacks on this one.
+- **Branches:** mobile `wmt/NUV-06` (this branch; MONEY-16's mobile head merged (main `3117807` with it), API types regenerated from backend `wmt/NUV-06`). Backend `wmt/NUV-06` `4fc31b6` (MONEY-16 `c694505` merged; migration renamed to `20261021280000_payout_nuvion_ids`, contents unchanged). No PRs yet.
+- **Merged and live:** nothing of this task. NUV-05, which it builds on, is live (backend 51b02c5).
+- **Open findings:** blocker 0, high 0, medium 0. Lows F1 to F4 are in tasks/SWEEP-MONEY.md.
+- **Next:** the lead merges backend MONEY-16 first, then this one (its migration sorts after MONEY-16's), then WALLET-07. Then WALLET-09 can start.
+- **Records:** the round history is in tasks/history/NUV-06.md.
 
 ## Read first
 
@@ -54,8 +64,8 @@ holder's name; WAWU can pay out from its operational account. All of it as Nuvio
 - [ ] An account saved in the Fintava days is checked by name before its first Nuvion send.
 - [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/NUV-06.md](history/NUV-06.md).
 
 ## Owner sign-off
