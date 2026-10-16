@@ -11,7 +11,7 @@ Moved out of [tasks/FIX-13.md](../FIX-13.md) word for word, oldest first. The cu
 - **Capability 3, suite and contract:** wawu-id full suite 32 of 32 suites, 520 of 520 tests. `tsc --noEmit` 0. `contract:build` leaves `contract/openapi.json` unchanged; `src/contract/contract.spec.ts` passes.
 - **GitHub on `7d25c1c`:** build, deploy-build-in-sync, Executable gates, Baseline: all success.
 - **F-4:** measured, see Current state. No code changed for it.
-- **Gate counts (mobile repo, no code changed):** typecheck, lint, 152 of 152 jest suites (2756 of 2756 tests), gates (0 fail, 5 warn, as on main), tasks check: all pass in one run. wawu-id has no gate counts of its own beyond the suite above.
+- **Gate counts (mobile repo, no code changed):** typecheck, lint, 152 of 152 jest suites (2756 of 2756 tests), gates (0 fail, 5 warn), tasks check: all pass in one run. wawu-id has no gate counts of its own beyond the suite above.
 - **Gaps / shared changes:** none filed. Nothing could not be done.
 
 ## Verifier report
