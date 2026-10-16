@@ -47,7 +47,14 @@ code, stop and say so. A builder cannot verify their own work.
 
 ## Report
 
-Write it into **Verifier report** in the task file:
+Grade every defect blocker, high, medium or low. The verdict is `merge` (status
+`review`) when nothing is medium or worse; lows go to the area's sweep
+(`tasks/SWEEP-<AREA>.md`), not to another round. Read the task file's **Current
+state** and only the last section of `tasks/history/<ID>.md`, not all of it.
+
+Write the report into **Verifier report** in the task file, then rewrite
+**Current state** and run `python3 scripts/tasks/compact_task.py <ID>` (the
+report moves to `tasks/history/<ID>.md`):
 
 | Pass | Result | Evidence |
 |------|--------|----------|

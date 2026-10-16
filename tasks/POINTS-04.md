@@ -15,6 +15,17 @@ artboards: []
 ---
 # POINTS-04 · Convert points to cash
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** merging (lead). Verified once: stand-in attacks held (12 parallel requests on one key make one conversion, no way to convert twice or past the balance); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on WALLET-10 (this branch contains `wmt/WALLET-10`, which contains WALLET-07, NUV-06 and MONEY-16); backend main `18ac5f9` is in it.
+- **Branches:** mobile `wmt/POINTS-04` (this branch; WALLET-10's mobile head merged, API types regenerated from backend `wmt/POINTS-04`). Backend `wmt/POINTS-04` (WALLET-10 merged; migration renamed to `20261021310000_points_cash_out`, contents unchanged). No PRs yet.
+- **Merged and live:** nothing of this task.
+- **Conventions:** the backend section for this task is number 20 in `docs/contract/CONVENTIONS.md` (19 is WALLET-07, 21 is FIX-20, 22 is MONEY-16).
+- **Open findings:** blocker 0, high 0, medium 0. The lows (a 500 after the conversion exists, wording "payment" and "Your money is safe") are in tasks/SWEEP-MONEY.md. Operational edges on record: G-742 (no tool to clear a conversion in review), G-745 (an ended lot loses released points). No screen calls the routes yet (G-740).
+- **Next:** the lead opens one backend pull request from the FIX-20 head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
+- **Records:** the round history is in tasks/history/POINTS-04.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
@@ -51,47 +62,8 @@ From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the ver
 - [ ] A person without a wallet gets `no_wallet` and keeps their points.
 - [ ] The cash leaves WAWU's operational account, and the ledger shows it as WAWU's movement.
 
-## Builder report
+## History
 
-Builder, 11 Oct 2026 (Sonnet agent). wawu-backend `wmt/POINTS-04` `1bb872f` (own work `ef9c352`, built on backend main `2a4b9a4`, which holds TIER-03, #123; main merged in `3a47cbf`); this repo `wmt/POINTS-04` (hash in the hand-back; mobile main `3e5b7cb` merged). Migration folder `20261021220000_points_cash_out` (the lead renames it at merge if another lands first). `depends_on` POINTS-01, TIER-01 and MONEY-18 are merged. Stand-ins only: no Fintava, Nuvion, Flutterwave or wawuafrica.com host was called, and no screen was built (`artboards: []`, R-47: the app calls none of these routes yet). Gap ids G-740 to G-745. Evidence is in the lead's scratchpad `p04/` (`logs/`, `hub/`, `mut/`).
-
-**Built (backend), `src/points/convert/`.**
-- `GET /points/convert/quote?points=` (the confirm sheet: balance, minimum, maximum, the rate, the points asked, the cash in kobo, `feeKobo` 0, `wawuPaysProviderCharge` true, `canConvert`, `blockedBy`), `POST /points/convert` (`points`; `Idempotency-Key` and `X-Transaction-Pin` headers; 201) and `GET /points/convert/{id}` (the poll after `pending`; another person's id is `404`).
-- The refusals that change nothing come BEFORE the PIN (a guard between the key and the PIN, `RequireIdempotentApproval(route, ...beforeApproval)`): a dollar-billed person `409 currency_not_supported`, under the minimum `422 below_minimum` (with `minimumPoints` and `balancePoints`), more than the balance `402 insufficient_points`, a cash of zero or above the provider's single-move cap `amount_out_of_range`; no wallet is the gate's `409 wallet_not_open` (MONEY-13). A refusal never consumes the key or a PIN try.
-- One transaction makes the key link, the `PointConversion` row and the points hold (`cash_out`, taken last, never under a wait on a provider). Then the move: a lease on the row (`sentAt`, `nextAttemptAt`), `walletToWallet` from WAWU's operational account to the person's wallet through the seam (both adapters; reference `wawu-pts-<id>`; narration without a name), WAWU paying the provider's charge. Landing is ONE transaction: the ledger (WAWU's out row with the charge, the person's in row, link kind `points_cash_out`), the conversion `paid` and the hold committed.
-- A move the provider PROVES it did not make (a refusal with no record, or a request that never left) cancels the conversion and gives the points back to their lots. Anything else (a lost answer, a timeout, a repeated reference, a transfer accepted and not finished) is asked about by our reference and never sent again; backoff 1, 2, 4 ... 60 minutes; the provider's own `failed` record gives the points back; `completed` lands; a reversal, another amount than asked, or no answer for 72 hours (`PAYMENT_REVIEW_AFTER_HOURS`) sends it to a person with the points still held. The `@Cron` sweep reads due rows by a keyset cursor with a time budget and leaves rows younger than 20 s to the request that made them.
-- Database rules (migration, additive): `PointConversion` with CHECKs (`cashKobo = points x rate / 1000`, the reference is `wawu-pts-<id>`, paid needs `sentAt`, cancelled needs a reason), a guard trigger (born held; what is converted never changes; a settled row never changes; the person only becomes null) and a deferred constraint trigger so a conversion and its hold agree at commit (held with held, paid with committed, cancelled with released). Rollback is in the migration header.
-- Shared, listed in `SHARED-CHANGES.md` (POINTS-04 #1 to #6): the module mount in `app.module.ts`, the schema and migration, `contract/openapi.json`, `RequireIdempotentApproval`'s extra guards, `MoneyModule` exporting `MerchantWallet`, the money enums and error fields, the history label, `PointsService.balanceOf`, the account purge (a conversion is kept with no person) and the data export section, and the three exact route lists in the gate specs.
-- The word "points" for the person is kept in one file, `src/points/points-words.ts`; a change to "credits" is that file.
-
-**Default (agent), owner may override.**
-1. Points from any source convert; the minimum and the rate are `plans.config.json` (TIER-01: 1,000 points = N500, minimum 1,000 points). The rate is written on the conversion row, so a later config change never changes a conversion in flight.
-2. Whole points only. The cash is the rate applied and rounded DOWN to a kobo (a person is never paid more than the rate says); the database holds the same sum.
-3. One conversion may not exceed the provider's single-move cap through WAWU's account; it is refused with `amount_out_of_range` before the PIN, never split (WALLET.md). The quote gives `maximumPoints`.
-4. A dollar-billed person is refused cleanly (`currency_not_supported`, plain words); G-741.
-5. Nothing times a `cash_out` hold out. The 72 hours end in a review, with the points held (the lead note of 8 Oct). A cancelled conversion gives the points back to the lots they came from, and POINTS-01's rule that an ended lot loses them stays (G-745).
-6. One conversion, one reference for ever. A cancelled conversion is not retried; the person asks again and gets a new conversion.
-7. The view says `completed`, `pending` or `failed`; `pending` also covers a conversion in review, with its own words ("We're checking this conversion").
-8. No signed quote and no `expectedCashKobo`: the figure paid is the row's (G-744).
-9. A deleted account keeps its conversion with no person (`ANONYMISED`, the destination account number cleared); the sweep finishes it.
-
-**Capability checks, each run, not read.**
-- Specs (6 suites, 74 tests, one fresh migrated database in a private network namespace): the Fintava stand-in over HTTP (`points-convert.contract.spec.ts`, 22; `points-cash-out-crash.contract.spec.ts`, 11), the Nuvion seam stand-in (15), the REAL Nuvion adapter over its socket and book stand-ins (`points-convert-nuvion-adapter.contract.spec.ts`, 7), the database rules (6) and the pure rules (13). They cover a conversion landing once with its lots soonest-expiring first, a replay, two Hubs at once, a kill between each pair of steps, a failed move giving the points back, an unknown outcome reconciled and never sent twice, a driver holding an old copy of the row, review after 72 hours, another amount than asked, a reversal, an account deleted before and after the move, below minimum, over balance, no wallet, a dollar-billed person and five wrong PINs. Each spec removes every row it makes.
-- Two built Hubs (`npm run build`, `dist`) on one database against the Fintava stand-in as its own process, over HTTP: P1 21 checks (quote, one conversion at the config rate, the lots, one send, the ledger, replay, key reuse, below minimum, over balance, no wallet, dollar-billed, five wrong PINs and the lock, a refused move giving the points back, a lost answer found by reference, `not_found`), P2 13 checks (24 requests each sent to both Hubs at once: all paid exactly once, balances equal to the kobo and the point; 12 lost-answer conversions landed once by sweeps racing on both Hubs), P3 16 checks (SIGKILL by PID inside the begin transaction, between hold and move, between move and commit, and a provider that took the move and never answered). 50 checks, 0 failed, run on the final build.
-- Mutants: 20 changes to the service, rules, controller and guard order (the lease without `sentAt`, a lost lease sending anyway, any error read as "nothing moved", paid without commit, cancelled without release, rounding up, the checks after the PIN, 72 hours giving the points back, a `failed` record ignored, the minimum itself refused, no balance check, a dollar account allowed, the key not linked, the answer not stored, the wrong ledger purpose, the cash not from WAWU's account, the hold taken first, a reversal ignored, another amount read as a payment in the receipt and in the provider's record). 20 of 20 killed. The first run let one survive (the lease's `sentAt` condition, which no spec reached because `nextAttemptAt` already refuses) and one anchor did not apply; the new spec for a driver holding an old copy of the row kills the first, and the second was re-run with a fixed anchor.
-
-**Checks, counts (backend, in a private network namespace).** `npx tsc --noEmit` 0; eslint (no fix) on the 28 changed TypeScript files 0 errors; prettier clean; the seven areas (`src/points`, `plans`, `money`, `wallet-provider`, `account-purge`, `data-export-request`, `nuvion`): 99 suites, 3,059 passed, 6 failed on a loaded machine: `ledger.contract.spec` (a timeout) and `selfie-match.contract.spec` (a 5 s timeout) pass alone; `receipt-units.spec` fails 4 of 43 the same way on main `2a4b9a4` (its digit table is Unicode 17 and this Node 22.22.0 knows 16.0; no file of that area is touched). Protected suite `run.sh --fresh HEAD` against the main lock: 253/253. Gates: the same 16 FAIL lines as main (branch 1,184 files, 97 warn, 76 accepted; main 1,169 files, the same counts). `check_baseline` OK (108 entries). `npm run contract:build` twice: byte-identical (sha 93d254e5...), additive only. `npm run test:netns`: 16 rows, none wrong. Mobile: typecheck 0, `npm run gates` (PASSED) and `npm run tasks` EXIT 0, all run after the contract sync and the last edit.
-
-**Gaps and shared changes filed.** `BACKEND_GAPS.md`: G-740 (PT6 screen and W1's button), G-741 (dollar-billed, NUV-09), G-742 (a conversion in review has no clearing tool; `inFlightTotals()` for MONEY-16 and NUV-08), G-743 (on Nuvion `pending` lasts until the sweep first asks; NUV-08), G-744 (no signed quote), G-745 (a lot that ended while its points were held). `SHARED-CHANGES.md`: POINTS-04 #1 to #6. The mobile `contract/` and `src/api/schema.generated.ts` are regenerated from the branch (`SOURCE_COMMIT` `1bb872f`).
-
-**NOT RUN, and what unblocks each.**
-- The real Fintava and Nuvion sandboxes: not called by rule. Every provider fact is from the stand-ins (the Fintava double, the seam stand-in and the Nuvion adapter over its socket stand-ins) and `docs/fintava/`. Unblocked by: a session with the sandbox keys (PAYMENTS-PLAN).
-- `npm run api -- --backend <worktree>`: it copies backend `origin/main` only, and the routes are on the branch, so the contract was copied from the branch by hand and `python3 scripts/api/sync_contract.py` regenerated the client. Unblocked by: the merge; the lead re-runs `npm run api`.
-- The rest of the backend suite outside the seven areas and the protected suite: not run. Unblocked by: CI on the pull request.
-- The owner's Developer Brief v2.0 of 5 Oct (the lead's scratchpad `nuvion/brief-docx.txt`, sections 2, 3, 6 and 8): the file is not in the scratchpad (only `nuvion/llms-full.txt`, Nuvion's API text), so what those sections say could not be read or checked. The task file, R-43, R-44, R-31 and design round 2 sections 1 to 7 were used. Unblocked by: the file, or the lead stating what sections 2, 3, 6 and 8 add.
-- The PT6 and W1 screens: no screen exists (R-47); G-740.
-- Slip, disclosed: one read-only `pgrep -f` was used inside a monitor command before the rule was checked; nothing was signalled with it. No server of this task is left running (ports 6451 to 6454 checked free).
-
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-04.md](history/POINTS-04.md).
 
 ## Owner sign-off

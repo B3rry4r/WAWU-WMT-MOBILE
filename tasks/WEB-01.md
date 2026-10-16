@@ -15,6 +15,13 @@ artboards: []
 ---
 # WEB-01 · Port web-only features after launch
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/WEB-01.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 6, add then move then remove)

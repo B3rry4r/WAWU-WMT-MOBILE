@@ -33,7 +33,8 @@ ask for one; don't pick work yourself.
 8. Every blocker names the fact that unblocks it. Adding something also
    removes what it replaces.
 9. Report what ran and what didn't. NOT RUN is a valid result; leaving it out
-   is not. The task file on the branch IS the report: NOT RUN items, owner
+   is not. The task file on the branch IS the report (its Current state, and
+   the rounds in `tasks/history/<ID>.md`): NOT RUN items, owner
    questions and findings go there and nowhere else. Never address the owner
    in chat or in a hand-back; the lead reads every branch and carries owner
    asks to the progress page.

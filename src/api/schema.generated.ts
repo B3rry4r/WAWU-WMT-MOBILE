@@ -2530,6 +2530,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/statements/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where a statement can be sent and in which formats (W38's "Send to" and
+         *     its format choice). Reads the token only: the address is the person's
+         *     own confirmed email, masked, or null when there is none to use
+         *     (`canEmail` false).
+         */
+        get: operations["MoneyStatementController_delivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/statements/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email a statement (W38 "Send statement"). The same period rules and the
+         *     same file as `GET /money/statements`, attached to a mail sent to the
+         *     person's own confirmed address: the request carries none, so a statement
+         *     cannot be sent to anyone else. No confirmed email is `409
+         *     email_not_verified`; a mail that could not be handed to WAWU ID's sender
+         *     is `503 statement_email_failed`. The limits of `GET /money/statements`
+         *     apply and are shared with it: an emailed statement is one statement.
+         *     An optional `Idempotency-Key` makes a repeat answer the first mail
+         *     instead of sending a second.
+         */
+        post: operations["MoneyStatementController_emailStatement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/fees/quote": {
         parameters: {
             query?: never;
@@ -2634,6 +2683,59 @@ export interface paths {
          *     read as an id.
          */
         get: operations["MoneyPaymentsController_payment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transfers/wawu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send to a WAWU user (W10 to W12): one wallet-to-wallet transfer from the
+         *     sender's wallet to the receiver's. The sender's balance falls by the
+         *     quoted total (the amount, the provider's charge and WAWU's fee on top,
+         *     R-10); the receiver's rises by exactly the amount. Answers 201 with the
+         *     send: completed, pending when the provider has not confirmed it yet (it
+         *     is never sent again blindly; poll `GET /money/transfers/{id}`), or failed
+         *     when the provider refused it and nothing moved. The same Idempotency-Key
+         *     and body answer the first result again (`Idempotent-Replayed: true`)
+         *     without checking the PIN. Who the money goes to (yourself, a closed
+         *     account, a block, no wallet) is answered before the PIN is looked at.
+         *     fees_not_set comes before the wallet gate, the key and the PIN;
+         *     limit_reached (WAWU's limit or the provider's) before anything is sent.
+         */
+        post: operations["MoneyTransfersController_sendToWawuUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One send as it stands now (W12 receipt, W14 failed): what the app polls
+         *     after `pending`. Only the sender reads it: another person's send is the
+         *     same `404 not_found` as one nobody holds. It reads our record only,
+         *     never the provider, and moves nothing, so it is not behind the fee
+         *     settings, the key or the PIN.
+         */
+        get: operations["MoneyTransfersController_transfer"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2832,6 +2934,22 @@ export interface paths {
          *     without one and this answers `selfie_not_available`.
          */
         post: operations["NuvionDocumentsController_startLiveness"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/email/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PublicEmailUnsubscribeController_get"];
+        put?: never;
+        post: operations["PublicEmailUnsubscribeController_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5394,6 +5512,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/waitlist/referral-codes/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Before paying: does this referral code apply, and what would the person
+         *     pay. Never the limit, the count or the community. A code we do not have
+         *     is a 404 `referral_unknown`. Advice only: the registration decides again.
+         */
+        get: operations["WaitlistPublicController_referralCheck"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/registrations": {
         parameters: {
             query?: never;
@@ -5410,6 +5549,10 @@ export interface paths {
          *     Nothing is charged here: the payment happens in the Flutterwave checkout
          *     with the answer's `flutterwaveConfig`, and counts only after
          *     POST /waitlist/registrations/verify (or Flutterwave's own notice).
+         *
+         *     With a `referralCode` (REF-01) the answer also carries `referral`. A code
+         *     at price 0 needs no checkout: the answer has `completed` and no
+         *     `flutterwaveConfig`, and the registration is already paid.
          */
         post: operations["WaitlistPublicController_register"];
         delete?: never;
@@ -5491,9 +5634,32 @@ export interface paths {
         /**
          * Registrations, newest first, every status unless `status` is given
          *     (`pending`, `paid` or `failed`; a `failed` row is a second payment kept
-         *     for a refund). `offerId` narrows to one offer.
+         *     for a refund). `offerId` narrows to one offer; `referralCode` to one code,
+         *     or `noReferral=true` to the registrations with no code.
          */
         get: operations["WaitlistAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/waitlist/registrations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The whole offer in numbers (REF-01): people paid, money paid (kobo),
+         *     second payments kept for a refund, and the split by referral code with a
+         *     last "No code" row. Every paid registration since the offer opened counts,
+         *     those made before referral codes included. Counted by the server.
+         */
+        get: operations["WaitlistAdminController_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5521,6 +5687,41 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/waitlist/referral-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every code with its paid count, held count, money paid and limit. */
+        get: operations["ReferralAdminController_list"];
+        put?: never;
+        /** Make a code. The price is from 0 (free) to the offer's standard price. */
+        post: operations["ReferralAdminController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/waitlist/referral-codes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a code's community, price, limit (null for none) or on/off. */
+        patch: operations["ReferralAdminController_update"];
         trace?: never;
     };
     "/api/hub/ads/{id}/events": {
@@ -5587,26 +5788,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/money/transfers/wawu": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send to a WAWU user (W10 to W12). Completes at once or is refused; never pending.
-         * @description Declared by MONEY-04, not served yet: WALLET-07 serves it.
-         */
-        post: operations["MoneyTransferController_sendToWawuUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/money/transfers/bank": {
         parameters: {
             query?: never;
@@ -5623,26 +5804,6 @@ export interface paths {
          * @description Declared by MONEY-04, not served yet: WALLET-09 serves it.
          */
         post: operations["MoneyTransferController_sendToBank"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/money/transfers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One send, as it stands now (W12 receipt, W14 failed, W19 timeline). Only the sender can read it.
-         * @description Declared by MONEY-04, not served yet: WALLET-07 serves it.
-         */
-        get: operations["MoneyTransferController_transfer"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6181,7 +6342,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -6372,6 +6533,26 @@ export interface components {
             bankCode: string;
             accountNumber: string;
         };
+        StatementEmailDto: {
+            /**
+             * @description The first day of the statement, YYYY-MM-DD in Africa/Lagos time, included.
+             * @example 2026-09-01
+             */
+            from: string;
+            /**
+             * @description The last day of the statement, YYYY-MM-DD in Africa/Lagos time,
+             *     included. On or after `from`, not after today in Lagos, and at most
+             *     366 days from `from`, both days counted (STATEMENT_MAX_DAYS).
+             * @example 2026-09-30
+             */
+            to: string;
+            /**
+             * @description The file. Only `csv` today: Fintava issues no stamped statement
+             *     (WALLET-27, BACKEND_GAPS G-68), so there is no `pdf`.
+             * @enum {string}
+             */
+            format: "csv";
+        };
         PaymentDto: {
             /** @enum {string} */
             kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
@@ -6387,6 +6568,23 @@ export interface components {
              */
             quoteToken: string;
             /** @description Only for a tip: the message that goes with it, 500 characters as POST /tips takes today. */
+            note?: string;
+        };
+        WawuTransferDto: {
+            /** @description What the recipient gets, in kobo. */
+            amountKobo: number;
+            /** @description `totalKobo` from the fee quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** Format: uuid */
+            recipientWawuUserId: string;
+            /**
+             * @description `quoteToken` from that fee quote (`GET /money/fees/quote?kind=
+             *     wawu_transfer`; BACKEND_GAPS G-64): the server checks it is its own, for
+             *     this person and this amount, and not past `expiresAt`; otherwise `409
+             *     quote_changed` with the new quote.
+             */
+            quoteToken: string;
+            /** @description W9's optional note, 100 characters at most. */
             note?: string;
         };
         MoneyPlainErrorEnvelope: {
@@ -6439,6 +6637,43 @@ export interface components {
             tone: "accent" | "info" | "neutral" | "success";
             /** @enum {string} */
             audience: "everyone" | "creators" | "buyers" | "unverified_creators" | "professionals" | "unverified_professionals";
+        };
+        EmailTemplateDto: {
+            name: string;
+            subject: string;
+            previewText?: string;
+            body: string;
+            /** @description The version the editor loaded. A save over a newer one is refused. */
+            version?: number;
+        };
+        EmailPreviewDto: {
+            subject: string;
+            previewText?: string;
+            body: string;
+            firstName?: string;
+        };
+        EmailTestSendDto: {
+            subject: string;
+            previewText?: string;
+            body: string;
+            firstName?: string;
+            /** Format: email */
+            to: string;
+        };
+        CreateRegistrantCampaignDto: {
+            /**
+             * @default all
+             * @enum {string}
+             */
+            filter: "all" | "paid" | "not_paid" | "opted_in";
+            limit?: number;
+            /** Format: uuid */
+            templateId: string;
+        };
+        CreateCsvCampaignDto: {
+            /** Format: uuid */
+            templateId: string;
+            limit?: number;
         };
         DeleteAccountDto: Record<string, never>;
         RegisterPushTokenDto: {
@@ -7110,8 +7345,35 @@ export interface components {
             state?: string;
             /** @description What they make (optional, up to 60 characters). */
             makes?: string;
+            /**
+             * @description What they make or do (optional): one of `WAITLIST_CRAFTS`, written as in
+             *     the list (Music, Fashion, Film and video, Photography, Art, Design, Food,
+             *     Digital art, Tech and software, Writing and media, Professional services,
+             *     Founder or business, Other).
+             * @enum {string}
+             */
+            craft?: "Music" | "Fashion" | "Film and video" | "Photography" | "Art" | "Design" | "Food" | "Digital art" | "Tech and software" | "Writing and media" | "Professional services" | "Founder or business" | "Other";
+            /**
+             * @description The conference city they will attend (optional): Lagos, Abuja, Port
+             *     Harcourt, Enugu or Online.
+             * @enum {string}
+             */
+            city?: "Lagos" | "Abuja" | "Port Harcourt" | "Enugu" | "Online";
+            /**
+             * @description They asked for launch and conference updates on WhatsApp and email
+             *     (optional). Sending nothing means the question was not asked.
+             */
+            updatesOptIn?: boolean;
             /** @description The consent line (with the privacy link) was accepted. Must be true. */
             consent: boolean;
+            /**
+             * @description A referral code (optional): 3 to 20 letters and numbers, in any case.
+             *     Leave it out, or empty, to pay the standard price. A code we do not have
+             *     is refused (`referral_unknown`); one that is switched off or full is not
+             *     refused: the person registers at the standard price and the answer's
+             *     `referral` says the code was not applied.
+             */
+            referralCode?: string;
         };
         VerifyWaitlistRegistrationDto: {
             /** @description The reference POST /waitlist/registrations gave. */
@@ -7126,6 +7388,25 @@ export interface components {
              *     accepted; the server reads it without them.
              */
             code: string;
+        };
+        CreateReferralCodeDto: {
+            /** @description What a person using the code pays, in whole kobo: 0 (free) up to the offer's price. */
+            priceKobo: number;
+            /** @description How many people may use the code. Leave out, or null, for no limit. */
+            limit?: number | null;
+            /** @description 3 to 20 letters and digits. Stored in upper case; matched in any case. */
+            code: string;
+            /** @description The community the code is for: the label the owner tracks by. */
+            community: string;
+            /** @description Whether the code works. Defaults to true. */
+            active?: boolean;
+        };
+        UpdateReferralCodeDto: {
+            priceKobo?: number;
+            /** @description A number, or null to remove the limit. */
+            limit?: number | null;
+            community?: string;
+            active?: boolean;
         };
         CreateAdCreativeDto: {
             headline: string;
@@ -7179,16 +7460,6 @@ export interface components {
         NameCheckDto: {
             bankCode: string;
             accountNumber: string;
-        };
-        WawuTransferDto: {
-            /** @description What the recipient gets, in kobo. */
-            amountKobo: number;
-            /** @description `totalKobo` from the fee quote the person saw. A different server total is `quote_changed`. */
-            expectedTotalKobo: number;
-            /** Format: uuid */
-            recipientWawuUserId: string;
-            /** @description W9's optional note. */
-            note?: string;
         };
         BankTransferDto: {
             bankCode: string;
@@ -7275,6 +7546,53 @@ export interface components {
             rowCount: number;
             content: string;
             generatedAt: string;
+        };
+        StatementDeliveryView: {
+            email: string | null;
+            canEmail: boolean;
+            formats: "csv"[];
+        };
+        StatementEmailView: {
+            sentTo: string;
+            from: string;
+            to: string;
+            /** @enum {string} */
+            format: "csv";
+            fileName: string;
+            rowCount: number;
+            sentAt: string;
+        };
+        PaginationMeta: {
+            currentPage: number;
+            nextPage: number | null;
+            perPage: number;
+            total: number;
+        };
+        NotificationsResponse: {
+            unreadCount: number;
+            items: {
+                /** @enum {number} */
+                statusCode: 200;
+                message: string;
+                data: {
+                    id: string;
+                    userWawuId: string;
+                    kind: string;
+                    title: string;
+                    body: string;
+                    tone: string;
+                    amount: number | null;
+                    creditsCount: number | null;
+                    actionLabel: string | null;
+                    read: boolean;
+                    /** Format: date-time */
+                    createdAt: string;
+                    imageUrl: string | null;
+                    actionHref: string | null;
+                    campaignId: string | null;
+                }[];
+                pagination: components["schemas"]["PaginationMeta"];
+            };
         };
         FeeQuotePartView: {
             /** @enum {string} */
@@ -7509,6 +7827,36 @@ export interface components {
             createdAt: string;
             completedAt: string | null;
         };
+        TransferTimelineEntry: {
+            /** @enum {string} */
+            step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
+        };
+        TransferReversalView: {
+            returnedKobo: number;
+            keptKobo: number;
+            reversedAt: string;
+        };
+        TransferView: {
+            id: string;
+            /** @enum {string} */
+            kind: "wawu_user" | "bank_account";
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            amountKobo: number;
+            fee: components["schemas"]["FeeBreakdown"];
+            totalKobo: number;
+            note: string | null;
+            reference: string;
+            toWawuUser: components["schemas"]["MoneyPartyView"] | null;
+            toBankAccount: components["schemas"]["BankAccountView"] | null;
+            timeline: components["schemas"]["TransferTimelineEntry"][];
+            failureReason: string | null;
+            reversal: components["schemas"]["TransferReversalView"] | null;
+            statusMessage: string | null;
+            transactionId: string | null;
+            createdAt: string;
+            completedAt: string | null;
+        };
         RecipientView: {
             wawuUserId: string;
             displayName: string;
@@ -7587,38 +7935,6 @@ export interface components {
             accessToken: string;
             refreshToken: string;
             expiresIn: number;
-        };
-        PaginationMeta: {
-            currentPage: number;
-            nextPage: number | null;
-            perPage: number;
-            total: number;
-        };
-        NotificationsResponse: {
-            unreadCount: number;
-            items: {
-                /** @enum {number} */
-                statusCode: 200;
-                message: string;
-                data: {
-                    id: string;
-                    userWawuId: string;
-                    /** Format: date-time */
-                    createdAt: string;
-                    kind: string;
-                    title: string;
-                    body: string;
-                    tone: string;
-                    amount: number | null;
-                    creditsCount: number | null;
-                    actionLabel: string | null;
-                    read: boolean;
-                    imageUrl: string | null;
-                    actionHref: string | null;
-                    campaignId: string | null;
-                }[];
-                pagination: components["schemas"]["PaginationMeta"];
-            };
         };
         StorageUsage: {
             usedBytes: number;
@@ -8028,11 +8344,11 @@ export interface components {
         };
         ContentPieceResponse: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8057,11 +8373,11 @@ export interface components {
         };
         MyContentItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8141,11 +8457,11 @@ export interface components {
         };
         FeedItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8279,9 +8595,9 @@ export interface components {
         };
         DirectMessage: {
             id: string;
+            amount: number;
             /** @enum {string} */
             status: "refunded" | "awaiting_response" | "responded";
-            amount: number;
             creatorWawuId: string;
             senderWawuId: string;
             text: string;
@@ -9432,6 +9748,59 @@ export interface components {
             deliveredCount: number;
             suppressedByPreference: number;
         };
+        EmailTemplateView: {
+            id: string;
+            name: string;
+            subject: string;
+            previewText: string;
+            body: string;
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        EmailPreviewView: {
+            subject: string;
+            html: string;
+            text: string;
+        };
+        EmailAudienceCountView: {
+            matching: number;
+            willSend: number;
+            unsubscribed: number;
+        };
+        EmailCampaignView: {
+            id: string;
+            templateName: string;
+            subject: string;
+            audienceKind: string;
+            audienceNote: string;
+            /** @enum {string} */
+            status: "sent" | "sending" | "ready";
+            totalCount: number;
+            queuedCount: number;
+            sentCount: number;
+            failedCount: number;
+            skippedCount: number;
+            unsubscribedCount: number;
+            invalidCount: number;
+            duplicateCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
+        EmailRecipientView: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            /** @enum {string} */
+            status: "failed" | "sent" | "queued" | "skipped";
+            error: string | null;
+            /** Format: date-time */
+            sentAt: string | null;
+        };
         ExploreCreatorCard: {
             wawuId: string;
             name: string;
@@ -9582,11 +9951,11 @@ export interface components {
         };
         LearnGuideResponse: {
             id: string;
-            /** Format: date-time */
-            updatedAt: string | null;
             /** @enum {string} */
             kind: "template" | "country" | "article";
             title: string;
+            /** Format: date-time */
+            updatedAt: string | null;
             /** Format: date-time */
             updated: string;
             country: string | null;
@@ -9607,9 +9976,9 @@ export interface components {
         };
         PlaybookResponse: {
             id: string;
+            title: string;
             /** Format: date-time */
             updatedAt: string | null;
-            title: string;
             description: string;
             format: string;
             fileUrl: string | null;
@@ -10777,6 +11146,9 @@ export interface components {
             email: string;
             state: string | null;
             makes: string | null;
+            craft: string | null;
+            city: string | null;
+            updatesOptIn: boolean | null;
             /** @enum {string} */
             status: "pending" | "failed" | "paid";
             amountKobo: number;
@@ -10789,6 +11161,28 @@ export interface components {
             claimedByWawuId: string | null;
             claimedAt: string | null;
             createdAt: string;
+            referralCode: string | null;
+            referralCommunity: string | null;
+        };
+        AdminWaitlistSplitRowView: {
+            code: string | null;
+            community: string | null;
+            people: number;
+            kobo: number;
+        };
+        AdminWaitlistSummaryView: {
+            offerId: string | null;
+            paid: {
+                people: number;
+                kobo: number;
+            };
+            failed: {
+                people: number;
+                kobo: number;
+            };
+            unpaid: number;
+            split: components["schemas"]["AdminWaitlistSplitRowView"][];
+            generatedAt: string;
         };
         AdminWaitlistExportView: {
             fileName: string;
@@ -10806,6 +11200,19 @@ export interface components {
             claimedAt: string;
             tier: components["schemas"]["MyTierView"];
         };
+        AdminReferralCodeView: {
+            id: string;
+            code: string;
+            community: string;
+            priceKobo: number;
+            limit: number | null;
+            active: boolean;
+            paidCount: number;
+            heldCount: number;
+            paidKobo: number;
+            createdAt: string;
+            updatedAt: string;
+        };
         WaitlistOfferView: {
             id: string;
             name: string;
@@ -10814,6 +11221,13 @@ export interface components {
             products: number;
             days: number;
             closesAt: string | null;
+        };
+        WaitlistReferralCheckView: {
+            code: string;
+            applies: boolean;
+            /** @enum {string|null} */
+            reason?: "full" | "inactive" | null;
+            priceKobo: number;
         };
         WaitlistCheckoutView: {
             publicKey: string;
@@ -10825,11 +11239,25 @@ export interface components {
             customerEmail: string;
             customerPhone: string;
         };
+        WaitlistRegistrationCompletedView: {
+            /** @enum {string} */
+            status: "paid";
+            firstName: string;
+            accessCode: string;
+        };
+        WaitlistReferralOutcomeView: {
+            code: string;
+            applied: boolean;
+            /** @enum {string|null} */
+            reason?: "full" | "inactive" | null;
+        };
         WaitlistRegistrationStartView: {
             reference: string;
             offerId: string;
             amountKobo: number;
-            flutterwaveConfig: components["schemas"]["WaitlistCheckoutView"];
+            flutterwaveConfig?: components["schemas"]["WaitlistCheckoutView"];
+            completed?: components["schemas"]["WaitlistRegistrationCompletedView"];
+            referral?: components["schemas"]["WaitlistReferralOutcomeView"];
         };
         WaitlistRegistrationStatusView: {
             reference: string;
@@ -11044,34 +11472,6 @@ export interface components {
             bankName: string;
             accountNumber: string;
             accountName: string;
-        };
-        TransferTimelineEntry: {
-            /** @enum {string} */
-            step: "completed" | "failed" | "reversed" | "requested" | "sent_to_bank";
-        };
-        TransferReversalView: {
-            returnedKobo: number;
-            keptKobo: number;
-            reversedAt: string;
-        };
-        TransferView: {
-            id: string;
-            /** @enum {string} */
-            kind: "wawu_user" | "bank_account";
-            /** @enum {string} */
-            status: "pending" | "completed" | "failed" | "reversed";
-            amountKobo: number;
-            fee: components["schemas"]["FeeBreakdown"];
-            totalKobo: number;
-            note: string | null;
-            reference: string;
-            toWawuUser: components["schemas"]["MoneyPartyView"] | null;
-            toBankAccount: components["schemas"]["BankAccountView"] | null;
-            timeline: components["schemas"]["TransferTimelineEntry"][];
-            failureReason: string | null;
-            reversal: components["schemas"]["TransferReversalView"] | null;
-            createdAt: string;
-            completedAt: string | null;
         };
     };
     responses: never;
@@ -14002,10 +14402,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14040,10 +14440,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14110,10 +14510,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14150,10 +14550,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14190,10 +14590,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14230,10 +14630,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -16073,6 +16473,114 @@ export interface operations {
             };
         };
     };
+    MoneyStatementController_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementDeliveryView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyStatementController_emailStatement: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 8 to 128 of A-Z a-z 0-9 _ -. The same key for the same person answers the first mail again. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementEmailDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementEmailView"];
+                };
+            };
+            /** @description reason.code: statement_too_large */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, email_not_verified */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: statement_email_failed, statement_busy */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     MoneyFeesController_feeQuote: {
         parameters: {
             query: {
@@ -16323,6 +16831,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyTransfersController_sendToWawuUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WawuTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range, self_transfer */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded, recipient_blocked */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, recipient_has_no_wallet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyTransfersController_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferView"];
                 };
             };
             /** @description reason.code: not_found */
@@ -16921,6 +17570,60 @@ export interface operations {
             };
         };
     };
+    PublicEmailUnsubscribeController_get: {
+        parameters: {
+            query?: {
+                t?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An HTML page asking to confirm. Nothing is changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An HTML page saying the link is not valid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicEmailUnsubscribeController_post: {
+        parameters: {
+            query?: {
+                t?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An HTML page confirming the address is unsubscribed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An HTML page saying the link is not valid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AccountController_deleteAccount: {
         parameters: {
             query?: never;
@@ -17407,11 +18110,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -17469,11 +18172,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -17653,9 +18356,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -17676,9 +18379,9 @@ export interface operations {
                         items: {
                             name: string;
                             id: string;
+                            imageUrl: string | null;
                             /** @enum {string} */
                             status: "live" | "coming";
-                            imageUrl: string | null;
                             slug: string;
                             category: string | null;
                             featured: boolean;
@@ -17723,9 +18426,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -17809,9 +18512,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        title: string;
                         /** Format: date-time */
                         updatedAt: string | null;
-                        title: string;
                         description: string;
                         format: string;
                         fileUrl: string | null;
@@ -18839,9 +19542,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** Format: date-time */
                         createdAt: string;
+                        status: string;
                         topics: string[];
                         mentorId: string;
                         requesterWawuId: string;
@@ -21669,6 +22372,34 @@ export interface operations {
             };
         };
     };
+    WaitlistPublicController_referralCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistReferralCheckView"];
+                };
+            };
+            /** @description `reason.code` `referral_unknown` (no such code) or `no_open_offer`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     WaitlistPublicController_register: {
         parameters: {
             query?: never;
@@ -21697,7 +22428,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `reason.code` `no_open_offer`: no offer has this id. */
+            /** @description `reason.code` `no_open_offer` (no offer has this id) or `referral_unknown` (no such referral code). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -21852,6 +22583,10 @@ export interface operations {
                 offerId?: string;
                 /** @description Only this status. Omitted means every status. */
                 status?: "pending" | "paid" | "failed";
+                /** @description Only registrations counted under this referral code (any case). */
+                referralCode?: string;
+                /** @description `true`: only registrations with no referral code (including every one made before codes existed). Not with `referralCode`. */
+                noReferral?: boolean;
             };
             header?: never;
             path?: never;
@@ -21869,11 +22604,37 @@ export interface operations {
             };
         };
     };
+    WaitlistAdminController_summary: {
+        parameters: {
+            query?: {
+                /** @description Only this offer. Omitted means every offer. */
+                offerId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWaitlistSummaryView"];
+                };
+            };
+        };
+    };
     WaitlistAdminController_export: {
         parameters: {
             query?: {
                 offerId?: string;
                 status?: "pending" | "paid" | "failed";
+                /** @description Only registrations counted under this referral code (any case). */
+                referralCode?: string;
+                /** @description `true`: only registrations with no referral code. Not with `referralCode`. */
+                noReferral?: boolean;
             };
             header?: never;
             path?: never;
@@ -21887,6 +22648,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminWaitlistExportView"];
+                };
+            };
+        };
+    };
+    ReferralAdminController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReferralCodeView"][];
+                };
+            };
+        };
+    };
+    ReferralAdminController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReferralCodeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReferralCodeView"];
+                };
+            };
+        };
+    };
+    ReferralAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReferralCodeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReferralCodeView"];
                 };
             };
         };
@@ -21987,97 +22815,6 @@ export interface operations {
             };
         };
     };
-    MoneyTransferController_sendToWawuUser: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin": string;
-                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WawuTransferDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: idempotency_key_required, amount_out_of_range, self_transfer */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, limit_reached, daily_limit_exceeded, recipient_blocked */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: recipient_not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, recipient_has_no_wallet */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable, fees_not_set */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
     MoneyTransferController_sendToBank: {
         parameters: {
             query?: never;
@@ -22160,54 +22897,6 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    MoneyTransferController_transfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransferView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen */
-            423: {
                 headers: {
                     [name: string]: unknown;
                 };
