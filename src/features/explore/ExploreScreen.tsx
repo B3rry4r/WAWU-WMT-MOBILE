@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Toast } from '@/components/Toast';
+import { CreateEntry } from '@/features/create/CreateEntry';
 import {
   ExploreEventsRail,
   ExploreFeaturedEvent,
@@ -57,6 +58,8 @@ export type ExploreScreenProps = {
   onFindSchool: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
+  /** The Create button, for creator accounts only (X1, X14): opens M19 (ME-04). */
+  onCreate?: () => void;
 };
 
 /**
@@ -72,7 +75,7 @@ export type ExploreScreenProps = {
  * bell (ME-14) and Create (ME-04). The task that builds each one adds it, as drawn. A section
  * with nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -187,6 +190,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
       >
         {body}
       </ScrollView>
+      {onCreate ? <CreateEntry onPress={onCreate} /> : null}
       <Toast message={follow.notice} tone="alert" placement="bottom" lines={2} duration={FOLLOW_NOTICE_MS} onHide={follow.dismiss} testID="follow-notice" />
     </View>
   );

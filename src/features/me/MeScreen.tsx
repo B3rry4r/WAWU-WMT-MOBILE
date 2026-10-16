@@ -8,6 +8,7 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/features/auth/Banner';
+import { CreateEntry } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { readFailure } from '@/features/profile-edit/failure';
 import { layout, radius, space, useWawu } from '@/theme';
@@ -63,6 +64,8 @@ export type MeScreenProps = {
   onOpenPaid?: () => void;
   /** Settings, the last row of the Menu sheet (Z1): opens Z2. */
   onOpenSettings: () => void;
+  /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
+  onCreate?: () => void;
 };
 
 /**
@@ -76,7 +79,7 @@ export type MeScreenProps = {
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
  * (PROS-03) are in.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -185,6 +188,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           )}
         </View>
       </ScrollView>
+      {onCreate ? <CreateEntry onPress={onCreate} /> : null}
       <Toast message={toast ? 'Profile saved' : null} testID="profile-saved" />
       <MeMenuSheet
         visible={menuOpen}

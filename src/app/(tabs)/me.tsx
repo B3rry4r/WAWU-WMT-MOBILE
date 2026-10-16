@@ -16,6 +16,7 @@ export default function MeTab() {
       onOpenListings={() => router.push('/professional-listings')}
       onOpenPaid={() => router.push('/paid-message-settings')}
       onOpenSettings={() => router.push('/settings')}
+      onCreate={() => router.push('/create')}
       onAddWork={() => router.push('/add-work')}
       onOpenWork={(wawuId, workId) => router.push({ pathname: '/works/[wawuId]/[workId]', params: { wawuId, workId } })}
     />

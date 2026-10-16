@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 112 | 0 | 0 | 0 |
+| todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 22 | 0 | 0 | 0 |
+| verifying | 23 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -22,6 +22,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 - [INBOX-21](../tasks/INBOX-21.md) Turn on phone notifications in the app (You)
 - [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
+- [ME-04](../tasks/ME-04.md) Create: pick a format, upload, preview (You)
 - [SCHOOLS-10](../tasks/SCHOOLS-10.md) Link to a school's own site, with the click recorded (You)
 - [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
 - [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
