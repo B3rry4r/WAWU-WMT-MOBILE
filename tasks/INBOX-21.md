@@ -7,7 +7,7 @@ order: 52
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: [INBOX-03, SHELL-02]
 decisions: []
 passes: [V1, V6, V7, V9, V10]
@@ -18,9 +18,20 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/INBOX-21.md.
+- **Status:** verifying. Built on `wmt/INBOX-21` (mobile only; no backend, wawu-id or website change, no migration).
+- **Built:** `src/features/push/`. After sign-in, once the tabs are reachable, the app makes the Android channel,
+  asks the system for notification permission once per phone, and registers the phone with the Hub
+  (`POST /push-tokens`, every live start and after 30 minutes away). Sign-out removes it (`DELETE /push-tokens`)
+  inside the existing sign-out wait. A tap opens: the room (join approved or declined), the Wallet tab (sale, tip,
+  refund), the Inbox tab (paid question, deadline). Every other kind opens the app where it is.
+- **Refusal:** a refused or unanswered ask changes nothing else; no screen, no nag, in-app notifications unchanged.
+- **Next:** the verifier (V1, V6, V7, V9). V10 (a real Android phone) is NOT RUN: needs a new development build
+  (`app.json` changed, SHARED-CHANGES INBOX-21 #2), the owner's FCM key uploaded to Expo, and `PUSH_ENABLED=true`
+  on the Hub (INBOX-03 #3).
+- **Each later screen a notification is about adds its row** to `src/features/push/routes.ts`: the other person's
+  profile (ME-02, `new_follower`), a piece of content (`content_published`, `content_rejected`, `review_received`),
+  the paid question itself (INBOX-18, `dm_received`, `dm_deadline`; today they open the Inbox).
+- **History:** the builder report is in tasks/history/INBOX-21.md.
 
 ## Read first
 
@@ -52,13 +63,9 @@ V10 runs on a real Android phone only (DECISIONS R-24).
 - [ ] A user who taps a notification lands on the screen it is about.
 - [ ] A user who refuses permission keeps using the app, and in-app notifications still work.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-21.md](history/INBOX-21.md).
 
 ## Owner sign-off
 
