@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** merging (lead). Round 2 verified, no blocker, no defect above low. Stacked on MONEY-16 (this branch contains `wmt/MONEY-16`); WALLET-07 stacks on this one.
-- **Branches:** mobile `wmt/NUV-06` (this branch; MONEY-16's mobile head merged, API types regenerated from backend `wmt/NUV-06`). Backend `wmt/NUV-06` `4fc31b6` (MONEY-16 `c694505` merged; migration renamed to `20261021280000_payout_nuvion_ids`, contents unchanged). No PRs yet.
+- **Branches:** mobile `wmt/NUV-06` (this branch; MONEY-16's mobile head merged (main `3117807` with it), API types regenerated from backend `wmt/NUV-06`). Backend `wmt/NUV-06` `4fc31b6` (MONEY-16 `c694505` merged; migration renamed to `20261021280000_payout_nuvion_ids`, contents unchanged). No PRs yet.
 - **Merged and live:** nothing of this task. NUV-05, which it builds on, is live (backend 51b02c5).
 - **Open findings:** blocker 0, high 0, medium 0. Lows F1 to F4 are in tasks/SWEEP-MONEY.md.
 - **Next:** the lead merges backend MONEY-16 first, then this one (its migration sorts after MONEY-16's), then WALLET-07. Then WALLET-09 can start.
