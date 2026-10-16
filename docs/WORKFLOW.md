@@ -102,6 +102,44 @@ Status values in a task file, in order: `todo`, `building`, `verifying`,
 `review`, `done`. A builder starts a task only when every `depends_on` task is
 `review` or `done` (built and verified; the owner's sign-off never blocks the next task).
 
+### Severity, sweeps and task files (15 Oct 2026)
+
+Owner, 15 Oct 2026, after measuring agent spend: task files had grown past
+50,000 tokens because every round appended its record and every later session
+read all of it, and rounds 3 to 6 mostly fixed low findings. Where this and
+the fix loop in step 5 disagree, this wins.
+
+- **A verdict is `merge` when nothing is medium or worse.** A verifier grades
+  every finding blocker, high, medium or low. Blocker, high and medium get a
+  fix round. Lows do not: they go to the area's sweep task,
+  `tasks/SWEEP-<AREA>.md`, one row each with the source task, the finding id,
+  one line and the report it came from. A sweep is a normal task, built and
+  verified like any other when the lead schedules it. A finding nobody graded
+  is written "unknown, ask the lead".
+- **A task file keeps a `## Current state` of at most 60 lines**, directly under
+  its title: status, branches and hashes per repo, what is merged and live,
+  open findings by severity (blocker, high, medium; lows are a pointer to the
+  sweep), and the next step. Whoever ends a round rewrites it.
+  `check_tasks.py` fails a `building`, `verifying` or `review` task with none,
+  and any Current state over 60 lines.
+- **History lives in `tasks/history/<ID>.md`.** Builder reports, verifier
+  reports and lead notes move there word for word, oldest first. The task file
+  keeps the brief, the Current state, a one-line link and the owner sign-off.
+  `python3 scripts/tasks/compact_task.py <ID>` does the move and keeps every
+  line. Read the task file, then only the last section of the history
+  (`grep -n '^## ' tasks/history/<ID>.md`, then that line range), never the
+  whole history. Done tasks are left as they are.
+- **Briefs carry a step budget** (about 150 steps for a build, 120 for a
+  check). Past it, an agent finishes what is open, pushes, and hands back with
+  a short note of what remains.
+- **Keep command output out of the context.** Every test run, build, check or
+  server log goes to a log file and only its end is printed
+  (`(cmd; echo "EXIT $?") > log 2>&1; tail -n 15 log`); failures are found with
+  `grep`. Never sit idle more than 4 minutes: after about 5 the whole context
+  is written again at the full rate.
+- **Run only the specs for the files you touched**, plus typecheck and lint.
+  The full suites run in CI on every task branch (OPS-CI, section 9).
+
 ### Shared files (fenced)
 
 A task never edits these unless the ticket says so. If it needs a change, it
@@ -302,6 +340,8 @@ colliding.
    branch merges main in again before its own merge (step 3).
 8. **Backend merges deploy the live server.** Batch backend pull requests
    where you can, so it restarts once.
+9. **Resuming a task branch:** merge main first, then run
+   `python3 scripts/tasks/compact_task.py <ID>` before reading the task file.
 
 Recommended GitHub settings on `main` in each repo: require a pull request,
 require the CI checks, and require branches to be up to date before merging.
@@ -317,6 +357,34 @@ Then GitHub enforces steps 3 and 7.
 - Every finding and how it was closed; every check not run, and why
 
 No evidence pack, no merge. The owner's own tasks are verified the same way.
+
+### CI on every task branch (OPS-CI), 15 Oct 2026
+
+GitHub runs the full checks on every push to a `wmt/**` branch, so nobody runs
+a full suite on the shared machine.
+
+| Repo | Workflow | What runs on a push to `wmt/**` (and on every pull request) |
+|------|----------|-------------------------------------------------------------|
+| wawu-backend | `branch-checks.yml` | `deploy-test-in-sync`, then `suite` (the deploy's test steps, jest in 3 shards), `netns`, and `contract` (`contract:build` twice, the committed contract is current) |
+| wawu-backend | `gates.yml`, `protected-routes.yml` | the gates and baseline; the protected route suite against main's checker and lock |
+| wawu-id | `branch-checks.yml`, `gates.yml` | the deploy's build steps (migrate, typecheck, build) and `deploy-build-in-sync`; the gates |
+| website (`wawuafrica`) | `branch-checks.yml`, `gates.yml` | typecheck, lint, the `node:test` files, `check:copy`, `check:site-mode`, a production build (`VERCEL_ENV=production`); the gates |
+| mobile | `ci.yml` | the whole `npm run check` set, plus expo-doctor, API types and the web bundle |
+
+- Each run is one per branch: a newer push cancels the older run.
+- `suite` and `netns` are copies of `deploy.yml`'s `test` job, and wawu-id's
+  `build` is a copy of its deploy `build` job. `deploy-test-in-sync` and
+  `deploy-build-in-sync` fail when a copy and its `deploy.yml` differ. Change
+  both files in one commit; never edit the script to pass.
+- Every job's last log line is `RESULT <job>: <status>`. Read a run with
+  `gh api repos/<owner>/<repo>/commits/<sha>/check-runs --jq '.check_runs[] | "\(.name) | \(.status) | \(.conclusion)"'`.
+- **Builders and verifiers run only the specs for the files they touched, plus
+  typecheck and lint, then push and read the CI result.** They do not run the
+  full suite, `test:netns` or `contract:build` on their machine, and they do
+  not run the full backend suite twice.
+- **A red branch run means the task is not done.** A job that is already red on
+  `main` (the backend and website gates, the website baseline) is not the
+  branch's to fix: the report names it and shows it is red on `main` too.
 
 ---
 

@@ -15,6 +15,19 @@ artboards: []
 ---
 # FIX-17 · A bad character or value in any query answers 400, not 500, across the Hub
 
+## Current state
+
+As of 16 Oct 2026, from the branch (verifier of 8 Oct) and the lead's queue (10 Oct: FIX-17 round 2, not started).
+- **Status:** building on its branches. This file on main still says todo.
+- **Branches:** mobile `wmt/FIX-17` 60a88e7. Backend `wmt/FIX-17` 6726b3c (main 657a152 merged in at the time).
+- **Merged and live:** nothing of this task.
+- **Open findings:** the verifier named three defects and did not grade them: unknown, ask the lead for the severity of each.
+  - D1: nothing pins the one line in `src/main.ts` that makes the rule true in production (a test gap with a production consequence).
+  - D2: two specs assert the old answers and pass only because their app is built without the check.
+  - D3: SHARED-CHANGES FIX-17 #3 leaves one spec failing after OPS-08 (the retired shop routes answer 410).
+- **Next:** round 2 for D1 to D3 once graded; D3 needs OPS-08 merged first.
+- **Records:** on the branch, `wmt/FIX-17`, in tasks/FIX-17.md there (42 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py FIX-17`; the history goes to tasks/history/FIX-17.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files)
