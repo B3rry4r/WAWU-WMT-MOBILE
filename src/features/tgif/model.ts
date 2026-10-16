@@ -153,12 +153,14 @@ export function fitSize(card: TgifCard, text: string, room: WordRoom): number {
 }
 
 /**
- * The line under the share sheet's title: what each way of sending really does. The Hub's
- * drawn card goes into a chat as a picture; WhatsApp takes the verse as text (a picture needs
- * the phone's share module, G-242). The link is named only while the Hub has one to send
- * (`TGIF_SHARE_LINK`); with none, nothing is said about a link.
+ * The line under the share sheet's title: what each way of sending really does. On a phone with a
+ * share sheet (`asPicture`) the Hub's drawn card goes out as a picture from WhatsApp, Story and Chat,
+ * and only Chat adds the link under it. Where there is no share sheet (the web build) the card goes to
+ * Chat as a picture and WhatsApp takes the verse as text. The link is named only while the Hub has one to
+ * send (`TGIF_SHARE_LINK`); with none, nothing is said about a link.
  */
-export function shareLine(shareLink: string | null | undefined): string {
+export function shareLine(shareLink: string | null | undefined, asPicture = false): string {
+  if (asPicture) return shareLink ? 'The card goes out as an image. Chat adds the link under it.' : 'The card goes out as an image.';
   const base = 'The card goes to Chat as an image. WhatsApp gets the verse as text.';
   return shareLink ? `${base} Both carry the link.` : base;
 }

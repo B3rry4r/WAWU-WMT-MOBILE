@@ -19,6 +19,7 @@ import { font, radius, space, useWawu } from '@/theme';
 
 import { chatsKey, fetchChats, newMessageId, sendCardToChat, type ChatSummary } from './api/chat';
 import { fetchShareCard, shareCardKey, type ShareCard, type TgifDay } from './api/tgif';
+import { canShareCard, saveCardFile, shareCardFile, writeCard } from './cardFile';
 import { cardFileName, pngSize, shareLine, shareText, whatsappUrl } from './model';
 import { useCountShare } from './useTgif';
 
@@ -40,6 +41,11 @@ const sheetMetrics = {
 
 export const COULD_NOT_OPEN_WHATSAPP = 'WhatsApp could not be opened. Try again.';
 export const COULD_NOT_SEND = 'The card could not be sent. Try again.';
+export const COULD_NOT_SHARE = 'The card could not be shared. Try again.';
+export const COULD_NOT_SAVE = 'The card could not be saved. Try again.';
+export const SAVE_NOT_ALLOWED = 'Saving needs permission to add to your photos. Allow it in your phone settings, then try again.';
+export const SAVED = 'Saved to your photos.';
+const SHARE_QUERY = ['tgif', 'phone-can-share'] as const;
 
 export type ShareSheetProps = {
   visible: boolean;
@@ -80,16 +86,74 @@ type ShareBodyProps = Omit<ShareSheetProps, 'visible'>;
 
 /** What is inside the open sheet. It exists only while the sheet is open, so a sheet opened again starts at its targets. */
 function ShareBody({ onClose, date, day, onOpenInbox }: ShareBodyProps) {
+  const client = useQueryClient();
   const [mode, setMode] = useState<Mode>({ kind: 'targets' });
   const [problem, setProblem] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const busy = useRef(false);
   const card = useQuery({ queryKey: shareCardKey(date), queryFn: () => fetchShareCard(date), staleTime: Infinity });
+  const phone = useQuery({ queryKey: SHARE_QUERY, queryFn: canShareCard, staleTime: Infinity });
   const counted = useCountShare(date);
+  const asPicture = phone.data === true;
 
-  const whatsapp = async () => {
+  /** The card as a file the phone's sheet and photo library can take; the picture is fetched again if the preview never got it. */
+  const cardUri = async () => {
+    const picture = await client.fetchQuery({ queryKey: shareCardKey(date), queryFn: () => fetchShareCard(date), staleTime: Infinity });
+    return writeCard(picture, date);
+  };
+
+  /** One press at a time: a second tap while the first is still working does nothing. */
+  const once = async (work: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true;
     setProblem(null);
+    setSaved(false);
+    try {
+      await work();
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  const whatsappText = async () => {
     if (await openUrl(whatsappUrl(shareText(day)))) counted.mutate();
     else setProblem(COULD_NOT_OPEN_WHATSAPP);
   };
+
+  const whatsapp = () =>
+    once(async () => {
+      if (asPicture) {
+        try {
+          await shareCardFile(await cardUri(), 'Share on WhatsApp');
+          counted.mutate();
+          return;
+        } catch {
+          // The sheet could not open with the picture: WhatsApp gets the verse as text instead.
+        }
+      }
+      await whatsappText();
+    });
+
+  const story = () =>
+    once(async () => {
+      try {
+        await shareCardFile(await cardUri(), 'Share to your story');
+        counted.mutate();
+      } catch {
+        setProblem(COULD_NOT_SHARE);
+      }
+    });
+
+  const save = () =>
+    once(async () => {
+      try {
+        const out = await saveCardFile(await cardUri());
+        if (out === 'saved') setSaved(true);
+        else setProblem(SAVE_NOT_ALLOWED);
+      } catch {
+        setProblem(COULD_NOT_SAVE);
+      }
+    });
 
   if (mode.kind === 'chat') {
     return (
@@ -115,12 +179,19 @@ function ShareBody({ onClose, date, day, onOpenInbox }: ShareBodyProps) {
   if (mode.kind === 'sent') return <Sent name={mode.name} onDone={onClose} />;
   return (
     <>
-      <Heading title="Share today's verse" line={shareLine(day.shareLink)} />
+      <Heading title="Share today's verse" line={shareLine(day.shareLink, asPicture)} />
       <Preview card={card.data} loading={card.isPending} error={card.isError ? card.error : null} onRetry={() => void card.refetch()} verse={day.verse} />
-      <View style={styles.targets}>
+      <View style={[styles.targets, asPicture ? styles.targetsSpread : null]}>
         <Target testID="tgif-share-whatsapp" icon="MessageCircle" label="WhatsApp" onPress={() => void whatsapp()} />
+        {asPicture ? <Target testID="tgif-share-story" icon="Instagram" label="Story" onPress={() => void story()} /> : null}
         <Target testID="tgif-share-chat" icon="Send" label="Chat" onPress={() => setMode({ kind: 'chat' })} />
+        {asPicture ? <Target testID="tgif-share-save" icon="ImageDown" label="Save" onPress={() => void save()} /> : null}
       </View>
+      {saved ? (
+        <Text variant="muted" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-share-saved">
+          {SAVED}
+        </Text>
+      ) : null}
       {problem ? (
         <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-share-problem">
           {problem}
@@ -306,6 +377,8 @@ const styles = StyleSheet.create({
   title: { fontSize: sheetMetrics.title },
   preview: { width: '100%', borderRadius: radius.card, overflow: 'hidden' },
   targets: { flexDirection: 'row', gap: space.lg },
+  /** Four targets, as the canvas lays them out: the sheet's width shared out between them. */
+  targetsSpread: { justifyContent: 'space-between' },
   target: { width: sheetMetrics.target, alignItems: 'center', gap: sheetMetrics.tileGap },
   tile: { width: sheetMetrics.tile, height: sheetMetrics.tile, borderRadius: radius.tile, alignItems: 'center', justifyContent: 'center' },
   targetLabel: { fontSize: sheetMetrics.label },
