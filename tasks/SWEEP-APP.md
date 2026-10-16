@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 79, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 80, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -126,6 +126,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | ME-04 | R6-1 | App: `src/features/create/draft.ts:45` sends `releaseUpload(...)` fire-and-forget and swallows every error, so a 429 `storage_busy` (like the old 503) leaves that file counted until a later release. Not reachable by a normal flow (at most 2 releases per action, no other capped route is called by the app yet); it needs 4 releases of one person inside one transaction time. ME-08 should retry a refused release after `Retry-After`. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 1 (round 6) |
 | ME-04 | R6-2 | Hub: requests that do not need the database lock still take the person's turn and can be refused: a text-only PATCH (`content-piece.service.ts:983`) and a PUT media with only `pageCount` or `durationLabel` (`content-media.service.ts:268`). Harmless; the cap is just broader than it needs to be. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 2 (round 6) |
 | ME-04 | R6-3 | Hub, note for the merge: a new 429 `storage_busy` is possible on `POST /content`, a route the web calls, but only for a 4th simultaneous request of one person on one Hub process (the route already answers the throttler's 429). The contract lists no 429 for these routes. Protected route suite is green. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 3 (round 6) |
+| SCHOOLS-07 | F1 | Hub: `eslint --no-fix` on the builder's `src/schools/enrolment/tests/school-enrolment.contract.spec.ts` reports 1 error (`no-unsafe-assignment` on `expect.stringMatching`, line 1040; line 913 at 79b24be, same text). No CI job lints specs. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-07.md`, finding 5 (round 2) |
 
 ## Builder report
 
