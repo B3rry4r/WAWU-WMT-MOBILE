@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** merging (lead). Round 2 verified, no blocker, nothing medium or worse. Its backend branch is merged up to main; three backend branches are stacked in this order: MONEY-16, NUV-06, WALLET-07.
-- **Branches:** mobile `wmt/MONEY-16` (this branch, main `2f0ca33` merged; API types regenerated from backend `wmt/MONEY-16`). Backend `wmt/MONEY-16` `c694505` (main `56f94d0` merged; migration renamed to `20261021270000_money_check_runs`, contents unchanged). wawu-id `wmt/MONEY-16` `e3d4825` (main `81e5e05` merged; the nightly report mail route and the EMAIL-02 relay share one mail service). No PRs yet.
+- **Branches:** mobile `wmt/MONEY-16` (this branch, main `3117807` merged; API types regenerated from backend `wmt/MONEY-16`). Backend `wmt/MONEY-16` `c694505` (main `56f94d0` merged; migration renamed to `20261021270000_money_check_runs`, contents unchanged). wawu-id `wmt/MONEY-16` `e3d4825` (main `81e5e05` merged; the nightly report mail route and the EMAIL-02 relay share one mail service). No PRs yet.
 - **Merged and live:** nothing of this task.
 - **Conventions:** the backend section for this task is number 22 in `docs/contract/CONVENTIONS.md` (19, 20 and 21 are claimed by other open branches: WALLET-07, WALLET-16, TIER-02, POINTS-04, FIX-20).
 - **Open findings:** blocker 0, high 0, medium 0. Lows RF-1 to RF-7 are in tasks/SWEEP-MONEY.md.
