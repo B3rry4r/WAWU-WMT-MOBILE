@@ -7,15 +7,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 138 | 0 | 0 | 0 |
+| todo | 137 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 101 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+- [FIX-10](../tasks/FIX-10.md) Calls to WAWU ID give up after a bounded time (You)
 
 ## Done
 
