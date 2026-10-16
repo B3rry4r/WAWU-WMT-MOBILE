@@ -7,7 +7,7 @@ order: 76
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [SCHOOLS-04]
 decisions: [R-12, R-33]
 passes: [V1, V2, V3, V4, V9]
@@ -17,10 +17,23 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/SCHOOLS-10.md.
+As of 16 Oct 2026, after the first build (builder, Sonnet).
+- **Status:** verifying. Built and pushed. CI on `a3b0f9f`: Branch checks 38933291303 and Protected routes 38933291332 green; Gates 38933291320 has main's same 16 FAIL lines.
+- **Branches:** wawu-backend `wmt/SCHOOLS-10` (from main `3797fb2`). Mobile `wmt/SCHOOLS-10` holds only this file, SHARED-CHANGES rows and the log line. wawu-id and the web: untouched.
+- **Migration:** `20261022230000_school_link_clicks` (two new tables, additive; rollback line in the file).
+- **Built (backend, all new):**
+  - `GET /schools/courses/{id}/apply-link`: public; the school's `applyUrl` with `ref=wawu-XXXX` added; records nothing. SC9 prints this.
+  - `POST /schools/courses/{id}/apply-click`: needs an account; writes one `SchoolLinkClick` (user, course, time), then answers with the same link. The app opens `url` in the phone's browser (R-33).
+  - The code is per school, made the first time a link is asked for (`SchoolLink`, unique), `wawu-` plus four of `A-Z2-9` without `I` and `O`. A race or a taken code is retried.
+  - The link carries the code only. No user id, no name, nothing else (DATA-SAFETY AA-10 lead check).
+  - A hidden course or school, a school with no `applyUrl` or one that is not http(s): 404 and no click.
+  - Account purge deletes a person's clicks (OWNED); the data export lists them (`schoolLinkClicks`).
+- **Not built, on purpose:** the school's sign-ups, conversion reports and the commission (SCHOOLS-12, after launch). A real 302 GET: the tap needs the person, and a browser opened by the phone carries no token, so the app calls the POST and opens the answer.
+- **For SCHOOLS-08 (SC9):** call `apply-link` for the sheet and `apply-click` on Continue, then open `url`. Never open the raw `applyUrl` that `GET /schools/{id}` and `GET /schools/courses/{id}` still serve: it has no code and records nothing. Run `npm run api -- --backend ../wawu-backend` first (SHARED-CHANGES SCHOOLS-10 #2).
+- **For RELEASE-01:** DATA-SAFETY AA-10 and D13 can now say the click is collected (user, course, time) and the school sees only the per-school code.
+- **Open findings:** none yet.
+- **Next:** a verifier runs V1, V2, V3, V4 and V9 against a Hub built from `wmt/SCHOOLS-10`.
+- **Records:** tasks/history/SCHOOLS-10.md.
 
 ## Read first
 
@@ -42,13 +55,9 @@ Per-school link code and a redirect endpoint that logs the click (user, course, 
 
 - [ ] Tapping 'Apply on their site' records one click and lands on the school's URL with the WAWU code.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SCHOOLS-10.md](history/SCHOOLS-10.md).
 
 ## Owner sign-off
 
