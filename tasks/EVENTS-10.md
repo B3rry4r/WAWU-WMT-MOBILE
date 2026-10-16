@@ -20,6 +20,7 @@ artboards: []
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-07.
+- **Rule from EVENTS-07 round 3 (the lead, 16 Oct 2026):** a host's call-off refund returns EVERYTHING the buyer paid, Fintava's charge included (`WalletHoldService.refund(..., { returnCharge: true })`), like a losing buyer and a failed bill (G-462): the buyer did nothing wrong. This replaces "the ticket price comes back, not Fintava's charge" in Scope below. WAWU carries the charge. The host-erase path in `src/event-ticketing/wallet/event-host-erasure.service.ts` already does this, and refunds only events that have not started; a called-off event that has started keeps its holds held.
 - **History:** none yet. Reports go to tasks/history/EVENTS-10.md.
 
 ## Read first
