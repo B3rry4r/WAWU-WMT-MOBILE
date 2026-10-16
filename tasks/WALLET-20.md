@@ -3,7 +3,7 @@ id: WALLET-20
 title: Scan to pay and my QR code
 owner: YOU
 area: WALLET
-order: 201
+order: 269
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [W24, W25]
 ---
 # WALLET-20 · Scan to pay and my QR code
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-28.
+- **History:** none yet. Reports go to tasks/history/WALLET-20.md.
 
 ## Read first
 

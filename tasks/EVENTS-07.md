@@ -1,7 +1,7 @@
 ---
 id: EVENTS-07
 title: Buy event tickets from the wallet (backend)
-owner: DEV3
+owner: YOU
 area: EVENTS
 order: 103
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # EVENTS-07 · Buy event tickets from the wallet (backend)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): MONEY-16.
+- **History:** none yet. Reports go to tasks/history/EVENTS-07.md.
 
 ## Read first
 

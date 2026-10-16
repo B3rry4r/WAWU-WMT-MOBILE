@@ -3,7 +3,7 @@ id: WALLET-26
 title: Add money by USSD
 owner: YOU
 area: WALLET
-order: 199
+order: 267
 priority: after-launch
 repo: wawu-backend
 type: third-party
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
 ---
 # WALLET-26 · Add money by USSD
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/WALLET-26.md.
 
 ## Read first
 

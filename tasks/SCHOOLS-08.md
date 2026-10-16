@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-08
 title: My courses and apply on the school's site
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 136
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [SC8, SC9]
 ---
 # SCHOOLS-08 · My courses and apply on the school's site
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-09, SCHOOLS-10, SCHOOLS-06.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-08.md.
 
 ## Read first
 

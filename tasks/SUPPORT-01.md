@@ -1,7 +1,7 @@
 ---
 id: SUPPORT-01
 title: Support chat that opens with the payment or piece it is about
-owner: DEV2
+owner: YOU
 area: SUPPORT
 order: 174
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V6, V7, V9]
 artboards: []
 ---
 # SUPPORT-01 · Support chat that opens with the payment or piece it is about
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-19, HOME-12, WALLET-04.
+- **History:** none yet. Reports go to tasks/history/SUPPORT-01.md.
 
 ## Read first
 

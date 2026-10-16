@@ -76,7 +76,7 @@ function boot() {
 }
 
 const okAnswer = (path: string) => {
-  const op = contract.paths[path].post;
+  const op = contract.paths[path].post ?? contract.paths[path].get;
   return sample((op.responses['200'] ?? op.responses['201']).content!['application/json'].schema);
 };
 
@@ -121,7 +121,7 @@ describe("WAWU ID's published contract and the app's sign-in calls", () => {
 
   it('has its generated types made from this contract (every operation, by name)', () => {
     const ids = Object.values(contract.paths).flatMap((item) => Object.values(item).map((op) => op.operationId));
-    expect(ids).toEqual(expect.arrayContaining(['login', 'refresh', 'forgotPassword', 'signup', 'phoneVerifyConfirm', 'signupResume', 'signupProgress']));
+    expect(ids).toEqual(expect.arrayContaining(['login', 'refresh', 'forgotPassword', 'signup', 'phoneVerifyConfirm', 'signupEmailCodeStart', 'signupEmailCodeConfirm', 'signupResume', 'signupProgress', 'signupChannel']));
     for (const id of ids) expect(generated).toContain(`operations["${id}"]`);
     const named = [...generated.matchAll(/operations\["(\w+)"\]/g)].map((m) => m[1]);
     expect(new Set(named)).toEqual(new Set(ids));
@@ -135,6 +135,9 @@ describe("WAWU ID's published contract and the app's sign-up calls (AUTH-04)", (
     ['start a sign-up', 'post', '/auth/signup', (id) => id.signupRequest({ email: 'ada@example.test', phone: '08031234412', password: 'a-long-password', accountType: 'creator' })],
     ['ask for another code', 'post', '/auth/phone/verify/start', (id) => id.phoneVerifyStartRequest({ phone: '+2348031234412', attempt: 'secret' })],
     ['confirm the phone code', 'post', '/auth/phone/verify/confirm', (id) => id.phoneVerifyConfirmRequest({ phone: '+2348031234412', attempt: 'secret', code: '481902', emailCode: '123456' })],
+    ['ask for another mailed code (AUTH-07)', 'post', '/auth/signup/email-code/start', (id) => id.signupEmailCodeStartRequest({ phone: '+2348031234412', attempt: 'secret' })],
+    ['confirm the mailed code (AUTH-07)', 'post', '/auth/signup/email-code/confirm', (id) => id.signupEmailCodeConfirmRequest({ phone: '+2348031234412', attempt: 'secret', code: '481902' })],
+    ['know which way the code will travel (AUTH-07 round 3)', 'get', '/auth/signup/channel', (id) => id.signupChannelRequest()],
     ['resume a sign-up', 'post', '/auth/signup/resume', (id) => id.signupResumeRequest({ phone: '+2348031234412', attempt: 'secret' })],
     ['read the sign-up progress', 'get', '/auth/signup/progress', (id) => id.signupProgressRequest(token)],
     ['put the email step off', 'post', '/auth/signup/progress', (id) => id.signupCompleteStepRequest(token, 'email')],
@@ -156,6 +159,34 @@ describe("WAWU ID's published contract and the app's sign-up calls (AUTH-04)", (
     expect(op).toBeDefined();
     if (op.requestBody) expect(problem(sent[0].body, op.requestBody.content['application/json'].schema)).toBeNull();
     else expect(sent[0].body).toBeUndefined();
+  });
+
+  it('reads the channel the contract describes, and none for a value it does not know', async () => {
+    const identity = boot();
+    const schema = contract.components.schemas.SignupChannelSchema.properties!.channel;
+    expect(schema.enum).toEqual(['phone', 'email']);
+    for (const channel of ['phone', 'email']) {
+      answer = () => ({ data: { channel } });
+      await expect(identity.signupChannelRequest()).resolves.toBe(channel);
+    }
+    for (const channel of ['sms', 'both', '', 7, null]) {
+      answer = () => ({ data: { channel } });
+      await expect(identity.signupChannelRequest()).resolves.toBeNull();
+    }
+    answer = () => ({});
+    await expect(identity.signupChannelRequest()).resolves.toBeNull();
+  });
+
+  it('reads that a mailed sign-up was made without the number typed, and says nothing otherwise', async () => {
+    const identity = boot();
+    const base = { phone: '+2348031234412', attempt: 'secret', expiresIn: 600, resendIn: 60, emailCodeRequired: false, channel: 'email', maskedEmail: 'a•••@example.test' };
+    answer = () => ({ data: { ...base, phoneNotSaved: true } });
+    await expect(identity.signupRequest({ email: 'a@b.test', phone: '08031234412', password: 'a-long-password' })).resolves.toMatchObject({ phoneNotSaved: true });
+    for (const phoneNotSaved of [undefined, false, 'true', 1]) {
+      answer = () => ({ data: { ...base, phoneNotSaved } });
+      const out = await identity.signupRequest({ email: 'a@b.test', phone: '08031234412', password: 'a-long-password' });
+      expect(out).not.toHaveProperty('phoneNotSaved');
+    }
   });
 
   it('refuses an answer that lacks what the screens use', async () => {

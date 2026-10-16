@@ -15,6 +15,17 @@ artboards: []
 ---
 # WALLET-09 · Send money to a bank
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 17:25).
+- **Status:** todo. No branch. It waits for the NUV-06 merge.
+- **Next:** a builder starts after NUV-06 merges. NUV-06's verifier left notes for it (F1: call `forBeneficiary` or `forPayoutAccount`, not the private `prepare`; N2, N3, N5, N6 from NUV-05); they are in the lead's log, 12 Oct 13:00 and 17:25.
+- **History:** none yet. Reports go to tasks/history/WALLET-09.md.
+
+## Lead note (11 Oct 2026): from MONEY-19's verification
+
+- A send this task builds that the wallet cannot cover must answer MONEY-19's `402 insufficient_funds` with `balanceKobo`, `totalKobo` and `shortfallKobo` (G-481); today `walletProviderErrorToHttp('insufficient_funds')` builds a 402 with no figures.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

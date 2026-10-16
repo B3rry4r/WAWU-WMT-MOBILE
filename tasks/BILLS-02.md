@@ -1,7 +1,7 @@
 ---
 id: BILLS-02
 title: Pay a bill: review, PIN, token, failures
-owner: DEV2
+owner: YOU
 area: BILLS
 order: 119
 priority: launch
@@ -16,6 +16,13 @@ artboards: [S5, S6, S7, S11, S12]
 On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
 
 # BILLS-02 · Pay a bill: review, PIN, token, failures
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-04.
+- **History:** none yet. Reports go to tasks/history/BILLS-02.md.
 
 ## Read first
 - **Lead note (3 Oct 2026):** the fee figures below were written before R-31. Every amount on S5, S6, S7 and S11 comes from the server's fee quote (`GET /money/fees/quote?kind=bill`, WALLET-15, merged), never from this file: today it returns ₦10,115.75 for a ₦10,000 electricity bill (the ₦100 bill charge plus Fintava's ₦15.75 balance-transfer charge, R-31). The owner is asked on the progress page whether the payer or WAWU pays that charge; build against the quote and the screen follows the ruling.

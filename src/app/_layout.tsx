@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
+import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -23,7 +24,8 @@ SplashScreen.preventAutoHideAsync();
  * emptied whenever the session ends, so one account's answers are never drawn
  * for the next (FIX-04). A signed-in account whose sign-up has an email step
  * left opens that step before the tabs; the server's progress decides (AUTH-04,
- * SHARED-CHANGES AUTH-04 #2).
+ * SHARED-CHANGES AUTH-04 #2). Categories (EXPLORE-01 #2) and the featured works
+ * screens (ME-11 #3) sit with the tabs: a signed-out visit to one never draws it.
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
@@ -31,6 +33,7 @@ export default function RootLayout() {
   const { status } = useSession();
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
+  const offer = useClaimOfferStep(signedIn);
   const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
 
   useEffect(() => {
@@ -51,8 +54,15 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
+          <Stack.Screen name="claim-offer" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="categories" />
+          <Stack.Screen name="add-work" />
+          <Stack.Screen name="works/[wawuId]/index" />
+          <Stack.Screen name="works/[wawuId]/[workId]" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />

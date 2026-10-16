@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { Appearance } from 'react-native';
+import { ActivityIndicator, Animated, Appearance, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -104,9 +104,32 @@ function frame(child: ReactElement) {
 }
 
 const mod = <T,>(path: string) => require(path) as T;
+
+/*
+ * The first test in this file used to pay for loading the screens' modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 18 s of a test's 20 s on a cold
+ * transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+void [
+  mod('../BlockedScreen'),
+  mod('../ChangePasswordScreen'),
+  mod('../NotificationsScreen'),
+  mod('../PrivacyScreen'),
+  mod('../SettingsScreen'),
+  mod('../devicePrefs'),
+];
+void [ActivityIndicator, Animated, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await render(<View />);
+  warm.unmount();
+});
 const checked = (testID: string) => Boolean(screen.getByTestId(testID).props.accessibilityState?.checked);
 const bodiesOf = (method: string, path: string) => sent.filter((s) => s.method === method && s.path === path).map((s) => s.body);
 const tap = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
+/** A switch flips at once and is busy, ignoring presses, until the Hub has answered: a second tap is for after that. */
+const idle = (testID: string) => waitFor(() => expect(screen.getByTestId(testID).props.accessibilityState?.busy).toBe(false));
 
 beforeEach(() => {
   answers = {};
@@ -219,10 +242,26 @@ describe('Z3 · Notifications', () => {
   });
 
   it('shows the loading view while the settings are on the way, then a retry when they never come', async () => {
-    answers[NOTIFY] = [refusal(500, 'The server is having trouble.'), ok(notifications)];
+    // The first read is held until the loading view has been seen. Answered at once, the refusal could land inside
+    // `render`'s own act (how far it gets depends on the machine's timing), so the loading view was sometimes gone
+    // before it was looked for.
+    let answerNow: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      answerNow = resolve;
+    });
+    answers[NOTIFY] = [
+      async () => {
+        await held;
+        return refusal(500, 'The server is having trouble.') as Plain;
+      },
+      ok(notifications),
+    ];
     await boot();
     expect(screen.getByTestId('notify-loading')).toBeTruthy();
+    expect(screen.queryByTestId('notify-error')).toBeNull();
+    await act(async () => answerNow());
     expect(await screen.findByTestId('notify-error')).toBeTruthy();
+    expect(screen.queryByTestId('notify-loading')).toBeNull();
     await act(async () => fireEvent.press(screen.getByLabelText('Try again')));
     expect(await screen.findByTestId('notify-moneyIn')).toBeTruthy();
   });
@@ -495,8 +534,10 @@ describe('Z2 · Settings', () => {
     expect(checked('settings-tgif')).toBe(true);
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(false));
+    await idle('settings-tgif');
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(true));
+    await idle('settings-tgif');
     expect(bodiesOf('PATCH', '/api/hub/settings/tgif')).toEqual([{ show: false }, { show: true }]);
   });
 

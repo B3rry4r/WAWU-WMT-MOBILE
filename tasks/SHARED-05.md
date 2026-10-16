@@ -1,0 +1,58 @@
+---
+id: SHARED-05
+title: The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch
+owner: YOU
+area: SHARED
+order: 228
+priority: launch
+repo: wawu-wmt-mobile
+type: component
+status: todo
+depends_on: []
+decisions: []
+passes: [V1, V2, V4, V5, V6, V10]
+artboards: []
+---
+# SHARED-05 · The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/SHARED-05.md.
+
+## Read first
+
+- `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files: this task IS the lead's shared-change pass, so it may edit the fenced files its rows name, and nothing else that is fenced)
+- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
+- `SHARED-CHANGES.md` rows: WALLET-11 #2, ME-06 #3, KYC-05 R1, KYC-03 R1, KYC-04 R1, SETTINGS-02 R1, SETTINGS-01 #3 (each row says what to change and why; the status cells were audited on 8 Oct 2026, mobile `fb01391`)
+- `src/app/_layout.tsx` and every route file the rows name
+
+## Goal
+
+Seven rows ask for routes to be listed in `src/app/_layout.tsx`, and none were. Each screen redirects a signed-out visitor to `/welcome` itself, so nobody is stranded, but the guard is in many places instead of one. And SETTINGS-01 #3 (a): the Theme a person picks in Settings (System, Light or Dark) only applies after Settings is opened, not from the start of the next launch.
+
+## Scope
+
+- List every route the rows name under the right `Stack.Protected` guard, then remove each screen's own signed-out check that the guard now covers (the rows say which).
+- Call `applyStoredTheme()` once before the first screen is drawn (SETTINGS-01 #3 (a)).
+- Mark each row applied.
+
+## Capability checks
+
+- [ ] A signed-out visit to each listed route lands on `/welcome` through the guard (a test per route), and a signed-in one opens the screen.
+- [ ] A person who picked Dark sees Dark on the first screen of the next launch, with no flash of the other theme.
+- [ ] `npm run check` exit 0.
+
+## Builder report
+
+_Not started._
+
+## Verifier report
+
+_Not started._
+
+## Owner sign-off
+
+_Owner: date, and "screenshots and evidence pack reviewed"._

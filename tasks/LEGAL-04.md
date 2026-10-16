@@ -1,7 +1,7 @@
 ---
 id: LEGAL-04
 title: Legal: book and pay a consultation
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 116
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [S18, S19, S20, S25]
 ---
 # LEGAL-04 · Legal: book and pay a consultation
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-05.
+- **History:** none yet. Reports go to tasks/history/LEGAL-04.md.
 
 ## Read first
 

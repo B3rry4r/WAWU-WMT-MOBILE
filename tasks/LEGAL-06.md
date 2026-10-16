@@ -1,7 +1,7 @@
 ---
 id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 120
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S21, S22, S23, S24, S26]
 ---
 # LEGAL-06 · Legal: quote, pay to start, delivery, fixed price
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-04, LEGAL-05.
+- **History:** none yet. Reports go to tasks/history/LEGAL-06.md.
 
 ## Read first
 

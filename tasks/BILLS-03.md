@@ -1,7 +1,7 @@
 ---
 id: BILLS-03
 title: Airtime, data and cable TV
-owner: DEV2
+owner: YOU
 area: BILLS
 order: 124
 priority: launch
@@ -16,6 +16,13 @@ artboards: [S8, S9]
 On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
 
 # BILLS-03 · Airtime, data and cable TV
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-02, BILLS-04.
+- **History:** none yet. Reports go to tasks/history/BILLS-03.md.
 
 ## Read first
 

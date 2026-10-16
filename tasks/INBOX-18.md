@@ -1,7 +1,7 @@
 ---
 id: INBOX-18
 title: Answer paid questions (creator)
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 171
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I9, I10, I11]
 ---
 # INBOX-18 · Answer paid questions (creator)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-12, INBOX-17, WALLET-16, ME-14, INBOX-19.
+- **History:** none yet. Reports go to tasks/history/INBOX-18.md.
 
 ## Read first
 

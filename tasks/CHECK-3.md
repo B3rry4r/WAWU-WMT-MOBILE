@@ -3,7 +3,7 @@ id: CHECK-3
 title: Checkpoint 3: full verification and QA (nothing new is built)
 owner: YOU
 area: CHECK
-order: 185
+order: 253
 priority: launch
 repo: all
 type: ops
@@ -14,6 +14,13 @@ passes: [V10, V11]
 artboards: []
 ---
 # CHECK-3 · Checkpoint 3: full verification and QA (nothing new is built)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): CHECK-2, ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, OPS-08, SCHOOLS-05, SETTINGS-05, SUPPORT-01.
+- **History:** none yet. Reports go to tasks/history/CHECK-3.md.
 
 ## Read first
 

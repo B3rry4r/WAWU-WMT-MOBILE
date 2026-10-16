@@ -2,7 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 /**
- * The sign-up that is waiting for its texted code: the phone WAWU ID stored
+ * The sign-up that is waiting for its code (texted by default, mailed when WAWU
+ * ID's `SIGNUP_VERIFY_CHANNEL` is `email`, AUTH-07): the phone WAWU ID stored
  * and the `attempt` secret `POST /auth/signup` returned (SHARED-CHANGES
  * AUTH-05 F1). Both live in the secure store, so quitting the app between A3 and A4 does
  * not lose them; the `attempt` is never written to a log, a URL or a route
@@ -61,14 +62,29 @@ export async function clearSignup(): Promise<void> {
 
 let memory: HeldSignup | null = null;
 
-/** What the code screen needs besides the secret: the server's figures at the moment it answered. */
-export type StartedState = { emailCodeRequired: boolean; resendIn: number; expiresIn: number; at: number };
+/**
+ * Where the sign-up's code went (WAWU ID's `channel`): an email address (SIGNUP_VERIFY_CHANNEL=email) or a text message
+ * (the default). `sms` is the texted code: WAWU ID's answer then carries no `channel` field.
+ */
+export type CodeChannel = 'email' | 'sms';
+
+/** What the code screen needs besides the secret: the server's figures at the moment it answered, and where the code went (`maskedEmail` is WAWU ID's own mask, n•••@example.com). */
+export type StartedState = {
+  channel: CodeChannel;
+  maskedEmail: string | null;
+  /** A mailed sign-up that was made without the number typed, because another account holds it (A4 says so). */
+  phoneNotSaved: boolean;
+  emailCodeRequired: boolean;
+  resendIn: number;
+  expiresIn: number;
+  at: number;
+};
 let startedState: StartedState | null = null;
 
 export function heldSignup(): HeldSignup | null {
   return memory;
 }
-export function setStarted(next: { emailCodeRequired: boolean; resendIn: number; expiresIn: number }) {
+export function setStarted(next: Omit<StartedState, 'at'>) {
   startedState = { ...next, at: Date.now() };
 }
 export function started(): StartedState | null {

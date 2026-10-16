@@ -3,20 +3,24 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 88 of 186.**
+**Launch tasks done: 140 of 254.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 68 | 0 | 23 | 26 |
+| todo | 136 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
-| done | 49 | 27 | 11 | 5 |
+| done | 101 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 - [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
+
+## Being verified
+
+- [WALLET-04](../tasks/WALLET-04.md) Transaction history and detail (You)
 
 ## Done
 
@@ -39,6 +43,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-05](../tasks/OPS-05.md) Update the other repos' CLAUDE.md for today's rulings (You)
 - [UI-01](../tasks/UI-01.md) Core components: text, buttons, inputs, money (Developer)
 - [INBOX-02](../tasks/INBOX-02.md) Live updates for chat (Developer 2)
+- [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail (You)
 - [MONEY-01](../tasks/MONEY-01.md) Protected route list and regression suite (You)
 - [UI-02](../tasks/UI-02.md) Lists, cards, sheets, tabs and states (Developer)
 - [INBOX-07](../tasks/INBOX-07.md) One inbox list with unread counts (Developer 2)
@@ -50,26 +55,38 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-04](../tasks/MONEY-04.md) Money conventions and the wallet contract (You)
 - [AUTH-03](../tasks/AUTH-03.md) Phone check at sign-up, and the email trap (Developer)
 - [ADS-04](../tasks/ADS-04.md) Serve a sponsored card (Developer 2)
+- [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out (You)
 - [SETTINGS-07](../tasks/SETTINGS-07.md) Notification switches the server honours (Developer)
 - [ADS-06](../tasks/ADS-06.md) Admin ad endpoints (Developer 2)
 - [AUTH-01](../tasks/AUTH-01.md) Sign in and password reset (Developer)
 - [ADS-05](../tasks/ADS-05.md) Count ad views and taps (Developer 2)
+- [PROS-03](../tasks/PROS-03.md) Get listed as a professional (You)
 - [MONEY-02](../tasks/MONEY-02.md) The PIN sheet (You)
 - [AUTH-02](../tasks/AUTH-02.md) Welcome and why you're here (Developer)
+- [PROS-01](../tasks/PROS-01.md) Find a professional (You)
 - [MONEY-03](../tasks/MONEY-03.md) The pay-from-wallet sheet (You)
 - [AUTH-05](../tasks/AUTH-05.md) The sign-up sequence end to end (Developer)
+- [INBOX-03](../tasks/INBOX-03.md) Phone push notifications (You)
+- [EVENTS-03](../tasks/EVENTS-03.md) My tickets, ticket QR, checked in (You)
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
+- [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
 - [ME-17](../tasks/ME-17.md) Ticks unlock uploads; free content (Developer)
 - [INBOX-04](../tasks/INBOX-04.md) Inbox: the list, empty, loading (Developer 2)
+- [EVENTS-09](../tasks/EVENTS-09.md) At the door: scan, let in, already used, not valid (You)
 - [MONEY-09](../tasks/MONEY-09.md) Transaction PIN (You)
 - [ME-05](../tasks/ME-05.md) Profile fields (Developer)
+- [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending (You)
+- [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results (You)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
+- [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (You)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
+- [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount (You)
+- [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 - [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
@@ -88,26 +105,65 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SETTINGS-03](../tasks/SETTINGS-03.md) Change password and sign out for real (WAWU ID) (Developer)
 - [WALLET-15](../tasks/WALLET-15.md) Fee quotes (You)
 - [HOME-11](../tasks/HOME-11.md) TGIF on Today, saved to the account (Developer)
+- [MONEY-17](../tasks/MONEY-17.md) Pay from wallet (You)
 - [SETTINGS-02](../tasks/SETTINGS-02.md) About, terms and privacy policy (Developer)
+- [MONEY-18](../tasks/MONEY-18.md) Hold, release and refund (You)
 - [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
+- [MONEY-19](../tasks/MONEY-19.md) Not enough money, and still confirming (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
+- [EXPLORE-01](../tasks/EXPLORE-01.md) Explore: browse, categories, loading, empty (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
+- [WALLET-06](../tasks/WALLET-06.md) Wallet settings, change and reset the PIN (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
 - [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
+- [WALLET-01](../tasks/WALLET-01.md) Wallet home: Naira account and its states (You)
 - [ME-10](../tasks/ME-10.md) Saved, purchases, notifications, monthly earnings (You)
 - [ME-16](../tasks/ME-16.md) Featured works and education (Developer)
 - [ME-11](../tasks/ME-11.md) Featured works: all works, one work, add a work (You)
 - [ME-01](../tasks/ME-01.md) My profile: content, services, about (You)
+- [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
+- [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
+- [SHARED-02](../tasks/SHARED-02.md) Shared-change pass for the four tab hubs (You)
+- [SHARED-03](../tasks/SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder) (You)
+- [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
+- [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
+- [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
+- [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
+- [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
+- [POINTS-01](../tasks/POINTS-01.md) Points: lots that expire, and the points ledger (You)
+- [NUV-02](../tasks/NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected (You)
+- [NUV-03](../tasks/NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review (You)
+- [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
+- [NUV-05](../tasks/NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account (You)
+- [TIER-03](../tasks/TIER-03.md) Buy, renew or upgrade a tier from the wallet (You)
+- [REF-01](../tasks/REF-01.md) Referral points (You)
+- [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
+- [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
+- [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
+- [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
+- [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
+- [FIX-29](../tasks/FIX-29.md) Unbuilt screens' entries are not drawn (R-47) (You)
+- [JOIN-01](../tasks/JOIN-01.md) Event registration link: register and pay the event fee (backend) (You)
+- [COMPLETE-05](../tasks/COMPLETE-05.md) Wallet shows its whole design (You)
+- [JOIN-02](../tasks/JOIN-02.md) Event registration link: the website page (wawuafrica.com/join) (You)
+- [JOIN-03](../tasks/JOIN-03.md) Event registration: claim the paid plan in the app with the access code (You)
+- [FIX-30](../tasks/FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording (You)
+- [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
+- [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)
+- [FIX-32](../tasks/FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -115,10 +171,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [MONEY-17](../tasks/MONEY-17.md) Pay from wallet
+- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
 - **Developer:** nothing unblocked
-- **Developer 2:** [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [INBOX-03](../tasks/INBOX-03.md) Phone push notifications, [INBOX-05](../tasks/INBOX-05.md) Communities: list, room, sending
-- **Developer 3:** [SCHOOLS-04](../tasks/SCHOOLS-04.md) Schools: browse, search, course detail, [EVENTS-01](../tasks/EVENTS-01.md) Events: list, filters, detail, sold out, [PROS-03](../tasks/PROS-03.md) Get listed as a professional
+- **Developer 2:** nothing unblocked
+- **Developer 3:** nothing unblocked
 
 ## Latest
 
@@ -129,13 +185,13 @@ From `docs/LOG.md`, newest first.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 3 (backend `b368f20`, status verifying): D1 fixed for PUT /events/:id/tickets and PATCH /events/:id, both decided and written under a lock on the event row, so an edit racing an admin remove never undoes the takedown (race spec 25 rounds each: 0 wrong on the branch, PUT 20 and PATCH 4 wrong on 6ea8612, PATCH 4 wrong on main; 40 live trials each, 0 undone); parallel PUTs no longer mix tier rows; lock unchanged, protected 253/253; O4 is enum order only (TypeScript first-seen order) and is back to main's order.
 - 7 Oct 2026 · EVENTS-11 · Builder report, round 2 (backend `6ea8612`, status verifying): lead rulings recorded; the tiers of an event that is not published are a 404 to all but its host (R-42 F3, published answers byte-identical to main), the admin queue and detail carry the ticket types (R-42 F2, additive), EVENTS-05's spec seeds its tiers directly (no assertion changed), and the protected suite re-approves the event after the PUT probe; relocked, 253/253 on the new lock (needs the owner's relock-approved label); event specs 150/150.
 - 7 Oct 2026 · EVENTS-11 · Builder report (backend `814e5fb` on `wmt/EVENTS-11`, status verifying): PUT /events/:id/tickets now needs a current tick (the POST/PATCH gate, same 403s, before any write) and a tier change sends an approved event back to `pending`; the sold-ticket 409 is unchanged and first, the same tiers sent again change nothing; new spec 11/11 (8 fail on main), live HTTP before/after on built Hubs, gates equal to main, contract unchanged. Protected suite 246/253: 7 later event probes and EVENTS-05's spec (27) assert the old behaviour, not edited, for the lead and owner.
-- 7 Oct 2026 · ME-01 · Merged: the Me tab (profile header, socials, counts, Content, Services and About with featured works); built now under R-41.
-- 7 Oct 2026 · ME-01 · Verifier report, round 2 (mobile `f247c6b`, backend main `3041887`, real wawu-id `fb8717e`): D1 (veil on a free tile without a picture), D2 (a failed refresh keeps the profile) and D3 (a new account sees "Nothing published yet") fixed in light and dark; U1 and U2 as ruled; 9 of 9 mutants killed (the 4 round-1 survivors and 5 new); M1, M2, M4 and M10 pictures unchanged apart from the two fixes; no defect open, status review.
-- 7 Oct 2026 · ME-01 · Builder round 2, status verifying: D1 (veil on bare tiles), D2 (a failed refresh keeps the profile), D3 (new account's empty shelf) fixed; U1, U2 per the lead's rulings; tests for the four surviving mutants.
-- 7 Oct 2026 · ME-01 · Verifier report (independent session, mobile `39f0627`, backend main `3041887`, real wawu-id `fb8717e`): V1, R-41, V4 and V9 passed (every value traced with non-canvas data, a save on M8 read back from the Hub and the database and shown on M10, signed in through the app against the real WAWU ID); 13 own mutants, 9 killed, 4 survived (test gaps); three defects: D1 a free piece without a picture has an unreadable white view count in light mode, D2 a failed refresh after a save replaces the loaded profile with "Your profile did not load", D3 a brand-new account (no profile row) gets "Your content did not load" for ever because the content route answers 404; status building.
-- 7 Oct 2026 · ME-01 · Built, status verifying: the Me tab (M1, M2, M4, M10) on the Hub's profile, counts, content, services and works; QR, Menu, the tick prompt, Create and the Services taps left out for their tasks (R-41); G-290 to G-292.
-- 7 Oct 2026 · SHARED-02 · New task (lead, order 183; tasks from 183 move down one): one serial pass applying the four tab hubs' shared-change requests (MediaCard, FilterChips, Button, tokens, the signed-in route list).
-- 7 Oct 2026 · Design · Owner answers recorded (R-42) and the 5 Oct plan adopted (R-43); design brief for Claude Design round 2 written (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`).
-- 7 Oct 2026 · HOME-01, ME-01, EXPLORE-01, WALLET-01 · Owner ruling R-41: every tab is built now with what exists; entries to screens not built yet are added by those tasks (each now says so).
-- 7 Oct 2026 · SETTINGS-01 · Merged: Settings (notifications, privacy, blocked people, change password, sign out); Developer 1's task, built and merged by the lead.
-- 7 Oct 2026 · EVENTS-11 · New task (lead, order 183; tasks from 183 move down one): ticket price edits need a current verification and send an approved event back to review (owner ruling R-40, EVENTS-02 F6).
+- 16 Oct 2026 · WALLET-04 · Builder report, round 2 (Sonnet builder; mobile `wmt/WALLET-04`, main `2f0ca33` merged; no backend change, migration `none (mobile only)`; status verifying): D1 fixed. A grouped row on W1 now opens the group's list (`/transactions?group=<key>`, as W26 does) instead of the newest unlock's receipt: `recentRow` carries `group.key` and `RecentTransactions` calls a new `onOpenGroup`. Two tests that failed before the fix (`walletHomeModel`, `historyFlow` on the real router) pass; pictures of W1 with a grouped row and the list it opens, light and dark, are in the builder report. Lows D2 to D4 stay in tasks/SWEEP-MONEY.md.
+- 11 Oct 2026 · WALLET-04 · Verifier report (Sonnet verifier, branch 67865ed, Hub from backend main 51b02c5, own Metro cache, bundle only :6431 and :6432; status building): live checks CONFIRMED (See all and rows, search and its wait, each chip, three pages under Lagos days in three device zones, the month's In and Out against SQL, W27 for 11 kinds of row with the debit's parts, Share receipt text, W28 to S2, the states by their real causes, light and dark beside each artboard); one defect, D1 (a grouped row on W1 opens one unlock's receipt, ₦2,500.00, not the group's ₦7,500.00), three low ones (surviving mutants M09, M13, M14; W27's Account line cuts the last four digits); 30 mutants, 27 killed; full check on main 15a8c2c merged in, EXIT 0 (155 suites, 2,830 tests, gates 0 fail / 5 warn on 581 files). Owner item: the "Fintava's charge" label (G-721).
+- 11 Oct 2026 · WALLET-04 · Builder report (Sonnet builder; mobile `wmt/WALLET-04` code `fe035aa`, backend unchanged and no contract change, status verifying): the Wallet tab's See all opens W26 and a recent row opens W27 (a grouped row opens the unlocks it stands for); W26 searches and filters through the Hub (`q`, `filter`), pages, groups rows under Lagos days and shows the Hub's In and Out for the month; W28 draws the empty chip with Pay a bill; W27 shows the receipt, a debit's parts (₦25,000.00 + ₦40.00 + ₦25.00 = ₦25,065.00), copies the reference and shares its text through the phone's share sheet. Live seam on wawu-id's real login, the Hub built from backend main f2b6bf6 with 49 seeded ledger rows, a Fintava balance stand-in and a web export at 390 px light and dark beside each artboard; every state entered by its real cause. Defaults: the list is the whole history, so W28 says "yet" where the canvas says "in September"; a person's name stands where the canvas draws "@handle" (G-720); the fee labels follow the brief (G-721). One edit to WALLET-01's `WalletScreen.test.tsx`, which asserted the See all and row taps this task builds. NOT RUN: a phone's share sheet and pull, the real wallet provider. SHARED-CHANGES WALLET-04 #1 and R1.
+- 16 Oct 2026 · OPS-TASKS · Task files now open with a `## Current state` of 60 lines at most and keep their round history in `tasks/history/<ID>.md` (CHECK-1 went from 50,104 bytes to 3,074; `scripts/tasks/compact_task.py` does the move; its tests show no line is lost, and none was lost on the 16 branch task files it was tried on). Lows now go to seven sweep tasks (`tasks/SWEEP-MONEY`, `JOIN`, `INBOX`, `EVENTS`, `AUTH`, `WEB`, `APP`; 66 open rows), and a verdict is `merge` when nothing is medium or worse (`docs/WORKFLOW.md` section 4, owner 15 Oct 2026). `check_tasks.py` fails a building, verifying or review task with no Current state, a Current state over 60 lines, and a link to a history file that is not there. The files of the 14 tasks still in flight live on their branches; they get the same treatment when they next change or merge.
+- 12 Oct 2026 · JOIN-02 · Owner redesign of /join merged by the lead: web PR #29, backend PRs #124 (the craft, city and updates opt-in) and #125 (the ₦2,000 offer gives a year of verification). No date ("this October"), four cities plus online, ₦10,000 struck through beside ₦2,000, paid only, the owner's conference poster in the hero.
+- 12 Oct 2026 · JOIN-02 · Owner redesign of /join (website `wmt/JOIN-V2`, backend `wmt/JOIN-V2` with migration `20261021240000_waitlist_craft_city_updates`; Sonnet builder; dark only): one page from the owner's example, no date ("this October"), four cities plus Online in place of the countdown, no free route, ₦10,000 struck through beside the API's fee, a form with craft, city and an updates box, a share action on the success screen; the backend stores the three new fields (additive, protected suite 253 of 253). "Verified for a full year" replaces the 10 Oct no-plan-length rule (R-48 needs a 12 Oct line; `tier_days` is still 30). The hero picture slot is empty until the owner's image arrives.
+- 12 Oct 2026 · JOIN-02 · Owner fix (website `wmt/WEB-LANDING` `744b4ac`; Sonnet builder): wawuafrica.com shows its landing page in join-only mode; the sign-up buttons go to /join, nothing on it leads into a closed page; full mode is unchanged (0 pixels differ from main with animations stopped); every other closed path still answers 307 to /join.
+- 11 Oct 2026 · TIER-03 · Merged by the lead: backend PR #123 (`2a4b9a4`) and mobile main. A person buys, renews or upgrades a tier from the wallet; a payment that can no longer be granted is refunded once, and the purchase says how much comes back.
+- 11 Oct 2026 · TIER-03 · Builder report, round 3 (Sonnet agent; backend `wmt/TIER-03` `9197a36` on main `51b02c5`, mobile `wmt/TIER-03` on main `15a8c2c`; status verifying): the lead's rulings. R2-D1: a new spec makes the grant and the refund fail with ordinary errors (a plain error, a `P2034`, a points conflict, the bump's lot, a refund that throws), so only a refusal pays money back and a failing refund is never swallowed (X01 and X13 killed). R2-D2: the refunded sentences name the price in naira and say the first payment's charge is not returned (R-10), read from the hold. R2-D3: the points-last spec sees raw SQL (X22 and X27 killed). The stale comment at `schema.prisma` 4693 is in MONEY-18's model, left and recorded. 12 of 12 mutants killed; purchases 98 of 98, areas 2929 of 2933 (the 4 are the Unicode table, as on main), protected suite 253/253, gates the same 16 FAIL lines as main, `contract:build` twice equal, `test:netns` EXIT 0.
+- 11 Oct 2026 · TIER-03 · Verifier report, round 2 (independent session; backend `wmt/TIER-03` `564a93c` in a detached worktree, a trial merge of main `51b02c5` (NUV-05) into it with 0 conflicts (local, not pushed), TIER-02 `3a8b57d` merged into it in a second copy with 1 conflict (the generated `contract/openapi.json`); mobile `ea84e0a`, main `39c472b` conflicts in the generated `docs/PROGRESS.md` and in `BACKEND_GAPS.md` (an add/add beside G-680); status building, no money defect): D1 as built holds under attack on two built Hubs over one database, the grant against the refund over 15 payments (4 granted, 11 refunded, never both, never neither, one send of exactly the price each), kill -9 at six points, 12 injected database failures that must not refund (24 of 24, none did), replayed and forged reports, a lost refund answer, a lagging record, a failed first try (one new try under -2) and a missing wallet; D2/D4 (extras), D3 (points last) and N7 (the CHECK refuses the raw insert; no CHECK on a future `activeFrom` is acceptable) confirmed; the contract change is two enum values; TIER-02 + TIER-03 15 of 15 live; protected suite 253 of 253, gates the same 16 FAIL lines, `contract:build` twice equal, `test:netns` EXIT 0. Three small defects: R2-D1 (mutants X01 and X13 survive: nothing pins that only a refusal refunds or that a failing refund call throws), R2-D2 (the purchase's sentences say "your money" and the original charge does not come back), R2-D3 (the points-last spec cannot see a raw SQL write); 28 mutants of my own, 23 killed.

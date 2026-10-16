@@ -22,7 +22,7 @@ import type { SocialLink } from './model';
  * - the cover is 200 high from the top of the phone (the 50 status bar included), black at 0.3 fading out by half way;
  * - the round glass buttons (42) sit 6 under the status bar, 20 from the side, 8 apart;
  * - the body starts 76 under them, 20 in from each side, its blocks 16 apart;
- * - the avatar is 96 with a 4 ring of the page colour; "Edit profile" is 38 high, 16 in, 14 at 600 on a strong ring;
+ * - the avatar is 96 with a 4 ring of the page colour; "Edit profile" is 38 high, 16 in, 14 at 600 on a strong ring (`Button size="profile"`);
  * - the name 24 at 700 (-0.03em) with its 20 tick 6 after it; the bio 14.5 secondary at 1.45, 5 under the name.
  * line 9 (`soc`): social chips 34 high, 10 in on the left and 12 on the right, 15 logos 7 from 13 at 600, 8 apart,
  * running off the right edge. line 12 (`counts`): 22 apart, 14 secondary words after a 16 bold figure.
@@ -38,8 +38,6 @@ export const headerMetrics = {
   bodyTop: 76,
   avatar: 96,
   avatarRing: 4,
-  editH: 38,
-  editPad: 16,
   name: 24,
   nameTracking: -0.03,
   tick: 20,
@@ -70,10 +68,12 @@ export type ProfileTopProps = {
   /** Off until the profile has loaded: there is nothing to share before then. */
   canShare: boolean;
   onShare: () => void;
+  /** Menu: raises Z1, the sheet with Settings in it. It needs no profile, so it works while the profile is loading or failed. */
+  onOpenMenu: () => void;
 };
 
-/** The cover picture, and the glass buttons over it. QR (WALLET-20) and Menu (ME-03) are added by those tasks. */
-export function ProfileTop({ coverUrl, top, canShare, onShare }: ProfileTopProps) {
+/** The cover picture, and the glass buttons over it. QR (WALLET-20) is added by COMPLETE-04. */
+export function ProfileTop({ coverUrl, top, canShare, onShare, onOpenMenu }: ProfileTopProps) {
   const { colors } = useWawu();
   const ends = gradientEnds(180);
   return (
@@ -92,6 +92,7 @@ export function ProfileTop({ coverUrl, top, canShare, onShare }: ProfileTopProps
       </View>
       <View style={[styles.buttons, { top: top + headerMetrics.buttonsTop }]}>
         <IconButton icon="Share" label="Share your profile" tone="glass" size={headerMetrics.buttons} disabled={!canShare} onPress={onShare} testID="me-share" />
+        <IconButton icon="Menu" label="Menu" tone="glass" size={headerMetrics.buttons} onPress={onOpenMenu} testID="me-menu-button" />
       </View>
     </>
   );
@@ -114,7 +115,7 @@ export function NameBlock({ wawuId, name, avatarUrl, ticks, bio, onEditProfile }
         <View style={[styles.avatarRing, { backgroundColor: colors.surfacePage }]}>
           <Avatar name={name} hue={hueFor(wawuId)} size={headerMetrics.avatar} source={avatarUrl ?? undefined} testID="me-avatar" />
         </View>
-        <Button label="Edit profile" variant="outline" size="sm" onPress={onEditProfile} style={styles.edit} testID="me-edit" />
+        <Button label="Edit profile" variant="outline" size="profile" onPress={onEditProfile} testID="me-edit" />
       </View>
       <View>
         <View style={styles.nameRow}>
@@ -228,7 +229,6 @@ const styles = StyleSheet.create({
   buttons: { position: 'absolute', right: layout.gutter, flexDirection: 'row', gap: headerMetrics.buttonGap, zIndex: 1 },
   avatarRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   avatarRing: { borderRadius: radius.chip, padding: headerMetrics.avatarRing, margin: -headerMetrics.avatarRing },
-  edit: { height: headerMetrics.editH, paddingHorizontal: headerMetrics.editPad },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: headerMetrics.tickGap, flexWrap: 'wrap' },
   name: { fontSize: headerMetrics.name, letterSpacing: headerMetrics.nameTracking * headerMetrics.name, lineHeight: canvasNormalLineHeight(headerMetrics.name), flexShrink: 1 },
   bio: { fontSize: headerMetrics.bio, lineHeight: headerMetrics.bio * headerMetrics.bioLine, marginTop: headerMetrics.bioGap },

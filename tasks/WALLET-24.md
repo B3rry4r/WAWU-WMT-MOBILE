@@ -3,7 +3,7 @@ id: WALLET-24
 title: Proof of address (A20)
 owner: YOU
 area: WALLET
-order: 194
+order: 262
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # WALLET-24 · Proof of address (A20)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-23.
+- **History:** none yet. Reports go to tasks/history/WALLET-24.md.
 
 ## Read first
 

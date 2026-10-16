@@ -3,7 +3,7 @@ id: RELEASE-03
 title: iOS release
 owner: YOU
 area: RELEASE
-order: 209
+order: 277
 priority: after-launch
 repo: wawu-wmt-mobile
 type: setup
@@ -14,6 +14,13 @@ passes: [V1, V10]
 artboards: []
 ---
 # RELEASE-03 · iOS release
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): RELEASE-02.
+- **History:** none yet. Reports go to tasks/history/RELEASE-03.md.
 
 ## Read first
 

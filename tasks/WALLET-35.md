@@ -3,7 +3,7 @@ id: WALLET-35
 title: Statements: ask for a statement by email
 owner: YOU
 area: WALLET
-order: 192
+order: 260
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [W38]
 ---
 # WALLET-35 · Statements: ask for a statement by email
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/WALLET-35.md.
 
 ## Read first
 

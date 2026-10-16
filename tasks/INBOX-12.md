@@ -1,7 +1,7 @@
 ---
 id: INBOX-12
 title: Paid message settings, warning, switched off
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 65
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V9]
 artboards: [I21, I22, I23]
 ---
 # INBOX-12 · Paid message settings, warning, switched off
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/INBOX-12.md.
 
 ## Read first
 

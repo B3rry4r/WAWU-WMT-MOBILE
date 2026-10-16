@@ -3,7 +3,7 @@ id: RELEASE-02
 title: Fix QA defects, re-verify, submit to the stores
 owner: YOU
 area: RELEASE
-order: 186
+order: 254
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
@@ -14,6 +14,13 @@ passes: []
 artboards: []
 ---
 # RELEASE-02 · Fix QA defects, re-verify, submit to the stores
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): CHECK-3.
+- **History:** none yet. Reports go to tasks/history/RELEASE-02.md.
 
 ## Read first
 

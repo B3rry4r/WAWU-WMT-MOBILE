@@ -1,7 +1,7 @@
 ---
 id: INBOX-15
 title: Money requests in chat
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 139
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # INBOX-15 · Money requests in chat
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-07.
+- **History:** none yet. Reports go to tasks/history/INBOX-15.md.
 
 ## Read first
 

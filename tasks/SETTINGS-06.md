@@ -15,8 +15,12 @@ artboards: []
 ---
 # SETTINGS-06 · Delete account in the Hub: empty wallet first, freeze, restore on cancel
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/SETTINGS-06.md.
 
 ## Read first
 
@@ -38,6 +42,10 @@ earnings are waiting (R-11). Freeze the Fintava wallet when deletion is schedule
 route SETTINGS-08 calls). Content stays restorable for the 30 days.
 
 BACKEND_GAPS G-10: a frozen Fintava wallet can neither send nor receive, so money due to a frozen wallet (earnings, refunds) waits in WAWU's merchant wallet and is paid on unfreeze.
+
+## Lead note (8 Oct 2026): points
+
+POINTS-01 (the points ledger) adds `purgePersonPoints` (`src/points/points-purge.ts`), and `AccountPurgeService.purge` calls it first. Account deletion here must reach that purge, so a deleted person's points lots, holds and ledger rows go with the account (POINTS-01 round 1 verifier, U3). Two rules from POINTS-01 apply: the points ledger refuses any other delete (a database trigger), and a hold still `held` at deletion (an AI job or a cash-out in flight) must be settled or released before the purge, never left to fail it. Add a capability check that a deleted person has no points rows left and that another person's are untouched.
 
 ## Capability checks
 

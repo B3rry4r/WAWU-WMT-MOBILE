@@ -1,7 +1,7 @@
 ---
 id: LEGAL-07
 title: Admin screens: legal prices
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 73
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # LEGAL-07 · Admin screens: legal prices
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/LEGAL-07.md.
 
 ## Read first
 

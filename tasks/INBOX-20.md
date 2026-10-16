@@ -1,7 +1,7 @@
 ---
 id: INBOX-20
 title: Request money and pay a request
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 145
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I16, I17, I18, I19, I20]
 ---
 # INBOX-20 · Request money and pay a request
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-15, INBOX-19.
+- **History:** none yet. Reports go to tasks/history/INBOX-20.md.
 
 ## Read first
 

@@ -47,7 +47,14 @@ code, stop and say so. A builder cannot verify their own work.
 
 ## Report
 
-Write it into **Verifier report** in the task file:
+Grade every defect blocker, high, medium or low. The verdict is `merge` (status
+`review`) when nothing is medium or worse; lows go to the area's sweep
+(`tasks/SWEEP-<AREA>.md`), not to another round. Read the task file's **Current
+state** and only the last section of `tasks/history/<ID>.md`, not all of it.
+
+Write the report into **Verifier report** in the task file, then rewrite
+**Current state** and run `python3 scripts/tasks/compact_task.py <ID>` (the
+report moves to `tasks/history/<ID>.md`):
 
 | Pass | Result | Evidence |
 |------|--------|----------|
@@ -60,7 +67,9 @@ Then each finding, labelled:
   A screen that does NOT apply its brief entry is a `defect`.
 - `unclear`: needs the owner
 
+A surviving mutant is a `defect` when it breaks a capability check, a ruling, money, identity or a behaviour the task states. One that only changes styling (an icon, a button variant, a colour) or an accessibility detail is a test-gap note: list it with the test that would kill it, and the lead gives it to a follow-up task (lead ruling, 9 Oct 2026).
+
 Set `status: review` if there are no open defects, otherwise back to
 `building`. Then run `npm run tasks -- --write` and commit the regenerated
-`tasks/INDEX.md` and `docs/PROGRESS.md` together with the task file. A pass you could not run is **NOT RUN** with the reason. It is
+`tasks/INDEX.md` and `docs/PROGRESS.md` together with the task file. Then run `npm run check` once more: setting `review` is what makes the `unbuilt_entries` gate fail any entry still inert for this task (R-47), so a green run before the flip proves nothing about it. A pass you could not run is **NOT RUN** with the reason. It is
 never left out and never counted as passed.

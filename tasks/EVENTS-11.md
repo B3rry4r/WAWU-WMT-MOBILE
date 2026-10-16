@@ -3,7 +3,7 @@ id: EVENTS-11
 title: Changing ticket prices on a live event needs a current verification and goes back to review
 owner: YOU
 area: EVENTS
-order: 184
+order: 185
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
@@ -14,6 +14,18 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # EVENTS-11 · Changing ticket prices on a live event needs a current verification and goes back to review
+
+## Current state
+
+As of 16 Oct 2026, from the lead's log (10 Oct) and the branch.
+- **Status:** review on its branch (round 5: no open defect). This file on main still says todo.
+- **Branches:** mobile `wmt/EVENTS-11` (refreshed 16 Oct on main 3117807; it was 9fcc932; the verifier checked 9106928; what changed after: unknown, ask the lead). Backend `wmt/EVENTS-11` a4b61fa (was b92a591), PR #83.
+- **Merged and live:** nothing of this task.
+- **Held by:** the owner's `relock-approved` label on backend PR #83.
+- **Open findings:** blocker 0, high 0, medium 0. Lows O7 and O8 are in tasks/SWEEP-EVENTS.md. NOT RUN by the verifier: the full backend suite (it needs a network namespace).
+- **Next:** the owner applies the label; the lead merges #83 and signs off mobile.
+- **Refresh, 16 Oct:** backend main 3797fb2 merged in, clean (the earlier merge of 18ac5f9 had one conflict in `event-ticketing.module.ts`, both sides kept); the migration folder is now `20261021350000_event_ticket_type_retired` (was `20261014100000_...`, which sorted before main's newest), `contract/openapi.json` regenerated twice, equal. Two later door specs from EVENTS-09 (`event-door-idempotency` and `event-door-scan`, 18 tests) failed on the new rules in their setup only (they PUT tickets as an unverified host, then ordered on the event as if it were still published): they now give the host a tick and put the event back to `published` after the tiers are set; no door expectation changed (SHARED-CHANGES EVENTS-11 #2). Before the change all 18 failed with a 403 on that PUT.
+- **Records:** on the branch, `wmt/EVENTS-11`, in tasks/EVENTS-11.md there (60 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py EVENTS-11`; the history goes to tasks/history/EVENTS-11.md.
 
 ## Read first
 

@@ -1,7 +1,7 @@
 ---
 id: BILLS-05
 title: Bill reminders and the month view
-owner: DEV2
+owner: YOU
 area: BILLS
 order: 132
 priority: launch
@@ -16,6 +16,13 @@ artboards: [S27, S28, S29, S30, S31, S32]
 On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
 
 # BILLS-05 · Bill reminders and the month view
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-06, BILLS-02, INBOX-21.
+- **History:** none yet. Reports go to tasks/history/BILLS-05.md.
 
 ## Read first
 

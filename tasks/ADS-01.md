@@ -1,7 +1,7 @@
 ---
 id: ADS-01
 title: TGIF sponsored card
-owner: DEV2
+owner: YOU
 area: ADS
 order: 178
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V9]
 artboards: [H33]
 ---
 # ADS-01 · TGIF sponsored card
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/ADS-01.md.
 
 ## Read first
 

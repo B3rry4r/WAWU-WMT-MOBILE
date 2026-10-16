@@ -3,7 +3,7 @@ id: WALLET-32
 title: Dollar account and swaps (first slice)
 owner: YOU
 area: WALLET
-order: 206
+order: 274
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # WALLET-32 · Dollar account and swaps (first slice)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/WALLET-32.md.
 
 ## Read first
 

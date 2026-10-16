@@ -1,7 +1,7 @@
 ---
 id: INBOX-14
 title: Private communities, hosting, join requests
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 176
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [I30, I31, I37, I32, I33, I34]
 ---
 # INBOX-14 · Private communities, hosting, join requests
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, AUTH-06, ME-04, ME-07.
+- **History:** none yet. Reports go to tasks/history/INBOX-14.md.
 
 ## Read first
 
@@ -35,6 +42,8 @@ New files under `src/features/` for these screens and their route files under `s
 I32's "You keep 85% of every credit spent in your room" is backed by WALLET-17, which pays hosts their share; this task depends on it. I33's wawu/c/ link is a deep link (V10).
 
 V10 runs on a real Android phone only (DECISIONS R-24).
+
+INBOX-14 removes the open-only filter in `useSuggestedCommunities` (`src/features/communities/useCommunities.ts`) when it builds Ask (I30): INBOX-05 lists only open rooms in I24's Suggested because a private row's only action is Ask (R-47), and with Ask built the private row is drawn as the artboard draws it, with Ask (BACKEND_GAPS G-623).
 
 Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy link). They are in `SHARED-CHANGES.md` row 8 (one batch for Developers 2 and 3, one new development build); if row 8 is not applied when this task starts, say so in the report and build everything else.
 

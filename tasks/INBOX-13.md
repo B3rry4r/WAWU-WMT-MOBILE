@@ -1,7 +1,7 @@
 ---
 id: INBOX-13
 title: Out of credits, buy credits, credits added
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 107
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I27, I28, I29]
 ---
 # INBOX-13 · Out of credits, buy credits, credits added
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-16.
+- **History:** none yet. Reports go to tasks/history/INBOX-13.md.
 
 ## Read first
 

@@ -3,7 +3,7 @@ id: WALLET-34
 title: Admin screens: proof-of-address review queue
 owner: YOU
 area: WALLET
-order: 196
+order: 264
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen
@@ -14,6 +14,13 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # WALLET-34 · Admin screens: proof-of-address review queue
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-24.
+- **History:** none yet. Reports go to tasks/history/WALLET-34.md.
 
 ## Read first
 

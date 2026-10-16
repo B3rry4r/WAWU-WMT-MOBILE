@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-06
 title: Enrol and pay, class full
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 129
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [SC4, SC5, SC6, SC7, SC11]
 ---
 # SCHOOLS-06 · Enrol and pay, class full
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-07.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-06.md.
 
 ## Read first
 

@@ -1,9 +1,9 @@
 ---
 id: SCHOOLS-12
 title: School sign-ups from the WAWU link, and the school's commission
-owner: DEV3
+owner: YOU
 area: SCHOOLS
-order: 188
+order: 256
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # SCHOOLS-12 · School sign-ups from the WAWU link, and the school's commission
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-10.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-12.md.
 
 ## Read first
 

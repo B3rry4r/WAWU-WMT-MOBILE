@@ -1,7 +1,7 @@
 ---
 id: INBOX-21
 title: Turn on phone notifications in the app
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 52
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V6, V7, V9, V10]
 artboards: []
 ---
 # INBOX-21 · Turn on phone notifications in the app
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/INBOX-21.md.
 
 ## Read first
 

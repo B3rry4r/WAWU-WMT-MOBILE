@@ -1,7 +1,7 @@
 ---
 id: INBOX-10
 title: Ask a creator a paid question
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 166
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I2, I3, I4, I5]
 ---
 # INBOX-10 · Ask a creator a paid question
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-17, ME-02, HOME-07.
+- **History:** none yet. Reports go to tasks/history/INBOX-10.md.
 
 ## Read first
 

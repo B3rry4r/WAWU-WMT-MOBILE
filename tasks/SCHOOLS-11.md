@@ -1,7 +1,7 @@
 ---
 id: SCHOOLS-11
 title: Pay schools their share of course fees
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 146
 priority: launch
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # SCHOOLS-11 · Pay schools their share of course fees
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-07, WALLET-09.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-11.md.
 
 ## Read first
 

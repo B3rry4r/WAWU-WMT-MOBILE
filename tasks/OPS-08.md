@@ -15,6 +15,17 @@ artboards: []
 ---
 # OPS-08 · Retire Shop on the backend
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (10 Oct) and the branch.
+- **Status:** review on its branches (round 2 verifier: PASS, no open finding). This file on main still says todo.
+- **Branches:** mobile `wmt/OPS-08` 2434f5a. Backend `wmt/OPS-08` 60e3fd9, PR #26.
+- **Merged and live:** nothing of this task.
+- **Held by:** the owner's `relock-approved` label on backend PR #26 (ten Shop entries are relocked).
+- **Open findings:** none. Where a buyer sees a past Shop order stays the owner's call.
+- **Next:** the owner applies the label; the lead merges #26. FIX-17's D3 needs this merge (retired shop routes answer 410).
+- **Records:** on the branch, `wmt/OPS-08`, in tasks/OPS-08.md there (30 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py OPS-08`; the history goes to tasks/history/OPS-08.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
