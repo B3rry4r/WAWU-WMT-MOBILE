@@ -109,6 +109,24 @@ describe('a recent row', () => {
     expect(shown.lead).toEqual({ kind: 'icon', icon: 'ArrowUpRight', tone: 'neutral' });
   });
 
+  it('carries a grouped row\u2019s group key, so W1 can open the list of movements the row stands for', () => {
+    const grouped = recentRow(
+      row({
+        direction: 'in',
+        category: 'earning',
+        amountKobo: 750_000,
+        fee: { providerFeeKobo: 0, wawuFeeKobo: 0, totalFeeKobo: 0 },
+        totalKobo: 750_000,
+        description: 'Unlock \u00b7 Test piece \u00b7 3 buyers',
+        counterparty: null,
+        group: { key: 'g2.test-key', count: 3, firstAt: '2026-10-07T10:00:00.000Z', lastAt: '2026-10-07T10:24:00.000Z' },
+      }),
+      now,
+    );
+    expect(grouped.groupKey).toBe('g2.test-key');
+    expect(recentRow(row(), now).groupKey).toBeUndefined();
+  });
+
   it('shows money in as a plus, with the person’s avatar when they are on Who Made This', () => {
     const shown = recentRow(
       row({
