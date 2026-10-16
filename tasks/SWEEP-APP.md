@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 80, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 82, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -127,6 +127,8 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | ME-04 | R6-2 | Hub: requests that do not need the database lock still take the person's turn and can be refused: a text-only PATCH (`content-piece.service.ts:983`) and a PUT media with only `pageCount` or `durationLabel` (`content-media.service.ts:268`). Harmless; the cap is just broader than it needs to be. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 2 (round 6) |
 | ME-04 | R6-3 | Hub, note for the merge: a new 429 `storage_busy` is possible on `POST /content`, a route the web calls, but only for a 4th simultaneous request of one person on one Hub process (the route already answers the throttler's 429). The contract lists no 429 for these routes. Protected route suite is green. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 3 (round 6) |
 | SCHOOLS-07 | F1 | Hub: `eslint --no-fix` on the builder's `src/schools/enrolment/tests/school-enrolment.contract.spec.ts` reports 1 error (`no-unsafe-assignment` on `expect.stringMatching`, line 1040; line 913 at 79b24be, same text). No CI job lints specs. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-07.md`, finding 5 (round 2) |
+| SHARED-07 | 1 | iOS has no short-circuit for a non-web address: `reader/index.tsx` sends a non-http(s) address straight to the phone viewer on Android only (`source === null`); on iOS `source` is always `{ uri }`, so the address is handed to the native web view, and no test covers that path. Low risk in practice (`playableUrl()` returns only the Hub's https storage addresses). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`, finding 3 |
+| SHARED-07 | 2 | `src/features/tgif/ShareSheet.tsx` `sharesPicture()` / `whatsapp()` (about lines 123-130): if the phone's `Sharing.isAvailableAsync()` never answers, a WhatsApp tap waits for ever with nothing shown (no spinner, no error, no wa.me, no share sheet; a second tap is ignored; Story and Save are never drawn; it lasts until the app restarts). Reachability is very low: `isAvailableAsync` is a local native call that resolves at once, and `canShareCard` catches throws. Optional hardening: race the wait against about 2 s and fall back to the text. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`, finding 1 (round 3) |
 
 ## Builder report
 

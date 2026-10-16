@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 106 | 0 | 0 | 0 |
+| todo | 105 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 31 | 0 | 0 | 0 |
+| verifying | 32 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -35,6 +35,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
 - [FIX-18](../tasks/FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone (You)
 - [FIX-19](../tasks/FIX-19.md) School and course names refuse control characters (You)
+- [SHARED-07](../tasks/SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture (You)
 - [SHARED-05](../tasks/SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch (You)
 - [FIX-22](../tasks/FIX-22.md) A profiling turn asks the model for one JSON object (You)
 - [FIX-26](../tasks/FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read (You)
