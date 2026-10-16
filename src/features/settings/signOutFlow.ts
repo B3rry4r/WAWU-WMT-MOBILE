@@ -1,5 +1,6 @@
 import { signOut } from '@/api/session';
 import { loadTokens } from '@/api/tokenStore';
+import { forgetPush } from '@/features/push/registration';
 
 import { logoutRequest } from './api/identity';
 
@@ -13,7 +14,8 @@ export const SERVER_WAIT_MS = 3000;
 
 /**
  * Signs this phone out. The refresh token is ended on the server first (WAWU ID `POST /auth/logout`, G-6), so a copy
- * of it is worth nothing afterwards; then the phone forgets its tokens, and the route graph returns the person to
+ * of it is worth nothing afterwards, and this phone is taken off the person's push list (INBOX-21, `DELETE /push-tokens`)
+ * while the session still works, in the same wait; then the phone forgets its tokens, and the route graph returns the person to
  * sign-in. If the server cannot be reached, or has not answered within `SERVER_WAIT_MS`, the phone still signs out:
  * the old token simply runs out on its own if the request never lands (BACKEND_GAPS G-262).
  *
@@ -31,10 +33,11 @@ export async function signOutOfThisPhone(): Promise<{ serverEnded: boolean; stor
     const slow = new Promise<boolean>((resolve) => {
       timer = setTimeout(() => resolve(false), SERVER_WAIT_MS);
     });
-    const asked = logoutRequest(stored.refreshToken).then(
+    const ended = logoutRequest(stored.refreshToken).then(
       () => true,
       () => false,
     );
+    const asked = Promise.all([ended, forgetPush()]).then(([done]) => done);
     serverEnded = await Promise.race([asked, slow]);
     clearTimeout(timer);
   }
