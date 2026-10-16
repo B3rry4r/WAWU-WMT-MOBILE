@@ -226,6 +226,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The creator's paid message settings with everything I21 to I23 draw (price, reply window, share, standing). */
+        get: operations["PaidDmController_getSettings"];
+        /** Saves the creator's paid message settings. Refused while paid messages are paused (R-13). */
+        put: operations["PaidDmController_saveSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/paid-dm/settings/earn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the creator keeps of one message at a price they are typing (I21, R-21). Read only; saves nothing. */
+        get: operations["PaidDmController_earn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/paid-dm/creators/{wawuId}/availability": {
         parameters: {
             query?: never;
@@ -432,6 +467,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/uploads/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * POST /uploads/confirm: the app has finished sending the file it got a URL
+         *     for, taken or turned away by the storage host. The server asks the bucket
+         *     and answers `confirmed` (the file is there and counts against the person's
+         *     storage), `pending` (it is not there yet and the URL could still be used,
+         *     so nothing changes and the sweep settles it) or `abandoned` (it is not
+         *     there and the URL is spent, so the space it held goes back at once instead
+         *     of when the sweep settles it). A file that lands after it was given up on
+         *     and no longer fits the person's storage is removed and answers 413. The
+         *     app's word decides nothing; only the person's own upload can be settled. A
+         *     bucket that cannot be asked answers 503 and changes nothing.
+         */
+        post: operations["StorageController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/uploads/usage": {
         parameters: {
             query?: never;
@@ -473,6 +536,64 @@ export interface paths {
          *     used 0 uploads.
          */
         get: operations["StorageController_allowance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plan as the caller pays for it. Every amount is whole minor units of
+         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
+         *     `no-store`: the answer is the caller's own (their currency).
+         */
+        get: operations["PlansController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `none`, `active`, `ending` or `ended`, with what the tier gives.
+         *     `no-store`: the answer is the caller's own.
+         */
+        get: operations["MeTierController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance, live lots with their end dates, the next end, the last 20 movements. */
+        get: operations["PointsController_mine"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1212,6 +1333,11 @@ export interface paths {
         };
         get: operations["ContentPieceController_list"];
         put?: never;
+        /**
+         * Publishes a piece. Needs a running tier or a tick that has not ended, and
+         *     a free place for one more product: otherwise 402 `tier_required` or
+         *     `product_limit_reached` with the offers (TIER-02).
+         */
         post: operations["ContentPieceController_create"];
         delete?: never;
         options?: never;
@@ -1315,7 +1441,10 @@ export interface paths {
         delete: operations["ContentPieceController_remove"];
         options?: never;
         head?: never;
-        /** Edit the details or the file of a piece that is pending or rejected. */
+        /**
+         * Edit the details or the file of a piece that is pending or rejected.
+         *     Sending a file needs a way to publish (402 `tier_required`, TIER-02).
+         */
         patch: operations["ContentPieceController_update"];
         trace?: never;
     };
@@ -1328,7 +1457,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send a rejected piece for review again. */
+        /**
+         * Send a rejected piece for review again. It takes a place like a new
+         *     publish, so it answers the same 402s (TIER-02).
+         */
         post: operations["ContentPieceController_resubmit"];
         delete?: never;
         options?: never;
@@ -1650,6 +1782,62 @@ export interface paths {
         get: operations["ContentMediaController_get"];
         put: operations["ContentMediaController_set"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/product-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My drafts, newest first. */
+        get: operations["ProductDraftController_list"];
+        put?: never;
+        /** Save a draft. Free: no tier is asked and no file is taken. */
+        post: operations["ProductDraftController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/product-drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductDraftController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["ProductDraftController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["ProductDraftController_update"];
+        trace?: never;
+    };
+    "/api/hub/product-drafts/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a draft with its two files. Needs a running tier or a tick that
+         *     has not ended, and a free place: otherwise 402 `tier_required` or
+         *     `product_limit_reached` with the offers. The piece is created waiting
+         *     for review, exactly as POST /content creates it, and the draft is gone.
+         */
+        post: operations["ProductDraftController_publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4328,6 +4516,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/schools/courses/{id}/apply-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The link SC9 prints. Records nothing. */
+        get: operations["SchoolLinkController_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/courses/{id}/apply-click": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One tap on "Continue to their site": records one click, answers with the link to open. */
+        post: operations["SchoolLinkController_click"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/mine": {
         parameters: {
             query?: never;
@@ -5284,64 +5506,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/me/points": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Balance, live lots with their end dates, the next end, the last 20 movements. */
-        get: operations["PointsController_mine"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The plan as the caller pays for it. Every amount is whole minor units of
-         *     `currency` (kobo for NGN, cents for USD); one currency per answer.
-         *     `no-store`: the answer is the caller's own (their currency).
-         */
-        get: operations["PlansController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/me/tier": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * `none`, `active`, `ending` or `ended`, with what the tier gives.
-         *     `no-store`: the answer is the caller's own.
-         */
-        get: operations["MeTierController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/plans/purchases/quote": {
         parameters: {
             query?: never;
@@ -5408,6 +5572,87 @@ export interface paths {
          *     holds are the same `404 not_found`. It reads our own records only.
          */
         get: operations["PlanPurchasesController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/points/convert/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * PT6 before the PIN: the rate (1,000 points for so many kobo, from the
+         *     config), the fewest points one conversion takes, the balance, and the
+         *     cash for `points` (the whole balance when none is asked). WAWU pays the
+         *     provider's charge, so the person pays nothing to convert (R-31).
+         *     `canConvert` and `blockedBy` say when the points asked cannot be
+         *     converted as they are (below the minimum, more than the balance, more
+         *     than one move carries), with the figures, instead of refusing. Nothing is
+         *     held. A person billed in dollars is `409 currency_not_supported`; with no
+         *     wallet, `409 wallet_not_open`.
+         */
+        get: operations["PointsConvertController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/points/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turns points into cash in the wallet, once. The cash is worked out at the
+         *     config's rate and rounded down; the points are held (soonest-ending lots
+         *     first) and the cash is paid from WAWU's own account into the person's
+         *     wallet; the points are spent only when the provider has confirmed it, and
+         *     go back to their lots if it did not move. Answers 201 with the
+         *     conversion: `completed`, `pending` while the provider has not confirmed
+         *     the cash yet (the points stay on hold; poll `GET /points/convert/{id}`;
+         *     it is never sent again), or `failed` when the cash did not move and the
+         *     points are back. The same Idempotency-Key and body answer the first
+         *     result again (`Idempotent-Replayed: true`) without checking the PIN.
+         *     Before the PIN, and changing nothing: `422 below_minimum`, `402
+         *     insufficient_points`, `400 amount_out_of_range` (more than one move
+         *     carries), `409 currency_not_supported`, `409 wallet_not_open`, `503
+         *     fees_not_set`.
+         */
+        post: operations["PointsConvertController_convertPoints"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/points/convert/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One conversion as it stands now: what the app polls after `pending`.
+         *     Only its owner reads it; another person's conversion and an id nobody
+         *     holds are the same `404 not_found`. It reads our own records only and
+         *     never asks the provider.
+         */
+        get: operations["PointsConvertController_read"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5746,6 +5991,14 @@ export interface components {
         RespondDmDto: {
             text: string;
         };
+        UpdatePaidDmSettingsDto: {
+            /** @description Price per message in kobo. Required when `enabled` is true and none is saved yet. */
+            priceKobo?: number;
+            /** @description Hours the creator has to reply. Left out means unchanged. */
+            responseHours?: number;
+            /** @description Whether fans may send paid messages. */
+            enabled: boolean;
+        };
         PaidDmReplyDto: {
             text: string;
         };
@@ -5779,6 +6032,67 @@ export interface components {
              *     URL directly.
              */
             contentLength: number;
+        };
+        TierGateReasonDto: {
+            /** @enum {string} */
+            code: "tier_required" | "product_limit_reached";
+            /**
+             * @description The person's tier: `none` (never had one), `active`, `ending` or `ended`.
+             *     `tier_required` answers `none` or `ended`.
+             * @enum {string}
+             */
+            tierState: "none" | "active" | "ending" | "ended";
+            /** @description Products published now. */
+            productsUsed: number;
+            /** @description Products they may have published at once (0 when nothing allows publishing). */
+            productsAllowed: number;
+            /**
+             * @description The currency of every amount in `tiers` and `extraProducts`. The offers
+             *     (`currency`, `tiers`, `extraProducts`) are always there; they are absent
+             *     only when the Hub could not read the plan at that moment, and the app
+             *     then shows `message` alone.
+             * @enum {string}
+             */
+            currency?: "NGN" | "USD";
+            /**
+             * @description The tiers that would let the person publish another, in both refusals:
+             *     once bought they leave more places than the person has products
+             *     published now (the extras they hold carry over). For `tier_required`
+             *     that is every tier for someone with nothing published, and only the big
+             *     enough ones for someone who still has products up after a tick or tier
+             *     ended. For `product_limit_reached` it is the tiers above the one they
+             *     hold. The list is empty when no tier does (they hold the top one, or they
+             *     have more published than any tier allows); `message` then says products
+             *     must come down first.
+             */
+            tiers?: components["schemas"]["PlanTierView"][];
+            /**
+             * @description The extra products they can buy now, or null when they cannot: no running
+             *     tier, or buying them would still leave fewer places than products
+             *     published.
+             */
+            extraProducts?: components["schemas"]["PlanExtraProductsView"] | null;
+            /** @description A sentence the app may show as it is. No em-dash. */
+            message: string;
+        };
+        TierGateErrorEnvelope: {
+            /**
+             * @description 402.
+             * @example 402
+             */
+            statusCode: number;
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            reason: components["schemas"]["TierGateReasonDto"];
+            /** @description Same as reason.message. */
+            message: string;
+        };
+        ConfirmUploadDto: {
+            /** @description The `key` or the `fileUrl` POST /uploads/presign returned for this file. */
+            key: string;
         };
         ValidateCustomerDto: {
             itemCode: string;
@@ -6070,6 +6384,40 @@ export interface components {
             /** @description How many pages a PDF has. PDFs only. */
             pageCount?: number;
         };
+        CreateProductDraftDto: {
+            title: string;
+            /** @enum {string} */
+            contentType?: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            /** @description At most three, as on POST /content. */
+            specializations?: string[];
+            /** @description At most twenty, as on POST /content. */
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+        };
+        UpdateProductDraftDto: {
+            title?: string;
+            /** @enum {string} */
+            contentType?: "video" | "course" | "audio" | "pdf" | "image" | "template";
+            description?: string;
+            /** @enum {string} */
+            category?: "agriculture_food" | "trade_commerce" | "business_entrepreneurship" | "finance" | "technology" | "education" | "healthcare" | "employment" | "entertainment_creative" | "beauty" | "family_lifestyle" | "culture_heritage" | "religion_faith" | "travel_tourism" | "real_estate" | "transport_logistics" | "manufacturing" | "energy_utilities" | "media_communications" | "professional_services" | "legal_services" | "insurance_pensions" | "sports_fitness" | "government_public" | "social_impact";
+            specializations?: string[];
+            tags?: string[];
+            /** @enum {string} */
+            accessType?: "free" | "paid";
+            price?: number;
+        };
+        PublishProductDraftDto: {
+            /** Format: uri */
+            previewAsset: string;
+            /** Format: uri */
+            fullAsset: string;
+        };
         CreateCreditPurchaseDto: {
             /** @enum {string} */
             pack: "starter" | "popular" | "pro";
@@ -6263,15 +6611,17 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
             totalKobo?: number;
             /** @description insufficient_funds: totalKobo minus balanceKobo, what to add before trying again. */
             shortfallKobo?: number;
-            /** @description daily_limit_exceeded: what is left of today's limit. */
+            /** @description daily_limit_exceeded, limit_reached: what is left of today's limit. */
             remainingTodayKobo?: number;
+            /** @description limit_reached on the account's daily limit (WALLET-23): the limit itself, in kobo. */
+            limitKobo?: number;
             /** @description amount_out_of_range: the smallest amount accepted. */
             minimumKobo?: number;
             /** @description amount_out_of_range: the largest amount accepted. */
@@ -6290,6 +6640,14 @@ export interface components {
              * @enum {string}
              */
             limit?: "per_transaction" | "daily" | "monthly";
+            /** @description below_minimum: the fewest points one conversion to cash takes (POINTS-04). */
+            minimumPoints?: number;
+            /** @description below_minimum, insufficient_points: the points the person has now. */
+            balancePoints?: number;
+            /** @description insufficient_points: the points asked for. */
+            neededPoints?: number;
+            /** @description insufficient_points: neededPoints minus balancePoints. */
+            shortfallPoints?: number;
             /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
             message: string;
             /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
@@ -6468,7 +6826,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -7238,6 +7596,9 @@ export interface components {
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this purchase, and not past its end. */
             quoteToken: string;
         };
+        PointsConvertDto: {
+            points: number;
+        };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
             offerId: string;
@@ -7405,7 +7766,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
         };
@@ -7471,6 +7832,38 @@ export interface components {
             fileName: string;
             rowCount: number;
             sentAt: string;
+        };
+        PaginationMeta: {
+            currentPage: number;
+            nextPage: number | null;
+            perPage: number;
+            total: number;
+        };
+        NotificationsResponse: {
+            unreadCount: number;
+            items: {
+                /** @enum {number} */
+                statusCode: 200;
+                message: string;
+                data: {
+                    id: string;
+                    userWawuId: string;
+                    kind: string;
+                    title: string;
+                    body: string;
+                    tone: string;
+                    amount: number | null;
+                    creditsCount: number | null;
+                    actionLabel: string | null;
+                    read: boolean;
+                    /** Format: date-time */
+                    createdAt: string;
+                    imageUrl: string | null;
+                    actionHref: string | null;
+                    campaignId: string | null;
+                }[];
+                pagination: components["schemas"]["PaginationMeta"];
+            };
         };
         FeeQuotePartView: {
             /** @enum {string} */
@@ -7653,7 +8046,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -7671,7 +8064,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -7689,7 +8082,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -7814,37 +8207,109 @@ export interface components {
             refreshToken: string;
             expiresIn: number;
         };
-        PaginationMeta: {
-            currentPage: number;
-            nextPage: number | null;
-            perPage: number;
-            total: number;
+        PointNextExpiryView: {
+            points: number;
+            expiresAt: string;
         };
-        NotificationsResponse: {
-            unreadCount: number;
-            items: {
-                /** @enum {number} */
-                statusCode: 200;
-                message: string;
-                data: {
-                    id: string;
-                    userWawuId: string;
-                    /** Format: date-time */
-                    createdAt: string;
-                    kind: string;
-                    title: string;
-                    body: string;
-                    tone: string;
-                    amount: number | null;
-                    creditsCount: number | null;
-                    actionLabel: string | null;
-                    read: boolean;
-                    imageUrl: string | null;
-                    actionHref: string | null;
-                    campaignId: string | null;
-                }[];
-                pagination: components["schemas"]["PaginationMeta"];
-            };
+        PointLotView: {
+            id: string;
+            points: number;
+            granted: number;
+            /** @enum {string} */
+            source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
+            label: string;
+            expiresAt: string;
+        };
+        PointMovementView: {
+            id: string;
+            points: number;
+            label: string;
+            /** @enum {string} */
+            reason: "hold" | "grant" | "release" | "expire";
+            pending: boolean;
+            createdAt: string;
+        };
+        MyPointsView: {
+            balance: number;
+            nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
+            lots: components["schemas"]["PointLotView"][];
+            lotCount: number;
+            movements: components["schemas"]["PointMovementView"][];
+        };
+        PlanBadgeView: {
+            id: string;
+            numbered: boolean;
+        };
+        MyTierSummaryView: {
+            id: string;
+            name: string | null;
+            badge: components["schemas"]["PlanBadgeView"] | null;
+        };
+        PlanEventPassView: {
+            id: string;
+            name: string;
+        };
+        MyTierView: {
+            /** @enum {string} */
+            state: "none" | "active" | "ending" | "ended";
+            tier: components["schemas"]["MyTierSummaryView"] | null;
+            activeFrom: string | null;
+            activeUntil: string | null;
+            productsAllowed: number;
+            productsUsed: number;
+            extraProducts: number;
+            pointsIncluded: number;
+            firstVoiceIntroIncluded: boolean;
+            eventPass: components["schemas"]["PlanEventPassView"] | null;
+        };
+        PlanTierView: {
+            id: string;
+            name: string;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            bonusPointsExpireDays: number;
+            priceMinor: number;
+            eventPass: components["schemas"]["PlanEventPassView"];
+            badge: components["schemas"]["PlanBadgeView"];
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            preselected: boolean;
+        };
+        PlanExtraProductsView: {
+            count: number;
+            priceMinor: number;
+        };
+        PlanPackView: {
+            id: string;
+            points: number;
+            priceMinor: number;
+        };
+        PlanCheckoutBumpView: {
+            points: number;
+            priceMinor: number;
+        };
+        PlanActionView: {
+            id: string;
+            points: number;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+        };
+        PlanCapsView: {
+            dailyPoints: number;
+            maxCharactersPerJob: number;
+            maxAudioMinutesPerJob: number;
+        };
+        PlansView: {
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            currencyFixed: boolean;
+            tiers: components["schemas"]["PlanTierView"][];
+            extraProducts: components["schemas"]["PlanExtraProductsView"];
+            packs: components["schemas"]["PlanPackView"][];
+            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
+            actions: components["schemas"]["PlanActionView"][];
+            caps: components["schemas"]["PlanCapsView"];
         };
         StorageUsage: {
             usedBytes: number;
@@ -8254,11 +8719,11 @@ export interface components {
         };
         ContentPieceResponse: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8283,11 +8748,11 @@ export interface components {
         };
         MyContentItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8367,11 +8832,11 @@ export interface components {
         };
         FeedItem: {
             id: string;
-            /** @enum {string} */
-            status: "pending" | "rejected" | "live" | "removed";
+            title: string;
             /** Format: date-time */
             createdAt: string;
-            title: string;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "live" | "removed";
             creatorWawuId: string;
             slug: string;
             /** @enum {string} */
@@ -8486,6 +8951,22 @@ export interface components {
             lessons: components["schemas"]["DetailLesson"][];
             rating: components["schemas"]["RatingState"];
         };
+        ProductDraftView: {
+            id: string;
+            title: string;
+            /** @enum {string|null} */
+            contentType: "video" | "course" | "audio" | "pdf" | "image" | "template" | null;
+            description: string | null;
+            category: string | null;
+            specializations: string[];
+            tags: string[];
+            /** @enum {string|null} */
+            accessType: "free" | "paid" | null;
+            price: number | null;
+            missing: string[];
+            createdAt: string;
+            updatedAt: string;
+        };
         DmSendInitResponse: {
             flutterwaveConfig: {
                 txRef: string;
@@ -8505,9 +8986,9 @@ export interface components {
         };
         DirectMessage: {
             id: string;
+            amount: number;
             /** @enum {string} */
             status: "refunded" | "awaiting_response" | "responded";
-            amount: number;
             creatorWawuId: string;
             senderWawuId: string;
             text: string;
@@ -8552,6 +9033,30 @@ export interface components {
             windowDays: number;
             pauseDays: number;
             pausedUntil: string | null;
+        };
+        PaidDmPricePreset: {
+            priceKobo: number;
+        };
+        PaidDmSettingsOptions: {
+            minPriceKobo: number;
+            maxPriceKobo: number;
+            pricePresets: components["schemas"]["PaidDmPricePreset"][];
+            responseWindowHours: number[];
+        };
+        PaidDmSettings: {
+            enabled: boolean;
+            priceKobo: number | null;
+            responseHours: number;
+            creatorSharePct: number;
+            earnPerMessageKobo: number | null;
+            raiseToKobo: number | null;
+            options: components["schemas"]["PaidDmSettingsOptions"];
+            standing: components["schemas"]["PaidDmStanding"];
+        };
+        PaidDmEarn: {
+            priceKobo: number;
+            creatorSharePct: number;
+            earnPerMessageKobo: number;
         };
         PaidDmAvailability: {
             creatorWawuId: string;
@@ -9861,11 +10366,11 @@ export interface components {
         };
         LearnGuideResponse: {
             id: string;
-            /** Format: date-time */
-            updatedAt: string | null;
             /** @enum {string} */
             kind: "template" | "country" | "article";
             title: string;
+            /** Format: date-time */
+            updatedAt: string | null;
             /** Format: date-time */
             updated: string;
             country: string | null;
@@ -9886,9 +10391,9 @@ export interface components {
         };
         PlaybookResponse: {
             id: string;
+            title: string;
             /** Format: date-time */
             updatedAt: string | null;
-            title: string;
             description: string;
             format: string;
             fileUrl: string | null;
@@ -10284,6 +10789,11 @@ export interface components {
         };
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
+        };
+        SchoolApplyLinkView: {
+            courseId: string;
+            code: string;
+            url: string;
         };
         PublicSchoolCard: {
             id: string;
@@ -10737,35 +11247,6 @@ export interface components {
             paidDms: number;
             communities: number;
         };
-        PointNextExpiryView: {
-            points: number;
-            expiresAt: string;
-        };
-        PointLotView: {
-            id: string;
-            points: number;
-            granted: number;
-            /** @enum {string} */
-            source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
-            label: string;
-            expiresAt: string;
-        };
-        PointMovementView: {
-            id: string;
-            points: number;
-            label: string;
-            /** @enum {string} */
-            reason: "hold" | "grant" | "release" | "expire";
-            pending: boolean;
-            createdAt: string;
-        };
-        MyPointsView: {
-            balance: number;
-            nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
-            lots: components["schemas"]["PointLotView"][];
-            lotCount: number;
-            movements: components["schemas"]["PointMovementView"][];
-        };
         MeCountsView: {
             purchases: number;
             saved: number;
@@ -10895,80 +11376,6 @@ export interface components {
             items: components["schemas"]["EarningSaleView"][];
             nextCursor: string | null;
         };
-        PlanBadgeView: {
-            id: string;
-            numbered: boolean;
-        };
-        MyTierSummaryView: {
-            id: string;
-            name: string | null;
-            badge: components["schemas"]["PlanBadgeView"] | null;
-        };
-        PlanEventPassView: {
-            id: string;
-            name: string;
-        };
-        MyTierView: {
-            /** @enum {string} */
-            state: "none" | "active" | "ending" | "ended";
-            tier: components["schemas"]["MyTierSummaryView"] | null;
-            activeFrom: string | null;
-            activeUntil: string | null;
-            productsAllowed: number;
-            extraProducts: number;
-            pointsIncluded: number;
-            firstVoiceIntroIncluded: boolean;
-            eventPass: components["schemas"]["PlanEventPassView"] | null;
-        };
-        PlanTierView: {
-            id: string;
-            name: string;
-            days: number;
-            products: number;
-            bonusPoints: number;
-            bonusPointsExpireDays: number;
-            priceMinor: number;
-            eventPass: components["schemas"]["PlanEventPassView"];
-            badge: components["schemas"]["PlanBadgeView"];
-            packBonusPercent: number;
-            firstVoiceIntroIncluded: boolean;
-            preselected: boolean;
-        };
-        PlanExtraProductsView: {
-            count: number;
-            priceMinor: number;
-        };
-        PlanPackView: {
-            id: string;
-            points: number;
-            priceMinor: number;
-        };
-        PlanCheckoutBumpView: {
-            points: number;
-            priceMinor: number;
-        };
-        PlanActionView: {
-            id: string;
-            points: number;
-            /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
-        };
-        PlanCapsView: {
-            dailyPoints: number;
-            maxCharactersPerJob: number;
-            maxAudioMinutesPerJob: number;
-        };
-        PlansView: {
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            currencyFixed: boolean;
-            tiers: components["schemas"]["PlanTierView"][];
-            extraProducts: components["schemas"]["PlanExtraProductsView"];
-            packs: components["schemas"]["PlanPackView"][];
-            checkoutBump: components["schemas"]["PlanCheckoutBumpView"];
-            actions: components["schemas"]["PlanActionView"][];
-            caps: components["schemas"]["PlanCapsView"];
-        };
         PlanPurchaseQuoteView: {
             /** @enum {string} */
             kind: "tier" | "renew" | "upgrade";
@@ -11015,6 +11422,38 @@ export interface components {
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
+        };
+        PointsConvertQuoteView: {
+            /** @enum {string} */
+            currency: "NGN";
+            balancePoints: number;
+            minimumPoints: number;
+            maximumPoints: number | null;
+            rate: {
+                points: number;
+                kobo: number;
+            };
+            points: number;
+            cashKobo: number;
+            feeKobo: number;
+            wawuPaysProviderCharge: boolean;
+            canConvert: boolean;
+            /** @enum {string|null} */
+            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | null;
+        };
+        PointsConversionView: {
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed";
+            /** @enum {string} */
+            currency: "NGN";
+            points: number;
+            cashKobo: number;
+            reference: string;
+            statusMessage: string | null;
+            failureReason: string | null;
+            createdAt: string;
+            completedAt: string | null;
         };
         AdminWaitlistRegistrationView: {
             id: string;
@@ -11180,7 +11619,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -11204,7 +11643,7 @@ export interface components {
                 /** @enum {string|null} */
                 placement: "tgif_card" | "today_slot" | null;
                 /** @enum {string|null} */
-                status: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+                status: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
                 /** Format: date-time */
@@ -11215,10 +11654,10 @@ export interface components {
             campaigns: number;
             delivery: components["schemas"]["AdCounts"];
             deliveryByStatus: {
+                ended: unknown;
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                ended: unknown;
                 scheduled: unknown;
             };
             deliveryByPlacement: {
@@ -11226,10 +11665,10 @@ export interface components {
                 today_slot: unknown;
             };
             byStatus: {
+                ended: unknown;
                 live: unknown;
                 paused: unknown;
                 draft: unknown;
-                ended: unknown;
                 scheduled: unknown;
             };
             byPlacement: {
@@ -11250,7 +11689,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -11260,11 +11699,11 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "paused" | "updated" | "ended" | "scheduled" | "created" | "resumed" | "deleted";
+            action: "ended" | "paused" | "updated" | "scheduled" | "created" | "resumed" | "deleted";
             /** @enum {string|null} */
-            previousStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+            previousStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             /** @enum {string|null} */
-            newStatus: "live" | "paused" | "draft" | "ended" | "scheduled" | null;
+            newStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             changes: {
                 [key: string]: {
                     from: unknown;
@@ -11286,7 +11725,7 @@ export interface components {
             /** @enum {string} */
             placement: "tgif_card" | "today_slot";
             /** @enum {string} */
-            status: "live" | "paused" | "draft" | "ended" | "scheduled";
+            status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
             phase: "upcoming" | "running" | "over";
             /** Format: date-time */
@@ -11664,6 +12103,105 @@ export interface operations {
             };
         };
     };
+    PaidDmController_getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmSettings"];
+                };
+            };
+            /** @description The caller is not a creator account. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_saveSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePaidDmSettingsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmSettings"];
+                };
+            };
+            /** @description The price is not a whole number of naira, no price is set, or the reply time is not on offer. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller is not a creator account, or paid messages are paused (reason.code paid_messages_paused). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_earn: {
+        parameters: {
+            query: {
+                /** @description The price to price a message at, in kobo. */
+                priceKobo: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmEarn"];
+                };
+            };
+            /** @description The price is missing, not an integer, outside the bounds, or not a whole number of naira. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller is not a creator account. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PaidDmController_availability: {
         parameters: {
             query?: never;
@@ -12002,6 +12540,42 @@ export interface operations {
                     };
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+        };
+    };
+    StorageController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmUploadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        key: string;
+                        /** @enum {string} */
+                        status: "pending" | "confirmed" | "abandoned";
+                    };
+                };
+            };
         };
     };
     StorageController_usage: {
@@ -12038,6 +12612,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadAllowanceView"];
+                };
+            };
+        };
+    };
+    PlansController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansView"];
+                };
+            };
+        };
+    };
+    MeTierController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
+    PointsController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyPointsView"];
                 };
             };
         };
@@ -13528,6 +14159,15 @@ export interface operations {
                     "application/json": components["schemas"]["ContentPieceResponse"];
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_mine: {
@@ -13702,6 +14342,15 @@ export interface operations {
                     "application/json": components["schemas"]["MyContentItem"];
                 };
             };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_resubmit: {
@@ -13721,6 +14370,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyContentItem"];
+                };
+            };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
                 };
             };
         };
@@ -14213,6 +14871,147 @@ export interface operations {
             };
         };
     };
+    ProductDraftController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"][];
+                };
+            };
+        };
+    };
+    ProductDraftController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductDraftDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProductDraftController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductDraftDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDraftView"];
+                };
+            };
+        };
+    };
+    ProductDraftController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishProductDraftDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentPieceResponse"];
+                };
+            };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+        };
+    };
     CreditPurchaseController_createPurchase: {
         parameters: {
             query?: never;
@@ -14280,10 +15079,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14318,10 +15117,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14388,10 +15187,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14428,10 +15227,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14468,10 +15267,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -14508,10 +15307,10 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** @enum {string} */
                         kind: "cac" | "nepc" | "mentor_request" | "easybuy" | "pension" | "banking" | "grants" | "loans";
                         title: string;
+                        status: string;
                         applicantWawuId: string;
                         reference: string;
                         /** Format: date-time */
@@ -16528,7 +17327,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -17988,11 +18787,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -18050,11 +18849,11 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        /** Format: date-time */
-                        updatedAt: string | null;
                         /** @enum {string} */
                         kind: "template" | "country" | "article";
                         title: string;
+                        /** Format: date-time */
+                        updatedAt: string | null;
                         /** Format: date-time */
                         updated: string;
                         country: string | null;
@@ -18234,9 +19033,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -18257,9 +19056,9 @@ export interface operations {
                         items: {
                             name: string;
                             id: string;
+                            imageUrl: string | null;
                             /** @enum {string} */
                             status: "live" | "coming";
-                            imageUrl: string | null;
                             slug: string;
                             category: string | null;
                             featured: boolean;
@@ -18304,9 +19103,9 @@ export interface operations {
                     "application/json": {
                         name: string;
                         id: string;
+                        imageUrl: string | null;
                         /** @enum {string} */
                         status: "live" | "coming";
-                        imageUrl: string | null;
                         slug: string;
                         category: string | null;
                         featured: boolean;
@@ -18390,9 +19189,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        title: string;
                         /** Format: date-time */
                         updatedAt: string | null;
-                        title: string;
                         description: string;
                         format: string;
                         fileUrl: string | null;
@@ -19420,9 +20219,9 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        status: string;
                         /** Format: date-time */
                         createdAt: string;
+                        status: string;
                         topics: string[];
                         mentorId: string;
                         requesterWawuId: string;
@@ -20291,6 +21090,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicSchoolDetail"];
+                };
+            };
+        };
+    };
+    SchoolLinkController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolApplyLinkView"];
+                };
+            };
+        };
+    };
+    SchoolLinkController_click: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolApplyLinkView"];
                 };
             };
         };
@@ -21798,63 +22639,6 @@ export interface operations {
             };
         };
     };
-    PointsController_mine: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyPointsView"];
-                };
-            };
-        };
-    };
-    PlansController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlansView"];
-                };
-            };
-        };
-    };
-    MeTierController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyTierView"];
-                };
-            };
-        };
-    };
     PlanPurchasesController_quote: {
         parameters: {
             query: {
@@ -22036,6 +22820,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_quote: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The points to quote. Left out, the quote is for the whole balance.
+                 *     Digits only: `1e3` or `1,000` is a 400, never read as some other number.
+                 */
+                points?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConvertQuoteView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, currency_not_supported */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_convertPoints: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PointsConvertDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConversionView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds, insufficient_points */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, currency_not_supported */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: below_minimum */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PointsConvertController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsConversionView"];
                 };
             };
             /** @description reason.code: not_found */

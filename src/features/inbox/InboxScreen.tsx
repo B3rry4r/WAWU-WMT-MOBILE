@@ -1,5 +1,5 @@
 import { useIsFocused } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,6 +30,8 @@ const inboxMetrics = {
 export type InboxScreenProps = {
   /** Which kinds of row are drawn, and how. Defaults to the app's (`rows.tsx`). */
   renderers?: InboxRowRenderers;
+  /** The round buttons at the right of the title (kit.js line 24, `Big`), each added by the task that builds the screen it opens. */
+  headerActions?: ReactNode;
 };
 
 /**
@@ -38,7 +40,7 @@ export type InboxScreenProps = {
  * live connection says something changed (see `unread.ts`), and when pulled down. The Communities chip
  * swaps the list for I24 (`CommunitiesView`), which reads its own rooms.
  */
-export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps) {
+export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: InboxScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const [chip, setChip] = useState(inboxChips[0]?.value ?? 'all');
@@ -48,6 +50,7 @@ export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps)
     <View testID="inbox-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.title}>
         <Text variant="title">Inbox</Text>
+        {headerActions ? <View style={styles.actions}>{headerActions}</View> : null}
       </View>
       <View style={styles.chips}>
         <FilterChips items={inboxChips} value={chip} onChange={setChip} label="Filter your inbox" testID="inbox-chips" />
@@ -189,7 +192,8 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  title: { paddingTop: inboxMetrics.titleTop, paddingBottom: inboxMetrics.titleBottom, paddingHorizontal: layout.gutter },
+  title: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingTop: inboxMetrics.titleTop, paddingBottom: inboxMetrics.titleBottom, paddingHorizontal: layout.gutter },
+  actions: { flexDirection: 'row', gap: space.sm },
   chips: { paddingBottom: inboxMetrics.chipsBottom },
   list: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: inboxMetrics.listTop, paddingBottom: inboxMetrics.listBottom },
