@@ -10,8 +10,21 @@ import { fetchMe, meKey } from '@/features/profile-edit/api';
  * (`@/api/query`, the one the root layout provides), so it needs no provider above it.
  */
 export function useIsCreator(): boolean {
-  const me = useQuery({ queryKey: meKey, queryFn: fetchMe, select: (profile) => profile.accountType === 'creator' }, queryClient);
-  return me.data === true;
+  return useCreatorGate() === 'creator';
+}
+
+/**
+ * The same answer for a route: `checking` until the profile has been read, then `creator`, or `other` for anyone else (a user account,
+ * an account with no type, a profile that did not load). A Create route draws nothing while checking and sends `other` Home, which
+ * is what the Create button's absence tells them too. `enabled` stays false until the person is signed in, so a signed-out visit asks
+ * the Hub nothing.
+ */
+export type CreatorGate = 'checking' | 'creator' | 'other';
+
+export function useCreatorGate(enabled = true): CreatorGate {
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMe, select: (profile) => profile.accountType === 'creator', enabled }, queryClient);
+  if (me.isPending) return 'checking';
+  return me.data === true ? 'creator' : 'other';
 }
 
 /**

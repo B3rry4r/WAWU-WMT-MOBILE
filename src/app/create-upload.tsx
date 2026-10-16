@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { useCreatorGate } from '@/features/create/CreateEntry';
 import { useDraft } from '@/features/create/draft';
 import { UploadScreen } from '@/features/create/UploadScreen';
 
@@ -9,8 +10,10 @@ export default function CreateUploadRoute() {
   const router = useRouter();
   const { status } = useSession();
   const { format } = useDraft();
+  const gate = useCreatorGate(status === 'signedIn');
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
+  if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
   if (!format) return <Redirect href="/create-format" />;
 
   return <UploadScreen format={format} onBack={() => (router.canGoBack() ? router.back() : router.replace('/create-format'))} onContinue={() => router.push('/create-preview')} />;

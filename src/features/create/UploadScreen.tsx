@@ -12,19 +12,20 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { font, space, useWawu } from '@/theme';
 
-import { fetchFormats, formatsKey } from './api';
+import { allowanceKey, fetchAllowance, fetchFormats, formatsKey } from './api';
 import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
 import { setFull, useDraft } from './draft';
 import { formatBytes, labelOf, uploadTitle, type FormatId, type FormatRule } from './model';
-import { FileRow, Stepper } from './parts';
+import { FileRow, Stepper, useFirstTap } from './parts';
 import { canPickFile, pickFile } from './pickFile';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
+import { SlotsFullNotice, slotsFull } from './UploadsMeter';
 
 /** me.js `upload`: a 200 high drop box, 24 corner, a 1.5 strong ring; a 56 accent tile, a 16 semi-bold line, a 13 muted line, 10 between. */
 const dropMetrics = { height: 200, corner: 24, ring: 1.5, icon: 56, between: 10, title: 16, hint: 13, pad: space.xl } as const;
 
-type Stage = { state: 'idle' } | { state: 'uploading'; file: ChosenFile; share: number } | { state: 'done'; name: string } | { state: 'failed'; file: ChosenFile | null; share: number; message: string; retry: boolean };
+type Stage = { state: 'idle' } | { state: 'uploading'; file: ChosenFile; share: number } | { state: 'done'; name: string } | { state: 'failed'; file: ChosenFile | null; message: string; retry: boolean };
 
 /** A failed upload is worth asking again for when nothing about the file is wrong: no answer, a server fault, or the bytes themselves not landing. */
 const retryable = (error: unknown): boolean => !isApiError(error) || error.status === 0 || error.status >= 500 || error.code === 'upload_failed';
@@ -37,10 +38,15 @@ export type UploadScreenProps = { format: FormatId; onBack: () => void; onContin
  */
 export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) {
   const formats = useQuery({ queryKey: formatsKey, queryFn: fetchFormats });
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   const { full } = useDraft();
   const rule: FormatRule | undefined = formats.data?.find((r) => r.id === format);
   const [stage, setStage] = useState<Stage>(full ? { state: 'done', name: full.name } : { state: 'idle' });
   const abort = useRef<AbortController | null>(null);
+  const firstTap = useFirstTap();
+  // At "5 of 5 used" the Hub would refuse the piece when it is created, so nothing is uploaded for it (M27). A count that has not
+  // loaded does not block: the Hub still decides at the create call.
+  const noRoom = allowance.data ? slotsFull(allowance.data) : false;
 
   // Leaving the screen stops a transfer that is still going.
   useEffect(() => () => abort.current?.abort(), []);
@@ -50,7 +56,7 @@ export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) 
     const refusal = refusalFor(file, rule.full);
     if (refusal) {
       setFull(null);
-      setStage({ state: 'failed', file, share: 0, message: refusal, retry: false });
+      setStage({ state: 'failed', file, message: refusal, retry: false });
       return;
     }
     abort.current?.abort();
@@ -65,23 +71,22 @@ export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) 
       setStage({ state: 'done', name: uploaded.name });
     } catch (error) {
       if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
-      setStage((s) => ({
+      setStage({
         state: 'failed',
         file,
-        share: s.state === 'uploading' ? s.share : 0,
         message: isApiError(error) ? error.message : 'That file did not upload. Try again.',
         retry: retryable(error),
-      }));
+      });
     }
   };
 
   const choose = async () => {
-    if (!rule || stage.state === 'uploading') return;
+    if (!rule || noRoom || stage.state === 'uploading' || !firstTap()) return;
     try {
       const file = await pickFile(rule.full.contentTypes);
       if (file) await send(file);
     } catch {
-      setStage({ state: 'failed', file: null, share: 0, message: "We couldn't open your files. Try again.", retry: false });
+      setStage({ state: 'failed', file: null, message: "We couldn't open your files. Try again.", retry: false });
     }
   };
 
@@ -106,10 +111,12 @@ export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) 
         <Skeleton testID="upload-loading" height={dropMetrics.height} radius={dropMetrics.corner} />
       ) : (
         <>
-          <DropBox format={format} limit={rule.full.maxBytes} disabled={uploading || !canPickFile} onPress={() => void choose()} />
+          {allowance.data && noRoom ? <SlotsFullNotice allowance={allowance.data} /> : null}
+          <DropBox format={format} limit={rule.full.maxBytes} disabled={uploading || noRoom || !canPickFile} onPress={() => void choose()} />
           {stage.state === 'uploading' || stage.state === 'failed' ? (
             stage.file ? (
-              <FileRow testID="upload-file" icon="FileText" name={stage.file.name} progress={stage.share} failed={stage.state === 'failed'} />
+              // A failed row shows no bar and no share: the bytes may all have gone and the file still not landed, and Try again starts over.
+              <FileRow testID="upload-file" icon="FileText" name={stage.file.name} progress={stage.state === 'uploading' ? stage.share : undefined} failed={stage.state === 'failed'} />
             ) : null
           ) : stage.state === 'done' ? (
             <FileRow testID="upload-file" icon="FileText" name={stage.name} progress={1} />

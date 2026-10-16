@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 8, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 12, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** nothing (every source task is merged).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -36,7 +36,7 @@ Every low finding in the table is fixed, or ruled "no" with the reason written i
 
 ## Scope
 
-Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, and the CHECK-1 audit's shell and profile lows. Mobile only. Only the rows in the table; nothing else is touched. A row whose task is not merged yet waits for that merge (or is fixed on that task's branch if the lead says so).
+Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, and the CHECK-1 audit's shell and profile lows. Mobile only, except the four ME-04 rows, which name the Hub where they mean it. Only the rows in the table; nothing else is touched. A row whose task is not merged yet waits for that merge (or is fixed on that task's branch if the lead says so).
 
 ## Capability checks
 
@@ -55,6 +55,10 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SCHOOLS-03 | V2-2 | The Kiritimati date-test label is wrong (UTC+14 is never behind UTC). Note. | `tasks/SCHOOLS-03.md`, Verifier report, round 2, line 255 |
 | CHECK-1 | F-1 | A production web export shows Expo's default "Unmatched Route" page for any unknown route and `/_sitemap` lists every route file. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 49 |
 | CHECK-1 | F-7 | M8's `wawu/<handle>` preview is hidden for a handle with a hyphen, which the Hub would also refuse. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 55 |
+| ME-04 | R2-1 | Hub: the storage quota is check-then-insert (`src/storage/storage.service.ts` presign: `usageAndTick` is read, then the row is written), so parallel presigns overshoot the limit. Twelve parallel 300 MB presigns against 1 GB: main accepted 7 (2.1 GB reserved), the branch 4. Pre-existing on main. Fix in the Hub with one conditional write or a lock per account. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, "Pre-existing on main" (a note under the findings) |
+| ME-04 | R2-2 | Hub: `POST /uploads/presign` has no creator check (any signed-in account reserves `content/*` space), and none on the upload count. Changing it changes a route the website calls (protected registry), so it waits for the lead's ruling; the app already gates its own routes. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-04.md`, finding 5 |
+| ME-04 | R2-3 | App: a release that fails (offline, 503) is dropped, as ruled, so the file keeps counting and the person cannot ask again once it is out of the draft. An upload cut off mid-way (the person leaves the screen, a failed PUT) has no key in the app at all; the Hub's 15 minute reconcile settles one that never landed, not one that did. A retry queue, or a Hub-side sweep of `content/*` rows no listing claimed after a day, would close both. | `tasks/ME-04.md`, Builder report, round 2 |
+| ME-04 | R2-4 | Hub: `POST /content` takes any URL as `previewAsset` and `fullAsset`; it does not check that each is the caller's own upload or that its row is not `abandoned`. A released (deleted) or another person's key is accepted. ME-08 sends these, so it should check them (the photo-set frames already do: `ownedFrameKeys`). | `tasks/ME-04.md`, Builder report, round 2 |
 
 ## Builder report
 

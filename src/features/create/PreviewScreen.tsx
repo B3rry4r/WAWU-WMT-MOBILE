@@ -20,7 +20,7 @@ import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
 import { setPreview, useDraft, type UploadedFile } from './draft';
 import { formatBytes, iconOf, labelOf, previewHint, type FormatId, type PreviewRule } from './model';
-import { FileRow, Stepper } from './parts';
+import { FileRow, Stepper, useFirstTap } from './parts';
 import { pagesOf } from './pdfPages';
 import { canPickFile, pickFile } from './pickFile';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
@@ -56,6 +56,7 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
   const rule: PreviewRule | undefined = formats.data?.find((r) => r.id === format)?.preview;
   const [stage, setStage] = useState<Stage>({ state: 'idle' });
   const abort = useRef<AbortController | null>(null);
+  const firstTap = useFirstTap();
 
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -91,7 +92,7 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
   };
 
   const choose = async () => {
-    if (!rule || stage.state === 'uploading') return;
+    if (!rule || stage.state === 'uploading' || !firstTap()) return;
     try {
       const file = await pickFile(rule.contentTypes);
       if (file) await send(file);

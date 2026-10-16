@@ -21,7 +21,9 @@ const { UploadScreen } = require('../UploadScreen') as typeof import('../UploadS
 const { PreviewScreen } = require('../PreviewScreen') as typeof import('../PreviewScreen');
 const { CreateEntry } = require('../CreateEntry') as typeof import('../CreateEntry');
 const draft = require('../draft') as typeof import('../draft');
+const { adoptSession, signOut, resetSessionForTests } = require('@/api/session') as typeof import('@/api/session');
 
+const RELEASE = '/api/hub/uploads/release';
 const ALLOWANCE = '/api/hub/uploads/allowance';
 const FORMATS_PATH = '/api/hub/uploads/formats';
 const PRESIGN = '/api/hub/uploads/presign';
@@ -99,6 +101,45 @@ describe('M19 · Create', () => {
     hub.answers[`GET ${ALLOWANCE}`] = 'hang';
     await open();
     expect(await screen.findByTestId('create-meter-loading')).toBeTruthy();
+  });
+});
+
+describe('M19 · Create at "5 of 5 used"', () => {
+  const open = async () => {
+    const calls = { close: jest.fn(), content: jest.fn(), event: jest.fn(), service: jest.fn() };
+    await renderFrame(<CreateScreen onClose={calls.close} onContent={calls.content} onEvent={calls.event} onService={calls.service} />);
+    return calls;
+  };
+
+  it('says the uploads are used and does not start a piece, while Event and Service still open', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
+    const calls = await open();
+    expect(await screen.findByText('Your 5 free uploads are used')).toBeTruthy();
+    expect(screen.getByText('Get verified for up to 25 uploads, or take something down.')).toBeTruthy();
+    expect(screen.getByTestId('create-meter-count').props.children).toBe('5 of 5 used');
+    await fireEvent.press(screen.getByTestId('create-tile-content'));
+    expect(calls.content).not.toHaveBeenCalled();
+    expect(screen.getByTestId('create-tile-content').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('create-tile-event'));
+    await fireEvent.press(screen.getByTestId('create-tile-service'));
+    expect(calls.event).toHaveBeenCalledTimes(1);
+    expect(calls.service).toHaveBeenCalledTimes(1);
+  });
+
+  it('words it for a ticked account, with no way up to offer', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(25, 25, true));
+    await open();
+    expect(await screen.findByText('Your 25 uploads are used')).toBeTruthy();
+    expect(screen.getByText('Take something down to make room for a new one.')).toBeTruthy();
+    expect(screen.queryByText(/Get verified/)).toBeNull();
+  });
+
+  it('draws no notice and keeps Content working while there is room, or while the count is not known', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
+    const calls = await open();
+    await fireEvent.press(await screen.findByTestId('create-tile-content'));
+    expect(calls.content).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('create-slots-full')).toBeNull();
   });
 });
 
@@ -194,8 +235,10 @@ describe('M21 · Upload', () => {
     expect(await screen.findByText('That file is over the 100 MB limit.')).toBeTruthy();
     expect(hub.sent.some((s) => s.path === PRESIGN)).toBe(false);
     mockPick.mockResolvedValue(chosen('clip.mp4', 'video/mp4', 5));
+    const later = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 5000);
     await fireEvent.press(screen.getByTestId('upload-drop'));
     expect(await screen.findByText('That file type is not accepted here. Choose PDF.')).toBeTruthy();
+    later.mockRestore();
   });
 
   it("shows the Hub's own sentence when it refuses the upload (the limit), without offering the same file again", async () => {
@@ -222,6 +265,44 @@ describe('M21 · Upload', () => {
     await act(async () => { ScriptedXhr.last?.finish(200); });
     await waitFor(() => expect(screen.getByText('100%')).toBeTruthy());
     expect(draft.getDraft().full).not.toBeNull();
+  });
+
+  it('does not start an upload at "5 of 5 used", and says so', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
+    mockPick.mockResolvedValue(chosen('a.pdf', 'application/pdf'));
+    await start();
+    expect(await screen.findByText('Your 5 free uploads are used')).toBeTruthy();
+    expect(screen.getByTestId('upload-drop').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('upload-drop'));
+    expect(mockPick).not.toHaveBeenCalled();
+    expect(hub.sent.some((s) => s.path === PRESIGN)).toBe(false);
+  });
+
+  it('opens one chooser and asks for one upload link on a double tap', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/full', 'a.pdf');
+    mockPick.mockResolvedValue(chosen('a.pdf', 'application/pdf'));
+    await start();
+    const drop = await screen.findByTestId('upload-drop');
+    await fireEvent.press(drop);
+    await fireEvent.press(drop);
+    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
+    expect(mockPick).toHaveBeenCalledTimes(1);
+    expect(hub.sent.filter((s) => s.path === PRESIGN)).toHaveLength(1);
+  });
+
+  it('shows no bar and no percentage on a file whose bytes all went but did not land', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/full', 'a.pdf');
+    mockPick.mockResolvedValue(chosen('a.pdf', 'application/pdf'));
+    await start();
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
+    await act(async () => { ScriptedXhr.last?.progress(100, 100); });
+    expect(screen.getByText('100%')).toBeTruthy();
+    await act(async () => { ScriptedXhr.last?.finish(500); });
+    expect(await screen.findByText('That file did not upload. Try again.')).toBeTruthy();
+    expect(screen.getByText('a.pdf')).toBeTruthy();
+    expect(screen.queryByTestId('create-percent')).toBeNull();
+    expect(screen.queryByText('100%')).toBeNull();
   });
 
   it('says there is no connection when the request cannot be made, and keeps Continue off', async () => {
@@ -267,6 +348,25 @@ describe('M22 · Preview', () => {
     expect(draft.getDraft().preview).toBeNull();
     expect(screen.queryByTestId('preview-look')).toBeNull();
     expect(screen.getByTestId('preview-drop')).toBeTruthy();
+    // Remove gives the file back to the Hub.
+    await waitFor(() => expect(hub.sent.filter((s) => s.path === RELEASE).map((s) => s.body)).toEqual([{ key: 'content/preview/u1/p.pdf' }]));
+  });
+
+  it('removes the preview at once even when the Hub cannot be asked to release it', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'p.pdf');
+    hub.answers[`POST ${RELEASE}`] = 'hang';
+    mockPick.mockResolvedValue(chosen('p.pdf', 'application/pdf'));
+    await open();
+    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
+    await act(async () => { ScriptedXhr.last?.finish(200); });
+    await screen.findByTestId('preview-look');
+    await fireEvent.press(screen.getByTestId('create-remove'));
+    expect(draft.getDraft().preview).toBeNull();
+    expect(screen.getByTestId('preview-drop')).toBeTruthy();
+    hub.answers[`POST ${RELEASE}`] = refusal(503, 'Could not remove that file right now. Try again in a moment.');
+    await act(async () => undefined);
+    expect(screen.queryByText(/Could not remove/)).toBeNull();
   });
 
   it('leaves the page count out when the file does not say how many pages it has', async () => {
@@ -331,5 +431,102 @@ describe('the Create button on Home, Explore and Me', () => {
     await waitFor(() => expect(hub.sent.some((s) => s.path === ME)).toBe(true));
     await act(async () => undefined);
     expect(screen.queryByTestId('explore-create')).toBeNull();
+  });
+});
+
+describe('the draft gives back what it lets go of', () => {
+  const file = (key: string) => ({ name: `${key}.pdf`, bytes: 10, contentType: 'application/pdf', key, fileUrl: `https://storage.test/${key}` });
+  const released = () => hub.sent.filter((s) => s.path === RELEASE).map((s) => (s.body as { key: string }).key);
+  const settle = () => act(async () => undefined);
+
+  it('releases the old full file and the preview that went with it when the full file is replaced', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(file('full-1'));
+    draft.setPreview(file('prev-1'));
+    expect(released()).toEqual([]);
+    draft.setFull(null);
+    draft.setFull(file('full-2'));
+    await settle();
+    expect(released().sort()).toEqual(['full-1', 'prev-1']);
+    expect(draft.getDraft().preview).toBeNull();
+  });
+
+  it('releases a replaced preview, and nothing when the same file is set again', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(file('full-1'));
+    draft.setPreview(file('prev-1'));
+    draft.setPreview(file('prev-1'));
+    draft.setPreview(file('prev-2'));
+    await settle();
+    expect(released()).toEqual(['prev-1']);
+  });
+
+  it('releases both files when a different format starts the piece again, and when a fresh piece is started', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(file('full-1'));
+    draft.setPreview(file('prev-1'));
+    draft.setFormat('pdf');
+    expect(released()).toEqual([]);
+    draft.setFormat('video');
+    await settle();
+    expect(released().sort()).toEqual(['full-1', 'prev-1']);
+    draft.setFull(file('full-2'));
+    draft.abandonDraft();
+    await settle();
+    expect(released().sort()).toEqual(['full-1', 'full-2', 'prev-1']);
+    expect(draft.getDraft()).toEqual({ format: null, full: null, preview: null });
+  });
+
+  it('empties the draft without releasing anything on resetDraft, which the create call uses once the files belong to a listing', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(file('full-1'));
+    draft.resetDraft();
+    await settle();
+    expect(released()).toEqual([]);
+    expect(draft.getDraft().full).toBeNull();
+  });
+
+  it('is cleared when the person signs out, so the next account never meets it', async () => {
+    resetSessionForTests();
+    const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    await adoptSession({ accessToken: `${b64({ alg: 'RS256' })}.${b64({ sub: 'account-ada', iat: 1000, exp: 4_000_000_000 })}.sig`, refreshToken: 'r' });
+    draft.setFormat('pdf');
+    draft.setFull(file('full-1'));
+    await signOut();
+    expect(draft.getDraft()).toEqual({ format: null, full: null, preview: null });
+    // The session is over: there is no one to ask on the account's behalf.
+    await settle();
+    expect(released()).toEqual([]);
+  });
+});
+
+describe('the Create routes are for creator accounts', () => {
+  const { useCreatorGate } = require('../CreateEntry') as typeof import('../CreateEntry');
+  const { Text } = require('react-native') as typeof import('react-native');
+  const profile = (accountType: 'creator' | 'user' | null) => ok({ wawuUserId: 'u1', accountType });
+  function Gate({ enabled = true }: { enabled?: boolean }) {
+    return <Text testID="gate">{useCreatorGate(enabled)}</Text>;
+  }
+
+  it('waits for the profile, then lets a creator in', async () => {
+    hub.answers[`GET ${ME}`] = profile('creator');
+    await renderFrame(<Gate />);
+    expect(screen.getByTestId('gate').props.children).toBe('checking');
+    await waitFor(() => expect(screen.getByTestId('gate').props.children).toBe('creator'));
+  });
+
+  // A server fault is asked for again a few times first (the app's query defaults), so the refusal here is one that is not.
+  it.each([['a user account', profile('user')], ['an account with no type', profile(null)], ['a profile that did not load', refusal(404, 'Not found')]])('turns away %s', async (_name, answer) => {
+    hub.answers[`GET ${ME}`] = answer;
+    await renderFrame(<Gate />);
+    await waitFor(() => expect(screen.getByTestId('gate').props.children).toBe('other'));
+  });
+
+  it('asks the Hub nothing until the person is signed in', async () => {
+    hub.answers[`GET ${ME}`] = profile('creator');
+    await renderFrame(<Gate enabled={false} />);
+    await act(async () => undefined);
+    expect(screen.getByTestId('gate').props.children).toBe('checking');
+    expect(hub.sent.some((x) => x.path === ME)).toBe(false);
   });
 });

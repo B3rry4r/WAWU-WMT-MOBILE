@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -15,6 +16,22 @@ const stepperMetrics = { bar: 4, barCorner: 2, between: 6, label: 11.5 } as cons
 /** me.js `upload` and `previewStep`: the file card is 14 by 16 (12 by 14 once it is a finished file), its name 14.5, the line under it 12.5 two below, the bar 6 high with 3 corners. */
 const fileMetrics = { padV: 14, padVTight: space.md, padH: 14, name: 14.5, meta: 12.5, metaGap: 2, track: 6, trackCorner: 3, percent: 13 } as const;
 const rowMetrics = { between: 13, padV: 12, minHeight: 64, title: 15.5, sub: 13, subGap: 3, icon: 44 } as const;
+
+/**
+ * Answers true for the first tap of a burst and false for the rest of it within `ms`. A double click on the web would otherwise open
+ * the chooser twice and ask the Hub for two upload links; the browser's own chooser is modal, so a person never means the second.
+ * It counts time, not "a chooser is open", because a browser that never reports the chooser being closed would otherwise leave the
+ * box dead.
+ */
+export function useFirstTap(ms = 800): () => boolean {
+  const last = useRef(0);
+  return () => {
+    const now = Date.now();
+    if (last.current !== 0 && now - last.current < ms) return false;
+    last.current = now;
+    return true;
+  };
+}
 
 export const STEP_NAMES = ['Upload', 'Preview', 'Details', 'Price'] as const;
 

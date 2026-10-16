@@ -32,8 +32,9 @@ export type UploadTarget = { folder: 'content/full' | 'content/preview'; format:
 
 /**
  * Uploads one file to the Hub's storage under the format's rule and answers what the create call takes. The link comes
- * from `POST /uploads/presign` (the Hub refuses a type or a size the format does not take, and a piece over the account's
- * upload or storage limit, in its own sentence); the bytes go straight to storage with progress.
+ * from `POST /uploads/presign` (the Hub refuses a type or a size the format does not take, and a file that does not fit the
+ * account's storage, in its own sentence; it does not check the upload count: that is refused when the piece is created, so the
+ * screens read `GET /uploads/allowance` and do not start an upload at "5 of 5 used"); the bytes go straight to storage with progress.
  */
 export async function uploadFile(
   file: ChosenFile,

@@ -11,12 +11,14 @@ import { font, radius, space, useWawu } from '@/theme';
 
 import { allowanceKey, fetchAllowance } from './api';
 import { CreateFrame } from './CreateFrame';
-import { UploadsMeter } from './UploadsMeter';
+import { SlotsFullNotice, UploadsMeter, slotsFull } from './UploadsMeter';
 
 /** me.js `hubItem`: a 22 corner card, 16 padding, 12 between the picture and the words; a 48 accent tile, a 16 semi-bold name, a 13 muted line 3 under it. */
 const tileMetrics = { corner: radius.card, pad: space.lg, gap: space.md, icon: 48, title: 16, sub: 13, subLeading: 1.35, subGap: 3, between: 10 } as const;
+/** M27 draws the list it disables at 45% opacity. */
+const FULL_FADE = 0.45;
 
-type Tile = { id: string; icon: IconName; title: string; sub: string; onPress: () => void };
+type Tile = { id: string; icon: IconName; title: string; sub: string; onPress: () => void; disabled?: boolean };
 
 export type CreateScreenProps = {
   onClose: () => void;
@@ -34,8 +36,10 @@ export type CreateScreenProps = {
  */
 export function CreateScreen({ onClose, onContent, onEvent, onService }: CreateScreenProps) {
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
+  // At "5 of 5 used" a new piece would be refused when it is created, so Content does not start one (M27). Event and Service take no upload slot.
+  const full = allowance.data ? slotsFull(allowance.data) : false;
   const tiles: Tile[] = [
-    { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: onContent },
+    { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: onContent, disabled: full },
     { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs a verified tick', onPress: onEvent },
     { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
   ];
@@ -44,6 +48,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService }: CreateS
 
   return (
     <CreateFrame testID="create-screen" title="Create" leading="close" onLeave={onClose}>
+      {allowance.data && full ? <SlotsFullNotice allowance={allowance.data} /> : null}
       <View style={styles.grid}>
         {rows.map((row) => (
           <View key={row[0].id} style={styles.pair}>
@@ -73,6 +78,8 @@ function HubTile({ tile }: { tile: Tile }) {
       testID={`create-tile-${tile.id}`}
       accessibilityRole="button"
       accessibilityLabel={`${tile.title}, ${tile.sub}`}
+      accessibilityState={{ disabled: tile.disabled ?? false }}
+      disabled={tile.disabled}
       onPress={tile.onPress}
       {...ring.handlers}
       style={({ pressed }) => [
@@ -81,6 +88,7 @@ function HubTile({ tile }: { tile: Tile }) {
           backgroundColor: pressed ? colors.surfaceSunken : colors.surfaceCard,
           boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }],
         },
+        tile.disabled ? { opacity: FULL_FADE } : null,
         ring.style,
       ]}
     >
@@ -119,7 +127,9 @@ function MeterFailed({ message, onRetry }: { message: string; onRetry: () => voi
 const styles = StyleSheet.create({
   grid: { gap: tileMetrics.between },
   pair: { flexDirection: 'row', gap: tileMetrics.between },
-  spacer: { flex: 1, minWidth: 0 },
+  // The empty half of an odd last row takes the same padding as a tile: a flex item's padding comes on top of its share, so without it
+  // the lone tile was wider than the others (186 against 170 at 390).
+  spacer: { flex: 1, minWidth: 0, paddingHorizontal: tileMetrics.pad },
   tile: { flex: 1, minWidth: 0, borderRadius: tileMetrics.corner, padding: tileMetrics.pad, gap: tileMetrics.gap },
   tileTitle: { fontSize: tileMetrics.title },
   tileSub: { fontSize: tileMetrics.sub, lineHeight: tileMetrics.sub * tileMetrics.subLeading, marginTop: tileMetrics.subGap },

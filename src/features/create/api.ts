@@ -7,7 +7,8 @@ import type { FormatId, FormatRule } from './model';
  * The calls M19 to M22 make, as the Hub's contract types them:
  * - `GET /uploads/allowance`: "Uploads 4 of 5 used" (M19), from the Hub's own count and limit for this account;
  * - `GET /uploads/formats`: what each format may upload, the types, the most bytes and the clip length (M20 to M22);
- * - `POST /uploads/presign` with `format`: the link one file goes up to, checked against that format's rule.
+ * - `POST /uploads/presign` with `format`: the link one file goes up to, checked against that format's rule;
+ * - `POST /uploads/release`: gives a file back once the draft lets go of it, so it stops counting against the account's storage.
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data`, so each call reads it.
  */
 const unreadable = (what: string): ApiError => new ApiError('unknown', 200, `Your ${what} could not be read. Try again.`);
@@ -63,4 +64,12 @@ export async function presign(
   );
   if (typeof out.uploadUrl !== 'string' || typeof out.key !== 'string' || typeof out.fileUrl !== 'string') throw unreadable('upload');
   return { uploadUrl: out.uploadUrl, key: out.key, fileUrl: out.fileUrl };
+}
+
+/**
+ * Tells the Hub the draft no longer holds this file. The Hub deletes it and frees its space unless a listing already uses it (then it
+ * refuses, and the file stays). Nothing waits on this: the callers send it and move on, and a failure is dropped.
+ */
+export async function releaseUpload(key: string): Promise<void> {
+  await unwrap(api.POST('/api/hub/uploads/release', { body: { key } }));
 }
