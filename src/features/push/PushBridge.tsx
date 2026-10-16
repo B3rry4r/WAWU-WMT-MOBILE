@@ -25,23 +25,26 @@ export function PushBridge({ live }: { live: boolean }) {
   return <NativePushBridge live={live} />;
 }
 
+/** The tap that started the app, if the system is holding one. */
+function readStartingTap(): Notifications.NotificationResponse | null {
+  try {
+    return Notifications.getLastNotificationResponse() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function NativePushBridge({ live }: { live: boolean }) {
   const router = useRouter();
   const { status } = useSession();
   const ready = Boolean(useRootNavigationState()?.key);
-  const [response, setResponse] = useState<Notifications.NotificationResponse | null>(null);
+  const [response, setResponse] = useState<Notifications.NotificationResponse | null>(readStartingTap);
   const handled = useRef<string | null>(null);
   const lastSync = useRef(0);
 
-  // A tap that started the app is held by the system until read; a tap while the app runs arrives by event.
+  // A tap that started the app is held by the system until read (above); a tap while the app runs arrives by event.
   // (`useLastNotificationResponse` would do both, but it throws on a response the system gave no notification for.)
   useEffect(() => {
-    try {
-      const first = Notifications.getLastNotificationResponse();
-      if (first) setResponse(first);
-    } catch {
-      // No tap to read: the app was opened some other way.
-    }
     try {
       const watch = Notifications.addNotificationResponseReceivedListener((next) => setResponse(next));
       return () => watch?.remove();
@@ -66,16 +69,15 @@ function NativePushBridge({ live }: { live: boolean }) {
   useEffect(() => {
     const request = response?.notification?.request;
     if (!response || !request) return;
+    const key = `${request.identifier}:${response.notification.date}`;
+    if (handled.current === key) return;
     if (status === 'signedOut') {
-      setResponse(null);
+      handled.current = key;
       Notifications.clearLastNotificationResponse();
       return;
     }
     if (!live || !ready) return;
-    const key = `${request.identifier}:${response.notification.date}`;
-    if (handled.current === key) return;
     handled.current = key;
-    setResponse(null);
     Notifications.clearLastNotificationResponse();
     if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
     const href = routeForPush(request.content?.data);
