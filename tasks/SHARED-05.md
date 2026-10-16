@@ -7,7 +7,7 @@ order: 228
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V4, V5, V6, V10]
@@ -17,10 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/SHARED-05.md.
+As of 16 Oct 2026, built (Sonnet builder), waiting for a verifier.
+- **Status:** verifying. Mobile only: no backend change, no migration (`none (mobile only)`), no contract change.
+- **Branch:** mobile `wmt/SHARED-05` from main `3117807`. No pull request (the lead merges).
+- **Built:** `src/app/_layout.tsx` lists `payout-account`, `edit-profile`, `social-links`, `open-wallet`, `open-wallet-details`, `open-wallet-selfie`, `open-wallet-account`, `open-wallet-pin` and the five `settings/*` screens in the signed-in group beside `(tabs)`; and lists `about`, `terms` and `privacy-policy` outside every guard, after the signed-out set.
+- **Own checks removed** from the eight route files that carried one (the `restoring` null and the `/welcome` redirect). `social-links` keeps its redirect to `/edit-profile` when no form is open.
+- **Theme:** the root layout runs `applyStoredTheme()` once and draws nothing, with the splash screen still up, until it finishes. A phone store that cannot be read counts as nothing saved.
+- **Rows marked applied** in SHARED-CHANGES.md: WALLET-11 #2, ME-06 #3, KYC-05 R1, KYC-03 R1, KYC-04 R1, SETTINGS-02 R1, SETTINGS-01 #3.
+- **Tests:** `src/__tests__/route-graph.test.tsx` (39 cases, 18 of them fail on main's layout). One existing test edited: `payoutAccountRoute.test.tsx` lost its signed-out case, because the route no longer carries that check (the route graph test covers it).
+- **Open findings:** none yet.
+- **Next:** a verifier checks the capability checks below on the real router.
+- **Records:** tasks/history/SHARED-05.md (the builder report).
 
 ## Read first
 
@@ -45,13 +52,9 @@ Seven rows ask for routes to be listed in `src/app/_layout.tsx`, and none were. 
 - [ ] A person who picked Dark sees Dark on the first screen of the next launch, with no flash of the other theme.
 - [ ] `npm run check` exit 0.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SHARED-05.md](history/SHARED-05.md).
 
 ## Owner sign-off
 
