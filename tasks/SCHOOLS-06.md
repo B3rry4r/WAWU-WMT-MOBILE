@@ -15,7 +15,12 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 ---
 # SCHOOLS-06 · Enrol and pay, class full
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, SCHOOLS-03, SCHOOLS-07, UI-02 built first.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-06.md.
 
 ## Read first
 

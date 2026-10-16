@@ -15,8 +15,12 @@ artboards: [H14, H15, H16, H17, H18]
 ---
 # HOME-12 · Unlock from the feed
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-15, UI-02, HOME-02 built first.
+- **History:** none yet. Reports go to tasks/history/HOME-12.md.
 
 ## Read first
 

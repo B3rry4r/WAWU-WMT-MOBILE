@@ -15,6 +15,13 @@ artboards: []
 ---
 # WEBPAY-03 · Pay from the wallet on the website: the pay sheet and the PIN
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-14, MONEY-17, MONEY-19, NUV-01, WEBPAY-01 built first.
+- **History:** none yet. Reports go to tasks/history/WEBPAY-03.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

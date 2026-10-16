@@ -15,7 +15,12 @@ artboards: [I21, I22, I23]
 ---
 # INBOX-12 · Paid message settings, warning, switched off
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs INBOX-09, UI-02, INBOX-04, PROS-03 built first.
+- **History:** none yet. Reports go to tasks/history/INBOX-12.md.
 
 ## Read first
 

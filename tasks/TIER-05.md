@@ -15,6 +15,13 @@ artboards: []
 ---
 # TIER-05 · Pay by bank transfer at checkout
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs TIER-03, NUV-04 built first.
+- **History:** none yet. Reports go to tasks/history/TIER-05.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

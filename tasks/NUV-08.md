@@ -15,6 +15,13 @@ artboards: []
 ---
 # NUV-08 · Reconciliation with Nuvion: missed deliveries, statements and the nightly figures
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs NUV-04, NUV-05, NUV-06, NUV-07 built first.
+- **History:** none yet. Reports go to tasks/history/NUV-08.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

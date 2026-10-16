@@ -15,6 +15,13 @@ artboards: []
 ---
 # CHECK-3 · Checkpoint 3: full verification and QA (nothing new is built)
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs CHECK-2, RELEASE-01, ADS-01, ADS-02, BILLS-05, EVENTS-08, INBOX-14, INBOX-18, LEGAL-07, ME-03, ME-13, OPS-08, SCHOOLS-05, SETTINGS-05, SUPPORT-01, WALLET-01, WALLET-11 built first.
+- **History:** none yet. Reports go to tasks/history/CHECK-3.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md`

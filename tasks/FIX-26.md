@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-26 · The limits lock always runs in a real transaction, and the money-route checks pin what they read
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs FIX-21 built first.
+- **History:** none yet. Reports go to tasks/history/FIX-26.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

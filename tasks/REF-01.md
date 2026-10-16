@@ -15,6 +15,14 @@ artboards: []
 ---
 # REF-01 · Referral points
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (14 Oct).
+- **Status:** merged and live by the lead's log, but this file still says todo and holds no builder or verifier report: unknown, ask the lead whether to set it done.
+- **Merged and live:** mobile record in main 77b7943. Backend PR #130 (26d2fd4), deployed 14 Oct. Web PR #31 (8ce31c7), Vercel production ready. Referral codes on /join work: LOGOART applies (₦1,200, the first 4,000), an unknown code answers 404, /admin/referrals answers 200.
+- **Open findings:** blocker 0, high 0, medium 0. D1 and D2 were fixed in round 2 (web 4d0ab7f). Lows D3, D4, D5 and the 320 px number are in tasks/SWEEP-JOIN.md.
+- **Next:** nothing for this task itself; the sweep takes the lows.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

@@ -15,6 +15,17 @@ artboards: []
 ---
 # TIER-02 · Publishing needs a tier: the gate and the product count
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (14 Oct) and the branch.
+- **Status:** review on its branch (round 5 verified, no blocker). This file on main still says todo; the merge sets done.
+- **Branches:** mobile `wmt/TIER-02` 957901c. Backend `wmt/TIER-02` b41831f, PR #122 open (main 2a4b9a4 merged in, migration `20261021161000_product_drafts`).
+- **Merged and live:** nothing of this task. TIER-03, the tier sales it needs, is live (backend 2a4b9a4, mobile 3e5b7cb).
+- **Held by:** the protected route suite fails on main's lock by design (its setup publishes as a new creator and now gets 402), so PR #122 needs the owner's `relock-approved` label (SHARED-CHANGES TIER-02 #4).
+- **Open findings:** blocker 0, high 0, medium 0. Lows (round 5: D11, T14, N18, N19) are in tasks/SWEEP-MONEY.md.
+- **Next:** the owner applies the label; the lead merges backend #122, signs off mobile, and fixes the owner question's item 7 at that point (D11: the boundary is 15 up, the worst case 5).
+- **Records:** on the branch, `wmt/TIER-02`, in tasks/TIER-02.md there (174 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py TIER-02`; the history goes to tasks/history/TIER-02.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

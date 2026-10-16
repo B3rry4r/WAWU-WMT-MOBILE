@@ -15,6 +15,13 @@ artboards: []
 ---
 # OPS-09 · Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it.
+- **History:** none yet. Reports go to tasks/history/OPS-09.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

@@ -15,8 +15,12 @@ artboards: [H7, H8, H9, H10, H12, H13]
 ---
 # HOME-07 · Feed: course, template, creator and professional cards, empty and error
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs HOME-04, HOME-05, PROS-02, UI-02, UI-03, HOME-08, HOME-12, PROS-01, EXPLORE-02 built first.
+- **History:** none yet. Reports go to tasks/history/HOME-07.md.
 
 ## Read first
 

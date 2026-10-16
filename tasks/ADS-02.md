@@ -15,7 +15,14 @@ artboards: []
 ---
 # ADS-02 · Admin screens: ads
 
-Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 2 had not pushed for 17 hours).
+## Current state
+
+As of 16 Oct 2026, from the branch (built 8 Oct). The lead's log does not mention this task.
+- **Status:** verifying. Built; the verifier report is the empty template. This file on main still says todo.
+- **Branches:** mobile `wmt/ADS-02` cccb84a (docs only: G-332, SHARED-CHANGES ADS-02 rows, LOG). The screens are on the dashboard repo's branch `wmt/ADS-02`; that repo is not among the three the lead keeps: its head and state are unknown, ask the lead.
+- **Merged and live:** nothing. **Open findings:** none yet. G-332: the 11 admin ads routes are not in the protected list (an owner re-lock).
+- **Next:** a verifier session, once the lead says where the dashboard repo is.
+- **Records:** on the branch, `wmt/ADS-02`, in tasks/ADS-02.md there (11 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py ADS-02`; the history goes to tasks/history/ADS-02.md.
 
 ## Read first
 

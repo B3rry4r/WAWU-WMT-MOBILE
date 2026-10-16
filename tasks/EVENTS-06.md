@@ -15,7 +15,12 @@ artboards: [E3, E4, E5, E10]
 ---
 # EVENTS-06 · Buy a ticket: pay, PIN, ticket, still confirming
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, EVENTS-01, EVENTS-03, EVENTS-07, UI-02 built first.
+- **History:** none yet. Reports go to tasks/history/EVENTS-06.md.
 
 ## Read first
 

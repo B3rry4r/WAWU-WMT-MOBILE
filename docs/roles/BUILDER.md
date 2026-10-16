@@ -64,6 +64,9 @@ verified.
 2. Fill in **Builder report** in the task file (max 20 lines): files changed;
    each capability check and how you tested it; gate counts before and after;
    gaps and shared-change requests filed; anything you could not do and why.
+   Then rewrite **Current state** (top of the task file, at most 60 lines) and run
+   `python3 scripts/tasks/compact_task.py <ID>`: the report moves to
+   `tasks/history/<ID>.md` (docs/WORKFLOW.md section 4, 15 Oct rules).
 3. Add one line to the top of `docs/LOG.md` (date · task · what changed), then
    run `npm run tasks -- --write` so `docs/PROGRESS.md` is current.
 4. Set `status: verifying`. Open a pull request titled `<ID>: <title>`.

@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 139 of 249.**
+**Launch tasks done: 139 of 254.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 132 | 0 | 0 | 0 |
+| todo | 139 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
 | verifying | 0 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
@@ -174,6 +174,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 16 Oct 2026 · OPS-TASKS · Task files now open with a `## Current state` of 60 lines at most and keep their round history in `tasks/history/<ID>.md` (CHECK-1 went from 50,104 bytes to 3,074; `scripts/tasks/compact_task.py` does the move; its tests show no line is lost, and none was lost on the 16 branch task files it was tried on). Lows now go to seven sweep tasks (`tasks/SWEEP-MONEY`, `JOIN`, `INBOX`, `EVENTS`, `AUTH`, `WEB`, `APP`; 66 open rows), and a verdict is `merge` when nothing is medium or worse (`docs/WORKFLOW.md` section 4, owner 15 Oct 2026). `check_tasks.py` fails a building, verifying or review task with no Current state, a Current state over 60 lines, and a link to a history file that is not there. The files of the 14 tasks still in flight live on their branches; they get the same treatment when they next change or merge.
 - 12 Oct 2026 · JOIN-02 · Owner redesign of /join merged by the lead: web PR #29, backend PRs #124 (the craft, city and updates opt-in) and #125 (the ₦2,000 offer gives a year of verification). No date ("this October"), four cities plus online, ₦10,000 struck through beside ₦2,000, paid only, the owner's conference poster in the hero.
 - 12 Oct 2026 · JOIN-02 · Owner redesign of /join (website `wmt/JOIN-V2`, backend `wmt/JOIN-V2` with migration `20261021240000_waitlist_craft_city_updates`; Sonnet builder; dark only): one page from the owner's example, no date ("this October"), four cities plus Online in place of the countdown, no free route, ₦10,000 struck through beside the API's fee, a form with craft, city and an updates box, a share action on the success screen; the backend stores the three new fields (additive, protected suite 253 of 253). "Verified for a full year" replaces the 10 Oct no-plan-length rule (R-48 needs a 12 Oct line; `tier_days` is still 30). The hero picture slot is empty until the owner's image arrives.
 - 12 Oct 2026 · JOIN-02 · Owner fix (website `wmt/WEB-LANDING` `744b4ac`; Sonnet builder): wawuafrica.com shows its landing page in join-only mode; the sign-up buttons go to /join, nothing on it leads into a closed page; full mode is unchanged (0 pixels differ from main with animations stopped); every other closed path still answers 307 to /join.
@@ -188,4 +189,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · FIX-32 · Verifier report (mobile `wmt/FIX-32` `0664baa`, main `5b9851b` merged; status `building`, one defect): the causes are real and the fixes hold (Explore, MeScreen and the host skeleton under a 1.3 s stall; LegalChat at 9 delay seeds; RoomScreen at 00:05 and 00:16:30; note 37 mutant killed by exactly the two new tests; 60 of 60 repeat runs; full check EXIT 0 twice, 152 suites 2756 tests). Defect: the new MeScreen D2 test passes without drawing the failed refresh, so a mutant the old test kills survives it (add a clock advance after the `isFetching` wait). Notes: the host skeleton failure under a stall is intermittent, LegalChat old seed 4 did not fail, a bare await in the fake-clock files is a trap only under the delay harness.
 - 11 Oct 2026 · FIX-32 · Builder report (status verifying; mobile `wmt/FIX-32`, main `610cc57` merged; tests only, six test files): a stalled worker spent the one second a `findBy` has for two answers in a row (reproduced with a thread-blocking stall: 8 Explore Categories tests and 4 MeScreen tests fail before, none after), so Explore and MeScreen run their waits on the fake clock; the host form's skeleton is asserted while the answers are held; LegalChat's three racing tests were victims of two earlier tests that ended with a message still on its way (43 of 43 at 13 delay seeds); RoomScreen pins the date (INBOX-05 defect 38); a refused next page of suggestions is asked for once (note 37, mutant Dc killed by both new tests); hostScreens E13 to E15 recorded as load only. Full check EXIT 0 (152 suites, 2756 tests).
 - 11 Oct 2026 · JOIN-03 · Round 5 merged by the lead: WAWU ID PR #12 (`bda1aa6`) and mobile main. A closed account gets no working refresh; the anonymise, sign-up and confirm take one lock order; a losing confirm writes nothing back. D12, N30, N31 and a test gap are recorded for a later round.
-- 11 Oct 2026 · NUV-05 · Merged by the lead: backend PR #120 (`51b02c5`) and mobile main. Payments, releases and refunds move as Nuvion book transfers, logged before they leave and never sent twice. Follow-ups N1 to N3 and N6; decision 6 is the owner's.

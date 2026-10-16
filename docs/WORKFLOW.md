@@ -102,6 +102,44 @@ Status values in a task file, in order: `todo`, `building`, `verifying`,
 `review`, `done`. A builder starts a task only when every `depends_on` task is
 `review` or `done` (built and verified; the owner's sign-off never blocks the next task).
 
+### Severity, sweeps and task files (15 Oct 2026)
+
+Owner, 15 Oct 2026, after measuring agent spend: task files had grown past
+50,000 tokens because every round appended its record and every later session
+read all of it, and rounds 3 to 6 mostly fixed low findings. Where this and
+the fix loop in step 5 disagree, this wins.
+
+- **A verdict is `merge` when nothing is medium or worse.** A verifier grades
+  every finding blocker, high, medium or low. Blocker, high and medium get a
+  fix round. Lows do not: they go to the area's sweep task,
+  `tasks/SWEEP-<AREA>.md`, one row each with the source task, the finding id,
+  one line and the report it came from. A sweep is a normal task, built and
+  verified like any other when the lead schedules it. A finding nobody graded
+  is written "unknown, ask the lead".
+- **A task file keeps a `## Current state` of at most 60 lines**, directly under
+  its title: status, branches and hashes per repo, what is merged and live,
+  open findings by severity (blocker, high, medium; lows are a pointer to the
+  sweep), and the next step. Whoever ends a round rewrites it.
+  `check_tasks.py` fails a `building`, `verifying` or `review` task with none,
+  and any Current state over 60 lines.
+- **History lives in `tasks/history/<ID>.md`.** Builder reports, verifier
+  reports and lead notes move there word for word, oldest first. The task file
+  keeps the brief, the Current state, a one-line link and the owner sign-off.
+  `python3 scripts/tasks/compact_task.py <ID>` does the move and keeps every
+  line. Read the task file, then only the last section of the history
+  (`grep -n '^## ' tasks/history/<ID>.md`, then that line range), never the
+  whole history. Done tasks are left as they are.
+- **Briefs carry a step budget** (about 150 steps for a build, 120 for a
+  check). Past it, an agent finishes what is open, pushes, and hands back with
+  a short note of what remains.
+- **Keep command output out of the context.** Every test run, build, check or
+  server log goes to a log file and only its end is printed
+  (`(cmd; echo "EXIT $?") > log 2>&1; tail -n 15 log`); failures are found with
+  `grep`. Never sit idle more than 4 minutes: after about 5 the whole context
+  is written again at the full rate.
+- **Run only the specs for the files you touched**, plus typecheck and lint.
+  The full suites run in CI on every task branch (OPS-CI, section 9).
+
 ### Shared files (fenced)
 
 A task never edits these unless the ticket says so. If it needs a change, it

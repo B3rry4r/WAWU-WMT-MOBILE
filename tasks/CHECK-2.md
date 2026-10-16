@@ -15,6 +15,13 @@ artboards: []
 ---
 # CHECK-2 · Checkpoint 2: money moves correctly
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs CHECK-1, NUV-10, BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, KYC-04, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17, TIER-04, TIER-05, POINTS-03, POINTS-04, REF-01, WEBPAY-04, WEBPAY-05 built first.
+- **History:** none yet. Reports go to tasks/history/CHECK-2.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md`

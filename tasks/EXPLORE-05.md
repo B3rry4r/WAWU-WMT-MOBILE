@@ -15,8 +15,12 @@ artboards: []
 ---
 # EXPLORE-05 · Search: communities, recent and popular searches, ticks
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs SCHOOLS-04 built first.
+- **History:** none yet. Reports go to tasks/history/EXPLORE-05.md.
 
 ## Read first
 

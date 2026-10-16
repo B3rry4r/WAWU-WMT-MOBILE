@@ -15,6 +15,13 @@ artboards: []
 ---
 # POINTS-03 · Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs POINTS-01, POINTS-02 built first.
+- **History:** none yet. Reports go to tasks/history/POINTS-03.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

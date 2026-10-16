@@ -15,6 +15,13 @@ artboards: [H2, H4, H5, H6, H35, M35]
 ---
 # SHARED-07 · The phone plays video and audio, reads PDFs in place, and shares the picture
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs SHARED-04 built first.
+- **History:** none yet. Reports go to tasks/history/SHARED-07.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files: this task IS the lead's shared-change pass, so it may edit the fenced files its rows name, and nothing else that is fenced)

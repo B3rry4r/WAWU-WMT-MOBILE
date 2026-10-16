@@ -15,6 +15,13 @@ artboards: [W24, W25]
 ---
 # WALLET-20 · Scan to pay and my QR code
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs WALLET-28, ME-01, HOME-01, WALLET-01 built first.
+- **History:** none yet. Reports go to tasks/history/WALLET-20.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

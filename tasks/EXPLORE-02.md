@@ -15,8 +15,12 @@ artboards: [X4, X5, X6, X7]
 ---
 # EXPLORE-02 · All creators and search
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs EXPLORE-03, EXPLORE-05, SETTINGS-04, UI-02, UI-03, INBOX-05 built first.
+- **History:** none yet. Reports go to tasks/history/EXPLORE-02.md.
 
 ## Read first
 

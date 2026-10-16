@@ -15,6 +15,13 @@ artboards: []
 ---
 # WALLET-23 · Account limits from Fintava
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-12 built first.
+- **History:** none yet. Reports go to tasks/history/WALLET-23.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

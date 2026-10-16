@@ -15,6 +15,13 @@ artboards: [A17, A18, A19, A20]
 ---
 # WALLET-19 · Account limits screens (A17 to A20)
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs WALLET-23, WALLET-24 built first.
+- **History:** none yet. Reports go to tasks/history/WALLET-19.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

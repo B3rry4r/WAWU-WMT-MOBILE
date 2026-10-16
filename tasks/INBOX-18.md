@@ -15,7 +15,12 @@ artboards: [I9, I10, I11]
 ---
 # INBOX-18 · Answer paid questions (creator)
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs INBOX-04, INBOX-08, INBOX-12, INBOX-17, WALLET-16, UI-02, ME-14, INBOX-19 built first.
+- **History:** none yet. Reports go to tasks/history/INBOX-18.md.
 
 ## Read first
 

@@ -15,7 +15,12 @@ artboards: [I12, I13, I14, I15]
 ---
 # INBOX-19 · Chat and send money in a chat
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-06, WALLET-07, WALLET-02, UI-02, UI-03, INBOX-04 built first.
+- **History:** none yet. Reports go to tasks/history/INBOX-19.md.
 
 ## Read first
 

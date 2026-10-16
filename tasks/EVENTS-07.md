@@ -15,7 +15,12 @@ artboards: []
 ---
 # EVENTS-07 · Buy event tickets from the wallet (backend)
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-18, MONEY-13, MONEY-16, WALLET-15, EVENTS-02 built first.
+- **History:** none yet. Reports go to tasks/history/EVENTS-07.md.
 
 ## Read first
 

@@ -15,7 +15,12 @@ artboards: [I30, I31, I37, I32, I33, I34]
 ---
 # INBOX-14 · Private communities, hosting, join requests
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04 built first.
+- **History:** none yet. Reports go to tasks/history/INBOX-14.md.
 
 ## Read first
 

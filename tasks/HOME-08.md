@@ -15,8 +15,12 @@ artboards: [H24, H25]
 ---
 # HOME-08 · Content detail: free video and course layouts
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs HOME-03, UI-02, HOME-13, HOME-12 built first.
+- **History:** none yet. Reports go to tasks/history/HOME-08.md.
 
 ## Read first
 

@@ -16,6 +16,8 @@ reading carefully. Now it is an exit code:
 - every artboard (except retired Shop) is in exactly one screen task
 - every launch task comes before CHECK-3 (full QA, nothing new is built), RELEASE-02 comes after it,
   and every after-launch task comes after RELEASE-02
+- a building, verifying or review task has a "## Current state" section, and any Current state is at
+  most 60 lines (docs/WORKFLOW.md section 4, 15 Oct rules); a link to history/<ID>.md must resolve
 """
 from __future__ import annotations
 
@@ -44,6 +46,7 @@ MIN_PASSES = {
     "web-port": ["V1", "V3", "V4", "V5", "V6", "V7", "V9"],
     "backend-refactor": ["V1", "V2", "V3", "V9"],
 }
+MAX_STATE_LINES = 60
 REQUIRED = ["id", "title", "owner", "area", "order", "priority", "repo", "type", "status",
             "depends_on", "decisions", "passes", "artboards"]
 
@@ -63,6 +66,19 @@ def parse(path: Path) -> dict:
             meta[k.strip()] = v.strip('"')
     meta["_body"] = text[m.end():]
     return meta
+
+
+def current_state(body: str) -> list[str] | None:
+    """The lines of the "## Current state" section (heading included), or None."""
+    lines = body.splitlines()
+    start = next((i for i, l in enumerate(lines) if re.match(r"## Current state\b", l)), None)
+    if start is None:
+        return None
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    section = lines[start:end]
+    while section and not section[-1].strip():
+        section.pop()
+    return section
 
 
 def main() -> int:
@@ -147,6 +163,15 @@ def main() -> int:
                 errors.append(f"{where}: decision {d} is not in DECISIONS.md")
         if "## Capability checks" not in t["_body"]:
             errors.append(f"{where}: no capability checks")
+        state = current_state(t["_body"])
+        if state is None and t["status"] in ("building", "verifying", "review"):
+            errors.append(f"{where}: status {t['status']} but no '## Current state' section (docs/WORKFLOW.md section 4)")
+        if state is not None and len(state) > MAX_STATE_LINES:
+            errors.append(f"{where}: Current state is {len(state)} lines; the limit is {MAX_STATE_LINES}. "
+                          f"Move detail to tasks/history/{tid}.md")
+        for target in re.findall(r"\]\(history/([A-Za-z0-9._-]+\.md)\)", t["_body"]):
+            if not (TASKS / "history" / target).is_file():
+                errors.append(f"{where}: links to history/{target}, which does not exist")
 
     for a in sorted(inventory):
         if not built(a):

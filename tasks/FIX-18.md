@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-18 · Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs FIX-08 built first.
+- **History:** none yet. Reports go to tasks/history/FIX-18.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files)

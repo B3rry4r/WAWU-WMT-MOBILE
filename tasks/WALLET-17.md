@@ -15,6 +15,13 @@ artboards: []
 ---
 # WALLET-17 · Hosts receive their share: community credits and event tickets
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-18, WALLET-16, EVENTS-07, INBOX-16 built first.
+- **History:** none yet. Reports go to tasks/history/WALLET-17.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

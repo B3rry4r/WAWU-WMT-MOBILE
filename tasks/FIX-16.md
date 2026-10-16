@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-16 · The dashboard and the web catch up with admin takedowns
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it. It needs FIX-06 built first.
+- **History:** none yet. Reports go to tasks/history/FIX-16.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

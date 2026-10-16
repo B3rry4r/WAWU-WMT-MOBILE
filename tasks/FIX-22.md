@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-22 · A profiling turn asks the model for one JSON object
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below when the lead schedules it.
+- **History:** none yet. Reports go to tasks/history/FIX-22.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files: this task IS the lead's shared-change pass, so it may edit the fenced files its rows name, and nothing else that is fenced)
