@@ -7,7 +7,7 @@ order: 175
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [MONEY-06, MONEY-11]
 decisions: [R-17, R-11, R-19]
 passes: [V1, V2, V3, V4, V9]
@@ -17,10 +17,21 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/SETTINGS-06.md.
+As of 16 Oct 2026, builder round 1 done.
+- **Status:** verifying. Backend branch `wmt/SETTINGS-06` (the code), mobile branch `wmt/SETTINGS-06` (this file, SHARED-CHANGES, BACKEND_GAPS). No mobile `src/` change: the delete-account screen is another task.
+- **Built (backend):**
+  - `DELETE /account` refuses with `409 account_deletion_blocked` (`reason.blockers`, `balanceKobo` from the provider, `openHolds`, `waitingEarnings`) while the wallet holds money, a hold is open, earnings wait, a payment is unsettled, a cash-out holds points or the wallet is opening. `503 provider_unreachable` when the balance cannot be read, never a guess.
+  - Otherwise it freezes the wallet through the provider seam (new optional `freezeWallet`/`unfreezeWallet`; Fintava adapter), hides the content piece by piece, stops push, answers a date 30 days out, and tells WAWU ID. Asking again keeps the date.
+  - `POST /account/cancel-deletion` (the person's own token) unfreezes, restores exactly the hidden pieces, resumes push; idempotent (`cancelled: false` with nothing scheduled); a provider failure changes nothing.
+  - Hourly sweep `account-deletion-purge` after the 30 days: re-checks the money (kept, with `purgeBlockedBy`, if any), releases held points, `AccountPurgeService.purge` (points first), `finalizeAccountDeletion` at WAWU ID, marks `purged`.
+- **Migration:** `20261022050000_account_deletion` (additive: `AccountDeletion`, `AccountDeletionContent`), with `rollback.sql`. Data-map rows, export-map exclusion, contract regenerated, CONVENTIONS section 22.
+- **Shared changes filed:** SHARED-CHANGES SETTINGS-06 #1 (schema) and #2 (contract). BACKEND_GAPS G-10 updated.
+- **Open for the lead / next tasks:**
+  - SETTINGS-08 (WAWU ID): call `POST /account/cancel-deletion` with the person's new token on sign-in; its 30-day clock should equal the Hub's `purgeAfter`; its anonymize route should answer ok when already anonymised (the Hub asks it at the end of the 30 days).
+  - Under Nuvion nothing is frozen (no freeze method yet); the up-front checks and the final re-check are the guard.
+  - Money that becomes due during the window (a hold waiting on the frozen wallet) keeps the final purge back until an operator looks (`purgeBlockedBy`).
+  - The old `account.contract.spec.ts` asserted 48 hours; it now asserts 30 days (R-17) and clears its own `AccountDeletion` row per run.
+- **Records:** this round's report is in tasks/history/SETTINGS-06.md.
 
 ## Read first
 
@@ -52,13 +63,9 @@ POINTS-01 (the points ledger) adds `purgePersonPoints` (`src/points/points-purge
 - [ ] A user with money in their wallet, an open hold or waiting earnings is told to move it first.
 - [ ] A user who cancels within 30 days gets their wallet unfrozen and their content back.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SETTINGS-06.md](history/SETTINGS-06.md).
 
 ## Owner sign-off
 
