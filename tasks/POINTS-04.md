@@ -7,7 +7,7 @@ order: 214
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [POINTS-01, TIER-01, MONEY-18]
 decisions: [R-43, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,12 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:35) and the branch.
-- **Status:** verifying. Built; the verifier report is empty. This file on main still says todo.
-- **Branches:** mobile `wmt/POINTS-04` 0dd2f63. Backend `wmt/POINTS-04` 1bb872f (migration `20261021220000_points_cash_out`; G-740 to G-745).
-- **Merged and live:** nothing of this task. **Open findings:** none yet.
-- **Next:** a verifier session.
-- **Records:** on the branch, `wmt/POINTS-04`, in tasks/POINTS-04.md there (14 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py POINTS-04`; the history goes to tasks/history/POINTS-04.md.
+live: convert points to cash, backend PR #137 (3797fb2), batch 2 with WALLET-10 and FIX-20.
 
 ## Read first
 
@@ -60,8 +55,8 @@ From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the ver
 - [ ] A person without a wallet gets `no_wallet` and keeps their points.
 - [ ] The cash leaves WAWU's operational account, and the ledger shows it as WAWU's movement.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-04.md](history/POINTS-04.md).
 
 ## Owner sign-off
