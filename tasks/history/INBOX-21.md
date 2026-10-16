@@ -24,3 +24,17 @@ Moved out of [tasks/INBOX-21.md](../INBOX-21.md) word for word, oldest first. Th
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+
+## Builder report, round 2
+
+Mobile `wmt/INBOX-21`, continued from a0bf293 (main 3117807, nothing to merge). Mobile only.
+- **High, fixed.** Before: `signOutFlow.ts` sent the WAWU ID logout and `forgetPush()` together, the logout ended the refresh token, and a removal needing a refresh got 401, so the Hub kept the phone. After: `forgetPush` first, then the logout, inside the one 3 s wait; the API client's own 401 refresh runs while the refresh token is still alive. The logout names the refresh token the session holds at that moment (a refresh hands out a new one). If the removal has not finished at 3 s the phone signs out and the logout is still sent, once.
+- **Test first.** New `src/features/push/__tests__/signOutPush.test.ts`: a fake Hub that expires access tokens and a fake WAWU ID that rotates and ends refresh tokens (the verifier's ATTACK 1, 4 and 5 and their controls). Red on a0bf293's code: 6 of 7 failed (log `inbox-21-b/logs/red-final.log`); green after: 7 of 7. The verifier's own attack files also pass (8 of 8).
+- **Low 2, fixed.** `forgetPush(waitMs)` waits for an in-flight registration at most `SERVER_WAIT_MS`, then cancels it: it sends nothing it has not sent, and if its POST lands after the sign-out it removes the phone again with the access token it was started with. A run started in an ended session is never shared with the next person (`syncPush` starts a new one), and if a late landing finds another person signed in, the phone is registered to them again. A removal that outlives the sign-out never uses the next person's session.
+- **Low 3, fixed.** `routes.ts` no longer lists `community_join_declined` (the Hub's push names no target); `routes.test.ts` uses the data the Hub sends for approved and declined; Current state corrected.
+- **Low 4, fixed.** SHARED-CHANGES INBOX-21 #1 now lists what `_layout.tsx` gains: one import, three comment lines, one constant, one element.
+- **Sweep, no code.** A forced session end leaves the phone registered (Hub fix) in `SWEEP-INBOX`; the web export's expo-notifications warning in `SWEEP-APP`.
+- **Not changed:** a removal that cannot be sent in 3 s, or sent with no connection, still leaves the phone registered (G-268, as before).
+- **Checks.** `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks; echo "EXIT $?")`: EXIT 0 (159 suites, 2880 tests; gates 0 fail; tasks 283). `check_tasks.py --write` run.
+- **NOT RUN:** V10 (a real phone).
+
