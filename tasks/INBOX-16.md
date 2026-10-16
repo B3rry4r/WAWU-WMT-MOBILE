@@ -7,7 +7,7 @@ order: 102
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15]
 decisions: [R-5, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,9 +18,14 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): MONEY-16.
-- **History:** none yet. Reports go to tasks/history/INBOX-16.md.
+- **Status:** verifying. Built by a Sonnet builder. Backend `wmt/INBOX-16` `f92208d`, started from `wmt/FIX-42` `73f4eb5` (batches 3 and 4, BILLS-04, FIX-40, FIX-42); mobile `wmt/INBOX-16` from `wmt/FIX-42` `1ca79a3` (docs only). Migration `20261024000000_credit_purchase_wallet_payment` (one nullable unique column, rollback in SHARED-CHANGES INBOX-16 #1). wawu-id untouched.
+- **What is built** (backend `src/credit-purchase/wallet/`): the payment kind `credit_pack` is registered with MONEY-17's pay from wallet (target: `starter`, `popular` or `pro`), and four new routes serve the buy sheet: `GET /credits/packs` (the server's table: `pack`, `credits`, `priceKobo`, `badge`; needs no wallet), `GET /credits/purchase/wallet/quote?pack=` (I28: 120 credits, price ₦1,000 + Fintava's ₦23.25 = ₦1,023.25 from the fee settings), `POST /credits/purchase/wallet` (PIN and `Idempotency-Key`; answers `paid`, `pending` or `failed` with `creditBalance` as a count) and `GET /credits/purchase/wallet/{id}` (what the app polls after `pending`, and I29 reads).
+- **How it works:** the payment is WAWU's own sale into WAWU's account (WALLET.md: `credit_pack`, not held: no payee, so nothing is held or released; the 85/15 split is applied per spent credit against the lot, as before). When the payment is confirmed, `onCompleted` writes ONE `CreditPurchase` row (keyed by the payment's id), the balance and the cost-basis `CreditLot` in one database transaction that calls no provider; a repeat finds the row and writes nothing. Credits that cannot be written leave the payment paid and not delivered (`pending`, "we're finishing it"), nothing half-written, and the sweep delivers them once. No refund path: a pack cannot fail to grant; a delivery that cannot finish goes to delivery review with the money safe in WAWU's account (MONEY-17).
+- **Unchanged:** the web's `POST /credits/purchase` and `/verify` (same pack table, now in `credit-packs.ts`), the lot, FIFO and the 85/15 split, the admin finance credits stream (wallet purchases appear with `txRef` `wallet:<payment id>`).
+- **Next:** a verifier. Passes V1, V2, V3, V4, V6, V7, V8, V9. NOT RUN: a payment against the Fintava sandbox (no key on this machine; everything ran against the repo's Fintava double and the Nuvion stand-in, whose answers are the sandbox's recorded bodies); the 20-parallel latency measurement of the common rules (this task holds no transaction or connection across a provider call: the only transaction is the delivery's, three writes and no network).
+- **Open for the lead or owner:** none. `credits-state.contract.spec.ts` logs in at `localhost:4001` (hard-coded), so it cannot run against a stack on other ports; it passes on CI.
+- **Fences touched:** SHARED-CHANGES INBOX-16 #1 (schema and migration, `src/app.module.ts`, `contract/openapi.json`, two route inventories), #2 (pack table moved, not fenced), #3 (the app's contract copy, open for INBOX-13).
+- **History:** the builder report is in tasks/history/INBOX-16.md.
 
 ## Read first
 
@@ -45,13 +50,9 @@ Credits purchase pays from the wallet (I28); credit lots and the 85/15 split unc
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-16.md](history/INBOX-16.md).
 
 ## Owner sign-off
 
