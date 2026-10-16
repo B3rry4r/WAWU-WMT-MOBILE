@@ -7,7 +7,7 @@ order: 224
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [NUV-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -17,14 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** merging (lead). Verified once: nothing a refund, dispute or reconciliation reads is deleted (the readers were scanned over main and every open branch); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on POINTS-04 (this branch contains `wmt/POINTS-04`, which contains WALLET-10, WALLET-07, NUV-06 and MONEY-16); backend main `18ac5f9` is in it.
-- **Branches:** mobile `wmt/FIX-20` (this branch; POINTS-04's mobile head merged, API types regenerated from backend `wmt/FIX-20`; the task adds no route, so the contract is POINTS-04's). Backend `wmt/FIX-20` (POINTS-04 merged; migration renamed to `20261021320000_webhook_body_retention`, contents unchanged). No PRs yet.
-- **Merged and live:** nothing of this task.
-- **Conventions:** the backend section for this task stays number 21 in `docs/contract/CONVENTIONS.md` (19 WALLET-07, 20 POINTS-04, 22 MONEY-16); the "section 21" comments in `account-data-map.ts` and `data-export-sections.ts` and the README line are unchanged.
-- **Open findings:** blocker 0, high 0, medium 0. The lows (section 21's "disagreement" wording against the code marking those deliveries `processed`; `failed`, `unrecognised` and `pending` bodies kept for ever, G-750; DATA-INVENTORY rows I-092 and I-281 lack "cleared after 90 days") are in tasks/SWEEP-MONEY.md.
-- **Next:** the lead opens one backend pull request from this head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
-- **Records:** the round history is in tasks/history/FIX-20.md.
+live: provider webhook deliveries are not kept forever, backend PR #137 (3797fb2), batch 2 with WALLET-10 and POINTS-04.
 
 ## Read first
 

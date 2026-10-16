@@ -3,31 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 141 of 254.**
+**Launch tasks done: 149 of 254.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 131 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 3 | 0 | 0 | 0 |
-| review | 3 | 0 | 0 | 0 |
-| done | 102 | 27 | 11 | 5 |
+| todo | 129 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 0 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
+| done | 110 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
-- [MONEY-16](../tasks/MONEY-16.md) Nightly check against Fintava (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-- [NUV-06](../tasks/NUV-06.md) Send to a bank and pay out, with the account name check (You)
-
-## Being verified
-
-- [WALLET-10](../tasks/WALLET-10.md) Money in: bank transfers to the account (You)
-- [POINTS-04](../tasks/POINTS-04.md) Convert points to cash (You)
-- [FIX-20](../tasks/FIX-20.md) Provider webhook deliveries are not kept forever (You)
-
-## Being built (or fixing verifier findings)
-
-- [WALLET-07](../tasks/WALLET-07.md) Send money to a WAWU user (You)
 
 ## Done
 
@@ -118,6 +106,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
 - [MONEY-19](../tasks/MONEY-19.md) Not enough money, and still confirming (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
+- [MONEY-16](../tasks/MONEY-16.md) Nightly check against Fintava (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
@@ -128,6 +117,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
 - [WALLET-06](../tasks/WALLET-06.md) Wallet settings, change and reset the PIN (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
+- [WALLET-07](../tasks/WALLET-07.md) Send money to a WAWU user (You)
+- [WALLET-10](../tasks/WALLET-10.md) Money in: bank transfers to the account (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
 - [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
 - [WALLET-01](../tasks/WALLET-01.md) Wallet home: Naira account and its states (You)
@@ -147,6 +138,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
 - [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
+- [FIX-13](../tasks/FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in (You)
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
@@ -155,8 +147,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-03](../tasks/NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review (You)
 - [NUV-04](../tasks/NUV-04.md) The account number, adding money by bank transfer, and the balance (You)
 - [NUV-05](../tasks/NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account (You)
+- [NUV-06](../tasks/NUV-06.md) Send to a bank and pay out, with the account name check (You)
+- [TIER-02](../tasks/TIER-02.md) Publishing needs a tier: the gate and the product count (You)
 - [TIER-03](../tasks/TIER-03.md) Buy, renew or upgrade a tier from the wallet (You)
+- [POINTS-04](../tasks/POINTS-04.md) Convert points to cash (You)
 - [REF-01](../tasks/REF-01.md) Referral points (You)
+- [FIX-20](../tasks/FIX-20.md) Provider webhook deliveries are not kept forever (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
@@ -188,6 +184,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 16 Oct 2026 · MAIN-LIVE-1 · Record keeper (Sonnet agent; mobile `wmt/MAIN-LIVE-1`, from `wmt/FIX-20` `a770675` with `wmt/FIX-13` `7cf93ec`, `wmt/JOIN-03` `4338f99` and `wmt/TIER-02` `957901c` merged; contract and API types regenerated from backend main `b32f9c0`): marks done what is live: MONEY-16 (backend #133, WAWU ID #15), NUV-06 (#134), WALLET-07 (#135), WALLET-10, POINTS-04 and FIX-20 (#137), FIX-13 (WAWU ID #16), JOIN-03 (WAWU ID #17), TIER-02 (backend #122). WALLET-35, WALLET-16 and the batch 3 tasks are not marked. No app behaviour changed.
 - 11 Oct 2026 · FIX-20 · Builder report (status verifying; backend `wmt/FIX-20` `bb9bbd1`, migration `20261021230000`): a daily job at 02:40 clears the raw body and parsed copy of a finished Fintava or Nuvion delivery after 90 days (`WEBHOOK_RETENTION_DAYS`, PROVISIONAL); pending, failed and unrecognised deliveries keep their body, and the row keeps its hash and ids, so a delivery sent again is still `200 duplicate` (both providers, through the routes and on two built Hubs). Batches of 200 under `SKIP LOCKED`, safe on two servers at once and while deliveries arrive. Rule in CONVENTIONS section 21, the purge map and the export list. Protected 253/253, the same 16 gate FAIL lines as main, nine mutants killed; G-750 to G-752 filed.
 - 11 Oct 2026 · POINTS-04 · Builder report (Sonnet agent; status verifying; backend `wmt/POINTS-04` `1bb872f` on main `2a4b9a4`, migration `20261021220000_points_cash_out`; mobile `wmt/POINTS-04`): a person turns points into wallet cash. `GET /points/convert/quote`, `POST /points/convert` (points, PIN, Idempotency-Key) and `GET /points/convert/{id}`; the refusals (dollar-billed, under the minimum, over the balance, over the cap) come before the PIN; the points are held, WAWU's operational account pays through the seam with WAWU paying the provider's charge, and the points are committed only when the provider confirms; a move proved not made gives the points back, an unknown outcome is asked about by reference and never sent twice, and 72 hours without an answer goes to a person with the points held. 74 specs on the Fintava and Nuvion stand-ins and the real Nuvion adapter, 50 checks on two built Hubs (a kill between each step), 20 of 20 mutants killed, protected suite 253/253, gates the same 16 FAIL lines, contract equal twice, test:netns 16 rows. NOT RUN: the real sandboxes, `npm run api` from main, and the owner's 5 Oct brief file (not in the scratchpad). Gaps G-740 to G-745.
 - 11 Oct 2026 · WALLET-10 · Builder report (status verifying; backend `wmt/WALLET-10` `5e57a09`, migration `20261021210000_money_in_notices`, mobile `wmt/WALLET-10`): a bank transfer into a person's account is told once, from its completed ledger row (never the webhook event), as one `money_in` notification the existing push sender sends, honouring Z3 "Money in"; the notification and a mark (primary key the ledger row) are written in one transaction, so a replay, an out-of-order delivery, two Hubs and a stop between the row and the push end in one notification; switch off writes only the mark. Both providers' rows (Fintava's `account_funded`, NUV-04's Nuvion inflow). Two built Hubs 31 of 31, a Nuvion Hub 11 of 11, 3 kill points; protected 253 of 253; gates the same 16 FAIL lines. Gaps G-730 to G-737; decisions 1 to 10 are the owner's to override.
@@ -202,4 +199,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · MONEY-16 · Built (verifying): the nightly check against Fintava. Once a night it compares every wallet's debits and balance, WAWU's account, the held money and WAWU's charge on each send with the ledger, lists what a person must look at, and has the report emailed through WAWU ID (the route is G-680). One run a night on any number of Hub processes; a night is never reported as clean unless every comparison was made. Backend `wmt/MONEY-16` `b96f5b9`, one migration, contract unchanged.
 - 16 Oct 2026 · WALLET-04 · Builder report, round 2 (Sonnet builder; mobile `wmt/WALLET-04`, main `2f0ca33` merged; no backend change, migration `none (mobile only)`; status verifying): D1 fixed. A grouped row on W1 now opens the group's list (`/transactions?group=<key>`, as W26 does) instead of the newest unlock's receipt: `recentRow` carries `group.key` and `RecentTransactions` calls a new `onOpenGroup`. Two tests that failed before the fix (`walletHomeModel`, `historyFlow` on the real router) pass; pictures of W1 with a grouped row and the list it opens, light and dark, are in the builder report. Lows D2 to D4 stay in tasks/SWEEP-MONEY.md.
 - 11 Oct 2026 · WALLET-04 · Verifier report (Sonnet verifier, branch 67865ed, Hub from backend main 51b02c5, own Metro cache, bundle only :6431 and :6432; status building): live checks CONFIRMED (See all and rows, search and its wait, each chip, three pages under Lagos days in three device zones, the month's In and Out against SQL, W27 for 11 kinds of row with the debit's parts, Share receipt text, W28 to S2, the states by their real causes, light and dark beside each artboard); one defect, D1 (a grouped row on W1 opens one unlock's receipt, ₦2,500.00, not the group's ₦7,500.00), three low ones (surviving mutants M09, M13, M14; W27's Account line cuts the last four digits); 30 mutants, 27 killed; full check on main 15a8c2c merged in, EXIT 0 (155 suites, 2,830 tests, gates 0 fail / 5 warn on 581 files). Owner item: the "Fintava's charge" label (G-721).
-- 11 Oct 2026 · WALLET-04 · Builder report (Sonnet builder; mobile `wmt/WALLET-04` code `fe035aa`, backend unchanged and no contract change, status verifying): the Wallet tab's See all opens W26 and a recent row opens W27 (a grouped row opens the unlocks it stands for); W26 searches and filters through the Hub (`q`, `filter`), pages, groups rows under Lagos days and shows the Hub's In and Out for the month; W28 draws the empty chip with Pay a bill; W27 shows the receipt, a debit's parts (₦25,000.00 + ₦40.00 + ₦25.00 = ₦25,065.00), copies the reference and shares its text through the phone's share sheet. Live seam on wawu-id's real login, the Hub built from backend main f2b6bf6 with 49 seeded ledger rows, a Fintava balance stand-in and a web export at 390 px light and dark beside each artboard; every state entered by its real cause. Defaults: the list is the whole history, so W28 says "yet" where the canvas says "in September"; a person's name stands where the canvas draws "@handle" (G-720); the fee labels follow the brief (G-721). One edit to WALLET-01's `WalletScreen.test.tsx`, which asserted the See all and row taps this task builds. NOT RUN: a phone's share sheet and pull, the real wallet provider. SHARED-CHANGES WALLET-04 #1 and R1.

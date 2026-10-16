@@ -7,7 +7,7 @@ order: 137
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: done
 depends_on: [MONEY-17, WALLET-15, SETTINGS-04]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,14 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** merging (lead). Round 1 verified: the money path held; no way to move money twice, lose it or send it to the wrong person. By the 15 Oct rule the verdict is merge. Stacked on NUV-06 (this branch contains `wmt/NUV-06`, which contains `wmt/MONEY-16`).
-- **Branches:** mobile `wmt/WALLET-07` (this branch; NUV-06's mobile head merged, main `3117807` with it, API types regenerated from backend `wmt/WALLET-07`). Backend `wmt/WALLET-07` `75c862d` (NUV-06 `4fc31b6` merged; migration renamed to `20261021290000_wallet_transfers`, contents unchanged). No PRs yet.
-- **Merged and live:** nothing of this task.
-- **Open findings:** blocker 0, high 0, medium 0. D1, D2 and D3 (all low) and the PushStoppedAccount item are in tasks/SWEEP-MONEY.md.
-  - Known limits: the Nuvion book transfer has no field for WAWU's fee (N10), so a send completes at the quote unless the owner sets Nuvion's fee; a lost answer completes at the quote whatever the provider took (G-717).
-- **Next:** the lead merges backend MONEY-16, NUV-06, then this one. The backend CONVENTIONS section for this task is 19; TIER-02 and WALLET-16 claim 19 on their open branches (MONEY-16 took 22), so whichever merges second renumbers.
-- **Records:** the round history is in tasks/history/WALLET-07.md.
+live: send money to a WAWU user, backend PR #135 (43a923a), deploy run 38909832332.
 
 ## Lead note (11 Oct 2026): from MONEY-19's verification
 

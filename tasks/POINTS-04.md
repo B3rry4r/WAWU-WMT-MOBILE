@@ -7,7 +7,7 @@ order: 214
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: done
 depends_on: [POINTS-01, TIER-01, MONEY-18]
 decisions: [R-43, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,14 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** merging (lead). Verified once: stand-in attacks held (12 parallel requests on one key make one conversion, no way to convert twice or past the balance); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on WALLET-10 (this branch contains `wmt/WALLET-10`, which contains WALLET-07, NUV-06 and MONEY-16); backend main `18ac5f9` is in it.
-- **Branches:** mobile `wmt/POINTS-04` (this branch; WALLET-10's mobile head merged, API types regenerated from backend `wmt/POINTS-04`). Backend `wmt/POINTS-04` (WALLET-10 merged; migration renamed to `20261021310000_points_cash_out`, contents unchanged). No PRs yet.
-- **Merged and live:** nothing of this task.
-- **Conventions:** the backend section for this task is number 20 in `docs/contract/CONVENTIONS.md` (19 is WALLET-07, 21 is FIX-20, 22 is MONEY-16).
-- **Open findings:** blocker 0, high 0, medium 0. The lows (a 500 after the conversion exists, wording "payment" and "Your money is safe") are in tasks/SWEEP-MONEY.md. Operational edges on record: G-742 (no tool to clear a conversion in review), G-745 (an ended lot loses released points). No screen calls the routes yet (G-740).
-- **Next:** the lead opens one backend pull request from the FIX-20 head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
-- **Records:** the round history is in tasks/history/POINTS-04.md.
+live: convert points to cash, backend PR #137 (3797fb2), batch 2 with WALLET-10 and FIX-20.
 
 ## Read first
 

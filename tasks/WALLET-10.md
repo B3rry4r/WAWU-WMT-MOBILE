@@ -7,7 +7,7 @@ order: 150
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: done
 depends_on: [MONEY-07, MONEY-10, MONEY-12, INBOX-03, SETTINGS-07]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,13 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** merging (lead). Verified once: the money path held (49 live attacks, 0 failed); by the 15 Oct rule the verdict is merge, nothing medium or worse. Stacked on WALLET-07 (this branch contains `wmt/WALLET-07`, which contains NUV-06 and MONEY-16); backend main `18ac5f9` is merged in.
-- **Branches:** mobile `wmt/WALLET-10` (this branch; WALLET-07's mobile head merged, API types regenerated from backend `wmt/WALLET-10`). Backend `wmt/WALLET-10` (main `18ac5f9` merged; migration renamed to `20261021300000_money_in_notices`, contents unchanged). No PRs yet.
-- **Merged and live:** nothing of this task.
-- **Open findings:** blocker 0, high 0, medium 0. The lows (plain `CREATE INDEX` blocks writes while it builds; the ledger fold does not carry the mark, G-734; a re-signed delivery flips a completed row to pending, MONEY-10) are in tasks/SWEEP-MONEY.md. G-732 (transfers, earnings and refunds tell nobody) is a lead ruling on record, not a defect.
-- **Next:** the lead opens one backend pull request from the FIX-20 head (WALLET-10, POINTS-04 and FIX-20 stacked) for the owner to merge, then mobile sign-off.
-- **Records:** the round history is in tasks/history/WALLET-10.md.
+live: money in by bank transfer, backend PR #137 (3797fb2), batch 2 with POINTS-04 and FIX-20.
 
 ## Read first
 

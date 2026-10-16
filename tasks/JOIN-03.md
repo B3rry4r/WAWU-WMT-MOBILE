@@ -7,13 +7,17 @@ order: 243
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: money-path
-status: review
+status: done
 depends_on: [JOIN-01, TIER-01]
 decisions: [R-48, R-43, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # JOIN-03 · Event registration: claim the paid plan in the app with the access code
+
+## Current state
+
+live: claim the paid plan in the app with the access code, WAWU ID PR #17 (round 6), deploy run 38922443853.
 
 ## Read first
 
