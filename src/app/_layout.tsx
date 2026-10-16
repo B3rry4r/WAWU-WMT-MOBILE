@@ -3,15 +3,37 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * True once the saved Theme has been applied. Nothing is drawn before then, so the first screen
+ * is already in the chosen theme. An unreadable phone store counts as nothing saved (it follows
+ * the phone), so the app still opens.
+ */
+function useStoredTheme(): boolean {
+  const [applied, setApplied] = useState(false);
+  useEffect(() => {
+    let live = true;
+    applyStoredTheme()
+      .catch(() => undefined)
+      .then(() => {
+        if (live) setApplied(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return applied;
+}
 
 /**
  * Root of the route graph. Fenced: only a flow-pass task edits routing
@@ -26,6 +48,15 @@ SplashScreen.preventAutoHideAsync();
  * left opens that step before the tabs; the server's progress decides (AUTH-04,
  * SHARED-CHANGES AUTH-04 #2). Categories (EXPLORE-01 #2) and the featured works
  * screens (ME-11 #3) sit with the tabs: a signed-out visit to one never draws it.
+ * So do every other signed-in screen that is not a tab: Payout bank, Edit profile and Social
+ * links, the five steps of Open your wallet, and the five Settings screens (SHARED-05). The
+ * guard is the one place that sends a signed-out visitor to the welcome screen; those screens
+ * carry no sign-in check of their own. About, Terms and Privacy policy are public on purpose
+ * (the Terms must be readable before sign-up), so they sit outside every guard, after the
+ * signed-out set so that a cold start with nobody signed in still opens the welcome screen.
+ * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
+ * applied before the first screen is drawn, with the splash screen still up, so the next
+ * launch never shows the other theme first (SETTINGS-01 #3 (a)).
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
@@ -34,7 +65,8 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
-  const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+  const themed = useStoredTheme();
+  const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -63,6 +95,19 @@ export default function RootLayout() {
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />
           <Stack.Screen name="works/[wawuId]/[workId]" />
+          <Stack.Screen name="payout-account" />
+          <Stack.Screen name="edit-profile" />
+          <Stack.Screen name="social-links" />
+          <Stack.Screen name="open-wallet" />
+          <Stack.Screen name="open-wallet-details" />
+          <Stack.Screen name="open-wallet-selfie" />
+          <Stack.Screen name="open-wallet-account" />
+          <Stack.Screen name="open-wallet-pin" />
+          <Stack.Screen name="settings/index" />
+          <Stack.Screen name="settings/notifications" />
+          <Stack.Screen name="settings/privacy" />
+          <Stack.Screen name="settings/blocked" />
+          <Stack.Screen name="settings/password" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />
@@ -72,6 +117,9 @@ export default function RootLayout() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>
+        <Stack.Screen name="about" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy-policy" />
       </Stack>
     </QueryClientProvider>
   );
