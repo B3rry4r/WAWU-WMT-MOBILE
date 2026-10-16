@@ -9,7 +9,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 137 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| verifying | 2 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 101 | 27 | 11 | 5 |
 
@@ -20,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Being verified
 
 - [WALLET-04](../tasks/WALLET-04.md) Transaction history and detail (You)
+- [FIX-38](../tasks/FIX-38.md) The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random (You)
 
 ## Done
 
