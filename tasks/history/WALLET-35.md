@@ -1,0 +1,17 @@
+# WALLET-35 · round history
+
+Moved out of [tasks/WALLET-35.md](../WALLET-35.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Builder, 16 Oct 2026 (Sonnet). Branches: wawu-backend `wmt/WALLET-35` 91a0cbe, wawu-id `wmt/WALLET-35` 0e7da30, mobile `wmt/WALLET-35`.
+- **Files changed.** Backend: `src/money/statements/` (`statement-email.ts`, `statement-email.service.ts`, `statement-email.dto.ts`, `statement-email-view.type.ts`, the controller), `money-contract.ts` and `dto/money-enums.ts` (two codes), `money.module.ts`, `src/admin/notifications/email/email-provider.ts` (optional `attachments` on the relay and Resend transports), `mock-wawu-id/server.js` (`/internal/mail/send`, outbox, `emailVerified` on the seeded user), the contract, CONVENTIONS section 12, WALLET.md. wawu-id: `src/mail/` (DTO, config, relay service, mail service, `mail-relay-body.ts`), `src/main.ts`, the contract doc. App: `src/features/wallet/statements/`, `src/app/wallet-statement.tsx`, the W35 screen and route (row and toast), contract copy and generated types.
+- **Capability checks.** (1) W35 to W38: the Statements row opens `/wallet-statement` (`walletStatementsRow.test.tsx`, and driven in the web export). (2) Period, format, Send statement and the mail: backend `statement-email.contract.spec.ts` (16 tests, real tokens and database, a stand-in for WAWU ID's relay: the attachment is byte for byte `GET /money/statements`, rows at the first and last Lagos instants in, the instant before and after out); live through the stack, the mock WAWU ID's outbox showed 2 rows for 1 to 16 Oct and 3 for 1 Jul to 16 Oct. (3) Pictures, V5: 390 px, light and dark, beside the artboard renders (`scratchpad/w35/compare-w38-*.png`, `compare-w35-*.png`); the differences are decisions 1, 2 and 4 above. (4) Nothing literal: account number, dates, address and formats come from the API and the clock (`StatementScreen.test.tsx` uses made-up values). (5) States: loading, load error, no wallet, opening, no confirmed email, a send in flight, each refusal's own sentence, a lost answer repeating its key.
+- **Checks.** Backend: `tsc` 0, eslint 0 on every changed file, the new and touched specs (statement-email contract and units, money-contract, wallet-gate coverage and contract, money-moving coverage, statements) pass; gates 16 fail, the same 16 as main, none in these files. wawu-id: `tsc` 0, eslint 0, `src/mail` 43/43. App: typecheck 0, lint 0, the statement and W35 tests 23/23, gates 0 fail.
+- **Gaps and requests.** G-69 rewritten, G-486 added; SHARED-CHANGES WALLET-35 #1 to #3.
+- **Not done.** V10 (a device), a real mail provider (none on this machine), the stamped PDF (G-68). Mutation checks were not run on the new backend spec.
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
