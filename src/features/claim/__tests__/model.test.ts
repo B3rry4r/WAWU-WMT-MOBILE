@@ -16,6 +16,7 @@ const result = (over: Partial<ClaimResult> = {}, tier: Partial<ClaimResult['tier
     activeFrom: '2026-10-17T10:00:00.000Z',
     activeUntil: '2026-11-16T10:00:00.000Z',
     productsAllowed: 3,
+    productsUsed: 0,
     extraProducts: 0,
     pointsIncluded: 100,
     firstVoiceIntroIncluded: true,
