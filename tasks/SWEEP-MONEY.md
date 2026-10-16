@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 66, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 67, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -113,6 +113,7 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | WALLET-09 | R2-2 | Hub: `payouts_blocked` keeps `recordMayExist` true in the Fintava client while `wallet-transfer.service.ts` `afterRefusal` (NO_TRANSFER_REFUSALS) fails the send at once, so the flag is ignored for these kinds; safe only because of the sandbox evidence (G-767). The classifier's looseness is FIX-41 F1. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-09.md`, finding 2 (round 2) |
 | FIX-41 | F3 | Hub: `wallet-transfer.service.ts` `sweep()` (~line 850) runs `lookForLateSuccess` inside the `sweeping` flag, one send at a time, up to 50 per minute. No transaction, connection or lock is held, but 20 sends x 3 s kept the sweep busy 60.6 s, so the next cron tick's pending-send settlement is skipped meanwhile; with a hung provider (30 s check timeout) 50 sends is about 25 minutes. An unreachable provider also puts every send back to checks 0, so the same 50 oldest are tried first every minute for up to 48 h. Add a time budget per sweep, or run the failed-send lookups after the flag is released. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-41.md`, finding 1 |
 | FIX-41 | F4 | Hub: nothing outside the service reads `WalletTransfer.reviewSince` for a failed send, so 'put in front of a person' today is the log line, the discrepancy column and the nightly money check. A dashboard list for it is a later task. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-41.md`, finding 2 |
+| FIX-40 | F1 | Hub: `src/money/limits/account-limits.service.ts` `movedToday` (unchanged) still counts a refunded payment toward the provider's own daily limit on the account (by design: the debit counted at the provider), so a person near that limit still gets `limit_reached` after a failed bill. WAWU's own limits are fixed. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-40.md`, finding 1 |
 
 ## Builder report
 
