@@ -7,15 +7,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 138 | 0 | 0 | 0 |
+| todo | 137 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 0 | 0 | 0 | 0 |
+| verifying | 1 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 101 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+
+## Being verified
+
+- [ME-04](../tasks/ME-04.md) Create: pick a format, upload, preview (You)
 
 ## Done
 
@@ -175,6 +179,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 16 Oct 2026 · ME-04 · Create is built (Sonnet builder; mobile `wmt/ME-04`, backend `wmt/ME-04` 270e299): M19 Create with the uploads meter, M20 formats, M21 upload with real progress and M22 preview; the Create button for creator accounts on Home, Explore and Me; backend `GET /uploads/formats` and `format` on presign (additive). Status verifying.
 - 16 Oct 2026 · OPS-TASKS · Task files now open with a `## Current state` of 60 lines at most and keep their round history in `tasks/history/<ID>.md` (CHECK-1 went from 50,104 bytes to 3,074; `scripts/tasks/compact_task.py` does the move; its tests show no line is lost, and none was lost on the 16 branch task files it was tried on). Lows now go to seven sweep tasks (`tasks/SWEEP-MONEY`, `JOIN`, `INBOX`, `EVENTS`, `AUTH`, `WEB`, `APP`; 66 open rows), and a verdict is `merge` when nothing is medium or worse (`docs/WORKFLOW.md` section 4, owner 15 Oct 2026). `check_tasks.py` fails a building, verifying or review task with no Current state, a Current state over 60 lines, and a link to a history file that is not there. The files of the 14 tasks still in flight live on their branches; they get the same treatment when they next change or merge.
 - 12 Oct 2026 · JOIN-02 · Owner redesign of /join merged by the lead: web PR #29, backend PRs #124 (the craft, city and updates opt-in) and #125 (the ₦2,000 offer gives a year of verification). No date ("this October"), four cities plus online, ₦10,000 struck through beside ₦2,000, paid only, the owner's conference poster in the hero.
 - 12 Oct 2026 · JOIN-02 · Owner redesign of /join (website `wmt/JOIN-V2`, backend `wmt/JOIN-V2` with migration `20261021240000_waitlist_craft_city_updates`; Sonnet builder; dark only): one page from the owner's example, no date ("this October"), four cities plus Online in place of the countdown, no free route, ₦10,000 struck through beside the API's fee, a form with craft, city and an updates box, a share action on the success screen; the backend stores the three new fields (additive, protected suite 253 of 253). "Verified for a full year" replaces the 10 Oct no-plan-length rule (R-48 needs a 12 Oct line; `tier_days` is still 30). The hero picture slot is empty until the owner's image arrives.
@@ -189,4 +194,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · FIX-32 · Builder report, round 2 (status verifying; mobile `wmt/FIX-32`, main `39c472b` merged; tests only, two test files): the MeScreen D2 test now moves the test's clock after its cache wait, so it reads the screen after React has drawn the failed refresh (the verifier's mutant PM6, a failed refresh drawn as the page error, passed the round 1 test 30 of 30 and fails this one, unmutated 30 of 30); a two-line comment at the top of the fake-clock `beforeEach` in the Explore and Me files says every wait goes through `findBy`, `waitFor` or `settle` and a bare await of a fetch answer hangs behind a timer. Full check EXIT 0 (152 suites, 2756 tests); both files 10 of 10 alone.
 - 11 Oct 2026 · FIX-32 · Verifier report (mobile `wmt/FIX-32` `0664baa`, main `5b9851b` merged; status `building`, one defect): the causes are real and the fixes hold (Explore, MeScreen and the host skeleton under a 1.3 s stall; LegalChat at 9 delay seeds; RoomScreen at 00:05 and 00:16:30; note 37 mutant killed by exactly the two new tests; 60 of 60 repeat runs; full check EXIT 0 twice, 152 suites 2756 tests). Defect: the new MeScreen D2 test passes without drawing the failed refresh, so a mutant the old test kills survives it (add a clock advance after the `isFetching` wait). Notes: the host skeleton failure under a stall is intermittent, LegalChat old seed 4 did not fail, a bare await in the fake-clock files is a trap only under the delay harness.
 - 11 Oct 2026 · FIX-32 · Builder report (status verifying; mobile `wmt/FIX-32`, main `610cc57` merged; tests only, six test files): a stalled worker spent the one second a `findBy` has for two answers in a row (reproduced with a thread-blocking stall: 8 Explore Categories tests and 4 MeScreen tests fail before, none after), so Explore and MeScreen run their waits on the fake clock; the host form's skeleton is asserted while the answers are held; LegalChat's three racing tests were victims of two earlier tests that ended with a message still on its way (43 of 43 at 13 delay seeds); RoomScreen pins the date (INBOX-05 defect 38); a refused next page of suggestions is asked for once (note 37, mutant Dc killed by both new tests); hostScreens E13 to E15 recorded as load only. Full check EXIT 0 (152 suites, 2756 tests).
-- 11 Oct 2026 · JOIN-03 · Round 5 merged by the lead: WAWU ID PR #12 (`bda1aa6`) and mobile main. A closed account gets no working refresh; the anonymise, sign-up and confirm take one lock order; a losing confirm writes nothing back. D12, N30, N31 and a test gap are recorded for a later round.

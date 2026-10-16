@@ -15,6 +15,7 @@ export default function MeTab() {
       onEditProfile={() => router.push({ pathname: '/edit-profile', params: { from: 'me' } })}
       onOpenListings={() => router.push('/professional-listings')}
       onOpenSettings={() => router.push('/settings')}
+      onCreate={() => router.push('/create')}
       onAddWork={() => router.push('/add-work')}
       onOpenWork={(wawuId, workId) => router.push({ pathname: '/works/[wawuId]/[workId]', params: { wawuId, workId } })}
     />
