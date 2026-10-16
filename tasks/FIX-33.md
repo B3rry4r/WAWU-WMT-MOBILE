@@ -18,10 +18,11 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done; backend `wmt/FIX-33` (one spec file, no product code).
-- **Next:** a verifier checks the branch against the Capability checks below.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-33.md`): verdict merge, nothing medium or worse. Batch 4: first of the batch 4 stack (on `wmt/INBOX-21`, the batch 3 mobile head, with `wmt/MAIN-LIVE-1`); API types regenerated from backend `wmt/FIX-33` (c5414f9).
 - **Id and order:** the brief called this FIX-29, which is taken (merged: unbuilt entries). Orders 1 to 252 are all used and a launch task after CHECK-3 fails `npm run tasks`, so it is filed after-launch at order 284 (the way FIX-15 and FIX-28 are).
 - **History:** none yet.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: 4 (an empty CI-rerun commit on the backend branch, the identity-holds flake that FIX-34 fixes, the helper's per-run memory, a comment's wording). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
@@ -43,18 +44,9 @@ Every address the file draws goes through one helper, `freshAddress`, that remem
 - [ ] No assertion, limit, timing or range changed (`git diff` is one file: the helper, and the five generator lines).
 - [ ] Backend `tsc --noEmit` and eslint on the file exit 0; CI gates show the same FAIL lines as main.
 
-## Builder report
+## History
 
-Sonnet builder. Backend `wmt/FIX-33` `83d8db3` (the change) and `4e6c865` (an empty commit to run CI again), from main `18ac5f9`. One file, +31 -8 lines.
-- **Red:** on a scratch copy of the spec with `addr = () => "203.0.113.5"`, `-t "round 3"` gave 3 failed, 86 passed, each "expected 200 OK, got 429 Too Many Requests" (the 5th-try test, the held-BVN probes test and the canResubmit view test).
-- **Green:** `-t "round 3"` 20 runs in a row, all EXIT 0, 89 passed each; the whole file once, EXIT 0, 365 of 365 passed. Run on the local stack `fix_29` (database `fix_29_wawu_hub_test`), stopped after.
-- **Checks:** `tsc --noEmit` EXIT 0; eslint on the file EXIT 0 (after its own prettier fix); the gates give the same 18 FAIL lines on main and on the branch (`gates run: 1223 files scanned, 16 fail`).
-- **CI on `83d8db3`:** 7 of 9 green. Shard 2 failed on another flake in a file this task does not touch: `admin-identity-holds.contract.spec.ts` line 200 scans an audit row with `/\d{11}|bvn/i` and a random admin id ended in `f43762817252` (11 decimal digits in a row). About 1 run in 100 for that file; it needs its own fix (strip the ids before the scan). The failed job could not be rerun with the token, so `4e6c865` runs the checks again: the three suite shards, netns, contract, deploy-test-in-sync, protected routes and baseline all green; Executable gates red with the same FAIL lines as main.
-- **FIX-18 sweep row:** none exists on main (no sweep file names this flake), so there was no row to mark.
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-33.md](history/FIX-33.md).
 
 ## Owner sign-off
 
