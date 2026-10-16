@@ -19,7 +19,7 @@ artboards: [W7, W9, W10, W11, W12]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-06, WALLET-07, WALLET-08, WALLET-14, UI-02, UI-03 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-07.
 - **History:** none yet. Reports go to tasks/history/WALLET-02.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs NUV-04, WEBPAY-01 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): WEBPAY-01.
 - **History:** none yet. Reports go to tasks/history/WEBPAY-02.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: [I6, I7, I8]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs INBOX-10, INBOX-09, MONEY-03, MONEY-19, HOME-13, UI-02, WALLET-05 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-10, HOME-13, WALLET-05.
 - **History:** none yet. Reports go to tasks/history/INBOX-11.md.
 
 ## Read first

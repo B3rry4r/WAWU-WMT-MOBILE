@@ -19,7 +19,7 @@ artboards: [H14, H15, H16, H17, H18]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-15, UI-02, HOME-02 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): HOME-15.
 - **History:** none yet. Reports go to tasks/history/HOME-12.md.
 
 ## Read first

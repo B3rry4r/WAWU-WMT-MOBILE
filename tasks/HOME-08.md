@@ -19,7 +19,7 @@ artboards: [H24, H25]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs HOME-03, UI-02, HOME-13, HOME-12 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): HOME-03, HOME-13, HOME-12.
 - **History:** none yet. Reports go to tasks/history/HOME-08.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: [A11, A12, A13]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, ME-04, KYC-05, PROS-03 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-12, ME-04.
 - **History:** none yet. Reports go to tasks/history/AUTH-06.md.
 
 ## Read first

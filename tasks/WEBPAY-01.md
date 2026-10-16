@@ -24,7 +24,7 @@ As of 16 Oct 2026, from the branch. Web work is paused (R-49); the lead's log do
 - **Open findings:** blocker: D1 (the account's country is ignored: a person outside Nigeria is asked for BVN and NIN and wallet routes are called for them).
   - Called "should fix" by the verifier and not graded: D2 (errors not tied to their fields), D3 (targets under 44 px), D4 (words that do not fit), D5 (the page does not know NUV-02 round 3's answers; NUV-02 merged since), D8 (the CLAUDE.md wallet note dropped R-10). Unknown, ask the lead.
   - Notes D6, D7, D9 to D12 are in tasks/SWEEP-WEB.md.
-- **Next:** unknown, ask the lead (web is paused).
+- **Next:** parked while web work is paused (R-49). The next step is taken when the owner reopens web; D1 is the open blocker.
 - **Records:** on the branch, `wmt/WEBPAY-01`, in tasks/WEBPAY-01.md there (37 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WEBPAY-01`; the history goes to tasks/history/WEBPAY-01.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: [W41, W42, W43]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs WALLET-04, WALLET-18 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-04.
 - **History:** none yet. Reports go to tasks/history/WALLET-12.md.
 
 ## Read first

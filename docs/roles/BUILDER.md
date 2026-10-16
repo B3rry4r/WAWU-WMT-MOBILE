@@ -20,6 +20,8 @@ You build ONE task. Your prompt named it: `tasks/<ID>.md`.
 6. Pull main, then make a branch from it: `wmt/<ID>` in each repo you will change. Record the gate
    counts before you change anything (`npm run check` here; the backend's own
    checks there).
+7. Resuming a task branch: merge main first, then run
+   `python3 scripts/tasks/compact_task.py <ID>` before reading the task file.
 
 ## While building
 

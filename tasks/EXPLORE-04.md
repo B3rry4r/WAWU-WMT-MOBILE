@@ -19,7 +19,7 @@ artboards: [X8, X9, X10, X11, X12]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs EXPLORE-05, UI-02, INBOX-05 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): EXPLORE-05.
 - **History:** none yet. Reports go to tasks/history/EXPLORE-04.md.
 
 ## Read first

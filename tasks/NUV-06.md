@@ -19,10 +19,10 @@ artboards: []
 
 As of 16 Oct 2026, from the lead's log (12 Oct 17:25, nothing newer) and the branch.
 - **Status:** review on its branch (round 2 verified: no blocker, no defect above low). This file on main still says todo.
-- **Branches:** mobile `wmt/NUV-06` c7edcd8. Backend `wmt/NUV-06` d6a303a (migration `20261021170000_*`). No PR number in the log: unknown, ask the lead whether one is open.
+- **Branches:** mobile `wmt/NUV-06` c7edcd8. Backend `wmt/NUV-06` d6a303a (migration `20261021170000_*`). No PR is open (the lead, 16 Oct 2026).
 - **Merged and live:** nothing of this task. NUV-05, which it builds on, is live (backend 51b02c5).
 - **Open findings:** blocker 0, high 0, medium 0. Lows F1 to F4 are in tasks/SWEEP-MONEY.md.
-- **Next:** the lead merges it. Its migration stamp ties MONEY-16's `20261021170000`: pick the stamp after main's last folder at merge. Then WALLET-09 can start.
+- **Next:** round 2 is ready to merge when the lead resumes it (the lead, 16 Oct 2026). Its migration stamp ties MONEY-16's `20261021170000`: pick the stamp after main's last folder at merge. Then WALLET-09 can start.
 - **Records:** on the branch, `wmt/NUV-06`, in tasks/NUV-06.md there (79 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py NUV-06`; the history goes to tasks/history/NUV-06.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 36, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 37, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -47,21 +47,22 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 
 | Source task | Id | Finding | Verifier report |
 |---|---|---|---|
-| MONEY-16 | RF-1 | Any HTTP 200 from the mail route counts as mailed; require `emailed === true`. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-2 | `giveUp` misses a lease whose `leaseUntil` is already past. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-3 | A body key named `constructor` makes wawu-id answer 500. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-4 | A bare domain or phone number inside a sentence is not handled. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-5 | A newline in a logged value can forge a log line. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-6 | docs/LOG.md says G-680 for what was renumbered G-690. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| MONEY-16 | RF-7 | Test gaps M10, M13, M18, M32 and W16 (surviving mutants). | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 144 |
-| NUV-06 | F1 | The WALLET-09 lead note names the private `prepare`; callable are `forBeneficiary` and `forPayoutAccount`. The seam's `reconcileSend` needs a SHARED-CHANGES NUV-06 #2 row. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 248 |
-| NUV-06 | F2 | `nuvion-adapter.spec.ts` was edited (three methods added to its filled-by-a-task list) and no SHARED-CHANGES row says so. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 248 |
-| NUV-06 | F3 | A ledger row of another provider on the same reference waits forever here; NUV-05 stops for review. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 248 |
-| NUV-06 | F4 | The changed NUV-05 test can no longer tell `done` from `failed` for a bank-transfer stranger (mutant T04 survives). | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 248 |
+| MONEY-16 | RF-1 | Any HTTP 200 from the mail route counts as mailed; require `emailed === true`. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 181 |
+| MONEY-16 | RF-2 | `giveUp` misses a lease whose `leaseUntil` is already past. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 182 |
+| MONEY-16 | RF-3 | A body key named `constructor` makes wawu-id answer 500. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 183 |
+| MONEY-16 | RF-4 | A bare domain or phone number inside a sentence is not handled. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 184 |
+| MONEY-16 | RF-5 | A newline in a logged value can forge a log line. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 185 |
+| MONEY-16 | RF-6 | docs/LOG.md says G-680 for what was renumbered G-690. | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 186 |
+| MONEY-16 | RF-7 | Test gaps M10, M13, M18, M32 and W16 (surviving mutants). | branch `wmt/MONEY-16`, `tasks/MONEY-16.md`, Verifier report, round 2, line 187 |
+| NUV-06 | F1 | The WALLET-09 lead note names the private `prepare`; callable are `forBeneficiary` and `forPayoutAccount`. The seam's `reconcileSend` needs a SHARED-CHANGES NUV-06 #2 row. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 293 |
+| NUV-06 | F2 | `nuvion-adapter.spec.ts` was edited (three methods added to its filled-by-a-task list) and no SHARED-CHANGES row says so. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 294 |
+| NUV-06 | F3 | A ledger row of another provider on the same reference waits forever here; NUV-05 stops for review. | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 295 |
+| NUV-06 | F4 | The changed NUV-05 test can no longer tell `done` from `failed` for a bank-transfer stranger (mutant T04 survives). | branch `wmt/NUV-06`, `tasks/NUV-06.md`, Verifier report, round 2, line 296 |
 | NUV-05 | N1 | Seven of 37 mutants survive the builder's specs (all killed by the verifier's probes). | `tasks/NUV-05.md`, Verifier report, line 162 |
 | NUV-05 | N2 | `reconcileSend` starts its walk at `since` minus ten minutes, not at the row's `sentAt` (latent, no caller reaches it). | `tasks/NUV-05.md`, Verifier report, line 163 |
 | NUV-05 | N3 | A `refunded` event whose `payment_type` is not `book-transfer` is answered `done` before `meta.source_payment_id` is read (needs the sandbox). | `tasks/NUV-05.md`, Verifier report, line 164 |
-| NUV-03 | N1 | No boot check when `IDENTITY_HOLD_DAYS` is above 30 under the fintava provider (production presumed unset). Grade not in the lead's log: unknown, ask the lead. | `tasks/NUV-03.md`, Verifier report, round 4, line 368 |
+| NUV-03 | N1 | Low. The boot refusal for `IDENTITY_HOLD_DAYS` above 30 applies under every `WALLET_PROVIDER`: with `IDENTITY_HOLD_DAYS=40` on fintava the branch refuses to boot where main boots. Accept, or gate the check on the Nuvion provider. | `tasks/NUV-03.md`, Verifier report, round 4, line 419 |
+| NUV-03 | N2 | Low, test gap: mutant C1 survives. Removing `bvnVerifiedAt: startedAt` from the `failed` branch of `ReviewedOpening.claim()` passes every spec of the area. | `tasks/NUV-03.md`, Verifier report, round 4, line 420 |
 | WALLET-06 | T4 | Test gap: the `pin_changed_again` branch of W36 and W37 re-reads the wallet, and nothing asserts it. | `tasks/WALLET-06.md`, Verifier report, round 3, line 410 |
 | WALLET-06 | T5 | Test gap: the old-row mutant VB08 is killed by one test only. | `tasks/WALLET-06.md`, Verifier report, round 3, line 412 |
 | WALLET-07 | D1 | Spec gap: `completeFromRecord`'s fresh re-read for a send no longer `pending` is pinned by no spec (mutant M02). | branch `wmt/WALLET-07`, `tasks/WALLET-07.md`, Verifier report, line 98 |

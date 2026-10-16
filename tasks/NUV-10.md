@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs NUV-01, NUV-02, NUV-03, NUV-04, NUV-05, NUV-06, NUV-07, NUV-08, NUV-09 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): NUV-06, NUV-08, NUV-09.
 - **History:** none yet. Reports go to tasks/history/NUV-10.md.
 
 ## Read first

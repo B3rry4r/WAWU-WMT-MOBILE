@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs POINTS-01, POINTS-02, TIER-05, WEBPAY-03 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): POINTS-02, TIER-05, WEBPAY-03.
 - **History:** none yet. Reports go to tasks/history/WEBPAY-05.md.
 
 ## Read first

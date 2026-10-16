@@ -19,7 +19,7 @@ artboards: [W24, W25]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs WALLET-28, ME-01, HOME-01, WALLET-01 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-28.
 - **History:** none yet. Reports go to tasks/history/WALLET-20.md.
 
 ## Read first

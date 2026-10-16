@@ -47,8 +47,8 @@ The /join page, referral codes, the waitlist and campaign mail: JOIN, REF and EM
 
 | Source task | Id | Finding | Verifier report |
 |---|---|---|---|
-| REF-01 | D3 | Hold spam: a limited code can have its places held by repeated holds. | the lead's log, 14 Oct; the report text is not in the task file |
-| REF-01 | D4 | Code probing: nothing slows someone trying codes one after another. | the lead's log, 14 Oct; the report text is not in the task file |
+| REF-01 | D3 | Hold spam: the places of a limited code can be held up by repeated holds. | the lead's log, 14 Oct; the report text is not in the task file |
+| REF-01 | D4 | Code probing: a guessable free code can be found with the public check, and nothing slows someone trying codes one after another. | the lead's log, 14 Oct; the report text is not in the task file |
 | REF-01 | D5 | `flutterwaveConfig` is optional in the contract. | the lead's log, 14 Oct; the report text is not in the task file |
 | REF-01 | r2-1 | At 320 px a number with a leading zero scrolls before the field blurs. | the lead's log, 14 Oct, round 2; the report text is not in the task file |
 | EMAIL-02 | JSDoc | The contract summary still says "409 when RESEND_API_KEY is unset"; the relay answers otherwise. Needs a SHARED-CHANGES row. Not a verifier finding. | the lead's log, 14 Oct, merge note; EMAIL-02 had no verifier session; the report text is not in the task file |

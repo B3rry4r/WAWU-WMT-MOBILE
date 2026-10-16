@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs SCHOOLS-10 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-10.
 - **History:** none yet. Reports go to tasks/history/SCHOOLS-12.md.
 
 ## Read first

@@ -21,7 +21,7 @@ On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, 
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, BILLS-06, BILLS-02, INBOX-21, UI-02, BILLS-01 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-06, BILLS-02, INBOX-21.
 - **History:** none yet. Reports go to tasks/history/BILLS-05.md.
 
 ## Read first

@@ -19,7 +19,7 @@ artboards: [SC8, SC9]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs SCHOOLS-03, SCHOOLS-09, SCHOOLS-10, UI-02, SCHOOLS-06 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-09, SCHOOLS-10, SCHOOLS-06.
 - **History:** none yet. Reports go to tasks/history/SCHOOLS-08.md.
 
 ## Read first

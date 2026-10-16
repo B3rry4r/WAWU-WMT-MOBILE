@@ -340,6 +340,8 @@ colliding.
    branch merges main in again before its own merge (step 3).
 8. **Backend merges deploy the live server.** Batch backend pull requests
    where you can, so it restarts once.
+9. **Resuming a task branch:** merge main first, then run
+   `python3 scripts/tasks/compact_task.py <ID>` before reading the task file.
 
 Recommended GitHub settings on `main` in each repo: require a pull request,
 require the CI checks, and require branches to be up to date before merging.

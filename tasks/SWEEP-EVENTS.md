@@ -47,8 +47,8 @@ Events, tickets and the door scan: EVENTS tasks. Backend and mobile. Only the ro
 
 | Source task | Id | Finding | Verifier report |
 |---|---|---|---|
-| EVENTS-11 | O7 | Spec gap: three mutants of the tier-retire logic survive (the organiser's `remaining` with a retired tier, re-sending a tier identical to a retired one). | branch `wmt/EVENTS-11`, `tasks/EVENTS-11.md`, Verifier report, round 5, line 275 |
-| EVENTS-11 | O8 | Once a ticket sold on a retired tier, the sold 409 names two tiers with the same name, one hidden from the host. Confusing message. | branch `wmt/EVENTS-11`, `tasks/EVENTS-11.md`, Verifier report, round 5, line 275 |
+| EVENTS-11 | O7 | Spec gap: three mutants of the tier-retire logic survive (the organiser's `remaining` with a retired tier, re-sending a tier identical to a retired one). | branch `wmt/EVENTS-11`, `tasks/EVENTS-11.md`, Verifier report, round 5, line 298 |
+| EVENTS-11 | O8 | Once a ticket sold on a retired tier, the sold 409 names two tiers with the same name, one hidden from the host. Confusing message. | branch `wmt/EVENTS-11`, `tasks/EVENTS-11.md`, Verifier report, round 5, line 303 |
 | EVENTS-09 | N1 | The queue of two or more typed codes is unreachable and untested. Low. | `tasks/EVENTS-09.md`, Verifier report, round 3, line 437 |
 | EVENTS-09 | N2 | Two test gaps in the builder's file: a code typed over an unseen problem, and a tap-dismissed verdict followed by a new scan inside 3 s (stale hold timer). | `tasks/EVENTS-09.md`, Verifier report, round 3, line 438 |
 

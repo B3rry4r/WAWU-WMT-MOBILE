@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs OPS-09, MONEY-07, MONEY-16, WALLET-15, WALLET-09 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): OPS-09, MONEY-16, WALLET-09.
 - **History:** none yet. Reports go to tasks/history/OPS-10.md.
 
 ## Read first

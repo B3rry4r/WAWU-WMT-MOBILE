@@ -19,7 +19,7 @@ artboards: [E17, E18, E25, E11]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, ME-12, UI-02, EVENTS-01 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-10, ME-12.
 - **History:** none yet. Reports go to tasks/history/EVENTS-08.md.
 
 ## Read first

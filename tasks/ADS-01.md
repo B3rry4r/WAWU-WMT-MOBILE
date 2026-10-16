@@ -19,7 +19,7 @@ artboards: [H33]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs HOME-09, HOME-01, ADS-04, ADS-05, EVENTS-01 built first.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/ADS-01.md.
 
 ## Read first

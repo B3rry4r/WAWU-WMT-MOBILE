@@ -19,7 +19,7 @@ artboards: [S18, S19, S20, S25]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below when the lead schedules it. It needs MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, LEGAL-02, LEGAL-03, LEGAL-05, UI-02 built first.
+- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-05.
 - **History:** none yet. Reports go to tasks/history/LEGAL-04.md.
 
 ## Read first

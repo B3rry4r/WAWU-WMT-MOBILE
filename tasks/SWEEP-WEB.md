@@ -47,12 +47,12 @@ The website (`wawuafrica`): WEBPAY and WEB tasks. Paused with the website (R-49)
 
 | Source task | Id | Finding | Verifier report |
 |---|---|---|---|
-| WEBPAY-01 | D6 | The account number wraps at 390 px ("819 933" then "1992"), the one thing on that card a person copies. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
-| WEBPAY-01 | D7 | The step rail changes length mid-flow when the selfie is on ("of 4" then "of 5"). Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
-| WEBPAY-01 | D9 | `globals.css` sets `color-scheme` on every `input[type="date"]` site-wide; the builder's report does not list it. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
-| WEBPAY-01 | D10 | Neither the details form nor the PIN is a `<form>`: Enter does not submit; Chrome logs a password-field warning. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
-| WEBPAY-01 | D11 | The selfie hand-off assigns whatever URL the server answers with no https check. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
-| WEBPAY-01 | D12 | The wallet screen is not exactly as on main for a creator: one more call, and an "Open your wallet" card above the old payout wallet. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 92 |
+| WEBPAY-01 | D6 | The account number wraps at 390 px ("819 933" then "1992"), the one thing on that card a person copies. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 140 |
+| WEBPAY-01 | D7 | The step rail changes length mid-flow when the selfie is on ("of 4" then "of 5"). Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 141 |
+| WEBPAY-01 | D9 | `globals.css` sets `color-scheme` on every `input[type="date"]` site-wide; the builder's report does not list it. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 143 |
+| WEBPAY-01 | D10 | Neither the details form nor the PIN is a `<form>`: Enter does not submit; Chrome logs a password-field warning. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 144 |
+| WEBPAY-01 | D11 | The selfie hand-off assigns whatever URL the server answers with no https check. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 145 |
+| WEBPAY-01 | D12 | The wallet screen is not exactly as on main for a creator: one more call, and an "Open your wallet" card above the old payout wallet. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 146 |
 
 ## Builder report
 
