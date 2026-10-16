@@ -61,7 +61,12 @@ export type PayStatus =
   /** The debit was sent and its result has not come back yet. */
   | { kind: 'confirming' }
   /** The payment did not complete. `message` says why, when the server said. */
-  | { kind: 'failed'; message?: string };
+  | { kind: 'failed'; message?: string }
+  /**
+   * The payment cannot be tried yet, and nothing was tried (WALLET-02 round 2: over today's limit). Not a failure: no red mark,
+   * no "didn't go through". `title` and `message` say why. Cancel is always offered; Try again only with `tryAgain` and `onRetry`.
+   */
+  | { kind: 'blocked'; title: string; message: string; tryAgain?: boolean };
 
 export type PaySheetProps = {
   /**
@@ -132,6 +137,8 @@ export function PaySheet(props: PaySheetProps) {
     body = <Confirming {...props} total={total} />;
   } else if (status.kind === 'failed') {
     body = <Failed {...props} total={total} message={status.message} />;
+  } else if (status.kind === 'blocked') {
+    body = <Blocked {...props} total={total} title={status.title} message={status.message} tryAgain={status.tryAgain === true} />;
   } else if (wallet.kind === 'open' && short > 0 && status.kind === 'review') {
     body = <NotEnough {...props} total={total} balanceKobo={wallet.balanceKobo} short={short} />;
   } else {
@@ -411,6 +418,19 @@ function Status({ icon, title, line }: { icon: ReactNode; title: string; line: s
         {line}
       </Text>
     </View>
+  );
+}
+
+/** A payment that cannot be tried (over a limit): a warning mark, why, and Cancel. Nothing went wrong, so nothing is drawn as failed. */
+function Blocked(p: Inner & { title: string; message: string; tryAgain: boolean }) {
+  return (
+    <>
+      <Status icon={<IconTile icon="CircleAlert" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />} title={p.title} line={p.message} />
+      <View style={styles.buttons}>
+        {p.tryAgain && p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
+        <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
+      </View>
+    </>
   );
 }
 

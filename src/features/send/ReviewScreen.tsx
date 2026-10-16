@@ -15,11 +15,13 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { isNoWallet, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { useSystemBack } from '@/features/professionals/parts';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, space, type, useWawu } from '@/theme';
 
 import { fetchFeeQuote, sendToWawuUser, transferQuery, type FeeQuote, type Transfer } from './api';
-import { CONFIRMING_LINE, failureLine, feeLinesOf, hueOfPayee, limitLine, quoteAddsUp, quoteSpent, WALLET_NAME, type Payee } from './model';
+import { dropIntent, findIntent, putIntent, type SendIntent } from './intent';
+import { failureLine, feeLinesOf, hueOfPayee, limitLine, NO_TOTAL_TITLE, OVER_LIMIT_TITLE, quoteAddsUp, quoteSpent, RETRY_LINE, WALLET_NAME, type Payee } from './model';
 
 /** How often a send the provider has not confirmed is read again (`GET /money/transfers/{id}`, our record). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -43,14 +45,28 @@ export type ReviewScreenProps = {
   onSetPin: () => void;
 };
 
-const feeQuoteQuery = (owner: string | null, amountKobo: number) =>
+/**
+ * The fee quote is asked for once per review (`round` makes Try again ask afresh). A quote that has run out is replaced when the
+ * person taps Send (`pay`), not when the window gets focus or the network returns.
+ */
+const feeQuoteQuery = (owner: string | null, amountKobo: number, round: number, enabled: boolean) =>
   ({
-    queryKey: ['money', 'fee-quote', 'wawu_transfer', owner ?? '', amountKobo] as const,
+    queryKey: ['money', 'fee-quote', 'wawu_transfer', owner ?? '', amountKobo, round] as const,
     queryFn: () => fetchFeeQuote(amountKobo),
-    staleTime: 0,
+    staleTime: Infinity,
     gcTime: 0,
-    enabled: Boolean(owner),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: Boolean(owner) && enabled,
   }) as const;
+
+/**
+ * What this screen is sending. It is made when the first request leaves the phone and kept (in the secure store too, while the
+ * Hub has not given a final answer) so the same request can be sent again, or the send read by its id.
+ * `ready`: nothing sent yet, or the Hub refused it before any money moved (the key is free). `unknown`: sent, no answer.
+ * `pending`: the Hub took it and the provider has not decided. `settled`: the Hub decided (the screen is leaving or shows why).
+ */
+type Request = Omit<SendIntent, 'phase' | 'at'> & { phase: 'ready' | 'unknown' | 'pending' | 'settled'; at: number };
 
 /**
  * W10 · Send · review, with W11 (the PIN sheet) over it. The review is `PaySheet`'s send variant: the person, the amount, Fintava's
@@ -60,8 +76,14 @@ const feeQuoteQuery = (owner: string | null, amountKobo: number) =>
  * One Idempotency-Key per payment intent: a wrong PIN, a request that got no answer and a PIN typed again all send the SAME key, so
  * the money moves once. A new intent (the fees changed, a send that failed, a new total) takes a new key.
  *
- * The send's own answers: completed goes to the receipt; `pending` (the provider has not said, G-710) is "still confirming", read
- * again by id and never sent again; failed says why in the Hub's words; short of money shows the bank's figures; no PIN yet opens A9.
+ * The intent outlives the screen (`./intent`). A request that got no answer is kept on the phone with its key and body; the next
+ * Send for the same person and amount, here or after Back, a reload or the app being closed, sends that same request first, never
+ * a new key and never a new quote (the Hub answers a known key before it checks the PIN or the quote). Only when the Hub says no
+ * payment exists for the key (`quote_changed`) does the next send take a new key and the quote it gave. A send the Hub took and the
+ * provider has not decided is kept with its id: the review shows it pending, reads it by id, and offers no Send for it.
+ *
+ * The send's own answers: completed goes to the receipt; `pending` (the provider has not said, G-710) is "still confirming"; failed
+ * says why in the Hub's words; short of money shows the bank's figures; no PIN yet opens A9; over today's limit is a blocked review.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
   const { payee, amountKobo, note } = props;
@@ -70,21 +92,37 @@ export function ReviewScreen(props: ReviewScreenProps) {
   const insets = useSafeAreaInsets();
   const entry = useOpenWalletEntry();
 
-  const quoted = useQuery(feeQuoteQuery(owner, amountKobo), queryClient);
-  const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(owner) }, queryClient);
+  // What this screen is sending: undefined while the phone is asked, null when nothing has been sent for this person and amount.
+  const [request, setRequest] = useState<Request | null | undefined>(undefined);
+  const key = useRef(newRequestKey());
   const [fresh, setFresh] = useState<FeeQuote | null>(null);
-  const quote = fresh ?? quoted.data ?? null;
+  const [round, setRound] = useState(0);
+  const quoted = useQuery(feeQuoteQuery(owner, amountKobo, round, request === null && fresh === null), queryClient);
+  const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(owner) }, queryClient);
+  const quote = request?.quote ?? fresh ?? quoted.data ?? null;
   const [shortOf, setShortOf] = useState<number | null>(null);
 
   const [status, setStatus] = useState<PayStatus>({ kind: 'review' });
   const [pinOpen, setPinOpen] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
-  const [pending, setPending] = useState<Transfer | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const key = useRef(newRequestKey());
   const newIntent = useCallback(() => {
     key.current = newRequestKey();
   }, []);
+
+  // The phone is asked once, for this person and amount: an intent left by an earlier screen, Back, a reload or a closed app.
+  useEffect(() => {
+    if (!owner) return undefined;
+    let current = true;
+    void findIntent(owner, payee.wawuUserId, amountKobo).then((found) => {
+      if (!current) return;
+      if (found) key.current = found.key;
+      setRequest(found);
+    });
+    return () => {
+      current = false;
+    };
+  }, [owner, payee.wawuUserId, amountKobo]);
 
   // Nobody has a wallet until they open one (R-6).
   const led = useRef(false);
@@ -96,77 +134,122 @@ export function ReviewScreen(props: ReviewScreenProps) {
     }
   }, [noWallet, entry]);
 
+  const keep = useCallback(
+    (next: Request) => {
+      setRequest(next);
+      if (owner && (next.phase === 'unknown' || next.phase === 'pending')) {
+        const { phase, ...rest } = next;
+        return putIntent(owner, { ...rest, phase });
+      }
+      return owner ? dropIntent(owner, next.key) : Promise.resolve();
+    },
+    [owner],
+  );
+
+  /** The Hub gave a send back: `from` is the request that asked for it. */
   const finish = useCallback(
-    (transfer: Transfer) => {
-      void queryClient.invalidateQueries({ queryKey: ['money'] });
+    (transfer: Transfer, from: Request) => {
+      // The fee quote is not read again: it belongs to this review, and a new one is asked for only when Send is tapped.
+      void queryClient.invalidateQueries({ queryKey: ['money'], predicate: (q) => q.queryKey[1] !== 'fee-quote' });
       if (transfer.status === 'completed') {
         queryClient.setQueryData(transferQuery(owner, transfer.id).queryKey, transfer);
+        void keep({ ...from, phase: 'settled', transferId: transfer.id });
         props.onSent(transfer.id);
       } else if (transfer.status === 'pending') {
-        setPending(transfer);
-        setStatus({ kind: 'confirming' });
+        void keep({ ...from, phase: 'pending', transferId: transfer.id });
       } else {
-        setPending(null);
+        void keep({ ...from, phase: 'settled', transferId: transfer.id });
         setStatus({ kind: 'failed', message: failureLine(transfer) });
       }
     },
-    [owner, props],
+    [owner, props, keep],
   );
 
   // A send the provider has not confirmed is read again by id until it is decided.
-  const polled = useQuery({ ...transferQuery(owner, pending?.id ?? ''), enabled: Boolean(owner && pending), refetchInterval: POLL_MS }, queryClient);
+  const pendingId = request?.phase === 'pending' ? request.transferId : null;
+  const polled = useQuery({ ...transferQuery(owner, pendingId ?? ''), enabled: Boolean(owner && pendingId), refetchInterval: POLL_MS }, queryClient);
   const seen = useRef<string | null>(null);
   useEffect(() => {
     const t = polled.data;
-    if (!pending || !t || t.id !== pending.id || t.status === 'pending' || seen.current === `${t.id}:${t.status}`) return;
+    if (!pendingId || !t || t.id !== pendingId || t.status === 'pending' || seen.current === `${t.id}:${t.status}`) return;
     seen.current = `${t.id}:${t.status}`;
-    finish(t);
-  }, [polled.data, pending, finish]);
+    // Settled after this render, as a callback: the decision moves the screen on, it is not part of drawing it.
+    if (request) queueMicrotask(() => finish(t, request));
+  }, [polled.data, pendingId, finish, request]);
 
   const submitPin = async (pin: string): Promise<PinCheckResult> => {
-    if (!quote) return { code: 'unanswered' };
-    const outcome = await sendToWawuUser({ recipientWawuUserId: payee.wawuUserId, amountKobo, quote, note, key: key.current, pin });
+    if (!quote || !owner || request === undefined) return { code: 'unanswered' };
+    // The request this send carries: the one already sent (same key, same body) or the first one, made now from what is on screen.
+    const sending: Request = request ?? {
+      key: key.current,
+      payeeId: payee.wawuUserId,
+      amountKobo,
+      note: note.trim(),
+      quote,
+      phase: 'ready',
+      transferId: null,
+      at: Date.now(),
+    };
+    // Written before it leaves the phone, so a screen that goes away mid-send still finds it.
+    await keep({ ...sending, phase: 'unknown' });
+    const outcome = await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+    // The Hub gave an answer that proves no payment exists for the key: the intent is not kept, the key is free for the next try.
+    const nothingMoved = (next: Request['phase'] = 'ready') => keep({ ...sending, phase: next });
     switch (outcome.kind) {
       case 'pin_incorrect':
+        void nothingMoved();
         return { code: 'pin_incorrect', triesLeft: outcome.triesLeft };
       case 'pin_locked':
+        void nothingMoved();
         setLockedUntil(outcome.lockedUntil);
         return { code: 'pin_locked', lockedUntil: outcome.lockedUntil };
       case 'unanswered':
         return { code: 'unanswered' };
       case 'done':
         setPinOpen(false);
-        finish(outcome.transfer);
+        finish(outcome.transfer, sending);
         return { code: 'approved' };
       case 'pin_not_set':
+        void nothingMoved();
         setPinOpen(false);
         props.onSetPin();
         return { code: 'approved' };
       case 'no_wallet':
+        void nothingMoved();
         setPinOpen(false);
         entry.open();
         return { code: 'approved' };
       case 'insufficient_funds':
         // The bank's own figures now: the sheet's "not enough" reads them, and the key is spent on nothing.
+        void nothingMoved();
         setPinOpen(false);
         setShortOf(outcome.balanceKobo);
         return { code: 'approved' };
       case 'quote_changed':
+        // No payment exists for the key: the fees moved, so this is a new intent with the quote the Hub gave.
+        void dropIntent(owner, sending.key);
         setPinOpen(false);
+        setRequest(null);
         setFresh(outcome.quote);
         newIntent();
         setNotice('The fees changed. Check the new total before you send.');
         return { code: 'approved' };
       case 'refused':
+        void nothingMoved('settled');
         setPinOpen(false);
         setStatus({ kind: 'failed', message: outcome.message });
         return { code: 'approved' };
     }
   };
 
+  const confirming = request?.phase === 'pending';
+  // Back from a send that is only waiting for the provider goes to the wallet, not to the amount.
+  const goBack = confirming ? props.onLeave : props.onBack;
+  useSystemBack(goBack);
+
   const nav = (
     <View style={[styles.nav, { paddingTop: insets.top, height: layout.controlH + space.sm + insets.top }]}>
-      <IconButton testID="review-back" icon="ChevronLeft" label="Back" onPress={props.onBack} size={BACK} />
+      <IconButton testID="review-back" icon="ChevronLeft" label="Back" onPress={goBack} size={BACK} />
       <Text style={[styles.navTitle, { color: colors.textPrimary }]} accessibilityRole="header">
         Review
       </Text>
@@ -174,7 +257,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
     </View>
   );
 
-  if (!quote) {
+  if (!quote || request === undefined) {
     return (
       <View testID="send-review-screen" style={[styles.page, { backgroundColor: colors.surfacePage }]}>
         {nav}
@@ -208,21 +291,33 @@ export function ReviewScreen(props: ReviewScreenProps) {
       : balanceKobo !== undefined
         ? { kind: 'open', balanceKobo }
         : { kind: 'loading' };
-  // A send the Hub would refuse is never offered: today's limit, or a quote whose parts do not make its total. The sheet says why and
-  // offers Try again (a new quote) and Cancel (back to the amount).
-  const blocked = limitLine(quote) ?? (quoteAddsUp(quote) ? null : "We couldn't work out the total for this send. Try again.");
-  const shown: PayStatus = blocked !== null && status.kind === 'review' ? { kind: 'failed', message: blocked } : status;
+  // A send the Hub would refuse is never offered, and nothing is tried: today's limit (Cancel only), or a quote whose parts do not
+  // make its total (Try again asks for a new quote). These are blocked states, not failed payments.
+  const limit = limitLine(quote);
+  const blocked: PayStatus | null =
+    limit !== null
+      ? { kind: 'blocked', title: OVER_LIMIT_TITLE, message: limit }
+      : quoteAddsUp(quote)
+        ? null
+        : { kind: 'blocked', title: NO_TOTAL_TITLE, message: 'Try again to ask for the fees once more.', tryAgain: true };
+  const shown: PayStatus = confirming ? { kind: 'confirming' } : blocked !== null && status.kind === 'review' ? blocked : status;
   const handle = payee.handle ? `@${payee.handle.replace(/^@/, '')}` : null;
+  const sentNote = request?.note ?? note.trim();
 
   const pay = async () => {
-    // A quote past its time is asked for again before the PIN, so the sheet never approves a total the Hub will refuse.
-    if (quoteSpent(quote, Date.now())) {
+    // A quote past its time is asked for again before the PIN, so the sheet never approves a total the Hub will refuse. Not for a
+    // request that already went out with no answer: that one is sent again as it was (same key, same quote), because the Hub
+    // answers a key it knows before it looks at the quote, and a new key could pay twice.
+    if (request?.phase !== 'unknown' && quoteSpent(quote, Date.now())) {
       const again = await quoted.refetch();
       if (again.data) {
         setFresh(again.data);
+        setRequest(null);
         newIntent();
-        if (again.data.totalKobo !== quote.totalKobo) setNotice('The fees changed. Check the new total before you send.');
-        return;
+        if (again.data.totalKobo !== quote.totalKobo) {
+          setNotice('The fees changed. Check the new total before you send.');
+          return;
+        }
       }
     }
     setPinOpen(true);
@@ -231,9 +326,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
   return (
     <View testID="send-review-screen" style={[styles.page, { backgroundColor: colors.surfacePage }]}>
       {nav}
-      {status.kind === 'confirming' ? (
-        <Text variant="muted" testID="send-review-confirming" style={styles.line}>
-          {CONFIRMING_LINE}
+      {request?.phase === 'unknown' && status.kind === 'review' && blocked === null ? (
+        <Text variant="muted" testID="send-review-retry" style={styles.line}>
+          {RETRY_LINE}
         </Text>
       ) : null}
       <PaySheet
@@ -242,7 +337,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         amountKobo={amountKobo}
         details={handle ? [{ label: 'Handle', value: handle }] : undefined}
         fees={feeLinesOf(quote)}
-        notes={note ? [{ label: 'Note', value: note }] : undefined}
+        notes={sentNote ? [{ label: 'Note', value: sentNote }] : undefined}
         wallet={walletState}
         walletName={WALLET_NAME}
         actionLabel="Send"
@@ -250,14 +345,14 @@ export function ReviewScreen(props: ReviewScreenProps) {
         status={shown}
         onPay={pay}
         onAddMoney={props.onAddMoney}
-        onCancel={status.kind === 'confirming' ? props.onLeave : props.onBack}
+        onCancel={goBack}
         onRetry={() => {
           // A send that did not go through starts again as a new intent, from a new quote.
           newIntent();
-          setPending(null);
+          setRequest(null);
           setFresh(null);
+          setRound((r) => r + 1);
           setStatus({ kind: 'review' });
-          void quoted.refetch();
         }}
         onRefresh={() => void polled.refetch()}
       />

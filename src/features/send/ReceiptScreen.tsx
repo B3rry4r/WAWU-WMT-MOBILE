@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
@@ -21,7 +21,7 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { SwitchRow } from '@/features/settings/SwitchRow';
 import { radius, space, useWawu } from '@/theme';
 
-import { fetchBeneficiaries, removeBeneficiary, savedRowFor, saveWawuBeneficiary, transferQuery, type Transfer } from './api';
+import { fetchBeneficiaries, removeBeneficiary, savedRowFor, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
 import { CONFIRMING_LINE, failureLine, firstName, receiptRows, shareText, toLine } from './model';
 
 const RECEIPT = { mark: 88, headGap: 12, headTop: 20, figure: 36, partMoney: 14.5, copy: 14, copyMs: 1600, poll: 4000 } as const;
@@ -37,8 +37,7 @@ export type ReceiptScreenProps = {
  * send the Hub holds (`GET /money/transfers/{id}`). Share receipt opens the phone's share sheet with the receipt's text and
  * reference (R-33); Done goes back to the wallet, where the new row is on top.
  *
- * "Save as a beneficiary" is a switch that starts off unless the person is already saved: a save is the person's own act and
- * counts toward a limit. A send the provider has not confirmed shows "Pending" and the still-confirming line, and is read again
+ * "Save as a beneficiary" is a switch that starts on, as the canvas draws it, and saves the person (lead ruling, 16 Oct 2026). A send the provider has not confirmed shows "Pending" and the still-confirming line, and is read again
  * until it is decided (G-710); one that failed says so in the Hub's words, with Done only.
  */
 export function ReceiptScreen({ id, onDone }: ReceiptScreenProps) {
@@ -179,7 +178,11 @@ function Receipt({ transfer }: { transfer: Transfer }) {
   );
 }
 
-/** W12's "Save <first name> as a beneficiary": on when saved, off when not; a failed read hides the row, a failed save says so. */
+/**
+ * W12's "Save <first name> as a beneficiary": the switch starts ON, as the canvas draws it, and the person is saved when the
+ * receipt opens (a person already saved is left as is). Turning it off takes the person back out. A failed read hides the row; a
+ * failed save leaves the switch off and says why, in the Hub's words.
+ */
 function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
   const owner = useSessionAccount(undefined);
   const list = useQuery(
@@ -187,28 +190,44 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
     queryClient,
   );
   const [busy, setBusy] = useState(false);
+  const [want, setWant] = useState(true);
   const [problem, setProblem] = useState<string | null>(null);
-  if (!list.data) return null;
-  const row = savedRowFor(list.data, wawuUserId);
+  const asked = useRef(false);
+  const rows = list.data;
+  const row = rows ? savedRowFor(rows, wawuUserId) : undefined;
 
-  const change = async (next: boolean) => {
-    setBusy(true);
-    setProblem(null);
-    try {
-      if (next) await saveWawuBeneficiary(wawuUserId);
-      else if (row) await removeBeneficiary(row.id);
-      await list.refetch();
-    } catch (error) {
-      setProblem(isApiError(error) && error.message ? error.message : 'We couldn’t change that. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
+  const change = useCallback(
+    async (next: boolean, saved: Beneficiary | undefined) => {
+      setWant(next);
+      setBusy(true);
+      setProblem(null);
+      try {
+        if (next) await saveWawuBeneficiary(wawuUserId);
+        else if (saved) await removeBeneficiary(saved.id);
+        await list.refetch();
+      } catch (error) {
+        setProblem(isApiError(error) && error.message ? error.message : 'We couldn’t change that. Try again.');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [wawuUserId, list],
+  );
+
+  // Once, when the saved people have been read: a person who is not saved yet is saved, because the switch is drawn on.
+  useEffect(() => {
+    if (!rows || asked.current) return;
+    asked.current = true;
+    if (!savedRowFor(rows, wawuUserId)) queueMicrotask(() => void change(true, undefined));
+  }, [rows, wawuUserId, change]);
+
+  if (!rows) return null;
+  const on = busy ? want : Boolean(row);
 
   return (
     <View style={styles.save}>
       <GroupedList testID="receipt-save">
-        <SwitchRow testID="receipt-save-switch" title={`Save ${firstName(name)} as a beneficiary`} on={Boolean(row)} busy={busy} onChange={(next) => void change(next)} />
+        <SwitchRow testID="receipt-save-switch" title={`Save ${firstName(name)} as a beneficiary`} on={on} busy={busy} onChange={(next) => void change(next, row)} />
       </GroupedList>
       {problem ? (
         <Text variant="errorLine" testID="receipt-save-error" accessibilityRole="alert">

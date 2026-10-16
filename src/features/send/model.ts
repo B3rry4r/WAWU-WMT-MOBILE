@@ -103,8 +103,18 @@ export function failureLine(transfer: Pick<Transfer, 'statusMessage' | 'failureR
   return transfer.statusMessage?.trim() || transfer.failureReason?.trim() || 'This send did not go through. Nothing left your wallet.';
 }
 
-/** The still-confirming sentence W12 and W10 draw while the provider has not said (G-710). Never "failed", never "sent again". */
-export const CONFIRMING_LINE = "We're still confirming this send. Don't send it again; we'll let you know.";
+/**
+ * The still-confirming sentence W12 draws while the provider has not said (G-710). Never "failed", never "sent again". It points
+ * at Wallet activity, the one place the result shows: the Hub sends the person who sent no notice when a send is decided.
+ */
+export const CONFIRMING_LINE = "We're still confirming this send. Don't send it again. Check Wallet activity for the result.";
+
+/** W10 when the last try at this send got no answer: sending again asks the Hub about that try first (the same Idempotency-Key). */
+export const RETRY_LINE = 'Your last try got no answer. Sending again checks it first, so you are not charged twice.';
+
+/** W10's blocked states (nothing was tried, so nothing "didn't go through"): the title above the sentence. */
+export const OVER_LIMIT_TITLE = 'Over today’s limit';
+export const NO_TOTAL_TITLE = 'We couldn’t work out the total';
 
 /** One row of W12's card. */
 export type ReceiptRow = { key: string; label: string; value: string; money?: number; strong?: boolean; copy?: boolean; wrap?: boolean };

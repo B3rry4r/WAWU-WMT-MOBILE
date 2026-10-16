@@ -272,4 +272,22 @@ describe('PaySheet', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(p.onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a blocked payment as a warning with Cancel only: nothing was tried, so no failed mark and no "didn\'t go through"', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'Over today’s limit', message: 'You can send ₦15,000 more today.' }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('Over today’s limit')).toBeTruthy();
+    expect(screen.getByText('You can send ₦15,000 more today.')).toBeTruthy();
+    expect(screen.queryByText("Payment didn't go through")).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(p.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Try again on a blocked payment only when the host asks for it', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'We couldn’t work out the total', message: 'Try again.', tryAgain: true }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(p.onRetry).toHaveBeenCalledTimes(1);
+  });
 });

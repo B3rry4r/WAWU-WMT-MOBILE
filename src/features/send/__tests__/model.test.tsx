@@ -4,7 +4,7 @@ import { MoneyCard } from '@/features/home/MoneyCard';
 import { actionWidth } from '@/features/wallet/home/WalletActions';
 
 import type { Transfer } from '../api';
-import { feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
+import { CONFIRMING_LINE, RETRY_LINE, feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
 
 const AMAKA = { wawuUserId: '11111111-1111-4111-8111-111111111111', name: 'Amaka Nwosu', handle: 'amaka', avatarUrl: null, tick: 'creator' as const };
 
@@ -114,5 +114,18 @@ describe('what the send screens read and write', () => {
     expect(names.indexOf('Send')).toBeLessThan(names.indexOf('Bills'));
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send' }));
     expect(onSend).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the sentences a send shows while it waits (round 2)', () => {
+  it('a send still confirming points to Wallet activity and promises no notice the Hub never sends', () => {
+    expect(CONFIRMING_LINE).toContain('Wallet activity');
+    expect(CONFIRMING_LINE).not.toMatch(/let you know|notify|we'll tell/i);
+    expect(CONFIRMING_LINE).not.toContain('—');
+  });
+
+  it('a send tried again after no answer says it is checked first', () => {
+    expect(RETRY_LINE).toContain('checks it first');
+    expect(RETRY_LINE).not.toContain('—');
   });
 });
