@@ -15,6 +15,15 @@ artboards: []
 ---
 # FIX-20 · Provider webhook deliveries are not kept forever
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 17:05) and the branch.
+- **Status:** verifying. Built; the verifier report says "Not started". This file on main still says todo.
+- **Branches:** mobile `wmt/FIX-20` 8c3a2f0. Backend `wmt/FIX-20` bb9bbd1 (migration `20261021230000_webhook_body_retention`; G-750 to G-752).
+- **Merged and live:** nothing of this task. **Open findings:** none yet.
+- **Next:** a verifier session. CONVENTIONS section 21 (this task) and section 19 (MONEY-16, WALLET-16) need their numbering settled at merge.
+- **Records:** on the branch, `wmt/FIX-20`, in tasks/FIX-20.md there (17 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py FIX-20`; the history goes to tasks/history/FIX-20.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files)

@@ -127,8 +127,12 @@ function outline(): string {
   return lines.join('\n');
 }
 
+/** Taken here, before a test fakes the clock: `settle` still lets real time pass, so "nothing more was asked" is read after the same 50 ms. */
+const realSetTimeout = setTimeout;
 const settle = () => rtl.act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => realSetTimeout(resolve, 50));
+  jest.advanceTimersByTime(50);
+  await new Promise((resolve) => realSetTimeout(resolve, 0));
 });
 /** Every follow or unfollow the screen sent has been answered and taken in. */
 const followsAnswered = () => rtl.waitFor(() => expect(queryClient.isMutating()).toBe(0));
@@ -149,6 +153,7 @@ function words(): string[] {
 }
 
 afterEach(async () => {
+  jest.useRealTimers();
   mockFocused = true;
   queryClient.setDefaultOptions(appDefaults);
   await queryClient.cancelQueries();
@@ -162,6 +167,13 @@ afterEach(async () => {
 });
 
 beforeEach(() => {
+  // Every wait goes through `findBy`, `waitFor` or `settle`; a bare `await` of a fetch answer hangs behind a timer.
+  // (A wait on the cache alone does not move this clock; after one that should show on screen, use `settle`.)
+  // Every wait in this file runs on the test's clock, not the machine's. A screen here asks for its data in two steps (the categories,
+  // then the creators in one), and a `findBy` has one second of wall time for both; on a loaded runner a stall of that second made the
+  // second step "not there yet". On the fake clock a `findBy` takes a fixed number of turns whatever the machine does, and `settle`
+  // moves the clock. `queueMicrotask` stays real: React's `act` queues its "was it awaited?" check on it.
+  jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
   answers = {
     'GET /explore/categories': [ok({ items: categories })],
     'GET /users/me': [ok({ wawuUserId: ME })],
@@ -454,7 +466,12 @@ describe('X1 · Explore', () => {
     answers['GET /explore/categories'] = [ok({ items: [{ id: '', label: 'No id' }, { id: 'nolabel', label: '' }, { id: 'music_audio', label: 'Music & Audio' }] })];
     answers[featured] = [ok({ items: [] })];
     const { fetchCategories } = require('../api') as typeof import('../api');
-    expect(await fetchCategories()).toEqual([{ id: 'music_audio', label: 'Music & Audio' }]);
+    // Read with `waitFor`, which moves the test's clock; a bare `await` would not move it if the answer is on a timer.
+    let read: unknown;
+    void fetchCategories().then((categoriesRead) => {
+      read = categoriesRead;
+    });
+    await rtl.waitFor(() => expect(read).toEqual([{ id: 'music_audio', label: 'Music & Audio' }]));
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     const tiles = await rtl.screen.findByTestId('explore-tiles');
     expect(rtl.within(tiles).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['All', 'Music & Audio', 'More categories']);
