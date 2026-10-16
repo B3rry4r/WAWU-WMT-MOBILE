@@ -19,7 +19,7 @@ artboards: [W38]
 
 As of 16 Oct 2026, builder round 1.
 - **Status:** verifying. Built whole: W38 and its Statements row on W35, the Hub's email routes and WAWU ID's mail relay carrying a file.
-- **Branches:** mobile `wmt/WALLET-35` (head of the branch, this file), backend `wmt/WALLET-35` (wawu-backend, 91a0cbe), wawu-id `wmt/WALLET-35` (0e7da30). Nothing merged. No backend migration.
+- **Branches:** mobile `wmt/WALLET-35` (head of the branch, this file), backend `wmt/WALLET-35` (wawu-backend, 7aa55d3, main 22bb2cc merged in), wawu-id `wmt/WALLET-35` (e57429f, main 7869c95 merged in). Nothing merged. No backend migration.
 - **Built:**
   - Backend: `POST /money/statements/email` (`{ from, to, format }`, no address) builds the file exactly as `GET /money/statements` does and mails it as one CSV attachment through WAWU ID's relay to the token's own address, only when the token says `emailVerified` is true. `GET /money/statements/delivery` names that address masked (`u***@x.dev`), `canEmail`, and the formats served (`csv`). New codes `email_not_verified` (409) and `statement_email_failed` (503). The statement limits (5 a minute, 30 an hour) are shared with the download.
   - wawu-id: `POST /internal/mail/send` takes `attachments` (at most 2, plain file name, base64, a short type list, 12 MiB decoded in all) and a 17 MB body on that route only.
