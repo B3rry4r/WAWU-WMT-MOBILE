@@ -1,6 +1,6 @@
 // usage: const part = eval(await readFile('_gen/buildAll.js')); await part('dark', 0, 4);
 (async function part(theme, from, to) {
-  const FLOWS = [['Wallet', 'wallet'], ['Home', 'home'], ['Inbox', 'inbox'], ['Explore', 'explore'], ['Me', 'me'], ['Services', 'services'], ['Professionals', 'pros'], ['Schools', 'schools'], ['Events', 'events'], ['Shop', 'shop'], ['Auth and KYC', 'auth'], ['Settings', 'settings']];
+  const FLOWS = [['Wallet', 'wallet'], ['Home', 'home'], ['Inbox', 'inbox'], ['Explore', 'explore'], ['Me', 'me'], ['Services', 'services'], ['Professionals', 'pros'], ['Schools', 'schools'], ['Events', 'events'], ['Auth and KYC', 'auth'], ['Settings', 'settings'], ['Verify', 'verify'], ['Points', 'points'], ['Referral', 'referral']];
   if (!globalThis.LUCIDE) { const m = { exports: {} }; (new Function('module', 'exports', await readFile('_gen/lucide.min.js')))(m, m.exports); globalThis.LUCIDE = m.exports.icons; }
   const kitSrc = (await readFile('_gen/kit.js')).replace("${hot('light')}${hot('dark')}", '${hot(globalThis.__TH)}').replace('Each column is one screen: dark on top, light underneath. Arrows show what you tap to move on.', 'Each column is one screen. Arrows show what you tap to move on.').replace('contain-intrinsic-size:410px 1880px', 'contain-intrinsic-size:410px 1000px');
   globalThis.__TH = theme;
