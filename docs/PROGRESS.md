@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-36](../tasks/FIX-36.md) The recipient leak check cannot match a random id by chance, so it stops failing at random (You)
 - [FIX-37](../tasks/FIX-37.md) The live hardening spec asks the system for its ports, so it stops failing with EADDRINUSE (You)
 - [FIX-38](../tasks/FIX-38.md) The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random (You)
+- [FIX-41](../tasks/FIX-41.md) A failed bank send that is later seen completed is put in front of a person, and a send to an unsaved account needs the name token (You)
 
 ## Done
 
