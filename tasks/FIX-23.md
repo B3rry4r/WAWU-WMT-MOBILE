@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-23 · The web sign-up keeps the phone's dial code, so the billing currency reads it right
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-23.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

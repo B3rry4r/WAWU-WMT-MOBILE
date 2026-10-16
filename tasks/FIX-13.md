@@ -15,6 +15,13 @@ artboards: []
 ---
 # FIX-13 · WAWU ID token rotation: a failed sweep never fails the sign-in
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-13.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows; section 4, fenced files)

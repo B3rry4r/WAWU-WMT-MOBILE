@@ -15,6 +15,17 @@ artboards: [W26, W27, W28]
 ---
 # WALLET-04 · Transaction history and detail
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 16:05) and the branch.
+- **Status:** building on its branch (round 1 verified). This file on main still says todo.
+- **Branches:** mobile `wmt/WALLET-04` 376288e. No backend change (G-720, G-721 filed).
+- **Merged and live:** nothing of this task.
+- **Open findings:** medium: D1 (a grouped row on W1 opens the newest unlock's receipt, not the group list; `recentRow` drops `group.key`).
+  - Lows D2, D3, D4 are in tasks/SWEEP-MONEY.md. G-721 (the fee label says Fintava under Nuvion) is the owner's.
+- **Next:** round 2 fixes D1 only. It also edited WALLET-01's WalletScreen test assertions about See all; the verifier confirmed that.
+- **Records:** on the branch, `wmt/WALLET-04`, in tasks/WALLET-04.md there (28 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-04`; the history goes to tasks/history/WALLET-04.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

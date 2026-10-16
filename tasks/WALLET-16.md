@@ -15,6 +15,17 @@ artboards: []
 ---
 # WALLET-16 · Earnings land in the wallet automatically
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (11 Oct 16:45) and the branch.
+- **Status:** building on its branches (round 1 verified: the code held on every money attack). This file on main still says todo.
+- **Branches:** mobile `wmt/WALLET-16` 66c375c. Backend `wmt/WALLET-16` 18ea4fb (migration `20261021180000_earning_settlements`).
+- **Merged and live:** nothing of this task.
+- **Open findings:** medium: F1 (test gap on three money rules; the code is right), F2 (lease and bounds test gap) and F3 (a `refused` earning never goes to review, against CONVENTIONS section 19). The lead counts F2 and F3 as medium (16 Oct 2026), so all three get a fix round.
+  - Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499.
+- **Next:** fix round 2: tests for F1 and F2, the review path for F3 (MONEY-18's WalletHoldService has the same dead branch). Before the merge, count the unsettled completed sales with a payee on production (F8: the first sweep pays them all). G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
+- **Records:** on the branch, `wmt/WALLET-16`, in tasks/WALLET-16.md there (40 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-16`; the history goes to tasks/history/WALLET-16.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

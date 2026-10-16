@@ -15,7 +15,12 @@ artboards: []
 ---
 # SCHOOLS-12 · School sign-ups from the WAWU link, and the school's commission
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV3).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-10.
+- **History:** none yet. Reports go to tasks/history/SCHOOLS-12.md.
 
 ## Read first
 
