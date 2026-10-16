@@ -20,13 +20,15 @@ On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, 
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder. Backend `wmt/BILLS-04` `cdedb3a`, started from `wmt/EXPLORE-05` `649187a` (the batch 4 head); mobile `wmt/BILLS-04` from `wmt/MERGE-4` `74b1edb` (docs only). Migration `20261023210000_wallet_bills` (one new table `WalletBill`). No PR.
+- **Status:** verifying. Built by a Sonnet builder. Backend `wmt/BILLS-04` `ba5e043` (round 2; round 1 was `cdedb3a`), started from `wmt/EXPLORE-05` `649187a` (the batch 4 head); mobile `wmt/BILLS-04` from `wmt/MERGE-4` `74b1edb` (docs only). Migration `20261023210000_wallet_bills` (one new table `WalletBill`). No PR.
 - **What is built** (backend `src/wallet-bills/`): `POST /bills/wallet` starts an electricity, airtime, data or cable bill and answers its quote (S5: the bill, the lines of the fee, the wallet payment's quote with the balance and shortfall for S11); `POST /bills/wallet/pay` pays it with the PIN; `GET /bills/wallet/{id}/quote`; `GET /bills/wallet/{id}` (S7's token, units and reference, or S12's failure with the money back). The web's Flutterwave bill routes are untouched.
 - **How a bill is paid:** a held `bill` payment moves the bill, Fintava's bill charge and WAWU's fee into WAWU's account in one transfer (R-31); then the purchase is made at Fintava out of it, once. Delivered: the hold is released. Failed: the hold is refunded by itself (S12). A bill under the company's minimum, a meter Fintava does not know and a price that changed are refused before any debit.
 - **Next:** a verifier. Passes V1, V2, V3, V4, V6, V7, V8, V9. The purchase checks NOT RUN against Fintava (question 17: payouts still refused in the sandbox); everything was run against the sandbox-shaped double, whose success bodies are guesses (G-647).
 - **Open for the lead or owner:** G-648 (bills cannot be paid from a Nuvion wallet: every bill route answers `target_not_payable` under `WALLET_PROVIDER=nuvion`; an owner ruling is needed before production moves to Nuvion, R-39, R-45); G-649 (Recent needs a list route, BILLS-02 or BILLS-03); G-462 (a refunded failed bill costs WAWU Fintava's charge on the refund move; the person loses Fintava's charge on the first transfer, R-10).
 - **Fences touched:** SHARED-CHANGES BILLS-04 #1 (schema and migration, `src/app.module.ts`, `contract/openapi.json`, two route inventories in specs, the purge map, and one change in the payment service: a bill is counted against the bill limits, not the purchase ones).
-- **History:** the builder report is in tasks/history/BILLS-04.md.
+- **Round 2 (16 Oct):** the verifier's medium (a lost purchase settled with another bill's record) and four lows fixed, each red then green; the fixes are in tasks/history/BILLS-04.md. Migration `20261023210000_wallet_bills` now also has two unique indexes (still unmerged). Next: a verifier for round 2 (the medium, then the lows).
+- **Sweep, not built here:** FIX-40, the daily limit counting a refunded payment (shared WALLET-23 code, `money-limits.service.ts`).
+- **History:** the builder reports are in tasks/history/BILLS-04.md.
 
 ## Read first
 
