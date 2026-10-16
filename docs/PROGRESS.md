@@ -9,7 +9,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 137 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| verifying | 2 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 101 | 27 | 11 | 5 |
 
@@ -20,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Being verified
 
 - [WALLET-04](../tasks/WALLET-04.md) Transaction history and detail (You)
+- [FIX-33](../tasks/FIX-33.md) The Nuvion opening spec draws every client address once, so it stops failing at random (You)
 
 ## Done
 
