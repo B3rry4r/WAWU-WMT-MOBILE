@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useIsFocused } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,8 +33,8 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
  * it leads, as drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap
- * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the WAWU card row (WALLET-22);
- * See all and a row's detail (WALLET-04). The settings icon is built (WALLET-06, W35). Nothing here reads, charges or moves money beyond the three reads above.
+ * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the WAWU card row (WALLET-22).
+ * The settings icon is built (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves money beyond the three reads above.
  *
  * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
  * failed read), because the canvas draws no other.
@@ -48,6 +48,7 @@ export function WalletScreen() {
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
+  const router = useRouter();
 
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
   const state = wallet.data?.state;
@@ -109,6 +110,9 @@ export function WalletScreen() {
               pending: recent.isFetching,
               failed: recent.isError,
               onRetry: () => void recent.refetch(),
+              onSeeAll: () => router.push('/transactions'),
+              onOpen: (id: string) => router.push({ pathname: '/transactions/[id]', params: { id } }),
+              onOpenGroup: (key: string) => router.push({ pathname: '/transactions', params: { group: key } }),
             }}
           />
         )}
@@ -124,7 +128,7 @@ type BodyProps = {
   onOpenWallet: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
-  recent: { rows: Parameters<typeof RecentTransactions>[0]['rows']; pending: boolean; failed: boolean; onRetry: () => void };
+  recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
 function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {
