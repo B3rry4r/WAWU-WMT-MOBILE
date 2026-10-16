@@ -21,6 +21,7 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-07.
 - **History:** none yet. Reports go to tasks/history/SCHOOLS-06.md.
+- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
 
 ## Read first
 

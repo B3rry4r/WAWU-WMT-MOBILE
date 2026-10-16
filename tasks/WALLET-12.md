@@ -3,13 +3,13 @@ id: WALLET-12
 title: Share a receipt as image or PDF
 owner: YOU
 area: WALLET
-order: 258
+order: 303
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-04, WALLET-18]
-decisions: [R-37]
+decisions: [R-37, R-67, R-69, R-53]
 passes: [V1, V4, V5, V6, V9]
 artboards: [W41, W42, W43]
 ---
@@ -21,6 +21,11 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): WALLET-04.
 - **History:** none yet. Reports go to tasks/history/WALLET-12.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** W41 to W43: the line "Nuvion, licensed by the CBN" stays hidden until the owner confirms the words (R-67); the share target reads "Who Made This? chat" (R-69).
+
+## Design v2 update (16 Oct 2026)
+
+- The receipt prints the bank only as the Hub serves it and never a licence or CBN line until the owner confirms the exact words (R-67; the Hub's `licenceLine` is empty). The share target "WAWU chat" becomes "Who Made This? chat" and wraps on a narrow phone (W42, W43). The provider's part of the fee is "Bank charge" (R-53).
 
 ## Read first
 

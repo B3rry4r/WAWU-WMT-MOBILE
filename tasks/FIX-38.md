@@ -3,7 +3,7 @@ id: FIX-38
 title: The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random
 owner: YOU
 area: FIX
-order: 289
+order: 334
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

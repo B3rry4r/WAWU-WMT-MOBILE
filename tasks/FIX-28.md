@@ -3,7 +3,7 @@ id: FIX-28
 title: The schools order spec tells lower from upper, and the communities list has a tie-break
 owner: YOU
 area: FIX
-order: 281
+order: 326
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

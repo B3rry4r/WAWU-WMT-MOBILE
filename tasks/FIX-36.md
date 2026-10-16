@@ -3,7 +3,7 @@ id: FIX-36
 title: The recipient leak check cannot match a random id by chance, so it stops failing at random
 owner: YOU
 area: FIX
-order: 287
+order: 332
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

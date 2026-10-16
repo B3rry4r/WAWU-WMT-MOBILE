@@ -3,7 +3,7 @@ id: FIX-35
 title: The documents spec checks the temporary folder only for what could be a document, so it stops failing at random
 owner: YOU
 area: FIX
-order: 286
+order: 331
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

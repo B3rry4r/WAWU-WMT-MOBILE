@@ -3,7 +3,7 @@ id: FIX-34
 title: The admin identity-holds spec scans an audit row without its own ids, so it stops failing at random
 owner: YOU
 area: FIX
-order: 285
+order: 330
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
