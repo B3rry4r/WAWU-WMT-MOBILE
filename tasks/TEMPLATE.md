@@ -15,6 +15,10 @@ artboards: [ids from design/canvas-inventory.json]
 ---
 # X-00 · Title
 
+## Current state
+
+At most 60 lines, rewritten at the end of every round: status, branches and hashes per repo, what is merged and live, open findings by severity (blocker, high, medium; lows point to `tasks/SWEEP-<AREA>.md`), the next step. Round reports move to `tasks/history/<ID>.md` with `python3 scripts/tasks/compact_task.py <ID>`.
+
 ## Read first
 
 - `docs/WORKFLOW.md`

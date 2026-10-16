@@ -15,6 +15,13 @@ artboards: [W39]
 ---
 # WALLET-13 · Earnings breakdown
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-16.
+- **History:** none yet. Reports go to tasks/history/WALLET-13.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

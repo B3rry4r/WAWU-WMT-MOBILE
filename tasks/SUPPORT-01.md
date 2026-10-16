@@ -15,7 +15,12 @@ artboards: []
 ---
 # SUPPORT-01 · Support chat that opens with the payment or piece it is about
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-19, HOME-12, WALLET-04.
+- **History:** none yet. Reports go to tasks/history/SUPPORT-01.md.
 
 ## Read first
 
