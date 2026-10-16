@@ -9,7 +9,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 23 | 0 | 0 | 0 |
+| verifying | 24 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -43,6 +43,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-36](../tasks/FIX-36.md) The recipient leak check cannot match a random id by chance, so it stops failing at random (You)
 - [FIX-37](../tasks/FIX-37.md) The live hardening spec asks the system for its ports, so it stops failing with EADDRINUSE (You)
 - [FIX-38](../tasks/FIX-38.md) The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random (You)
+- [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 
 ## Done
 
