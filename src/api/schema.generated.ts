@@ -226,6 +226,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The creator's paid message settings with everything I21 to I23 draw (price, reply window, share, standing). */
+        get: operations["PaidDmController_getSettings"];
+        /** Saves the creator's paid message settings. Refused while paid messages are paused (R-13). */
+        put: operations["PaidDmController_saveSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/paid-dm/creators/{wawuId}/availability": {
         parameters: {
             query?: never;
@@ -5583,6 +5601,14 @@ export interface components {
         RespondDmDto: {
             text: string;
         };
+        UpdatePaidDmSettingsDto: {
+            /** @description Price per message in kobo. Required when `enabled` is true and none is saved yet. */
+            priceKobo?: number;
+            /** @description Hours the creator has to reply. Left out means unchanged. */
+            responseHours?: number;
+            /** @description Whether fans may send paid messages. */
+            enabled: boolean;
+        };
         PaidDmReplyDto: {
             text: string;
         };
@@ -8234,6 +8260,25 @@ export interface components {
             windowDays: number;
             pauseDays: number;
             pausedUntil: string | null;
+        };
+        PaidDmPricePreset: {
+            priceKobo: number;
+        };
+        PaidDmSettingsOptions: {
+            minPriceKobo: number;
+            maxPriceKobo: number;
+            pricePresets: components["schemas"]["PaidDmPricePreset"][];
+            responseWindowHours: number[];
+        };
+        PaidDmSettings: {
+            enabled: boolean;
+            priceKobo: number | null;
+            responseHours: number;
+            creatorSharePct: number;
+            earnPerMessageKobo: number | null;
+            raiseToKobo: number | null;
+            options: components["schemas"]["PaidDmSettingsOptions"];
+            standing: components["schemas"]["PaidDmStanding"];
         };
         PaidDmAvailability: {
             creatorWawuId: string;
@@ -11254,6 +11299,69 @@ export interface operations {
                 };
             };
             /** @description The caller is not a creator account. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmSettings"];
+                };
+            };
+            /** @description The caller is not a creator account. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PaidDmController_saveSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePaidDmSettingsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmSettings"];
+                };
+            };
+            /** @description The price is not a whole number of naira, no price is set, or the reply time is not on offer. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller is not a creator account, or paid messages are paused (reason.code paid_messages_paused). */
             403: {
                 headers: {
                     [name: string]: unknown;
