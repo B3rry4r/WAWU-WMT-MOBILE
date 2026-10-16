@@ -7,7 +7,7 @@ order: 261
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-12]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,9 +18,12 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/WALLET-23.md.
+- **Status:** verifying. Built on `wmt/WALLET-23` in both repos: backend `4b844fa` (on main `56f94d0`, CI green except the 16 gate FAIL lines main already has), mobile docs only. No PR. Migration stamp `20261022010000`.
+- **Built:** the account's daily limit from Fintava. The tier comes from the balance read; its daily limit is the setting `FINTAVA_TIER_DAILY_LIMITS_KOBO` (empty: the `limits.md` policy). A balance read keeps it on the wallet row; `GET /money/wallet` fills W35's `limits` from that (no tier named; hidden until a limit is kept and under Nuvion); `MoneyLimits` refuses a debit over it with `403 limit_reached`, `limit: daily`, `limitKobo`, `remainingTodayKobo` and the limit in the sentence. All money out of the wallet counts together in the Lagos day.
+- **Next:** a verifier (not the builder) checks V1 to V4, V6 to V9 on the pair of branches: the HTTP spec's refusal path and the W35 row against a seeded wallet (draw W35 at 390 px, light and dark, from a stack with `--with mobile` and a `FintavaWallet` row whose `dailyLimitKobo` is set).
+- **Open for the lead:** SHARED-CHANGES WALLET-23 #1 (migration, rename at merge if needed) and #2 (contract, then `npm run api`).
+- **Open for the owner:** none new. A17 to A20 still wait on the owner's ruling; Fintava's own limit refusal and question 16 are unchanged.
+- **History:** the builder report is in tasks/history/WALLET-23.md.
 
 ## Read first
 
@@ -45,13 +48,9 @@ W35 limits row. What A17 to A20 become waits for the owner's ruling on them (aft
 
 - [ ] A debit over the account's limit is refused with the limit shown.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-23.md](history/WALLET-23.md).
 
 ## Owner sign-off
 
