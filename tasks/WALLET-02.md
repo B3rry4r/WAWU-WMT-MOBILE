@@ -7,7 +7,7 @@ order: 140
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-06, WALLET-07, WALLET-08, WALLET-14, UI-02, UI-03]
 decisions: [R-10, R-26, R-33, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,10 +17,16 @@ artboards: [W7, W9, W10, W11, W12]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-07.
-- **History:** none yet. Reports go to tasks/history/WALLET-02.md.
+As of 16 Oct 2026. Status: verifying. Built by a Sonnet builder; the verifier is a different session.
+- **Where:** mobile `wmt/WALLET-02` (from `wmt/MERGE-4` `74b1edb`), backend `wmt/WALLET-02` `50f3156` (from `wmt/EXPLORE-05` `649187a`, the batch 4 head). wawu-id unchanged. Migration: none (the stamp `20261023220000` is not used).
+- **Built (app):** W7 `/send` (search by name, @handle or phone with a 350 ms rest, Recent, results with the purple or blue tick), W9 `/send/amount` (the shared amount keypad, kobo typed whole, the bank's balance beneath, the Hub's quick amounts, a note), W10 `/send/review` (PaySheet's send variant: Fintava's charge, WAWU's fee, Fees, Total, "They get", the total on the button), W11 (the PIN sheet over it), W12 `/send/receipt` (reference with copy, Lagos date, charges, Total paid, save as beneficiary, Share receipt through the phone's share sheet, Done to the Wallet tab). Send is added on W1 (`WalletActions`) and on H1's balance card, as drawn (R-41).
+- **Built (backend, additive):** `GET /money/transfers/presets` (quick amounts from `TRANSFER_AMOUNT_PRESETS_KOBO`, PROVISIONAL(TRANSFER-PRESETS); the note's length). No new money-out route, so WALLET-23's limit check is the existing one on `POST /money/transfers/wawu`; the review reads the quote's `withinDailyLimit` and `remainingTodayKobo` and never sends a send the Hub would refuse.
+- **One key per intent:** a wrong PIN, no answer and a retyped PIN send the SAME `Idempotency-Key`; a changed quote, or Try again after a failure, takes a new one. `pending` (G-710) is "still confirming", read again by id every 4 s, never sent again. `402` shows the bank's figures; `409 pin_not_set` opens A9 and comes back; `409 wallet_not_open` opens A26.
+- **Not built, and why:** fingerprint or face on W11 (needs SHARED-CHANGES WALLET-06 #1 and a W35 switch that registers a phone key; G-43, G-788; the sheet's `biometric` prop is left out, R-47). W7's Bank account tab (WALLET-03). W14 (not this task's artboard).
+- **Decisions (Default (agent), owner may override):** (1) the beneficiary switch on W12 starts OFF unless the person is already saved (the canvas draws it on): a save counts toward a limit and is the person's own act. (2) The canvas's "On WAWU" list under Recent is the search result; the Hub serves no suggestions, so with nothing typed the screen shows Recent, or what to type. (3) A send over today's limit shows PaySheet's failed state with the Hub's own figure ("Try again", "Cancel"); its title says the payment did not go through although nothing was tried. (4) The not-enough state's "Add" button takes the person to the Wallet tab (their account number and Copy) until Add money (WALLET-05) exists (SHARED-CHANGES WALLET-02 #4). (5) Amount text is at most 9 whole digits and 2 decimals.
+- **Shared changes filed:** WALLET-02 #1 to #6 (the route, the contract copy, the amount keypad, PaySheet's optional `onAddMoney`, the biometric hold-back, and the three existing tests that asserted Send was absent). Gaps: G-785 to G-788.
+- **Next:** a verifier. Backend CI runs on the push (the full suite, gates, protected routes, contract). Mobile CI cannot run (billing), so the full mobile check ran locally (see the Builder report).
+- **History:** the builder report is in [history/WALLET-02.md](history/WALLET-02.md).
 
 ## Read first
 
@@ -103,18 +109,6 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Designer notes (⚠, unresolved)
 
 - None.
-
-## Builder report
-
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

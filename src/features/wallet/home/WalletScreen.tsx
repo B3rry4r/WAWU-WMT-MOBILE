@@ -15,6 +15,7 @@ import { layout, useWawu } from '@/theme';
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { BillTiles } from './BillTiles';
+import { WalletActions } from './WalletActions';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { WalletBar } from './WalletBar';
@@ -33,7 +34,7 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
  * it leads, as drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap
- * (WALLET-21); Send (WALLET-02) and Add money (WALLET-05); the WAWU card row (WALLET-22).
+ * (WALLET-21); Add money (WALLET-05); the WAWU card row (WALLET-22). Send (WALLET-02) is built.
  * The settings icon is built (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves money beyond the three reads above.
  *
  * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
@@ -103,6 +104,7 @@ export function WalletScreen() {
             hidden={hidden}
             onToggleHidden={() => setHidden((was) => !was)}
             onOpenWallet={openWallet}
+            onSend={() => router.push('/send')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -126,12 +128,13 @@ type BodyProps = {
   hidden: boolean;
   onToggleHidden: () => void;
   onOpenWallet: () => void;
+  onSend: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -201,6 +204,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRet
             hidden={hidden}
             onToggleHidden={onToggleHidden}
           />
+          <WalletActions onSend={onSend} />
           <BillTiles />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>

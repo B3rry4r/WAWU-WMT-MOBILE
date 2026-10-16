@@ -2911,6 +2911,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/transfers/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What W9 draws that is not the person's own: the quick amounts under the
+         *     keypad (settings, PROVISIONAL(TRANSFER-PRESETS)) and the note's longest
+         *     length. It reads settings only: no provider, no fee, no money moves.
+         *     Declared before `transfers/:id` so `presets` is never read as an id.
+         */
+        get: operations["MoneyTransfersController_presets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/transfers/{id}": {
         parameters: {
             query?: never;
@@ -8176,6 +8198,13 @@ export interface components {
             transactionId: string | null;
             createdAt: string;
             completedAt: string | null;
+        };
+        TransferQuickAmountView: {
+            amountKobo: number;
+        };
+        TransferPresetsView: {
+            quickAmounts: components["schemas"]["TransferQuickAmountView"][];
+            noteMaxLength: number;
         };
         RecipientView: {
             wawuUserId: string;
@@ -17678,6 +17707,43 @@ export interface operations {
             };
             /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyTransfersController_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferPresetsView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
                 headers: {
                     [name: string]: unknown;
                 };

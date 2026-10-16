@@ -305,7 +305,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Scan', 'Shop', 'See all']) {
+    for (const label of ['Add', 'Scan', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -432,7 +432,7 @@ describe('H1 · the Bills action on the balance card (BILLS-01, R-41)', () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
-    for (const label of ['Send', 'Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    for (const label of ['Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
   });
 });
 
