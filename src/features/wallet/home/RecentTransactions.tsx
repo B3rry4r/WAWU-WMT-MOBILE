@@ -32,14 +32,16 @@ export type RecentTransactionsProps = {
   onSeeAll: () => void;
   /** A row: that movement's detail (W27). */
   onOpen: (id: string) => void;
+  /** A grouped row: the movements it stands for (W26 with `?group=`), as the history opens the same row. */
+  onOpenGroup: (key: string) => void;
 };
 
 /**
  * W1's recent transactions, W4's row shapes while the read is out, and W5's "No transactions yet". A row opens that
- * transaction's detail (W27) and See all opens the history (W26). W4 and W5 draw no heading: the shapes, or the empty card,
+ * transaction's detail (W27), a grouped row opens the list it stands for (W26 with the group, as the history does), and See all opens the history (W26). W4 and W5 draw no heading: the shapes, or the empty card,
  * alone, so there is no See all with nothing to see.
  */
-export function RecentTransactions({ rows, pending, failed, onRetry, accountNumber, now, onSeeAll, onOpen }: RecentTransactionsProps) {
+export function RecentTransactions({ rows, pending, failed, onRetry, accountNumber, now, onSeeAll, onOpen, onOpenGroup }: RecentTransactionsProps) {
   const view = recentView({ rows, pending, failed });
   // Until the read answers nobody knows whether there are rows: W4's shapes, not a heading over nothing.
   if (view === 'loading') return <RowsSkeleton testID="wallet-transactions-loading" />;
@@ -80,7 +82,7 @@ export function RecentTransactions({ rows, pending, failed, onRetry, accountNumb
               amountKobo={shown.amountKobo}
               meta={shown.meta}
               lead={shown.lead}
-              onPress={() => onOpen(shown.id)}
+              onPress={() => (shown.groupKey ? onOpenGroup(shown.groupKey) : onOpen(shown.id))}
             />
           );
         })

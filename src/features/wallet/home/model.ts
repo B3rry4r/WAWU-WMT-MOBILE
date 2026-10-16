@@ -124,6 +124,8 @@ export type RecentRow = {
   amountKobo: number;
   meta: string;
   lead: RowLead;
+  /** Set when the row stands for several movements (three unlocks of one piece): the key of the list they open to (W26's `?group=`). */
+  groupKey?: string;
 };
 
 export function recentRow(row: WalletTransaction, now: Date): RecentRow {
@@ -136,6 +138,7 @@ export function recentRow(row: WalletTransaction, now: Date): RecentRow {
     amountKobo: face.amountKobo,
     meta: face.status ? [face.status, time].filter(Boolean).join(' \u00b7 ') : time,
     lead: face.lead,
+    groupKey: row.group?.key,
   };
 }
 

@@ -112,6 +112,7 @@ export function WalletScreen() {
               onRetry: () => void recent.refetch(),
               onSeeAll: () => router.push('/transactions'),
               onOpen: (id: string) => router.push({ pathname: '/transactions/[id]', params: { id } }),
+              onOpenGroup: (key: string) => router.push({ pathname: '/transactions', params: { group: key } }),
             }}
           />
         )}
@@ -127,7 +128,7 @@ type BodyProps = {
   onOpenWallet: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
-  recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen'>;
+  recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
 function Body({ view, hidden, onToggleHidden, onOpenWallet, onRetryWallet, onRetryBalance, recent }: BodyProps) {

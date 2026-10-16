@@ -177,6 +177,21 @@ describe('From the Wallet tab to the history and a receipt, on the real router',
     await waitFor(() => expect(pathname()).toBe('/wallet'));
   });
 
+  it('a user on the Wallet tab taps a grouped row and sees the unlocks it stands for, not one unlock\u2019s receipt, and Back returns to the tab', async () => {
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    await fireEvent.press(await screen.findByTestId('wallet-row-unlock-9'));
+    expect(await screen.findByText('Tolu Test')).toBeTruthy();
+    expect(pathname()).toBe('/transactions');
+    expect(screen.queryByLabelText('Search transactions')).toBeNull();
+    expect(screen.queryByText('Reference')).toBeNull();
+    await fireEvent.press(screen.getByTestId('history-row-unlock-1'));
+    await waitFor(() => expect(pathname()).toBe('/transactions/unlock-1'));
+    expect(await screen.findByText('Unlock from Tolu Test')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(pathname()).toBe('/wallet'));
+  });
+
   it('a user taps a grouped row and sees the unlocks it stands for, then one of them as a receipt', async () => {
     await renderRouter(routes, { initialUrl: '/transactions' });
     await fireEvent.press(await screen.findByTestId('history-row-unlock-9'));
