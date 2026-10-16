@@ -7,7 +7,7 @@ order: 230
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -17,10 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/FIX-22.md.
+As of 16 Oct 2026, after round 1 (builder, Sonnet).
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-22.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-28` (this branch contains it); API types regenerated from backend `wmt/FIX-22` (51f1bc2).
+- **Branches:** backend `wmt/FIX-22` at ba3c59f (the build `11eb3bf` on top of a merge of main `18ac5f9`). Mobile `wmt/FIX-22` holds this record and the SHARED-CHANGES row. No migration (`none`), no route change, `contract/openapi.json` unchanged.
+- **Merged and live:** nothing of this task.
+- **Built:** `GeminiChatRequest.responseSchema?: object`; `chat()` sends `responseMimeType: "application/json"` and the schema in `generationConfig` when it is there (a new `buildChatBody`), and sends the body it always sent when it is not. `LegalAssistantService.turn` passes `buildTurnSchema(intake.matter)`. SHARED-CHANGES LEGAL-01 #3 is marked applied.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: the response schema (enum, nullable, maxItems) is not proven against the live Gemini API; a matter the model switches to mid-turn gets its schema from the next turn. They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens the backend pull request from the batch 3 head (51f1bc2: 819aa28 plus an empty commit that re-ran CI) and has one live Gemini smoke run when a key is available. The src/common/ai change is the SHARED-CHANGES row already marked applied in this task.
 
 ## Read first
 
@@ -46,13 +49,9 @@ LEGAL-01 #3 asked for an optional `responseSchema` on `GeminiChatRequest`, sent 
 - [ ] The profiling turn sends its schema.
 - [ ] Protected routes 253/253.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-22.md](history/FIX-22.md).
 
 ## Owner sign-off
 
