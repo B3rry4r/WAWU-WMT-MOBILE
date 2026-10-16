@@ -14,7 +14,7 @@ const mockPressableProps: Record<string, unknown>[] = [];
 jest.mock('react-native/Libraries/Components/Pressable/Pressable', () => {
   const React = require('react');
   const actual = jest.requireActual('react-native/Libraries/Components/Pressable/Pressable');
-  const Watched = React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+  const Watched = React.forwardRef(function Watched(props: Record<string, unknown>, ref: unknown) {
     mockPressableProps.push(props);
     return React.createElement(actual.default, { ...props, ref });
   });
@@ -70,7 +70,7 @@ const consentBox = () => [...mockPressableProps].reverse().find((props) => props
 describe('A5 · the consent box on the web', () => {
   it('hands the Pressable aria-checked beside accessibilityState, and both follow the tick', async () => {
     const { ConfirmDetailsScreen } = require('../ConfirmDetailsScreen') as { ConfirmDetailsScreen: ComponentType<Record<string, unknown>> };
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
     clients.push(client);
     await render(
       <QueryClientProvider client={client}>
