@@ -1,5 +1,7 @@
 import type { FeeQuote } from '../api';
-import { dropIntent, findIntent, forgetIntentsInMemory, intentsKey, MAX_INTENTS, putIntent, readIntent, UNKNOWN_KEEP_MS, type SendIntent } from '../intent';
+import { signOut } from '@/api/session';
+
+import { dropIntent, dropIntentOfTransfer, findIntent, forgetIntentsInMemory, intentsKey, MAX_INTENTS, putIntent, readIntent, rereadIntent, settleIntentsAtSignOut, UNKNOWN_KEEP_MS, type SendIntent } from '../intent';
 
 /*
  * The payment intent the review keeps on the phone (WALLET-02 round 2): written before a request leaves, found again after the
@@ -124,10 +126,73 @@ describe('a payment intent on the phone', () => {
     expect(readIntent({ ...intent(), amountKobo: 12.5 })).toBeNull();
   });
 
-  it('still holds in memory when the phone’s store cannot be written or read', async () => {
+  it('is not kept, and says so, when the phone’s store cannot be written: the caller does not send', async () => {
     mockStore.failWrites = true;
-    mockStore.failReads = true;
-    await expect(putIntent(OWNER, intent())).resolves.toBeUndefined();
+    await expect(putIntent(OWNER, intent())).resolves.toBe(false);
+    expect(await findIntent(OWNER, AMAKA, 2_500_000)).toBeNull();
+    mockStore.failWrites = false;
+    await expect(putIntent(OWNER, intent())).resolves.toBe(true);
     expect((await findIntent(OWNER, AMAKA, 2_500_000))?.key).toBe('key-1');
+  });
+
+  it('reads nothing, and never throws, from a store that cannot be read', async () => {
+    mockStore.failReads = true;
+    expect(await findIntent(OWNER, AMAKA, 2_500_000)).toBeNull();
+    expect(await rereadIntent(OWNER, AMAKA, 2_500_000)).toBeNull();
+  });
+});
+
+describe('read again at Send (round 3)', () => {
+  it('adopts what another tab wrote since this one loaded, and nothing else', async () => {
+    expect(await findIntent(OWNER, AMAKA, 2_500_000)).toBeNull();
+    mockVault.set(intentsKey(OWNER), JSON.stringify([intent({ key: 'tab-one' })]));
+    expect((await rereadIntent(OWNER, AMAKA, 2_500_000))?.key).toBe('tab-one');
+    expect((await findIntent(OWNER, AMAKA, 2_500_000))?.key).toBe('tab-one');
+    expect(await rereadIntent(OWNER, CHIDI, 2_500_000)).toBeNull();
+  });
+
+  it('takes the other tab’s pending answer for the same send, but never swaps a send this run made for a different key', async () => {
+    await putIntent(OWNER, intent({ key: 'mine' }));
+    mockVault.set(intentsKey(OWNER), JSON.stringify([intent({ key: 'mine', phase: 'pending', transferId: 'send-3' })]));
+    expect(await rereadIntent(OWNER, AMAKA, 2_500_000)).toEqual(expect.objectContaining({ key: 'mine', phase: 'pending', transferId: 'send-3' }));
+    forgetIntentsInMemory();
+    await putIntent(OWNER, intent({ key: 'mine' }));
+    mockVault.set(intentsKey(OWNER), JSON.stringify([intent({ key: 'theirs' })]));
+    expect((await rereadIntent(OWNER, AMAKA, 2_500_000))?.key).toBe('mine');
+  });
+
+  it('never goes back to an older stored phase for the send this run already knows is pending', async () => {
+    await putIntent(OWNER, intent({ key: 'mine', phase: 'pending', transferId: 'send-3' }));
+    mockVault.set(intentsKey(OWNER), JSON.stringify([intent({ key: 'mine' })]));
+    expect((await rereadIntent(OWNER, AMAKA, 2_500_000))?.phase).toBe('pending');
+  });
+});
+
+describe('a send the Hub decided, and sign-out (round 3)', () => {
+  it('a receipt that shows a send decided lets the intent with that send’s id go', async () => {
+    await putIntent(OWNER, intent({ phase: 'pending', transferId: 'send-4' }));
+    await dropIntentOfTransfer(OWNER, 'send-4');
+    forgetIntentsInMemory();
+    expect(await findIntent(OWNER, AMAKA, 2_500_000)).toBeNull();
+  });
+
+  it('sign-out keeps what is unresolved and writes out what has run out', async () => {
+    const old = Date.now() - UNKNOWN_KEEP_MS - 1000;
+    await putIntent(OWNER, intent({ key: 'fresh-unknown', payeeId: AMAKA }));
+    await putIntent(OWNER, intent({ key: 'pending', payeeId: CHIDI, phase: 'pending', transferId: 'send-5' }));
+    await putIntent(OWNER, intent({ key: 'run-out', payeeId: CHIDI, amountKobo: 100_000, at: old }));
+    await settleIntentsAtSignOut();
+    const kept = (JSON.parse(mockVault.get(intentsKey(OWNER)) ?? '[]') as { key: string }[]).map((row) => row.key).sort();
+    expect(kept).toEqual(['fresh-unknown', 'pending']);
+  });
+
+  it('signing out of the app does the same, and the same person finds the unresolved ones when they sign back in', async () => {
+    await putIntent(OWNER, intent({ key: 'pending', phase: 'pending', transferId: 'send-6' }));
+    await putIntent(OWNER, intent({ key: 'run-out', payeeId: CHIDI, at: Date.now() - UNKNOWN_KEEP_MS - 1000 }));
+    await signOut();
+    await settleIntentsAtSignOut();
+    expect(JSON.parse(mockVault.get(intentsKey(OWNER)) ?? '[]')).toHaveLength(1);
+    expect((await findIntent(OWNER, AMAKA, 2_500_000))?.key).toBe('pending');
+    expect(await findIntent(OTHER, AMAKA, 2_500_000)).toBeNull();
   });
 });

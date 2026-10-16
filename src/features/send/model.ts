@@ -109,8 +109,24 @@ export function failureLine(transfer: Pick<Transfer, 'statusMessage' | 'failureR
  */
 export const CONFIRMING_LINE = "We're still confirming this send. Don't send it again. Check Wallet activity for the result.";
 
+/** W10's still-confirming sentence: the sheet's own words, pointing to Wallet activity as W12 does. It never says "failed" or "send again". */
+export const reviewConfirmingLine = (totalKobo: number): string =>
+  `Your payment of ${formatMoney(totalKobo, { decimals: totalKobo % 100 !== 0 })} hasn't been confirmed yet. Don't send it again. Check Wallet activity for the result.`;
+
 /** W10 when the last try at this send got no answer: sending again asks the Hub about that try first (the same Idempotency-Key). */
 export const RETRY_LINE = 'Your last try got no answer. Sending again checks it first, so you are not charged twice.';
+
+/**
+ * W10 when the phone still held an earlier send for this person and amount and the Hub had already decided it (WALLET-02 round 3).
+ * It is not this send: no receipt, nothing saved for it, and the person can send again with a new key. Wallet activity has the row.
+ */
+export function earlierSendLine(amountKobo: number, name: string, went: boolean): string {
+  const money = formatMoney(amountKobo, { decimals: amountKobo % 100 !== 0 });
+  return `Your earlier send of ${money} to ${firstName(name)} ${went ? 'went through' : 'did not go through'}. See Wallet activity.`;
+}
+
+/** W10 when the intent could not be written to the phone's store: nothing is sent, because a send the phone cannot remember cannot be protected. */
+export const NOT_READY_LINE = 'We could not get this payment ready. Try again.';
 
 /** W10's blocked states (nothing was tried, so nothing "didn't go through"): the title above the sentence. */
 export const OVER_LIMIT_TITLE = 'Over today’s limit';

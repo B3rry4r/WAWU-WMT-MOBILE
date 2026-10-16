@@ -12,9 +12,15 @@ import type { ComponentType } from 'react';
  * as the Hub does when the PIN is wrong, the wallet is short, the fees moved, nothing comes back, or the provider has not decided.
  */
 const mockVault = new Map<string, string>();
+/** `fail`: a write of the payment intent throws. `hang`: it never answers. Only keys of the intent store are touched. */
+const mockVaultFault = { fail: false, hang: false };
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
   setItemAsync: jest.fn(async (key: string, value: string) => {
+    if (key.startsWith('wmt.send.intents.')) {
+      if (mockVaultFault.fail) throw new Error('keychain unavailable');
+      if (mockVaultFault.hang) await new Promise(() => undefined);
+    }
     mockVault.set(key, value);
   }),
   deleteItemAsync: jest.fn(async (key: string) => {
@@ -245,6 +251,8 @@ beforeEach(() => {
     saveFails: false,
   });
   forgetIntentsInMemory();
+  mockVaultFault.fail = false;
+  mockVaultFault.hang = false;
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
@@ -533,6 +541,8 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     expect(await screen.findByText('Still confirming')).toBeTruthy();
     expect(hub.sends).toHaveLength(1);
     await restartApp();
+    // The Hub still has it pending when the review opens (a send it had already decided is the next tests' case).
+    hub.pollsLeftPending = 1;
     await renderRouter(routes, { initialUrl: REVIEW_URL });
     expect(await screen.findByText('Still confirming')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Send ₦/ })).toBeNull();
@@ -549,6 +559,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     expect(screen.queryAllByText(/confirming/i)).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
+    hub.pollsLeftPending = 50;
     await fireEvent.press(await screen.findByRole('button', { name: 'Send' }));
     await fireEvent.press(await screen.findByRole('button', { name: 'Send to Amaka Nwosu' }));
     await screen.findByTestId('send-amount-screen');
@@ -736,5 +747,150 @@ describe('W10 · over the limit, the quote, and the fee call (round 2)', () => {
       focusManager.setFocused(undefined);
       queryClient.unmount();
     }
+  });
+});
+
+
+/** The key one account's intents are kept under, as the review writes it (the test account's `sub`). */
+const OWNER = '00000000-0000-4000-8000-0000000000f2';
+const storeKey = `wmt.send.intents.${OWNER}`;
+const DAY = 24 * 60 * 60 * 1000;
+const storedRows = (): { key: string; phase: string; transferId: string | null; payeeId: string; amountKobo: number }[] => JSON.parse(mockVault.get(storeKey) ?? '[]');
+const seedIntent = (over: Record<string, unknown> = {}) =>
+  mockVault.set(
+    storeKey,
+    JSON.stringify([
+      {
+        key: 'stalekey-0000-1111',
+        payeeId: AMAKA.wawuUserId,
+        amountKobo: 2_500_000,
+        note: 'last month',
+        quote: quote(2_500_000),
+        phase: 'pending',
+        transferId: SEND_ID,
+        at: Date.now() - 3 * DAY,
+        ...over,
+      },
+    ]),
+  );
+const EARLIER_WENT = 'Your earlier send of ₦25,000 to Amaka went through. See Wallet activity.';
+const EARLIER_NOT = 'Your earlier send of ₦25,000 to Amaka did not go through. See Wallet activity.';
+
+describe('W10 · an old send the Hub already decided is not this send (round 3)', () => {
+  it('S9 · a pending intent from days ago that the Hub completed: no old receipt, one line, a fresh review, and a new send takes a new key', async () => {
+    hub.stored = transfer('completed', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575, note: 'last month' });
+    seedIntent();
+    await renderRouter(routes, { initialUrl: REVIEW_URL });
+    expect(await screen.findByText(EARLIER_WENT)).toBeTruthy();
+    expect(pathname()).toBe('/send/review');
+    expect(screen.queryByTestId('send-receipt-screen')).toBeNull();
+    expect(await screen.findByRole('button', { name: /^Send ₦/ })).toBeTruthy();
+    expect(storedRows()).toHaveLength(0);
+    expect(hub.sends).toHaveLength(0);
+    await pay();
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+    expect(hub.sends[0].key).not.toBe('stalekey-0000-1111');
+    expect(hub.payments).toBe(1);
+  });
+
+  it('S14 · the same for an old send the Hub failed: one line that it did not go through, and the person can send fresh', async () => {
+    hub.stored = transfer('failed', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575 });
+    seedIntent();
+    await renderRouter(routes, { initialUrl: REVIEW_URL });
+    expect(await screen.findByText(EARLIER_NOT)).toBeTruthy();
+    expect(screen.queryByText(/Payment didn.t go through/)).toBeNull();
+    expect(await screen.findByRole('button', { name: /^Send ₦/ })).toBeTruthy();
+    expect(storedRows()).toHaveLength(0);
+    await pay();
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends[0].key).not.toBe('stalekey-0000-1111');
+  });
+
+  it('a stored intent the Hub still has as pending keeps blocking; when this review has seen it pending and the Hub then decides it, it goes to the receipt', async () => {
+    hub.stored = transfer('pending', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575 });
+    hub.pollsLeftPending = 1;
+    seedIntent({ at: Date.now() - 60 * 1000 });
+    await renderRouter(routes, { initialUrl: REVIEW_URL });
+    expect(await screen.findByText('Still confirming')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send ₦/ })).toBeNull();
+    expect(screen.queryByTestId('send-review-earlier')).toBeNull();
+    expect(await screen.findByTestId('send-receipt-screen', {}, { timeout: 15_000 })).toBeTruthy();
+    expect(hub.sends).toHaveLength(0);
+    expect(storedRows()).toHaveLength(0);
+  }, 30_000);
+
+  it('a send this review started and found pending goes to its own receipt when it completes (this review was watching)', async () => {
+    hub.mode = 'pending';
+    await toReview();
+    await pay();
+    expect(await screen.findByText('Still confirming')).toBeTruthy();
+    expect(await screen.findByTestId('send-receipt-screen', {}, { timeout: 15_000 })).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+  }, 30_000);
+
+  it('a receipt that shows an old send decided lets its stored intent go', async () => {
+    hub.stored = transfer('completed', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575 });
+    seedIntent();
+    await renderRouter(routes, { initialUrl: `/send/receipt?id=${SEND_ID}` });
+    expect(await screen.findByTestId('receipt-head')).toBeTruthy();
+    await waitFor(() => expect(storedRows()).toHaveLength(0));
+  });
+});
+
+describe('W10 · what the store may and may not do (round 3)', () => {
+  it('a second tab opened before the first tab sent takes the key that tab wrote, so the money moves once', async () => {
+    await toReview();
+    // The other tab sent after this one opened: its intent is in the shared store, and this tab has never seen it.
+    seedIntent({ key: 'tab-one-key', phase: 'unknown', transferId: null, at: Date.now(), note: '' });
+    await pay();
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+    expect(hub.sends[0].key).toBe('tab-one-key');
+    expect(hub.payments).toBe(1);
+  });
+
+  it('a second tab that finds the first tab\'s send pending shows it pending and sends nothing', async () => {
+    await toReview();
+    seedIntent({ key: 'tab-one-key', phase: 'pending', transferId: SEND_ID, at: Date.now() });
+    hub.stored = transfer('pending', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575 });
+    hub.pollsLeftPending = 50;
+    await fireEvent.press(await screen.findByRole('button', { name: /^Send ₦/ }));
+    expect(await screen.findByText('Still confirming')).toBeTruthy();
+    expect(screen.queryByText(/^Approve ₦/)).toBeNull();
+    expect(hub.sends).toHaveLength(0);
+  });
+
+  it('when the store cannot keep the payment, nothing is sent and the person is told; with the store back, one send goes', async () => {
+    await toReview();
+    mockVaultFault.fail = true;
+    await pay();
+    expect(await screen.findByText('We could not get this payment ready. Try again.')).toBeTruthy();
+    expect(hub.sends).toHaveLength(0);
+    expect(screen.queryByText(/^Approve ₦/)).toBeNull();
+    expect(screen.queryByTestId('send-review-retry')).toBeNull();
+    mockVaultFault.fail = false;
+    await pay();
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+    expect(hub.payments).toBe(1);
+  });
+
+  it('a store that does not answer in time is the same: nothing is sent', async () => {
+    await toReview();
+    mockVaultFault.hang = true;
+    await pay();
+    await sleep(2000);
+    expect(await screen.findByText('We could not get this payment ready. Try again.')).toBeTruthy();
+    expect(hub.sends).toHaveLength(0);
+  });
+
+  it('W10 still-confirming points to Wallet activity, like W12', async () => {
+    hub.mode = 'pending';
+    await toReview();
+    await pay();
+    expect(await screen.findByText('Still confirming')).toBeTruthy();
+    expect(screen.getByText(/Check Wallet activity for the result/)).toBeTruthy();
+    expect(screen.queryByText(/pay a second time/)).toBeNull();
   });
 });

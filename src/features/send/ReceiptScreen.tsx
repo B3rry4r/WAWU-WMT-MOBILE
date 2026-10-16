@@ -22,6 +22,7 @@ import { SwitchRow } from '@/features/settings/SwitchRow';
 import { radius, space, useWawu } from '@/theme';
 
 import { fetchBeneficiaries, removeBeneficiary, savedRowFor, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
+import { dropIntentOfTransfer } from './intent';
 import { CONFIRMING_LINE, failureLine, firstName, receiptRows, shareText, toLine } from './model';
 
 const RECEIPT = { mark: 88, headGap: 12, headTop: 20, figure: 36, partMoney: 14.5, copy: 14, copyMs: 1600, poll: 4000 } as const;
@@ -51,6 +52,12 @@ export function ReceiptScreen({ id, onDone }: ReceiptScreenProps) {
   );
   const transfer = read.data;
   const [notice, setNotice] = useState<string | null>(null);
+
+  // A send the Hub has decided needs no intent kept for it: the phone lets it go when a receipt shows the answer.
+  const decidedId = transfer && transfer.status !== 'pending' ? transfer.id : null;
+  useEffect(() => {
+    if (owner && decidedId) void dropIntentOfTransfer(owner, decidedId);
+  }, [owner, decidedId]);
 
   const share = async () => {
     if (!transfer) return;

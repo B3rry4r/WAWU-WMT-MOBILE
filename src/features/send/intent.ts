@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+import { onSessionEnd } from '@/api/session';
 import { bounded } from '@/features/claim/localStore';
 
 import { readQuote, type FeeQuote } from './api';
@@ -58,11 +59,17 @@ export const intentsKey = (owner: string) => `wmt.send.intents.${owner}`;
 const readRaw = (key: string): Promise<string | null> =>
   bounded(async () => (onWeb ? (globalThis.localStorage?.getItem(key) ?? null) : SecureStore.getItemAsync(key)), null);
 
-const writeRaw = (key: string, value: string): Promise<void> =>
+/** True when the store took the value. A store that throws or takes longer than `STORE_WAIT_MS` has not kept it. */
+const writeRaw = (key: string, value: string): Promise<boolean> =>
   bounded(async () => {
     if (onWeb) globalThis.localStorage?.setItem(key, value);
     else await SecureStore.setItemAsync(key, value);
-  }, undefined);
+    return true;
+  }, false);
+
+/** What the store holds now: `{ raw: null }` when nothing is kept, null when the store could not be read (never the same thing). */
+const readStored = (key: string): Promise<{ raw: string | null } | null> =>
+  bounded<{ raw: string | null } | null>(async () => ({ raw: onWeb ? (globalThis.localStorage?.getItem(key) ?? null) : await SecureStore.getItemAsync(key) }), null);
 
 const filled = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 
@@ -90,7 +97,17 @@ export const intentAlive = (intent: SendIntent, now: number): boolean => intent.
 
 const memory = new Map<string, SendIntent[]>();
 const loading = new Map<string, Promise<SendIntent[]>>();
-let writes: Promise<void> = Promise.resolve();
+let writes: Promise<unknown> = Promise.resolve();
+
+/** The whole entries in a stored value that can still be trusted at `now`; anything unreadable is nothing. */
+function parseRows(raw: string | null, now: number): SendIntent[] {
+  try {
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(readIntent).filter((row): row is SendIntent => row !== null && intentAlive(row, now)) : [];
+  } catch {
+    return [];
+  }
+}
 
 /** The phone forgets what this run held in memory (for tests: a reload, the app closed and opened). What was written stays. */
 export function forgetIntentsInMemory(): void {
@@ -105,17 +122,7 @@ async function load(owner: string): Promise<SendIntent[]> {
   const pending = loading.get(owner);
   if (pending) return pending;
   const reading = (async () => {
-    let rows: SendIntent[] = [];
-    try {
-      const raw = await readRaw(intentsKey(owner));
-      const parsed: unknown = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) {
-        const now = Date.now();
-        rows = parsed.map(readIntent).filter((row): row is SendIntent => row !== null && intentAlive(row, now));
-      }
-    } catch {
-      rows = [];
-    }
+    const rows = parseRows(await readRaw(intentsKey(owner)), Date.now());
     // Whatever this run put in memory while the phone was being asked is newer than the store.
     const meanwhile = memory.get(owner);
     const settled = meanwhile ?? rows;
@@ -128,10 +135,11 @@ async function load(owner: string): Promise<SendIntent[]> {
 }
 
 /** Writes are one after another, so an older write never lands over a newer one. */
-function persist(owner: string): Promise<void> {
+function persist(owner: string): Promise<boolean> {
   const rows = memory.get(owner) ?? [];
-  writes = writes.then(() => writeRaw(intentsKey(owner), JSON.stringify(rows)));
-  return writes;
+  const done = writes.then(() => writeRaw(intentsKey(owner), JSON.stringify(rows)));
+  writes = done;
+  return done;
 }
 
 /** The unresolved intent for this person and amount, if the phone holds one. */
@@ -142,13 +150,39 @@ export async function findIntent(owner: string, payeeId: string, amountKobo: num
 
 /**
  * Keeps the intent (replacing the one with its key, or the one for the same person and amount). The memory changes at once; the
- * promise settles when the store has it, so a caller can wait for it before the request leaves the phone.
+ * promise settles when the store has it, so a caller can wait for it before the request leaves the phone. It settles false when
+ * the store did not keep it (a failure or no answer in time): the memory then goes back to what it held, because a request that
+ * is not sent leaves nothing to remember. The caller does not send.
  */
-export async function putIntent(owner: string, intent: SendIntent): Promise<void> {
+export async function putIntent(owner: string, intent: SendIntent): Promise<boolean> {
   const rows = await load(owner);
   const next = [intent, ...rows.filter((row) => row.key !== intent.key && !(row.payeeId === intent.payeeId && row.amountKobo === intent.amountKobo))].slice(0, MAX_INTENTS);
   memory.set(owner, next);
-  await persist(owner);
+  const kept = await persist(owner);
+  if (!kept && memory.get(owner) === next) memory.set(owner, rows);
+  return kept;
+}
+
+/**
+ * The intent for this person and amount as the store holds it NOW. Another copy of the app on the same storage (a second browser
+ * tab; a phone has one) may have sent since this screen opened, and its key and request are the ones that must be used. Waits for
+ * this run's own writes first, so the store is read only after everything this run already decided has been written. Adopts the stored entry
+ * when this run holds none for the person and amount, or holds the same send as unknown while the store has it pending. Never
+ * replaces a different key this run already sent with: that send's own key is the one to repeat.
+ */
+export async function rereadIntent(owner: string, payeeId: string, amountKobo: number): Promise<SendIntent | null> {
+  const rows = await load(owner);
+  await writes;
+  const stored = await readStored(intentsKey(owner));
+  const mine = memory.get(owner) ?? rows;
+  const here = mine.find((row) => row.payeeId === payeeId && row.amountKobo === amountKobo) ?? null;
+  if (!stored) return here;
+  const there = parseRows(stored.raw, Date.now()).find((row) => row.payeeId === payeeId && row.amountKobo === amountKobo) ?? null;
+  if (!there) return here;
+  const adopt = !here || (here.key === there.key && there.phase === 'pending' && here.phase !== 'pending');
+  if (!adopt) return here;
+  memory.set(owner, [there, ...mine.filter((row) => row.key !== there.key && row !== here)].slice(0, MAX_INTENTS));
+  return there;
 }
 
 /** Lets the intent go: the Hub has given a final answer for its key. */
@@ -161,3 +195,36 @@ export async function dropIntent(owner: string, key: string): Promise<void> {
   );
   await persist(owner);
 }
+
+/** Lets go of the intent whose send the Hub has decided, found by the send's id (a receipt that shows it decided calls this). */
+export async function dropIntentOfTransfer(owner: string, transferId: string): Promise<void> {
+  const rows = await load(owner);
+  const row = rows.find((r) => r.transferId === transferId);
+  if (row) await dropIntent(owner, row.key);
+}
+
+/**
+ * Sign-out keeps only what is still unresolved (WALLET-02 round 3). An unknown or pending send protects the person from paying
+ * twice when they sign back in, so it stays in the store, under their account's own key. What has run out (an unknown send past
+ * `UNKNOWN_KEEP_MS`) is written out of the store, and nothing of this run's memory outlives the session. A send the Hub decided
+ * is already gone: the review and the receipt drop it the moment they see the answer.
+ */
+export async function settleIntentsAtSignOut(): Promise<void> {
+  const now = Date.now();
+  const owners = [...memory.keys()];
+  for (const owner of owners) {
+    const rows = memory.get(owner) ?? [];
+    const kept = rows.filter((row) => intentAlive(row, now));
+    if (kept.length !== rows.length) {
+      memory.set(owner, kept);
+      void persist(owner);
+    }
+  }
+  memory.clear();
+  loading.clear();
+  await writes;
+}
+
+onSessionEnd(() => {
+  void settleIntentsAtSignOut();
+});

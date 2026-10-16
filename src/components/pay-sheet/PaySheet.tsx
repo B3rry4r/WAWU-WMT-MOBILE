@@ -58,8 +58,11 @@ export type PayWallet =
 export type PayStatus =
   | { kind: 'review' }
   | { kind: 'paying' }
-  /** The debit was sent and its result has not come back yet. */
-  | { kind: 'confirming' }
+  /**
+   * The debit was sent and its result has not come back yet. `line` replaces the sheet's sentence (W10 points to Wallet activity,
+   * the one place the result shows; WALLET-02 round 3). Without it the sentence is the default.
+   */
+  | { kind: 'confirming'; line?: string }
   /** The payment did not complete. `message` says why, when the server said. */
   | { kind: 'failed'; message?: string }
   /**
@@ -134,7 +137,7 @@ export function PaySheet(props: PaySheetProps) {
 
   let body: ReactNode;
   if (status.kind === 'confirming') {
-    body = <Confirming {...props} total={total} />;
+    body = <Confirming {...props} total={total} line={status.line} />;
   } else if (status.kind === 'failed') {
     body = <Failed {...props} total={total} message={status.message} />;
   } else if (status.kind === 'blocked') {
@@ -309,36 +312,70 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
   );
 }
 
-function Confirming(p: Inner) {
+/**
+ * A status (still confirming, failed, blocked) and its buttons. A purchase sheet spaces them with the sheet's own gap. W10's page
+ * pins the buttons to the foot, as it does the Send button and the not-enough state (the canvas's W14 and SH14 do the same), so a
+ * message never sits a few points above its button (WALLET-02 round 3).
+ */
+function StatusBody({ send, status, buttons }: { send: boolean; status: ReactNode; buttons: ReactNode }) {
+  if (!send) {
+    return (
+      <>
+        {status}
+        {buttons}
+      </>
+    );
+  }
   return (
     <>
-      <Status
-        icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
-        title="Still confirming"
-        line={`Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
-      />
-      <View style={styles.buttons}>
-        {p.onRefresh && <Button label="Refresh" onPress={p.onRefresh} icon="RotateCcw" full />}
-        {p.onContactSupport && <Button label="Contact support" onPress={p.onContactSupport} variant="secondary" full />}
-        {!p.onRefresh && !p.onContactSupport && <Button label="Close" onPress={p.onCancel} variant="secondary" full />}
+      <View style={styles.sendBody}>{status}</View>
+      <View testID="pay-sheet-foot" style={styles.foot}>
+        {buttons}
       </View>
     </>
   );
 }
 
+function Confirming(p: Inner & { line?: string }) {
+  return (
+    <StatusBody
+      send={p.variant === 'send'}
+      status={
+        <Status
+          icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
+          title="Still confirming"
+          line={p.line ?? `Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
+        />
+      }
+      buttons={
+        <View style={styles.buttons}>
+          {p.onRefresh && <Button label="Refresh" onPress={p.onRefresh} icon="RotateCcw" full />}
+          {p.onContactSupport && <Button label="Contact support" onPress={p.onContactSupport} variant="secondary" full />}
+          {!p.onRefresh && !p.onContactSupport && <Button label="Close" onPress={p.onCancel} variant="secondary" full />}
+        </View>
+      }
+    />
+  );
+}
+
 function Failed(p: Inner & { message?: string }) {
   return (
-    <>
-      <Status
-        icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
-        title="Payment didn't go through"
-        line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
-      />
-      <View style={styles.buttons}>
-        {p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
-        <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
-      </View>
-    </>
+    <StatusBody
+      send={p.variant === 'send'}
+      status={
+        <Status
+          icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
+          title="Payment didn't go through"
+          line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
+        />
+      }
+      buttons={
+        <View style={styles.buttons}>
+          {p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
+          <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
+        </View>
+      }
+    />
   );
 }
 
@@ -424,13 +461,16 @@ function Status({ icon, title, line }: { icon: ReactNode; title: string; line: s
 /** A payment that cannot be tried (over a limit): a warning mark, why, and Cancel. Nothing went wrong, so nothing is drawn as failed. */
 function Blocked(p: Inner & { title: string; message: string; tryAgain: boolean }) {
   return (
-    <>
-      <Status icon={<IconTile icon="CircleAlert" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />} title={p.title} line={p.message} />
-      <View style={styles.buttons}>
-        {p.tryAgain && p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
-        <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
-      </View>
-    </>
+    <StatusBody
+      send={p.variant === 'send'}
+      status={<Status icon={<IconTile icon="CircleAlert" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />} title={p.title} line={p.message} />}
+      buttons={
+        <View style={styles.buttons}>
+          {p.tryAgain && p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
+          <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
+        </View>
+      }
+    />
   );
 }
 

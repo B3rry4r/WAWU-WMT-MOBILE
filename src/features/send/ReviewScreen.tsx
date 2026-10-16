@@ -20,8 +20,23 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, space, type, useWawu } from '@/theme';
 
 import { fetchFeeQuote, sendToWawuUser, transferQuery, type FeeQuote, type Transfer } from './api';
-import { dropIntent, findIntent, putIntent, type SendIntent } from './intent';
-import { failureLine, feeLinesOf, hueOfPayee, limitLine, NO_TOTAL_TITLE, OVER_LIMIT_TITLE, quoteAddsUp, quoteSpent, RETRY_LINE, WALLET_NAME, type Payee } from './model';
+import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
+import {
+  earlierSendLine,
+  failureLine,
+  feeLinesOf,
+  hueOfPayee,
+  limitLine,
+  NO_TOTAL_TITLE,
+  NOT_READY_LINE,
+  OVER_LIMIT_TITLE,
+  quoteAddsUp,
+  quoteSpent,
+  RETRY_LINE,
+  reviewConfirmingLine,
+  WALLET_NAME,
+  type Payee,
+} from './model';
 
 /** How often a send the provider has not confirmed is read again (`GET /money/transfers/{id}`, our record). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -82,6 +97,13 @@ type Request = Omit<SendIntent, 'phase' | 'at'> & { phase: 'ready' | 'unknown' |
  * payment exists for the key (`quote_changed`) does the next send take a new key and the quote it gave. A send the Hub took and the
  * provider has not decided is kept with its id: the review shows it pending, reads it by id, and offers no Send for it.
  *
+ * A stored intent is only this send's while this review started it or watched it. When the review opens on a stored `pending` intent and
+ * the Hub's first answer is already `completed` or `failed`, that send was decided before this review existed: it is dropped, one
+ * line says how it ended and points to Wallet activity, and the person sends fresh with a new key (no receipt, nothing saved for the
+ * old send). A stored intent the Hub still has as pending keeps blocking, and when this review has seen it pending and the Hub then
+ * decides it, the review goes on to the receipt as before. At Send the store is read again, so a second tab opened before the first
+ * send takes the key that tab wrote. If the store cannot keep the new intent, nothing is sent.
+ *
  * The send's own answers: completed goes to the receipt; `pending` (the provider has not said, G-710) is "still confirming"; failed
  * says why in the Hub's words; short of money shows the bank's figures; no PIN yet opens A9; over today's limit is a blocked review.
  */
@@ -106,6 +128,10 @@ export function ReviewScreen(props: ReviewScreenProps) {
   const [pinOpen, setPinOpen] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // How an earlier send for this person and amount ended, when the Hub had decided it before this review looked (null: none).
+  const [earlier, setEarlier] = useState<'went' | 'not' | null>(null);
+  // True once this review started the send, or has seen the Hub say it is still pending: only then is a decision this review's to show.
+  const watching = useRef(false);
   const newIntent = useCallback(() => {
     key.current = newRequestKey();
   }, []);
@@ -135,7 +161,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
   }, [noWallet, entry]);
 
   const keep = useCallback(
-    (next: Request) => {
+    (next: Request): Promise<unknown> => {
       setRequest(next);
       if (owner && (next.phase === 'unknown' || next.phase === 'pending')) {
         const { phase, ...rest } = next;
@@ -156,6 +182,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         void keep({ ...from, phase: 'settled', transferId: transfer.id });
         props.onSent(transfer.id);
       } else if (transfer.status === 'pending') {
+        watching.current = true;
         void keep({ ...from, phase: 'pending', transferId: transfer.id });
       } else {
         void keep({ ...from, phase: 'settled', transferId: transfer.id });
@@ -165,22 +192,63 @@ export function ReviewScreen(props: ReviewScreenProps) {
     [owner, props, keep],
   );
 
-  // A send the provider has not confirmed is read again by id until it is decided.
+  /** The Hub had decided a stored send before this review looked: it is not this send. Drop it and let the person send fresh. */
+  const settleEarlier = useCallback(
+    (transfer: Transfer, from: Request) => {
+      void queryClient.invalidateQueries({ queryKey: ['money'], predicate: (q) => q.queryKey[1] !== 'fee-quote' });
+      if (owner) void dropIntent(owner, from.key);
+      newIntent();
+      setFresh(null);
+      setStatus({ kind: 'review' });
+      setEarlier(transfer.status === 'completed' ? 'went' : 'not');
+      setRequest(null);
+    },
+    [owner, newIntent],
+  );
+
+  // A send the provider has not confirmed is read again by id until it is decided. Only an answer read after this review opened counts.
   const pendingId = request?.phase === 'pending' ? request.transferId : null;
   const polled = useQuery({ ...transferQuery(owner, pendingId ?? ''), enabled: Boolean(owner && pendingId), refetchInterval: POLL_MS }, queryClient);
   const seen = useRef<string | null>(null);
   useEffect(() => {
     const t = polled.data;
-    if (!pendingId || !t || t.id !== pendingId || t.status === 'pending' || seen.current === `${t.id}:${t.status}`) return;
+    if (!pendingId || !t || t.id !== pendingId || !polled.isFetchedAfterMount) return;
+    if (t.status === 'pending') {
+      watching.current = true;
+      return;
+    }
+    if (seen.current === `${t.id}:${t.status}`) return;
     seen.current = `${t.id}:${t.status}`;
     // Settled after this render, as a callback: the decision moves the screen on, it is not part of drawing it.
-    if (request) queueMicrotask(() => finish(t, request));
-  }, [polled.data, pendingId, finish, request]);
+    if (request) queueMicrotask(() => (watching.current ? finish(t, request) : settleEarlier(t, request)));
+  }, [polled.data, polled.isFetchedAfterMount, pendingId, finish, settleEarlier, request]);
+
+  /**
+   * The intent for this person and amount as the store holds it now, read again at Send: a second tab of the web build may have
+   * written one since this review opened, and its key is the one to use. A send found pending is shown pending and not sent.
+   */
+  const latestRequest = async (): Promise<Request | null> => {
+    if (!owner) return request ?? null;
+    const found = await rereadIntent(owner, payee.wawuUserId, amountKobo);
+    if (found && (found.key !== request?.key || found.phase !== request?.phase)) {
+      key.current = found.key;
+      if (found.phase === 'pending') watching.current = true;
+      setRequest(found);
+      return found;
+    }
+    return request ?? null;
+  };
 
   const submitPin = async (pin: string): Promise<PinCheckResult> => {
     if (!quote || !owner || request === undefined) return { code: 'unanswered' };
+    const latest = await latestRequest();
+    if (latest?.phase === 'pending') {
+      setPinOpen(false);
+      return { code: 'approved' };
+    }
+    const current = latest ?? request;
     // The request this send carries: the one already sent (same key, same body) or the first one, made now from what is on screen.
-    const sending: Request = request ?? {
+    const sending: Request = current ?? {
       key: key.current,
       payeeId: payee.wawuUserId,
       amountKobo,
@@ -190,8 +258,15 @@ export function ReviewScreen(props: ReviewScreenProps) {
       transferId: null,
       at: Date.now(),
     };
-    // Written before it leaves the phone, so a screen that goes away mid-send still finds it.
-    await keep({ ...sending, phase: 'unknown' });
+    // Written before it leaves the phone, so a screen that goes away mid-send still finds it. A first send the store cannot keep is
+    // not sent at all: the phone could not protect it from being paid twice. (A repeat of one already kept has its entry.)
+    const kept = await putIntent(owner, { ...sending, phase: 'unknown' });
+    if (!kept && sending.phase !== 'unknown') {
+      setPinOpen(false);
+      setNotice(NOT_READY_LINE);
+      return { code: 'approved' };
+    }
+    setRequest({ ...sending, phase: 'unknown' });
     const outcome = await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
     // The Hub gave an answer that proves no payment exists for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = (next: Request['phase'] = 'ready') => keep({ ...sending, phase: next });
@@ -300,15 +375,18 @@ export function ReviewScreen(props: ReviewScreenProps) {
       : quoteAddsUp(quote)
         ? null
         : { kind: 'blocked', title: NO_TOTAL_TITLE, message: 'Try again to ask for the fees once more.', tryAgain: true };
-  const shown: PayStatus = confirming ? { kind: 'confirming' } : blocked !== null && status.kind === 'review' ? blocked : status;
+  const shown: PayStatus = confirming ? { kind: 'confirming', line: reviewConfirmingLine(quote.totalKobo) } : blocked !== null && status.kind === 'review' ? blocked : status;
   const handle = payee.handle ? `@${payee.handle.replace(/^@/, '')}` : null;
   const sentNote = request?.note ?? note.trim();
 
   const pay = async () => {
+    // The store is read again first: another tab may have sent this one already (a pending send is then shown, not offered again).
+    const latest = await latestRequest();
+    if (latest?.phase === 'pending') return;
     // A quote past its time is asked for again before the PIN, so the sheet never approves a total the Hub will refuse. Not for a
     // request that already went out with no answer: that one is sent again as it was (same key, same quote), because the Hub
     // answers a key it knows before it looks at the quote, and a new key could pay twice.
-    if (request?.phase !== 'unknown' && quoteSpent(quote, Date.now())) {
+    if (latest?.phase !== 'unknown' && quoteSpent(latest?.quote ?? quote, Date.now())) {
       const again = await quoted.refetch();
       if (again.data) {
         setFresh(again.data);
@@ -329,6 +407,11 @@ export function ReviewScreen(props: ReviewScreenProps) {
       {request?.phase === 'unknown' && status.kind === 'review' && blocked === null ? (
         <Text variant="muted" testID="send-review-retry" style={styles.line}>
           {RETRY_LINE}
+        </Text>
+      ) : null}
+      {earlier !== null && request === null && status.kind === 'review' ? (
+        <Text variant="muted" testID="send-review-earlier" style={styles.line}>
+          {earlierSendLine(amountKobo, payee.name, earlier === 'went')}
         </Text>
       ) : null}
       <PaySheet
