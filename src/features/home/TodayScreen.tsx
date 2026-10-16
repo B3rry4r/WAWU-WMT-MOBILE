@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/api/session';
 import { ErrorState } from '@/components/StateViews';
+import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
+import { useAd, useAdReports } from '@/features/ads/useAd';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { metrics as feedMetrics } from '@/features/feed/look';
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
@@ -45,7 +47,8 @@ export type TodayScreenProps = {
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
  * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), See all (EXPLORE-02),
  * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The sponsored
- * card that takes TGIF's place when it is off (H36) is ADS-01's; with no campaign nothing shows. The Events tile
+ * card that takes TGIF's place when it is off (H36, ADS-01) reads `GET /ads?placement=today_slot`; with no
+ * campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The Events tile
  * (E1) is EVENTS-01's, in the services row (`Services`).
  */
 export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) {
@@ -84,6 +87,9 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
   const tgifOn = showsTgif(tgifSwitch.data, tgifSwitch.isError);
   const tgifDay = useQuery({ queryKey: dayKey(date), queryFn: () => fetchDay(date), staleTime: Infinity, enabled: tgifOn }, client);
   const tgifStats = useQuery({ queryKey: statsKey(date), queryFn: () => fetchStats(date), enabled: tgifOn && tgifDay.isSuccess }, client);
+  // TGIF's place is the sponsored card's only when the switch has been read and is off.
+  const adSlot = !tgifSwitch.isPending && !tgifOn;
+  const ad = useAd('today_slot', adSlot, client);
   const creators = useQuery({ queryKey: suggestionsKey, queryFn: fetchCreatorSuggestions }, client);
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId, staleTime: Infinity }, client);
 
@@ -96,6 +102,11 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
     tgifDay: tgifSwitch.isPending || tgifOn ? read(tgifDay) : null,
     creators: read(creators),
   });
+
+  // The card is on screen once Today is drawn (not its loading or error view) and this tab is the one in front.
+  const focused = useIsFocused();
+  const sponsored = adSlot && phase === 'ready' ? ad.data ?? null : null;
+  const reports = useAdReports(sponsored, focused);
 
   const retryAll = () => {
     void wallet.refetch();
@@ -142,6 +153,14 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         />
       ) : tgifOn && tgifDay.isError ? (
         <TgifProblem date={date} onRetry={() => void tgifDay.refetch()} retrying={tgifDay.isFetching} />
+      ) : sponsored ? (
+        <SponsoredSlot
+          ad={sponsored}
+          onOpen={() => {
+            reports.tap();
+            router.push({ pathname: '/events/[id]', params: { id: sponsored.ctaDestinationId } });
+          }}
+        />
       ) : null}
       <Services onOpenBills={() => router.push('/bills')} onOpenEvents={() => router.push('/events')} onOpenLegal={() => router.push('/legal')} onOpenSchools={() => router.push('/schools')} />
       <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} />

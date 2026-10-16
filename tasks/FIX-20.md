@@ -7,7 +7,7 @@ order: 224
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: done
 depends_on: [NUV-01]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -17,12 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:05) and the branch.
-- **Status:** verifying. Built; the verifier report says "Not started". This file on main still says todo.
-- **Branches:** mobile `wmt/FIX-20` 8c3a2f0. Backend `wmt/FIX-20` bb9bbd1 (migration `20261021230000_webhook_body_retention`; G-750 to G-752).
-- **Merged and live:** nothing of this task. **Open findings:** none yet.
-- **Next:** a verifier session. CONVENTIONS section 21 (this task) and section 19 (MONEY-16, WALLET-16) need their numbering settled at merge.
-- **Records:** on the branch, `wmt/FIX-20`, in tasks/FIX-20.md there (17 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py FIX-20`; the history goes to tasks/history/FIX-20.md.
+live: provider webhook deliveries are not kept forever, backend PR #137 (3797fb2), batch 2 with WALLET-10 and POINTS-04.
 
 ## Read first
 
@@ -48,14 +43,12 @@ As of 16 Oct 2026, from the lead's log (12 Oct 17:05) and the branch.
 - [ ] The job is safe to run twice, and safe to run while a delivery is arriving.
 - [ ] Protected routes 253/253.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-20.md](history/FIX-20.md).
 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
+**Evidence** is in the lead's scratchpad `f20/`: `logs/` (each check's log with its EXIT line, the gates of the branch and of main, `protected.log`, `shard-*.log`), `hub/run/` (the sender's lines, the Hubs' log lines, `load-result.txt`) and `mut/results.txt`. Every server I started (two Hubs, the mock WAWU ID, the Fintava stand-in, the database bridge) was stopped by its PID; none is left running; databases `bf20_*` and my worktrees are removed.

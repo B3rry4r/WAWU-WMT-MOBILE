@@ -13,15 +13,22 @@ export const cardLabels: Record<TgifCard, string> = {
 };
 
 /**
- * One step of the reader. Today every step is one of the five cards; a sponsored
- * card (ADS-01) is another kind of step that joins this list, so the progress
- * bar, the tap to continue and the Done on the last step need no change.
+ * One step of the reader: one of the five cards, or the sponsored card (ADS-01, H33), which sits before the
+ * takeaway. It is another kind of step in this list, so the progress bar, the tap to continue and the Done on the
+ * last step need no change.
  */
-export type ReaderStep = { kind: 'card'; card: TgifCard };
+export type ReaderStep = { kind: 'card'; card: TgifCard } | { kind: 'sponsored' };
 
-export function readerSteps(): ReaderStep[] {
-  return cardOrder.map((card) => ({ kind: 'card', card }));
+/** The steps of a reading: the five cards, and the sponsored card before the takeaway when there is one to show. */
+export function readerSteps(sponsored = false): ReaderStep[] {
+  return cardOrder.flatMap((card): ReaderStep[] => {
+    const step: ReaderStep = { kind: 'card', card };
+    return sponsored && card === 'takeaway' ? [{ kind: 'sponsored' }, step] : [step];
+  });
 }
+
+/** Where the sponsored card sits: the place the takeaway has when there is none. A person already there or past it is never sent back to it. */
+export const sponsoredSlot = cardOrder.indexOf('takeaway');
 
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 const months = [

@@ -5,17 +5,9 @@ import type { PayoutAccount } from '../api/payoutAccount';
 import type { PayoutAccountScreenProps } from '../PayoutAccountScreen';
 
 const mockRouter = { back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true) };
-let mockStatus: 'restoring' | 'signedOut' | 'signedIn' = 'signedIn';
 let mockProps: PayoutAccountScreenProps | null = null;
 
-jest.mock('expo-router', () => ({
-  useRouter: () => mockRouter,
-  Redirect: ({ href }: { href: string }) => {
-    const { Text: T } = require('react-native');
-    return <T testID="redirect">{href}</T>;
-  },
-}));
-jest.mock('@/api/session', () => ({ useSession: () => ({ status: mockStatus }) }));
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 jest.mock('../PayoutAccountScreen', () => ({
   PayoutAccountScreen: (props: PayoutAccountScreenProps) => {
     mockProps = props;
@@ -39,23 +31,11 @@ beforeEach(() => {
   mockRouter.back.mockClear();
   mockRouter.replace.mockClear();
   mockRouter.canGoBack.mockImplementation(() => true);
-  mockStatus = 'signedIn';
   mockProps = null;
 });
 
+// A signed-out visit never reaches this route: the route graph guards it (src/__tests__/route-graph.test.tsx, SHARED-05).
 describe('the A21 route', () => {
-  it('a signed-out visitor is sent to the welcome screen, and nothing shows while the session is read', async () => {
-    mockStatus = 'signedOut';
-    await render(<PayoutAccountRoute />);
-    expect(screen.getByTestId('redirect').props.children).toBe('/welcome');
-    expect(screen.queryByTestId('payout-screen')).toBeNull();
-
-    mockStatus = 'restoring';
-    await render(<PayoutAccountRoute />);
-    expect(screen.queryByTestId('payout-screen')).toBeNull();
-    expect(screen.queryByTestId('redirect')).toBeNull();
-  });
-
   it('after a save in the BVN name, or with nothing to compare, the user goes back where they came from', async () => {
     await render(<PayoutAccountRoute />);
     mockProps!.onSaved!(account(true));

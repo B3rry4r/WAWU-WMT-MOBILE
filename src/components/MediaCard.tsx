@@ -190,6 +190,7 @@ export function MediaCard({
         <View
           testID={testID ? `${testID}-placeholder` : undefined}
           pointerEvents="none"
+          aria-hidden
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
           style={[styles.placeholder, stacked ? { paddingTop: mediaMetrics.captionInset, paddingBottom: mediaMetrics.captionInset + captionHeight + mediaMetrics.footerGap } : null]}

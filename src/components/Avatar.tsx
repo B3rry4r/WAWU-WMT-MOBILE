@@ -57,7 +57,8 @@ export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decora
   const { colors } = useWawu();
   const fontSize = Math.round(size * initialsScale);
   const a11y = decorative
-    ? ({ accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const)
+    ? // react-native-web reads only `aria-hidden`; the two native props hide it on iOS and Android.
+      ({ 'aria-hidden': true, accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const)
     : ({ accessible: true, accessibilityRole: 'image', accessibilityLabel: name ?? APP_NAME } as const);
 
   return (

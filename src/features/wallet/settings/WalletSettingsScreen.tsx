@@ -9,6 +9,7 @@ import { IconTile } from '@/components/IconTile';
 import { ListRow, rowMetrics } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
+import { Toast } from '@/components/Toast';
 import { Text } from '@/components/Text';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { groupedAccountNumber } from '@/features/open-wallet/pin';
@@ -18,6 +19,7 @@ import { SettingsFrame } from '@/features/settings/SettingsFrame';
 import { ROW_TILE } from '@/features/settings/metrics';
 
 import { walletSettingsQuery, type WalletSettings } from '../api/settings';
+import { useStatementSent } from '../statements/notice';
 import { AccountDetailsSheet } from './AccountDetailsSheet';
 import { accountLine, limitsLine, pinLine, savedLine } from './model';
 
@@ -36,6 +38,8 @@ export type WalletSettingsScreenProps = {
   onCreatePin: () => void;
   /** The account has no wallet: Open your wallet. */
   onOpenWallet: () => void;
+  /** Statements: W38. Without it the row is not drawn. */
+  onOpenStatements?: () => void;
 };
 
 /**
@@ -44,16 +48,19 @@ export type WalletSettingsScreenProps = {
  * the limits row is drawn only when the server sends a limit (it sends none today, BACKEND_GAPS G-7) and hidden
  * otherwise.
  *
- * Drawn: what has a screen behind it or says something true by itself (R-47). Left out, each added as drawn by the
- * task that builds where it leads: Fingerprint or face for payments (WALLET-06 itself, but it needs a signing package
- * and a PIN sheet without an amount, SHARED-CHANGES WALLET-06 #1), Cards (WALLET-22), Statements (WALLET-35), Help
- * with a payment (SUPPORT-01). Beneficiaries shows the count and, until the list screen (WALLET-03) can be opened
+ * Drawn: what has a screen behind it or says something true by itself (R-47). Statements (WALLET-35) leads to W38 and
+ * is drawn when the route gives it somewhere to go; W38's "Toast on W35" shows over this page. Left out, each added as
+ * drawn by the task that builds where it leads: Fingerprint or face for payments (WALLET-06 itself, but it needs a signing
+ * package and a PIN sheet without an amount, SHARED-CHANGES WALLET-06 #1), Cards (WALLET-22), Help with a payment
+ * (SUPPORT-01). Beneficiaries shows the count and, until the list screen (WALLET-03) can be opened
  * from here, has no chevron and opens nothing.
  */
-export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet }: WalletSettingsScreenProps) {
+export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
   const [showAccount, setShowAccount] = useState(false);
+  // W38's ending: "Toast on W35", while the notice it posted is up.
+  const sent = useStatementSent();
   const data = wallet.data;
 
   let body: React.ReactNode;
@@ -90,20 +97,35 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
       />
     );
   } else {
-    body = <Settings data={data} onOpenPin={onOpenPin} onCreatePin={onCreatePin} onOpenAccount={() => setShowAccount(true)} />;
+    body = (
+      <Settings
+        data={data}
+        onOpenPin={onOpenPin}
+        onCreatePin={onCreatePin}
+        onOpenAccount={() => setShowAccount(true)}
+        onOpenStatements={onOpenStatements}
+      />
+    );
   }
 
   return (
     <SettingsFrame title="Wallet settings" onBack={onBack} gap={BODY_GAP} testID="wallet-settings-screen">
       {body}
+      <Toast message={sent} testID="statement-sent" />
       {data?.account ? <AccountDetailsSheet visible={showAccount} onClose={() => setShowAccount(false)} account={data.account} /> : null}
     </SettingsFrame>
   );
 }
 
-type SettingsProps = { data: WalletSettings; onOpenPin: () => void; onCreatePin: () => void; onOpenAccount: () => void };
+type SettingsProps = {
+  data: WalletSettings;
+  onOpenPin: () => void;
+  onCreatePin: () => void;
+  onOpenAccount: () => void;
+  onOpenStatements?: () => void;
+};
 
-function Settings({ data, onOpenPin, onCreatePin, onOpenAccount }: SettingsProps) {
+function Settings({ data, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -130,8 +152,18 @@ function Settings({ data, onOpenPin, onCreatePin, onOpenAccount }: SettingsProps
         />
         <ListRow testID="wallet-settings-beneficiaries" lead={<IconTile icon="Users" size={ROW_TILE} />} title="Beneficiaries" subtitle={savedLine(data.beneficiaryCount)} />
       </GroupedList>
-      {data.account ? (
+      {data.account || onOpenStatements ? (
         <GroupedList testID="wallet-settings-account">
+          {onOpenStatements ? (
+            <ListRow
+              testID="wallet-settings-statements"
+              lead={<IconTile icon="FileText" size={ROW_TILE} />}
+              title="Statements"
+              subtitle="Sent to your email"
+              onPress={onOpenStatements}
+            />
+          ) : null}
+          {data.account ? (
           <ListRow
             testID="wallet-settings-account-details"
             lead={<IconTile icon="Landmark" size={ROW_TILE} />}
@@ -139,6 +171,7 @@ function Settings({ data, onOpenPin, onCreatePin, onOpenAccount }: SettingsProps
             subtitle={accountLine(data.account.bankName, groupedAccountNumber(data.account.accountNumber))}
             onPress={onOpenAccount}
           />
+          ) : null}
         </GroupedList>
       ) : null}
     </>
