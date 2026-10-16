@@ -8,8 +8,8 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, ME-12, UI-02, EVENTS-01]
-decisions: [R-10, R-37]
+depends_on: [EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, UI-02, EVENTS-01]
+decisions: [R-10, R-37, R-69]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [E17, E18, E25, E11]
 ---
@@ -21,6 +21,12 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-10, ME-12.
 - **History:** none yet. Reports go to tasks/history/EVENTS-08.md.
+- **Design v2 (16 Oct 2026):** ME-12 is re-cut to the tier checkout (VF5 to VF7) and is no longer a dependency here. E21 "Needs a tier" and its See tiers entry are DV2-04 and ME-12's.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** E18 reads "Yours after our cut" (was "after WAWU's cut"); ME-12 is no longer a dependency.
+
+## Design v2 update (16 Oct 2026)
+
+- Copy only: the organiser dashboard line reads "Yours after our cut ₦408,000 · 85%" (the figure comes from the Hub, never typed; 85/15 stays, R-5). Hosting by tier (E21) is DV2-04 and EVENTS-12.
 
 ## Read first
 

@@ -3,7 +3,7 @@ id: FIX-33
 title: The Nuvion opening spec draws every client address once, so it stops failing at random
 owner: YOU
 area: FIX
-order: 284
+order: 329
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

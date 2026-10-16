@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-05, INBOX-16, UI-02]
-decisions: [R-5, R-6, R-10, R-37]
+decisions: [R-5, R-6, R-10, R-37, R-62, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [I27, I28, I29]
 ---
@@ -21,6 +21,13 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): INBOX-16.
 - **History:** none yet. Reports go to tasks/history/INBOX-13.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** I27 and I28 show costs by kind of message (R-62); the Hub serves them after INBOX-22.
+
+## Design v2 update (16 Oct 2026)
+
+- I27 now only blocks a photo, a video or a voice note: text and emoji are free, so a person out of credits can still talk. The copy reads "Reading and text stay free" style lines the board draws; read the exact words from the 16 Oct board.
+- I28 credits copy: text free, a photo 1 credit, a video or voice note 3, read from `GET /communities/message-cost` (INBOX-22 adds the per-kind costs). Until INBOX-22 serves them, print no per-kind figure (R-47). Packs, "Credits don't expire and can't be cashed out", and the breakdown line stay. The breakdown's provider part is labelled "Bank charge" (R-53).
+- INBOX-23 reworks the composer and I38; this task does not touch them. Brand copy: "Who Made This?" (R-69).
 
 ## Read first
 

@@ -3,7 +3,7 @@ id: FIX-40
 title: The daily limit no longer counts a held payment that was refunded
 owner: YOU
 area: MONEY
-order: 291
+order: 336
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

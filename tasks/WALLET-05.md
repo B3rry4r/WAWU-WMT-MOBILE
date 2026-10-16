@@ -8,10 +8,10 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-09, WALLET-10, WALLET-14, MONEY-12, UI-02, HOME-12, WALLET-03, BILLS-02]
-decisions: [R-10, R-1, R-16, R-28, R-33, R-6]
+depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-09, WALLET-10, WALLET-14, MONEY-12, UI-02, HOME-12, WALLET-03]
+decisions: [R-10, R-1, R-16, R-28, R-33, R-6, R-42, R-53, R-67, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
-artboards: [W15, W17, W19]
+artboards: [W15, W17, W19, W45, W46]
 ---
 # WALLET-05 · Add money and withdraw
 
@@ -19,8 +19,15 @@ artboards: [W15, W17, W19]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-09, WALLET-10, HOME-12, WALLET-03, BILLS-02.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-09, WALLET-10, HOME-12, WALLET-03.
 - **History:** none yet. Reports go to tasks/history/WALLET-05.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** W15 is transfer-only; W45 and W46 added here; BILLS-02 dropped as a dependency (bills are off, R-52).
+
+## Design v2 update (16 Oct 2026)
+
+- W15 is bank transfer only (R-42): the card draws the wallet's own account number, bank name and account name (all from `GET /money/wallet` `account`, bank "Nuvion" as the Hub says) each with Copy, and Share details. "Free" replaces "Free · instant"; the "1.5%" card line, the "instant" line and the FX line are gone. W16 (card) is removed from the canvas and WALLET-36 is cancelled.
+- W45 "Add money · waiting" and W46 "Add money · received" are states of this screen and belong to this task (decided in DESIGN-V2-CUT): after the person copies or shares the details the screen shows "Waiting for your transfer, usually a few minutes" and polls `GET /money/wallet/balance`; when the balance rises it shows W46 with the amount, the new balance, the sender line and the reference from the credit (`GET /money/transactions`). WALLET-39 sends the matching notice.
+- W17 and W19 fee lines: the provider's part is labelled "Bank charge" (R-53); WAWU's part keeps its own label. The licence line stays hidden (R-67). Bills are off (R-52): the "Add from a bill" entry from S11 is not built.
 
 ## Read first
 
@@ -46,7 +53,7 @@ Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime
 
 ## Artboards
 
-- **W15 · Add money**: Bank transfer details first (account name, number, the bank name from the API (Loma Bank), share). The other ways (Debit card, USSD, From your Dollar account) are not built at launch (BRIEF W15, R-16).
+- **W15 · Add money**: Bank transfer only (16 Oct board): the wallet's own account number, bank name and account name, each with Copy, "Free", and Share details. Bank transfer details first (account name, number, the bank name from the API (Loma Bank), share). The other ways (Debit card, USSD, From your Dollar account) are not built at launch (BRIEF W15, R-16).
 - **W17 · Withdraw to bank**: Withdraw: available NGN, amount with Max, destination defaulting to the saved payout account with Change, the fee breakdown (₦40 + ₦25), arrival estimate; the button shows the total and a line says what the bank gets (BRIEF W17).
 - **W19 · Withdraw · on its way**: Withdrawal receipt with a timeline (Requested, Sent to bank, In your bank account), reference, the fee breakdown and Total paid (BRIEF W19); Share receipt is the phone's share sheet (R-33).
 
@@ -80,7 +87,7 @@ Top-up at launch is a bank transfer to the account number (`account_funded`). Th
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6).
-- [ ] From H17 (HOME-12), W13 (WALLET-03) and S11 (BILLS-02), a user can tap Add and reach W15 with the shortfall filled in (this task adds them, as drawn).
+- [ ] From H17 (HOME-12) and W13 (WALLET-03), a user can tap Add and reach W15 with the shortfall filled in (this task adds them, as drawn).
 
 ## What the backend serves today (from the analysis)
 

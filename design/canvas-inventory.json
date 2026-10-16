@@ -1,5 +1,5 @@
 {
- "artboards": 297,
+ "artboards": 360,
  "items": [
   {
    "id": "A1",
@@ -11,61 +11,31 @@
    "id": "A2",
    "label": "A2 Why you're here",
    "flow": "Auth",
-   "hash": "9eb2b87eef85b346"
+   "hash": "ef2177e944890e11"
   },
   {
    "id": "A3",
-   "label": "A3 Email, phone, BVN",
+   "label": "A3 Create your account",
    "flow": "Auth",
-   "hash": "286a183cc0a70aaf"
+   "hash": "2d367ab3a05e38b1"
   },
   {
    "id": "A4",
    "label": "A4 Phone code",
    "flow": "Auth",
-   "hash": "d43d7d601a0db91f"
-  },
-  {
-   "id": "A5",
-   "label": "A5 Confirm your details",
-   "flow": "Auth",
-   "hash": "718e4fc2e615311c"
-  },
-  {
-   "id": "A6",
-   "label": "A6 Selfie",
-   "flow": "Auth",
-   "hash": "523216cd2507d022"
-  },
-  {
-   "id": "A7",
-   "label": "A7 Matched",
-   "flow": "Auth",
-   "hash": "129aca8c37bfbc5f"
-  },
-  {
-   "id": "A8",
-   "label": "A8 Wallet open",
-   "flow": "Auth",
-   "hash": "95c790ec6f709666"
-  },
-  {
-   "id": "A9",
-   "label": "A9 Create PIN",
-   "flow": "Auth",
-   "hash": "2e69a53d55b51bcb"
-  },
-  {
-   "id": "A10",
-   "label": "A10 Confirm PIN",
-   "flow": "Auth",
-   "hash": "692754fdea5c09c0"
+   "hash": "7ed450ec78913422"
   },
   {
    "id": "A11",
    "label": "A11 Creator setup",
    "flow": "Auth",
-   "hash": "2baf74c2ab5713ff"
+   "hash": "08b2620116a52459"
+  },
+  {
+   "id": "A30",
+   "label": "A30 Home · complete your account",
+   "flow": "Auth",
+   "hash": "0aabbfdb15e05b08"
   },
   {
    "id": "A12",
@@ -77,31 +47,97 @@
    "id": "A13",
    "label": "A13 People to follow",
    "flow": "Auth",
-   "hash": "910d83a817edbafe"
-  },
-  {
-   "id": "A14",
-   "label": "A14 Phone doesn't match BVN",
-   "flow": "Auth",
-   "hash": "2c3e5ab6dc969fff"
+   "hash": "5942f11bd821f3db"
   },
   {
    "id": "A15",
    "label": "A15 Wrong code",
    "flow": "Auth",
-   "hash": "abf77b2f933200f4"
+   "hash": "05c9a233285276a7"
+  },
+  {
+   "id": "A31",
+   "label": "A31 BVN and NIN",
+   "flow": "Auth",
+   "hash": "0c91ebd90f8c9bdb"
+  },
+  {
+   "id": "A5",
+   "label": "A5 Confirm your details",
+   "flow": "Auth",
+   "hash": "718e4fc2e615311c"
+  },
+  {
+   "id": "A6",
+   "label": "A6 Selfie hand-off",
+   "flow": "Auth",
+   "hash": "587db05c9b0bcff9"
+  },
+  {
+   "id": "A7",
+   "label": "A7 Back from the secure page",
+   "flow": "Auth",
+   "hash": "4c5ecabb679ad4a0"
+  },
+  {
+   "id": "A26",
+   "label": "A26 ID document",
+   "flow": "Auth",
+   "hash": "f1661411c25eef0b"
+  },
+  {
+   "id": "A27",
+   "label": "A27 Proof of address",
+   "flow": "Auth",
+   "hash": "f23cebfd53ac1573"
+  },
+  {
+   "id": "A28",
+   "label": "A28 Checking your details",
+   "flow": "Auth",
+   "hash": "3023cd38b33eca87"
+  },
+  {
+   "id": "A8",
+   "label": "A8 Approved",
+   "flow": "Auth",
+   "hash": "399734fca5bc1b20"
+  },
+  {
+   "id": "A9",
+   "label": "A9 Create PIN",
+   "flow": "Auth",
+   "hash": "2e69a53d55b51bcb"
+  },
+  {
+   "id": "A10",
+   "label": "A10 Confirm PIN",
+   "flow": "Auth",
+   "hash": "2f8229c78483ec49"
+  },
+  {
+   "id": "A14",
+   "label": "A14 Phone doesn't match BVN",
+   "flow": "Auth",
+   "hash": "dcb56508f4764339"
   },
   {
    "id": "A16",
    "label": "A16 Face doesn't match",
    "flow": "Auth",
-   "hash": "8b1bab04030250fb"
+   "hash": "652814ebba2e3123"
+  },
+  {
+   "id": "A29",
+   "label": "A29 Rejected",
+   "flow": "Auth",
+   "hash": "7bdc1c57a1583195"
   },
   {
    "id": "A17",
    "label": "A17 Account limits",
    "flow": "Auth",
-   "hash": "f5ee4970bfc48204"
+   "hash": "0bf604a890c346d6"
   },
   {
    "id": "A18",
@@ -113,7 +149,7 @@
    "id": "A19",
    "label": "A19 Tier 2 done",
    "flow": "Auth",
-   "hash": "558dbfa952b74847"
+   "hash": "fde50153ec16c786"
   },
   {
    "id": "A20",
@@ -155,73 +191,73 @@
    "id": "E1",
    "label": "E1 Events",
    "flow": "Events",
-   "hash": "e762223ee50e02a7"
+   "hash": "b69664fa61026e5c"
   },
   {
    "id": "E2",
    "label": "E2 Event",
    "flow": "Events",
-   "hash": "9dbb62bde43fd81e"
+   "hash": "47e8ade934755ff5"
   },
   {
    "id": "E3",
    "label": "E3 Pay",
    "flow": "Events",
-   "hash": "7185b2efc6ec4e9a"
+   "hash": "1ed979281a05c791"
   },
   {
    "id": "E4",
    "label": "E4 PIN",
    "flow": "Events",
-   "hash": "69ead4779d2201e5"
+   "hash": "9bebbd6c98f49a78"
   },
   {
    "id": "E5",
    "label": "E5 Ticket",
    "flow": "Events",
-   "hash": "1bb3178db5219d68"
+   "hash": "62896085cb9fe419"
   },
   {
    "id": "E6",
    "label": "E6 My tickets",
    "flow": "Events",
-   "hash": "1992d43e98072971"
+   "hash": "2b0d64310f3bf5f7"
   },
   {
    "id": "E7",
    "label": "E7 Ticket QR",
    "flow": "Events",
-   "hash": "3fccd27115c73b10"
+   "hash": "19adacb2697630db"
   },
   {
    "id": "E8",
    "label": "E8 Filters",
    "flow": "Events",
-   "hash": "4edd348c4de24766"
+   "hash": "5273a0f847bf827a"
   },
   {
    "id": "E9",
    "label": "E9 Sold out",
    "flow": "Events",
-   "hash": "37ddc2fe3f8de9b7"
+   "hash": "081d07eacb0c7057"
   },
   {
    "id": "E10",
    "label": "E10 Still confirming",
    "flow": "Events",
-   "hash": "d4103aa1fbb87eff"
+   "hash": "6f6e68874bd189bd"
   },
   {
    "id": "E11",
    "label": "E11 Called off",
    "flow": "Events",
-   "hash": "985ec2eb212ec1d1"
+   "hash": "1f410f0957975cc4"
   },
   {
    "id": "E12",
    "label": "E12 Checked in",
    "flow": "Events",
-   "hash": "d823a8b8daf890dd"
+   "hash": "12a600e02253d497"
   },
   {
    "id": "E13",
@@ -257,7 +293,7 @@
    "id": "E18",
    "label": "E18 Organiser dashboard",
    "flow": "Events",
-   "hash": "0b50baba67817125"
+   "hash": "0a40909d9d937cee"
   },
   {
    "id": "E19",
@@ -273,9 +309,9 @@
   },
   {
    "id": "E21",
-   "label": "E21 Needs a tick",
+   "label": "E21 Needs a tier",
    "flow": "Events",
-   "hash": "e7545fc0a1fa315e"
+   "hash": "676c13fd20eabfaf"
   },
   {
    "id": "E22",
@@ -305,13 +341,13 @@
    "id": "X1",
    "label": "X1 Explore",
    "flow": "Explore",
-   "hash": "dac6e718829bfaa7"
+   "hash": "d4875f8fff88098b"
   },
   {
    "id": "X15",
    "label": "X15 Explore · scrolled down",
    "flow": "Explore",
-   "hash": "1e55c7e481f7f160"
+   "hash": "92619762748ec3b0"
   },
   {
    "id": "X2",
@@ -323,19 +359,31 @@
    "id": "X3",
    "label": "X3 One category",
    "flow": "Explore",
-   "hash": "c597725b46ca1002"
+   "hash": "bd39ef4779c1c55d"
   },
   {
    "id": "X4",
    "label": "X4 All creators",
    "flow": "Explore",
-   "hash": "a7e6ae4cfb1a7462"
+   "hash": "d087348a6eb2855b"
+  },
+  {
+   "id": "X16",
+   "label": "X16 Slider · event slide",
+   "flow": "Explore",
+   "hash": "ee48724eff05e219"
+  },
+  {
+   "id": "X17",
+   "label": "X17 No events",
+   "flow": "Explore",
+   "hash": "81c0c30d3d2123a7"
   },
   {
    "id": "X5",
    "label": "X5 Search",
    "flow": "Explore",
-   "hash": "eb547c8faa53ee38"
+   "hash": "2358fef1b1d9e56e"
   },
   {
    "id": "X6",
@@ -371,7 +419,7 @@
    "id": "X11",
    "label": "X11 No recent searches",
    "flow": "Explore",
-   "hash": "07899ce7977cd0c5"
+   "hash": "9deac88cce473bb5"
   },
   {
    "id": "X12",
@@ -389,13 +437,13 @@
    "id": "X14",
    "label": "X14 Explore · loading",
    "flow": "Explore",
-   "hash": "082bbf7e4814c135"
+   "hash": "d6296b0ec00e1f74"
   },
   {
    "id": "H1",
    "label": "H1 Today",
    "flow": "Home",
-   "hash": "3b8bfd4081c0b4e3"
+   "hash": "2ed6e2a08c38616e"
   },
   {
    "id": "H2",
@@ -461,7 +509,7 @@
    "id": "H12",
    "label": "H12 Following · empty",
    "flow": "Home",
-   "hash": "ea361738290337cb"
+   "hash": "569ef183b7f02e8b"
   },
   {
    "id": "H13",
@@ -521,7 +569,7 @@
    "id": "H22",
    "label": "H22 Share sheet",
    "flow": "Home",
-   "hash": "b314898783db626a"
+   "hash": "0d0349d1e69360d2"
   },
   {
    "id": "H23",
@@ -545,7 +593,7 @@
    "id": "H26",
    "label": "H26 Tip sheet",
    "flow": "Home",
-   "hash": "213c45f028bab469"
+   "hash": "db4717ee2fb4626c"
   },
   {
    "id": "H27",
@@ -563,55 +611,55 @@
    "id": "H29",
    "label": "H29 Verse",
    "flow": "Home",
-   "hash": "a18f791f6dbbd59d"
+   "hash": "0dfaa35c7d3850e8"
   },
   {
    "id": "H30",
    "label": "H30 What it means",
    "flow": "Home",
-   "hash": "05b5cdbbc0f7779c"
+   "hash": "8742ae65afb8dd76"
   },
   {
    "id": "H31",
    "label": "H31 The line to carry",
    "flow": "Home",
-   "hash": "743732e287838b98"
+   "hash": "cc5fa489e6f1c2a2"
   },
   {
    "id": "H32",
    "label": "H32 Prayer",
    "flow": "Home",
-   "hash": "7bfb6257b8529605"
+   "hash": "3f35fb2f82ad619c"
   },
   {
    "id": "H33",
    "label": "H33 Sponsored",
    "flow": "Home",
-   "hash": "ea2a2a41fc1a0a45"
+   "hash": "5be1893c1063ae74"
   },
   {
    "id": "H34",
    "label": "H34 One thing to do",
    "flow": "Home",
-   "hash": "36985ab8d5626e2e"
+   "hash": "b4592335f31d3f2a"
   },
   {
    "id": "H35",
    "label": "H35 Share the verse",
    "flow": "Home",
-   "hash": "36974551dddf749e"
+   "hash": "b20ec7747d0c93cd"
   },
   {
    "id": "H36",
-   "label": "H36 Today · TGIF off",
+   "label": "H36 Daily TGIF notification",
    "flow": "Home",
-   "hash": "0f497c5b0d44a6d5"
+   "hash": "bb4ee262f4e98515"
   },
   {
    "id": "I1",
    "label": "I1 Inbox · All",
    "flow": "Inbox",
-   "hash": "7fcf2ec29269799b"
+   "hash": "9e7db41b0a5b8392"
   },
   {
    "id": "I35",
@@ -635,7 +683,7 @@
    "id": "I3",
    "label": "I3 Write the question",
    "flow": "Inbox",
-   "hash": "defca0d390cd96e9"
+   "hash": "45f0549d1ba84206"
   },
   {
    "id": "I4",
@@ -653,7 +701,7 @@
    "id": "I6",
    "label": "I6 Not enough in wallet",
    "flow": "Inbox",
-   "hash": "b1befebe07ed9ca1"
+   "hash": "f296eedf90690a39"
   },
   {
    "id": "I7",
@@ -689,13 +737,13 @@
    "id": "I12",
    "label": "I12 Chat",
    "flow": "Inbox",
-   "hash": "5277b156d51fd3aa"
+   "hash": "bed076c25d938879"
   },
   {
    "id": "I13",
    "label": "I13 Add to chat",
    "flow": "Inbox",
-   "hash": "a768f3a50b678400"
+   "hash": "73a14f04bbdae633"
   },
   {
    "id": "I14",
@@ -707,19 +755,19 @@
    "id": "I15",
    "label": "I15 Sent",
    "flow": "Inbox",
-   "hash": "c5d2fa4c5d312560"
+   "hash": "e83d258168a3c96c"
   },
   {
    "id": "I16",
    "label": "I16 Request sheet",
    "flow": "Inbox",
-   "hash": "e730e7d700a71235"
+   "hash": "dd2a7152483ec5c0"
   },
   {
    "id": "I17",
    "label": "I17 Request sent",
    "flow": "Inbox",
-   "hash": "d674680ec77d1326"
+   "hash": "b6996da53a66fb40"
   },
   {
    "id": "I18",
@@ -761,31 +809,37 @@
    "id": "I24",
    "label": "I24 Communities",
    "flow": "Inbox",
-   "hash": "6574488d9f5b922d"
+   "hash": "dc6ddddadc273cff"
   },
   {
    "id": "I25",
    "label": "I25 Community",
    "flow": "Inbox",
-   "hash": "bd48450200b1afb7"
+   "hash": "7c0521a23418807b"
   },
   {
    "id": "I26",
-   "label": "I26 Sending",
+   "label": "I26 Sending text",
    "flow": "Inbox",
-   "hash": "698408a80a20cbcf"
+   "hash": "234e0af0369e7e3e"
+  },
+  {
+   "id": "I38",
+   "label": "I38 Sending a photo",
+   "flow": "Inbox",
+   "hash": "d8f75adff5e2bf68"
   },
   {
    "id": "I27",
    "label": "I27 Out of credits",
    "flow": "Inbox",
-   "hash": "ecfae0d8b15418e1"
+   "hash": "019c63661a5c2a85"
   },
   {
    "id": "I28",
    "label": "I28 Buy credits",
    "flow": "Inbox",
-   "hash": "a188c5aca9767e86"
+   "hash": "c435fb72d6307a60"
   },
   {
    "id": "I29",
@@ -795,15 +849,15 @@
   },
   {
    "id": "I30",
-   "label": "I30 Private · ask to join",
+   "label": "I30 Private · pay to join",
    "flow": "Inbox",
-   "hash": "5fdc7d9e03c32e05"
+   "hash": "b704ff9c961b53cc"
   },
   {
    "id": "I31",
-   "label": "I31 Request sent",
+   "label": "I31 Joined",
    "flow": "Inbox",
-   "hash": "4ac9b01739bfc8cc"
+   "hash": "d7a0cd6c6b082fd8"
   },
   {
    "id": "I37",
@@ -815,67 +869,67 @@
    "id": "I32",
    "label": "I32 New community",
    "flow": "Inbox",
-   "hash": "8241a7b1158154e5"
+   "hash": "8009850cffe0d31f"
   },
   {
    "id": "I33",
    "label": "I33 Created",
    "flow": "Inbox",
-   "hash": "5f042648f00e4c35"
+   "hash": "3ef2d2887dad940d"
   },
   {
    "id": "I34",
    "label": "I34 Join requests",
    "flow": "Inbox",
-   "hash": "064db5f7af70330c"
+   "hash": "380ce5e04bc109e5"
   },
   {
    "id": "M1",
    "label": "M1 Me · Content",
    "flow": "Me",
-   "hash": "d6864ad0bae26e59"
+   "hash": "2d6e184d9ecb27a3"
   },
   {
    "id": "M2",
    "label": "M2 Services",
    "flow": "Me",
-   "hash": "14cba9d5a1cf4e3e"
+   "hash": "57d457b6748e16bb"
   },
   {
    "id": "M3",
    "label": "M3 Shop",
    "flow": "Me",
-   "hash": "a4ec9dd3c794a4dd"
+   "hash": "36d873e6b873fc7f"
   },
   {
    "id": "M4",
    "label": "M4 About",
    "flow": "Me",
-   "hash": "87ab1ac51c30ec32"
+   "hash": "c51042bf6da2981e"
   },
   {
    "id": "M5",
    "label": "M5 Public profile",
    "flow": "Me",
-   "hash": "1e6aa02d777b99a3"
+   "hash": "7310b2ee2d71a254"
   },
   {
    "id": "M6",
    "label": "M6 Following",
    "flow": "Me",
-   "hash": "54b79f21b0fb761d"
+   "hash": "f4e43171c0c2042f"
   },
   {
    "id": "M7",
    "label": "M7 Menu",
    "flow": "Me",
-   "hash": "943361f21a80ba5c"
+   "hash": "2ede2251f9b6ba95"
   },
   {
    "id": "M33",
    "label": "M33 About, as a visitor",
    "flow": "Me",
-   "hash": "6de7191b4dae568b"
+   "hash": "83b9065d674cfd93"
   },
   {
    "id": "M34",
@@ -911,31 +965,31 @@
    "id": "M10",
    "label": "M10 Saved",
    "flow": "Me",
-   "hash": "eb16ee7fc36d2c6c"
+   "hash": "08a4e55ab915e0e5"
   },
   {
    "id": "M11",
-   "label": "M11 Verification",
+   "label": "M11 Replaced by VF5",
    "flow": "Me",
-   "hash": "e74465122c41c8a1"
+   "hash": "e84266fd063bdf85"
   },
   {
    "id": "M12",
-   "label": "M12 Pay",
+   "label": "M12 Replaced by VF6",
    "flow": "Me",
-   "hash": "ec2a0e95aae32ad2"
+   "hash": "8e7b5dceb0d977ec"
   },
   {
    "id": "M13",
-   "label": "M13 PIN",
+   "label": "M13 Replaced by VF6",
    "flow": "Me",
-   "hash": "c019197a82c0e789"
+   "hash": "69b47efb03f38d12"
   },
   {
    "id": "M14",
-   "label": "M14 Tick live",
+   "label": "M14 Replaced by VF7",
    "flow": "Me",
-   "hash": "374c24e2702b92bc"
+   "hash": "b6a64ec6be098c95"
   },
   {
    "id": "M15",
@@ -965,7 +1019,7 @@
    "id": "M19",
    "label": "M19 Create",
    "flow": "Me",
-   "hash": "cfe8fa3404fd4022"
+   "hash": "070ca17c103cf413"
   },
   {
    "id": "M20",
@@ -977,7 +1031,7 @@
    "id": "M21",
    "label": "M21 Upload",
    "flow": "Me",
-   "hash": "d8440f48b0678393"
+   "hash": "c7ba6dd7b6ef9719"
   },
   {
    "id": "M22",
@@ -995,7 +1049,7 @@
    "id": "M24",
    "label": "M24 Price",
    "flow": "Me",
-   "hash": "93bf8c319a750743"
+   "hash": "48efbf3592cd6734"
   },
   {
    "id": "M25",
@@ -1052,6 +1106,120 @@
    "hash": "52296accbcdec9bf"
   },
   {
+   "id": "PT1",
+   "label": "PT1 Studio",
+   "flow": "Points",
+   "hash": "b7eb82056ca8a866"
+  },
+  {
+   "id": "PT2",
+   "label": "PT2 VoiceOver",
+   "flow": "Points",
+   "hash": "385782c4f27d2b4c"
+  },
+  {
+   "id": "PT2a",
+   "label": "PT2a Working",
+   "flow": "Points",
+   "hash": "421714604f4ad56f"
+  },
+  {
+   "id": "PT2b",
+   "label": "PT2b Done",
+   "flow": "Points",
+   "hash": "a0105f584a8e4964"
+  },
+  {
+   "id": "PT3",
+   "label": "PT3 Not enough points",
+   "flow": "Points",
+   "hash": "144af5f4bf1e8e4b"
+  },
+  {
+   "id": "PT4",
+   "label": "PT4 Buy points",
+   "flow": "Points",
+   "hash": "8df72c39956ab52f"
+  },
+  {
+   "id": "PT4b",
+   "label": "PT4b Paying",
+   "flow": "Points",
+   "hash": "8ae5e4e71efa2f56"
+  },
+  {
+   "id": "PT4c",
+   "label": "PT4c Points added",
+   "flow": "Points",
+   "hash": "e9902d6e45fcc8fa"
+  },
+  {
+   "id": "PT5",
+   "label": "PT5 Your points",
+   "flow": "Points",
+   "hash": "ba989455b52c17a0"
+  },
+  {
+   "id": "PT6",
+   "label": "PT6 Convert to cash",
+   "flow": "Points",
+   "hash": "05ff2c3f6dd4e051"
+  },
+  {
+   "id": "PT6b",
+   "label": "PT6b Converted",
+   "flow": "Points",
+   "hash": "a475c091f5b76eaa"
+  },
+  {
+   "id": "PT1a",
+   "label": "PT1a No points",
+   "flow": "Points",
+   "hash": "4089fc548924dd95"
+  },
+  {
+   "id": "PT2c",
+   "label": "PT2c Failed",
+   "flow": "Points",
+   "hash": "78bff30d83d74576"
+  },
+  {
+   "id": "PT3a",
+   "label": "PT3a Use wallet off",
+   "flow": "Points",
+   "hash": "63145555cdd631cd"
+  },
+  {
+   "id": "PT3b",
+   "label": "PT3b Wallet too low",
+   "flow": "Points",
+   "hash": "3d5f5d089001d485"
+  },
+  {
+   "id": "PT4a",
+   "label": "PT4a Dollars",
+   "flow": "Points",
+   "hash": "7de576902bec580b"
+  },
+  {
+   "id": "PT5a",
+   "label": "PT5a Nothing yet",
+   "flow": "Points",
+   "hash": "7223f546081f7577"
+  },
+  {
+   "id": "PT6a",
+   "label": "PT6a Below the minimum",
+   "flow": "Points",
+   "hash": "c66ee30b81c47799"
+  },
+  {
+   "id": "PT7",
+   "label": "PT7 Daily limit",
+   "flow": "Points",
+   "hash": "752213d74a3eca10"
+  },
+  {
    "id": "P1",
    "label": "P1 Professionals",
    "flow": "Professionals",
@@ -1061,13 +1229,13 @@
    "id": "P2",
    "label": "P2 Profile",
    "flow": "Professionals",
-   "hash": "bf0444465772c06e"
+   "hash": "409a31ac36fe6957"
   },
   {
    "id": "P3",
    "label": "P3 Not taking messages",
    "flow": "Professionals",
-   "hash": "c7df4f8e842f97e4"
+   "hash": "188b0743505c44d0"
   },
   {
    "id": "P4",
@@ -1112,6 +1280,48 @@
    "hash": "795c8f43431ccc12"
   },
   {
+   "id": "RF1",
+   "label": "RF1 Invite and earn",
+   "flow": "Referral",
+   "hash": "a4d4d876ee84c6e4"
+  },
+  {
+   "id": "RF2",
+   "label": "RF2 Share card",
+   "flow": "Referral",
+   "hash": "c12fcb149910fcfc"
+  },
+  {
+   "id": "RF3",
+   "label": "RF3 You earned points",
+   "flow": "Referral",
+   "hash": "f1cabf075051118d"
+  },
+  {
+   "id": "RF4",
+   "label": "RF4 How it works",
+   "flow": "Referral",
+   "hash": "1a66b46c766b4cdb"
+  },
+  {
+   "id": "RF1a",
+   "label": "RF1a Nothing yet",
+   "flow": "Referral",
+   "hash": "6f980f173bb87ee3"
+  },
+  {
+   "id": "RF1b",
+   "label": "RF1b Milestone close",
+   "flow": "Referral",
+   "hash": "39528e4599f5cd30"
+  },
+  {
+   "id": "RF3a",
+   "label": "RF3a Milestone",
+   "flow": "Referral",
+   "hash": "0940ef977b93035f"
+  },
+  {
    "id": "SC1",
    "label": "SC1 Schools",
    "flow": "Schools",
@@ -1133,7 +1343,7 @@
    "id": "SC4",
    "label": "SC4 Your details",
    "flow": "Schools",
-   "hash": "716a8da42791d60c"
+   "hash": "4b1e9df53962da30"
   },
   {
    "id": "SC5",
@@ -1151,7 +1361,7 @@
    "id": "SC7",
    "label": "SC7 Enrolled",
    "flow": "Schools",
-   "hash": "b3010bf4e7354161"
+   "hash": "6aa7c90f647b1911"
   },
   {
    "id": "SC8",
@@ -1163,7 +1373,7 @@
    "id": "SC9",
    "label": "SC9 Apply on their site",
    "flow": "Schools",
-   "hash": "032cadbbda49c508"
+   "hash": "6ed0761ec60f7056"
   },
   {
    "id": "SC10",
@@ -1253,19 +1463,19 @@
    "id": "S27",
    "label": "S27 This month",
    "flow": "Services",
-   "hash": "0e4c8a95120f8848"
+   "hash": "cae7d34914c04915"
   },
   {
    "id": "S28",
    "label": "S28 New reminder",
    "flow": "Services",
-   "hash": "483ee4e0857b5b3c"
+   "hash": "c31e8c482668c50f"
   },
   {
    "id": "S29",
    "label": "S29 Reminder",
    "flow": "Services",
-   "hash": "c77e0986f0c86bc6"
+   "hash": "933aef4f8dce6349"
   },
   {
    "id": "S30",
@@ -1275,9 +1485,9 @@
   },
   {
    "id": "S31",
-   "label": "S31 Not on WAWU",
+   "label": "S31 Not on Who Made This?",
    "flow": "Services",
-   "hash": "a93a0c9984670678"
+   "hash": "212bc1858d61da5b"
   },
   {
    "id": "S32",
@@ -1289,25 +1499,25 @@
    "id": "S14",
    "label": "S14 Legal chat",
    "flow": "Services",
-   "hash": "1e3f06ac758bb095"
+   "hash": "40fcbeffb24b667a"
   },
   {
    "id": "S15",
    "label": "S15 Profiling",
    "flow": "Services",
-   "hash": "e48c1f574fc96771"
+   "hash": "fa4dc66cb4ecc463"
   },
   {
    "id": "S16",
    "label": "S16 Brief",
    "flow": "Services",
-   "hash": "e8274eed3a013554"
+   "hash": "e031142e25b20a4b"
   },
   {
    "id": "S17",
    "label": "S17 Consultant joins",
    "flow": "Services",
-   "hash": "70c89ef168b4d809"
+   "hash": "1849cf67d4caab56"
   },
   {
    "id": "S18",
@@ -1349,7 +1559,7 @@
    "id": "S24",
    "label": "S24 Fixed price, in chat",
    "flow": "Services",
-   "hash": "b1d7fe336bd39623"
+   "hash": "bed168e5ed3a0853"
   },
   {
    "id": "S26",
@@ -1373,13 +1583,13 @@
    "id": "Z2",
    "label": "Z2 Settings",
    "flow": "Settings",
-   "hash": "e9f565f44584b276"
+   "hash": "968535200e859ea0"
   },
   {
    "id": "Z3",
    "label": "Z3 Notifications",
    "flow": "Settings",
-   "hash": "544cd5242911bca5"
+   "hash": "c2f3dff340af3d39"
   },
   {
    "id": "Z4",
@@ -1409,19 +1619,19 @@
    "id": "Z8",
    "label": "Z8 Scheduled",
    "flow": "Settings",
-   "hash": "ee9db745e8d0f50a"
+   "hash": "ac6ab1325c5e2cfd"
   },
   {
    "id": "Z9",
    "label": "Z9 About",
    "flow": "Settings",
-   "hash": "5de9e5068c637f97"
+   "hash": "8914e056b6ec92fc"
   },
   {
    "id": "Z10",
    "label": "Z10 Terms",
    "flow": "Settings",
-   "hash": "e06fea19ea3f86bc"
+   "hash": "7c03fe42c0b26318"
   },
   {
    "id": "Z11",
@@ -1436,112 +1646,262 @@
    "hash": "30419a00b31d5397"
   },
   {
-   "id": "SH1",
-   "label": "SH1 Marketplace",
-   "flow": "Shop",
-   "hash": "dd67b5b87baa467e"
+   "id": "VF1",
+   "label": "VF1 Your bonus is waiting",
+   "flow": "Verify",
+   "hash": "397aa365da780e2a"
   },
   {
-   "id": "SH2",
-   "label": "SH2 Aisle",
-   "flow": "Shop",
-   "hash": "5970eaeabab5fec8"
+   "id": "VF2",
+   "label": "VF2 Draft shop",
+   "flow": "Verify",
+   "hash": "f223f48e34161df4"
   },
   {
-   "id": "SH3",
-   "label": "SH3 Product",
-   "flow": "Shop",
-   "hash": "2d53104765ca198c"
+   "id": "VF3",
+   "label": "VF3 Hear your name",
+   "flow": "Verify",
+   "hash": "3b8257f6735534d1"
   },
   {
-   "id": "SH4",
-   "label": "SH4 Your WOW",
-   "flow": "Shop",
-   "hash": "e4fb6c23c651db68"
+   "id": "VF4",
+   "label": "VF4 Write your Voice Intro",
+   "flow": "Verify",
+   "hash": "5cd6c862ecb3729b"
   },
   {
-   "id": "SH5",
-   "label": "SH5 Delivery",
-   "flow": "Shop",
-   "hash": "4bd5bcd35327464c"
+   "id": "VF5",
+   "label": "VF5 Make it official",
+   "flow": "Verify",
+   "hash": "b5deedbe02d75644"
   },
   {
-   "id": "SH6",
-   "label": "SH6 Pay",
-   "flow": "Shop",
-   "hash": "5029c4d51a73e087"
+   "id": "VF6",
+   "label": "VF6 Checkout",
+   "flow": "Verify",
+   "hash": "2a127b0cd786a413"
   },
   {
-   "id": "SH7",
-   "label": "SH7 PIN",
-   "flow": "Shop",
-   "hash": "3c9d2d4499a2649d"
+   "id": "VF7",
+   "label": "VF7 You're official",
+   "flow": "Verify",
+   "hash": "6375b6d876acd8b4"
   },
   {
-   "id": "SH8",
-   "label": "SH8 Confirmed",
-   "flow": "Shop",
-   "hash": "a9e98426659d830c"
+   "id": "VF8",
+   "label": "VF8 Your voice, your consent",
+   "flow": "Verify",
+   "hash": "1c2ddebf82f2bb2b"
   },
   {
-   "id": "SH9",
-   "label": "SH9 My orders",
-   "flow": "Shop",
-   "hash": "14eb8cbbdb99a32c"
+   "id": "VF9",
+   "label": "VF9 Record 30 seconds",
+   "flow": "Verify",
+   "hash": "acd17a25417a1acf"
   },
   {
-   "id": "SH10",
-   "label": "SH10 Order",
-   "flow": "Shop",
-   "hash": "25121ce68b117192"
+   "id": "VF10",
+   "label": "VF10 Making your intro",
+   "flow": "Verify",
+   "hash": "e587c4e5d55d402f"
   },
   {
-   "id": "SH11",
-   "label": "SH11 Sold out",
-   "flow": "Shop",
-   "hash": "6b213e00e9741951"
+   "id": "VF11",
+   "label": "VF11 Hear yourself",
+   "flow": "Verify",
+   "hash": "6f8aa66608579def"
   },
   {
-   "id": "SH12",
-   "label": "SH12 Item gone",
-   "flow": "Shop",
-   "hash": "21ff75338e134dae"
+   "id": "VF12",
+   "label": "VF12 Publish your first product",
+   "flow": "Verify",
+   "hash": "6754752a4e3e846d"
   },
   {
-   "id": "SH13",
-   "label": "SH13 Empty WOW",
-   "flow": "Shop",
-   "hash": "59fc6952a5993cc1"
+   "id": "VF15",
+   "label": "VF15 Identity check",
+   "flow": "Verify",
+   "hash": "3056ac0a75150930"
   },
   {
-   "id": "SH14",
-   "label": "SH14 Still confirming",
-   "flow": "Shop",
-   "hash": "53fe84fa6887c546"
+   "id": "VF15a",
+   "label": "VF15a Passed",
+   "flow": "Verify",
+   "hash": "80d6ffa9406a9940"
   },
   {
-   "id": "SH15",
-   "label": "SH15 No orders",
-   "flow": "Shop",
-   "hash": "cbff82cf63f33062"
+   "id": "VF13",
+   "label": "VF13 All products used",
+   "flow": "Verify",
+   "hash": "b4fed000b11051dd"
+  },
+  {
+   "id": "VF14",
+   "label": "VF14 Your tier",
+   "flow": "Verify",
+   "hash": "5c07f148ae0d92a1"
+  },
+  {
+   "id": "VF2a",
+   "label": "VF2a Draft shop · empty",
+   "flow": "Verify",
+   "hash": "7cc01d980effa24b"
+  },
+  {
+   "id": "VF2b",
+   "label": "VF2b Draft shop · three drafts",
+   "flow": "Verify",
+   "hash": "9bdfe0000be15c81"
+  },
+  {
+   "id": "VF3a",
+   "label": "VF3a Phonetic edit",
+   "flow": "Verify",
+   "hash": "86a0843dd4e073c1"
+  },
+  {
+   "id": "VF3b",
+   "label": "VF3b Name saved",
+   "flow": "Verify",
+   "hash": "3f2384a3992b958d"
+  },
+  {
+   "id": "VF4a",
+   "label": "VF4a Intro · empty",
+   "flow": "Verify",
+   "hash": "f34370d27b520c47"
+  },
+  {
+   "id": "VF4b",
+   "label": "VF4b Intro · too long",
+   "flow": "Verify",
+   "hash": "c8619b81c5e31897"
+  },
+  {
+   "id": "VF5a",
+   "label": "VF5a Tiers · dollars",
+   "flow": "Verify",
+   "hash": "c1bea5844c57e9c3"
+  },
+  {
+   "id": "VF5b",
+   "label": "VF5b Upgrade",
+   "flow": "Verify",
+   "hash": "af589925c24acaec"
+  },
+  {
+   "id": "VF6a",
+   "label": "VF6a Wallet short",
+   "flow": "Verify",
+   "hash": "25453bbd34a8fd83"
+  },
+  {
+   "id": "VF6b",
+   "label": "VF6b Bank transfer",
+   "flow": "Verify",
+   "hash": "d17ee79e521061c9"
+  },
+  {
+   "id": "VF6c",
+   "label": "VF6c Paying",
+   "flow": "Verify",
+   "hash": "668493ee61dd7baf"
+  },
+  {
+   "id": "VF6d",
+   "label": "VF6d Payment failed",
+   "flow": "Verify",
+   "hash": "6ff100db1c47f6d4"
+  },
+  {
+   "id": "VF7a",
+   "label": "VF7a Founding Maker",
+   "flow": "Verify",
+   "hash": "747de1605b9b0ba9"
+  },
+  {
+   "id": "VF9a",
+   "label": "VF9a Recording",
+   "flow": "Verify",
+   "hash": "b1136c75169ee0b1"
+  },
+  {
+   "id": "VF9b",
+   "label": "VF9b Too short",
+   "flow": "Verify",
+   "hash": "b4a310f2508af366"
+  },
+  {
+   "id": "VF9c",
+   "label": "VF9c Recording done",
+   "flow": "Verify",
+   "hash": "b96f4ae3c8037069"
+  },
+  {
+   "id": "VF10a",
+   "label": "VF10a Intro failed",
+   "flow": "Verify",
+   "hash": "d70c6158f9ce2019"
+  },
+  {
+   "id": "VF12a",
+   "label": "VF12a Uploading",
+   "flow": "Verify",
+   "hash": "66b92cc7111c6dbc"
+  },
+  {
+   "id": "VF12b",
+   "label": "VF12b Published",
+   "flow": "Verify",
+   "hash": "f153cd0dec6a1633"
+  },
+  {
+   "id": "VF12c",
+   "label": "VF12c Share sheet",
+   "flow": "Verify",
+   "hash": "8bfee6e90318b30a"
+  },
+  {
+   "id": "VF13a",
+   "label": "VF13a All used · dollars",
+   "flow": "Verify",
+   "hash": "7042ec28fcf9ba5d"
+  },
+  {
+   "id": "VF14a",
+   "label": "VF14a Ending in 3 days",
+   "flow": "Verify",
+   "hash": "eb0cf2c3a0cc8fad"
+  },
+  {
+   "id": "VF14b",
+   "label": "VF14b Ended",
+   "flow": "Verify",
+   "hash": "20ef1ec4c00abf3b"
+  },
+  {
+   "id": "VF15b",
+   "label": "VF15b Uploads paused",
+   "flow": "Verify",
+   "hash": "f88d5547cfa54ff1"
   },
   {
    "id": "W1",
    "label": "W1 Wallet · Naira",
    "flow": "Wallet",
-   "hash": "ac66c7ca45702c05"
+   "hash": "1d9f1cdd6b5abf1e"
   },
   {
    "id": "W2",
    "label": "W2 Wallet · Dollar",
    "flow": "Wallet",
-   "hash": "4e7bd3b7f48c1f9f"
+   "hash": "a211beb7bc77df5e"
   },
   {
    "id": "W3",
    "label": "W3 Wallet · Crypto",
    "flow": "Wallet",
-   "hash": "4e0e22d7c9266b2e"
+   "hash": "63b4315e05987079"
   },
   {
    "id": "W4",
@@ -1553,25 +1913,25 @@
    "id": "W5",
    "label": "W5 Wallet · new account",
    "flow": "Wallet",
-   "hash": "36a89c40232aa8bc"
+   "hash": "3e1cd43501bfb629"
   },
   {
    "id": "W6",
    "label": "W6 Wallet · can't reach account",
    "flow": "Wallet",
-   "hash": "a46cd465855dc89c"
+   "hash": "e2aca24deb8ba811"
   },
   {
    "id": "W7",
-   "label": "W7 Send · to a WAWU user",
+   "label": "W7 Send · to a Who Made This? user",
    "flow": "Wallet",
-   "hash": "96a6d21893e52a9c"
+   "hash": "2b3945098f0c8417"
   },
   {
    "id": "W8",
    "label": "W8 Send · to a bank account",
    "flow": "Wallet",
-   "hash": "6c6a6f1839d8d3a7"
+   "hash": "a4ebad16a17a37a8"
   },
   {
    "id": "W9",
@@ -1613,13 +1973,19 @@
    "id": "W15",
    "label": "W15 Add money",
    "flow": "Wallet",
-   "hash": "3de0a2c302e47617"
+   "hash": "0fc853d71138704b"
   },
   {
-   "id": "W16",
-   "label": "W16 Add money · card",
+   "id": "W45",
+   "label": "W45 Add money · waiting",
    "flow": "Wallet",
-   "hash": "4bbe9c4de74b0683"
+   "hash": "3f153ff2efe58486"
+  },
+  {
+   "id": "W46",
+   "label": "W46 Add money · received",
+   "flow": "Wallet",
+   "hash": "79add65f12065005"
   },
   {
    "id": "W17",
@@ -1634,10 +2000,22 @@
    "hash": "79f5c0fb8d9f7020"
   },
   {
+   "id": "W16",
+   "label": "W16 Removed: transfer only",
+   "flow": "Wallet",
+   "hash": "81d90c0943f7a63e"
+  },
+  {
    "id": "W18",
    "label": "W18 Withdraw · waiting on KYC",
    "flow": "Wallet",
-   "hash": "2c49abb3bf5fb587"
+   "hash": "0e9a2b3f7240b42a"
+  },
+  {
+   "id": "W44",
+   "label": "W44 Your pass",
+   "flow": "Wallet",
+   "hash": "ae734f18050cd9e9"
   },
   {
    "id": "W20",
@@ -1667,19 +2045,19 @@
    "id": "W24",
    "label": "W24 Scan to pay",
    "flow": "Wallet",
-   "hash": "39dffd8653545e02"
+   "hash": "81c57889e495f69e"
   },
   {
    "id": "W25",
    "label": "W25 My QR code",
    "flow": "Wallet",
-   "hash": "bce7bd20210b7fb2"
+   "hash": "89d468a524271925"
   },
   {
    "id": "W26",
    "label": "W26 Transaction history",
    "flow": "Wallet",
-   "hash": "724ca7c9250038b5"
+   "hash": "ace7d5f3c40c09aa"
   },
   {
    "id": "W27",
@@ -1691,43 +2069,43 @@
    "id": "W28",
    "label": "W28 History · no results",
    "flow": "Wallet",
-   "hash": "676613b678ef28fe"
+   "hash": "7714ff1f0cfa49ab"
   },
   {
    "id": "W41",
    "label": "W41 Share as",
    "flow": "Wallet",
-   "hash": "ec4b9444e1f414a5"
+   "hash": "b42cbaa37890e96a"
   },
   {
    "id": "W42",
    "label": "W42 Image",
    "flow": "Wallet",
-   "hash": "bde06b8e12868947"
+   "hash": "c47137f1fb203e7a"
   },
   {
    "id": "W43",
    "label": "W43 PDF",
    "flow": "Wallet",
-   "hash": "9cfa3f753a060da2"
+   "hash": "ddc042e7bf3104fb"
   },
   {
    "id": "W29",
    "label": "W29 Cards · get a card",
    "flow": "Wallet",
-   "hash": "fea5d3e71a784929"
+   "hash": "7a37b5ebf144f57f"
   },
   {
    "id": "W30",
    "label": "W30 Cards · delivery",
    "flow": "Wallet",
-   "hash": "fa3378c0c51e8b46"
+   "hash": "801ff64c3fb08515"
   },
   {
    "id": "W31",
    "label": "W31 Card detail",
    "flow": "Wallet",
-   "hash": "4ee28ed221a2a2e5"
+   "hash": "dfe70131b92007b9"
   },
   {
    "id": "W33",
@@ -1745,13 +2123,13 @@
    "id": "W32",
    "label": "W32 Card · frozen",
    "flow": "Wallet",
-   "hash": "516e66b00552f9cf"
+   "hash": "fa4009bbbe35c4b1"
   },
   {
    "id": "W35",
    "label": "W35 Wallet settings",
    "flow": "Wallet",
-   "hash": "de4fa90c58afe842"
+   "hash": "c01486f596337787"
   },
   {
    "id": "W36",
@@ -1769,7 +2147,7 @@
    "id": "W38",
    "label": "W38 Statements",
    "flow": "Wallet",
-   "hash": "2fbe568b2e87c7df"
+   "hash": "e6d9240d037270b3"
   },
   {
    "id": "W39",

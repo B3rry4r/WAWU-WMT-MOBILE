@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [HOME-04, HOME-05, PROS-02, UI-02, UI-03, HOME-08, HOME-12, PROS-01, EXPLORE-02]
-decisions: [R-18]
+decisions: [R-18, R-69]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H7, H8, H9, H10, H12, H13]
 ---
@@ -21,6 +21,11 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): HOME-08, HOME-12, EXPLORE-02.
 - **History:** none yet. Reports go to tasks/history/HOME-07.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** H12's rail title is "Who Made This?" (was "Creators to discover").
+
+## Design v2 update (16 Oct 2026)
+
+- Copy only: the rail under "You're not following anyone yet" is titled "Who Made This?" with the question mark (R-69). Nothing else on H12 changed.
 
 ## Read first
 

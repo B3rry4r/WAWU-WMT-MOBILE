@@ -3,13 +3,13 @@ id: WALLET-19
 title: Account limits screens (A17 to A20)
 owner: YOU
 area: WALLET
-order: 263
+order: 308
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-23, WALLET-24]
-decisions: []
+decisions: [R-67]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A17, A18, A19, A20]
 ---
@@ -21,6 +21,11 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): WALLET-23, WALLET-24.
 - **History:** none yet. Reports go to tasks/history/WALLET-19.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** A17 and A19: "Limits set by the CBN" and the provider name in the footnote stay hidden until the owner confirms the words (R-67).
+
+## Design v2 update (16 Oct 2026)
+
+- The limits footnote reads "Limits set by the CBN" and names Nuvion on the 16 Oct boards; both are settings and stay hidden until the owner confirms the exact words (R-67). The Hub serves the limit figures only (NUV-07).
 
 ## Read first
 

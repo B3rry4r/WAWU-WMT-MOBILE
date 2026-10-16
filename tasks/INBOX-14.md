@@ -3,13 +3,13 @@ id: INBOX-14
 title: Private communities, hosting, join requests
 owner: YOU
 area: INBOX
-order: 176
+order: 284
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
-depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04]
-decisions: []
+depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04, INBOX-24]
+decisions: [R-62, R-63, R-47, R-69]
 passes: [V1, V4, V5, V6, V7, V9, V10]
 artboards: [I30, I31, I37, I32, I33, I34]
 ---
@@ -19,8 +19,17 @@ artboards: [I30, I31, I37, I32, I33, I34]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, AUTH-06, ME-04, ME-07.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, AUTH-06, ME-04, ME-07, INBOX-24.
 - **History:** none yet. Reports go to tasks/history/INBOX-14.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** re-cut to pay-to-join (R-63); now depends on INBOX-24. See the section below.
+
+## Design v2 update (16 Oct 2026)
+
+- Re-cut by DESIGN-V2-CUT from the owner's 16 Oct answer 19 (R-63) and the 16 Oct boards I30 to I32. Where this section differs from the board bullets below, this section wins.
+- I30 is "Private · pay to join": the host's price per month, not a request. I31 is "Joined". I32 asks the host for the price (members pay, the host sets it, 85% to the host). The backend is INBOX-24 (`POST /communities/{id}/pass`, `passUntil` and `canRenew` on `GET /communities/{id}/membership`); this task depends on it.
+- A reminder 3 days before the pass ends carries a deep link to the renew tap; renewing asks for the PIN like every wallet payment. There is no automatic debit.
+- I34 (join requests) is built only for rooms that already hold pending requests (the Hub lists them); a new private room has no approval step. Default (agent), owner may override.
+- I37 reads: text and emoji free, a photo 1 credit (R-62). Order moved from 176 to the DESIGN-V2-CUT block because of the new dependency.
 
 ## Read first
 
@@ -49,8 +58,8 @@ Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy li
 
 ## Artboards
 
-- **I30 · Private · ask to join**: Private room landing with cover image header, host name, "The host approves every member", avatars "Bisi and 12 people you follow are members", member count, host "Answers requests usually within a day", Ask to join.
-- **I31 · Request sent**: "Request sent. Adaeze will see it in her join requests. We'll let you know when she answers." Waiting for the host, Cancel request.
+- **I30 · Private · pay to join** (16 Oct board; the old "ask to join" is replaced, R-63): Private room landing with cover image header, host name, "The host approves every member", avatars "Bisi and 12 people you follow are members", member count, host "Answers requests usually within a day", Pay to join (the host's monthly price, e.g. ₦2,000 a month).
+- **I31 · Joined** (replaces "Request sent"): "Request sent. Adaeze will see it in her join requests. We'll let you know when she answers." Waiting for the host, Cancel request.
 - **I37 · Approved · inside**: Inside the private room after approval; cover stays as the room header, credit balance, host welcome message, Message · 1 credit.
 - **I32 · New community**: New community form: picture, name, what it's for, Open vs Private ("You approve every member. Needs a cover image."), "Free to host. You keep 85% of every credit spent in your room." Creator accounts only.
 - **I33 · Created**: "Aba tailors circle is live. Open · you're the host" with share link wawu/c/aba-tailors, Copy, Share link, Open room.
@@ -58,16 +67,16 @@ Native modules: `expo-image-picker` (I32 picture), `expo-clipboard` (I33 Copy li
 
 ## Capability checks
 
-- [ ] **I30**: a user can Ask to join.
-- [ ] **I31**: a user can Cancel request.
-- [ ] **I37**: a user can read; send (1 credit).
-- [ ] **I32**: a user can add picture; enter name/description; pick Open or Private; Create community.
+- [ ] **I30**: a user can pay for a 30 day pass from the wallet with the PIN and is in; the price is the host's (R-63). No host approval.
+- [ ] **I31**: a user who has joined sees "Joined" with the end date, gets a reminder 3 days before it ends, and can renew with one tap (R-63). Nothing is debited automatically.
+- [ ] **I37**: a user can read; send (text and emoji free, a photo 1 credit, R-62).
+- [ ] **I32**: a user can add picture; enter name/description; pick Open or Private and, for Private, set the monthly price (R-63); Create community.
 - [ ] **I33**: a user can Copy link; Share link; Open room.
 - [ ] **I34**: a user can Approve; Decline.
 - [ ] Each artboard above matches its render in light and dark, compared picture with picture (V5).
 - [ ] Every value on screen comes from the API or the user, never a literal. Anything the API does not serve yet is in `BACKEND_GAPS.md`.
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states I31.
-- [ ] From A11 (AUTH-06), M19 (ME-04), M18 (ME-07) and I1 (INBOX-04), a user can reach I32 to start a community, and from I24 (INBOX-05) tap Ask (private) and reach I30 (this task adds them, as drawn).
+- [ ] From A11 (AUTH-06), M19 (ME-04), M18 (ME-07) and I1 (INBOX-04), a user can reach I32 to start a community, and from I24 (INBOX-05) tap Join (private) and reach I30 (this task adds them, as drawn).
 - [ ] A user who opens wawu/c/aba-tailors on their Android phone lands in that room.
 
 ## What the backend serves today (from the analysis)

@@ -3,7 +3,7 @@ id: FIX-37
 title: The live hardening spec asks the system for its ports, so it stops failing with EADDRINUSE
 owner: YOU
 area: FIX
-order: 288
+order: 333
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

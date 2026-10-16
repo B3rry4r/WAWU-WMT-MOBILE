@@ -9,7 +9,7 @@ repo: wawu-backend
 type: money-path
 status: todo
 depends_on: [MONEY-17, MONEY-12]
-decisions: [R-11]
+decisions: [R-11, R-55, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -25,6 +25,14 @@ As of 16 Oct 2026, from the lead's log (11 Oct 16:45) and the branch.
   - Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499.
 - **Next:** fix round 2: tests for F1 and F2, the review path for F3 (MONEY-18's WalletHoldService has the same dead branch). Before the merge, count the unsettled completed sales with a payee on production (F8: the first sweep pays them all). G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
 - **Records:** on the branch, `wmt/WALLET-16`, in tasks/WALLET-16.md there (40 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-16`; the history goes to tasks/history/WALLET-16.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** two owner rulings apply on top of round 2: R-55 (72 h review after the first refusal; one daily move per creator with a ₦200 floor). See the section below. The branch builder takes them in fix round 2.
+
+## Owner rulings of 16 Oct 2026 (R-55)
+
+- **Refused earnings (R-55, owner 16 Oct):** an earning the wallet refuses goes to review 72 hours after its FIRST refusal. This settles F3 (a `refused` earning never reached review): the review path uses 72 h from the first refusal, not a count of tries.
+- **One move a day (R-55, owner 16 Oct; G-703):** all of a creator's earnings go to their wallet once a day in one transfer per creator. A day's total under ₦200 waits for the next day and is added to it. This replaces one move per sale and answers G-703 (sales under about ₦155 no longer cost WAWU more than its 15%): the provider's charge is paid once per creator per day. The split is unchanged: 85/15 (R-5). The ₦200 floor and the 72 h are settings.
+- The sweep builds the reference per creator and day (idempotent); a creator with no wallet keeps earning and the money waits (R-11).
+- F8 stays open (the owner or production access): the count of unsettled completed sales with a payee on the LIVE database before this task merges.
 
 ## Read first
 

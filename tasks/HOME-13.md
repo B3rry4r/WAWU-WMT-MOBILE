@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-14, UI-02, HOME-02]
-decisions: [R-6, R-10]
+decisions: [R-6, R-10, R-64, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [H26, H27, H28]
 ---
@@ -21,6 +21,11 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): HOME-14.
 - **History:** none yet. Reports go to tasks/history/HOME-13.md.
+- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** H26 is Naira only at launch (R-64): the Dollar and USDT picker is not shown.
+
+## Design v2 update (16 Oct 2026)
+
+- The tip sheet's currency picker (Naira, Dollar, USDT) drawn on H26 is not built until dollar and crypto accounts exist (R-16, R-64). Quick amounts, the note and the breakdown stay. The provider's part of the breakdown is labelled "Bank charge" (R-53); the app name is "Who Made This?" (R-69).
 
 ## Read first
 

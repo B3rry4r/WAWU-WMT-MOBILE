@@ -3,7 +3,7 @@ id: FIX-41
 title: A failed bank send that is later seen completed is put in front of a person, and a send to an unsaved account needs the name token
 owner: YOU
 area: MONEY
-order: 290
+order: 335
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

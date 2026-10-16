@@ -3,7 +3,7 @@ id: FIX-42
 title: Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure
 owner: YOU
 area: MONEY
-order: 292
+order: 337
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
