@@ -9,7 +9,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 24 | 0 | 0 | 0 |
+| verifying | 25 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-37](../tasks/FIX-37.md) The live hardening spec asks the system for its ports, so it stops failing with EADDRINUSE (You)
 - [FIX-38](../tasks/FIX-38.md) The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random (You)
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
+- [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 
 ## Done
 

@@ -266,6 +266,7 @@ Builder and verifier are always different sessions.
 34. [FIX-37](FIX-37.md) The live hardening spec asks the system for its ports, so it stops failing with EADDRINUSE
 35. [FIX-38](FIX-38.md) The transfer spec looks for the PIN in the log only where it can be one, so it stops failing at random
 36. [FIX-40](FIX-40.md) The daily limit no longer counts a held payment that was refunded
+37. [FIX-42](FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure
 
 ## Developer
 
