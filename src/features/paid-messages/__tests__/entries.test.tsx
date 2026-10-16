@@ -36,6 +36,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const ME = 'GET /api/hub/users/me';
 
+const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { SettingsEntry } = require('../SettingsEntry') as typeof import('../SettingsEntry');
 const { InboxScreen } = require('@/features/inbox/InboxScreen') as typeof import('@/features/inbox/InboxScreen');
 const { ServicesTab } = require('@/features/me/ServicesTab') as typeof import('@/features/me/ServicesTab');
@@ -61,6 +62,7 @@ afterEach(async () => {
   });
   await cleanup();
   clients.splice(0).forEach((c) => c.clear());
+  queryClient.clear();
 });
 
 describe('I1: the settings button in the Inbox header', () => {
@@ -82,6 +84,7 @@ describe('I1: the settings button in the Inbox header', () => {
       });
       expect(screen.queryByLabelText('Paid message settings')).toBeNull();
       await view.unmount();
+      queryClient.clear();
     }
   });
 
@@ -91,6 +94,7 @@ describe('I1: the settings button in the Inbox header', () => {
     expect(screen.getByRole('header', { name: 'Inbox' })).toBeTruthy();
     expect(await screen.findByLabelText('Paid message settings')).toBeTruthy();
     await cleanup();
+    queryClient.clear();
     await frame(<InboxScreen />);
     expect(screen.getByRole('header', { name: 'Inbox' })).toBeTruthy();
     await act(async () => {
