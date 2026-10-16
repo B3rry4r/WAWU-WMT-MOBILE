@@ -7,7 +7,7 @@ order: 194
 priority: launch
 repo: wawu-id
 type: setup
-status: todo
+status: done
 depends_on: [AUTH-08]
 decisions: []
 passes: [V1, V2, V3]
@@ -17,10 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/FIX-13.md.
+live: WAWU ID token rotation, a failed sweep never fails the sign-in, WAWU ID PR #16 (ca19904).
 
 ## Read first
 
@@ -43,13 +40,9 @@ The sweep can no longer fail the rotation (outside the transaction or best-effor
 - [ ] The spec passes 50 runs in a row under load.
 - [ ] wawu-id's suite passes; the Hub's sign-in contract is unchanged.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-13.md](history/FIX-13.md).
 
 ## Owner sign-off
 

@@ -22,6 +22,7 @@ export default function WalletSettingsRoute() {
       onOpenPin={() => router.push('/change-pin')}
       onCreatePin={() => router.push(OPEN_WALLET_PIN_PATH)}
       onOpenWallet={entry.open}
+      onOpenStatements={() => router.push('/wallet-statement')}
     />
   );
 }

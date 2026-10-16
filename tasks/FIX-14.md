@@ -18,14 +18,14 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done (one Sonnet session, 16 Oct 2026); the verifier is next.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-14.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/SHARED-05` (this branch contains it); API types regenerated from backend `wmt/FIX-14` (b9cda2a).
 - **Branches:** mobile `wmt/FIX-14` (code `208d87c` and `5238c29`, from main `3117807`, nothing newer to merge). Backend: none changed. wawu-id: none. Migration: none. Contract: unchanged.
 - **Built:** R1 row chips draw their outline inside the padding (15, or 11 and 14 in an icon row, less the border), so a chip is exactly the canvas's width; N1 decorative `Avatar` and the `MediaCard` placeholder pass `aria-hidden`; A5's consent box passes `aria-checked`; `settingsScreens.test.tsx` exits on its own (a mutation's 5 minute `gcTime` timer, now `Infinity` in that test's client); the fork gate reads function components (a copy of a component exported from `src/components/` fails).
 - **Checks:** typecheck, lint, jest (157 suites, 2,841 tests) and gates pass in one local run; tasks passes after `PROGRESS.md` is regenerated. No CI for mobile (billing).
 - **Edited tests that were not mine (4 assertions, for the new padding):** `src/__tests__/hubSharedProps.test.tsx` (3) and `src/__tests__/lists.test.tsx` (1) asserted the row chip's padding without its border (15, 11, 14). They now assert padding plus border equals those numbers, the same sum `chips.test.tsx` already asserts for option chips. Nothing else in any test, gate or baseline was changed.
-- **Open findings:** none known. Low, for the sweep: 14 other test files build their `QueryClient` with `mutations: { retry: false }` and no `gcTime`, so each would also keep Jest up about 5 minutes if run alone (they exit in the full run).
 - **Not run:** a phone; the live web DOM for the decorative avatar and the consent box (jest checks the props the components set); Apply's and the host day picker's chips on screen (same component, not reachable without data).
-- **Next:** the verifier checks the four capability checks below, V1 with its own full run, V5 pictures against X2, X3, I1 and M34, and V6.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: 5 (a gate misses three component spellings, other decorative components lack aria-hidden, the gate test runs by hand only, a changed test missing from the Current state list, 14 other QueryClient files). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
