@@ -15,6 +15,15 @@ artboards: []
 ---
 # POINTS-04 · Convert points to cash
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 17:35) and the branch.
+- **Status:** verifying. Built; the verifier report is empty. This file on main still says todo.
+- **Branches:** mobile `wmt/POINTS-04` 0dd2f63. Backend `wmt/POINTS-04` 1bb872f (migration `20261021220000_points_cash_out`; G-740 to G-745).
+- **Merged and live:** nothing of this task. **Open findings:** none yet.
+- **Next:** a verifier session.
+- **Records:** on the branch, `wmt/POINTS-04`, in tasks/POINTS-04.md there (14 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py POINTS-04`; the history goes to tasks/history/POINTS-04.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

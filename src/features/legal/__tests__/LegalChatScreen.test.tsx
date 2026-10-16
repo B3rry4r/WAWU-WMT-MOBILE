@@ -150,6 +150,12 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
 const type = async (text: string) => rtl.fireEvent.changeText(rtl.screen.getByTestId('legal-input'), text);
 const press = async (testID: string) => await rtl.fireEvent.press(rtl.screen.getByTestId(testID));
 const sendEnabled = () => rtl.screen.getByTestId('legal-send').props.accessibilityState.disabled === false;
+/**
+ * A sent message is drawn at once, dimmed, while the Hub is asked (`legal-bubble-sending`), so its words are on screen before the Hub has
+ * answered. This waits until the Hub has: the dimmed copy is gone and the confirmed message has replaced it. A test that ends before then
+ * leaves the request running, and its answer lands in the next test's conversation.
+ */
+const messageConfirmed = () => rtl.waitFor(() => expect(rtl.screen.queryByTestId('legal-bubble-sending')).toBeNull());
 
 beforeEach(() => {
   answers = { [MINE]: [ok([])], [OPEN]: [ok(thread())] };
@@ -382,6 +388,7 @@ describe('S17 · a consultant joins', () => {
     await rtl.screen.findByText("Hi Chidi, I've read your brief.");
     await type('Thank you');
     await press('legal-send');
+    await messageConfirmed();
     expect(await rtl.screen.findByText('Thank you')).toBeTruthy();
     expect(calls(MESSAGES)[0].body).toEqual({ body: 'Thank you' });
   });
@@ -514,6 +521,7 @@ describe('the matter before payment', () => {
     await rtl.screen.findByText("I've sent your brief to a consultant.");
     await type('Any news?');
     await press('legal-send');
+    await messageConfirmed();
     expect(await rtl.screen.findByText('Any news?')).toBeTruthy();
   });
 
@@ -698,6 +706,8 @@ describe('leaving and coming back', () => {
     await screen.unmount();
     await renderScreen();
     await rtl.screen.findByText(OPENER);
+    // The screen draws the conversation it held while it reads it again; the test ends once that read has landed.
+    await rtl.waitFor(() => expect(queryClient.isFetching()).toBe(0));
     expect(rtl.screen.getByTestId('legal-input').props.value).toBe('Half a thought');
     expect(sendEnabled()).toBe(true);
   });
@@ -713,6 +723,7 @@ describe('leaving and coming back', () => {
     await screen.unmount();
     await renderScreen();
     await rtl.screen.findByText('Does the lease say anything about rent reviews?');
+    await rtl.waitFor(() => expect(queryClient.isFetching()).toBe(0));
     expect(rtl.screen.getByTestId('legal-input').props.value).toBe('');
   });
 });

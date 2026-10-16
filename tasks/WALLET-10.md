@@ -15,6 +15,15 @@ artboards: []
 ---
 # WALLET-10 · Money in: bank transfers to the account
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 16:05) and the branch.
+- **Status:** verifying. Built; the verifier report is still the empty template. This file on main still says todo.
+- **Branches:** mobile `wmt/WALLET-10` 95d1f93. Backend `wmt/WALLET-10` 5e57a09 (migration `20261021210000_money_in_notices`; G-730 to G-737).
+- **Merged and live:** nothing of this task. **Open findings:** none yet.
+- **Next:** a verifier session.
+- **Records:** on the branch, `wmt/WALLET-10`, in tasks/WALLET-10.md there (10 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-10`; the history goes to tasks/history/WALLET-10.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

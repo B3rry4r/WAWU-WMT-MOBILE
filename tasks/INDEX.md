@@ -219,8 +219,14 @@ Builder and verifier are always different sessions.
 201. [FIX-30](FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording
 202. [AUTH-07](AUTH-07.md) Sign-up verifies by email code; no SMS · needs AUTH-03, AUTH-04, AUTH-05 from Developer first
 203. [FIX-31](FIX-31.md) The app's tests that fail only under load: make them deterministic
-204. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-205. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+204. [FIX-32](FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock
+205. [SWEEP-MONEY](SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
+206. [SWEEP-JOIN](SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail
+207. [SWEEP-INBOX](SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox
+208. [SWEEP-EVENTS](SWEEP-EVENTS.md) Events sweep: the low findings of events and the door
+209. [SWEEP-AUTH](SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in
+210. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+211. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
@@ -251,6 +257,8 @@ Builder and verifier are always different sessions.
 25. [WEB-01](WEB-01.md) Port web-only features after launch
 26. [FIX-15](FIX-15.md) A refused upload does not count against storage quota
 27. [FIX-28](FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break
+28. [SWEEP-WEB](SWEEP-WEB.md) Web sweep: the low findings of the website tasks
+29. [SWEEP-APP](SWEEP-APP.md) App sweep: test gaps and small differences across the app
 
 ## Developer
 
