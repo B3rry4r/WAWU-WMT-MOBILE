@@ -18,7 +18,7 @@ artboards: [H33]
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done (Sonnet builder, mobile branch `wmt/ADS-01` on main 3117807). Backend and wawu-id unchanged (ADS-03 to ADS-06 serve everything the card needs; no migration).
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ADS-01.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-14` (this branch contains it); API types regenerated from backend `wmt/ADS-01` (b9cda2a).
 - **What is built:** `src/features/ads/` (`api.ts`, `useAd.ts`, `SponsoredStep.tsx`, `SponsoredSlot.tsx`, `look.ts`, 4 test files).
   - H33: the TGIF reader asks `GET /ads?placement=tgif_card` and, when a card comes, shows it as a sixth step before the takeaway (`readerSteps(true)`). Words, picture and button word are the Hub's. Get tickets opens the event (`/events/[id]`, E2) and stays on the card for the way back. Skip goes on to the takeaway.
   - H36: with TGIF off, Today asks `GET /ads?placement=today_slot` and draws `SponsoredSlot` in TGIF's place; the whole card opens the event.
@@ -29,7 +29,8 @@ As of 16 Oct 2026.
 - **Checks:** full local check EXIT 0 (159 suites, 2878 tests; gates 0 fail, 5 warn, 0 accepted, the same 5 warns as main). GitHub cannot run mobile CI now.
 - **Evidence (builder's, for the verifier to repeat):** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ads-01-b/shots/` (H33 and H36, dark and light, each beside its artboard as `*-compare.png`; E2 reached from the card).
 - **Open for the owner (in BACKEND_GAPS.md):** G-760 (the "Ads keep TGIF free" line), G-761 (a campaign with no artwork).
-- **Next:** a verifier, passes V1, V4, V5, V6, V9. History: `tasks/history/ADS-01.md`.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: 5 (skip sits under Next and Done, the SPONSORED label breaks at 320 px, the Today slot cuts the longest allowed words, advertiser is read by no screen, an artwork link that will not load). They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 

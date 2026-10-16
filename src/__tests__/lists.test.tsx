@@ -113,7 +113,8 @@ describe('filter chips', () => {
     await render(<Filters />);
     const chip = flat(screen.getByRole('radio', { name: 'Money in' }).props.style);
     expect(chip.height).toBe(36);
-    expect(chip.paddingHorizontal).toBe(15);
+    // FIX-14 R1: the canvas draws the outline inside the 15, so the padding is 15 less the border.
+    expect(Number(chip.paddingHorizontal) + Number(chip.borderWidth)).toBe(15);
     expect(chipMetrics.font).toBe(14);
   });
 });

@@ -7,7 +7,10 @@ import { focusRingGap, focusRingWidth, useFocusRing } from './focusRing';
 import { Icon, type IconName } from './icon';
 import { Text } from './Text';
 
-/** design/_gen/kit.js line 19, `Chip`: 36 high, 15 across, 14 semi-bold. */
+/**
+ * design/_gen/kit.js line 19, `Chip`: 36 high, 15 across, 14 semi-bold. The kit draws the 1 px outline as an inset shadow,
+ * which takes no room, so the 15 across counts the border: a row chip's padding is 15 less its border (FIX-14 R1).
+ */
 export const chipMetrics = { height: 36, padH: 15, font: 14 } as const;
 
 /**
@@ -17,9 +20,10 @@ export const chipMetrics = { height: 36, padH: 15, font: 14 } as const;
 export const optionChipMetrics = { height: 38, padH: 14, font: 14, border: 1 } as const;
 
 /**
- * design/_gen/explore.js `chipRow`, a row of chips with icons: every chip in it pads 11 at the start and 14 at the end
- * (the outline counted in, as above), the one without an icon too (X2, X3 and X13 draw All that way); a 15 icon,
- * stroke 2, in the label's colour, 6 before the label.
+ * design/_gen/explore.js `chipRow`, a row of chips with icons: every chip in it pads 11 at the start and 14 at the end,
+ * the one without an icon too (X2, X3 and X13 draw All that way); a 15 icon, stroke 2, in the label's colour, 6 before
+ * the label. The canvas draws the outline as an inset shadow that takes no room, so, as for `chipMetrics` and
+ * `optionChipMetrics`, each chip's own padding is these numbers less its border: the edge to the label is exactly 11 and 14.
  */
 export const chipIconMetrics = { padStart: 11, padEnd: 14, size: 15, stroke: 2, iconGap: 6 } as const;
 
@@ -27,6 +31,9 @@ export type ChipVariant = 'row' | 'option';
 
 /** Room above and below the chips for the focus ring, which a scroller would otherwise clip. The scroller's margin takes it back, so the layout does not move. */
 const ringRoom = Math.ceil(focusRingGap + focusRingWidth);
+
+/** A row chip's outline: 1 px on the web, one device pixel on a phone. Counted into its padding, so it takes no room (see `chipMetrics`). */
+const rowBorder = StyleSheet.hairlineWidth;
 
 export type ChipItem<T extends string> = {
   value: T;
@@ -73,7 +80,7 @@ function Chip({ label, icon, iconRow, selected, onPress, variant, onLayout, test
   const { colors } = useWawu();
   const ring = useFocusRing();
   const tone = selected ? 'surfacePage' : variant === 'option' ? 'textPrimary' : 'textSecondary';
-  const border = variant === 'option' ? optionChipMetrics.border : 0;
+  const border = variant === 'option' ? optionChipMetrics.border : rowBorder;
   return (
     <Pressable
       testID={testID}
@@ -86,11 +93,11 @@ function Chip({ label, icon, iconRow, selected, onPress, variant, onLayout, test
       {...ring.handlers}
       style={[
         styles.chip,
-        variant === 'option' && styles.optionChip,
+        variant === 'option' ? styles.optionChip : styles.rowChip,
         {
           backgroundColor: selected ? colors.textPrimary : 'transparent',
           borderColor: selected ? 'transparent' : colors.borderStrong,
-          borderWidth: variant === 'option' ? optionChipMetrics.border : StyleSheet.hairlineWidth,
+          borderWidth: border,
         },
         iconRow ? { paddingLeft: chipIconMetrics.padStart - border, paddingRight: chipIconMetrics.padEnd - border } : null,
         icon ? styles.iconChip : null,
@@ -190,11 +197,11 @@ const styles = StyleSheet.create({
   row: { gap: space.sm, alignItems: 'center', paddingVertical: ringRoom },
   chip: {
     height: chipMetrics.height,
-    paddingHorizontal: chipMetrics.padH,
     borderRadius: radius.chip,
     justifyContent: 'center',
     flexShrink: 0,
   },
+  rowChip: { paddingHorizontal: chipMetrics.padH - rowBorder },
   optionChip: { height: optionChipMetrics.height, paddingHorizontal: optionChipMetrics.padH - optionChipMetrics.border },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   label: { fontSize: chipMetrics.font },

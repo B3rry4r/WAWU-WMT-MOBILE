@@ -312,6 +312,7 @@ function DetailsForm({ owner, prefill, identity, address, occupation: keptOccupa
             testID="open-wallet-consent"
             accessibilityRole="checkbox"
             accessibilityState={{ checked: agreed, disabled: busy }}
+            aria-checked={agreed}
             accessibilityLabel="I agree to the terms and privacy policy"
             accessibilityHint={problems.agreed}
             disabled={busy}

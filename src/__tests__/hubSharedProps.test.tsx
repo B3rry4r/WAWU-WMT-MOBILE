@@ -129,7 +129,10 @@ describe('FilterChips icon (EXPLORE-01 #1)', () => {
   it('draws the icon 6 before the label, 15 at stroke 2 in the label colour, with 11 at the start and 14 at the end', async () => {
     await render(<FilterChips label="Categories" items={categories} value="all" onChange={() => undefined} testID="cats" />);
     const on = screen.getByTestId('cats-all');
-    expect(styleOf(on)).toMatchObject({ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 11, paddingRight: 14 });
+    expect(styleOf(on)).toMatchObject({ flexDirection: 'row', alignItems: 'center', gap: 6 });
+    // FIX-14 R1: the outline takes no room on the canvas, so the 11 and 14 are the padding plus the border.
+    expect(Number(styleOf(on).paddingLeft) + Number(styleOf(on).borderWidth)).toBe(11);
+    expect(Number(styleOf(on).paddingRight) + Number(styleOf(on).borderWidth)).toBe(14);
     // The icon is decoration: hidden from a screen reader, which reads the label.
     expect(screen.getByTestId('icon-LayoutGrid', hiddenOk)).toBeTruthy();
     expect(on.children.length).toBe(2);
@@ -151,7 +154,7 @@ describe('FilterChips icon (EXPLORE-01 #1)', () => {
     const plainRow = categories.map(({ value, label }) => ({ value, label }));
     await render(<FilterChips label="Categories" items={plainRow} value="all" onChange={() => undefined} testID="cats" />);
     const plain = styleOf(screen.getByTestId('cats-music'));
-    expect(plain.paddingHorizontal).toBe(chipMetrics.padH);
+    expect(Number(plain.paddingHorizontal) + Number(plain.borderWidth)).toBe(chipMetrics.padH);
     expect(plain.paddingLeft).toBeUndefined();
     expect(plain.flexDirection).toBeUndefined();
     expect(screen.queryAllByTestId(/^icon-/, hiddenOk)).toHaveLength(0);
@@ -160,7 +163,8 @@ describe('FilterChips icon (EXPLORE-01 #1)', () => {
   it('a chip with no icon of its own beside icon chips takes chipRow\'s 11 and 14 and draws no icon (SHARED-03 item 2, X3\'s All)', async () => {
     await render(<FilterChips label="Categories" items={categories} value="all" onChange={() => undefined} testID="cats" />);
     const music = styleOf(screen.getByTestId('cats-music'));
-    expect(music).toMatchObject({ paddingLeft: chipIconMetrics.padStart, paddingRight: chipIconMetrics.padEnd });
+    expect(Number(music.paddingLeft) + Number(music.borderWidth)).toBe(chipIconMetrics.padStart);
+    expect(Number(music.paddingRight) + Number(music.borderWidth)).toBe(chipIconMetrics.padEnd);
     expect(music.flexDirection).toBeUndefined();
     expect(screen.getByTestId('cats-music').children).toHaveLength(1);
     expect(screen.queryAllByTestId(/^icon-/, hiddenOk)).toHaveLength(2);
