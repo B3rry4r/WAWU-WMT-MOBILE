@@ -9,6 +9,7 @@ import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { PushBridge } from '@/features/push/PushBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { fontFiles, useWawu } from '@/theme';
 
@@ -57,6 +58,8 @@ function useStoredTheme(): boolean {
  * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
  * applied before the first screen is drawn, with the splash screen still up, so the next
  * launch never shows the other theme first (SETTINGS-01 #3 (a)).
+ * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
+ * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
@@ -67,6 +70,7 @@ export default function RootLayout() {
   const offer = useClaimOfferStep(signedIn);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+  const inApp = signedIn && !gate.needsEmail && !offer.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -121,6 +125,7 @@ export default function RootLayout() {
         <Stack.Screen name="terms" />
         <Stack.Screen name="privacy-policy" />
       </Stack>
+      <PushBridge live={inApp} />
     </QueryClientProvider>
   );
 }

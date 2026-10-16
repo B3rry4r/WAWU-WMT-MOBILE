@@ -25,6 +25,7 @@ Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscript
 - The design: `python3 scripts/design/render_design.py SC1 SC2 SC3 SC10` then open `build/design_shots/`
 - What the analysis found for these artboards: `docs/analysis/evidence/A7.json`
 - `docs/designer/BRIEF.md`: its entries for SC1 (the brief is part of the design: build its version, not the canvas's; R-29)
+- Paging (FIX-28, from FIX-27 verifier N1): the directory continues on `nextCursor`, never on "the page was full", because a school hidden between the list's two reads shortens a page. `SchoolsScreen.tsx` does this today (`getNextPageParam: last.nextCursor ?? undefined`).
 
 ## Goal
 

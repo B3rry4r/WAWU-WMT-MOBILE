@@ -27,10 +27,12 @@ export type ListingsScreenProps = {
   onBack: () => void;
   /** Apply again (with the field) and Apply in another field (without). */
   onApply: (fieldId?: string) => void;
+  /** "Inbox settings" in the note opens I21, Paid messages (INBOX-12, R-41). */
+  onOpenInboxSettings?: () => void;
 };
 
 /** P8, and P9 for a field that is hidden. P10 stops an account that is not a creator's. */
-export function ListingsScreen({ onBack, onApply }: ListingsScreenProps) {
+export function ListingsScreen({ onBack, onApply, onOpenInboxSettings }: ListingsScreenProps) {
   const creator = useQuery({ queryKey: proKeys.account, queryFn: fetchIsCreator });
   const isCreator = creator.data === true;
   const fields = useQuery({ queryKey: proKeys.fields, queryFn: fetchFields, enabled: isCreator });
@@ -75,13 +77,33 @@ export function ListingsScreen({ onBack, onApply }: ListingsScreenProps) {
         <ListingCard key={row.id} row={row} fields={fields.data} onApplyAgain={(field) => onApply(field?.id)} />
       ))}
       <ApplyAnother onPress={() => onApply()} />
-      <Note
-        tone="info"
-        icon="MessageCircle"
-        title="People reach you through paid messages"
-        body="Set your price and reply time in Inbox settings."
-        testID="pro-paid-note"
-      />
+      {onOpenInboxSettings ? (
+        <Note tone="info" icon="MessageCircle" title="People reach you through paid messages" testID="pro-paid-note">
+          <Text variant="bannerBody">
+            {'Set your price and reply time in '}
+            <Text
+              variant="bannerBody"
+              tone="accentFg"
+              accessibilityRole="link"
+              accessibilityLabel="Inbox settings"
+              onPress={onOpenInboxSettings}
+              testID="pro-paid-note-open"
+              style={styles.noteLink}
+            >
+              Inbox settings
+            </Text>
+            .
+          </Text>
+        </Note>
+      ) : (
+        <Note
+          tone="info"
+          icon="MessageCircle"
+          title="People reach you through paid messages"
+          body="Set your price and reply time in Inbox settings."
+          testID="pro-paid-note"
+        />
+      )}
     </ProFrame>
   );
 }
@@ -181,6 +203,7 @@ function ListingCard({ row, fields, onApplyAgain }: { row: Application; fields: 
 }
 
 const styles = StyleSheet.create({
+  noteLink: { ...font(600) },
   another: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: anotherMetrics.iconToLabel, padding: anotherMetrics.pad, borderRadius: radius.tile },
   card: { gap: rowMetrics.between, borderRadius: radius.card, paddingVertical: rowMetrics.padV, paddingHorizontal: space.lg },
   name: { ...font(600), fontSize: rowMetrics.name, lineHeight: canvasNormalLineHeight(rowMetrics.name) },
