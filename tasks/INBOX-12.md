@@ -7,7 +7,7 @@ order: 65
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [INBOX-09, UI-02, INBOX-04, PROS-03]
 decisions: [R-13, R-2, R-9]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -18,8 +18,15 @@ artboards: [I21, I22, I23]
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **Status:** verifying. Built by a Sonnet builder on `wmt/INBOX-12` in wawu-backend (`15ee7e9`) and in this repo. No migration. Not verified.
+- **Backend (done):** `GET` and `PUT /paid-dm/settings` (creator only): switch, price in kobo, reply hours, the share and what the creator keeps, the next preset to raise to, the options (price bounds, presets, reply times, from config), and the INBOX-09 standing with the missed and total counts. A save is refused with 403 `paid_messages_paused` while paid messages are off. The live `PATCH /creator/dm-settings` is untouched. GitHub run 38900290377: all three suites, protected routes, contract and baseline green; gates show main's 16 FAIL lines plus one new PROVISIONAL warn (G-722).
+- **App (done):** `src/features/paid-messages/` (screen, parts, model, api), route `src/app/paid-message-settings.tsx`. I21, I22 and I23 are one screen in three moments picked by the Hub's standing. Loading, error, a plain account (the creator gate) and the empty creator (switch off, empty price) are built and entered by their real causes.
+- **Entries (R-41, done):** I1 settings button in the Inbox header (creators only), M2 paid messages row (chevron and press), P8 "Inbox settings" link in the note.
+- **Checks:** backend tsc 0, new spec 21 passed, money-contract spec passed (a `*Kobo` field must be integer: fixed in round one). Mobile: new tests 37 passed (model 13, screen 17, entries 7); the touched features' tests pass. Pictures at 390 px, light and dark, design beside build, from a web export through the stack: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/inbox12/shots/pair-I2{1,2,3}-{dark,light}.png`, with a real save round trip (`I21-saved-dark.png`, the Hub row read back) and the Inbox and Services entries pressed in the browser.
+- **Differs, for a reason:** no status bar or home indicator (web build). The canvas draws the price field focused (ring and caret) on I21 and I22; the build focuses it on tap. The warning's body wraps one word earlier in the canvas (its font renders about 2% wider); the label-to-field gap is about 2 px more here (label line height).
+- **Changed on purpose:** `src/features/me/__tests__/listingsEntryReal.test.tsx` T2 said the paid messages row has no chevron and is not a button, which was the state before this task; it now says the opposite and T3 presses it (SHARED-CHANGES INBOX-12 #2).
+- **Next:** a verifier (not the builder) runs V1, V4, V5, V6, V7, V9 from the task's list.
+- **Open, for the owner (via the lead):** G-722 the presets and reply times (the design's and the web's, in config) until ruled; G-723 the web's live `PATCH /creator/dm-settings` still lets a paused creator switch on (sends stay refused).
 - **History:** none yet. Reports go to tasks/history/INBOX-12.md.
 
 ## Read first
@@ -92,17 +99,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The ME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-12.md](history/INBOX-12.md).
 
 ## Owner sign-off
 
