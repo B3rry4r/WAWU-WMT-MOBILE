@@ -15,6 +15,16 @@ artboards: []
 ---
 # MONEY-16 · Nightly check against Fintava
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (12 Oct 17:15, nothing newer) and the branches.
+- **Status:** review on its branches (round 2 verified: no blocker, no false clean). This file on main still says todo.
+- **Branches:** mobile `wmt/MONEY-16` 3c5b536. Backend `wmt/MONEY-16` 61e2b08 (migration `20261021170000_money_check_runs`). wawu-id `wmt/MONEY-16` 3a17b6a (the mail route). No PRs yet.
+- **Merged and live:** nothing of this task.
+- **Open findings:** blocker 0, high 0, medium 0. Lows RF-1 to RF-7 are in tasks/SWEEP-MONEY.md.
+- **Next:** the lead merges: rename the migration off NUV-06's stamp (after main's last folder), backend PR, wawu-id PR, mobile sign-off. The reversed-send rule assumes Fintava reports FAILURE; it is loud if that is wrong.
+- **Records:** on the branch, `wmt/MONEY-16`, in tasks/MONEY-16.md there (75 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py MONEY-16`; the history goes to tasks/history/MONEY-16.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

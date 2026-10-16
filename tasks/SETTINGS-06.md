@@ -15,8 +15,12 @@ artboards: []
 ---
 # SETTINGS-06 · Delete account in the Hub: empty wallet first, freeze, restore on cancel
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/SETTINGS-06.md.
 
 ## Read first
 

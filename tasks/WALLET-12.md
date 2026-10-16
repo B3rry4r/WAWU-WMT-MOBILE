@@ -15,6 +15,13 @@ artboards: [W41, W42, W43]
 ---
 # WALLET-12 · Share a receipt as image or PDF
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-04.
+- **History:** none yet. Reports go to tasks/history/WALLET-12.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

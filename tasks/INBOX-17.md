@@ -15,7 +15,12 @@ artboards: []
 ---
 # INBOX-17 · Paid questions: pay, hold, pay out and refund through the wallet (backend)
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): MONEY-16, WALLET-16.
+- **History:** none yet. Reports go to tasks/history/INBOX-17.md.
 
 ## Read first
 

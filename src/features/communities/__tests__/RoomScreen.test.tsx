@@ -174,6 +174,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  jest.useRealTimers();
   await queryClient.cancelQueries();
   await rtl.act(async () => {
     await signOut();
@@ -182,8 +183,19 @@ afterEach(async () => {
   queryClient.clear();
 });
 
+/**
+ * Freezes the date and nothing else (every timer stays real) at a fixed noon. `message()` stamps a message about 16 minutes before
+ * "now", which is yesterday for the 17 minutes after midnight, so a test that expects the day label `Today` pins the date first.
+ */
+const pinDate = () =>
+  jest.useFakeTimers({
+    now: new Date('2026-10-07T12:00:00'),
+    doNotFake: ['hrtime', 'nextTick', 'performance', 'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'setImmediate', 'clearImmediate', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+  });
+
 describe('a community room (I25)', () => {
   it('a member reads the messages oldest at the top, with the member count and the credit balance in the header, and a Host tag on the host\'s message', async () => {
+    pinDate();
     const first = message('Meetup is Saturday, 2pm.', HOST);
     const second = message("Who's at the meetup Sat?", 'u2');
     const third = message("I'll be there. First time.", 'u3');

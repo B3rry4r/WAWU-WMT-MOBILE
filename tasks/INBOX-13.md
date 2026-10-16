@@ -15,7 +15,12 @@ artboards: [I27, I28, I29]
 ---
 # INBOX-13 · Out of credits, buy credits, credits added
 
-Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-16.
+- **History:** none yet. Reports go to tasks/history/INBOX-13.md.
 
 ## Read first
 

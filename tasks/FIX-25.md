@@ -15,6 +15,13 @@ artboards: [M8, M36]
 ---
 # FIX-25 · A photo uploaded from the website or the app's web build carries no location
 
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-25.md.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)

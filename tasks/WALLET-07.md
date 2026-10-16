@@ -15,6 +15,18 @@ artboards: []
 ---
 # WALLET-07 · Send money to a WAWU user
 
+## Current state
+
+As of 16 Oct 2026, from the lead's log (11 Oct 16:55) and the branch.
+- **Status:** building on its branches (round 1 verified: the money path held; no way to move money twice, lose it or send it to the wrong person). This file on main still says todo.
+- **Branches:** mobile `wmt/WALLET-07` 10ed011. Backend `wmt/WALLET-07` 4644a4c (migration `20261021190000_wallet_transfers`).
+- **Merged and live:** nothing of this task.
+- **Open findings:** blocker 0, high 0, medium 0. D1, D2 and D3 (all low) are in tasks/SWEEP-MONEY.md. By the 15 Oct rule the verdict is merge; the lead to confirm.
+  - Not filed anywhere yet (unknown, ask the lead): PushStoppedAccount is never cleared after a cancelled deletion (the log says own ticket).
+  - Known limits: the Nuvion book transfer has no field for WAWU's fee (N10), so a send completes at the quote unless the owner sets Nuvion's fee; a lost answer completes at the quote whatever the provider took (G-717).
+- **Next:** the lead merges. The backend trial merge has two spec route-list conflicts; keep both sides.
+- **Records:** on the branch, `wmt/WALLET-07`, in tasks/WALLET-07.md there (39 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-07`; the history goes to tasks/history/WALLET-07.md.
+
 ## Lead note (11 Oct 2026): from MONEY-19's verification
 
 - A send this task builds that the wallet cannot cover must answer MONEY-19's `402 insufficient_funds` with `balanceKobo`, `totalKobo` and `shortfallKobo` (G-481); today `walletProviderErrorToHttp('insufficient_funds')` builds a 402 with no figures.
