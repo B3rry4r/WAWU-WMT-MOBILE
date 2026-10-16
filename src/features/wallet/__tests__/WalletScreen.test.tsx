@@ -165,14 +165,14 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 /** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. The settings icon is built since WALLET-06 (W35) and is drawn in every state. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Send', 'Add money', 'Swap', 'WAWU card', 'Airtime', 'Data', 'TV'];
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Add money', 'Swap', 'WAWU card', 'Airtime', 'Data', 'TV'];
 /**
  * The bills tiles that are built, drawn on every state of the tab, each opening Pay a bill (S2). The canvas draws Airtime, Data and TV
  * too; their screens are BILLS-03's, so until it adds them they are not drawn (R-47, U1).
  */
 const BILL_TILES = ['Power', 'More'];
 const NOT_BUILT_IDS = [
-  'wallet-scan', 'wallet-tabs', 'wallet-actions', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
+  'wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
   'wallet-loading-tabs', 'wallet-loading-actions',
   'wallet-bill-airtime', 'wallet-bill-data', 'wallet-bill-tv',
 ];
@@ -272,11 +272,11 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the settings icon, the eye, Copy, the two bills tiles, See all and the two rows, and each one works', async () => {
+  it('every button on W1 does something: the settings icon, the eye, Copy, Send, the two bills tiles, See all and the two rows, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Send', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
     const asks = sent.length;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Hide balance' }));
@@ -286,6 +286,9 @@ describe('W1 · Wallet · Naira', () => {
     expect(mockCopied).toEqual(['8100000417']);
     expect(mockPushed).toEqual([]);
     expect(sent.length).toBe(asks);
+    // Send (WALLET-02) opens W7.
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Send' }));
+    expect(mockPushed).toEqual(['/send']);
     expect(allText(app)).not.toMatch(/soon|not available|not built/i);
   });
 
@@ -435,7 +438,7 @@ describe('W5 · Wallet · new account', () => {
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-bills', 'wallet-no-transactions'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
+    expect(buttonNames(app).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'Send', 'Wallet settings'].sort());
   });
 });
 
@@ -711,7 +714,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app, { rows: true });
     // The settings icon, the card's own two buttons, the two bills tiles, See all and the two rows are the only ones pressable.
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...BILL_TILES, 'Copy account number', 'Hide balance', 'See all transactions', 'Send', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
   });
 

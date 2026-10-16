@@ -183,6 +183,30 @@ describe('PaySheet', () => {
     expect(p.onPay).toHaveBeenCalledTimes(1);
   });
 
+  it('on a send page the status buttons sit in the foot, as the not-enough state and the canvas draw them: blocked, still confirming and failed', async () => {
+    const states = [
+      { kind: 'blocked', title: 'Over today’s limit', message: 'You can send ₦15,000 more today.' },
+      { kind: 'confirming', line: 'Check Wallet activity for the result.' },
+      { kind: 'failed', message: 'The bank turned this send down.' },
+    ] as const;
+    for (const status of states) {
+      const { unmount } = await render(<PaySheet {...props({ ...send(), status, onRefresh: jest.fn(), onRetry: jest.fn() })} />);
+      const foot = screen.getByTestId('pay-sheet-foot');
+      expect(foot).toHaveStyle({ marginTop: 'auto' });
+      expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
+      for (const button of screen.getAllByRole('button')) expect(foot).toContainElement(button);
+      await unmount();
+    }
+  });
+
+  it('a still-confirming sheet says what the host gives it, and its own sentence when the host gives none', async () => {
+    const { unmount } = await render(<PaySheet {...props({ ...send(), status: { kind: 'confirming', line: 'Check Wallet activity for the result.' } })} />);
+    expect(screen.getByText('Check Wallet activity for the result.')).toBeTruthy();
+    await unmount();
+    await render(<PaySheet {...props({ ...send(), status: { kind: 'confirming' } })} />);
+    expect(screen.getByText(/hasn't been confirmed yet/)).toBeTruthy();
+  });
+
   it('shows every send amount with its kobo faded, as W10 draws it', async () => {
     await render(<PaySheet {...props(send())} />);
     for (const whole of ['₦40.00', '₦25.00', '₦65.00', '₦25,065.00']) expect(screen.getByText(whole)).toBeTruthy();
@@ -271,5 +295,23 @@ describe('PaySheet', () => {
     expect(p.onRetry).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(p.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a blocked payment as a warning with Cancel only: nothing was tried, so no failed mark and no "didn\'t go through"', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'Over today’s limit', message: 'You can send ₦15,000 more today.' }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('Over today’s limit')).toBeTruthy();
+    expect(screen.getByText('You can send ₦15,000 more today.')).toBeTruthy();
+    expect(screen.queryByText("Payment didn't go through")).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(p.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Try again on a blocked payment only when the host asks for it', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'We couldn’t work out the total', message: 'Try again.', tryAgain: true }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(p.onRetry).toHaveBeenCalledTimes(1);
   });
 });

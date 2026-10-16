@@ -143,6 +143,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         onRetryWallet={() => void wallet.refetch()}
         onRetryBalance={() => void balance.refetch()}
         retrying={wallet.isFetching || balance.isFetching}
+        onSend={() => router.push('/send')}
         onOpenBills={() => router.push('/bills')}
       />
       {tgifOn && tgifDay.data ? (
