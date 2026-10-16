@@ -57,6 +57,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | CHECK-1 | F-7 | M8's `wawu/<handle>` preview is hidden for a handle with a hyphen, which the Hub would also refuse. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 55 |
 | EXPLORE-05 | V1-4 | The cap of 20 recent searches is not held under parallel `POST /search/recent` (18 at once after 19 rows left 27; the next single POST trims to 20, Recent shows 10 regardless). Fix: a per-person advisory lock in the transaction, as `PushTokenService.register` does. Backend. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`, finding 4 |
 | EXPLORE-05 | V1-5 | Blocked accounts are counted in the global `GET /search/popular` list (one list for everybody, no per-viewer filter, as designed). Rule it "no" or filter per viewer. Backend. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`, finding 5 |
+| EXPLORE-05 | R3-1 | `GET /search/popular` is kept 60 seconds in the Hub process (lead ruling, 16 Oct 2026), so a text can show for up to 60 seconds after one of its people asks to delete the account (the deleted-account rule itself holds on the next ask). Fix if wanted: have the deletion call empty the kept answer, or accept. Backend. | `tasks/EXPLORE-05.md`, Builder report, round 3 |
 
 ## Builder report
 
