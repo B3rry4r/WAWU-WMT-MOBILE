@@ -8,7 +8,7 @@ priority: launch
 repo: all
 type: backend-refactor
 status: todo
-depends_on: [MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02]
+depends_on: [MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02, SETTINGS-06]
 decisions: [R-49]
 passes: [V1, V2, V3, V9]
 artboards: []
@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 37, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost).
+- **Open lows:** 40, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02, SETTINGS-06 (not merged yet; its lows are listed now so none is lost).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -84,6 +84,9 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | TIER-02 | T14 | No route-level test reaches a tier the config does not name (mutant M1 survives all 125 tests). Info. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 919 |
 | TIER-02 | N18 | The new ended-plan sentence drops "Everything you published stays up." Wording; the owner may want it back. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 920 |
 | TIER-02 | N19 | An ended tier that held extras: the sentence says a bigger plan has room and does not say to renew. Never false. | branch `wmt/TIER-02`, `tasks/TIER-02.md`, Verifier report, round 5, line 921 |
+| SETTINGS-06 | L4 | Money check and freeze are not atomic with a money action: an open hold created while the balance is being read still lets DELETE schedule (the final check keeps the account, so no money is lost). Pending ledger entries (a withdrawal made to empty the wallet) are not a blocker; a failed one would reverse into the frozen wallet and hold the purge back. | branch `wmt/SETTINGS-06`, `tasks/history/SETTINGS-06.md`, Verifier report, round 1, finding 4 (copy at `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-06.md`) |
+| SETTINGS-06 | L5 | A cancel after a provider switch (scheduled under Fintava, cancelled with a provider that cannot unfreeze) answers `cancelled: true, walletUnfrozen: false`, clears `walletFrozenAt` and leaves the wallet frozen at Fintava. The row's `walletProvider` is not used. | branch `wmt/SETTINGS-06`, `tasks/history/SETTINGS-06.md`, Verifier report, round 1, finding 5 (copy at `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-06.md`) |
+| SETTINGS-06 | L6 | A wallet opened during the 30 days is not frozen (nothing refuses opening while a deletion is scheduled); the final check blocks the purge if it holds money. A repeat DELETE after the date but before the sweep answers a past date. The web's comments in `src/lib/api/settings.ts` (lines 120 and 127) still say 48 hours. | branch `wmt/SETTINGS-06`, `tasks/history/SETTINGS-06.md`, Verifier report, round 1, finding 6 (copy at `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-06.md`) |
 
 ## Builder report
 

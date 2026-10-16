@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 137 | 0 | 0 | 0 |
+| todo | 136 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 1 | 0 | 0 | 0 |
+| verifying | 2 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 101 | 27 | 11 | 5 |
 
@@ -19,8 +19,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [WALLET-04](../tasks/WALLET-04.md) Transaction history and detail (You)
+- [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 
 ## Done
 
@@ -195,6 +195,3 @@ From `docs/LOG.md`, newest first.
 - 11 Oct 2026 · TIER-03 · Verifier report (status building; backend `wmt/TIER-03` `bcae6a6`, trial merges of backend main `020f055` and `origin/wmt/TIER-02` `8c90db5`): every capability check CONFIRMED live on two built Hubs (105 checks), protected suite 253/253, gates the same 16 FAIL lines, contract equal twice, 27 of 31 mutants killed. Open: D1 an upgrade paid while its source tier ends is taken and not granted (reproduced), D2 and D3 behaviours without a test (`extraProducts` kept or reset; points granted last), D4 the lead's ruling on `extraProducts` (kept on all three kinds; a stale ended tier's extras return, so TIER-02's offers under-promise). Merge: backend main conflicts in `wallet-payment.service.ts` `onModuleInit`; mobile main in `contract/SOURCE_COMMIT` and `docs/PROGRESS.md`.
 - 11 Oct 2026 · TIER-03 · Builder report (status verifying; backend `wmt/TIER-03` `bcae6a6` (main `74b501b` merged), mobile `wmt/TIER-03`): a tier is bought, renewed or upgraded from the wallet. `POST /plans/purchases` pays through MONEY-17 as `tier` or `tier_bump` into WAWU's own account (no split, not held, one debit with the bump); an upgrade pays the difference of the two config prices and starts today; the tier, dates, bonus lot, event pass, Voice Intro and the bump's points are granted once per payment in one transaction, with the billing currency fixed by the first. Two Hub processes on stand-ins: one debit, twice and at once, the upgrade difference, the shortfall, a still-confirming and a failed payment, no wallet, five wrong PINs; 21 mutants killed (two needed new specs). Dollar wallet path NOT RUN (NUV-09). G-680 filed; G-421 (badge number) left open.
 - 11 Oct 2026 · FIX-32 · Merged by the lead (merge of `47e75e3`): the last racy jest tests (Explore, LegalChat, RoomScreen D38, MeScreen, hostScreens skeleton) wait for what they assert; two new CommunitiesView tests pin note 37.
-- 11 Oct 2026 · FIX-32 · Builder report, round 2 (status verifying; mobile `wmt/FIX-32`, main `39c472b` merged; tests only, two test files): the MeScreen D2 test now moves the test's clock after its cache wait, so it reads the screen after React has drawn the failed refresh (the verifier's mutant PM6, a failed refresh drawn as the page error, passed the round 1 test 30 of 30 and fails this one, unmutated 30 of 30); a two-line comment at the top of the fake-clock `beforeEach` in the Explore and Me files says every wait goes through `findBy`, `waitFor` or `settle` and a bare await of a fetch answer hangs behind a timer. Full check EXIT 0 (152 suites, 2756 tests); both files 10 of 10 alone.
-- 11 Oct 2026 · FIX-32 · Verifier report (mobile `wmt/FIX-32` `0664baa`, main `5b9851b` merged; status `building`, one defect): the causes are real and the fixes hold (Explore, MeScreen and the host skeleton under a 1.3 s stall; LegalChat at 9 delay seeds; RoomScreen at 00:05 and 00:16:30; note 37 mutant killed by exactly the two new tests; 60 of 60 repeat runs; full check EXIT 0 twice, 152 suites 2756 tests). Defect: the new MeScreen D2 test passes without drawing the failed refresh, so a mutant the old test kills survives it (add a clock advance after the `isFetching` wait). Notes: the host skeleton failure under a stall is intermittent, LegalChat old seed 4 did not fail, a bare await in the fake-clock files is a trap only under the delay harness.
-- 11 Oct 2026 · FIX-32 · Builder report (status verifying; mobile `wmt/FIX-32`, main `610cc57` merged; tests only, six test files): a stalled worker spent the one second a `findBy` has for two answers in a row (reproduced with a thread-blocking stall: 8 Explore Categories tests and 4 MeScreen tests fail before, none after), so Explore and MeScreen run their waits on the fake clock; the host form's skeleton is asserted while the answers are held; LegalChat's three racing tests were victims of two earlier tests that ended with a message still on its way (43 of 43 at 13 delay seeds); RoomScreen pins the date (INBOX-05 defect 38); a refused next page of suggestions is asked for once (note 37, mutant Dc killed by both new tests); hostScreens E13 to E15 recorded as load only. Full check EXIT 0 (152 suites, 2756 tests).
