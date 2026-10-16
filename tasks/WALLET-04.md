@@ -7,7 +7,7 @@ order: 113
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: done
 depends_on: [MONEY-15, UI-02, BILLS-01]
 decisions: [R-10, R-33]
 passes: [V1, V4, V5, V6, V9]
@@ -17,15 +17,7 @@ artboards: [W26, W27, W28]
 
 ## Current state
 
-As of 16 Oct 2026, after round 2 (builder, Sonnet).
-- **Status:** verifying. Round 1 was verified and sent back with one medium defect (D1). Round 2 fixed it.
-- **Branches:** mobile `wmt/WALLET-04` (round 2 on top of a merge of main `2f0ca33`). No backend change, no migration (`none (mobile only)`), no contract change (G-720, G-721 filed).
-- **Merged and live:** nothing of this task.
-- **Round 2 (D1, medium, fixed):** a grouped row on W1 opened the newest unlock's receipt. `recentRow` now carries `group.key`, and `RecentTransactions` opens the group list (`/transactions?group=<key>`, the same list W26 opens) through a new `onOpenGroup`; `WalletScreen` routes it. A plain row still opens its receipt.
-  - Tests that failed before the fix and pass after it: `walletHomeModel.test.ts` (recentRow carries the key) and `historyFlow.test.tsx` (on the real router, the Wallet tab's grouped row lands on the group list, then one unlock's receipt, and Back returns to the tab).
-- **Open findings:** none medium or worse. Lows D2, D3, D4 are in tasks/SWEEP-MONEY.md. G-721 (the fee label says Fintava under Nuvion) is the owner's.
-- **Next:** a verifier checks D1 on the stack (pictures of W1 with a grouped row and of the group list it opens are in the builder report's evidence line).
-- **Records:** tasks/history/WALLET-04.md (round 1 builder and verifier reports, round 2 builder report at the end).
+merged to main 3117807, 16 Oct 2026
 
 ## Read first
 

@@ -18,10 +18,11 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** verifying. Builder done; backend `wmt/FIX-34` (one spec file, no product code).
-- **Next:** a verifier checks the branch against the Capability checks below.
+- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-34.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-33` (this branch contains it); API types regenerated from backend `wmt/FIX-34` (aba6c71).
 - **Id and order:** filed after-launch at order 285, the way FIX-33 (order 284) is.
 - **History:** none yet.
+- **Open findings:** blocker 0, high 0, medium 0, low 0.
+- **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
 
 ## Read first
 
@@ -44,17 +45,9 @@ A helper, `withoutKnownIds`, cuts the ids the test generated (the row's own uuid
 - [ ] No pattern, assertion, route or product file changed (`git diff` is one file: the helper, the two scan lines, one new case).
 - [ ] Backend `tsc --noEmit` and eslint on the file exit 0; CI gates show the same FAIL lines as main.
 
-## Builder report
+## History
 
-Sonnet builder. Backend `wmt/FIX-34` `2bf6e97`, from main `3797fb2`. One file.
-- **Red:** with every generated id ending in 11 decimal digits (`00000000-0000-4000-8000-f43762817260` and the like), the unchanged spec fails 2 tests on the response scan (line 188, `Expected pattern: not /bvn|hash|released:|\d{11}/i`); with only that line fixed, the audit-row scan (line 200) fails the same 2 tests.
-- **Green:** the same ids with the changed spec: 12 of 12 pass. Planting `22212345678` in the audit row's `detail` fails the audit-row scan (2 tests, the planted value shown in the received text); planting a `bvn` key fails it the same way. The spec ran 10 times in a row on the local stack `fix_34`, each 12 of 12, EXIT 0; the stack is down and its database dropped.
-- **Checks:** `tsc --noEmit` EXIT 0; eslint on the file EXIT 0; prettier check clean.
-- **CI on `2bf6e97`:** all 3 suite shards, netns, contract, deploy-test-in-sync, the baseline check and the protected route suite green. Executable gates red with the same 18 FAIL lines as on main (`gates run: 1249 files scanned, 16 fail`, identical on `3797fb2`).
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-34.md](history/FIX-34.md).
 
 ## Owner sign-off
 
