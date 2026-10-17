@@ -36,7 +36,17 @@ export type MeMenuSheetProps = {
  * My content), Saved and Notifications (ME-14, after My courses). The task that builds each of those screens adds its row here, as
  * drawn, with the line the canvas puts under its title (a figure the Hub serves to that screen).
  */
-export function MeMenuSheet({ visible, onClose, onOpenSettings, onOpenCourses, onOpenVerification, onOpenDashboard, onOpenLibrary }: MeMenuSheetProps) {
+export function MeMenuSheet({ visible, onClose, ...rows }: MeMenuSheetProps) {
+  // The rows (and the two reads behind their lines) mount only while the sheet is raised, as the sheet's Modal mounts nothing
+  // otherwise: the Me tab itself needs no query client until the menu is opened.
+  return (
+    <BottomSheet visible={visible} onClose={onClose} label="Menu" gap={SHEET_GAP} testID="me-menu">
+      <MenuRows visible={visible} {...rows} />
+    </BottomSheet>
+  );
+}
+
+function MenuRows({ visible, onOpenSettings, onOpenCourses, onOpenVerification, onOpenDashboard, onOpenLibrary }: Omit<MeMenuSheetProps, 'onClose'>) {
   // The two lines are the Hub's figures, read when the sheet is raised and shared with the screens they open (the same keys). The
   // month's earnings are `GET /money/earnings`, the read M18 and W39 make, so the three never say different things.
   const owner = useSessionAccount(undefined);
@@ -45,14 +55,12 @@ export function MeMenuSheet({ visible, onClose, onOpenSettings, onOpenCourses, o
   const earned = earnings.data ? `${formatMoney(earnings.data.thisMonth.earnedKobo, { decimals: showsKobo(earnings.data.thisMonth.earnedKobo) })} this month` : undefined;
   const uploads = allowance.data && allowance.data.uploads.allowed > 0 ? `${allowance.data.uploads.used} of ${allowance.data.uploads.allowed} uploads` : undefined;
   return (
-    <BottomSheet visible={visible} onClose={onClose} label="Menu" gap={SHEET_GAP} testID="me-menu">
-      <GroupedList testID="me-menu-list">
-        {onOpenDashboard ? <ListRow testID="me-menu-dashboard" lead={<IconTile icon="LayoutDashboard" />} title="Creator dashboard" subtitle={earned} onPress={onOpenDashboard} /> : null}
-        {onOpenLibrary ? <ListRow testID="me-menu-content" lead={<IconTile icon="Library" />} title="My content" subtitle={uploads} onPress={onOpenLibrary} /> : null}
-        {onOpenCourses ? <ListRow testID="me-menu-courses" lead={<IconTile icon="GraduationCap" />} title="My courses" onPress={onOpenCourses} /> : null}
-        {onOpenVerification ? <ListRow testID="me-menu-verification" lead={<IconTile icon="BadgeCheck" />} title="Verification" onPress={onOpenVerification} /> : null}
-        <ListRow testID="me-menu-settings" lead={<IconTile icon="Settings" />} title="Settings" onPress={onOpenSettings} />
-      </GroupedList>
-    </BottomSheet>
+    <GroupedList testID="me-menu-list">
+      {onOpenDashboard ? <ListRow testID="me-menu-dashboard" lead={<IconTile icon="LayoutDashboard" />} title="Creator dashboard" subtitle={earned} onPress={onOpenDashboard} /> : null}
+      {onOpenLibrary ? <ListRow testID="me-menu-content" lead={<IconTile icon="Library" />} title="My content" subtitle={uploads} onPress={onOpenLibrary} /> : null}
+      {onOpenCourses ? <ListRow testID="me-menu-courses" lead={<IconTile icon="GraduationCap" />} title="My courses" onPress={onOpenCourses} /> : null}
+      {onOpenVerification ? <ListRow testID="me-menu-verification" lead={<IconTile icon="BadgeCheck" />} title="Verification" onPress={onOpenVerification} /> : null}
+      <ListRow testID="me-menu-settings" lead={<IconTile icon="Settings" />} title="Settings" onPress={onOpenSettings} />
+    </GroupedList>
   );
 }
