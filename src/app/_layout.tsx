@@ -61,6 +61,13 @@ function useStoredTheme(): boolean {
  * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
  * applied before the first screen is drawn, with the splash screen still up, so the next
  * launch never shows the other theme first (SETTINGS-01 #3 (a)).
+ * Every other route file that needs a session sits in that same last signed-in group (FIX-63, SHARED-CHANGES FIX-63 #1): wallet,
+ * send, withdraw, bills, events, schools, professionals, library, create and publish, chat and rooms, points, invite, legal,
+ * notifications, search, saved, TGIF and the rest. A route file is listed in a signed-in group, or it is on the short public
+ * list kept in `src/__tests__/route-guard.test.tsx`: the signed-out set above, About, Terms and Privacy policy, the app links
+ * (`/r`, `/selfie`, `/activate`, `/receipt`, `/u`, `/c`, `/content`, which each send a signed-out visitor on themselves),
+ * `/claim-code` (sends a signed-out visitor to sign-in and brings the sign-in back) and the development-only screens. That test
+ * fails when a route file is neither.
  * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
  * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
@@ -138,6 +145,90 @@ export default function RootLayout() {
           <Stack.Screen name="settings/privacy" />
           <Stack.Screen name="settings/blocked" />
           <Stack.Screen name="settings/password" />
+          <Stack.Screen name="add-money" />
+          <Stack.Screen name="bills/electricity/[code]" />
+          <Stack.Screen name="bills/electricity/index" />
+          <Stack.Screen name="bills/index" />
+          <Stack.Screen name="change-pin" />
+          <Stack.Screen name="chat/[id]" />
+          <Stack.Screen name="chat/send" />
+          <Stack.Screen name="checkout" />
+          <Stack.Screen name="community/[id]" />
+          <Stack.Screen name="create" />
+          <Stack.Screen name="create-details" />
+          <Stack.Screen name="create-format" />
+          <Stack.Screen name="create-preview" />
+          <Stack.Screen name="create-price" />
+          <Stack.Screen name="create-review" />
+          <Stack.Screen name="create-upload" />
+          <Stack.Screen name="creator" />
+          <Stack.Screen name="creators" />
+          <Stack.Screen name="earnings" />
+          <Stack.Screen name="events/[id]" />
+          <Stack.Screen name="events/dashboard/[id]" />
+          <Stack.Screen name="events/door/[id]" />
+          <Stack.Screen name="events/host" />
+          <Stack.Screen name="events/index" />
+          <Stack.Screen name="events/links/[id]" />
+          <Stack.Screen name="events/mine" />
+          <Stack.Screen name="events/orders/[orderId]" />
+          <Stack.Screen name="events/sent-back/[id]" />
+          <Stack.Screen name="events/tickets/[ticketId]" />
+          <Stack.Screen name="events/tickets/index" />
+          <Stack.Screen name="invite" />
+          <Stack.Screen name="invite-card" />
+          <Stack.Screen name="invite-rules" />
+          <Stack.Screen name="legal" />
+          <Stack.Screen name="legal-book" />
+          <Stack.Screen name="legal-fixed" />
+          <Stack.Screen name="legal-matter" />
+          <Stack.Screen name="library/[id]/edit" />
+          <Stack.Screen name="library/[id]/index" />
+          <Stack.Screen name="library/[id]/replace" />
+          <Stack.Screen name="library/index" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="paid-message-settings" />
+          <Stack.Screen name="pass" />
+          <Stack.Screen name="points" />
+          <Stack.Screen name="points-buy" />
+          <Stack.Screen name="points-convert" />
+          <Stack.Screen name="professional-apply" />
+          <Stack.Screen name="professional-listings" />
+          <Stack.Screen name="professionals/[id]" />
+          <Stack.Screen name="professionals/index" />
+          <Stack.Screen name="publish" />
+          <Stack.Screen name="purchases" />
+          <Stack.Screen name="reset-pin" />
+          <Stack.Screen name="saved" />
+          <Stack.Screen name="schools/[id]" />
+          <Stack.Screen name="schools/courses/[id]" />
+          <Stack.Screen name="schools/enrol/[courseId]" />
+          <Stack.Screen name="schools/enrolments/[id]" />
+          <Stack.Screen name="schools/index" />
+          <Stack.Screen name="schools/mine" />
+          <Stack.Screen name="search" />
+          <Stack.Screen name="send/amount" />
+          <Stack.Screen name="send/bank" />
+          <Stack.Screen name="send/failed" />
+          <Stack.Screen name="send/index" />
+          <Stack.Screen name="send/receipt" />
+          <Stack.Screen name="send/review" />
+          <Stack.Screen name="settings/delete-account/confirm" />
+          <Stack.Screen name="settings/delete-account/index" />
+          <Stack.Screen name="settings/delete-account/scheduled" />
+          <Stack.Screen name="studio" />
+          <Stack.Screen name="tgif" />
+          <Stack.Screen name="tier-done" />
+          <Stack.Screen name="tiers" />
+          <Stack.Screen name="transactions/[id]" />
+          <Stack.Screen name="transactions/index" />
+          <Stack.Screen name="verification" />
+          <Stack.Screen name="wallet-settings" />
+          <Stack.Screen name="wallet-statement" />
+          <Stack.Screen name="withdraw/failed" />
+          <Stack.Screen name="withdraw/index" />
+          <Stack.Screen name="withdraw/receipt" />
+          <Stack.Screen name="your-tier" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />

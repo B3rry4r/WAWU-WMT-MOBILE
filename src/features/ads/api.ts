@@ -39,6 +39,9 @@ export function drawable(value: unknown): AdCard | null {
   if (typeof card.artworkUrl !== 'string' || !/^https?:\/\//i.test(card.artworkUrl)) return null;
   return {
     id: card.id,
+    // Carried, read by no screen: the chip on every sponsored card is the fixed word SPONSORED, as the canvases draw it, and
+    // not "SPONSORED · <advertiser>" (the Hub's own comment in ads-text-limits.ts words it that way). A longer chip would
+    // worsen the 320 px break of the Today slot's label. Ruled no (SWEEP-APP row 61, ADS-01 L4, FIX-63).
     advertiser: typeof card.advertiser === 'string' ? card.advertiser : '',
     headline: card.headline,
     subline: text(card.subline) ? card.subline : null,
