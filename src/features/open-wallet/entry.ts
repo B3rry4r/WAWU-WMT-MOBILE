@@ -57,3 +57,11 @@ export function useOpenWalletEntry(): OpenWalletEntry {
     };
   }, [router]);
 }
+/** A26, the ID document (KYC-06): the third step of the review opening, after the details and the selfie. */
+export const OPEN_WALLET_ID_PATH = '/open-wallet-id' as const;
+/** A27, the proof of address with the home address and Submit (KYC-06), pushed on top of A26. */
+export const OPEN_WALLET_ADDRESS_PATH = '/open-wallet-address' as const;
+/** A28, Checking your details (KYC-06): in place of A26 and A27 once the documents are sent. */
+export const OPEN_WALLET_CHECKING_PATH = '/open-wallet-checking' as const;
+/** A29, Rejected (KYC-06): the bank's reasons and what to fix, with Upload again. */
+export const OPEN_WALLET_REJECTED_PATH = '/open-wallet-rejected' as const;
