@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 18, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 20, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the INBOX-12 rows wait for batch 4 to merge; the other rows' source tasks are merged. The WALLET-40 rows wait for batch 7 to merge (the code they name is on its branch until then). The HOME-17 rows wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -65,6 +65,8 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | WALLET-40 | L3 | Backend (INBOX-03's design, unchanged): `PUSH_LOOKBACK_MINUTES = 15` (`src/push/push-config.ts:74`). If every push sweep is down for more than 15 minutes after the commit, the phone push for the "account number is ready" notice is never sent (the notice is still in the list). Never doubled. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 3 |
 | HOME-17 | L1 | Backend: the migration uses a plain `CREATE INDEX` (Prisma runs it in a transaction, so no `CONCURRENTLY`): Notification writes wait while it builds. Sub-second at 70k rows; on a very large production table schedule the deploy off peak. `prisma/migrations/20261024220000_tgif_notice_retention_index/migration.sql:9`. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-17.md`, finding 1 |
 | HOME-17 | info 3 | Backend (note, no change asked): a second server follows an edit of a setting within 15 s (`PLAN_SETTINGS_REFRESH_SECONDS`, TIER-06's design). For the TGIF time that can mean up to 15 s early or late on one server, never a second notice (the once-a-day marker). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-17.md`, finding 3 (info) |
+| INBOX-20 | L1 | The shared pay sheet's header (`src/components/pay-sheet/PaySheet.tsx:383`, `Header`) draws an empty rounded tile before the title on the "Not enough" sheets of a request ("Pay Ada", `RequestPaySheet.tsx:56`) and a send ("Send to Ada Seeded", `ChatSendScreen.tsx:401`); nothing is passed as `image`. Filed as SHARED-CHANGES INBOX-13 #3 (open). The credits short state no longer uses the sheet. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F2 and round 2 notes |
+| INBOX-19 | L1 | Known limit (G-880): the "You sent" bubble is kept on the sender's phone only (`src/features/chat/sends.ts`). A send whose answer was lost and never retried has no bubble, the receiver never sees one, and a new phone loses it. It survives a cold restart. Needs the Hub to write a chat message for a send. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F4 |
 
 ## Builder report
 
