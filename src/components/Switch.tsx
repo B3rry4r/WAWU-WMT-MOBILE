@@ -14,6 +14,7 @@ export function Switch({ on, busy }: { on: boolean; busy?: boolean }) {
   const travel = switchMetrics.width - switchMetrics.knob - 2 * switchMetrics.inset;
   return (
     <View
+      aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[

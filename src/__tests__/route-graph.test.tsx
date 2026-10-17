@@ -1,7 +1,7 @@
-import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Appearance, Text, View, useColorScheme } from 'react-native';
 
-import RootLayout from '@/app/_layout';
+import RootLayout, { THEME_READ_LIMIT_MS } from '@/app/_layout';
 import AccountTypeRoute from '@/app/account-type';
 import ForgotPasswordRoute from '@/app/forgot-password';
 import SignInRoute from '@/app/sign-in';
@@ -218,6 +218,22 @@ describe('the chosen theme applies before the first screen (SHARED-CHANGES SETTI
     await waitFor(() => expect(screen.getByRole('header', { name: 'Probe' })).toBeTruthy());
     expect(applied).toEqual(['dark']);
     expect(seenAtFirstDraw!.appliedBefore).toEqual(['dark']);
+  });
+
+  it('a phone store that never answers does not hold the app forever: after the limit it opens following the phone (SHARED-05 L1)', async () => {
+    mockVault.set(THEME_KEY, 'dark');
+    mockThemeGate = new Promise<void>(() => undefined);
+    await renderRouter({ ...routes, welcome: Probe });
+    expect(screen.queryByRole('header', { name: 'Probe' })).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(THEME_READ_LIMIT_MS - 1);
+    });
+    expect(screen.queryByRole('header', { name: 'Probe' })).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Probe' })).toBeTruthy());
+    expect(applied).toEqual([]);
   });
 
   it.each([

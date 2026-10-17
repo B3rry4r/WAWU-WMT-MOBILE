@@ -16,6 +16,9 @@ import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+/** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
+export const THEME_READ_LIMIT_MS = 3000;
+
 /**
  * True once the saved Theme has been applied. Nothing is drawn before then, so the first screen
  * is already in the chosen theme. An unreadable phone store counts as nothing saved (it follows
@@ -25,13 +28,19 @@ function useStoredTheme(): boolean {
   const [applied, setApplied] = useState(false);
   useEffect(() => {
     let live = true;
+    // A phone store that never answers must not hold the splash forever: after this long the app opens following the phone.
+    const gaveUp = setTimeout(() => {
+      if (live) setApplied(true);
+    }, THEME_READ_LIMIT_MS);
     applyStoredTheme()
       .catch(() => undefined)
       .then(() => {
+        clearTimeout(gaveUp);
         if (live) setApplied(true);
       });
     return () => {
       live = false;
+      clearTimeout(gaveUp);
     };
   }, []);
   return applied;

@@ -65,6 +65,7 @@ export function BrandMark({ layout = 'submark', width, surface, decorative = fal
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
       accessibilityLabel={decorative ? undefined : APP_NAME}
+      aria-hidden={decorative}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}
     >
