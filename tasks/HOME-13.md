@@ -7,7 +7,7 @@ order: 118
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-14, UI-02, HOME-02]
 decisions: [R-6, R-10, R-64, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,12 @@ artboards: [H26, H27, H28]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): HOME-14.
-- **History:** none yet. Reports go to tasks/history/HOME-13.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** H26 is Naira only at launch (R-64): the Dollar and USDT picker is not shown.
+As of 17 Oct 2026, built (bundle S1, Sonnet builder), waiting for a verifier.
+- **Status:** verifying. Mobile `wmt/S1` (from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/B1` merged, never rebased). Backend: none changed; used `wmt/B1` `e41210e` (HOME-14).
+- **Built:** H2's rail `₦ Tip` (not on your own post), H26 (Tip sheet), H27 (shared PIN sheet), H28 (Tip sent, "Total paid"), and the pay sheet's states between them (Not enough, Still confirming, Didn't go through). Files: `src/features/tips/`, `src/features/feedpay/` (shared with HOME-12), the rail in `src/features/feed/`.
+- **Not drawn (R-47, R-64):** the Naira/Dollar/USDT picker. The Add button leads to the Wallet tab, as the ticket checkout's does.
+- **Open for the lead:** SHARED-CHANGES HOME-13 #1 (export the pay sheet's wallet card; `WalletLine` copies it meanwhile); BACKEND_GAPS G-1721 (the quick amounts are the board's, PROVISIONAL TIP-QUICK-AMOUNTS).
+- **Next:** a verifier; passes V1, V4, V5, V6, V7, V8, V9. Records: this file and `docs/LOG.md`.
 
 ## Design v2 update (16 Oct 2026)
 
@@ -89,7 +90,12 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+**Files.** New: `src/features/tips/` (`api.ts`, `model.ts`, `useTip.ts`, `TipSheets.tsx`, tests) and `src/features/feedpay/` (`payCall.ts`, `usePaymentFlow.ts`, `StatusSheet.tsx`, `useFeedPay.tsx`, `useKeyboardLift.ts`, shared with HOME-12). Edited: `src/features/feed/{FeedScreen,PostFrame,parts,look}`, `src/features/home/HomeScreen.tsx`, `src/app/(tabs)/index.tsx` (the handlers). With no handlers the feed draws no Tip (R-47).
+**How it pays.** The breakdown is the Hub's quote for the amount, asked again on every change; Tip asks a FRESH quote before the PIN and shows, never pays, a moved total; ONE Idempotency-Key per attempt, kept (with its quote) across a wrong PIN, a lost answer and a closed sheet; `pending` is only read.
+**Checks.** `npx tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest tips+unlock+feed+home+shell, route-graph, focus, auth-guard, open-wallet guards: 17 suites, 266 tests EXIT 0 (18 new tip tests); `npm run gates` EXIT 0, 0 fail (was 0). Tests attack: double tap, wrong PIN, short balance (quote and payment), lost answer then retry, quote changed (before and at the PIN), pending, refused, no wallet.
+**On the stack** (backend `e41210e` + STACK-NUV, `s1_test`, ports 7700-7707, Nuvion stand-in at ₦23.25): through the app's own screens, once each. Double tap: 1 payment, debit 202,325. Wrong PIN: nothing moved, same key, 1 debit. Short balance: sheet "You have ₦1,000.00", no payment, no debit. Lost answer (Hub took it, answer dropped) then retry: same key, no new quote, 1 debit. Quote changed: not drawable on the stack (the stand-in's fee is fixed); covered by tests.
+**Pictures** (390 px, light and dark, beside the boards H2, H26, H27, H28): `.../scratchpad/s1-b/pics/beside-*.png`.
+**Not done.** An attempt is kept for the app's run only (a force-quit after a lost answer gets a new key); the quote-changed attack on the stack; the Android and iOS phones (web export only).
 
 ## Verifier report
 
