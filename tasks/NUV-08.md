@@ -7,7 +7,7 @@ order: 206
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [NUV-04, NUV-05, NUV-06, NUV-07]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,10 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): NUV-06.
-- **History:** none yet. Reports go to tasks/history/NUV-08.md.
+17 Oct 2026. Built by a Sonnet builder; push to verify. Backend `wmt/NUV-08` `5b756e2` on `wmt/MERGE-7` `0be61a4`. No PR.
+- **Status:** verifying. Nuvion stood in everywhere; no real host called.
+- **Migration:** `20261025050000_nuvion_reconcile_findings` (one new table, `NuvionReconcileFinding`; the lead may rename at merge).
+- **Next:** a verifier (not the builder). The (key) check waits for the sandbox key.
+- **History:** reports go to tasks/history/NUV-08.md.
 
 ## Read first
 
@@ -65,6 +66,40 @@ papered over.
 - [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run.
 
 ## Builder report
+
+Builder, 17 Oct 2026. Backend `wmt/NUV-08` `5b756e2` (on `wmt/MERGE-7` `0be61a4`). Specs run on the Nuvion stand-in only.
+
+**Docs were not on the machine.** The lead's saved Nuvion docs (`nuvion/docs/`) were wiped with the container, so the
+wire shapes for statements, webhook subscriptions and fee simulations are ASSUMED from the task text and the transfer
+object other pages show. Every one is read in `src/nuvion/areas/reconcile-readers.ts` (header lists them) and built in
+`src/nuvion/areas/reconcile.ts`. The verifier compares them with `api-reference__accounts.md` and
+`api-reference__webhooks.md`; a difference is a one-function fix. Request names to check: statement `year`, `month`,
+`include_pending`; `PATCH /entity-webhooks/{id}` `{expires_in}`; `POST /fee-simulations` body.
+
+**Built**
+- `areas/reconcile.ts`: `listTransactions` (statement month by month, every page of a month, kept a minute; fee and running
+  balance on each line, person and operational), `statementOfMonth`, `statementSince`, `getTransfer`, webhook list and
+  renewal, `simulateFee`, id lookups widened to every rail (adapter falls back to it).
+- `handlers/reconcile.handler.ts` (minute cron, only under nuvion), `reconcile-sweep.ts`, `reconcile-checks.ts`,
+  `reconcile-findings.ts`, `reconcile-config.ts` (5 optional settings, PROVISIONAL tags, in `.env.example` and `deploy/README.md`).
+- The sweep never credits: it STORES the missed movement as the delivery a webhook would have been
+  (`reconcile-<transferId>-<event>`), for the NUV-04/05/06 handlers, which read it back and write the ledger once.
+- `ProviderTransaction` gains optional `direction`, `balanceAfterKobo`. Migration adds `NuvionReconcileFinding`.
+
+**Capability checks**
+1. Missed inflow found and credited once, late delivery changes nothing (V8): passed (`nuvion-reconcile.contract.spec.ts`;
+   also late-first, and a pending movement left for the next pass).
+2. Bank send and book transfer with lost outcome settled once: passed (bank via statement, book via the pending log).
+3. `listTransactions` every movement of a month across pages with fee and balance, person and operational: passed
+   (`nuvion-reconcile-area.spec.ts`, 250 lines over 3 pages, three months, both orders).
+4. Subscription renewed before expiry; failed, ignored, missing and unreadable are reported: passed.
+5. Fee difference reported with both figures, setting unchanged, resolved when equal: passed.
+6. (key) a sandbox month matches the sandbox transfers: NOT RUN (sandbox key does not work).
+
+**Checks:** `tsc` 0; eslint `--no-fix` on every changed file 0; reconcile specs 28/28; `src/nuvion`, `src/wallet-provider`,
+`src/money/check` all pass; gates 0 fail, baseline ok; `contract:build` leaves `contract/` unchanged. One edit to a test
+I did not write: `nuvion-adapter.spec.ts` FILLED list gains `listTransactions` (its title says "until its task fills it";
+NUV-06 did the same). `data-export*.contract.spec.ts` fail on my empty database (a Comment foreign key), not on this change.
 
 ## Verifier report
 
