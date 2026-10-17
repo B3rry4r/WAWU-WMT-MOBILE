@@ -17,12 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026 (H1 bundle, Sonnet builder, round 2).
-- **Status:** verifying. Round 2 built D1 and D3; D2 is left for a lead ruling (below). Needs a fresh verifier for the new bits.
-- **Branches:** backend `wmt/H1` `a5d0a7d` = `origin/wmt/MERGE-9` `4e444ca` + `wmt/FIX-17` `6726b3c` merged (one conflict, CONVENTIONS section 15 now sits between 14 and 16) + the D1/D3 commit + the docs line. Mobile `wmt/H1` (this commit): this file, the contract copy, SHARED-CHANGES, LOG. The earlier `wmt/FIX-17` branches are folded in; do not merge them again.
+As of 17 Oct 2026 (H1 bundle, Sonnet builder, round 2 fix, tests only).
+- **Status:** verifying. Rounds 2 and 2-fix built D1, D2 and D3 and the four specs the verifier found red on `a5d0a7d`. Needs a fresh verifier for the fix round; CI shard 3 must go green.
+- **Branches:** backend `wmt/H1` `13fe440` (tests only on top of `a5d0a7d`) = `origin/wmt/MERGE-9` `4e444ca` + `wmt/FIX-17` `6726b3c` merged (one conflict, CONVENTIONS section 15 now sits between 14 and 16) + the D1/D3 commit + the docs line. Mobile `wmt/H1` (this commit): this file, the contract copy, SHARED-CHANGES, LOG. The earlier `wmt/FIX-17` branches are folded in; do not merge them again.
 - **Merged and live:** nothing of this task.
 - **Done this round:** D1: `src/hub-app-config.ts` `configureHubApp(app)` holds everything `main.ts` did between creating the app and listening, including the check; `main.ts` is now create, `configureHubApp`, listen. The Hub spec builds its app with the same function and pins (comments stripped by the compiler) that `main.ts` calls it once, right after creating the app, with no `init()` in `main.ts` or in `configureHubApp`. D3: the sweep spec allows 410 for a retired shop route.
-- **Open findings:** D2 only (two other tasks' specs, `money-recipient.contract.spec.ts:746` and `explore.contract.spec.ts:386`, assert the answers before this rule; their apps are built without the check so they still pass). Not edited here: it changes another task's assertions. Lead: say yes, and a builder gives those two apps `configureHubApp` and moves the two expected answers to 400; or leave them.
+- **Open findings:** none for the fix round. D2 was ruled by the lead and is done (below). Verifier lows stay on the sweep list: `GET /wallet/history?take=`, a repeated `token` on the export download (both 500 on main), the protected suite not wiring the pipe.
+- **Fix round (CI run 39048156767 shard 3 red):** `hub-rate-limits` and `body-parser-refusals` read `src/hub-app-config.ts` for the settings and filter and still check `main.ts` creates the app with `HUB_APP_OPTIONS` and calls `configureHubApp(app)`; `money-recipient` and `explore` build their apps with `configureHubApp` and expect 400 for a NUL. Ruled changes, no assertion weakened (SHARED-CHANGES FIX-17 #4).
 - **Next:** a verifier; OPS-08 (PR #26) still unmerged, follow SHARED-CHANGES FIX-17 #3 when it merges (the 410 allowance is already in); after the merge run `python3 scripts/tasks/compact_task.py FIX-17`.
 
 ## Read first
@@ -48,6 +49,12 @@ One rule, applied once: a NUL (or anything else Postgres refuses in text) in a q
 - [ ] Protected routes 253/253.
 
 ## Builder report
+
+**Round 2 fix (H1 bundle, Sonnet builder, 17 Oct 2026), tests only, no product code.** Backend `wmt/H1` `13fe440` on `a5d0a7d`. By ruling the four specs that pin the old shape of `main.ts` or skip the check are updated (SHARED-CHANGES FIX-17 #4); no assertion is weakened, each is moved to what `configureHubApp` now holds:
+- `src/tests/hub-rate-limits.contract.spec.ts`, "src/main.ts applies the same settings to the live app": `main.ts` still creates with `HUB_APP_OPTIONS` and now calls `configureHubApp(app)`; `applyHubHttpSettings(app)` is read from `src/hub-app-config.ts`.
+- `src/common/filters/tests/body-parser-refusals.contract.spec.ts`, "src/main.ts composes the app this spec builds": same two `main.ts` checks; `useGlobalFilters(new AllExceptionsFilter())` is read from `hub-app-config.ts`; the "no parser or limit of its own" check now covers both files.
+- D2, `money-recipient.contract.spec.ts` (was :746): its app is built with `configureHubApp`; `q=a%00b` expects 400 with the body `{statusCode:400, message: unstorableTextMessage('q'), data: null}` (was 200). `explore.contract.spec.ts` (was :386): app built with `configureHubApp`; `PUT /admin/featured-creators/%00` expects 400 (was 404). The other cases of both specs are unchanged and pass on the Hub's real setup.
+- **Checks** (migrated and seeded database, the mock WAWU ID on 7920, `--runInBand`): the four specs plus `src/storable-text` and `src/search-response`, 13 suites, 411 passed, 0 failed (hub-rate-limits 24, body-parser-refusals 48, money-recipient 41, explore 12, storable-text 50, search-response 236), EXIT 0. `npx tsc --noEmit` EXIT 0; eslint on the four files 0 errors (one old warning in explore, line 80, not touched). CI: see the Current state when the lead has the run ids.
 
 **Round 2 (H1 bundle, Sonnet builder, 17 Oct 2026).** Backend `wmt/H1` `a5d0a7d`; mobile `wmt/H1`.
 - **The rule:** unchanged from round 1 (a NUL or a lone surrogate in a query or path value is `400 <field> must have text in it, with no null characters or broken characters`, before any query). It now covers **568 routes, 285 of them GET, 1,046 arguments, every one carrying the check** (counted from the built Hub's own router: `dist/src/hub-app-config` applied to `AppModule`, `scratchpad/h1-b/count.js`).
