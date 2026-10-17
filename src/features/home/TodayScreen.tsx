@@ -37,6 +37,7 @@ export type TodayScreenProps = {
   onSearch?: () => void;
   /** "See all" on Creators to discover opens All creators (X4, EXPLORE-02). Not drawn without it. */
   onSeeAllCreators?: () => void;
+  onOpenCreator?: (wawuId: string) => void;
 };
 
 /**
@@ -53,7 +54,7 @@ export type TodayScreenProps = {
  * (`Services`) draws Monetize for a creator account only. No Bills button on the money card and no Pay bills or Events tile
  * (R-52, R-61, DV2-RM).
  */
-export function TodayScreen({ onView, masked, onToggleMask, onSearch, onSeeAllCreators }: TodayScreenProps) {
+export function TodayScreen({ onView, masked, onToggleMask, onSearch, onSeeAllCreators, onOpenCreator }: TodayScreenProps) {
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
@@ -69,14 +70,14 @@ export function TodayScreen({ onView, masked, onToggleMask, onSearch, onSeeAllCr
         {onSearch ? <IconButton icon="Search" label="Search" size={m.headRow} onPress={onSearch} testID="today-search" /> : null}
       </View>
       <ScrollView testID="today-scroll" contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} onSeeAllCreators={onSeeAllCreators} /> : <TodayLoading />}
+        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} /> : <TodayLoading />}
       </ScrollView>
     </View>
   );
 }
 
 /** Today's parts, read for the signed-in person. */
-function TodayBody({ masked, onToggleMask, onSeeAllCreators }: Pick<TodayScreenProps, 'masked' | 'onToggleMask' | 'onSeeAllCreators'>) {
+function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pick<TodayScreenProps, 'masked' | 'onToggleMask' | 'onSeeAllCreators' | 'onOpenCreator'>) {
   const router = useRouter();
   const client = useTodayClient();
 
@@ -160,7 +161,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators }: Pick<TodayScreenP
         onOpenLegal={() => router.push('/legal')}
         onOpenMonetize={isCreator ? () => router.push('/create') : undefined}
       />
-      <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} />
+      <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} onOpenCreator={onOpenCreator} />
     </>
   );
 }

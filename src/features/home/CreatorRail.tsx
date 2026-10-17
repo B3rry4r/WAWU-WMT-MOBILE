@@ -22,7 +22,7 @@ import { suggestionLine, suggestionTick } from './model';
  * canvas's Follow (13 at 700) and Following (white at 20%, no ring) for every creator card. With no photo the card
  * shows the person's initials on their hue through `placeholder`.
  */
-function SuggestionCard({ item, onFollow, busy }: { item: CreatorSuggestion; onFollow: () => void; busy: boolean }) {
+function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggestion; onFollow: () => void; onOpen?: () => void; busy: boolean }) {
   const tick = suggestionTick(item);
   return (
     <MediaCard
@@ -30,6 +30,7 @@ function SuggestionCard({ item, onFollow, busy }: { item: CreatorSuggestion; onF
       layout="stacked"
       width={m.cardWidth}
       height={m.cardHeight}
+      onPress={onOpen}
       title={item.name}
       subtitle={suggestionLine(item) ?? undefined}
       imageUrl={item.avatarUrl ?? undefined}
@@ -49,15 +50,16 @@ export type CreatorRailProps = {
   onSeeAll?: () => void;
   /** A follow or an unfollow the Hub accepted: whoever shows the rail can mark what depends on it (HOME-07, H12). */
   onFollowChange?: () => void;
+  /** A card opens that creator's profile (M5, ME-02). The card is not pressed without it. */
+  onOpenCreator?: (wawuId: string) => void;
 };
 
 /**
  * "Who Made This?" (H1, R-69): a sideways rail of creators, each with Follow in place. The
  * Hub's answer is changed at once and put right by its reply; a refused follow goes back and
- * says so. "See all" opens All creators (X4, EXPLORE-02); a card opening the profile (M5) is added by
- * ME-02 with its screen (R-27, R-41).
+ * says so. "See all" opens All creators (X4, EXPLORE-02); a card opens the profile (M5, ME-02).
  */
-export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowChange }: CreatorRailProps) {
+export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowChange, onOpenCreator }: CreatorRailProps) {
   const client = useTodayClient();
   const [failed, setFailed] = useState<string | null>(null);
   const follow = useMutation(
@@ -113,6 +115,7 @@ export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowCha
             key={item.wawuId}
             item={item}
             busy={busyId === item.wawuId}
+            onOpen={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
             onFollow={() => {
               if (follow.isPending) return;
               follow.mutate({ item, on: !item.following });

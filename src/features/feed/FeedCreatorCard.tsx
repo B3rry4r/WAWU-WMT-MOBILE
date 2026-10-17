@@ -20,6 +20,8 @@ export type FeedCreatorCardProps = {
   chromeTop: number;
   /** A piece in the strip opens its own page (H19). Left out, the strip is only looked at. */
   onOpenWork?: (id: string) => void;
+  /** Profile (M5, ME-02): opens the creator's profile. Left out, the button is not drawn (R-47). */
+  onOpenProfile?: (wawuId: string) => void;
 };
 
 /** One piece in the strip: its kind, a lock and its price when it is locked, else its views and length. */
@@ -97,9 +99,9 @@ function KnownRow({ known }: { known: CreatorCardData['knownFollowers'] }) {
  * their headline, the stats the Hub counts (followers, posts, and the rating when the Hub has one),
  * the people the viewer follows who follow them, a sideways strip of their latest work (free and
  * locked), and Follow. Every figure is the Hub's: a figure it does not have is left out with the
- * element around it. Profile (M5) is added by ME-02 with its screen.
+ * element around it. Profile opens M5 (ME-02).
  */
-export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork }: FeedCreatorCardProps) {
+export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork, onOpenProfile }: FeedCreatorCardProps) {
   const name = card.displayName?.trim() ?? '';
   const follow = useCardFollow(card.wawuId, card.followsCreator);
   return (
@@ -140,6 +142,7 @@ export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork }: 
           busy={follow.busy}
           onPress={follow.toggle}
         />
+        {onOpenProfile ? <CardButton testID="card-profile" tone="glass" label="Profile" onPress={() => onOpenProfile(card.wawuId)} /> : null}
       </ButtonRow>
     </CardFrame>
   );

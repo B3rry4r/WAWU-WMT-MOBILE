@@ -27,5 +27,5 @@ export default function ProfileLinkRoute() {
   if (!valid) return <Redirect href="/" />;
   if (me.isPending) return null;
   const own = me.data?.handle?.toLowerCase() === wanted.toLowerCase();
-  return own ? <Redirect href="/me" /> : <Redirect href={{ pathname: '/works/[wawuId]', params: { wawuId: wanted } }} />;
+  return own ? <Redirect href="/me" /> : <Redirect href={{ pathname: '/profile/[wawuId]', params: { wawuId: wanted } }} />;
 }

@@ -83,7 +83,9 @@ export function openableLink(url: string): string {
  * The social chips, in the order the person set on M9 (`socialOrder`, then any other filled one in the default
  * order), each with the handle as the chip shows it and the platform page a tap opens.
  */
-export function socialLinksOf(me: MyProfile, fields: Pick<ProfileFields, 'threadsHandle' | 'socialOrder'>): SocialLink[] {
+export type SocialSource = Pick<MyProfile, 'instagramHandle' | 'tiktokHandle' | 'youtubeUrl' | 'xHandle' | 'linkedinUrl' | 'facebookUrl'>;
+
+export function socialLinksOf(me: SocialSource, fields: Pick<ProfileFields, 'threadsHandle' | 'socialOrder'>): SocialLink[] {
   const handles = {} as SocialHandles;
   const stored = {} as Record<SocialPlatform, string>;
   for (const platform of PLATFORMS) {

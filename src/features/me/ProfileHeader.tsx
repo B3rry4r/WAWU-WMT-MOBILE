@@ -108,7 +108,8 @@ export type NameBlockProps = {
   /** The tier pill after the ticks (M1): only for a person with a running tier, from the Hub. */
   badge?: HeaderBadge | null;
   bio: string | null;
-  onEditProfile: () => void;
+  /** The owner's "Edit profile" (M1). A visitor's header (M5) has none, so it is not drawn without it. */
+  onEditProfile?: () => void;
   /** The tier pill opens Your tier (VF14, VERIFY-05). Left out, the pill is read, not pressed. */
   onOpenTier?: () => void;
 };
@@ -121,7 +122,7 @@ export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditPr
         <View style={[styles.avatarRing, { backgroundColor: colors.surfacePage }]}>
           <Avatar name={name} hue={hueFor(wawuId)} size={headerMetrics.avatar} source={avatarUrl ?? undefined} testID="me-avatar" />
         </View>
-        <Button label="Edit profile" variant="outline" size="profile" onPress={onEditProfile} testID="me-edit" />
+        {onEditProfile ? <Button label="Edit profile" variant="outline" size="profile" onPress={onEditProfile} testID="me-edit" /> : null}
       </View>
       <View>
         <View style={styles.nameRow}>

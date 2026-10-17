@@ -45,6 +45,8 @@ export type CategoriesScreenProps = {
   title?: string;
   /** X4 draws a search button at the end of the bar; Categories draws none. */
   onSearch?: () => void;
+  /** A creator's card opens their profile (X4, X8 to M5, ME-02). The card is not pressed without it. */
+  onOpenCreator?: (wawuId: string) => void;
   /** The chip changed, so the route can carry it (a link or a back step lands on the same category). */
   onChange?: (category: CategoryChoice) => void;
 };
@@ -69,7 +71,7 @@ function GridSkeleton({ testID = 'categories-loading' }: { testID?: string }) {
 }
 
 /** X2, X3 and X13: every creator category as a chip above the creators in it, each with Follow. With a title and a search button it is X4, All creators. */
-export function CategoriesScreen({ initial, onBack, title = 'Categories', onSearch, onChange }: CategoriesScreenProps) {
+export function CategoriesScreen({ initial, onBack, title = 'Categories', onSearch, onChange, onOpenCreator }: CategoriesScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
@@ -161,6 +163,7 @@ export function CategoriesScreen({ initial, onBack, title = 'Categories', onSear
             creator={item}
             width={cell}
             height={creatorCardMetrics.gridHeight}
+            onPress={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
             onToggleFollow={item.wawuId === me.data ? undefined : () => follow.toggle(item)}
           />
         )}

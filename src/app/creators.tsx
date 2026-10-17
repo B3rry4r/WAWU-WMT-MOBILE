@@ -19,6 +19,7 @@ export default function CreatorsRoute() {
       initial="all"
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/explore'))}
       onSearch={() => router.push('/search')}
+      onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
     />
   );
 }

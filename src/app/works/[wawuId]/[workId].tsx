@@ -22,6 +22,7 @@ export default function WorkRoute() {
       wawuId={wawuId}
       workId={workId}
       onBack={leave}
+      onOpenCreator={(who) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: who } })}
       onRemoved={() => router.dismissTo({ pathname: '/works/[wawuId]', params: { wawuId } })}
     />
   );
