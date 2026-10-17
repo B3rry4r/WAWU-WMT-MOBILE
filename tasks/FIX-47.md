@@ -3,7 +3,7 @@ id: FIX-47
 title: No blank page while Open your wallet sends the ID and address details
 owner: YOU
 area: FIX
-order: 176
+order: 135
 priority: launch
 repo: wawu-wmt-mobile
 type: component
@@ -19,7 +19,7 @@ artboards: [A27, A31]
 
 As of 17 Oct 2026.
 - **Status:** verifying (builder round 1, Sonnet). Branch `wmt/FIX-47` in the mobile repo only, from `origin/wmt/DV2-05` `960c40d` (DV2-05 round 2, checked, joins batch 7 next). No backend, wawu-id or migration change.
-- **Id and order:** order 176 is the only free launch slot (every number from 177 to 299 is taken, `npm run tasks` needs a unique one). Its true place is just after DV2-05 (order 290), which it is stacked on; the lead can move it.
+- **Id and order:** order 135 (renumbered at the batch 8 merge: 176 was also STACK-NUV's and FIX-48's, and 135 was the only free order below CHECK-3 (298) left once FIX-50 held 131 and FIX-48 took 0). It depends on nothing; its true place is just after DV2-05, which it is stacked on; the lead can move it.
 - **Built:** the cause was not A5's restart alone. A27's first call (`POST /money/wallet/open`) puts the opening in the query cache, so A31 (under A5, A26, A27) read "belongs further on", swapped its step for the resume fallback and UNMOUNTED it; that unmount forgets the BVN and NIN A5 holds and removes the opening's queries, so A5's `lost` effect fired `restart` (`dismissTo('/open-wallet')`) about 70 ms after Submit and A27 went with the pop. Three changes: (1) `ReviewResume` keeps its step mounted while it is not the screen in front (`active` false); (2) A5 does not call `restart` while a send is in flight (`useOpeningSending`, DV2-05's `sending.ts`); (3) A31's fallback (`ResumeFallback`) draws a busy state (a line and two skeleton blocks) while a send is in flight, and the same empty frame as before otherwise.
 - **Kept:** every DV2-05 round 2 behaviour (A6 when only the selfie is left, A28 otherwise, the loop guard, the poll, the taps); a flow with no opening on the Hub still restarts from A5 as before.
 - **Checks:** new `duringSend.test.tsx` (7 tests, real A31, A5 and A27 stacked): 5 fail on `960c40d`'s code, all 7 pass now. Browser chain on the stack `fix_47`: see the builder report in tasks/history/FIX-47.md.
