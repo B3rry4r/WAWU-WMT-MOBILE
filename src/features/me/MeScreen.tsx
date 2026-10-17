@@ -93,6 +93,10 @@ export type MeScreenProps = {
   onOpenShop?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
+  /** Creator dashboard (M18, ME-07): the menu's first row for a creator account, drawn only when given. */
+  onOpenDashboard?: () => void;
+  /** My content (M28, ME-07): the menu's second row for a creator account, drawn only when given. */
+  onOpenLibrary?: () => void;
 };
 
 /**
@@ -111,7 +115,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -248,6 +252,22 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
             ? () => {
                 setMenuOpen(false);
                 onOpenVerification();
+              }
+            : undefined
+        }
+        onOpenDashboard={
+          creator && onOpenDashboard
+            ? () => {
+                setMenuOpen(false);
+                onOpenDashboard();
+              }
+            : undefined
+        }
+        onOpenLibrary={
+          creator && onOpenLibrary
+            ? () => {
+                setMenuOpen(false);
+                onOpenLibrary();
               }
             : undefined
         }

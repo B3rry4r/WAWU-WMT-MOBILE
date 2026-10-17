@@ -91,7 +91,7 @@ type CategorySheetProps = {
 };
 
 /** The list behind "What is this?" (the canvas draws the field, not the list): the Hub's 25 categories, the chosen one ticked. */
-function CategorySheet({ visible, onClose, selected, onPick }: CategorySheetProps) {
+export function CategorySheet({ visible, onClose, selected, onPick }: CategorySheetProps) {
   const { colors } = useWawu();
   const { height } = useWindowDimensions();
   return (

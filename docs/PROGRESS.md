@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 91 | 0 | 0 | 0 |
+| todo | 90 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 72 | 0 | 0 | 0 |
+| verifying | 73 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -45,6 +45,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
+- [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
@@ -286,6 +287,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · ME-07 · Built (Sonnet builder, T1; mobile `wmt/ME-07` on `origin/wmt/WALLET-13` `f1f57e10` with `origin/wmt/P1` `9285017` merged; no backend change, no migration; status verifying): the Creator dashboard (M18, `/creator`: the month's earnings and change from `GET /me/earnings`, the uploads meter, Set up with the wallet row "Open your wallet: Not opened / Open", Earnings "Lands in your wallet automatically", My content), My content (M28, `/library`), Rejected (M26, `/library/<id>`: the reviewer's reason, Replace the file, Edit details, Delete, Send again to M25), M27 as M20 with every upload used and Open library, View in library on M25, and Creator dashboard and My content in the Me menu for a creator. Walked on stack `me07` against the real Hub. Gaps G-ME-07-1 to -7 (the delete row says "Delete": the Hub already returns the place at a rejection), SHARED-CHANGES ME-07 #1, F1, F2; Get verified waits for ME-12, Host a community for INBOX-14.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
@@ -300,4 +302,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · WALLET-16 · Merged onto batch 7 and the start-time cutoff built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e` on `origin/wmt/MERGE-7` `432f017` with `wmt/WALLET-16` `315b69b` merged, mobile `wmt/B1`; migrations `20261025120000_earning_settlements` (renamed from `20261021180000`) and `20261025130000_earning_sweep_start`; status verifying): the sweep pays only sales made on or after `EARNINGS_SWEEP_START`, else the moment the code first reached the environment (stored once); older unsettled sales get no earning and are listed at `GET /admin/money/earnings/before-start`. The earnings section of CONVENTIONS is now 26. R-55 (one move a day, 200 naira floor, 72 h after the first refusal) is NOT built.
 - 17 Oct 2026 · HOME-14 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a tip is paid from the wallet (`GET /tips/wallet/quote`, `POST /tips/wallet`, `GET /tips/wallet/{id}`), the creator's 85% lands by the sweep, the web's tip row is written once per payment, an undeliverable tip is paid back. 8 Nuvion stand-in specs: double submit, twice in parallel, wrong PIN, short balance, a lost provider answer then a retry, a refund; the ledger equals the stand-in after each.
 - 17 Oct 2026 · HOME-15 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a piece is unlocked from the wallet (`GET /content/{id}/unlock/wallet/quote`, `POST /content/{id}/unlock/wallet`, `GET /content/{id}/unlock/wallet/{paymentId}`), access is the web's purchase row written once per payment, a debited-but-not-granted payment is granted by the sweep or paid back. 8 Nuvion stand-in specs with the same attacks.
-- 17 Oct 2026 · LEGAL-05 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): consultation and service fees (business name registration included) are paid from the wallet (`GET /legal/requests/{id}/pay/wallet/quote`, `POST .../pay/wallet`, `GET .../pay/wallet/{paymentId}`) at the price on the request (R-14), bound to the stage and fee; a fee that cannot be applied is paid back. 10 Nuvion stand-in specs with the same attacks.
