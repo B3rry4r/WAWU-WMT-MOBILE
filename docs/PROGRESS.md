@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 113 | 0 | 0 | 0 |
+| todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 67 | 0 | 0 | 0 |
+| verifying | 69 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -28,6 +28,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
 - [INBOX-16](../tasks/INBOX-16.md) Buy WAWU Credits from the wallet (backend) (You)
 - [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
+- [INBOX-17](../tasks/INBOX-17.md) Paid questions: pay, hold, pay out and refund through the wallet (backend) (You)
 - [LEGAL-05](../tasks/LEGAL-05.md) Pay legal fees from the wallet (backend) (You)
 - [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
@@ -36,6 +37,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
+- [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
 - [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
@@ -255,6 +257,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · WALLET-17 · Built (bundle B3a, Sonnet builder; backend `wmt/B3a` `ed45009` on `origin/wmt/WALLET-16-R55` `9580bb0`, mobile `wmt/B3a`; migration `20261025160000_host_share_earnings`; status verifying): a community host's 85% of spent credits is an earning (`EarningSettlement`, kind `community_credits`, `paymentId` null) that lands in their one move a day with their sales (R-55), once; only credits bought with the wallet are paid (G-829). An event host's 85% is paid by releasing each paid order's ticket hold once the event has taken place (`EVENT_PAYOUT_DELAY_HOURS`, default 0), once, one way against a refund; no wallet keeps the share until one opens (R-11). 10 Nuvion stand-in specs; G-704 served, G-829 to G-831 filed.
+- 17 Oct 2026 · INBOX-17 · Built (bundle B3a, Sonnet builder; backend `wmt/B3a` `ed45009`, mobile `wmt/B3a`; migration `20261025150000_paid_dm_drafts`; status verifying): a paid question is drafted and priced (`POST /dm/{creatorWawuId}/send/wallet`), paid from the wallet (`POST /dm/send/wallet/pay`) and held in WAWU's account (R-19); the creator's answer releases 85% to their wallet (R-11) and the window passing refunds the price without the charge (R-10), each once and never both; a second question to one creator is `409 question_already_waiting` (G-75). 11 Nuvion stand-in specs: double submit, twice in parallel, a lost provider answer then a retry, the answer racing the expiry, a release racing a refund; the ledger equals the stand-in after each, WAWU's account included.
 - 17 Oct 2026 · WALLET-16 · Merged onto batch 7 and the start-time cutoff built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e` on `origin/wmt/MERGE-7` `432f017` with `wmt/WALLET-16` `315b69b` merged, mobile `wmt/B1`; migrations `20261025120000_earning_settlements` (renamed from `20261021180000`) and `20261025130000_earning_sweep_start`; status verifying): the sweep pays only sales made on or after `EARNINGS_SWEEP_START`, else the moment the code first reached the environment (stored once); older unsettled sales get no earning and are listed at `GET /admin/money/earnings/before-start`. The earnings section of CONVENTIONS is now 26. R-55 (one move a day, 200 naira floor, 72 h after the first refusal) is NOT built.
 - 17 Oct 2026 · HOME-14 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a tip is paid from the wallet (`GET /tips/wallet/quote`, `POST /tips/wallet`, `GET /tips/wallet/{id}`), the creator's 85% lands by the sweep, the web's tip row is written once per payment, an undeliverable tip is paid back. 8 Nuvion stand-in specs: double submit, twice in parallel, wrong PIN, short balance, a lost provider answer then a retry, a refund; the ledger equals the stand-in after each.
 - 17 Oct 2026 · HOME-15 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a piece is unlocked from the wallet (`GET /content/{id}/unlock/wallet/quote`, `POST /content/{id}/unlock/wallet`, `GET /content/{id}/unlock/wallet/{paymentId}`), access is the web's purchase row written once per payment, a debited-but-not-granted payment is granted by the sweep or paid back. 8 Nuvion stand-in specs with the same attacks.
@@ -268,5 +272,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · EVENTS-10 · Builder report (Sonnet builder; backend `wmt/EVENTS-10` `1b0ea03` on `wmt/MERGE-6` `fbf391f`, mobile record on `70a7895`; no migration; status verifying): calling an event off sends each wallet buyer everything they paid back, Fintava's charge included, through the hold, once per order under races, repeated cancels and sweeps; the order reads refunded with void tickets; a minute sweep finishes what the request did not reach; no ticket is made for an event called off a moment before; G-793.
 - 17 Oct 2026 · DV2-06 · Builder report (Sonnet builder; mobile `wmt/DV2-06` `d83fca12` on `origin/wmt/SHARED-06` `d563eb3`, no backend change; status verifying): Z2 switch is "TGIF each morning" (still `PATCH /settings/tgif`, names no time); "Who Made This?" with the question mark on Z2, Z3, Z9; Z9 draws "Banking by <Hub bank name>" and nothing licence, CBN or tier (R-67), and no bank row while the name is blank (G-826).
 - 17 Oct 2026 · DV2-COMP · Builder report, round 2 (Sonnet builder; mobile `wmt/DV2-COMP` on the round 1 head `51235be`, no backend or wawu-id change; status verifying): the verifier's six findings fixed. The meter caption reads Lagos months from the history's `MONTHS` table ("Sep", no Intl); `PointsFigure` shrinks the count and the word to fit a narrow parent (phone: `adjustsFontSizeToFit`; web: measured scale), proven at 150, 182 and 200 px, 7 and 9 digits, light and dark; the voice error row is one "Try again" button; bars never thinner than 2 px and none until measured; `TierBadge` takes `stretch`; the 1.2 line height is named. 60 dv2-comp tests; full check `EXIT 0`.
-- 17 Oct 2026 · DV2-COMP · Builder report (Sonnet builder; mobile `wmt/DV2-COMP` on `origin/wmt/SHARED-06` `d563eb3`, no backend or wawu-id change; status verifying): the four shared pieces the tier, points and Voice Intro screens draw are built once, by props only: `TierBadge`, `ProductsMeter`, `PointsFigure`, `VoicePlayer` with `VoiceLabel` (the "Bio" label and the small "AI voice" tag, R-66), each with a development preview route and 43 tests; compared with M1, VF11, VF14, M19, PT5 and VF7a in light and dark. SHARED-CHANGES DV2-COMP #1 applied, #2 (two confetti tokens) filed for ME-12.
-- 17 Oct 2026 · SHARED-06 · Builder report (Sonnet builder; mobile `wmt/SHARED-06` on `origin/wmt/MERGE-7` `f45ffbd`, no backend change; status verifying): 17 of 19 SHARED-CHANGES rows applied (tokens, API client, `Banner`, `Switch`, `SwitchRow`, `ScreenFrame`, `PinDots`, `TextField` props, `ListRow` lines, `Button` props, `PaySheet` `onOpenWallet`, social marks) and 14 stand-ins deleted; HOME-02 #4 and row 11 listed for their own tasks; 56 picture pairs, 48 identical and 8 explained.
