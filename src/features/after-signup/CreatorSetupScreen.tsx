@@ -23,8 +23,8 @@ const DONE_OPACITY = 0.7;
 /** The kit's `setRow` and `txIcon`: a 40 px round icon, the row cards 8 apart, the top card 14 by 16. */
 const SETUP = { icon: 40, between: 8, topPadV: 14, topPadH: 16 } as const;
 
-export type SetupTarget = 'paid' | 'profile' | 'publish' | 'wallet';
-type Row = { target: SetupTarget; icon: 'MessageCircle' | 'UserRound' | 'Upload' | 'IdCard'; title: string; line: string; done: boolean | undefined };
+export type SetupTarget = 'paid' | 'profile' | 'publish' | 'community' | 'wallet';
+type Row = { target: SetupTarget; icon: 'MessageCircle' | 'UserRound' | 'Upload' | 'Users' | 'IdCard'; title: string; line: string; done: boolean | undefined };
 
 /** The line under each row. A figure the system does not back ("Free to list") is not written here (BACKEND_GAPS G-171). */
 function rowsOf(state: SetupState | undefined): Row[] {
@@ -37,6 +37,13 @@ function rowsOf(state: SetupState | undefined): Row[] {
       title: 'Publish your first piece',
       line: state?.published === undefined ? '' : state.published ? 'You have published' : 'Nothing published yet',
       done: state?.published,
+    },
+    {
+      target: 'community',
+      icon: 'Users',
+      title: 'Start your first community',
+      line: state?.community === undefined ? '' : state.community ? 'You host a community' : 'None started yet',
+      done: state?.community,
     },
     { target: 'wallet', icon: 'IdCard', title: 'Verify your identity', line: 'Needed to get paid', done: state?.wallet },
   ];
@@ -52,8 +59,9 @@ export type CreatorSetupScreenProps = {
 
 /**
  * A11 · Set up your account. The checklist of what a new earning account does next, each row opening the screen that does it. A row is
- * ticked when the Hub says it is done; the count is the rows ticked of the rows drawn. "Start your first community" (I32) is drawn by the
- * task that builds I32 (R-47), so the count is of four. Uploading is open: the first line says earnings wait for the wallet (R-11, BRIEF A11).
+ * ticked when the Hub says it is done; the count is the rows ticked of the rows drawn. "Start your first community" (I32, INBOX-14) is the
+ * fourth row, ticked when the person is the host of a room, so the count is of five; the board's "Free to host" under it is not backed
+ * (G-INBOX-14-1) and is not written. Uploading is open: the first line says earnings wait for the wallet (R-11, BRIEF A11).
  */
 export function CreatorSetupScreen({ onLater, laterBusy, laterFailed, onOpen }: CreatorSetupScreenProps) {
   const { colors } = useWawu();

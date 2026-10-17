@@ -106,6 +106,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [EXPLORE-07](../tasks/EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore (You)
+- [INBOX-14](../tasks/INBOX-14.md) Private communities, hosting, join requests (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [DV2-01](../tasks/DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count (You)
 - [DV2-02](../tasks/DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills (You)

@@ -7,11 +7,12 @@ import { finishStep } from '@/features/after-signup/steps';
 import { useSignupGate } from '@/features/auth/signupGate';
 import { meKey } from '@/features/profile-edit/api';
 
-/** What each row of A11 opens: I21, M8, M19 and Open your wallet (A26). */
+/** What each row of A11 opens: I21, M8, M19, I32 and Open your wallet (A26). */
 const TARGETS: Record<SetupTarget, Href> = {
   paid: '/paid-message-settings',
   profile: '/edit-profile',
   publish: '/create',
+  community: '/community/new',
   wallet: '/open-wallet',
 };
 

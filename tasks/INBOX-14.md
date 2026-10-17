@@ -7,7 +7,7 @@ order: 284
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04, INBOX-24]
 decisions: [R-62, R-63, R-47, R-69]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -17,11 +17,18 @@ artboards: [I30, I31, I37, I32, I33, I34]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, AUTH-06, ME-04, ME-07, INBOX-24.
-- **History:** none yet. Reports go to tasks/history/INBOX-14.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** re-cut to pay-to-join (R-63); now depends on INBOX-24. See the section below.
+As of 17 Oct 2026, round 2 built (Sonnet builder, tier T2); status `verifying`.
+- **Branch:** mobile `wmt/INBOX-14` = round 1 `e991fec6` + `origin/wmt/MERGE-13` `4c7b2acd` merged (merge `f58a8608`: both sides of every record kept, contract and generated types taken whole from MERGE-13, PROGRESS regenerated) + round 2 code. Backend: none changed; the stack ran `origin/wmt/MERGE-13` `6bc7b20`. MERGE-13's own `npm run check`: EXIT 0 (255 suites, 4265 tests).
+- **Built (round 1):** I30, I31, I37 (`src/features/community-pass/`, `/community/pass/[id]`), I32, I33, I34 (`src/features/community-host/`).
+- **Built (round 2):** (1) "Add ₦X" on the short pass sheet and landing, opening W15 with the shortfall; the pass and its price are asked for again when the person comes back. (2) The entries as drawn: A11 "Start your first community" (count of five, ticked when the person hosts a room), M18 "Host a community" (last row of Set up), I1's compose pencil (creators only), the host's "Join requests · N waiting" row in a private room (to I34). (3) The removed state: "Removed by the host" with the Hub's sentence and no Pay; a removed member can still hold an ACTIVE pass (the Hub turns `canBuy` and `canRenew` off), so the screen keys on `canBuy`, not `active`; the room sends them to I30; I34 says "Removed from this room" for such a row.
+- **Stack walk** (`inbox14r2_test`, ports 7760-7767, Nuvion stand-in, web export of this branch): host made a private room at N2,000 a month (API; the cover upload needs storage the stack lacks, G-INBOX-14-7). Member: double tap on Join asked for one quote; wrong PIN moved nothing; a lost answer (the Hub took the payment, the phone got nothing) then a retry with the same Idempotency-Key: ONE debit, ONE pass; gets in (I37); renewed early twice (each adds 30 days, passUntil 16 Nov, 16 Dec, 15 Jan). Host removed them: I30 shows "Removed by the host", the Hub refused a new quote and a buy-back with the old quote (409 target_not_payable), balance unchanged; the host's room shows "Join requests, 1 waiting", I34 lists them, Approve lets them back in. A N500 wallet saw "Not enough", "Add N1,500", and W15 opened with "Top up at least N1,500". Hub balance = stand-in after every step (host, member, short wallet).
+- **Pictures** (390 px, light and dark, design then built): scratchpad `inbox-14-b/side/<board>-design-then-built-<theme>.png` for I30 (new, PIN, wrong PIN, lost answer, short, removed), I31 (joined, running, renew PIN, renewed), I37 (inside, back in, host row), I32 (empty, private needs a cover), I33, I34 (removed member, empty), A11, M18, I1, W15.
+- **Checks:** tsc EXIT 0; eslint on changed files EXIT 0; jest community-pass 13, community-host (new: joinRequests 3), communities (RoomScreen 67, +4 new), creator 16, after-signup, paid-messages entries, inbox: all pass; gates 0 fail 15 warn (none mine), check_tasks EXIT 0; jest on the named suites 30 suites, 501 tests, EXIT 0. I changed A11's tests (a fifth row, "of 5") because the row is the task's.
+- **Not run:** V10 (a real Android phone); the cover upload (G-INBOX-14-7); loading and error pictures of I30 to I34. Full jest and `npm run check` (the merge agent).
+- **Gaps filed:** G-INBOX-14-6 (no board draws the host's way into I34), G-INBOX-14-7 (cover upload not run); G-INBOX-24-6 updated.
+- **Round 3 (17 Oct 2026, Sonnet builder, tier T2):** the verifier's MEDIUM-3 closed. On a "Removed from this room" row I34 draws only "Let back in" (the Approve call); Decline is drawn only on a real request in a room that sells no pass, because the Hub keeps a removed row and Decline did nothing (R-47). Until the room is read no button is drawn; if it cannot be read, Approve alone. Tests: joinRequests 5 (3 fail before the change, all pass after); communities, community-host, community-pass jest 8 suites 172 tests EXIT 0; tsc EXIT 0; eslint on changed files EXIT 0; gates 0 fail. Branch: mobile `wmt/INBOX-14` + one commit on `977efc9a`. The backend half (HIGH-1, MEDIUM-1) is INBOX-24 round 3, backend `wmt/PASS-r3`.
+- **Next:** the lead's re-check of round 3 (HIGH-1 and MEDIUM-1 sit in the backend), then the batch.
+- **History:** reports go to tasks/history/INBOX-14.md.
 
 ## Design v2 update (16 Oct 2026)
 
@@ -109,13 +116,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-14.md](history/INBOX-14.md).
 
 ## Owner sign-off
 

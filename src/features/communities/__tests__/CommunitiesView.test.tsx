@@ -260,21 +260,25 @@ describe('Communities (I24)', () => {
     await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
   });
 
-  it('does not list a private room: asking to join it is another task\'s screen (R-47)', async () => {
+  it('lists a private room with a lock and Join, and Join opens its pass page (INBOX-14, R-63)', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
     answers[SUGGESTED] = [paged([suggestion('r4', 'Founders under 30', { kind: 'private', memberCount: 640 }), suggestion('r3', 'Afrobeats producers')])];
     await renderView();
     expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
-    expect(rtl.screen.queryByText('Founders under 30')).toBeNull();
-    expect(rtl.screen.queryByLabelText(/Founders under 30/)).toBeNull();
+    expect(rtl.screen.getByText('Founders under 30')).toBeTruthy();
+    expect(rtl.screen.getByLabelText(/^Join Founders under 30, private, /)).toBeTruthy();
+    // No request to the host: the row says Join, never Ask (R-63).
     expect(rtl.screen.queryByText('Ask')).toBeNull();
     // The one Buy is the credits strip's (INBOX-13, I28); no room row offers one.
     expect(rtl.screen.getAllByText('Buy')).toHaveLength(1);
-    // Nothing on the screen is a row that does nothing: every suggestion is a button that joins.
-    expect(rtl.screen.getAllByText('Join')).toHaveLength(1);
+    expect(rtl.screen.getAllByText('Join')).toHaveLength(2);
+    rtl.fireEvent.press(rtl.screen.getByLabelText(/^Join Founders under 30, private, /));
+    await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/pass/[id]', params: { id: 'r4' } }));
+    // Joining a private room is not a one tap join: nothing was posted.
+    expect(sent.filter((request) => request.startsWith('POST /communities/r4/join'))).toEqual([]);
   });
 
-  it('a page that holds only private rooms is followed by the next one, until a room that can be joined turns up', async () => {
+  it('a page that holds only a few rooms, all private, is followed by the next one without the person scrolling', async () => {
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
     answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' }), suggestion('p2', 'Private two', { kind: 'private' })], 2)];
     answers[SUGGESTED_2] = [paged([suggestion('r3', 'Afrobeats producers')])];
@@ -283,7 +287,7 @@ describe('Communities (I24)', () => {
     expect(await rtl.screen.findByText('Afrobeats producers')).toBeTruthy();
     expect(sent).toContain(SUGGESTED_2);
     expect(rtl.screen.queryByTestId('communities-empty')).toBeNull();
-    expect(rtl.screen.queryByText('Private one')).toBeNull();
+    expect(rtl.screen.getByText('Private one')).toBeTruthy();
   });
 
   it('a first page with only a few open rooms is followed by the next one without the person scrolling (defect 22)', async () => {
@@ -297,18 +301,18 @@ describe('Communities (I24)', () => {
     expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toEqual([SUGGESTED, SUGGESTED_2]);
   });
 
-  it('lists every open room when private rooms fill the pages between them: two open, 45 private, two open', async () => {
+  it('lists private and open rooms together in the Hub\'s order, and reads on only until enough rooms are listed', async () => {
     const privates = (from: number, to: number) =>
       Array.from({ length: to - from + 1 }, (_, i) => suggestion(`p${from + i}`, `Private room ${from + i}`, { kind: 'private', memberCount: 3000 }));
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
     answers[SUGGESTED] = [paged([suggestion('o1', 'Zeta open', { memberCount: 5000 }), suggestion('o2', 'Mid open', { memberCount: 3000 }), ...privates(1, 18)], 2)];
-    answers[SUGGESTED_2] = [paged(privates(19, 38), 3)];
-    answers['GET /communities/suggested?page=3&perPage=20'] = [paged([...privates(39, 45), suggestion('o3', 'Afrobeats producers'), suggestion('o4', 'Alpha open')])];
     await renderView();
-    expect(await rtl.screen.findByText('Alpha open', {}, { timeout: 5000 })).toBeTruthy();
-    for (const name of ['Zeta open', 'Mid open', 'Afrobeats producers', 'Alpha open']) expect(rtl.screen.getByText(name)).toBeTruthy();
-    expect(rtl.screen.queryByText(/^Private room/)).toBeNull();
-    expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toHaveLength(3);
+    expect(await rtl.screen.findByText('Zeta open', {}, { timeout: 5000 })).toBeTruthy();
+    expect(rtl.screen.getByText('Mid open')).toBeTruthy();
+    expect(rtl.screen.getByText('Private room 1')).toBeTruthy();
+    // Twenty rooms are listed, more than the screen needs: the next page waits for the list's end.
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toEqual([SUGGESTED]);
   });
 
   it('does not read on when the Hub has no next page', async () => {
@@ -320,13 +324,13 @@ describe('Communities (I24)', () => {
     expect(sent.filter((request) => request.startsWith('GET /communities/suggested'))).toEqual([SUGGESTED]);
   });
 
-  it('a person in no room, when every suggestion is private, sees the empty state and no row that does nothing', async () => {
+  it('a person in no room whose only suggestion is a private room sees it with Join, not the empty state', async () => {
     answers[MINE] = [paged([])];
     answers[SUGGESTED] = [paged([suggestion('p1', 'Private one', { kind: 'private' })])];
     await renderView();
-    expect(await rtl.screen.findByTestId('communities-empty')).toBeTruthy();
-    expect(rtl.screen.queryByText('Private one')).toBeNull();
-    expect(rtl.screen.queryByText('Suggested')).toBeNull();
+    expect(await rtl.screen.findByText('Private one')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('communities-empty')).toBeNull();
+    expect(rtl.screen.getByText('Suggested')).toBeTruthy();
   });
 
   it('does not say there are no communities while the next page of suggestions, which may hold a room to join, is still on its way', async () => {
@@ -482,15 +486,15 @@ describe('Suggested reads on until it lists enough open rooms (defect 22)', () =
     expect(suggestedRequests()).toHaveLength(SUGGESTED_READ_ON_PAGES + 1);
   });
 
-  it('reads on past pages of private rooms, which count as pages read', async () => {
+  it('reads on past pages that hold few rooms, which count as pages read', async () => {
     const privatePage = (n: number) => paged([suggestion(`p${n}`, `Private ${n}`, { kind: 'private' })], n + 1);
     for (let n = 1; n <= 4; n += 1) answers[pageUrl(n)] = [privatePage(n)];
     answers[pageUrl(5)] = [paged([suggestion('o5', 'Open room 5')], 6)];
     answers[pageUrl(6)] = [paged([suggestion('o6', 'Open room 6')])];
     const hook = await rtl.renderHook(() => useSuggestedCommunities(true));
-    await rtl.waitFor(() => expect(hook.result.current.items.map((room) => room.name)).toEqual(['Open room 5']));
+    await rtl.waitFor(() => expect(hook.result.current.items.map((room) => room.name)).toEqual(['Private 1', 'Private 2', 'Private 3', 'Private 4', 'Open room 5']));
     await settle(250);
-    // Five pages in the pass, the last one the first with a room to join; the sixth is for the end of the list.
+    // Five pages in the pass, the most one pass reads; the sixth is for the end of the list.
     expect(suggestedRequests()).toHaveLength(5);
   });
 

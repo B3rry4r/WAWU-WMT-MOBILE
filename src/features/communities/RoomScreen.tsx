@@ -5,6 +5,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Pressable,
+  Share,
   StyleSheet,
   View,
   type NativeScrollEvent,
@@ -17,19 +18,24 @@ import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { Button, IconButton } from '@/components/Button';
 import { Icon } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { fetchRequestsCount, requestsCountKey } from '@/features/community-host/api';
+import { fetchHostHandle, fetchPass, hostKey, passKey } from '@/features/community-pass/api';
 import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
 import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
 import { Composer } from './Composer';
+import { CoverHeader, CoverShare } from './CoverHeader';
 import { dayKey, dayLabel, membersFull } from './format';
 import { GroupTile, tileMetrics } from './GroupTile';
 import { MessagePost, OutgoingPost } from './MessagePost';
-import { RoomHeader } from './RoomHeader';
+import { CreditPill, RoomHeader } from './RoomHeader';
 import { useJoinCommunity } from './useCommunities';
 import { useCredits } from './useCredits';
 import { useRoomMessages, type OutgoingMessage } from './useRoomMessages';
@@ -134,14 +140,39 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const notMember = isApiError(messages.error) && messages.error.status === 403;
   const hidden = (isApiError(room.error) && room.error.status === 404) || (isApiError(messages.error) && messages.error.status === 404);
 
+  const isPrivate = room.data?.kind === 'private';
+  const hostWawuId = room.data?.hostWawuId;
+  const host = useQuery({ queryKey: hostKey(hostWawuId ?? ''), queryFn: () => fetchHostHandle(hostWawuId as string), enabled: isPrivate && Boolean(hostWawuId), retry: false }, queryClient);
+  // The host of a private room that holds people waiting on them (a removed member is one, G-INBOX-24-6) gets the way into I34; nobody else does.
+  const hostsPrivate = isPrivate && room.data?.role === 'host';
+  const waitingOnHost = useQuery({ queryKey: requestsCountKey(id), queryFn: () => fetchRequestsCount(id), enabled: hostsPrivate, retry: false }, queryClient);
   const header = room.data ? (
-    <RoomHeader
-      name={room.data.name}
-      imageUrl={room.data.imageUrl}
-      sub={`${membersFull(room.data.memberCount)} · ${room.data.kind}`}
-      credits={credits.data?.creditBalance}
-      onBack={onBack}
-    />
+    isPrivate ? (
+      // I37: a private room keeps its picture as the header, with the credit balance on it.
+      <CoverHeader
+        size="room"
+        name={room.data.name}
+        imageUrl={room.data.imageUrl}
+        sub={[membersFull(room.data.memberCount), host.data ? `hosted by @${host.data}` : null].filter(Boolean).join(' · ')}
+        onBack={onBack}
+        right={
+          credits.data?.creditBalance !== undefined ? (
+            <CreditPill credits={credits.data.creditBalance} />
+          ) : (
+            <CoverShare onPress={() => void Share.share({ message: room.data?.link ?? '' }).catch(() => undefined)} />
+          )
+        }
+        testID="room-cover"
+      />
+    ) : (
+      <RoomHeader
+        name={room.data.name}
+        imageUrl={room.data.imageUrl}
+        sub={`${membersFull(room.data.memberCount)} · ${room.data.kind}`}
+        credits={credits.data?.creditBalance}
+        onBack={onBack}
+      />
+    )
   ) : (
     <View style={styles.plainBar}>
       <IconButton icon="ChevronLeft" label="Back" onPress={onBack} size={roomBarBack} testID="room-back" />
@@ -201,9 +232,10 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
     <KeyboardAvoidingView
       testID="room-screen"
       behavior="padding"
-      style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}
+      style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: isPrivate ? 0 : insets.top }]}
     >
       {header}
+      {hostsPrivate && (waitingOnHost.data ?? 0) > 0 ? <JoinRequestsEntry id={id} count={waitingOnHost.data ?? 0} /> : null}
       <View style={styles.body}>{body}</View>
       {outOfCredits ? <OutOfCreditsPanel onBuy={() => setBuying(true)} /> : null}
       {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} cost={room.data?.messageCostInCredits} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
@@ -213,6 +245,23 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
 }
 
 const roomBarBack = 40;
+
+/** The host's way into I34 (`/community/requests/<id>`): one row under the cover, drawn only while someone is waiting on them. */
+function JoinRequestsEntry({ id, count }: { id: string; count: number }) {
+  const router = useRouter();
+  return (
+    <View style={styles.requestsEntry}>
+      <ListRow
+        testID="room-requests"
+        lead={<IconTile icon="Users" tone="accent" size={roomBarBack} />}
+        title="Join requests"
+        subtitle={`${count} waiting`}
+        onPress={() => router.push({ pathname: '/community/requests/[id]', params: { id } })}
+        accessibilityLabel={`Join requests, ${count} waiting`}
+      />
+    </View>
+  );
+}
 
 function Thread({ room, messages, onEdit }: { room: RoomView | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void }) {
   const { colors } = useWawu();
@@ -340,11 +389,25 @@ function Gap() {
   return <View style={styles.gap} />;
 }
 
-/** The person is not in the room: what it is, and a way in when it is open. The room view says whether their request is still with the host (`role` pending). */
+/**
+ * The person is not in the room: what it is, and a way in. An open room has Join. A private room that sells a monthly pass (R-63) opens
+ * I30 in this screen's place, where the host's price is paid from the wallet (INBOX-14), and a pass that ended is brought back the same
+ * way; a private room that sells none keeps the older words (the room view says whether a request is still with the host: `role` pending).
+ */
 function NotMemberPanel({ room }: { room: RoomView }) {
+  const router = useRouter();
   const join = useJoinCommunity();
   const waiting = room.role === 'pending';
   const isOpen = room.kind === 'open';
+  const pass = useQuery({ queryKey: passKey(room.id), queryFn: () => fetchPass(room.id), enabled: !isOpen, staleTime: 0 }, queryClient);
+  // I30 draws both: the host's price to a person who can pay, and "Removed by the host" with the Hub's sentence to a member the host removed
+  // (a pending row in a pass room, INBOX-24 round 2). Neither is a request still with the host, so the older words below are not used for them.
+  const sellsPass = !isOpen && pass.data?.sellsPass === true && !pass.data.isHost && (pass.data.canBuy || waiting);
+  useEffect(() => {
+    if (sellsPass) router.replace({ pathname: '/community/pass/[id]', params: { id: room.id } });
+  }, [sellsPass, room.id, router]);
+  if (!isOpen && pass.isPending) return <RoomSkeleton />;
+  if (sellsPass) return <RoomSkeleton />;
   return (
     <View style={styles.notMember} testID="room-not-member">
       <GroupTile uri={room.imageUrl} size={tileMetrics.row} />
@@ -424,6 +487,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
   },
+  requestsEntry: { paddingHorizontal: layout.gutter },
   notMember: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, paddingHorizontal: layout.gutter },
   centered: { textAlign: 'center' },
   skeletonPad: { paddingTop: roomMetrics.padTop, paddingHorizontal: roomMetrics.padH },

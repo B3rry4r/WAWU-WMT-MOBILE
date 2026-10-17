@@ -9,7 +9,7 @@ import { useSystemBack } from '@/features/professionals/parts';
 /**
  * M18 · Creator dashboard (`/creator`), opened from the Me menu (Z1). Paid messages opens I21 (`/paid-message-settings`), the wallet row
  * opens Open your wallet (A26, `/open-wallet`) until a wallet is open, Earnings opens W39 (`/earnings`) and My content opens M28
- * (`/library`); each returns here with Back. Creator accounts only: anyone else who opens it is sent Home, as the Create routes do.
+ * (`/library`) and Host a community opens I32 (`/community/new`); each returns here with Back. Creator accounts only: anyone else who opens it is sent Home, as the Create routes do.
  */
 export default function CreatorRoute() {
   const router = useRouter();
@@ -28,6 +28,7 @@ export default function CreatorRoute() {
       onOpenWallet={() => router.push(OPEN_WALLET_PATH)}
       onOpenEarnings={() => router.push('/earnings')}
       onOpenLibrary={() => router.push('/library')}
+      onOpenCommunity={() => router.push('/community/new')}
     />
   );
 }
