@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 83 | 0 | 0 | 0 |
+| todo | 82 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 84 | 0 | 0 | 0 |
+| verifying | 85 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -52,6 +52,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-07](../tasks/HOME-07.md) Feed: course, template, creator and professional cards, empty and error (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
+- [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
@@ -298,6 +299,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · ME-02 · Builder (Sonnet, T1; mobile `wmt/ME-02` on `origin/wmt/HOME-07` `32cff62d`, backend `wmt/ME-02` `e8e8a1d` on `61b6743`; additive, no migration; status verifying): someone else's profile at `/profile/<wawuId or handle>` (M5 with Follow and the ₦ tip, M6 Following with one write per tap, M33 About as a CV with Follow pinned; Content, Services, About; a blocked or gone person shows the Hub's answer), one new route `GET /users/{wawuId}/visitor-profile`, and the entries that lead to it (Home rail, feed creator card, Explore, All creators, Categories, Search, a work's creator, `/u/<handle>`). Message waits for INBOX-10.
 - 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, bundle S1b): a piece's own page `/content/<id>`: H19 locked, H20 unlocked, H21 comments, H22 share, H23 rate, H24 free video, H25 course, on HOME-12's unlock and HOME-13's tip sheets; backend `GET /content/{id}/detail` also carries who made it (`wmt/S1b` `b5f5538`); a feed caption and a Search result open it; mobile `wmt/S1b` on MERGE-11 with S1 and EXPLORE-02-R2 merged; gaps G-HOME-03-1 to 5, G-HOME-08-1 to 3; status verifying.
 - 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.
@@ -312,4 +314,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · FIX-54 · Built (Sonnet builder; backend `wmt/FIX-54` `c78b796` on `origin/wmt/FIX-52` `773a9ee`, mobile `wmt/FIX-54` on `origin/wmt/MERGE-9` `72bc8d6c` holds the task file only; no migration, no contract change; status verifying): a bank send on Nuvion stays pending until Nuvion says completed; `outflows.failed` settles it failed with the money and WAWU's fee back; `outflows.refunded` after completion settles it reversed and `GET /money/transfers/{id}` shows the reversal; the stand-in sends a bank reversal as a credit record; 6 new cases fail before and pass after.
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · SCHOOLS-11 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025131000_school_settlement`; status verifying): a school's 85% is sent from WAWU's account to its bank account at the class's start through the provider seam (`bankTransfer` from the merchant account), a class called off sends the fees back to the students' wallets, one decision per enrolment; a failed payout is retried once under a new reference and never doubles; the school's bank account is saved only after the bank confirms it; dashboard routes for finance and the superadmin.
-- 17 Oct 2026 · SCHOOLS-09 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025130000_school_enrolment_report`; status verifying): the school gets one mail with the student's name, email, phone, course, intake and consent time when an enrolment is paid (or free); `GET /schools/enrolments` is My courses with current and finished tabs.

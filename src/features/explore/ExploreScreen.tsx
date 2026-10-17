@@ -64,6 +64,8 @@ export type ExploreScreenProps = {
   onSearch?: () => void;
   /** Featured creators' See all opens All creators (X4, EXPLORE-02). Not drawn without it. */
   onSeeAllCreators?: () => void;
+  /** A featured creator's card opens their profile (M5, ME-02). The card is not pressed without it. */
+  onOpenCreator?: (wawuId: string) => void;
 };
 
 /**
@@ -82,7 +84,7 @@ export type ExploreScreenProps = {
  * nothing to show keeps its heading and draws neutral frames (`parts.tsx`). X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenCreator }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -184,6 +186,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
                   key={creator.wawuId}
                   testID={`explore-featured-${creator.wawuId}`}
                   creator={creator}
+                  onPress={onOpenCreator ? () => onOpenCreator(creator.wawuId) : undefined}
                   onToggleFollow={creator.wawuId === me.data ? undefined : () => follow.toggle(creator)}
                 />
               ))}

@@ -26,6 +26,7 @@ export default function ExploreTab() {
       onOpenTgif={() => router.push('/tgif')}
       onSearch={() => router.push('/search')}
       onSeeAllCreators={() => router.push('/creators')}
+      onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
     />
   );
 }

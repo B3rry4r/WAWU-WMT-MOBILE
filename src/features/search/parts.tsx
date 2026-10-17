@@ -190,12 +190,14 @@ export function ResultTabs({ value, counts, onChange }: { value: SearchTab; coun
   );
 }
 
-/** `pRow`: a person with their picture, name and tick, what they do, and Follow (Following when they are followed; their profile, M5, is ME-02's). */
-export function PersonRow({ person, onToggleFollow, testID }: { person: SearchPerson; onToggleFollow?: () => void; testID?: string }) {
+/** `pRow`: a person with their picture, name and tick, what they do, and Follow (Following when they are followed). The row opens their profile (M5, ME-02) when `onPress` is given. */
+export function PersonRow({ person, onToggleFollow, onPress, testID }: { person: SearchPerson; onToggleFollow?: () => void; onPress?: () => void; testID?: string }) {
   const { colors } = useWawu();
+  const ring = useFocusRing();
   const tick = tickOf(person);
-  return (
-    <View testID={testID} accessible accessibilityLabel={[person.name, person.field].filter(Boolean).join(', ')} style={styles.row}>
+  const label = [person.name, person.field].filter(Boolean).join(', ');
+  const who = (
+    <>
       <Avatar name={person.name} hue={hueFor(person.wawuId)} size={rowMetrics.avatar} source={person.avatarUrl ?? undefined} decorative />
       <View style={styles.words}>
         <View style={styles.nameLine}>
@@ -210,15 +212,31 @@ export function PersonRow({ person, onToggleFollow, testID }: { person: SearchPe
           </NativeText>
         ) : null}
       </View>
-      {onToggleFollow ? (
-        <Button
-          label={person.following ? 'Following' : 'Follow'}
-          variant={person.following ? 'secondary' : 'primary'}
-          size="sm"
-          onPress={onToggleFollow}
-          testID={testID ? `${testID}-follow` : undefined}
-        />
-      ) : null}
+    </>
+  );
+  const follow = onToggleFollow ? (
+    <Button
+      label={person.following ? 'Following' : 'Follow'}
+      variant={person.following ? 'secondary' : 'primary'}
+      size="sm"
+      onPress={onToggleFollow}
+      testID={testID ? `${testID}-follow` : undefined}
+    />
+  ) : null;
+  if (onPress) {
+    return (
+      <View testID={testID} style={styles.row}>
+        <Pressable testID={testID ? `${testID}-open` : undefined} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} {...ring.handlers} style={[styles.who, ring.style]}>
+          {who}
+        </Pressable>
+        {follow}
+      </View>
+    );
+  }
+  return (
+    <View testID={testID} accessible accessibilityLabel={label} style={styles.row}>
+      {who}
+      {follow}
     </View>
   );
 }
@@ -310,6 +328,7 @@ const styles = StyleSheet.create({
   tabsRow: { flexDirection: 'row', gap: rowMetrics.tabsGap, paddingHorizontal: layout.gutter },
   tab: { paddingBottom: rowMetrics.tabPadBottom, borderBottomWidth: rowMetrics.tabLine, marginBottom: -StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between, paddingVertical: rowMetrics.rowPadV },
+  who: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   words: { flex: 1, minWidth: 0 },
   nameLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minWidth: 0 },
   name: { fontSize: rowMetrics.name, flexShrink: 1 },

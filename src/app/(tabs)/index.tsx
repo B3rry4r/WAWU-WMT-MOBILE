@@ -28,6 +28,7 @@ export default function HomeTab() {
       }}
       onSearch={() => router.push('/search')}
       onSeeAllCreators={() => router.push('/creators')}
+      onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
       onOpenProfessional={(id) => router.push({ pathname: '/professionals/[id]', params: { id } })}
       onOpenPiece={(item) => router.push({ pathname: '/content/[id]', params: { id: item.id } })}
     />

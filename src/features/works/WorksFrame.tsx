@@ -17,11 +17,17 @@ export type WorksFrameProps = {
   subtitle?: string;
   onBack: () => void;
   children: ReactNode;
+  /** The 42 slot on the right of the bar (M33's Share). Empty by default. */
+  right?: ReactNode;
+  /** A row between the bar and the scrolling body that stays put (M33's tabs). */
+  below?: ReactNode;
+  /** A bar pinned to the bottom of the screen (M33's Follow). The body leaves room for it. */
+  footer?: ReactNode;
   testID?: string;
 };
 
 /** M34's frame: safe areas, the bar (back, a title with a line under it) and the scrolling body. */
-export function WorksFrame({ title, subtitle, onBack, children, testID }: WorksFrameProps) {
+export function WorksFrame({ title, subtitle, onBack, children, right, below, footer, testID }: WorksFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -40,18 +46,20 @@ export function WorksFrame({ title, subtitle, onBack, children, testID }: WorksF
             </Text>
           ) : null}
         </View>
-        <View style={styles.side} />
+        <View style={styles.side}>{right}</View>
       </View>
+      {below}
       <ScrollView
         style={styles.scroll}
         testID="works-scroll"
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + bodyMetrics.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right },
+          { paddingBottom: footer ? bodyMetrics.bottom : insets.bottom + bodyMetrics.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right },
         ]}
       >
         {children}
       </ScrollView>
+      {footer}
     </View>
   );
 }

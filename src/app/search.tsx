@@ -14,5 +14,5 @@ export default function SearchRoute() {
   const { status } = useSession();
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
-  return <SearchScreen onCancel={() => (router.canGoBack() ? router.back() : router.replace('/explore'))} onOpenRoom={(id) => openRoom(router, id)} onOpenContent={(id) => router.push({ pathname: '/content/[id]', params: { id } })} />;
+  return <SearchScreen onCancel={() => (router.canGoBack() ? router.back() : router.replace('/explore'))} onOpenRoom={(id) => openRoom(router, id)} onOpenContent={(id) => router.push({ pathname: '/content/[id]', params: { id } })} onOpenPerson={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })} />;
 }

@@ -25,13 +25,15 @@ export type HomeScreenProps = {
   onSeeAllCreators?: () => void;
   /** A professional card in the feed has Profile, which opens their page (P2, PROS-01) with the listing's id. Not drawn without it. */
   onOpenProfessional?: (id: string) => void;
+  /** A creator card on Today's rail and the feed's creator card open that creator's profile (M5). */
+  onOpenCreator?: (wawuId: string) => void;
   /** Where the feed's wallet payments lead (HOME-13). Without it, no payment can start from the feed. */
   pay?: FlowHandlers;
   /** A feed post's caption, and a piece in a creator card's strip, open that piece's own page (H19, HOME-03). */
   onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
 };
 
-export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfessional, pay, onOpenPiece }: HomeScreenProps = {}) {
+export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfessional, onOpenCreator, pay, onOpenPiece }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -40,7 +42,7 @@ export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfess
     <View testID="home" style={styles.root}>
       <View accessible accessibilityRole="header" accessibilityLabel="Home" style={styles.title} />
       {view === 'today' ? (
-        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} />
+        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} />
       ) : (
         <FeedScreen
           key={view}
@@ -50,6 +52,7 @@ export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfess
           pay={pay}
           onOpenPiece={onOpenPiece}
           onOpenProfessional={onOpenProfessional}
+          onOpenCreator={onOpenCreator}
           onSeeAllCreators={onSeeAllCreators}
         />
       )}

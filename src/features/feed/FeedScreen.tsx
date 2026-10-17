@@ -115,11 +115,13 @@ export type FeedScreenProps = {
   onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
   /** A professional card's Profile opens their page (P2) with the listing's id. Not drawn without it. */
   onOpenProfessional?: (id: string) => void;
+  /** A creator card's Profile button opens that creator's profile (H9, M5). Not drawn without it. */
+  onOpenCreator?: (wawuId: string) => void;
   /** "Find people to follow" on an empty Following, and the creators rail's "See all" beside it, open All creators (X4). Not drawn without it. */
   onSeeAllCreators?: () => void;
 };
 
-export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece, onOpenProfessional, onSeeAllCreators }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece, onOpenProfessional, onOpenCreator, onSeeAllCreators }: FeedScreenProps = {}) {
   const pay = useFeedPay(payHandlers);
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
@@ -234,7 +236,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
         windowSize={3}
         renderItem={({ item: row, index }) => {
           if (row.kind === 'creator') {
-            return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} />;
+            return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} onOpenProfile={onOpenCreator} />;
           }
           if (row.kind === 'professional') {
             return <FeedProfessionalCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenProfile={onOpenProfessional} />;

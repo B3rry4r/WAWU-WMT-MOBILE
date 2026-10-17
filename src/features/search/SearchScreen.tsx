@@ -42,6 +42,8 @@ export type SearchScreenProps = {
   onOpenRoom: (id: string) => void;
   /** A content result was pressed: open that piece's own page (H19, HOME-03). Left out, a content row only reads. */
   onOpenContent?: (id: string) => void;
+  /** A person's row opens their profile (M5, ME-02). The row is not pressed without it. */
+  onOpenPerson?: (wawuId: string) => void;
 };
 
 function Block({ children, testID }: { children: React.ReactNode; testID?: string }) {
@@ -80,7 +82,7 @@ function RowsSkeleton() {
  * (R-27), so a person row opens nothing today. Follow works in place; a creator already followed shows Following (tap to
  * unfollow) where X6 draws Profile.
  */
-export function SearchScreen({ onCancel, onOpenRoom, onOpenContent }: SearchScreenProps) {
+export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson }: SearchScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const { text, setText, query, submit } = useSearchText(MAX_QUERY);
@@ -131,7 +133,7 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent }: SearchScre
   };
 
   const person = (p: SearchPerson, prefix: string) => (
-    <PersonRow key={p.wawuId} testID={`${prefix}-${p.wawuId}`} person={p} onToggleFollow={onToggle(p)} />
+    <PersonRow key={p.wawuId} testID={`${prefix}-${p.wawuId}`} person={p} onToggleFollow={onToggle(p)} onPress={onOpenPerson ? () => onOpenPerson(p.wawuId) : undefined} />
   );
   const room = (r: SearchCommunity) => (
     <RoomRow key={r.id} testID={`search-room-${r.id}`} room={r} state={roomState(r)} busy={joining === r.id} onPress={() => onRoom(r)} />

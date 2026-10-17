@@ -7199,6 +7199,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/users/{wawuId}/visitor-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ME-02: everything M5, M6 and M33 draw about somebody else, in one answer
+         *     (the public profile, the profile fields, the person's name, whether the
+         *     caller follows them, their live listings). A person the public profile
+         *     hides is a 404 here as well.
+         */
+        get: operations["UserProfileController_getVisitorProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -14081,6 +14103,19 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        VisitorProfileView: {
+            name: string | null;
+            own: boolean;
+            following: boolean;
+            profile: components["schemas"]["CreatorProfile"];
+            fields: components["schemas"]["ProfileFieldsView"];
+            listings: components["schemas"]["VisitorListingView"][];
+        };
+        VisitorListingView: {
+            id: string;
+            headline: string;
+            category: string;
         };
     };
     responses: never;
@@ -28206,6 +28241,27 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    UserProfileController_getVisitorProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitorProfileView"];
                 };
             };
         };
