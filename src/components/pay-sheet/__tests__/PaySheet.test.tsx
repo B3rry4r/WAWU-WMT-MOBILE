@@ -139,6 +139,15 @@ describe('PaySheet', () => {
     expect(p.onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('draws no Add button when the caller has no way to add money, and keeps the notice and Cancel', async () => {
+    const p = props({ wallet: { kind: 'open', balanceKobo: 120000 }, onAddMoney: undefined });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('Not enough in your Naira wallet')).toBeTruthy();
+    expect(screen.getByText('Top up at least')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Add / })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
   it('counts a WAWU fee and the charge in both the total and the shortfall', async () => {
     const p = props({
       amountKobo: 2500000,

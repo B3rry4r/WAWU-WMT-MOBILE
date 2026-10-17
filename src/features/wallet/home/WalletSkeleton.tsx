@@ -5,22 +5,25 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius } from '@/theme';
 
 import { RECENT_ROWS } from '../api/home';
-import { BILL_TILE, BILLS_DRAWN, billTileSize } from './BillTiles';
+import { ACTION_TILE, actionTileSize } from './WalletActions';
 import { ACCT } from './BalanceCard';
 import { useRowRoom } from './useRowRoom';
 
 /**
  * design/_gen/wallet.js line 65, W4: the real layout in quiet blocks. The balance card is a 196 block with a 28 corner;
  * each row is a 44 circle, two lines (150 x 13 and 96 x 11, corner 6, 8 apart) and a 64 x 13 figure, 13 between the
- * parts and 18 between rows. The bills tiles are a 54 square at the tile corner with a 44 by 10 bar under it (corner 5),
- * in the canvas's columns (BILLS-01): the canvas draws five, and only the built ones have shapes (R-47), packed from the left. The canvas also draws shapes for the account tabs and the actions; they stand
- * for parts that are not built (R-47), so they are not drawn. The title bar is the screen's own, drawn live.
+ * parts and 18 between rows. The action tiles are a 54 square at the tile corner with a 44 by 10 bar under it (corner 5),
+ * in the board's five columns: only the built ones have shapes (R-47), packed from the left. The canvas also draws shapes for the account
+ * tabs; they stand for parts that are not built (R-47), so they are not drawn. The Points card is one half-width block (the Passes
+ * card has no shape: it is drawn only when the person has a pass). The title bar is the screen's own, drawn live.
  */
 const W4 = {
   card: 196,
   tileBar: 44,
+  mini: 86,
   tileBarH: 10,
   tileBarRadius: 5,
+  miniRadius: 20,
   tileGap: 10,
   lead: 44,
   line1: 150,
@@ -32,8 +35,6 @@ const W4 = {
   figure: 64,
   rowsGap: 18,
 } as const;
-
-const TILES = BILLS_DRAWN;
 
 /** One recent row's stand-in. */
 export function RowSkeleton() {
@@ -63,16 +64,18 @@ export function RowsSkeleton({ testID }: { testID?: string }) {
 }
 
 /** W4: the real layout in quiet blocks. Nothing of the account, not even its number, shows until the balance is in. */
-export function WalletSkeleton() {
+export function WalletSkeleton({ tiles = 0 }: { tiles?: number }) {
   // The tiles are the size the real ones will be (54 on a 390 screen, less on a narrower phone), so nothing jumps when the wallet loads.
-  const tile = billTileSize(useRowRoom());
+  const room = useRowRoom();
+  const tile = actionTileSize(room);
   return (
     <LoadingView label="Loading your wallet" testID="wallet-loading">
       <View style={styles.body}>
         <Skeleton testID="wallet-loading-card" height={W4.card} radius={ACCT.radius} />
-        <View testID="wallet-loading-bills" style={styles.tiles}>
-          {Array.from({ length: TILES }, (_, i) => (
-            <View key={i} style={[styles.tile, { width: tile + BILL_TILE.extra }]}>
+        <Skeleton testID="wallet-loading-points" width={(room - W4.tileGap) / 2} height={W4.mini} radius={W4.miniRadius} />
+        <View testID="wallet-loading-actions" style={styles.tiles}>
+          {Array.from({ length: tiles }, (_, i) => (
+            <View key={i} style={[styles.tile, { width: tile + ACTION_TILE.extra }]}>
               <Skeleton width={tile} height={tile} radius={radius.tile} />
               <Skeleton width={Math.min(W4.tileBar, tile)} height={W4.tileBarH} radius={W4.tileBarRadius} />
             </View>

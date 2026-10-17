@@ -19,9 +19,10 @@ import { useSystemBack } from '@/features/professionals/parts';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, space, type, useWawu } from '@/theme';
 
-import { fetchFeeQuote, sendToWawuUser, transferQuery, type FeeQuote, type Transfer } from './api';
+import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type FeeQuote, type SendKind, type Transfer } from './api';
 import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
 import {
+  BANK_CHARGE,
   earlierSendLine,
   failureLine,
   feeLinesOf,
@@ -50,10 +51,15 @@ export type ReviewScreenProps = {
   onBack: () => void;
   /** The send completed: the receipt (W12). */
   onSent: (transferId: string) => void;
+  /**
+   * A send to a bank account the bank did not take, decided after the Hub accepted it: W14, which says what came back. A send to a
+   * WAWU user that fails shows its words on this review, as WALLET-02 built it.
+   */
+  onFailed?: (transferId: string) => void;
   /** Leave without a receipt: the wallet. */
   onLeave: () => void;
-  /** Add money for the shortfall (kobo). */
-  onAddMoney: (shortfallKobo: number) => void;
+  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05): the short notice shows without the button. */
+  onAddMoney?: (shortfallKobo: number) => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back here. */
@@ -64,10 +70,10 @@ export type ReviewScreenProps = {
  * The fee quote is asked for once per review (`round` makes Try again ask afresh). A quote that has run out is replaced when the
  * person taps Send (`pay`), not when the window gets focus or the network returns.
  */
-const feeQuoteQuery = (owner: string | null, amountKobo: number, round: number, enabled: boolean) =>
+const feeQuoteQuery = (owner: string | null, kind: SendKind, amountKobo: number, round: number, enabled: boolean) =>
   ({
-    queryKey: ['money', 'fee-quote', 'wawu_transfer', owner ?? '', amountKobo, round] as const,
-    queryFn: () => fetchFeeQuote(amountKobo),
+    queryKey: ['money', 'fee-quote', kind, owner ?? '', amountKobo, round] as const,
+    queryFn: () => fetchFeeQuote(amountKobo, kind),
     staleTime: Infinity,
     gcTime: 0,
     refetchOnWindowFocus: false,
@@ -119,7 +125,8 @@ export function ReviewScreen(props: ReviewScreenProps) {
   const key = useRef(newRequestKey());
   const [fresh, setFresh] = useState<FeeQuote | null>(null);
   const [round, setRound] = useState(0);
-  const quoted = useQuery(feeQuoteQuery(owner, amountKobo, round, request === null && fresh === null), queryClient);
+  const kind: SendKind = payee.bank ? 'bank_transfer' : 'wawu_transfer';
+  const quoted = useQuery(feeQuoteQuery(owner, kind, amountKobo, round, request === null && fresh === null), queryClient);
   const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(owner) }, queryClient);
   const quote = request?.quote ?? fresh ?? quoted.data ?? null;
   const [shortOf, setShortOf] = useState<number | null>(null);
@@ -184,6 +191,10 @@ export function ReviewScreen(props: ReviewScreenProps) {
       } else if (transfer.status === 'pending') {
         watching.current = true;
         void keep({ ...from, phase: 'pending', transferId: transfer.id });
+      } else if (props.onFailed && transfer.kind === 'bank_account') {
+        // The bank did not take it after the Hub accepted it: W14 says what came back (its own words, from the Hub's record).
+        void keep({ ...from, phase: 'settled', transferId: transfer.id });
+        props.onFailed(transfer.id);
       } else {
         void keep({ ...from, phase: 'settled', transferId: transfer.id });
         setStatus({ kind: 'failed', message: failureLine(transfer) });
@@ -257,6 +268,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
       phase: 'ready',
       transferId: null,
       at: Date.now(),
+      ...(payee.bank?.nameToken ? { nameToken: payee.bank.nameToken } : {}),
     };
     // Written before it leaves the phone, so a screen that goes away mid-send still finds it. A first send the store cannot keep is
     // not sent at all: the phone could not protect it from being paid twice. (A repeat of one already kept has its entry.)
@@ -267,7 +279,18 @@ export function ReviewScreen(props: ReviewScreenProps) {
       return { code: 'approved' };
     }
     setRequest({ ...sending, phase: 'unknown' });
-    const outcome = await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+    const outcome = payee.bank
+      ? await sendToBankAccount({
+          bankCode: payee.bank.bankCode,
+          accountNumber: payee.bank.accountNumber,
+          amountKobo: sending.amountKobo,
+          quote: sending.quote,
+          nameToken: sending.nameToken ?? payee.bank.nameToken,
+          note: sending.note,
+          key: sending.key,
+          pin,
+        })
+      : await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
     // The Hub gave an answer that proves no payment exists for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = (next: Request['phase'] = 'ready') => keep({ ...sending, phase: next });
     switch (outcome.kind) {
@@ -418,8 +441,17 @@ export function ReviewScreen(props: ReviewScreenProps) {
         variant="send"
         item={{ title: payee.name, displayName: payee.name, avatar: { hue: hueOfPayee(payee), source: payee.avatarUrl ?? undefined } }}
         amountKobo={amountKobo}
-        details={handle ? [{ label: 'Handle', value: handle }] : undefined}
-        fees={feeLinesOf(quote)}
+        details={
+          payee.bank
+            ? [
+                { label: 'Bank', value: payee.bank.bankName },
+                { label: 'Account', value: payee.bank.accountNumber },
+              ]
+            : handle
+              ? [{ label: 'Handle', value: handle }]
+              : undefined
+        }
+        fees={feeLinesOf(quote, payee.bank ? BANK_CHARGE : undefined)}
         notes={sentNote ? [{ label: 'Note', value: sentNote }] : undefined}
         wallet={walletState}
         walletName={WALLET_NAME}

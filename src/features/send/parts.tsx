@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, VerifiedTick } from '@/components/icon';
 import { Text } from '@/components/Text';
+import { copyText } from '@/features/open-wallet/copy';
 import { searchMetrics } from '@/features/wallet/history/HistoryParts';
 import { canvasNormalLineHeight, space, useWawu } from '@/theme';
 
@@ -102,9 +103,61 @@ export function PayeeTick({ payee, size = 15 }: { payee: Pick<Payee, 'tick'>; si
 }
 
 const styles = StyleSheet.create({
+  reference: { flexShrink: 1 },
   search: { height: searchMetrics.height, borderRadius: searchMetrics.height / 2, flexDirection: 'row', alignItems: 'center', gap: searchMetrics.between, paddingHorizontal: searchMetrics.padH },
   input: { flex: 1, minWidth: 0, fontSize: searchMetrics.text, lineHeight: canvasNormalLineHeight(searchMetrics.text), padding: 0 },
   // The avatar is the column (W7 spaces avatars 16 apart from the gutter); a name wider than it overflows both sides alike.
   recent: { width: SEND.recentAvatar, alignItems: 'center', gap: SEND.recentGap },
   recentName: { width: SEND.recentColumn, textAlign: 'center' },
 });
+
+/** The copy glyph beside a reference is 14, and "Copied" shows for 1.6 seconds. */
+const COPY = { icon: 14, ms: 1600 } as const;
+
+/** The reference, with a glyph that copies it ("copied" shows by its check mark for a moment and is said to a screen reader). */
+export function Reference({ value }: { value: string }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  const copy = async () => {
+    const done = await copyText(value);
+    AccessibilityInfo.announceForAccessibility(done ? 'Reference copied' : 'Couldn’t copy the reference');
+    if (!done) return;
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), COPY.ms);
+  };
+  return (
+    <>
+      <Text variant="kvValue" numberOfLines={1} ellipsizeMode="middle" selectable style={styles.reference}>
+        {value}
+      </Text>
+      <Pressable
+        testID="receipt-copy"
+        accessibilityRole="button"
+        accessibilityLabel={copied ? 'Copied' : 'Copy reference'}
+        hitSlop={space.md}
+        onPress={() => void copy()}
+        {...ring.handlers}
+        style={ring.style}
+      >
+        <Icon name={copied ? 'Check' : 'Copy'} size={COPY.icon} color={colors.textMuted} />
+      </Pressable>
+    </>
+  );
+}
+
+/** W7 and W8's two ways to send, in the board's order and words (R-69: the app's name has its question mark). */
+export const SEND_WAYS = [
+  { value: 'user', label: 'Who Made This? user' },
+  { value: 'bank', label: 'Bank account' },
+] as const;
+
+export type SendWay = (typeof SEND_WAYS)[number]['value'];

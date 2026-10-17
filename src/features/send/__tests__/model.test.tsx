@@ -1,7 +1,7 @@
 import * as rtl from '@testing-library/react-native';
 
 import { MoneyCard } from '@/features/home/MoneyCard';
-import { actionWidth } from '@/features/wallet/home/WalletActions';
+import { actionTileSize } from '@/features/wallet/home/WalletActions';
 
 import type { Transfer } from '../api';
 import { CONFIRMING_LINE, RETRY_LINE, feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
@@ -99,9 +99,9 @@ describe('what the send screens read and write', () => {
     );
   });
 
-  it('Send keeps the width it has beside Add money and the switch, so adding them later moves nothing', () => {
-    expect(actionWidth(350)).toBe(140);
-    expect(actionWidth(0)).toBe(0);
+  it('Send keeps the column the board gives it (one of five), so adding Add money, Withdraw and the rest resizes nothing', () => {
+    expect(actionTileSize(350)).toBe(54);
+    expect(actionTileSize(0)).toBe(0);
   });
 
   it('Home’s balance card has Send, first, and it calls the send', async () => {

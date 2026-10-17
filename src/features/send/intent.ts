@@ -27,7 +27,7 @@ import { readQuote, type FeeQuote } from './api';
 export type SendIntent = {
   /** The `Idempotency-Key`, one per payment intent. */
   key: string;
-  /** Who gets it. */
+  /** Who gets it: a WAWU user's id, or for a bank account the key `bank:<code>:<number>` (WALLET-03). */
   payeeId: string;
   /** What they get, kobo. */
   amountKobo: number;
@@ -39,6 +39,11 @@ export type SendIntent = {
   transferId: string | null;
   /** When the request was first sent (ms). */
   at: number;
+  /**
+   * A bank send to an account that is not saved carries the `nameToken` of the name check the person saw (WALLET-09); the same request
+   * sent again carries the same one. Left out for a WAWU user and for a saved account.
+   */
+  nameToken?: string | null;
 };
 
 /**
@@ -89,7 +94,7 @@ export function readIntent(value: unknown): SendIntent | null {
   } catch {
     return null;
   }
-  return { key: v.key, payeeId: v.payeeId, amountKobo: v.amountKobo, note: v.note, quote, phase: v.phase, transferId, at: v.at };
+  return { key: v.key, payeeId: v.payeeId, amountKobo: v.amountKobo, note: v.note, quote, phase: v.phase, transferId, at: v.at, ...(filled(v.nameToken) ? { nameToken: v.nameToken } : {}) };
 }
 
 /** True when the intent can still be trusted at `now`. */

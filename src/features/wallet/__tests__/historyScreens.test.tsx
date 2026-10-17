@@ -149,7 +149,7 @@ function tokenFor(sub: string) {
 }
 
 const frame = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
-const handlers = { onBack: jest.fn(), onOpenTransaction: jest.fn(), onOpenGroup: jest.fn(), onPayBill: jest.fn() };
+const handlers = { onBack: jest.fn(), onOpenTransaction: jest.fn(), onOpenGroup: jest.fn() };
 
 async function history(props: { group?: string } = {}) {
   const { HistoryScreen } = require('../history/HistoryScreen') as typeof import('../history/HistoryScreen');
@@ -241,7 +241,7 @@ describe('W26 · Transaction history', () => {
     expect(await app.screen.findByText('Bayo Test')).toBeTruthy();
     expect(app.screen.getByRole('header', { name: 'Transactions' })).toBeTruthy();
     expect(app.screen.getByLabelText('Search transactions')).toBeTruthy();
-    expect(app.screen.getAllByRole('radio').map((r) => r.props.accessibilityLabel)).toEqual(['All', 'Money in', 'Money out', 'Bills', 'Content']);
+    expect(app.screen.getAllByRole('radio').map((r) => r.props.accessibilityLabel)).toEqual(['All', 'Money in', 'Money out', 'Content']);
     // The export icon beside the title leads to statements (WALLET-35), and Report a problem is SUPPORT-01's.
     expect(app.screen.queryByRole('button', { name: /statement|export|download|report/i })).toBeNull();
     // The only buttons are Back and the rows.
@@ -281,13 +281,12 @@ describe('W26 · Transaction history', () => {
     expect(asked('/money/transactions/summary').length).toBeGreaterThan(before);
   });
 
-  it('a user can filter by Money in, Money out, Bills and Content, and each chip asks the Hub for it', async () => {
+  it('a user can filter by Money in, Money out and Content, and each chip asks the Hub for it', async () => {
     const app = await history();
     expect(await app.screen.findByText('Bayo Test')).toBeTruthy();
     for (const [label, value] of [
       ['Money in', 'money_in'],
       ['Money out', 'money_out'],
-      ['Bills', 'bills'],
       ['Content', 'content'],
       ['All', 'all'],
     ] as const) {
@@ -484,30 +483,31 @@ describe('W26 · Transaction history', () => {
 });
 
 describe('W28 · History, no results', () => {
-  it('a user who filters to Bills with none sees the empty card, and can tap Pay a bill', async () => {
-    hubWith([TIP], { list: (ask) => pageOf(ask.query.get('filter') === 'bills' ? [] : [TIP]) });
+  it('a user who filters to Content with none sees W28: "No content sales" and what shows here, with the chips and the search kept', async () => {
+    hubWith([TIP], { list: (ask) => pageOf(ask.query.get('filter') === 'content' ? [] : [TIP]) });
     const app = await history();
     expect(await app.screen.findByText('Bayo Test')).toBeTruthy();
-    await app.fireEvent.press(app.screen.getByRole('radio', { name: 'Bills' }));
-    expect(await app.screen.findByText('No bill payments yet')).toBeTruthy();
-    expect(app.screen.getByText('Airtime, data, power and TV bills you pay from your wallet appear here.')).toBeTruthy();
-    // The search and the chips stay, the summary and the rows go, and Bills is the chip that is on.
+    await app.fireEvent.press(app.screen.getByRole('radio', { name: 'Content' }));
+    expect(await app.screen.findByText('No content sales yet')).toBeTruthy();
+    expect(app.screen.getByText('Sales and unlocks of your work show here.')).toBeTruthy();
+    // The search and the chips stay, the summary and the rows go, and Content is the chip that is on.
     expect(app.screen.getByLabelText('Search transactions')).toBeTruthy();
-    expect(app.screen.getByRole('radio', { name: 'Bills' }).props.accessibilityState.checked).toBe(true);
+    expect(app.screen.getByRole('radio', { name: 'Content' }).props.accessibilityState.checked).toBe(true);
     expect(app.screen.queryByTestId('history-summary')).toBeNull();
     expect(app.screen.queryByText('Bayo Test')).toBeNull();
-    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Pay a bill' }));
-    expect(handlers.onPayBill).toHaveBeenCalledTimes(1);
+    // Bills are off (R-52): no chip, no bill words, no Pay a bill.
+    expect(app.screen.queryByRole('radio', { name: 'Bills' })).toBeNull();
+    expect(app.screen.queryByRole('button', { name: 'Pay a bill' })).toBeNull();
   });
 
-  it('gives the other chips their own words and no Pay a bill', async () => {
+  it('gives the other chips their own words', async () => {
     hubWith([TIP], { list: (ask) => pageOf(ask.query.get('filter') === 'all' ? [TIP] : []) });
     const app = await history();
     expect(await app.screen.findByText('Bayo Test')).toBeTruthy();
     for (const [chip, title] of [
       ['Money in', 'No money in yet'],
       ['Money out', 'No money out yet'],
-      ['Content', 'No content payments yet'],
+      ['Content', 'No content sales yet'],
     ] as const) {
       await app.fireEvent.press(app.screen.getByRole('radio', { name: chip }));
       expect(await app.screen.findByText(title)).toBeTruthy();

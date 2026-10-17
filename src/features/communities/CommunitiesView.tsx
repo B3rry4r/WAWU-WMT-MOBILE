@@ -6,6 +6,7 @@ import { isApiError } from '@/api/errors';
 import { Button } from '@/components/Button';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
 import { layout, space, useWawu } from '@/theme';
 import { queryClient } from '@/api/query';
 
@@ -62,6 +63,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
     wasFocused.current = focused;
   }, [focused, recover]);
   const [pulled, setPulled] = useState(false);
+  const [buying, setBuying] = useState(false);
 
   const joining = join.isPending ? join.variables : undefined;
   const joinFailed = join.isError ? join.variables : undefined;
@@ -190,7 +192,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         renderItem={renderEntry}
         ListHeaderComponent={
           <View style={styles.header}>
-            <CreditsStrip />
+            <CreditsStrip onBuy={() => setBuying(true)} />
           </View>
         }
         ListEmptyComponent={
@@ -240,6 +242,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         contentContainerStyle={styles.content}
         style={styles.list}
       />
+      {buying ? <BuyCreditsEntry visible onClose={() => setBuying(false)} doneLabel="Done" onAdded={recover} /> : null}
     </View>
   );
 }

@@ -46,8 +46,8 @@ export type TicketBuyArgs = {
   onSetPin: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
-  /** Add money for the shortfall (kobo). */
-  onAddMoney: (shortfallKobo: number) => void;
+  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): the short notice shows without the button. */
+  onAddMoney?: (shortfallKobo: number) => void;
 };
 
 /** What E3 and E4 draw, ready for `PaySheet` and `PinSheet`. Null while no payment is being reviewed. */
@@ -66,7 +66,7 @@ export type BuySheet = {
   closePin: () => void;
   forgotPin: () => void;
   openWallet: () => void;
-  addMoney: (shortfallKobo: number) => void;
+  addMoney?: (shortfallKobo: number) => void;
   tryAgain: () => void;
   eventName: string;
 };

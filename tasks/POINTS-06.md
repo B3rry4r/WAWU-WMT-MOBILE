@@ -7,7 +7,7 @@ order: 276
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [POINTS-02, TIER-05, POINTS-05, DV2-COMP]
 decisions: [R-43, R-65, R-10, R-16]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,16 @@ artboards: [PT4, PT4b, PT4c]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 4 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): POINTS-02, TIER-05, POINTS-05, DV2-COMP.
-- **History:** none yet. Reports go to tasks/history/POINTS-06.md.
+As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; POINTS-02 and TIER-05 are served on MERGE-8, so no backend change, no migration). Status: merging (lead). Verified (verdict merge); stacked in batch 10 by MERGE-10 inside FIX-55 (WA `2c5e1bc2`, with FIX-55's Bank transfer only when short). Order 276 kept.
+- **Built (`src/features/points/`, route `src/app/points-buy.tsx`):** PT4 (`BuyScreen`): the packs from `GET /plans` (the middle one chosen, as the board), each pack's bonus chip ("Founding +10%": the running tier's first word and the Hub's `packBonusPercent`; none for anyone else), "For AI tools. Points don't expire for 12 months." with the months from the quote's `expiryDays`, Pay with the wallet (balance from the quote) or Bank transfer, and Pay as the total with the Bank charge, the parts beneath ("₦2,500 + ₦23.25 Bank charge"). PT4b: "Paying..." while the bank has not confirmed, read by id every 4 seconds. PT4c: "2,750 points added" and the balance from `GET /me/points`.
+- **Once (V8):** Pay asks for a fresh quote; figures that moved are shown and nothing is sent; the PIN sends one request on one key, kept on the phone (`buyIntent.ts`): a wrong PIN, a lost answer, a second tap and a closed app send the same request. A wallet short of the total turns Pay off and says so; the transfer way is still there.
+- **By transfer:** the PIN confirms it, the wallet's own account, bank, name and the amount to send are shown, the button reads "Waiting for your transfer", and PT4c shows when the Hub reads the purchase as paid.
+- **Entries as drawn:** Buy points on Wallet's action row, the pill beside the balance on Your points (accented on PT5a), Buy on Convert. PT5a's "Buy a pack, or" clause is back. PT1a and PT3 (Studio, not enough points) are POINTS-07's.
+- **Tests changed:** three assertions in `pointsFlow.test.tsx` (Buy is drawn now; SHARED-CHANGES POINTS-06 #1). New `buyFlow.test.tsx` (12 cases).
+- **On the stack** (same stack as WALLET-03, each once, the Hub's wallet and points read before and after): wrong PIN then right: 403 then 201, nothing debited by the wrong one, ₦2,500 debited once and 2,750 points added once; double tap on Pay: one purchase request, two quote reads (the first and the fresh one), one debit, one grant; an answer lost then a retry: two requests on one key, one debit, one grant; a quote that changed: 409, nothing debited, the Hub's sentence shown. **NOT RUN on the stack:** a short wallet (the wallet holds ₦485,250; covered by the flow test and the screen), a bank transfer landing (it needs a fired inflow webhook and the sweep's next tick; not tried here, covered by the flow test).
+- **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wa-b/pics/` PT5, PT4, PT4 with the transfer way, PT4 with the PIN sheet (light and dark), PT4c (light), with `side-PT5`, `side-PT4` beside the boards.
+- **Round 2 (verifier F5):** the transfer card shows the pack's full price (the total) when the Hub needs 0 from the transfer because the wallet already covers the pack, never "Send ₦0.00"; a short wallet still shows the shortfall. The Hub's behaviour is unchanged. Two new cases in `buyFlow.test.tsx`.
+- **Gaps:** G-POINTS-06-1 (Back to AI tools), G-POINTS-06-2 (no board for the transfer state). **Next:** the batch 10 pull request.
 
 ## Read first
 
@@ -51,13 +56,9 @@ A person buys a points pack in Naira from the wallet or by bank transfer, and se
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-06.md](history/POINTS-06.md).
 
 ## Owner sign-off
 

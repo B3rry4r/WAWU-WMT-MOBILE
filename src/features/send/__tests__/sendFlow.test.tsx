@@ -203,7 +203,7 @@ function WalletStandIn() {
   return (
     <View>
       <Text accessibilityRole="header">Wallet tab</Text>
-      <WalletActions onSend={() => router.push('/send')} />
+      <WalletActions actions={[{ key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') }]} />
     </View>
   );
 }
@@ -321,8 +321,9 @@ describe('W7 · find who to send to', () => {
     expect(await screen.findByTestId('send-recipient-screen')).toBeTruthy();
     expect(pathname()).toBe('/send');
     expect(await screen.findByRole('button', { name: 'Send to Amaka Nwosu' })).toBeTruthy();
-    // The Bank account tab is WALLET-03's: nothing for it is drawn (R-47).
-    expect(screen.queryByText('Bank account')).toBeNull();
+    // WALLET-03 adds the Bank account tab beside Who Made This? user, as W7 draws it.
+    expect(screen.getByRole('tab', { name: 'Who Made This? user' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByRole('tab', { name: 'Bank account' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
   });

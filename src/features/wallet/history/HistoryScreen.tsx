@@ -35,8 +35,6 @@ export type HistoryScreenProps = {
   onOpenTransaction: (id: string) => void;
   /** A grouped row ("Unlock, 3 buyers"): the movements it stands for. */
   onOpenGroup: (key: string) => void;
-  /** W28's Pay a bill (S2). */
-  onPayBill: () => void;
 };
 
 /**
@@ -50,7 +48,7 @@ export type HistoryScreenProps = {
  * Default (agent), owner may override: the list is the whole history, so a chip with nothing says "yet" where the canvas says
  * "in September"; a grouped row opens the movements it stands for, the same list without its search, chips and totals.
  */
-export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup, onPayBill }: HistoryScreenProps) {
+export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup }: HistoryScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const owner = useSessionAccount(undefined);
@@ -112,12 +110,7 @@ export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup, o
   } else if (empty) {
     state = (
       <Card testID="history-empty" style={styles.empty}>
-        <EmptyState
-          icon={words.icon}
-          title={words.title}
-          message={words.message}
-          action={words.payBill ? { label: 'Pay a bill', onPress: onPayBill } : undefined}
-        />
+        <EmptyState icon={words.icon} title={words.title} message={words.message} />
       </Card>
     );
   }

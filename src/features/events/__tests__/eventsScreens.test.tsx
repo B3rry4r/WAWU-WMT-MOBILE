@@ -140,7 +140,7 @@ async function bootList() {
   return props;
 }
 
-const buyHandlers = () => ({ onOpenOrder: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
+const buyHandlers = () => ({ onOpenOrder: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn() });
 
 async function bootDetail(id = 'e-1', buy?: ReturnType<typeof buyHandlers>) {
   const props = { id, onBack: jest.fn(), buy };

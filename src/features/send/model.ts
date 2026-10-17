@@ -12,20 +12,59 @@ export const WALLET_NAME = OWN_WALLET;
 /** The line under W9's amount: "Naira balance ₦485,250.75". */
 export const BALANCE_LABEL = 'Naira balance';
 
-/** A person on the way through the screens: what the route carries from W7 to W12 (everything but the id is for drawing). */
+/**
+ * A bank account a send goes to (WALLET-03): the bank and the ten digits, the name the BANK gave for them (never a typed one),
+ * the `nameToken` that name check came with (null for a saved account, which the Hub compares with its kept name) and whether
+ * the account is already saved.
+ */
+export type BankPayee = {
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  nameToken: string | null;
+  saved: boolean;
+};
+
+/** A person or a bank account on the way through the screens: what the route carries from W7 or W8 to W12 (everything but the id is for drawing). */
 export type Payee = {
+  /** A WAWU user's id; for a bank account the key `bank:<code>:<number>` that its intent and its fee quote are kept under. */
   wawuUserId: string;
   name: string;
   handle: string | null;
   avatarUrl: string | null;
   tick: Recipient['tick'];
+  /** Set when the send goes to a bank account (W8 to W14); a WAWU user has none. */
+  bank?: BankPayee;
 };
+
+/** The key a bank account is kept under in a payment intent: stable for the same bank and number, never a WAWU user's id. */
+export const bankKey = (bankCode: string, accountNumber: string): string => `bank:${bankCode}:${accountNumber}`;
+
+/** The payee a bank account makes: the name is the bank's, and the avatar is the name's initials. */
+export function bankPayeeOf(name: string, bank: BankPayee): Payee {
+  return { wawuUserId: bankKey(bank.bankCode, bank.accountNumber), name, handle: null, avatarUrl: null, tick: null, bank };
+}
+
+/** "GTBank · 0123456789": the line under a bank account's name (W13). */
+export const bankLine = (bank: Pick<BankPayee, 'bankName' | 'accountNumber'>): string => `${bank.bankName} · ${bank.accountNumber}`;
+
+/** The provider's part of a bank send's fee, as every fee breakdown names it (R-53): never the provider's own name. */
+export const BANK_CHARGE = 'Bank charge';
 
 export const payeeOf = (r: Recipient): Payee => ({ wawuUserId: r.wawuUserId, name: r.displayName, handle: r.handle, avatarUrl: r.avatarUrl, tick: r.tick });
 
 /** The route params that carry a payee (strings only). */
 export function payeeParams(p: Payee): Record<string, string> {
-  return { id: p.wawuUserId, name: p.name, ...(p.handle ? { handle: p.handle } : {}), ...(p.avatarUrl ? { avatar: p.avatarUrl } : {}), ...(p.tick ? { tick: p.tick } : {}) };
+  return {
+    id: p.wawuUserId,
+    name: p.name,
+    ...(p.handle ? { handle: p.handle } : {}),
+    ...(p.avatarUrl ? { avatar: p.avatarUrl } : {}),
+    ...(p.tick ? { tick: p.tick } : {}),
+    ...(p.bank
+      ? { bankCode: p.bank.bankCode, bankName: p.bank.bankName, accountNumber: p.bank.accountNumber, saved: p.bank.saved ? '1' : '0', ...(p.bank.nameToken ? { nameToken: p.bank.nameToken } : {}) }
+      : {}),
+  };
 }
 
 type Param = string | string[] | undefined;
@@ -37,12 +76,22 @@ export function payeeFromParams(params: Record<string, Param>): Payee | null {
   const name = one(params.name);
   if (!id || !name) return null;
   const tick = one(params.tick);
+  const bankCode = one(params.bankCode);
+  const bankName = one(params.bankName);
+  const accountNumber = one(params.accountNumber);
+  // A bank account needs all three, or it is not a bank account (the screen then goes back to W7).
+  const bank: BankPayee | undefined =
+    bankCode && bankName && accountNumber && /^[0-9]{3,6}$/.test(bankCode) && /^[0-9]{10}$/.test(accountNumber)
+      ? { bankCode, bankName, accountNumber, nameToken: one(params.nameToken) || null, saved: one(params.saved) === '1' }
+      : undefined;
+  if (id.startsWith('bank:') && !bank) return null;
   return {
     wawuUserId: id,
     name,
     handle: one(params.handle) || null,
     avatarUrl: one(params.avatar) || null,
     tick: tick === 'creator' || tick === 'professional' ? tick : null,
+    ...(bank ? { bank } : {}),
   };
 }
 
@@ -52,7 +101,8 @@ export const hueOfPayee = (p: Pick<Payee, 'wawuUserId'>) => hueFor(p.wawuUserId)
 export const tickKind = (tick: Payee['tick']): 'creator' | 'pro' | undefined => (tick === 'creator' ? 'creator' : tick === 'professional' ? 'pro' : undefined);
 
 /** "@amaka · Creator", "@chidieze · Professional", "@kemi.designs": the line under a name. The word is the tick's own meaning. */
-export function payeeLine(p: Pick<Payee, 'handle' | 'tick'>): string {
+export function payeeLine(p: Pick<Payee, 'handle' | 'tick'> & { bank?: BankPayee }): string {
+  if (p.bank) return bankLine(p.bank);
   const handle = p.handle ? `@${p.handle.replace(/^@/, '')}` : '';
   const role = p.tick === 'creator' ? 'Creator' : p.tick === 'professional' ? 'Professional' : '';
   return [handle, role].filter(Boolean).join(' · ');
@@ -68,14 +118,14 @@ export const searchText = (raw: string): string => raw.trim();
  * The quote's parts as lines, each charge as its own part (R-10): Fintava's charge, then WAWU's fee. A part that is zero stays
  * (any part can be zero, the sheet shows ₦0.00). Two provider parts would share a label, so they are added into one line.
  */
-export function feeLinesOf(quote: Pick<FeeQuote, 'parts'>): PayFeeLine[] {
+export function feeLinesOf(quote: Pick<FeeQuote, 'parts'>, providerLabel: string = FEE_LABELS.provider): PayFeeLine[] {
   const lines: PayFeeLine[] = [];
   const add = (label: string, kobo: number) => {
     const found = lines.find((l) => l.label === label);
     if (found) found.amountKobo += kobo;
     else lines.push({ label, amountKobo: kobo });
   };
-  for (const part of quote.parts) add(part.source === 'wawu' ? FEE_LABELS.wawu : FEE_LABELS.provider, part.amountKobo);
+  for (const part of quote.parts) add(part.source === 'wawu' ? FEE_LABELS.wawu : providerLabel, part.amountKobo);
   return lines;
 }
 
@@ -137,13 +187,14 @@ export type ReceiptRow = { key: string; label: string; value: string; money?: nu
 
 /** W12's card: the reference, the date (Lagos time), where it came from, the note, then the charges and the total paid (BRIEF W12). */
 export function receiptRows(t: Transfer): ReceiptRow[] {
+  const providerLabel = t.kind === 'bank_account' ? BANK_CHARGE : FEE_LABELS.provider;
   const rows: ReceiptRow[] = [
     { key: 'reference', label: 'Reference', value: t.reference, copy: true },
     { key: 'date', label: 'Date', value: longDateTime(t.completedAt ?? t.createdAt) },
     { key: 'from', label: 'From', value: WALLET_NAME },
   ];
   if (t.note?.trim()) rows.push({ key: 'note', label: 'Note', value: t.note.trim(), wrap: true });
-  rows.push({ key: 'provider', label: FEE_LABELS.provider, value: '', money: t.fee.providerFeeKobo });
+  rows.push({ key: 'provider', label: providerLabel, value: '', money: t.fee.providerFeeKobo });
   rows.push({ key: 'wawu', label: FEE_LABELS.wawu, value: '', money: t.fee.wawuFeeKobo });
   rows.push({ key: 'fees', label: 'Fees', value: '', money: t.fee.providerFeeKobo + t.fee.wawuFeeKobo });
   rows.push({ key: 'total', label: 'Total paid', value: '', money: t.totalKobo, strong: true });
@@ -151,7 +202,9 @@ export function receiptRows(t: Transfer): ReceiptRow[] {
 }
 
 /** The person a send went to, as W12's line reads: "To Amaka Nwosu · @amaka". */
-export function toLine(t: Pick<Transfer, 'toWawuUser'>): string {
+export function toLine(t: Pick<Transfer, 'toWawuUser'> & Partial<Pick<Transfer, 'toBankAccount'>>): string {
+  const account = t.toBankAccount;
+  if (account) return `To ${account.accountName} · ${account.bankName} ${account.accountNumber}`;
   const who = t.toWawuUser;
   if (!who) return '';
   return ['To ' + who.displayName, who.handle ? `@${who.handle.replace(/^@/, '')}` : ''].filter(Boolean).join(' · ');
@@ -167,4 +220,66 @@ export function shareText(t: Transfer): string {
   }
   out.push(`Reference: ${t.reference}`);
   return out.join('\n');
+}
+
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* W14 · a send to a bank account the bank did not take */
+
+/** W14's headline, as the board draws it. */
+export const FAILED_TITLE = "Transfer didn't go through";
+/** Under the headline when the Hub gave no sentence of its own: it says only that the bank did not take it (nothing about money). */
+export const FAILED_FALLBACK = 'The bank did not take this transfer.';
+
+/** How a failed bank send stands (BRIEF W14, rule 6): money back as the Hub recorded it, or not recorded yet. Nothing here is promised. */
+export type FailedView = {
+  title: string;
+  /** The Hub's own sentence for why, or the plain fallback. */
+  reason: string;
+  /** `reversed`: the Hub has the reversal on record (`reversal`); `open`: it has not, so no word about the money is written. */
+  stands: 'reversed' | 'open';
+  /** The reversal's own figures when it is on record. */
+  returnedKobo: number | null;
+  keptKobo: number | null;
+  /** The note under the card: what came back, or where to look. */
+  note: { title: string; body: string };
+};
+
+const cash = (kobo: number): string => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
+
+/**
+ * What W14 says about a failed send, from the Hub's record alone. "Returned to your wallet" is the reversal's `returnedKobo`, and a
+ * charge that was kept is its own row (`keptKobo`): never "full" or "nothing was taken" (rule 6). Without a reversal on record the
+ * screen says nothing about the money beyond where to look.
+ */
+export function failedView(t: Pick<Transfer, 'status' | 'statusMessage' | 'failureReason' | 'reversal'>): FailedView {
+  const reason = t.statusMessage?.trim() || t.failureReason?.trim() || FAILED_FALLBACK;
+  const r = t.reversal;
+  if (r) {
+    return {
+      title: FAILED_TITLE,
+      reason,
+      stands: 'reversed',
+      returnedKobo: r.returnedKobo,
+      keptKobo: r.keptKobo,
+      note: { title: 'Your money is back', body: `${cash(r.returnedKobo)} is back in your Naira wallet.` },
+    };
+  }
+  return {
+    title: FAILED_TITLE,
+    reason,
+    stands: 'open',
+    returnedKobo: null,
+    keptKobo: null,
+    note: { title: 'Your wallet shows where it stands', body: 'Wallet activity has this transfer and what became of it.' },
+  };
+}
+
+/** W14's card: what came back (and a charge that was kept), the reference and the date in Lagos time. An open failure shows the amount asked for. */
+export function failedRows(t: Pick<Transfer, 'amountKobo' | 'reference' | 'createdAt' | 'completedAt' | 'reversal'>): ReceiptRow[] {
+  const r = t.reversal;
+  const rows: ReceiptRow[] = r ? [{ key: 'returned', label: 'Returned to your wallet', value: '', money: r.returnedKobo }] : [{ key: 'amount', label: 'Amount', value: '', money: t.amountKobo }];
+  if (r && r.keptKobo > 0) rows.push({ key: 'kept', label: 'Charge kept', value: '', money: r.keptKobo });
+  rows.push({ key: 'reference', label: 'Reference', value: t.reference, copy: true });
+  rows.push({ key: 'date', label: 'Date', value: longDateTime((r ? r.reversedAt : null) ?? t.completedAt ?? t.createdAt) });
+  return rows;
 }

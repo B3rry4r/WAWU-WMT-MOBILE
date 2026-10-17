@@ -44,6 +44,7 @@ export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: In
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const [chip, setChip] = useState(inboxChips[0]?.value ?? 'all');
+  // A money request is a row of its own only under the Money chip; in All the chat it is in is the row, with the request as its last words (I1, I20).
   const kind = inboxChips.find((c) => c.value === chip)?.kind ?? 'all';
 
   return (
@@ -58,7 +59,7 @@ export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: In
       {chip === communitiesChip ? (
         <CommunitiesView />
       ) : (
-        <InboxList kind={kind} renderers={renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
+        <InboxList kind={kind} renderers={kind === 'all' ? { ...renderers, money_request: undefined } : renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
       )}
     </View>
   );

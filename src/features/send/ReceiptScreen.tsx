@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Share, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
-import { useFocusRing } from '@/components/focusRing';
-import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, rowMetrics } from '@/components/ListRow';
 import { Money } from '@/components/Money';
@@ -16,14 +14,14 @@ import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { copyText } from '@/features/open-wallet/copy';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { SwitchRow } from '@/components/SwitchRow';
-import { radius, space, useWawu } from '@/theme';
+import { radius, space } from '@/theme';
 
-import { fetchBeneficiaries, removeBeneficiary, savedRowFor, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
+import { fetchBeneficiaries, removeBeneficiary, savedBankRowFor, savedRowFor, saveBankBeneficiary, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
 import { dropIntentOfTransfer } from './intent';
 import { CONFIRMING_LINE, failureLine, firstName, receiptRows, shareText, toLine } from './model';
+import { Reference } from './parts';
 
 const RECEIPT = { mark: 88, headGap: 12, headTop: 20, figure: 36, partMoney: 14.5, copy: 14, copyMs: 1600, poll: 4000 } as const;
 
@@ -180,7 +178,10 @@ function Receipt({ transfer }: { transfer: Transfer }) {
           ))}
         </GroupedList>
       ) : null}
-      {done && transfer.toWawuUser ? <SaveRow wawuUserId={transfer.toWawuUser.wawuUserId} name={transfer.toWawuUser.displayName} /> : null}
+      {done && transfer.toWawuUser ? <SaveRow target={{ kind: 'wawu', wawuUserId: transfer.toWawuUser.wawuUserId, name: transfer.toWawuUser.displayName }} /> : null}
+      {done && transfer.toBankAccount ? (
+        <SaveRow target={{ kind: 'bank', bankCode: transfer.toBankAccount.bankCode, accountNumber: transfer.toBankAccount.accountNumber, name: transfer.toBankAccount.accountName }} />
+      ) : null}
     </>
   );
 }
@@ -190,7 +191,9 @@ function Receipt({ transfer }: { transfer: Transfer }) {
  * receipt opens (a person already saved is left as is). Turning it off takes the person back out. A failed read hides the row; a
  * failed save leaves the switch off and says why, in the Hub's words.
  */
-function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
+type SaveTarget = { kind: 'wawu'; wawuUserId: string; name: string } | { kind: 'bank'; bankCode: string; accountNumber: string; name: string };
+
+function SaveRow({ target }: { target: SaveTarget }) {
   const owner = useSessionAccount(undefined);
   const list = useQuery(
     { queryKey: ['money', 'beneficiaries', owner ?? ''] as const, queryFn: fetchBeneficiaries, staleTime: 0, enabled: Boolean(owner) },
@@ -201,7 +204,11 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
   const [problem, setProblem] = useState<string | null>(null);
   const asked = useRef(false);
   const rows = list.data;
-  const row = rows ? savedRowFor(rows, wawuUserId) : undefined;
+  const find = useCallback(
+    (list: readonly Beneficiary[]) => (target.kind === 'wawu' ? savedRowFor(list, target.wawuUserId) : savedBankRowFor(list, target.bankCode, target.accountNumber)),
+    [target],
+  );
+  const row = rows ? find(rows) : undefined;
 
   const change = useCallback(
     async (next: boolean, saved: Beneficiary | undefined) => {
@@ -209,7 +216,7 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
       setBusy(true);
       setProblem(null);
       try {
-        if (next) await saveWawuBeneficiary(wawuUserId);
+        if (next) await (target.kind === 'wawu' ? saveWawuBeneficiary(target.wawuUserId) : saveBankBeneficiary(target.bankCode, target.accountNumber));
         else if (saved) await removeBeneficiary(saved.id);
         await list.refetch();
       } catch (error) {
@@ -218,15 +225,15 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
         setBusy(false);
       }
     },
-    [wawuUserId, list],
+    [target, list],
   );
 
   // Once, when the saved people have been read: a person who is not saved yet is saved, because the switch is drawn on.
   useEffect(() => {
     if (!rows || asked.current) return;
     asked.current = true;
-    if (!savedRowFor(rows, wawuUserId)) queueMicrotask(() => void change(true, undefined));
-  }, [rows, wawuUserId, change]);
+    if (!find(rows)) queueMicrotask(() => void change(true, undefined));
+  }, [rows, find, change]);
 
   if (!rows) return null;
   const on = busy ? want : Boolean(row);
@@ -234,7 +241,7 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
   return (
     <View style={styles.save}>
       <GroupedList testID="receipt-save">
-        <SwitchRow testID="receipt-save-switch" title={`Save ${firstName(name)} as a beneficiary`} on={on} busy={busy} onChange={(next) => void change(next, row)} />
+        <SwitchRow testID="receipt-save-switch" title={`Save ${firstName(target.name)} as a beneficiary`} on={on} busy={busy} onChange={(next) => void change(next, row)} />
       </GroupedList>
       {problem ? (
         <Text variant="errorLine" testID="receipt-save-error" accessibilityRole="alert">
@@ -242,46 +249,6 @@ function SaveRow({ wawuUserId, name }: { wawuUserId: string; name: string }) {
         </Text>
       ) : null}
     </View>
-  );
-}
-
-/** The reference, with a glyph that copies it ("copied" shows by its check mark for a moment and is said to a screen reader). */
-function Reference({ value }: { value: string }) {
-  const { colors } = useWawu();
-  const ring = useFocusRing();
-  const [copied, setCopied] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-  const copy = async () => {
-    const done = await copyText(value);
-    AccessibilityInfo.announceForAccessibility(done ? 'Reference copied' : 'Couldn’t copy the reference');
-    if (!done) return;
-    setCopied(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), RECEIPT.copyMs);
-  };
-  return (
-    <>
-      <Text variant="kvValue" numberOfLines={1} ellipsizeMode="middle" selectable style={styles.reference}>
-        {value}
-      </Text>
-      <Pressable
-        testID="receipt-copy"
-        accessibilityRole="button"
-        accessibilityLabel={copied ? 'Copied' : 'Copy reference'}
-        hitSlop={space.md}
-        onPress={() => void copy()}
-        {...ring.handlers}
-        style={ring.style}
-      >
-        <Icon name={copied ? 'Check' : 'Copy'} size={RECEIPT.copy} color={colors.textMuted} />
-      </Pressable>
-    </>
   );
 }
 
@@ -307,7 +274,6 @@ const styles = StyleSheet.create({
   sentWord: { fontSize: RECEIPT.figure * 0.9 },
   centre: { textAlign: 'center' },
   wrapped: { flexShrink: 1, textAlign: 'right' },
-  reference: { flexShrink: 1 },
   save: { gap: space.sm },
   footer: { gap: space.sm },
   buttons: { flexDirection: 'row', gap: space.md },

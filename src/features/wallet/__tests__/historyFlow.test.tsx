@@ -9,7 +9,7 @@ import type { ComponentType } from 'react';
 /*
  * The Wallet tab, the history (W26) and the receipt (W27) on the real Expo Router stack and tabs, answered by a stand-in Hub:
  * See all from the tab lands on W26, a row on W26 or on the tab lands on W27, a grouped row lands on the movements it stands
- * for, W28's Pay a bill lands on Pay a bill (S2), and Back walks the way it came. The stand-in `fetch` is installed before the
+ * for, and Back walks the way it came. The stand-in `fetch` is installed before the
  * app's modules load: the API client keeps the `fetch` it finds when it is made.
  */
 const mockVault = new Map<string, string>();
@@ -124,7 +124,6 @@ beforeAll(async () => {
     '(tabs)/me': () => <Stub name="Me" />,
     'transactions/index': page('@/app/transactions/index'),
     'transactions/[id]': page('@/app/transactions/[id]'),
-    'bills/index': () => <Stub name="S2 Pay a bill" />,
     welcome: () => <Stub name="Welcome" />,
   };
   const { unmount } = await renderRouter(routes, { initialUrl: '/wallet' });
@@ -200,14 +199,6 @@ describe('From the Wallet tab to the history and a receipt, on the real router',
     await fireEvent.press(screen.getByTestId('history-row-unlock-1'));
     await waitFor(() => expect(pathname()).toBe('/transactions/unlock-1'));
     expect(await screen.findByText('Unlock from Tolu Test')).toBeTruthy();
-  });
-
-  it('a user who filters to Bills with none can tap Pay a bill and lands on Pay a bill (S2)', async () => {
-    await renderRouter(routes, { initialUrl: '/transactions' });
-    await fireEvent.press(await screen.findByRole('radio', { name: 'Bills' }));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Pay a bill' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    expect(await screen.findByRole('header', { name: 'S2 Pay a bill' })).toBeTruthy();
   });
 
   it('the history opened on its own (no tab under it) goes Back to the Wallet tab', async () => {

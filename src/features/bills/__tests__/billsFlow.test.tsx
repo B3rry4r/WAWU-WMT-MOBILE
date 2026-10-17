@@ -103,34 +103,6 @@ afterAll(async () => {
 });
 
 describe('bills, on the real router', () => {
-  it('a user on the Wallet tab taps a bills tile and lands on Pay a bill (S2), then Electricity, a company and the meter (S4), and Back walks home', async () => {
-    await renderRouter(routes);
-    await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Power' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    expect(await screen.findByText('What are you paying for?')).toBeTruthy();
-
-    await fireEvent.press(await screen.findByRole('button', { name: 'Electricity' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Ikeja Electric, Prepaid' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity/Ikeja_Electric_Bill_Payment'));
-    expect(await screen.findByText('Ikeja Electric · Prepaid')).toBeTruthy();
-
-    await fireEvent.changeText(screen.getByTestId('meter-number'), '0412 3456 789');
-    expect(await screen.findByText('Chidinma Okoro · 14 Admiralty Way', undefined, { timeout: 4000 })).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: '₦5,000' }));
-    expect(screen.getByTestId('amount').props.value).toBe('5,000');
-    expect(asked.filter((a) => a === 'POST /bills/electricity/meter-preview')).toHaveLength(1);
-
-    // Back walks S4, S3, S2 and the Wallet tab again.
-    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/wallet'));
-  });
-
   it('the X on "Paying for" on S4 goes to S2, and the X on "Biller" goes to S3', async () => {
     await renderRouter(routes, { initialUrl: '/bills' });
     await fireEvent.press(await screen.findByRole('button', { name: 'Electricity' }));

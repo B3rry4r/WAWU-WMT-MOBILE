@@ -115,11 +115,11 @@ describe('the inbox screen', () => {
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
 
-  it('shows only the chips whose screens exist: All and Communities', async () => {
+  it('shows only the chips whose screens exist: All, Communities and Money (INBOX-20 built it)', async () => {
     answers[FIRST] = [pageOf([row('chat:1')])];
     await renderScreen(testRows);
     await rtl.screen.findByTestId('row-chat:1');
-    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities']);
+    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities', 'Money']);
   });
 
   it('a user with no messages sees "No messages yet" and the guidance', async () => {
@@ -329,20 +329,23 @@ describe('the inbox screen', () => {
       expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'r1' } });
     });
 
-    it('a user with chats and no community sees no chat row (another task draws them) and the same empty state as an empty inbox, never a blank page (FIX-30)', async () => {
-      answers[FIRST] = [pageOf([row('chat:1'), row('chat:2')])];
+    // Chat rows are drawn since INBOX-19; a paid question is the kind nobody draws yet (INBOX-10), so it stands for "a row nobody draws".
+    const paidDm = (id: string) => row(id, { kind: 'paid_dm', chat: null });
+
+    it('a user with paid questions and no community sees no row (another task draws them) and the same empty state as an empty inbox, never a blank page (FIX-30)', async () => {
+      answers[FIRST] = [pageOf([paidDm('paid_dm:1'), paidDm('paid_dm:2')])];
       await renderScreen();
       await rtl.screen.findByRole('header', { name: 'Inbox' });
       expect(await rtl.screen.findByText('No messages yet')).toBeTruthy();
       expect(rtl.screen.queryAllByTestId(/^row-/)).toEqual([]);
       expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
-      expect(rtl.screen.getAllByRole('radio')).toHaveLength(2);
+      expect(rtl.screen.getAllByRole('radio')).toHaveLength(3);
       expect(rtl.screen.getByRole('button', { name: 'Browse communities' })).toBeTruthy();
     });
 
     it('keeps reading pages until a row it can draw appears, when the first pages hold only rows nobody draws yet', async () => {
-      answers[FIRST] = [pageOf([row('chat:1')], 'cur2')];
-      answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([row('chat:2')], 'cur3')];
+      answers[FIRST] = [pageOf([paidDm('paid_dm:1')], 'cur2')];
+      answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([paidDm('paid_dm:2')], 'cur3')];
       answers['GET /inbox?limit=20&cursor=cur3'] = [pageOf([community('r9')])];
       await renderScreen();
       expect(await rtl.screen.findByTestId('row-community:r9')).toBeTruthy();

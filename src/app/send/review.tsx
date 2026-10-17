@@ -29,8 +29,8 @@ export default function SendReviewRoute() {
       note={note}
       onBack={leave}
       onSent={(id) => router.replace({ pathname: '/send/receipt', params: { id } })}
+      onFailed={(id) => router.replace({ pathname: '/send/failed', params: { id } })}
       onLeave={() => router.dismissTo('/wallet')}
-      onAddMoney={() => router.dismissTo('/wallet')}
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
     />

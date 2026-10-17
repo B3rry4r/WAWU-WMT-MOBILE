@@ -106,10 +106,13 @@ export function readQuote(value: unknown): FeeQuote {
   return q as FeeQuote;
 }
 
+/** What a send goes to, as the fee quote names it: a WAWU user's wallet, or a bank account (WALLET-03). */
+export type SendKind = 'wawu_transfer' | 'bank_transfer';
+
 /** GET /money/fees/quote for a send of `amountKobo` (what the person gets; fees are on top). */
-export async function fetchFeeQuote(amountKobo: number): Promise<FeeQuote> {
+export async function fetchFeeQuote(amountKobo: number, kind: SendKind = 'wawu_transfer'): Promise<FeeQuote> {
   const body = (await unwrap(
-    api.GET('/api/hub/money/fees/quote', { params: { query: { kind: 'wawu_transfer', amountKobo } } }),
+    api.GET('/api/hub/money/fees/quote', { params: { query: { kind, amountKobo } } }),
   )) as unknown as Envelope<FeeQuote>;
   return readQuote(body?.data);
 }
@@ -210,6 +213,52 @@ export async function sendToWawuUser(input: SendInput): Promise<SendOutcome> {
   } catch {
     return { kind: 'unanswered' };
   }
+  return outcomeOf(result);
+}
+
+/** What a send to a bank account carries (WALLET-03): the bank, the ten digits, what they get, the quote, and the name token of the name check. */
+export type BankSendInput = {
+  bankCode: string;
+  accountNumber: string;
+  /** What the account gets, kobo. */
+  amountKobo: number;
+  quote: FeeQuote;
+  /** The name check's `nameToken`: required for an account that is not saved, and left out for a saved one. */
+  nameToken: string | null;
+  note: string;
+  /** One per payment intent, kept across retries of the same intent. */
+  key: string;
+  pin: string;
+};
+
+/**
+ * POST /money/transfers/bank (WALLET-09): the same send as to a WAWU user, to a bank account. The Hub asks the bank for the name again
+ * before the PIN is looked at and sends to the name the bank gives; the app never sends a name. Never rejects: every answer is a
+ * `SendOutcome`. The status is read from `GET /money/transfers/{id}` (`pending` until the bank answers).
+ */
+export async function sendToBankAccount(input: BankSendInput): Promise<SendOutcome> {
+  let result;
+  try {
+    result = await api.POST('/api/hub/money/transfers/bank', {
+      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
+      body: {
+        bankCode: input.bankCode,
+        accountNumber: input.accountNumber,
+        amountKobo: input.amountKobo,
+        expectedTotalKobo: input.quote.totalKobo,
+        quoteToken: input.quote.quoteToken,
+        ...(input.nameToken ? { nameToken: input.nameToken } : {}),
+        ...(input.note.trim() ? { note: input.note.trim() } : {}),
+      },
+    });
+  } catch {
+    return { kind: 'unanswered' };
+  }
+  return outcomeOf(result);
+}
+
+/** Reads the Hub's answer to either send into the one `SendOutcome` the screen branches on. */
+function outcomeOf(result: { data?: unknown; error?: unknown; response: Response }): SendOutcome {
   const { data, error, response } = result;
   if (response.status === HTTP_CREATED) {
     try {
@@ -256,6 +305,18 @@ export async function fetchBeneficiaries(): Promise<Beneficiary[]> {
   return body.data;
 }
 
+/**
+ * POST /money/beneficiaries for a bank account (W12's "Save as beneficiary" after a bank send). The Hub asks the bank for the name and
+ * keeps the bank's, never one typed here. Saving one already saved answers the one already there.
+ */
+export async function saveBankBeneficiary(bankCode: string, accountNumber: string): Promise<Beneficiary> {
+  const body = (await unwrap(
+    api.POST('/api/hub/money/beneficiaries', { body: { kind: 'bank_account', bankCode, accountNumber } }),
+  )) as unknown as Envelope<Beneficiary>;
+  if (!body?.data || !filled(body.data.id)) throw unreadable('saved account');
+  return body.data;
+}
+
 /** POST /money/beneficiaries for a WAWU user. Saving one already saved answers the one already there. */
 export async function saveWawuBeneficiary(wawuUserId: string): Promise<Beneficiary> {
   const body = (await unwrap(
@@ -268,6 +329,11 @@ export async function saveWawuBeneficiary(wawuUserId: string): Promise<Beneficia
 /** DELETE /money/beneficiaries/{id}. */
 export async function removeBeneficiary(id: string): Promise<void> {
   await unwrap(api.DELETE('/api/hub/money/beneficiaries/{id}', { params: { path: { id } } }));
+}
+
+/** The saved row for this bank account, if there is one. */
+export function savedBankRowFor(rows: readonly Beneficiary[], bankCode: string, accountNumber: string): Beneficiary | undefined {
+  return rows.find((row) => row.kind === 'bank_account' && row.bankAccount?.bankCode === bankCode && row.bankAccount?.accountNumber === accountNumber);
 }
 
 /** The saved row for this person, if there is one. */

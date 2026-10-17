@@ -28,7 +28,6 @@ export default function EventRoute() {
         onOpenWallet: entry.open,
         onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
         onForgotPin: () => router.push('/reset-pin'),
-        onAddMoney: () => router.dismissTo('/wallet'),
       }}
     />
   );

@@ -110,8 +110,11 @@ export type PaySheetProps = {
    * that returns nothing gets a short guard against a double tap.
    */
   onPay: () => void | Promise<unknown>;
-  /** Top up by at least the shortfall (kobo), then come back. */
-  onAddMoney: (shortfallKobo: number) => void;
+  /**
+   * Top up by at least the shortfall (kobo), then come back. Left out, the "Add" button is not drawn and the notice stands
+   * alone (R-47: a caller whose way to add money is not built does not offer one).
+   */
+  onAddMoney?: (shortfallKobo: number) => void;
   onCancel: () => void;
   /**
    * With no wallet yet (`wallet.kind === 'none'`) the footer offers "Open your wallet" in Pay's place and calls this
@@ -292,7 +295,7 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
   );
   const buttons = (
     <View style={styles.buttons}>
-      <Button label={`Add ${formatNaira(p.short)}`} onPress={() => p.onAddMoney(p.short)} icon="Plus" full />
+      {p.onAddMoney ? <Button label={`Add ${formatNaira(p.short)}`} onPress={() => p.onAddMoney?.(p.short)} icon="Plus" full /> : null}
       <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
     </View>
   );

@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 290.**
+**Launch tasks done: 176 of 291.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 104 | 0 | 0 | 0 |
+| todo | 98 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 58 | 0 | 0 | 0 |
+| verifying | 65 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,10 +19,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
+- [INBOX-13](../tasks/INBOX-13.md) Out of credits, buy credits, credits added (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
 - [FIX-52](../tasks/FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote (You)
@@ -30,7 +32,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-47](../tasks/FIX-47.md) No blank page while Open your wallet sends the ID and address details (You)
 - [ME-13](../tasks/ME-13.md) Tick still confirming, wallet not opened, identity not matched (You)
 - [INBOX-15](../tasks/INBOX-15.md) Money requests in chat (You)
+- [INBOX-19](../tasks/INBOX-19.md) Chat and send money in a chat (You)
+- [INBOX-20](../tasks/INBOX-20.md) Request money and pay a request (You)
 - [SCHOOLS-11](../tasks/SCHOOLS-11.md) Pay schools their share of course fees (You)
+- [WALLET-03](../tasks/WALLET-03.md) Send to a bank, not enough money, failed send (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
@@ -49,12 +54,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
+- [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [EXPLORE-07](../tasks/EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [DV2-01](../tasks/DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count (You)
+- [DV2-02](../tasks/DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills (You)
 - [DV2-03](../tasks/DV2-03.md) Me follows the 16 Oct design: the profile header (You)
 - [DV2-05](../tasks/DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design (You)
 - [DV2-06](../tasks/DV2-06.md) Settings: TGIF each morning, and the provider wording (You)
@@ -275,6 +282,9 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
 - 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
 - 17 Oct 2026 · LINKS-01 · Built (Sonnet builder; web `wmt/LINKS-01` on `origin/main` `5b45d65`, mobile `wmt/LINKS-01` on `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): 22 links WAWU sends or receives audited, 9 landed nowhere that works, 4 fixed (reset and sign-in-alert emails reopened in join-only mode; the invite shared as `https://wawuafrica.com/r/<code>`; the hosted selfie returns to `https://wawuafrica.com/selfie`), 5 left for a ruling. The website serves `/r/<code>` and `/selfie` as app links (small dark "Open in the WAWU app" page) and the two `.well-known` files; `app.json` registers them. Owner values missing: Apple team id and Android signing fingerprint. Order 298 taken by moving CHECK-3 and the 12 tasks after it up one.
+- 17 Oct 2026 · FIX-55 · Built (Sonnet builder, T0; mobile `wmt/FIX-55` on `origin/wmt/WA` `2c5e1bc2` with `origin/wmt/S2` `6957df6b` merged; no backend change, no migration; status verifying): PT4 offers Bank transfer only when the wallet is short of the pack (lead ruling); no pay sheet offers Add money until WALLET-05 (R-47): the ticket sheet, the credits sheet (`credits-add`), the request pay sheet and the send sheet lose the button and keep their short notice; the S2 and WA gap ids G-880 to G-882 collided, WA's are now G-WALLET-03-1, G-POINTS-06-1 and G-POINTS-06-2.
+- 17 Oct 2026 · DV2-02, WALLET-03, POINTS-06 · Built (Sonnet builder, one branch `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): the Wallet tab is the 16 Oct board (Points and Passes cards, five-column actions with Send, Buy points and To cash, no bills, History without Bills and with W28's No content sales, the card's bank line "Who Made This? · <bank>"); Send to a bank account (W7's Bank account tab, W8, W13's shortfall line on W9, W10 with the Bank charge, W12 for a bank, W14 for a transfer the bank did not take); Buy points (PT4, PT4b, PT4c, by wallet or bank transfer, Buy on Wallet, Your points and Convert).
+- 17 Oct 2026 · INBOX-13, INBOX-19, INBOX-20 · Built (Sonnet builder, bundle S2; mobile `wmt/S2` on `origin/wmt/MERGE-8` `cc436a53` with `origin/wmt/INBOX-15` `d72a9724` merged; no backend change, no migration; status verifying): Buy WAWU Credits (I27 out of credits, I28 packs with the Bank charge and Total, I29 added; I24's Buy button), the chat between two people (I12, Add to chat I13, send money I14 with the fee line and the PIN, I15's bubble kept by the send's id), money requests (I16, I17, I18 with a review before the PIN, I19 live) and the Money chip (I20); the shared pay and PIN sheets, one Idempotency-Key per attempt, a fresh quote per tap, an attempt kept across a lost answer; every attack run in tests and once each on a stack (one debit each time). Contract copy gains the money request routes (SHARED-CHANGES INBOX-13 #1). G-880 to G-883 filed (G-883: on the stack a send quoted with WAWU's fee took only the amount).
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · SCHOOLS-11 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025131000_school_settlement`; status verifying): a school's 85% is sent from WAWU's account to its bank account at the class's start through the provider seam (`bankTransfer` from the merchant account), a class called off sends the fees back to the students' wallets, one decision per enrolment; a failed payout is retried once under a new reference and never doubles; the school's bank account is saved only after the bank confirms it; dashboard routes for finance and the superadmin.
 - 17 Oct 2026 · SCHOOLS-09 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025130000_school_enrolment_report`; status verifying): the school gets one mail with the student's name, email, phone, course, intake and consent time when an enrolment is paid (or free); `GET /schools/enrolments` is My courses with current and finished tabs.
@@ -284,6 +294,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · REF-03 · Builder report (Sonnet builder; mobile `wmt/REF-03` on `origin/wmt/DV2-03` `d4a0e95` plus `origin/wmt/DV2-COMP` `c6da2af`, no backend, wawu-id or migration change; status verifying): Invite and earn is built, RF1 to RF4. RF1, RF1a and RF1b read `GET /me/referrals`; RF3 and RF3a tell a reward or milestone the Hub made available, once per phone; RF4 prints the Hub's hold days; RF2 draws the card on the phone and hands its picture to the phone's share sheet (`react-native-view-shot`, SHARED-CHANGES REF-03 #1 applied), with no outside brand (R-68). The gift button on Me opens it; a `wawu/r/<code>` link keeps the code and claims it after sign-in, drawing nothing (G-812). Gaps G-812 (updated), G-830, G-831.
 - 17 Oct 2026 · EVENTS-06 · Built (Sonnet builder; mobile `wmt/EVENTS-06` on `wmt/MERGE-7` `0aca612c`; no backend, migration or contract change; status verifying): E2 draws the steppers, the running total and Get tickets; Get tickets makes the wallet order, E3 is the shared pay sheet with the Hub's bank charge, E4 the PIN sheet, E10 the Hub's still-confirming (polled, kept on the phone, never paid twice), E5 `/events/orders/<id>` the ticket with Add to calendar and My tickets; a ₦0 basket is issued with no wallet, sheet or PIN (R-8); the Hub's message shows for `event_order_limit`. Pictures beside the boards at 390 px light and dark. Filed G-827, G-828, SHARED-CHANGES EVENTS-06 #1 (the pay button's dot).
 - 17 Oct 2026 · EVENTS-08 · Built (Sonnet builder; backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478`, mobile `wmt/EVENTS-08` on `0aca612c`; no migration): My events (E17) with its tab and E16's button, the organiser dashboard (E18), call it off (E25) and Shared links, and the called-off ticket (E11); `GET /events/{id}/call-off` added (the buyers a call-off refunds). Edit event and Ticket types are not built (G-833, the owner).
-- 17 Oct 2026 · ME-13 · Built (Sonnet builder; backend `wmt/ME-13` `ca103ec` on `wmt/MERGE-7` `9c40478`, mobile `wmt/ME-13` on `0aca612c`; no migration; status verifying): Verification at `/verification`, opened from a new Me menu row. The Identity check row is the wallet's state from the Hub (M16 no wallet, M17 a rejected review or a selfie step out of tries) and opens Open your wallet; M15 "Paid, still confirming" reads the new additive `GET /plans/purchases/pending`. Gaps G-870 to G-872, SHARED-CHANGES ME-13 #1 and #2.
-- 17 Oct 2026 · INBOX-15 · Built (Sonnet builder; backend `wmt/INBOX-15` `f304f26` on `origin/wmt/MERGE-7` `9c40478`, mobile record on `0aca612c`; migration `20261025040000_money_requests`; status verifying): a user asks the other person in a chat for money (`POST /chats/:chatId/money-requests`, a chat bubble of kind `money_request`); the other pays it through the WALLET-07 send path (Idempotency-Key, PIN, fee quote) or declines it, and a request is paid exactly once under parallel taps, replays and a lost provider answer; requests are rows in `GET /inbox` and the Money filter (`kind=money_request`), and reach the other phone live (`money_request.updated`).
-- 17 Oct 2026 · VERIFY-01, AUTH-06 · Patch round 4 (Sonnet builder; mobile `wmt/VERIFY-01` now holds AUTH-06's mobile side, `fe5b218c` merged): the merged route order fixed as verified, a discoverer never mounts VF1, P10's Become a creator is the compact pill, A13 has a Back to A12, a route test walks both sign-ups on the merged layout; status verifying.

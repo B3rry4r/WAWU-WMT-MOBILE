@@ -23,17 +23,19 @@ export type PointsScreenProps = {
   onBack: () => void;
   /** The round button on the bar: PT6. */
   onConvert: () => void;
+  /** Buy points: PT4. */
+  onBuy: () => void;
 };
 
 /**
  * PT5 · Your points, with PT5a (nothing yet). Read from `GET /me/points`: the balance, a row for each live lot with the day it
  * ends (the soonest in the warning tone), and the last movements in the Hub's own words. Every figure is the Hub's and a count of
- * points, never naira. The Buy points button on the board is POINTS-06's; the Points card on Wallet that opens this screen is
- * DV2-02's (R-47).
+ * points, never naira. Buy points opens PT4 (POINTS-06): a secondary pill beside the balance, and the accent one when there are
+ * none (PT5a); the Points card on Wallet that opens this screen is DV2-02's.
  *
  * A person who has never had points sees the designed empty view; a read that fails is the error view with Try again.
  */
-export function PointsScreen({ onBack, onConvert }: PointsScreenProps) {
+export function PointsScreen({ onBack, onConvert, onBuy }: PointsScreenProps) {
   const owner = useSessionAccount(undefined);
   const points = useQuery(myPointsQuery(owner), queryClient);
   const action = { icon: 'Banknote', label: 'Convert to cash', onPress: onConvert, testID: 'points-convert' } as const;
@@ -61,7 +63,7 @@ export function PointsScreen({ onBack, onConvert }: PointsScreenProps) {
   const empty = points.data.balance === 0 && points.data.lots.length === 0 && points.data.movements.length === 0;
   return (
     <PointsFrame title="Your points" onBack={onBack} action={action} gap={BODY_GAP} testID="points-screen">
-      <BalanceCard points={points.data.balance} />
+      <BalanceCard points={points.data.balance} buy={{ label: 'Buy points', primary: empty, onPress: onBuy }} />
       {empty ? (
         <View style={styles.empty}>
           <EmptyState testID="points-empty" icon="Sparkles" title={WORDS.emptyTitle} message={WORDS.emptyBody} />
