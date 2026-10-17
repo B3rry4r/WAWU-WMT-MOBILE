@@ -97,6 +97,12 @@ export type MeScreenProps = {
   onOpenDashboard?: () => void;
   /** My content (M28, ME-07): the menu's second row for a creator account, drawn only when given. */
   onOpenLibrary?: () => void;
+  /** My purchases (M29, ME-14): a row of the menu, drawn only when given. */
+  onOpenPurchases?: () => void;
+  /** Saved (M30, ME-14): a row of the menu, drawn only when given. */
+  onOpenSaved?: () => void;
+  /** Notifications (M31, ME-14): a row of the menu, drawn only when given. */
+  onOpenNotifications?: () => void;
 };
 
 /**
@@ -116,7 +122,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -269,6 +275,30 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
             ? () => {
                 setMenuOpen(false);
                 onOpenLibrary();
+              }
+            : undefined
+        }
+        onOpenPurchases={
+          onOpenPurchases
+            ? () => {
+                setMenuOpen(false);
+                onOpenPurchases();
+              }
+            : undefined
+        }
+        onOpenSaved={
+          onOpenSaved
+            ? () => {
+                setMenuOpen(false);
+                onOpenSaved();
+              }
+            : undefined
+        }
+        onOpenNotifications={
+          onOpenNotifications
+            ? () => {
+                setMenuOpen(false);
+                onOpenNotifications();
               }
             : undefined
         }
