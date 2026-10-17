@@ -7,7 +7,7 @@ order: 99
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [SCHOOLS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, round 3 (builder, Sonnet; the verifier of round 2 closed M1 and M2 and found the popular text rules only partly closed, a medium; round 3 replaces those rules with an allow-list).
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/ADS-01` (this branch contains it); API types regenerated from backend `wmt/EXPLORE-05` (649187a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-05.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/ADS-01` (this branch contains it); API types regenerated from backend `wmt/EXPLORE-05` (649187a).
 - **Branches:** wawu-backend `wmt/EXPLORE-05` `ba55a42` (round 2 `343e913`, round 1 `9e6b4bc`; backend main `b32f9c0` merged); mobile `wmt/EXPLORE-05` (the commit after `4d95eee` that carries this report) (contract unchanged this round, so the copy and the generated types are as they were; SHARED-CHANGES EXPLORE-05 #1 and #2). Migration `20261022240000_search_history` (stamp `20261022190000` until the batch 4 merge preparation of 16 Oct, which moved it after SCHOOLS-10's `20261022230000`; contents unchanged; one new table `SearchHistory`).
 - **Merged and live:** nothing of this task.
 - **What the app calls (new, additive):**

@@ -12,6 +12,7 @@ depends_on: [task ids]
 decisions: [D or R ids]
 passes: [at least what the type requires, docs/WORKFLOW.md section 5]
 artboards: [ids from design/canvas-inventory.json]
+tier: T0 | T1 | T2 (optional line; if missing the tier comes from type, docs/WORKFLOW.md section 4a)
 ---
 # X-00 · Title
 

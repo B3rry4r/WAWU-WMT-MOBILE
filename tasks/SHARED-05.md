@@ -7,7 +7,7 @@ order: 228
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V4, V5, V6, V10]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, built (Sonnet builder), waiting for a verifier.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-05.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/WALLET-35` (this branch contains it); API types regenerated from backend `wmt/SHARED-05` (b9cda2a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-05.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/WALLET-35` (this branch contains it); API types regenerated from backend `wmt/SHARED-05` (b9cda2a).
 - **Branch:** mobile `wmt/SHARED-05` from main `3117807`. No pull request (the lead merges).
 - **Built:** `src/app/_layout.tsx` lists `payout-account`, `edit-profile`, `social-links`, `open-wallet`, `open-wallet-details`, `open-wallet-selfie`, `open-wallet-account`, `open-wallet-pin` and the five `settings/*` screens in the signed-in group beside `(tabs)`; and lists `about`, `terms` and `privacy-policy` outside every guard, after the signed-out set.
 - **Own checks removed** from the eight route files that carried one (the `restoring` null and the `/welcome` redirect). `social-links` keeps its redirect to `/edit-profile` when no form is open.

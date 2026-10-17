@@ -7,7 +7,7 @@ order: 263
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [TIER-03, TIER-02]
 decisions: [R-43]
 passes: [V1, V2, V3, V4, V9]
@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, builder round 1 done (Sonnet builder). Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-07.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`).
+As of 17 Oct 2026, builder round 1 done (Sonnet builder). Status: done (live on main; records pass OPS-R0, 17 Oct 2026). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-07.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`).
 - **Branches:** backend `wmt/TIER-07` `493a276` on `origin/main` `a5e48fc`; mobile `wmt/TIER-07` on `origin/main` `7de785d` (docs only: this file, history, SHARED-CHANGES, BACKEND_GAPS, LOG).
 - **Migration:** `20261024090000_maker_badge_number` (nullable unique `MakerTier.badgeNumber`, one-row `BadgeNumberCounter`, and the Founding Makers that exist are numbered oldest first). Additive; rollback is in the file.
 - **Built:** `badge` (`PersonBadgeView`: `id`, `numbered`, `name`, `number`) is `null` unless the person's tier is running (`active` or `ending`, `tierStateAt`, the publishing gate's own test). On: `GET /users/{id}/profile-fields` and `GET /users/me/profile-fields` (M1, M5), the feed creator and professional cards (`GET /feed/entries`), `GET /explore/creators` and `/explore/featured-creators`, `GET /professionals/directory` and `/directory/{id}`.

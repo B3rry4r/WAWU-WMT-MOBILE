@@ -7,7 +7,7 @@ order: 190
 priority: launch
 repo: wawu-backend, wawuafrica
 type: setup
-status: verifying
+status: done
 depends_on: []
 decisions: [R-5]
 passes: [V1, V2, V3]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-09.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-10` (this branch contains it); API types regenerated from backend `wmt/FIX-09` (4e1ee39).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-09.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-10` (this branch contains it); API types regenerated from backend `wmt/FIX-09` (4e1ee39).
 - **Done (backend):** 34 served strings rewritten without an em-dash (error messages, validation messages, the legal intake's option labels and helper, status labels, the AI brief's prompt). A new spec `src/served-strings/tests/no-em-dash.spec.ts` parses every `.ts` under `src/` and `prisma/` (not specs, not tests, not migrations) and fails on a dash in any string or template literal, escaped or as an HTML entity, and in every text asset (`assets/`, json or html under `src/`). A data migration `20261022130000_no_em_dash_stored_labels` rewrites the two stored values older rows still carry (ServiceApplication label and the first timeline note). No schema change.
 - **Done (web):** `public/tgif` 02, 03, 04, 05, 06, 09, 10, 12 now equal the backend's book (18 dashes gone, 15 days, `quote` only).
 - **Not in scope, left as they are:** code comments, test names and fixtures, the contract's descriptions (they come from JSDoc comments), the mock WAWU ID's console line, text a user or an admin typed.

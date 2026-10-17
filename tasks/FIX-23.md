@@ -3,8 +3,8 @@ id: FIX-23
 title: The web sign-up keeps the phone's dial code, so the billing currency reads it right
 owner: YOU
 area: FIX
-order: 231
-priority: launch
+order: 352
+priority: after-launch
 repo: wawuafrica
 type: web-port
 status: todo
@@ -18,6 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/FIX-23.md.

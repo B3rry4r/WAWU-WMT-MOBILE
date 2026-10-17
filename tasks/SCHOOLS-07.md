@@ -7,7 +7,7 @@ order: 125
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: done
 depends_on: [MONEY-17, MONEY-18, MONEY-13, MONEY-16, WALLET-15, SCHOOLS-04]
 decisions: [R-12, R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]

@@ -3,8 +3,8 @@ id: NUV-09
 title: A dollar wallet for people billed in dollars
 owner: YOU
 area: MONEY
-order: 207
-priority: launch
+order: 346
+priority: after-launch
 repo: wawu-backend
 type: money-path
 status: todo
@@ -18,6 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-16, R-64 and R-65 (owner, 2 and 16 Oct 2026): dollar and crypto accounts come after launch, and prices and tips are Naira only at launch.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/NUV-09.md.

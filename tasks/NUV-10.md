@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: ops
 status: todo
-depends_on: [NUV-01, NUV-02, NUV-03, NUV-04, NUV-05, NUV-06, NUV-07, NUV-08, NUV-09]
+depends_on: [NUV-01, NUV-02, NUV-03, NUV-04, NUV-05, NUV-06, NUV-07, NUV-08]
 decisions: [R-39, R-42, R-25]
 passes: []
 artboards: []
@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): NUV-06, NUV-08, NUV-09.
+- **Next:** a builder starts from the brief below after these are done (or in review): NUV-06 and NUV-08 (NUV-09 is after launch, R-16, R-64, R-65, so it is not a dependency).
 - **History:** none yet. Reports go to tasks/history/NUV-10.md.
 
 ## Read first

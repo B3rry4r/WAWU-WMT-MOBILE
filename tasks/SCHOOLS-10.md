@@ -7,7 +7,7 @@ order: 76
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [SCHOOLS-04]
 decisions: [R-12, R-33]
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, after the first build (builder, Sonnet).
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-10.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/INBOX-12` (this branch contains it); API types regenerated from backend `wmt/SCHOOLS-10` (a45a87a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-10.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/INBOX-12` (this branch contains it); API types regenerated from backend `wmt/SCHOOLS-10` (a45a87a).
 - **Branches:** wawu-backend `wmt/SCHOOLS-10` (from main `3797fb2`). Mobile `wmt/SCHOOLS-10` holds only this file, SHARED-CHANGES rows and the log line. wawu-id and the web: untouched.
 - **Migration:** `20261022230000_school_link_clicks` (two new tables, additive; rollback line in the file).
 - **Built (backend, all new):**

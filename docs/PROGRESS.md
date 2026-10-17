@@ -3,69 +3,43 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 302.**
+**Launch tasks done: 176 of 288.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 109 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 76 | 0 | 0 | 0 |
-| review | 2 | 0 | 0 | 0 |
-| done | 110 | 27 | 11 | 5 |
+| verifying | 51 | 0 | 0 | 0 |
+| review | 1 | 0 | 0 | 0 |
+| done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-- [FIX-10](../tasks/FIX-10.md) Calls to WAWU ID give up after a bounded time (You)
 
 ## Being verified
 
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
-- [INBOX-21](../tasks/INBOX-21.md) Turn on phone notifications in the app (You)
-- [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
-- [ME-04](../tasks/ME-04.md) Create: pick a format, upload, preview (You)
-- [SCHOOLS-10](../tasks/SCHOOLS-10.md) Link to a school's own site, with the click recorded (You)
-- [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
-- [INBOX-16](../tasks/INBOX-16.md) Buy WAWU Credits from the wallet (backend) (You)
-- [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
+- [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
-- [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
-- [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
 - [FIX-47](../tasks/FIX-47.md) No blank page while Open your wallet sends the ID and address details (You)
 - [ME-13](../tasks/ME-13.md) Tick still confirming, wallet not opened, identity not matched (You)
 - [INBOX-15](../tasks/INBOX-15.md) Money requests in chat (You)
-- [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
-- [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
-- [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
-- [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
-- [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
 - [TIER-04](../tasks/TIER-04.md) Add 5 more products (You)
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
-- [FIX-18](../tasks/FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone (You)
-- [FIX-19](../tasks/FIX-19.md) School and course names refuse control characters (You)
-- [SHARED-07](../tasks/SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture (You)
-- [SHARED-05](../tasks/SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch (You)
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
-- [FIX-22](../tasks/FIX-22.md) A profiling turn asks the model for one JSON object (You)
-- [FIX-26](../tasks/FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read (You)
-- [DESIGN-V2-CUT](../tasks/DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks (You)
-- [GATES-02](../tasks/GATES-02.md) Record the five gate lines in the backend baseline (You)
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
-- [HOME-16](../tasks/HOME-16.md) Daily TGIF notification (You)
-- [WALLET-39](../tasks/WALLET-39.md) A notice for all money in (You)
-- [TIER-06](../tasks/TIER-06.md) The new money figures as admin settings (You)
-- [TIER-07](../tasks/TIER-07.md) A person's tier badge on their public profile (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
@@ -146,6 +120,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [MONEY-06](../tasks/MONEY-06.md) Fintava client (You)
 - [FIX-01](../tasks/FIX-01.md) Fintava timeout covers the whole answer, garbage collection included (You)
 - [AUTH-04](../tasks/AUTH-04.md) Sign-up: email and phone (Developer)
+- [INBOX-21](../tasks/INBOX-21.md) Turn on phone notifications in the app (You)
 - [EVENTS-04](../tasks/EVENTS-04.md) Host an event: basics, when and where, tickets, review (You)
 - [MONEY-07](../tasks/MONEY-07.md) Fintava webhooks (You)
 - [OPS-11](../tasks/OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy) (You)
@@ -158,13 +133,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-03](../tasks/SCHOOLS-03.md) Schools: directory, school page, course page, no results (You)
 - [MONEY-10](../tasks/MONEY-10.md) The ledger (You)
 - [ME-09](../tasks/ME-09.md) My content: edit, resubmit, rejection reason, sales (Developer)
+- [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
 - [LEGAL-02](../tasks/LEGAL-02.md) Legal: chat, profiling, brief, consultant joins (You)
 - [MONEY-08](../tasks/MONEY-08.md) Status checks and the pending sweep (You)
+- [ME-04](../tasks/ME-04.md) Create: pick a format, upload, preview (You)
 - [BILLS-01](../tasks/BILLS-01.md) Pay a bill: choose biller, meter and amount (You)
 - [LEGAL-03](../tasks/LEGAL-03.md) Legal consultations and deliverables (You)
 - [MONEY-11](../tasks/MONEY-11.md) Balance (You)
 - [KYC-01](../tasks/KYC-01.md) BVN check when someone opens a wallet (You)
 - [ME-06](../tasks/ME-06.md) Edit profile and social links (Developer)
+- [SCHOOLS-10](../tasks/SCHOOLS-10.md) Link to a school's own site, with the click recorded (You)
 - [KYC-02](../tasks/KYC-02.md) Selfie match to the BVN photo (You)
 - [HOME-04](../tasks/HOME-04.md) Feed: following, likes, views, shares (Developer)
 - [MONEY-12](../tasks/MONEY-12.md) Open a Fintava account when someone opens a wallet (You)
@@ -186,18 +164,25 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SETTINGS-01](../tasks/SETTINGS-01.md) Settings, notifications, privacy and blocked (You)
 - [MONEY-19](../tasks/MONEY-19.md) Not enough money, and still confirming (You)
 - [EXPLORE-03](../tasks/EXPLORE-03.md) Explore: categories and featured creators (Developer)
+- [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
 - [MONEY-16](../tasks/MONEY-16.md) Nightly check against Fintava (You)
+- [INBOX-16](../tasks/INBOX-16.md) Buy WAWU Credits from the wallet (backend) (You)
+- [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
 - [MONEY-14](../tasks/MONEY-14.md) Reset the PIN, and approve with fingerprint or face (You)
 - [FIX-03](../tasks/FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy) (You)
 - [MONEY-15](../tasks/MONEY-15.md) Transaction history and detail (You)
 - [EXPLORE-01](../tasks/EXPLORE-01.md) Explore: browse, categories, loading, empty (You)
 - [WALLET-04](../tasks/WALLET-04.md) Transaction history and detail (You)
+- [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
 - [WALLET-14](../tasks/WALLET-14.md) Saved recipients and payout account (You)
 - [WALLET-11](../tasks/WALLET-11.md) Payout bank account (You)
 - [FIX-04](../tasks/FIX-04.md) One person's cached answers are never shown to the next person (You)
+- [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
 - [WALLET-06](../tasks/WALLET-06.md) Wallet settings, change and reset the PIN (You)
 - [WALLET-08](../tasks/WALLET-08.md) Find a recipient, and recent recipients (You)
 - [WALLET-07](../tasks/WALLET-07.md) Send money to a WAWU user (You)
+- [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
+- [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [WALLET-10](../tasks/WALLET-10.md) Money in: bank transfers to the account (You)
 - [HOME-10](../tasks/HOME-10.md) TGIF reactions, readers and shares (Developer)
 - [HOME-09](../tasks/HOME-09.md) TGIF reader (You)
@@ -209,6 +194,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-27](../tasks/FIX-27.md) The schools list pages the same way on every database, so no school is skipped (You)
 - [HOME-01](../tasks/HOME-01.md) Today: home screen, loading, TGIF off (You)
 - [RELEASE-01](../tasks/RELEASE-01.md) Store listings and production builds (You)
+- [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
 - [FIX-05](../tasks/FIX-05.md) Global throttler, one address must not push others into 429 (You)
 - [MONEY-20](../tasks/MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch (You)
 - [AUTH-08](../tasks/AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in (You)
@@ -217,8 +203,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-06](../tasks/FIX-06.md) An admin's unlist cannot be undone by the professional (You)
 - [FIX-07](../tasks/FIX-07.md) Search answers 400, not 500, for a NUL in the query (You)
 - [FIX-08](../tasks/FIX-08.md) A request body over the size limit answers 413, not 500 (You)
+- [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
+- [FIX-10](../tasks/FIX-10.md) Calls to WAWU ID give up after a bounded time (You)
 - [FIX-11](../tasks/FIX-11.md) The legal thread's opener is written once, metered and locked (You)
 - [FIX-13](../tasks/FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in (You)
+- [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
 - [NUV-01](../tasks/NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion (You)
 - [NUV-07](../tasks/NUV-07.md) Fees and limits as settings, and nothing moves before they are set (You)
 - [TIER-01](../tasks/TIER-01.md) Prices, tiers and the billing currency: one config file (You)
@@ -232,10 +221,16 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-03](../tasks/TIER-03.md) Buy, renew or upgrade a tier from the wallet (You)
 - [POINTS-04](../tasks/POINTS-04.md) Convert points to cash (You)
 - [REF-01](../tasks/REF-01.md) Referral points (You)
+- [FIX-18](../tasks/FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone (You)
+- [FIX-19](../tasks/FIX-19.md) School and course names refuse control characters (You)
 - [FIX-20](../tasks/FIX-20.md) Provider webhook deliveries are not kept forever (You)
 - [FIX-21](../tasks/FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level (You)
 - [SHARED-04](../tasks/SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy (You)
+- [SHARED-07](../tasks/SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture (You)
+- [SHARED-05](../tasks/SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch (You)
+- [FIX-22](../tasks/FIX-22.md) A profiling turn asks the model for one JSON object (You)
 - [FIX-24](../tasks/FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded (You)
+- [FIX-26](../tasks/FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read (You)
 - [BRAND-01](../tasks/BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in (You)
 - [COMPLETE-01](../tasks/COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest (You)
 - [COMPLETE-02](../tasks/COMPLETE-02.md) Explore shows its whole design (You)
@@ -248,6 +243,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
 - [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)
 - [FIX-32](../tasks/FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock (You)
+- [DESIGN-V2-CUT](../tasks/DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks (You)
+- [GATES-02](../tasks/GATES-02.md) Record the five gate lines in the backend baseline (You)
+- [HOME-16](../tasks/HOME-16.md) Daily TGIF notification (You)
+- [WALLET-39](../tasks/WALLET-39.md) A notice for all money in (You)
+- [TIER-06](../tasks/TIER-06.md) The new money figures as admin settings (You)
+- [TIER-07](../tasks/TIER-07.md) A person's tier badge on their public profile (You)
 - [OPS-07](../tasks/OPS-07.md) List the web features the app doesn't have, for the web team (You)
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
@@ -255,7 +256,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [OPS-09](../tasks/OPS-09.md) Set WAWU's fees as merchant charges in the Fintava sandbox dashboard, [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend
+- **You:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

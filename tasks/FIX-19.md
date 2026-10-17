@@ -7,7 +7,7 @@ order: 223
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [SCHOOLS-04]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-19.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-09` (this branch contains it); API types regenerated from backend `wmt/FIX-19` (f69596e).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-19.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-09` (this branch contains it); API types regenerated from backend `wmt/FIX-19` (f69596e).
 - **Branches:** backend `wmt/FIX-19` 2dbf748 (on main 56f94d0). Mobile `wmt/FIX-19` carries only this file, `tasks/history/FIX-19.md`, `docs/LOG.md` and `docs/PROGRESS.md`. No migration, no fenced file, no contract change (`contract:emit` and `contract:enrich` leave `contract/openapi.json` byte-identical).
 - **Built:** a school's `name` and a course's `title` (create and edit) answer 400 `<field> must not contain control characters` and save nothing when they hold U+0001 to U+001F, U+007F or U+0080 to U+009F. `src/schools/school-admin.dto.ts`: `hasControlCharacter`, a `HasNoControlCharacters` decorator and a `trimmedName` transform on the four DTO fields. NUL keeps its own message. Accents, Arabic, Chinese, emoji and combining marks pass.
 - **Judgement calls to confirm:**

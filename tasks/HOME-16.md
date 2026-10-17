@@ -7,7 +7,7 @@ order: 260
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [SETTINGS-01, HOME-11, INBOX-03]
 decisions: [R-59]
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026. Built; a fresh session verifies, the builder does not.
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend branch `wmt/HOME-16` (`f3090ea`, off main a5e48fc); mobile branch `wmt/HOME-16` (`2965dbd`, off wmt/MERGE-5 7de785d). No PR. Backend CI on `f3090ea`: Branch checks run 38988169052 (3 suite shards, contract, netns all green), Protected routes run 38988169121 green, Gates run 38988169026 red only on the same five lines as main.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend branch `wmt/HOME-16` (`f3090ea`, off main a5e48fc); mobile branch `wmt/HOME-16` (`2965dbd`, off wmt/MERGE-5 7de785d). No PR. Backend CI on `f3090ea`: Branch checks run 38988169052 (3 suite shards, contract, netns all green), Protected routes run 38988169121 green, Gates run 38988169026 red only on the same five lines as main.
 - **Migration:** `20261024080000_tgif_daily_notice` (one new table `TgifDailyNotice`, rollback in its header). The lead renames at merge if the stamp is taken.
 - **What a person gets:** every morning from 07:00 Lagos, one in-app notice per person with TGIF on ("TGIF: Sons, Not Slaves" / "Today's TGIF is ready. Romans 8:15 (NIV)."), and the phone push through INBOX-03. Tapping either opens the reader on that day (`/tgif?date=`); a notice more than a day old opens today's.
 - **Settings:** `GET` and `PATCH /settings/tgif` unchanged in shape and values. The switch is read in three places: the job (at the claim), `NotificationService.emit` and the push sender (just before sending).

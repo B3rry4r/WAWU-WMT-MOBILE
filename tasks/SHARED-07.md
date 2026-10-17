@@ -7,7 +7,7 @@ order: 227
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: done
 depends_on: [SHARED-04]
 decisions: []
 passes: [V1, V2, V5, V6, V7, V10]

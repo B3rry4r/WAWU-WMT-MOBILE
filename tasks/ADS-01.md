@@ -7,7 +7,7 @@ order: 178
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: done
 depends_on: [HOME-09, HOME-01, ADS-04, ADS-05, EVENTS-01]
 decisions: [R-15, R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -18,7 +18,7 @@ artboards: [H33]
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ADS-01.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-14` (this branch contains it); API types regenerated from backend `wmt/ADS-01` (b9cda2a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ADS-01.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/FIX-14` (this branch contains it); API types regenerated from backend `wmt/ADS-01` (b9cda2a).
 - **What is built:** `src/features/ads/` (`api.ts`, `useAd.ts`, `SponsoredStep.tsx`, `SponsoredSlot.tsx`, `look.ts`, 4 test files).
   - H33: the TGIF reader asks `GET /ads?placement=tgif_card` and, when a card comes, shows it as a sixth step before the takeaway (`readerSteps(true)`). Words, picture and button word are the Hub's. Get tickets opens the event (`/events/[id]`, E2) and stays on the card for the way back. Skip goes on to the takeaway.
   - H36: with TGIF off, Today asks `GET /ads?placement=today_slot` and draws `SponsoredSlot` in TGIF's place; the whole card opens the event.
