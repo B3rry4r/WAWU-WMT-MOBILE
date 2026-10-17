@@ -22,7 +22,7 @@ import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type
 import { openingProgressQuery } from './api/review';
 import { checkBvn } from '@/api/walletIdentity';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
+import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, readNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
@@ -268,6 +268,8 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
   const [bvn, setBvn] = useState('');
   const [nin, setNin] = useState('');
   const [busy, setBusy] = useState(false);
+  /** The review opening's numbers are held in memory and the fields show only their last 4 (back from A5, KYC-07 L2). */
+  const [held, setHeld] = useState(false);
   const [failure, setFailure] = useState<CheckFailure | null>(null);
   const [missing, setMissing] = useState<Missing>({});
   /** Set before the first await, so a second tap in the same frame sends nothing (each check is charged). */
@@ -292,6 +294,14 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
   const ninInput = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
 
+  /** Touching a field that shows only a last 4 empties both: the person types the numbers again. */
+  const letGo = () => {
+    if (!held) return;
+    setBvn('');
+    setNin('');
+    setHeld(false);
+  };
+
   const edit = (setter: (value: string) => void, field: 'bvn' | 'nin') => (value: string) => {
     setter(groupIdNumber(value));
     setMissing((now) => ({ ...now, [field]: undefined }));
@@ -301,6 +311,11 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
 
   const submit = async () => {
     if (inFlight.current) return;
+    // Back from the next step: the numbers are still held, the fields show their last 4 only.
+    if (held && review && readNumbers(account.wawuUserId)) {
+      onPassed();
+      return;
+    }
     const gaps: Missing = {
       bvn: isWholeIdNumber(bvn) ? undefined : 'Enter the 11 digits of your BVN.',
       nin: isWholeIdNumber(nin) ? undefined : 'Enter the 11 digits of your NIN.',
@@ -312,8 +327,15 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
     const ticket = ticketFor(account.wawuUserId);
     if (review) {
       // The review opening has no BVN check (the Hub answers `step_not_used`): the numbers stay in memory for the
-      // open call and the Hub's review checks them. They stay in these fields too, so back from the next step they are still here.
-      if (keepNumbers(ticket, { bvn: idDigits(bvn), nin: idDigits(nin) })) onPassed();
+      // open call and the Hub's review checks them. The fields keep only their last 4, so back from the next step
+      // the screen shows no more than the check path does (KYC-07 L2).
+      const typed = { bvn: idDigits(bvn), nin: idDigits(nin) };
+      if (keepNumbers(ticket, typed)) {
+        setBvn(maskedIdNumber(typed.bvn.slice(-4)));
+        setNin(maskedIdNumber(typed.nin.slice(-4)));
+        setHeld(true);
+        onPassed();
+      }
       return;
     }
     inFlight.current = true;
@@ -390,6 +412,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
           mono
           testID="open-wallet-bvn"
           value={bvn}
+          onFocus={letGo}
           onChangeText={edit(setBvn, 'bvn')}
           hint={BVN_HINT}
           // A14 draws the field's own hint as its error line (red, with the alert), the sentence about the phone being the banner's.
@@ -413,6 +436,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
           testID="open-wallet-nin"
           inputRef={ninInput}
           value={nin}
+          onFocus={letGo}
           onChangeText={edit(setNin, 'nin')}
           hint={NIN_HINT}
           error={missing.nin}

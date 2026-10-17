@@ -230,7 +230,8 @@ export function receiptOf(row: Transaction): Receipt {
     if (name) lines.push({ key: 'to', label: 'To', value: name });
   }
   const account = cp ? accountLine(cp) : null;
-  if (account) lines.push({ key: 'account', label: 'Account', value: account });
+  // Wraps, so a long bank name never cuts the last four digits off the end (SWEEP-MONEY WALLET-04 D4).
+  if (account) lines.push({ key: 'account', label: 'Account', value: account, wrap: true });
   if (row.note?.trim()) lines.push({ key: 'note', label: 'Note', value: row.note.trim(), wrap: true });
   lines.push({ key: 'date', label: 'Date', value: longDateTime(row.createdAt) });
   lines.push({ key: 'reference', label: 'Reference', value: row.reference, copy: true });
