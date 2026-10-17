@@ -19,6 +19,7 @@ artboards: [S21, S22, S23, S24, S26]
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Backend half of verifier finding F1 (bundle B3a round 2, 17 Oct 2026):** backend `wmt/B3a` `242ce9d`, `src/legal/legal.service.ts` `quote()`. Once the engagement letter is signed, or the work is paid or under way (`contractSignedAt` or `servicePaidAt` set, or the status is `contract_signed`, `awaiting_service_payment`, `in_progress` or `delivered`), ops' quote is refused with `409` and a clear sentence, and the write itself carries the same condition so a client signing at the same moment cannot slip between the check and the update. It never moves a paid matter back to `quoted`; a quote before signing still works. Spec: `legal-ops.contract.spec.ts` (3 new tests, 2 fail on `ed45009`). The app half of F1 (drop the stale price card after a failed ask) is not here.
 - **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-04, LEGAL-05.
 - **History:** none yet. Reports go to tasks/history/LEGAL-06.md.
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
@@ -98,13 +99,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - S26: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 - S26: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-06.md](history/LEGAL-06.md).
 
 ## Owner sign-off
 
