@@ -7,7 +7,7 @@ order: 279
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [REF-02, DV2-COMP, ME-01]
 decisions: [R-43, R-65, R-68, R-33]
 passes: [V1, V4, V5, V6, V9, V10]
@@ -17,11 +17,17 @@ artboards: [RF1, RF1a, RF1b, RF2, RF3, RF3a, RF4]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 3 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): REF-02, DV2-COMP.
-- **History:** none yet. Reports go to tasks/history/REF-03.md.
+As of 17 Oct 2026, built by a Sonnet builder. Status: verifying (not yet checked by a verifier). App only: no backend, wawu-id or web change, no migration.
+- **Branch:** mobile `wmt/REF-03`, code `ff15a8f1` on `origin/wmt/DV2-03` `d4a0e956` plus a merge of `origin/wmt/DV2-COMP` `c6da2af7` (PointsFigure `fit`). The Hub is REF-02 on batch 7 (`origin/wmt/MERGE-7` `9c40478`); the app's types already had `/me/referrals` (REF-02 #2), so nothing was regenerated.
+- **Built (`src/features/referral/`, routes `invite`, `invite-rules`, `invite-card`, `r/[code]`):** RF1, RF1a and RF1b are one screen over `GET /me/referrals`: link and code with Copy, Share, Brought / Verified / Points / Pending, the level row from the Hub's ladder, the next milestone ("then +X at N" from the milestones), the "one more" note when `remaining` is 1, "Nobody yet" while `brought` is 0. RF4 prints `holdDays` from the Hub. RF2 draws the card on the phone, captures it with `react-native-view-shot` and hands the PNG to the phone's share sheet; Save puts it in the photos. RF3 and RF3a tell a reward the Hub lists as `available` and a milestone it granted, once each per phone and account. The gift button on Me (M1) is the entry. A `wawu/r/<code>` link keeps the code and `POST /me/referrals/claim` is sent once the person is signed in (Home calls it), with nothing drawn.
+- **Differs from the boards, each on purpose:** RF2 draws Share and Save, not WhatsApp, Story and Who Made This? chat (R-68: no outside brand; the chat target is not built, R-47); the web build draws Share only (no share sheet or photos there, as TGIF's). RF4's sixth rule stops after "never cash." until POINTS-05 builds Convert to cash (G-831, R-47). "Example values" captions are the board's, not drawn. The card's shadow is the `cover` token, the nearest to the board's.
+- **Decisions made (agent, owner may override):** the first look on a phone tells nothing and takes everything the Hub already lists as seen (a reinstall never replays old rewards); a milestone's "level is now" is the person's level now; several unseen moments are told one after another, oldest first; a refusal of a claim is final and silent, a claim that could not reach the Hub keeps the code for the next Home.
+- **Shared:** SHARED-CHANGES REF-03 #1 applied with `npx expo install react-native-view-shot` (5.1.0; the native module needs the next dev or store build). Nothing else.
+- **Gaps filed:** G-812 (the shared text `wawu/r/lennox` has no scheme and no https address opens the app), G-830 (the Hub sends no notice when a reward lands, so RF3 is told on opening the screen), G-831 (RF4 rule 6).
+- **PROVISIONAL:** none added: every figure on RF1 to RF4 is the Hub's; the owner's list is TIER-06's.
+- **Checks:** see the builder report (history). Pictures: NOT RUN or run, see the report.
+- **Next:** a verifier checks V1, V4, V5, V6, V9, V10; the lead merges on batch 7.
+- **History:** tasks/history/REF-03.md.
 
 ## Read first
 
@@ -54,13 +60,9 @@ A person shares their link and code, watches brought, verified, earned and pendi
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/REF-03.md](history/REF-03.md).
 
 ## Owner sign-off
 
