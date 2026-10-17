@@ -176,28 +176,28 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
     await waitFor(() => expect(pathname()).toBe('/wallet'));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
     expect(screen.getByText('Send to 810 000 0528 from any Nigerian bank.')).toBeTruthy();
-    expect(screen.getByText('WAWU · Ekiti Trial MFB')).toBeTruthy();
+    expect(screen.getByText('Who Made This? · Ekiti Trial MFB')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
   });
 });
 
 describe('the Wallet tab with a wallet, on the real router', () => {
-  it('a user sees no scan, Dollar, Crypto, Add money or Swap entry (their screens are not built, R-47), the settings icon and the two built bills tiles, and the tab stays on /wallet', async () => {
+  it('a user sees no scan, Dollar, Crypto, Add money, Withdraw or Swap entry (their screens are not built, R-47) and no bills (R-52), the settings icon and the Send and To cash actions, and the tab stays on /wallet', async () => {
     opened = true;
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
     await waitFor(() => expect(pathname()).toBe('/wallet'));
-    for (const name of ['Scan to pay', 'Add money', 'Swap', 'WAWU card', 'See all transactions']) {
+    for (const name of ['Scan to pay', 'Add money', 'Withdraw', 'Swap', 'WAWU card', 'See all transactions']) {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
     for (const name of ['Naira', 'Dollar', 'Crypto']) expect(screen.queryByRole('tab', { name })).toBeNull();
-    // The buttons on the tab are the settings icon (W35, WALLET-06), the card's own two (hide the balance, copy the number) and the two built bills tiles, Power and More (BILLS-01; Airtime, Data and TV wait for BILLS-03, R-47); the rest of the bar is the tab bar.
+    // The buttons on the tab are the settings icon (W35, WALLET-06), the card's own two (hide the balance, copy the number) and the two built actions, Send and To cash; the rest of the bar is the tab bar.
     expect(screen.getByRole('button', { name: 'Wallet settings' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hide balance' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy account number' })).toBeTruthy();
-    for (const name of ['Power', 'More']) expect(screen.getByRole('button', { name })).toBeTruthy();
-    for (const name of ['Airtime', 'Data', 'TV']) expect(screen.queryByRole('button', { name })).toBeNull();
+    for (const name of ['Send', 'To cash']) expect(screen.getByRole('button', { name })).toBeTruthy();
+    for (const name of ['Bills', 'Power', 'More', 'Airtime', 'Data', 'TV']) expect(screen.queryByRole('button', { name })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
     expect(pathname()).toBe('/wallet');
     expect(screen.queryByRole('header', { name: 'A26' })).toBeNull();

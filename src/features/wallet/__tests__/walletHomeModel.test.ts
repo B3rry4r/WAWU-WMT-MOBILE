@@ -88,9 +88,10 @@ describe('the recent-transactions region picks its state from its read (round 2,
 });
 
 describe('the words the card and the empty state use', () => {
-  it('names the bank the server sends after "WAWU · "', () => {
-    expect(bankLine('Loma Bank')).toBe('WAWU · Loma Bank');
-    expect(bankLine('Ekiti Trial MFB')).toBe('WAWU · Ekiti Trial MFB');
+  it('names the bank the Hub sends after "Who Made This? · "', () => {
+    expect(bankLine('Loma Bank')).toBe('Who Made This? · Loma Bank');
+    expect(bankLine('Ekiti Trial MFB')).toBe('Who Made This? · Ekiti Trial MFB');
+    expect(bankLine('Nuvion')).toBe('Who Made This? · Nuvion');
   });
 
   it('puts the account’s own number in W5’s line', () => {

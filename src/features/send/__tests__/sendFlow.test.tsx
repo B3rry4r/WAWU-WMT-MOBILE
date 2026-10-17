@@ -203,7 +203,7 @@ function WalletStandIn() {
   return (
     <View>
       <Text accessibilityRole="header">Wallet tab</Text>
-      <WalletActions onSend={() => router.push('/send')} />
+      <WalletActions actions={[{ key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') }]} />
     </View>
   );
 }

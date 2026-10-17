@@ -105,9 +105,9 @@ export function recentView(read: { rows: readonly unknown[] | undefined; failed:
   return read.failed && !read.pending ? 'failed' : 'loading';
 }
 
-/** "WAWU · " then the bank the server names (BRIEF W1: a slot the app fills, "Loma Bank"; R-1). */
+/** The app's name, then the bank the Hub names (W1, 16 Oct: "Who Made This? · Nuvion"; R-69, R-67). */
 export function bankLine(bankName: string): string {
-  return `WAWU · ${bankName}`;
+  return `Who Made This? · ${bankName}`;
 }
 
 /** W5's line under "No transactions yet", with the account's own number (the server's, never the canvas's). */

@@ -15,12 +15,11 @@ import { clockTime, dayKey, dayLabel, longDateTime } from './lagosTime';
  * that left the wallet, fees included (BRIEF W26, rule 5, R-10).
  */
 
-/** The chips, in the canvas's order and words (wallet.js line 115). Their values are the contract's. */
+/** The chips, in the 16 Oct board's order and words (W26): no Bills chip, bills are off (R-52). Their values are the contract's. */
 export const FILTER_CHIPS: readonly ChipItem<HistoryFilter>[] = [
   { value: 'all', label: 'All' },
   { value: 'money_in', label: 'Money in' },
   { value: 'money_out', label: 'Money out' },
-  { value: 'bills', label: 'Bills' },
   { value: 'content', label: 'Content' },
 ];
 
@@ -139,21 +138,15 @@ export function entriesOf(pages: readonly (readonly Transaction[])[], now: Date)
 export const rowCount = (entries: readonly Entry[]) => entries.filter((entry) => entry.kind === 'row').length;
 
 /** What a list shows when it has no rows: W28 for a chip, the words for a search, and the first-use words for none at all. */
-export type EmptyWords = { icon: IconName; title: string; message: string; payBill?: boolean };
+export type EmptyWords = { icon: IconName; title: string; message: string };
 
-const CHIP_EMPTY: Record<HistoryFilter, EmptyWords> = {
+const CHIP_EMPTY: Record<Exclude<HistoryFilter, 'bills'>, EmptyWords> = {
   all: { icon: 'ArrowLeftRight', title: 'No transactions yet', message: 'Money you send, receive and pay shows up here.' },
   money_in: { icon: 'ArrowDownLeft', title: 'No money in yet', message: 'Money you receive shows up here.' },
   money_out: { icon: 'ArrowUpRight', title: 'No money out yet', message: 'Money you send and pay shows up here.' },
-  // W28's own words, with its call to action. The canvas names the month ("in September"); the list here is the whole
-  // history (nothing narrows it to a month), so it says "yet" (Default (agent), owner may override).
-  bills: {
-    icon: 'Receipt',
-    title: 'No bill payments yet',
-    message: 'Airtime, data, power and TV bills you pay from your wallet appear here.',
-    payBill: true,
-  },
-  content: { icon: 'LockOpen', title: 'No content payments yet', message: 'Tips and unlocks on your content appear here.' },
+  // W28's own words (16 Oct board). The board names the month ("in September"); the list here is the whole history (nothing
+  // narrows it to a month), so it says "yet" (Default (agent), owner may override).
+  content: { icon: 'Receipt', title: 'No content sales yet', message: 'Sales and unlocks of your work show here.' },
 };
 
 export function emptyWords(filter: HistoryFilter, search: string | null): EmptyWords {
@@ -165,7 +158,8 @@ export function emptyWords(filter: HistoryFilter, search: string | null): EmptyW
       message: `Nothing${where} matches “${search}”. Try a name, a reference or what it was for.`,
     };
   }
-  return CHIP_EMPTY[filter];
+  // `bills` is the contract's filter and no chip offers it (R-52); a list that somehow holds it says what an empty history says.
+  return filter === 'bills' ? CHIP_EMPTY.all : CHIP_EMPTY[filter];
 }
 
 /* ---------------------------------------------------------------------------------------------------------------- */

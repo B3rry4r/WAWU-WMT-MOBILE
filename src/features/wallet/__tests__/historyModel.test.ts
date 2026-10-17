@@ -187,31 +187,30 @@ describe('the list under day labels', () => {
 });
 
 describe('the chips and what each says when it has nothing (W28)', () => {
-  it('are the canvas’s five, in its order, with the contract’s values', () => {
+  it('are the 16 Oct board’s four (no Bills, R-52), in its order, with the contract’s values', () => {
     expect(FILTER_CHIPS.map((c) => [c.value, c.label])).toEqual([
       ['all', 'All'],
       ['money_in', 'Money in'],
       ['money_out', 'Money out'],
-      ['bills', 'Bills'],
       ['content', 'Content'],
     ]);
   });
 
-  it('gives Bills W28’s words and its Pay a bill, and every other chip words of its own with none', () => {
-    expect(emptyWords('bills', null)).toMatchObject({ icon: 'Receipt', title: 'No bill payments yet', payBill: true });
-    expect(emptyWords('bills', null).message).toBe('Airtime, data, power and TV bills you pay from your wallet appear here.');
+  it('gives Content W28’s words ("No content sales"), and every chip words of its own with no mention of bills', () => {
+    expect(emptyWords('content', null)).toMatchObject({ title: 'No content sales yet', message: 'Sales and unlocks of your work show here.' });
     for (const chip of ['all', 'money_in', 'money_out', 'content'] as const) {
       const words = emptyWords(chip, null);
-      expect(words.payBill).toBeUndefined();
       expect(words.title).not.toMatch(/—|bill/i);
+      expect(words.message).not.toMatch(/—|bill/i);
     }
+    // The contract still has a bills filter and no chip offers it: it is never worded as bills.
+    expect(emptyWords('bills', null)).toEqual(emptyWords('all', null));
   });
 
   it('says what a search found nothing for, and under which chip', () => {
     expect(emptyWords('all', 'zzz')).toMatchObject({ icon: 'Search', title: 'No results' });
     expect(emptyWords('all', 'zzz').message).toContain('“zzz”');
     expect(emptyWords('money_out', 'zzz').message).toContain('under Money out');
-    expect(emptyWords('bills', 'zzz').payBill).toBeUndefined();
   });
 });
 
