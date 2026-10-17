@@ -66,6 +66,11 @@
               "scheme": "https",
               "host": "wawuafrica.com",
               "pathPrefix": "/c/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/content/"
             }
           ],
           "category": [

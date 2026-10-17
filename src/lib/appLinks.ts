@@ -3,7 +3,7 @@
  * website and the phone's link settings cannot drift apart.
  *
  * An app link is an https address on wawuafrica.com that this app opens when it is
- * installed. Six exist, and only these six (the website lists exactly the same
+ * installed. Seven exist, and only these seven (the website lists exactly the same
  * paths in `/.well-known/apple-app-site-association`; `app.json` registers them
  * as the `associatedDomains` entry and the Android `intentFilters`, and a spec
  * checks that it does):
@@ -14,6 +14,7 @@
  *   /receipt/<code>  a receipt's check address, its own path (never `/r/`, the invite path)
  *   /u/<handle>      a profile, as Share on Me sends it
  *   /c/<slug>        a community room, as the Hub issues its link
+ *   /content/<id>    a piece of content, as its Share sends it (FIX-60; the content page is `src/app/content/[id].tsx`)
  *
  * Without the app installed the website shows a small "Open in the WAWU app" page
  * for each. `/join` is the registration campaign and is never one of these.
@@ -40,6 +41,9 @@ export const PROFILE_PATH_PREFIX = '/u/';
 
 /** A community room as its link is issued, `/c/<slug>`, with its closing slash. */
 export const ROOM_PATH_PREFIX = '/c/';
+
+/** A piece of content as its Share sends it, `/content/<id>`, with its closing slash. */
+export const CONTENT_PATH_PREFIX = '/content/';
 
 /**
  * An invite as it is shared: `https://wawuafrica.com/r/<code>`, the code in lower case like the Hub writes it.

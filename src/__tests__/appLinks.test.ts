@@ -5,6 +5,7 @@ import appConfig from '../../app.json';
 import { codeFromLink } from '@/features/referral/model';
 import {
   ACTIVATE_PATH,
+  CONTENT_PATH_PREFIX,
   INVITE_PATH_PREFIX,
   LINK_HOST,
   LINK_ORIGIN,
@@ -21,7 +22,7 @@ import {
 
 /**
  * LINKS-01: the addresses WAWU shares and receives. `app.json` (what the phone is told) and `src/lib/appLinks.ts` (what
- * the app builds and the website lists) must say the same, and say only the six app paths.
+ * the app builds and the website lists) must say the same, and say only the seven app paths.
  */
 describe('LINKS-01: the app links', () => {
   it('an invite is shared as an https address on the website, the code in lower case', () => {
@@ -52,6 +53,12 @@ describe('LINKS-01: the app links', () => {
     expect(roomLink(' Aba-Tailors-2 ')).toBe('https://wawuafrica.com/c/aba-tailors-2');
   });
 
+  it('a piece of content has its own path, apart from the room path', () => {
+    expect(CONTENT_PATH_PREFIX).toBe('/content/');
+    expect(CONTENT_PATH_PREFIX.startsWith(ROOM_PATH_PREFIX)).toBe(false);
+    expect(ROOM_PATH_PREFIX.startsWith(CONTENT_PATH_PREFIX)).toBe(false);
+  });
+
   it('a receipt has its own path and never the invite path', () => {
     expect(RECEIPT_PATH_PREFIX).toBe('/receipt/');
     expect(RECEIPT_PATH_PREFIX).not.toBe(INVITE_PATH_PREFIX);
@@ -69,7 +76,7 @@ describe('LINKS-01: the app links', () => {
     expect(appConfig.expo.scheme).toBe('wawu');
   });
 
-  it('app.json tells Android to open exactly the six app paths on the website, verified', () => {
+  it('app.json tells Android to open exactly the seven app paths on the website, verified', () => {
     const filters = appConfig.expo.android.intentFilters;
     expect(filters).toHaveLength(1);
     const [filter] = filters;
@@ -83,6 +90,7 @@ describe('LINKS-01: the app links', () => {
       { scheme: 'https', host: LINK_HOST, pathPrefix: RECEIPT_PATH_PREFIX },
       { scheme: 'https', host: LINK_HOST, pathPrefix: PROFILE_PATH_PREFIX },
       { scheme: 'https', host: LINK_HOST, pathPrefix: ROOM_PATH_PREFIX },
+      { scheme: 'https', host: LINK_HOST, pathPrefix: CONTENT_PATH_PREFIX },
     ]);
     // Nothing of the registration campaign or any other website page is claimed.
     for (const entry of filter.data) expect(`${entry.path ?? entry.pathPrefix}`.startsWith('/join')).toBe(false);
@@ -97,6 +105,7 @@ describe('LINKS-01: the app links', () => {
       '/receipt/': 'receipt/[code].tsx',
       '/u/': 'u/[handle].tsx',
       '/c/': 'c/[slug].tsx',
+      '/content/': 'content/[id].tsx',
     };
     const claimed = appConfig.expo.android.intentFilters[0].data.map((entry) => `${'path' in entry ? entry.path : entry.pathPrefix}`);
     expect([...claimed].sort()).toEqual(Object.keys(routeFile).sort());
