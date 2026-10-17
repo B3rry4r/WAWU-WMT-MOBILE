@@ -11,6 +11,8 @@ export type MeMenuSheetProps = {
   onClose: () => void;
   /** Settings (Z2): the row whose screen is built. */
   onOpenSettings: () => void;
+  /** My courses (SCHOOLS-08, SC8): drawn once its screen can be opened, so a caller with none draws no row. */
+  onOpenCourses?: () => void;
   /** Verification (ME-13): drawn once its screen can be opened, so a caller with none draws no row. */
   onOpenVerification?: () => void;
 };
@@ -23,10 +25,11 @@ export type MeMenuSheetProps = {
  * Notifications (ME-14). The task that builds each of those screens adds its row here, as drawn, with the line the
  * canvas puts under its title (a figure the Hub serves to that screen).
  */
-export function MeMenuSheet({ visible, onClose, onOpenSettings, onOpenVerification }: MeMenuSheetProps) {
+export function MeMenuSheet({ visible, onClose, onOpenSettings, onOpenCourses, onOpenVerification }: MeMenuSheetProps) {
   return (
     <BottomSheet visible={visible} onClose={onClose} label="Menu" gap={SHEET_GAP} testID="me-menu">
       <GroupedList testID="me-menu-list">
+        {onOpenCourses ? <ListRow testID="me-menu-courses" lead={<IconTile icon="GraduationCap" />} title="My courses" onPress={onOpenCourses} /> : null}
         {onOpenVerification ? <ListRow testID="me-menu-verification" lead={<IconTile icon="BadgeCheck" />} title="Verification" onPress={onOpenVerification} /> : null}
         <ListRow testID="me-menu-settings" lead={<IconTile icon="Settings" />} title="Settings" onPress={onOpenSettings} />
       </GroupedList>
