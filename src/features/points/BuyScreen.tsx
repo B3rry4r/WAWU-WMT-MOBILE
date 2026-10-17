@@ -41,6 +41,8 @@ export type BuyScreenProps = {
   onBack: () => void;
   /** Done: back to where Buy points was opened from. */
   onDone: () => void;
+  /** The button's words once the points are added: "Back to AI tools" when Studio opened this screen (PT4c), else "Done". */
+  doneLabel?: string;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back here. */
@@ -63,7 +65,7 @@ type Attempt = { key: string; packId: string; method: 'wallet' | 'transfer'; exp
  *
  * The purchase's own answers: `paid` is PT4c; `pending` (the bank has not confirmed) is PT4b and is read by its id, never sent again;
  * `awaiting_transfer` shows the wallet's own account to send to and completes when the money lands; `failed` says why in the Hub's
- * words. "Back to AI tools" on the board is not drawn: AI tools has no screen yet (R-47), so the sheet's button is Done.
+ * words. PT4c's button is "Back to AI tools" when Studio opened this screen (`doneLabel`), and Done where it was opened from anywhere else.
  */
 export function BuyScreen(props: BuyScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -452,7 +454,7 @@ export function BuyScreen(props: BuyScreenProps) {
           lockedUntil={lockedUntil}
         />
       ) : null}
-      {done ? <Added purchase={done} balance={points.data?.balance ?? null} onDone={props.onDone} /> : null}
+      {done ? <Added purchase={done} balance={points.data?.balance ?? null} label={props.doneLabel ?? BUY_WORDS.done} onDone={props.onDone} /> : null}
       {notice ? <Toast message={notice} tone="alert" placement="top" lines={2} onHide={() => setNotice(null)} testID="buy-notice" /> : null}
     </>
   );
@@ -558,7 +560,7 @@ function TransferCard({ purchase }: { purchase: PackPurchase }) {
 }
 
 /** PT4c: the points added and the balance now, over the same screen. */
-function Added({ purchase, balance, onDone }: { purchase: PackPurchase; balance: number | null; onDone: () => void }) {
+function Added({ purchase, balance, label, onDone }: { purchase: PackPurchase; balance: number | null; label: string; onDone: () => void }) {
   const added = purchase.grant?.totalPoints ?? purchase.points + purchase.bonusPoints;
   return (
     <BottomSheet visible onClose={onDone} label="Points added" testID="buy-added">
@@ -573,7 +575,7 @@ function Added({ purchase, balance, onDone }: { purchase: PackPurchase; balance:
           </Text>
         ) : null}
       </View>
-      <Button testID="buy-done" label={BUY_WORDS.done} full onPress={onDone} />
+      <Button testID="buy-done" label={label} full onPress={onDone} />
     </BottomSheet>
   );
 }

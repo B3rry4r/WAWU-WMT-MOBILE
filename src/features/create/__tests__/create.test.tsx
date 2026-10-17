@@ -78,6 +78,56 @@ describe('M19 · Create', () => {
     expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
   });
 
+  // POINTS-07 (R-61, M19): the Studio card carries the tools the Hub lists and the person's points, and opens Studio.
+  describe('the Studio card', () => {
+    const signIn = async () => {
+      resetSessionForTests();
+      const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+      await adoptSession({ accessToken: `${b64({ alg: 'RS256' })}.${b64({ sub: 'account-studio', iat: 1000, exp: 4_000_000_000 })}.sig`, refreshToken: 'r' });
+    };
+    const tools = (names: string[]) => ({
+      tools: names.map((name) => ({ id: name.toLowerCase(), action: 'voiceover_per_min', name, description: '', unit: 'minute', costPointsPerUnit: 250, enabled: true, input: { maxCharacters: 5000, charactersPerUnit: 900 }, voices: [] })),
+      caps: { dailyPoints: 5000, maxCharactersPerJob: 5000, maxAudioMinutesPerJob: 10 },
+    });
+    const withStudio = async (onStudio: () => void) => {
+      await signIn();
+      await renderFrame(<CreateScreen onClose={jest.fn()} onContent={jest.fn()} onEvent={jest.fn()} onService={jest.fn()} onStudio={onStudio} />);
+    };
+
+    it('a creator sees Studio with the tools the Hub lists and the points the Hub holds, and taps it to open Studio', async () => {
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
+      hub.answers['GET /api/hub/ai-tools'] = ok(tools(['VoiceOver']));
+      hub.answers['GET /api/hub/me/points'] = ok({ balance: 1250, nextExpiry: null, lots: [], lotCount: 0, movements: [] });
+      const onStudio = jest.fn();
+      await withStudio(onStudio);
+      expect(await screen.findByTestId('create-studio-points')).toHaveAccessibleName('1,250 points');
+      expect(screen.getByTestId('create-studio-sub')).toHaveTextContent('VoiceOver', { exact: true });
+      expect(screen.queryByText(/captions|music/i)).toBeNull();
+      await fireEvent.press(screen.getByTestId('create-studio-row'));
+      expect(onStudio).toHaveBeenCalledTimes(1);
+    });
+
+    it('a balance that cannot be read leaves the count out and the card still opens Studio', async () => {
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
+      hub.answers['GET /api/hub/ai-tools'] = ok(tools([]));
+      hub.answers['GET /api/hub/me/points'] = 'offline';
+      const onStudio = jest.fn();
+      await withStudio(onStudio);
+      expect(await screen.findByTestId('create-studio-row')).toBeTruthy();
+      expect(screen.getByTestId('create-studio-sub')).toHaveTextContent('AI voice tools', { exact: true });
+      expect(screen.queryByTestId('create-studio-points')).toBeNull();
+      await fireEvent.press(screen.getByTestId('create-studio-row'));
+      expect(onStudio).toHaveBeenCalledTimes(1);
+    });
+
+    it('without a Studio screen to open the card is not drawn', async () => {
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
+      await open();
+      await screen.findByTestId('create-tile-content');
+      expect(screen.queryByTestId('create-studio-row')).toBeNull();
+    });
+  });
+
   it('follows a ticked account: a longer bar, its own limit and no way up to offer', async () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(7, 25, true));
     await open();

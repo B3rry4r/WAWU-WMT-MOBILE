@@ -30,6 +30,7 @@ export default function CreateRoute() {
       onEvent={() => router.push('/events/host')}
       onService={() => void listServicesTarget(queryClient).then((href) => router.push(href))}
       onShop={() => router.push('/shop')}
+      onStudio={() => router.push('/studio')}
     />
   );
 }

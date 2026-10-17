@@ -12,8 +12,8 @@ import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
  *
  * R-61 (owner, 16 Oct 2026): the drawn row is Studio, Learn, Monetize, Legal. Learn (Schools, SCHOOLS-03) and Legal
  * (LEGAL-02) are built; Monetize opens the Create hub (M19), which is for creator accounts only (R-38), so it is drawn
- * for them and for no one else (R-47: a buyer's tap would send them back Home). Studio is POINTS-07's tile, added where the
- * canvas draws it, first. The two tiles the 16 Oct export dropped are gone (DV2-RM): Pay bills (R-52, bills are off) and
+ * for them and for no one else (R-47: a buyer's tap would send them back Home). Studio (PT1, POINTS-07) is the first tile, for every
+ * account, drawn with the canvas's waveform mark. The two tiles the 16 Oct export dropped are gone (DV2-RM): Pay bills (R-52, bills are off) and
  * Events (R-61, events are reached from Explore). The tiles present pack from the left, four to a line as drawn (U-H1:
  * there is no empty slot), so the row is the canvas's once Studio is in.
  */
@@ -34,6 +34,8 @@ const m = servicesMetrics;
 type Service = { key: string; icon: IconName; label: string; onPress: () => void };
 
 export type ServicesProps = {
+  /** Opens Studio (PT1), the AI tools, for every account (R-61, POINTS-07). */
+  onOpenStudio: () => void;
   onOpenLearn: () => void;
   onOpenLegal: () => void;
   /** Opens the Create hub (M19). Given only to a creator account: without it Monetize is not drawn. */
@@ -41,8 +43,9 @@ export type ServicesProps = {
 };
 
 /** The tiles present, in the canvas's order (R-61). `TodayLoading` draws one shape for each that is always there. */
-function presentServices({ onOpenLearn, onOpenLegal, onOpenMonetize }: ServicesProps): Service[] {
+function presentServices({ onOpenStudio, onOpenLearn, onOpenLegal, onOpenMonetize }: ServicesProps): Service[] {
   const tiles: (Service | null)[] = [
+    { key: 'studio', icon: 'AudioLines', label: 'Studio', onPress: onOpenStudio },
     { key: 'schools', icon: 'GraduationCap', label: 'Learn', onPress: onOpenLearn },
     onOpenMonetize ? { key: 'monetize', icon: 'HandCoins', label: 'Monetize', onPress: onOpenMonetize } : null,
     { key: 'legal', icon: 'Scale', label: 'Legal', onPress: onOpenLegal },
@@ -51,7 +54,7 @@ function presentServices({ onOpenLearn, onOpenLegal, onOpenMonetize }: ServicesP
 }
 const nothing = () => undefined;
 /** The tiles every account has: what the loading shapes stand in for. */
-export const servicesPresent = presentServices({ onOpenLearn: nothing, onOpenLegal: nothing }).length;
+export const servicesPresent = presentServices({ onOpenStudio: nothing, onOpenLearn: nothing, onOpenLegal: nothing }).length;
 
 export function Services(props: ServicesProps) {
   const columns = presentServices(props);
