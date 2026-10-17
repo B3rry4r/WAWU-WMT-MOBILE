@@ -31,6 +31,8 @@ export type DraftFormScreenProps = {
   onSaved: () => void;
   /** The draft is deleted: back to VF2. */
   onDeleted: () => void;
+  /** Publish (VERIFY-04): a saved draft opens the publish step (VF12), or the tiers when no tier is running. Not drawn without it, and not for a new draft. */
+  onPublish?: (draftId: string) => void | Promise<void>;
 };
 
 const failure = (error: unknown, fallback: string): string => (isApiError(error) && error.message ? error.message : fallback);
@@ -41,7 +43,7 @@ const failure = (error: unknown, fallback: string): string => (isApiError(error)
  * A draft with no file saves free. Delete asks once (`DELETE /product-drafts/{id}`). The Hub's own words are shown when it refuses a
  * save, as when the next draft would pass the number it keeps (G-662).
  */
-export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted }: DraftFormScreenProps) {
+export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted, onPublish }: DraftFormScreenProps) {
   const cache = useQueryClient();
   const editing = draftId !== undefined;
   const loaded = useQuery({ queryKey: draftKey(draftId ?? 'new'), queryFn: () => fetchDraft(draftId as string), enabled: editing, retry: false });
@@ -157,7 +159,11 @@ export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted }: DraftFo
             </View>
           ) : (
             <>
-              <Button testID="draft-save" label="Save draft" full onPress={() => void save()} disabled={!canSave} loading={busy === 'saving'} />
+              {editing && onPublish ? (
+                // What is published is the draft as the Hub holds it, so a form with unsaved changes asks to be saved first.
+                <Button testID="draft-publish" label="Publish" full onPress={() => void onPublish(draftId)} disabled={busy !== null || changed} />
+              ) : null}
+              <Button testID="draft-save" label="Save draft" full variant={editing && onPublish ? 'secondary' : undefined} onPress={() => void save()} disabled={!canSave} loading={busy === 'saving'} />
               {editing ? <Button testID="draft-delete" label="Delete draft" variant="outline" icon="Trash2" full onPress={() => setConfirming(true)} disabled={busy !== null} /> : null}
             </>
           )}

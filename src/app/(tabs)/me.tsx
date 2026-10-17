@@ -20,6 +20,7 @@ export default function MeTab() {
       onOpenInvite={() => router.push('/invite')}
       onOpenCourses={() => router.push('/schools/mine')}
       onOpenVerification={() => router.push('/verification')}
+      onOpenTier={() => router.push('/your-tier')}
       onOpenShop={() => router.push('/shop')}
       onCreate={() => router.push('/create')}
       onOpenDashboard={() => router.push('/creator')}

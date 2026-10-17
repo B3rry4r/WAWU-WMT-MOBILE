@@ -52,6 +52,8 @@ export type SettingsScreenProps = {
   onOpenNotifications: () => void;
   onOpenPrivacy: () => void;
   onOpenPassword: () => void;
+  /** Your tier (VF14, VERIFY-05): the tier the person holds, or the way to get one. The row is drawn only when the route gives a place to go. */
+  onOpenTier?: () => void;
   /** The launch access code screen (JOIN-03): claim the plan an event registration paid for. The row is drawn only when the route gives a place to go. */
   onOpenClaimCode?: () => void;
   /** Wallet and PIN: W35 (WALLET-06). The row is drawn only when the screen has somewhere to open it (the route gives it). */
@@ -114,6 +116,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
         <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
         <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+        {props.onOpenTier ? <ListRow testID="settings-tier" lead={<IconTile icon="BadgeCheck" size={ROW_TILE} />} title="Your tier" onPress={props.onOpenTier} /> : null}
         {props.onOpenClaimCode ? (
           <ListRow testID="settings-claim-code" lead={<IconTile icon="Ticket" size={ROW_TILE} />} title="Access code" subtitle="Claim a plan you paid for at an event" onPress={props.onOpenClaimCode} />
         ) : null}

@@ -9,7 +9,7 @@ import { VerifiedTick } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
-import { TierBadge } from '@/components/TierBadge';
+import { TierBadge, tierBadgeLabel } from '@/components/TierBadge';
 import { hueFor } from '@/features/feed/model';
 import { SOCIAL } from '@/features/profile-edit/social';
 import { SocialLogo, hasMark } from '@/features/profile-edit/SocialLogo';
@@ -109,9 +109,11 @@ export type NameBlockProps = {
   badge?: HeaderBadge | null;
   bio: string | null;
   onEditProfile: () => void;
+  /** The tier pill opens Your tier (VF14, VERIFY-05). Left out, the pill is read, not pressed. */
+  onOpenTier?: () => void;
 };
 
-export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditProfile }: NameBlockProps) {
+export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditProfile, onOpenTier }: NameBlockProps) {
   const { colors } = useWawu();
   return (
     <>
@@ -139,7 +141,13 @@ export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditPr
           {/* The pill pins itself to the top of its row; this slot lets the name row centre it, as the board does. */}
           {badge ? (
             <View style={styles.badgeSlot}>
-              <TierBadge name={badge.name} number={badge.number} testID="me-tier-badge" />
+              {onOpenTier ? (
+                <Pressable testID="me-tier-open" accessibilityRole="button" accessibilityLabel={`${tierBadgeLabel(badge.name, badge.number)}. Open your tier`} onPress={onOpenTier} hitSlop={8}>
+                  <TierBadge name={badge.name} number={badge.number} testID="me-tier-badge" />
+                </Pressable>
+              ) : (
+                <TierBadge name={badge.name} number={badge.number} testID="me-tier-badge" />
+              )}
             </View>
           ) : null}
         </View>

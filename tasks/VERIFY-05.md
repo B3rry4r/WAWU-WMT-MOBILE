@@ -7,7 +7,7 @@ order: 274
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [ME-12, TIER-04, TIER-07, DV2-COMP]
 decisions: [R-43, R-65]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,12 @@ artboards: [VF13, VF14, VF14a, VF14b]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 4 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): ME-12, TIER-04, TIER-07, DV2-COMP.
-- **History:** none yet. Reports go to tasks/history/VERIFY-05.md.
+As of 17 Oct 2026 (builder, bundle S7).
+- **Status:** verifying. Same branch as ME-12 (`wmt/S7`); no backend change.
+- **Built:** `/your-tier` (VF14, VF14a, VF14b) from `GET /me/tier`: dates, products used and allowed (added places included), points included, the event pass; ending shows the days left, ended says published products stay up and publishing is paused; Renew opens the checkout for the tier held, Upgrade opens VF5 (drawn only when a higher tier is sold). The VF13 sheet ("You have used N of N") adds five products once with the PIN (`kind extra_products`, the same one-attempt payment as the tier; a short wallet turns the button into "Add ₦X" to W15) or opens VF5.
+- **Entries:** Me's tier badge, Settings' Your tier row, the Create hub's Content at the limit of a running tier, the upload step and the publish step on a 402.
+- **Not drawn:** dollar offer (VF13a, R-16).
+- **Next:** a fresh verifier. NOT RUN by this builder: the stack run and the pictures.
 
 ## Read first
 
@@ -54,7 +55,10 @@ A person sees their tier (name, badge, active until, products used, points inclu
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+- Files: `src/features/verify/` `YourTierScreen.tsx`, `ProductsFullSheet.tsx`, `ProductsFullHost.tsx`; `me/ProfileHeader.tsx`, `MeScreen.tsx`, `settings/SettingsScreen.tsx`; routes `your-tier`, `(tabs)/me`, `settings/index`, `create`.
+- Checks: tsc EXIT 0; eslint on the changed files EXIT 0; jest `src/features/verify` 8 suites, 67 tests (12 checkout, 11 publish and tier, 44 earlier) EXIT 0, and `src/features/create`, `me`, `settings`, `home` with the send model test, 17 suites, 314 tests, passed. Tests: `publishAndTier.test.tsx` (VF13 adds five once after a double tap, the number now; VF14 active, ending (3 days), ended with Renew to the checkout, none)."
+- Gaps: none new. Shared: SHARED-CHANGES ME-12 #2.
+- NOT RUN: stack run and pictures.
 
 ## Verifier report
 

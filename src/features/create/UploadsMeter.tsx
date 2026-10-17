@@ -39,11 +39,12 @@ export const onFreeAllowance = (a: Allowance): boolean => !a.tickHeld && a.free.
 const noticeMetrics = { padV: 14, icon: 19, iconToText: 12, inner: 3, iconNudge: 1, buttonsTop: 8, buttonsGap: space.sm } as const;
 
 /**
- * M27's note, as drawn: "Your 5 free uploads are used", then the way up when there is one, and "Open library" (M28) under it. The
- * board's other button, "Get verified" (M11, replaced by ME-12's tiers), is added by ME-12 (R-47). `Banner` takes no buttons, so the
- * box is drawn here until it does (SHARED-CHANGES ME-07 #1, the same ask as INBOX-13 #2).
+ * M27's note, as drawn: "Your 5 free uploads are used", then the way up when there is one, and the two buttons under it as the board
+ * orders them. "Get verified" opens the tiers (VF5, ME-12), drawn when the screen gives it a place to go and the person has no tick;
+ * "Open library" (M28) is ME-07's. `Banner` takes no buttons, so the box is drawn here until it does (SHARED-CHANGES ME-07 #1, the
+ * same ask as INBOX-13 #2).
  */
-export function SlotsFullNotice({ allowance, onOpenLibrary }: { allowance: Allowance; onOpenLibrary?: () => void }) {
+export function SlotsFullNotice({ allowance, onOpenLibrary, onGetVerified }: { allowance: Allowance; onOpenLibrary?: () => void; onGetVerified?: () => void }) {
   const { colors } = useWawu();
   const { tickHeld, uploads, withTick } = allowance;
   if (noAllowance(allowance)) return null;
@@ -55,9 +56,10 @@ export function SlotsFullNotice({ allowance, onOpenLibrary }: { allowance: Allow
       <View style={styles.noticeText}>
         <Text variant="kvValue">{`Your ${uploads.allowed} ${onFreeAllowance(allowance) ? 'free ' : ''}uploads are used`}</Text>
         <Text variant="bannerBody">{tickHeld ? 'Take something down to make room for a new one.' : `Get verified for up to ${withTick.uploads} uploads, or take something down.`}</Text>
-        {onOpenLibrary ? (
+        {onOpenLibrary || (!tickHeld && onGetVerified) ? (
           <View style={styles.noticeButtons}>
-            <Button testID="create-slots-full-library" label="Open library" variant="secondary" size="sm" onPress={onOpenLibrary} />
+            {!tickHeld && onGetVerified ? <Button testID="create-get-verified" label="Get verified" size="sm" onPress={onGetVerified} /> : null}
+            {onOpenLibrary ? <Button testID="create-slots-full-library" label="Open library" variant="secondary" size="sm" onPress={onOpenLibrary} /> : null}
           </View>
         ) : null}
       </View>
@@ -97,7 +99,7 @@ export function AllowanceMeter() {
  * level above it are read from `GET /uploads/allowance`, never typed here. The "Get verified" link under it opens M11 and is
  * added by ME-12 (R-47). An account the Hub allows nothing (no tier, no tick) gets no card: "0 of 0 used" counts nothing.
  */
-export function UploadsMeter({ allowance }: { allowance: Allowance }) {
+export function UploadsMeter({ allowance, onGetVerified }: { allowance: Allowance; onGetVerified?: () => void }) {
   const { colors } = useWawu();
   const { used, allowed } = allowance.uploads;
   if (noAllowance(allowance)) return null;
@@ -117,11 +119,13 @@ export function UploadsMeter({ allowance }: { allowance: Allowance }) {
       <Text variant="caption" tone="textMuted" testID="create-meter-line" style={styles.line}>
         {meterLine(allowance)}
       </Text>
+      {!allowance.tickHeld && onGetVerified ? <Button testID="create-meter-get-verified" label="Get verified" size="card" onPress={onGetVerified} style={styles.noticeButton} /> : null}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  noticeButton: { alignSelf: 'flex-start' },
   card: { paddingVertical: meterMetrics.padV, paddingHorizontal: meterMetrics.padH, gap: meterMetrics.between },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   title: { flex: 1, fontSize: meterMetrics.title },

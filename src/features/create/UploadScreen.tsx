@@ -30,13 +30,25 @@ type Stage = { state: 'idle' } | { state: 'uploading'; file: ChosenFile; share: 
 /** A failed upload is worth asking again for when nothing about the file is wrong: no answer, a server fault, or the bytes themselves not landing. */
 export const retryable = (error: unknown): boolean => !isApiError(error) || error.status === 0 || error.status >= 500 || error.code === 'upload_failed';
 
-export type UploadScreenProps = { format: FormatId; onBack: () => void; onContinue: () => void; onOpenLibrary?: () => void };
+export type UploadScreenProps = {
+  format: FormatId;
+  onBack: () => void;
+  onContinue: () => void;
+  /** The full note's Open library button (M27) opens My content (M28). The button is not drawn without it. */
+  onOpenLibrary?: () => void;
+  /** "Get verified" under the full note opens the tiers (VF5, ME-12). Not drawn without it. */
+  onGetVerified?: () => void;
+  /** The Hub refused the upload because no tier is running (`402 tier_required`): VF5 (VERIFY-04). */
+  onNeedTier?: () => void;
+  /** The Hub refused it because every place is used (`402 product_limit_reached`): VF13 (VERIFY-05). */
+  onProductsFull?: () => void;
+};
 
 /**
  * M21 · Upload the full file for the chosen format. The line under the heading and the limit on it come from the Hub's
  * rule for the format; the bar is the real share of the file that has gone up. Continue waits until it has all landed.
  */
-export function UploadScreen({ format, onBack, onContinue, onOpenLibrary }: UploadScreenProps) {
+export function UploadScreen({ format, onBack, onContinue, onOpenLibrary, onGetVerified, onNeedTier, onProductsFull }: UploadScreenProps) {
   const formats = useQuery({ queryKey: formatsKey, queryFn: fetchFormats });
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   const { full } = useDraft();
@@ -71,6 +83,17 @@ export function UploadScreen({ format, onBack, onContinue, onOpenLibrary }: Uplo
       setStage({ state: 'done', name: uploaded.name });
     } catch (error) {
       if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
+      // The Hub's own answer for a tier that is not running, or every place used: the way up, not a sentence to read.
+      if (isApiError(error) && error.code === 'tier_required' && onNeedTier) {
+        setStage({ state: 'idle' });
+        onNeedTier();
+        return;
+      }
+      if (isApiError(error) && error.code === 'product_limit_reached' && onProductsFull) {
+        setStage({ state: 'idle' });
+        onProductsFull();
+        return;
+      }
       setStage({
         state: 'failed',
         file,
@@ -111,7 +134,7 @@ export function UploadScreen({ format, onBack, onContinue, onOpenLibrary }: Uplo
         <Skeleton testID="upload-loading" height={dropMetrics.height} radius={dropMetrics.corner} />
       ) : (
         <>
-          {allowance.data && noRoom ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} /> : null}
+          {allowance.data && noRoom ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} onGetVerified={onGetVerified} /> : null}
           <DropBox format={format} limit={rule.full.maxBytes} disabled={uploading || noRoom || !canPickFile} onPress={() => void choose()} />
           {stage.state === 'uploading' || stage.state === 'failed' ? (
             stage.file ? (

@@ -14576,6 +14576,35 @@ export interface components {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
         };
+        IdentityPausedReasonDto: {
+            /** @enum {string} */
+            code: "identity_paused";
+            /**
+             * @description Where the check stands: `needs_documents` (the documents the bank asked
+             *     for are still needed), `rejected`, `stopped` (for good) or `expired`
+             *     (left unfinished too long). The same words as `review.stage` on
+             *     `GET /money/wallet`.
+             * @enum {string}
+             */
+            stage: "needs_documents" | "rejected" | "stopped" | "expired";
+            /** @description The Hub's sentence: what is paused, why, and what to do. The app shows it as it is. No em-dash. */
+            message: string;
+        };
+        IdentityPausedErrorEnvelope: {
+            /**
+             * @description 403.
+             * @example 403
+             */
+            statusCode: number;
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            reason: components["schemas"]["IdentityPausedReasonDto"];
+            /** @description Same as reason.message. */
+            message: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -15333,6 +15362,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
                 };
             };
         };
@@ -16998,6 +17036,15 @@ export interface operations {
                     "application/json": components["schemas"]["TierGateErrorEnvelope"];
                 };
             };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_mine: {
@@ -17181,6 +17228,15 @@ export interface operations {
                     "application/json": components["schemas"]["TierGateErrorEnvelope"];
                 };
             };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
+                };
+            };
         };
     };
     ContentPieceController_resubmit: {
@@ -17209,6 +17265,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
                 };
             };
         };
@@ -17838,6 +17903,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
                 };
             };
         };
