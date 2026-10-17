@@ -7,7 +7,7 @@ order: 213
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [POINTS-01, POINTS-02]
 decisions: [R-43, R-38]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,9 +17,18 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): POINTS-02.
+As of 17 Oct 2026, builder round 2 done (Sonnet builder), after the verifier's `fix` verdict (1 medium). Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-03.md`, round 1 verdict fix, one medium; round 2 fixed it and the lead accepted it on review). Stacked in batch 7 by MERGE-7f.
+- **Branches:** backend `wmt/POINTS-03` `ebe76de` (round 1 `6225022`) on `origin/wmt/POINTS-02` `1cf41b0` (it extends POINTS-02 and TIER-05, both being checked); mobile `wmt/POINTS-03` on `origin/wmt/POINTS-02` `b553f48` (this file, SHARED-CHANGES rows POINTS-03 #1 to #5, contract and API types copied from the backend branch).
+- **Migration:** `20261025020000_points_spend`: the table `PointsSetting` and the index `PointHold (state, createdAt)`. Additive; the stamp is kept at merge (it sorts after every batch 7 folder).
+- **Built:** `src/points/spend/`. `PointsSpendService` (`hold`, `commit`, `release` for an `ai_job`, exported for the tool tasks), `POST /points/quote`, `POST /points/shortfall` (PIN, Idempotency-Key) with `GET /points/shortfall/{id}`, `GET`/`PUT /me/points/settings`, the five-minute sweep of stale AI holds. No AI provider is called.
+- **Every figure is a setting (R-65):** a job's cost is `points.action.<id>`; the caps are `points.daily_cap`, `points.max_chars_per_job` and `points.max_audio_min_per_job` (the last two are new admin settings, defaults from the plan's existing `caps`); the shortfall rate is `points.price_kobo_per_1000`; the sweep's limit is `points.job_max_run_minutes` (new, PROVISIONAL `POINTS-JOB-MAX-RUN`, 30). No cost, cap or rate is a literal in code.
+- **The hold:** caps, the day's count and the hold are under the person's points lock in one database-only transaction, the hold last; nothing waits on a provider inside it. A cap is `422 points_cap_reached` naming `cap` (`daily`, `characters_per_job`, `minutes_per_job`), its size and, for the day's, `resetsAt` (next Lagos midnight). A reference already spent or given back is `points_hold_settled`, so a retry needs `jobHoldReference(jobId, attempt)`.
+- **The shortfall:** a new wallet payment kind `points_shortfall` (target `shortfall-<points>`, WAWU's own sale, not held), priced at the pack rate pro rata and rounded up, the provider's charge on top. Points, rate and expiry are the payment's terms, so the quote binds them (`409 quote_changed`); the lot (source `shortfall`) is granted once, last, in a database-only transaction. Nothing moves without the PIN; the same quote under another key finds no shortfall (`409 points_not_short`).
+- **Checks:** backend CI on `6225022`: see the Builder report. Local: tsc 0; eslint 0 and prettier on the changed files; 30 new cases pass (rules 13, over HTTP 17); the plan-settings, plans, points, account-purge and admin settings suites pass; `contract:build` twice identical. Mobile full check: see the Builder report.
+- **Not done:** dollar-billed people get no wallet money (R-16, NUV-09): the quote says so and nothing is taken. No screen (PT1 to PT3 and PT7 are POINTS-06 and POINTS-07). The AI tools themselves come later and call `PointsSpendService`.
+- **Round 2 (done):** the verifier's medium: a person with no wallet and no billing row was priced with no claims, so the quote's `walletNote` was the dollars note even for a Nigerian. The note is now chosen in this order: a billing currency fixed in dollars gives the dollars note; else no open wallet gives "Open your wallet to top up points from it."; else price as before. Pricing is unchanged. Text only; nothing moved either way.
+- **Open findings:** none known after round 2 (medium 0).
+- **Next:** the lead merges with batch 7 (stacked here by MERGE-7f on POINTS-02; POINTS-03 builds on it).
 - **History:** none yet. Reports go to tasks/history/POINTS-03.md.
 
 ## Read first
@@ -55,14 +64,14 @@ From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the ver
 
 ## Capability checks
 
-- [ ] A person sees VoiceOver's cost for 2 minutes (from config) before running; a hold takes it, a failed job releases all of it, a finished job keeps it.
-- [ ] With too few points and "Use wallet" off, the quote shows the shortfall and offers buying points; nothing is taken.
-- [ ] With "Use wallet" on, the quote shows the wallet money for the shortfall; nothing is debited until `POST /points/shortfall` with the PIN, which debits once and grants once even when sent twice (V8).
-- [ ] Past the daily cap, or over the characters or minutes per job, the answer names the cap and nothing is held.
-- [ ] Two holds at once never take points below zero.
+- [x] A person sees VoiceOver's cost for 2 minutes (from config) before running; a hold takes it, a failed job releases all of it, a finished job keeps it.
+- [x] With too few points and "Use wallet" off, the quote shows the shortfall and offers buying points; nothing is taken.
+- [x] With "Use wallet" on, the quote shows the wallet money for the shortfall; nothing is debited until `POST /points/shortfall` with the PIN, which debits once and grants once even when sent twice (V8).
+- [x] Past the daily cap, or over the characters or minutes per job, the answer names the cap and nothing is held.
+- [x] Two holds at once never take points below zero.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-03.md](history/POINTS-03.md).
 
 ## Owner sign-off
