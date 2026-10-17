@@ -18,10 +18,17 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** built, waiting for an independent verifier. Backend `wmt/FIX-52` from `wmt/MERGE-7` `432f017`.
-- **Found by:** INBOX-15 round 2, finding 2 (`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-15.md`): the quote total was 101,000 kobo and the person was debited 100,000.
-- **Open findings:** none yet.
-- **Next:** a verifier attacks it on the Nuvion stand-in (the stack, `WALLET_PROVIDER=nuvion`); then the lead merges.
+- **Status:** round 2 built, waiting for an independent verifier. Backend `wmt/FIX-52` `773a9ee` (round 1 `d865efb`, from `wmt/MERGE-7` `432f017`).
+- **Found by:** INBOX-15 round 2 finding 2; round 1 verifier report (`scratchpad/verify/FIX-52.md`, findings 1 to 5).
+- **Builder report, round 2** (lead rulings, 17 Oct; the owner may override):
+  - Finding 1: WAWU's fee now moves FIRST (book transfer `<send ref>-fee`), in the request and in the sweep. Refused: nothing else moves, the person is told (402/503 as a send refusal). Unfinished: the send waits, nothing sent; the sweep or the fee's delivery then makes the send.
+  - Finding 2: the delivery handler reads the fee transfer's own record, never the fee as quoted; a send whose fee never moved is written at the send alone. Ledger equals the stand-in on the inline and the delivery path.
+  - Finding 3: a fee Nuvion fails (not insufficient funds only) fails the send before anything moves; a transient outage only waits.
+  - Finding 4: a send that fails, or is reversed before or after it completed, gives the fee back (`<send ref>-fee-back`, once, retried by the sweep); a completed send Nuvion reverses becomes `reversed`.
+  - Finding 5: the fee transfer's delivery wakes the send (`LedgerService.wakeTransfer`); Nuvion's charge is taken on the leg actually moved.
+  - Not changed: no schema, no route, no Fintava file. Bank sends use the same code; the sweep's own bank payout (after a pending fee) is not covered by a spec, the stack check should drive it.
+- **Checks:** tsc 0, eslint 0, gates passed; fee spec 8 of 8 (all 8 fail on `d865efb`); Nuvion transfer, book and unit specs 8 suites, 172 tests, EXIT 0.
+- **Next:** a verifier attacks round 2 on the Nuvion stack; then the lead merges.
 
 ## Read first
 
@@ -41,12 +48,11 @@ A quote on the Nuvion path is amount + Nuvion's charge + WAWU's fee. Nuvion's `a
 
 ## Capability checks
 
-- [x] Before the fix the new spec fails: `debit differs from the quote: Nuvion took 200150 kobo (fee 150), quoted 201150 kobo (fee 1150)`.
-- [x] After: debit equals the quote, ₦8.50 of the ₦10 reaches the operational account once (Nuvion charges ₦1.50 to move it), through replay, sweeps and settle again; the ledger row and the send show the fee as quoted. 7 of 7.
-- [x] Failed and reversed sends: no fee leg, payer whole, operational account unchanged.
-- [x] Fee leg pending at Nuvion: the send stays pending, one fee transfer, completes once Nuvion finishes it.
-- [x] Completion by the Nuvion delivery, and a bank send completed from the ledger row the bank handler writes.
-- [x] The existing Nuvion specs pass (299 of 299 with the new one); `tsc`, eslint on the changed files exit 0.
+- [x] Fee first: the fee transfer is made before the send; the person is debited the quote to the kobo; one fee through replays, parallel taps, sweeps and settling again.
+- [x] A balance spent between two sends cannot evade the fee: the send that cannot be paid fails whole and its fee comes back.
+- [x] Fee pending: the send waits, nothing sent, one fee transfer; fee failed: nothing else moves, person whole.
+- [x] Send failed after the fee: fee returned once. Completed send reversed later: fee returned, send reversed.
+- [x] The fee's delivery wakes the send; the ledger row equals what Nuvion moved on the delivery path.
 
 ## History
 
