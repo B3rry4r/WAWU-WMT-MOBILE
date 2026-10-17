@@ -84,6 +84,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 
+## Being verified
+
+- [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
+
 ## Done
 
 - [OPS-01](../tasks/OPS-01.md) Record the owner's rulings (You)

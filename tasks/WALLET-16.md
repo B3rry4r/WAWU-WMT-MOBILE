@@ -7,7 +7,7 @@ order: 98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-12]
 decisions: [R-11, R-55, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,14 +17,15 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (11 Oct 16:45) and the branch.
-- **Status:** building on its branches (round 1 verified: the code held on every money attack). This file on main still says todo.
-- **Branches:** mobile `wmt/WALLET-16` 66c375c. Backend `wmt/WALLET-16` 18ea4fb (migration `20261021180000_earning_settlements`).
+As of 16 Oct 2026, round 2 built (Sonnet builder), waiting for the verifier.
+- **Status:** verifying. Round 1 was verified: the code held on every money attack, three mediums stood. Round 2 fixes the three.
+- **Branches:** mobile `wmt/WALLET-16` (the tip of this branch; docs and the regenerated contract only). Backend `wmt/WALLET-16` `315b69b` (merged into `wmt/B1` on 17 Oct; the migration is `20261025120000_earning_settlements` there).
 - **Merged and live:** nothing of this task.
-- **Open findings:** medium: F1 (test gap on three money rules; the code is right), F2 (lease and bounds test gap) and F3 (a `refused` earning never goes to review, against CONVENTIONS section 19). The lead counts F2 and F3 as medium (16 Oct 2026), so all three get a fix round.
-  - Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499.
-- **Next:** fix round 2: tests for F1 and F2, the review path for F3 (MONEY-18's WalletHoldService has the same dead branch). Before the merge, count the unsettled completed sales with a payee on production (F8: the first sweep pays them all). G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
-- **Records:** on the branch, `wmt/WALLET-16`, in tasks/WALLET-16.md there (40 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-16`; the history goes to tasks/history/WALLET-16.md.
+- **Built in round 2:** F1 and F2 (tests only, the code was right): the rules about the provider's own record (absent is not a failure, pending is not finished, another amount is a stop), the lease (a sale no longer completed sends nothing, two stale readers lease once), the 72nd hour and the Lagos month edge, each killed by a mutant that reads it the other way (14 of 14 killed). F3: a `refused` earning goes to review past the review bound, and so does a `refused` hold (MONEY-18's `WalletHoldService`, the same dead branch), with tests that fail without the fix.
+- **Open findings:** nothing medium or worse is open. Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499 until HOME-14 and HOME-15 write wallet sales.
+- **For the lead:** (1) F8 stays yours: before the merge, count the unsettled completed sales with a payee on production (the first sweep pays them all). (2) The review bound for `refused` is counted from when the earning was made (a hold: from when the release or refund was asked for), as the dead code had it, so a refusal that comes after a long wait for a wallet goes to review at its first refusal. A `refusedSince` column would count from the first refusal instead; say if you want it. (3) G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
+- **Next:** the verifier checks round 2 (the 14 mutants in the round 2 builder report are the claim to test). Then the lead merges both branches.
+- **Records:** tasks/history/WALLET-16.md, last section "Builder report, round 2".
 - **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** two owner rulings apply on top of round 2: R-55 (72 h review after the first refusal; one daily move per creator with a ₦200 floor). See the section below. The branch builder takes them in fix round 2.
 
 ## Owner rulings of 16 Oct 2026 (R-55)
@@ -54,16 +55,12 @@ Per-content earnings breakdown; automatic settlement into the wallet. A creator 
 
 ## Capability checks
 
-- [ ] Earnings shown equal the sum of that creator's sales after the split.
-- [ ] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
+- [x] Earnings shown equal the sum of that creator's sales after the split.
+- [x] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-16.md](history/WALLET-16.md).
 
 ## Owner sign-off
 
