@@ -26,7 +26,8 @@ As of 17 Oct 2026, round 2 built (Sonnet builder, tier T2); status `verifying`.
 - **Checks:** tsc EXIT 0; eslint on changed files EXIT 0; jest community-pass 13, community-host (new: joinRequests 3), communities (RoomScreen 67, +4 new), creator 16, after-signup, paid-messages entries, inbox: all pass; gates 0 fail 15 warn (none mine), check_tasks EXIT 0; jest on the named suites 30 suites, 501 tests, EXIT 0. I changed A11's tests (a fifth row, "of 5") because the row is the task's.
 - **Not run:** V10 (a real Android phone); the cover upload (G-INBOX-14-7); loading and error pictures of I30 to I34. Full jest and `npm run check` (the merge agent).
 - **Gaps filed:** G-INBOX-14-6 (no board draws the host's way into I34), G-INBOX-14-7 (cover upload not run); G-INBOX-24-6 updated.
-- **Next:** a verifier (T2): V8 on the stack (the claims above), pictures beside the boards.
+- **Round 3 (17 Oct 2026, Sonnet builder, tier T2):** the verifier's MEDIUM-3 closed. On a "Removed from this room" row I34 draws only "Let back in" (the Approve call); Decline is drawn only on a real request in a room that sells no pass, because the Hub keeps a removed row and Decline did nothing (R-47). Until the room is read no button is drawn; if it cannot be read, Approve alone. Tests: joinRequests 5 (3 fail before the change, all pass after); communities, community-host, community-pass jest 8 suites 172 tests EXIT 0; tsc EXIT 0; eslint on changed files EXIT 0; gates 0 fail. Branch: mobile `wmt/INBOX-14` + one commit on `977efc9a`. The backend half (HIGH-1, MEDIUM-1) is INBOX-24 round 3, backend `wmt/PASS-r3`.
+- **Next:** the lead's re-check of round 3 (HIGH-1 and MEDIUM-1 sit in the backend), then the batch.
 - **History:** reports go to tasks/history/INBOX-14.md.
 
 ## Design v2 update (16 Oct 2026)

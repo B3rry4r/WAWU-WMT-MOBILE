@@ -27,7 +27,8 @@ export type JoinRequestsScreenProps = { id: string; onBack: () => void };
  * A private room made now is joined by a pass and has no queue (R-63), so the screen is reached only from a room the Hub lists requests for.
  * The Hub serves the requester's handle and picture; the headline and city the board draws are not served (G-INBOX-14-2) and are left out.
  * In a room that sells a pass a waiting row is a member the host removed (INBOX-24 round 2, G-INBOX-24-6), not someone who asked: the line says so,
- * and Approve lets them back in while Decline keeps them out.
+ * and the one button, "Let back in", lets them back (the Hub keeps a removed row whatever the host declines, so Decline is not drawn, R-47, INBOX-24 round 3).
+ * Decline is drawn only on a real request, in a room that sells no pass. Until the room is known no button is drawn; if it cannot be read, Approve alone is.
  */
 export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
   const { colors } = useWawu();
@@ -44,6 +45,8 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
   // Whether the room sells a pass decides what a waiting row means; until it is read the older words ("asked") are not written for a row.
   const pass = useQuery({ queryKey: passKey(id), queryFn: () => fetchPass(id) }, queryClient);
   const removedRoom = pass.data?.sellsPass === true;
+  // What a waiting row is decides the buttons: a removed member can only be let back in; a request can be declined or approved.
+  const rowKind: RowKind = pass.isPending ? 'unknown' : pass.isError ? 'unread' : removedRoom ? 'removed' : 'request';
   const items = useMemo(() => list.data?.pages.flatMap((page) => page.items).filter((row) => row.status === 'pending') ?? [], [list.data]);
   const settle = useMutation(
     {
@@ -101,6 +104,7 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
           <Row
             row={item}
             line={pass.isPending ? '' : removedRoom ? removedLine() : requestLine(askedAgo(item.requestedAt))}
+            kind={rowKind}
             busy={working === item.userWawuId}
             disabled={settle.isPending}
             onApprove={() => settle.mutate({ userWawuId: item.userWawuId, approve: true })}
@@ -124,7 +128,10 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
   );
 }
 
-function Row({ row, line, busy, disabled, onApprove, onDecline }: { row: JoinRequest; line: string; busy: boolean; disabled: boolean; onApprove: () => void; onDecline: () => void }) {
+/** unknown: the room is still being read, no button yet. unread: it could not be read, Approve works either way. */
+type RowKind = 'unknown' | 'unread' | 'removed' | 'request';
+
+function Row({ row, line, kind, busy, disabled, onApprove, onDecline }: { row: JoinRequest; line: string; kind: RowKind; busy: boolean; disabled: boolean; onApprove: () => void; onDecline: () => void }) {
   const who = row.handle ? `@${row.handle.replace(/^@/, '')}` : 'Someone';
   return (
     <View style={styles.row} testID={`request-${row.userWawuId}`}>
@@ -139,14 +146,18 @@ function Row({ row, line, busy, disabled, onApprove, onDecline }: { row: JoinReq
           </Text>
         </View>
       </View>
-      <View style={styles.buttons}>
-        <View style={styles.flex}>
-          <Button label="Decline" variant="secondary" size="md" full disabled={disabled} onPress={onDecline} testID={`decline-${row.userWawuId}`} />
+      {kind === 'unknown' ? null : (
+        <View style={styles.buttons}>
+          {kind === 'request' ? (
+            <View style={styles.flex}>
+              <Button label="Decline" variant="secondary" size="md" full disabled={disabled} onPress={onDecline} testID={`decline-${row.userWawuId}`} />
+            </View>
+          ) : null}
+          <View style={styles.flex}>
+            <Button label={kind === 'removed' ? 'Let back in' : 'Approve'} size="md" full loading={busy} disabled={disabled} onPress={onApprove} testID={`approve-${row.userWawuId}`} />
+          </View>
         </View>
-        <View style={styles.flex}>
-          <Button label="Approve" size="md" full loading={busy} disabled={disabled} onPress={onApprove} testID={`approve-${row.userWawuId}`} />
-        </View>
-      </View>
+      )}
     </View>
   );
 }
