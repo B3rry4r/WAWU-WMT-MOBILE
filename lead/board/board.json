@@ -1,0 +1,1027 @@
+{
+ "meta": {
+  "mobile_repo": "MOXN-AFRICA/wawu-wmt-mobile",
+  "news_max_age_days": 7,
+  "news_show": 12,
+  "merged_show": 20
+ },
+ "stats": {
+  "launch_done": 170,
+  "launch_total": 292
+ },
+ "needs": [
+  {
+   "title": "Approve merges when I ask",
+   "sub": "Each merge now comes to you as one Approve tap. Next: batch 5"
+  },
+  {
+   "title": "Keys and accounts only you can give",
+   "pills": [
+    "Fintava sandbox key",
+    "Nuvion sandbox key",
+    "Expo token (for the APK)",
+    "Fix GitHub billing (app checks)"
+   ]
+  },
+  {
+   "title": "For WMT on 24 Oct, Voices a week after",
+   "pills": [
+    "1 more Max 20x plan (N280k)",
+    "Sign that plan into its own session",
+    "AI voice provider key (Voice Intro, Studio)",
+    "One live count: unpaid sales (WALLET-16)",
+    "Voices: brand pick + section 22 by 24 Oct"
+   ]
+  }
+ ],
+ "chains": [
+  {
+   "title": "Money core (unblocks ~40 app screens)",
+   "nodes": [
+    {
+     "id": "MONEY-18",
+     "label": "Hold, release, refund",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "WALLET-06",
+     "label": "Wallet settings and PIN",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "MONEY-19",
+     "label": "Not enough money",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "WALLET-04",
+     "label": "History and receipt",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "MONEY-16",
+     "label": "Nightly check",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "NUV-06",
+     "label": "Bank payouts",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "WALLET-07",
+     "label": "Send to a user",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "WALLET-10",
+     "label": "Money in",
+     "state": "done",
+     "hidden": true
+    },
+    {
+     "id": "POINTS-04",
+     "label": "Points to cash",
+     "state": "done",
+     "note": "live"
+    },
+    {
+     "id": "WALLET-16",
+     "label": "Earnings land",
+     "state": "queued",
+     "note": "passed; needs your count"
+    },
+    {
+     "id": "WALLET-23",
+     "label": "Account limits",
+     "state": "done",
+     "note": "live"
+    },
+    {
+     "id": "WALLET-35",
+     "label": "Statements",
+     "state": "done",
+     "note": "live"
+    }
+   ]
+  },
+  {
+   "title": "Build workflow",
+   "nodes": [
+    {
+     "id": "OPS-CI",
+     "label": "GitHub checks",
+     "state": "done",
+     "note": "every branch"
+    },
+    {
+     "id": "OPS-STACK",
+     "label": "Test stack",
+     "state": "done",
+     "note": "one command"
+    },
+    {
+     "id": "OPS-TASKS",
+     "label": "Short task files",
+     "state": "done"
+    },
+    {
+     "id": "RULES",
+     "label": "Cheaper agent rules",
+     "state": "done"
+    },
+    {
+     "id": "SKILLS",
+     "label": "10 skills delivered",
+     "state": "done",
+     "note": "8 updated, 2 new"
+    }
+   ]
+  },
+  {
+   "title": "Open a wallet in the app",
+   "nodes": [
+    {
+     "id": "NUV-01",
+     "label": "Nuvion link",
+     "state": "done"
+    },
+    {
+     "id": "NUV-02",
+     "label": "Open a wallet",
+     "state": "done"
+    },
+    {
+     "id": "NUV-03",
+     "label": "ID and address",
+     "state": "done"
+    },
+    {
+     "id": "NUV-04",
+     "label": "Account number",
+     "state": "done"
+    },
+    {
+     "id": "LIVE",
+     "label": "Switch on",
+     "state": "blocked",
+     "note": "needs key + 2 screens"
+    }
+   ]
+  },
+  {
+   "title": "Path to the stores",
+   "nodes": [
+    {
+     "id": "W1",
+     "label": "Wave 1: no blockers",
+     "state": "building",
+     "note": "now",
+     "live": true
+    },
+    {
+     "id": "W2",
+     "label": "Wave 2: pay backends",
+     "state": "todo"
+    },
+    {
+     "id": "W3",
+     "label": "Wave 3: pay screens",
+     "state": "todo"
+    },
+    {
+     "id": "W4",
+     "label": "Wave 4: profile, creator",
+     "state": "todo"
+    },
+    {
+     "id": "CHECK",
+     "label": "Full QA",
+     "state": "todo"
+    },
+    {
+     "id": "STORE",
+     "label": "Stores",
+     "state": "todo"
+    }
+   ]
+  }
+ ],
+ "columns": {
+  "building": [
+   {
+    "id": "TIER-06",
+    "title": "Tier, points, referral figures as settings",
+    "note": "round 2: a cash-out pays only what was quoted"
+   },
+   {
+    "id": "LEAD-HANDOFF",
+    "title": "Hand-over folder for other accounts",
+    "note": "lead branch in the app repo"
+   },
+   {
+    "id": "KYC-06",
+    "title": "ID document and proof of address screens",
+    "note": "round 2: your answers + 3 fixes"
+   }
+  ],
+  "checking": [
+   {
+    "id": "SETTINGS-06",
+    "title": "Delete account",
+    "note": "round 8 check"
+   },
+   {
+    "id": "TIER-07",
+    "title": "Tier badge on profiles",
+    "note": "built; checking"
+   }
+  ],
+  "check_queued": [
+   {
+    "id": "EXPLORE-02",
+    "title": "All creators and search",
+    "note": "waits for the new designs"
+   }
+  ],
+  "merging": [],
+  "ready": [
+   {
+    "id": "EVENTS-07",
+    "title": "Buy event tickets from the wallet",
+    "note": "batch 6, check passed",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/EVENTS-07",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/EVENTS-07"
+    ]
+   },
+   {
+    "id": "WALLET-39",
+    "title": "Money-in notices, add money received",
+    "note": "batch 6, check passed",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/WALLET-39",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/WALLET-39"
+    ]
+   },
+   {
+    "id": "GATES-02",
+    "title": "Record the 5 gate lines",
+    "note": "batch 6, check passed",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/GATES-02",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/GATES-02"
+    ]
+   },
+   {
+    "id": "HOME-16",
+    "title": "Daily TGIF notification",
+    "note": "batch 6, check passed",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/HOME-16",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/HOME-16"
+    ]
+   }
+  ],
+  "waiting": [
+   {
+    "id": "WALLET-16",
+    "title": "Earnings to wallet",
+    "note": "your live sales count",
+    "alert": true,
+    "q": "Q-21"
+   },
+   {
+    "id": "WEBPAY-01",
+    "title": "Website wallet",
+    "note": "web paused",
+    "alert": true
+   }
+  ],
+  "queued": [
+   {
+    "id": "TIER-05",
+    "title": "Pay by bank transfer at checkout"
+   },
+   {
+    "id": "TIER-04",
+    "title": "Add 5 more products"
+   },
+   {
+    "id": "EVENTS-11",
+    "title": "Ticket price edits",
+    "note": "refresh, then your label",
+    "pr": "B3rry4r/WAWU-Backend#83"
+   },
+   {
+    "id": "OPS-08",
+    "title": "Retire Shop",
+    "note": "refresh, then your label",
+    "pr": "B3rry4r/WAWU-Backend#26"
+   },
+   {
+    "id": "HOME-17",
+    "title": "TGIF time in admin, clear after 30 days",
+    "note": "your answer; after TIER-06"
+   }
+  ],
+  "stopped": [
+   {
+    "id": "WALLET-25",
+    "title": "Card top-up",
+    "note": "bank transfer only"
+   },
+   {
+    "id": "WALLET-26",
+    "title": "USSD top-up",
+    "note": "bank transfer only"
+   }
+  ]
+ },
+ "news": [
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Daily TGIF notification passed its check: joins batch 6"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Your 4 answers on wallet opening and TGIF recorded"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Money-in alerts for all money in passed its check: joins batch 6"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Batch 5 live (health 200); app updated with it and the new-design task list"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Event tickets from the wallet passed its check: buyers refunded in full if a host leaves before the event"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Batch 5 merged (PR #141): bank sends, bills, credits, school fees, sends to WAWU users, upload preview"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Launch list grew from 254 to 292 tasks: the new designs (Verify, Points, Referral, KYC split, redo of changed screens)"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "New designs cut into 38 tasks in 6 waves; Shop gone, card top-up cancelled"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Enrol and pay for schools from the wallet passed its check: joins batch 5"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Legal assistant fix live; health 200"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Your 12 design answers recorded; turning them and 78 new screens into tasks"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Event tickets check: buyers now refunded if a host deletes their account (fixing)"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Board now rebuilds itself from facts and refuses to publish if anything is stale"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Buy WAWU Credits from the wallet passed its check: ready for batch 5"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Your 16 answers recorded; all go into the build"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "New designs received: Points, Referral, Verify flows added; Shop removed; comparing every screen"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Batches 3 and 4 live (20 tasks); health 200"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "accent-fg",
+   "text": "Live Gemini test: assistant replies cut off; hotfix FIX-43 building"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "WALLET-02, WALLET-09, BILLS-04, ME-04 passed their checks"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "WALLET-02 passed: send to a WAWU user, never twice"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "ME-04 passed: Create, upload and preview, storage limit holds under any burst"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "BILLS-04 passed: pay bills from the wallet (server)"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "WALLET-09 passed: send money to a bank"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "SHARED-07 passed: video, audio and PDFs on the phone"
+  },
+  {
+   "date": "2026-10-16",
+   "tone": "positive",
+   "text": "EXPLORE-05 passed: search with communities, recent and popular"
+  }
+ ],
+ "areas": [
+  {
+   "name": "Fixes",
+   "done": 29,
+   "total": 30
+  },
+  {
+   "name": "Money",
+   "done": 25,
+   "total": 29
+  },
+  {
+   "name": "Inbox",
+   "done": 11,
+   "total": 24
+  },
+  {
+   "name": "Wallet",
+   "done": 12,
+   "total": 20
+  },
+  {
+   "name": "Me",
+   "done": 9,
+   "total": 17
+  },
+  {
+   "name": "Home",
+   "done": 8,
+   "total": 16
+  },
+  {
+   "name": "Events",
+   "done": 6,
+   "total": 12
+  },
+  {
+   "name": "Schools",
+   "done": 6,
+   "total": 11
+  },
+  {
+   "name": "Operations",
+   "done": 6,
+   "total": 10
+  },
+  {
+   "name": "Sign-up",
+   "done": 8,
+   "total": 8
+  },
+  {
+   "name": "Shared",
+   "done": 6,
+   "total": 8
+  },
+  {
+   "name": "Website",
+   "done": 3,
+   "total": 8
+  },
+  {
+   "name": "Settings",
+   "done": 5,
+   "total": 8
+  },
+  {
+   "name": "Legal",
+   "done": 3,
+   "total": 7
+  },
+  {
+   "name": "Ads",
+   "done": 4,
+   "total": 7
+  },
+  {
+   "name": "Bills",
+   "done": 2,
+   "total": 6
+  },
+  {
+   "name": "Explore",
+   "done": 4,
+   "total": 8
+  },
+  {
+   "name": "Identity",
+   "done": 5,
+   "total": 7
+  },
+  {
+   "name": "Verify",
+   "done": 3,
+   "total": 13
+  },
+  {
+   "name": "Sweeps",
+   "done": 0,
+   "total": 5
+  },
+  {
+   "name": "Checkpoints",
+   "done": 1,
+   "total": 4
+  },
+  {
+   "name": "Points",
+   "done": 2,
+   "total": 9
+  },
+  {
+   "name": "Professionals",
+   "done": 3,
+   "total": 3
+  },
+  {
+   "name": "Shell",
+   "done": 3,
+   "total": 3
+  },
+  {
+   "name": "Components",
+   "done": 3,
+   "total": 3
+  },
+  {
+   "name": "Release",
+   "done": 1,
+   "total": 2
+  },
+  {
+   "name": "Referral",
+   "done": 1,
+   "total": 3
+  },
+  {
+   "name": "Setup",
+   "done": 1,
+   "total": 1
+  },
+  {
+   "name": "Support",
+   "done": 0,
+   "total": 1
+  },
+  {
+   "name": "New design redo",
+   "done": 0,
+   "total": 9
+  }
+ ],
+ "merged": [
+  {
+   "id": "BATCH 5",
+   "text": "Bank sends, bills, credits, school fees, sends to WAWU users, upload preview, video and PDFs (live)"
+  },
+  {
+   "id": "DESIGN-V2-CUT",
+   "text": "Your 28 answers in the rulings; 38 new tasks from the new designs (merging with batch 5)"
+  },
+  {
+   "id": "FIX-43",
+   "text": "Legal assistant replies no longer cut off (live)"
+  },
+  {
+   "id": "APP",
+   "text": "App main caught up: today's live tasks, phone notifications, sign-in guard, TGIF ad card, UI follow-ups"
+  },
+  {
+   "id": "BATCH 4",
+   "text": "Steadier tests, gate cleanup, paid message settings, school link, statements by email, search history (live)"
+  },
+  {
+   "id": "BATCH 3",
+   "text": "Daily limits, timeouts, uploads, school names, assistant JSON (live)"
+  },
+  {
+   "id": "WALLET-35",
+   "text": "Statements by email: WAWU ID part (live)"
+  },
+  {
+   "id": "TIER-02",
+   "text": "Publishing needs a tier (live)"
+  },
+  {
+   "id": "WALLET-10",
+   "text": "Money in by bank transfer (live)"
+  },
+  {
+   "id": "POINTS-04",
+   "text": "Points to cash (live)"
+  },
+  {
+   "id": "FIX-20",
+   "text": "Old webhook bodies cleared (live)"
+  },
+  {
+   "id": "FIX-13",
+   "text": "Sign-in token sweep (live)"
+  },
+  {
+   "id": "JOIN-03",
+   "text": "Event code in the app (WAWU ID live)"
+  },
+  {
+   "id": "WALLET-07",
+   "text": "Send money to a WAWU user (live)"
+  },
+  {
+   "id": "NUV-06",
+   "text": "Bank payouts on Nuvion (live)"
+  },
+  {
+   "id": "MONEY-16",
+   "text": "Nightly check vs Fintava (live)"
+  },
+  {
+   "id": "WALLET-04",
+   "text": "History and receipt (app)"
+  },
+  {
+   "id": "REF-01",
+   "text": "Referral codes on /join (live)"
+  }
+ ],
+ "questions": [
+  {
+   "id": "Q-01",
+   "text": "Creator deletes account: do buyers keep paid content?",
+   "status": "answered",
+   "answer": "Yes, buyers keep it (round 1)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-02",
+   "text": "Withdrawals: any account or own name only?",
+   "status": "answered",
+   "answer": "Own name only: the payout account name must match the verified name (G-765, round 1)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-03",
+   "text": "Failed bill: who pays Fintava's 15.75 and the refund fee?",
+   "status": "answered",
+   "answer": "WAWU covers it; the person gets every naira back (G-462, round 1)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-04",
+   "text": "Bills under Nuvion",
+   "status": "answered",
+   "answer": "Turn bills off at the move (G-648, round 1)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-05",
+   "text": "Send screen quick amounts",
+   "status": "answered",
+   "answer": "5k, 10k, 25k, 50k as designed (round 2)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-06",
+   "text": "Name check limit",
+   "status": "answered",
+   "answer": "30 an hour per person; build it (G-764, round 2)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-07",
+   "text": "Community names in popular search",
+   "status": "answered",
+   "answer": "Count only at 10 or more members; built in the EXPLORE-05 follow-up (round 2)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-08",
+   "text": "Share a TGIF ad through the phone share sheet",
+   "status": "answered",
+   "answer": "Yes (round 2)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-09",
+   "text": "Search figures (20/10, 3 people in 30 days, 8)",
+   "status": "answered",
+   "answer": "Keep them (round 3)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-10",
+   "text": "Ads keep TGIF free",
+   "status": "answered",
+   "answer": "Leave it out (G-760, round 3)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-11",
+   "text": "Campaign artwork required?",
+   "status": "answered",
+   "answer": "Required; the dashboard refuses a campaign without it (G-761, round 3)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-12",
+   "text": "More money-in alerts?",
+   "status": "answered",
+   "answer": "Yes, for all money in: from a WAWU user, earnings and refunds (round 3)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-13",
+   "text": "When refused earnings go to review",
+   "status": "answered",
+   "answer": "72 h after the first refusal (WALLET-16, round 4)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-14",
+   "text": "Record the 5 gate lines now?",
+   "status": "answered",
+   "answer": "Record now: 5 entries, owner-approved, the agent writes, the owner approves the prompt (round 4)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-15",
+   "text": "Gemini key for the live test",
+   "status": "answered",
+   "answer": "Owner gave a test key (rotating, free tier limited: minimal calls; kept only in the scratchpad, never committed or printed) (round 4)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-16",
+   "text": "Fee label under Nuvion",
+   "status": "answered",
+   "answer": "Bank charge (round 4)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-17",
+   "text": "5-place pack price",
+   "status": "answered",
+   "answer": "Add 5 products: N1,500 (design figure, admin setting)",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-18",
+   "text": "Minimum payout for small tips",
+   "status": "answered",
+   "answer": "One daily move per creator; under N200 waits",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-19",
+   "text": "Nuvion reversal wording",
+   "status": "answered",
+   "answer": "Buyer keeps it; a person reviews",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-20",
+   "text": "TIER-02 wording (D9)",
+   "status": "answered",
+   "answer": "Design figures as launch settings",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-21",
+   "text": "Live sales count (WALLET-16)",
+   "status": "open",
+   "answer": "",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-22",
+   "text": "Home row: Studio, Learn, Monetize, Legal",
+   "status": "answered",
+   "answer": "Follow the design",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-23",
+   "text": "Community credits",
+   "status": "answered",
+   "answer": "Text free, photo 1, video or voice 3",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-24",
+   "text": "Private communities",
+   "status": "answered",
+   "answer": "Monthly pass, renew by tap",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-25",
+   "text": "Dollar and USDT pickers",
+   "status": "answered",
+   "answer": "Naira only at launch",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-26",
+   "text": "TGIF and adverts",
+   "status": "answered",
+   "answer": "Follow the design, take turns",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-27",
+   "text": "New tier, points, referral figures",
+   "status": "answered",
+   "answer": "Design figures as launch settings",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-28",
+   "text": "Voice Intro label",
+   "status": "answered",
+   "answer": "Bio, plus a small AI voice tag",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-29",
+   "text": "Licence and CBN wording",
+   "status": "answered",
+   "answer": "Held until you confirm the words",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-30",
+   "text": "Outside brand names",
+   "status": "answered",
+   "answer": "None",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-31",
+   "text": "App name",
+   "status": "answered",
+   "answer": "Who Made This? with the question mark",
+   "date": "2026-10-16"
+  },
+  {
+   "id": "Q-32",
+   "text": "Wallet opening: missing ID and bill fields",
+   "status": "answered",
+   "answer": "Add them to the ID and address screens",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-33",
+   "text": "Passport has one side",
+   "status": "answered",
+   "answer": "No back asked for passports",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-34",
+   "text": "Checking screen wording",
+   "status": "answered",
+   "answer": "This usually takes a few minutes, plus an alert",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-35",
+   "text": "Daily TGIF time and keeping",
+   "status": "answered",
+   "answer": "7am Lagos, clear after 30 days",
+   "date": "2026-10-17"
+  }
+ ],
+ "prs": [
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 26,
+   "tasks": [
+    "OPS-08"
+   ],
+   "purpose": "Retire Shop on the backend"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 83,
+   "tasks": [
+    "EVENTS-11"
+   ],
+   "purpose": "Ticket price edits"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 122,
+   "tasks": [
+    "TIER-02"
+   ],
+   "purpose": "Publishing needs a tier"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 135,
+   "tasks": [
+    "WALLET-07"
+   ],
+   "purpose": "Send money to a WAWU user"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 137,
+   "tasks": [
+    "WALLET-10",
+    "POINTS-04",
+    "FIX-20"
+   ],
+   "purpose": "Batch 2: money in, points to cash, webhook clean-up"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 138,
+   "tasks": [
+    "WALLET-23",
+    "FIX-26",
+    "FIX-18",
+    "FIX-10",
+    "FIX-09",
+    "FIX-19",
+    "FIX-15",
+    "FIX-28",
+    "FIX-22"
+   ],
+   "purpose": "Batch 3: daily limits, timeouts, uploads, school names, assistant JSON"
+  },
+  {
+   "repo": "B3rry4r/WAWU-Backend",
+   "number": 139,
+   "tasks": [
+    "BATCH 4",
+    "EXPLORE-05",
+    "INBOX-12",
+    "SCHOOLS-10",
+    "WALLET-35",
+    "GATES-01",
+    "FIX-33",
+    "FIX-34",
+    "FIX-35",
+    "FIX-36",
+    "FIX-37",
+    "FIX-38"
+   ],
+   "purpose": "Batch 4: steadier tests, gate cleanup, paid message settings, school link, statements by email, search history"
+  }
+ ]
+}

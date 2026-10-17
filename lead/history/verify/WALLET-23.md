@@ -1,0 +1,25 @@
+# WALLET-23 verifier report (Sonnet verifier, 16 Oct 2026)
+
+Backend `wmt/WALLET-23` 4b844fa (main 56f94d0), mobile `wmt/WALLET-23` fa2700e (docs only). Verdict: **merge** (nothing medium or worse).
+
+## Checks (stack wallet_23, ports 7070-7077, real app module, real DB, Fintava sandbox-body double)
+My attack spec: /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wallet-23-v/v23-attacks.contract.spec.ts (14 tests, all pass; local only, not committed).
+- A1 one kobo: piece-50,000,001 refused 403 (limitKobo 50000000, remainingTodayKobo 50000000); after 49,999,999 paid, 2 kobo refused (remaining 1), 1 kobo passes (exactly the limit), W35 then used 50,000,000 / left 0. Quote remainingTodayKobo, refusal remainingTodayKobo and W35 remainingTodayKobo agree at every step (also B2: 1,000,000 in all three).
+- A2 six parallel pays of ~20,000,000: 2 pass, 4 refused 403, 2 sends. B1 twelve parallel of ~15,000,000: exactly 3 pass, used 45,000,008 <= limit. A2b two people in parallel do not interfere. Mutation: with the per-person advisory lock line removed, B1 gives 7 sends (N1,050,000 against N500,000) and A2 gives 4: the tests have teeth and the existing lock is what holds the account limit.
+- A3 same Idempotency-Key four at once: 1 x 201, 3 x 409, 1 send; replay after the day is spent returns the stored success, no second send. B2: a refused key stored nothing; after room appears the same key pays 201.
+- A4 stale limit: Tier 2 to Tier 1 flip between quote and pay is refused 403 with the new limit (the pay path reads the balance first); flip back, pays 201.
+- A5 unknown tier (TIER_9) after a known one clears the copy (limit null, W35 row hidden). A tier-less answer keeps the old copy (finding 1).
+- A7 Lagos boundary (service level, injected now): 22:59:30Z (23:59 Lagos) day start 15 Oct 23:00Z, usage 40,000,000 counted, 10,000,001 refused, 10,000,000 passes; 23:01Z (00:01 Lagos) day start 16 Oct 23:00Z, usage 0, 50,000,000 passes; a row stamped exactly 23:00:00.000Z counts for the new day; resetsAt 2026-10-16T23:00Z and 2026-10-17T23:00Z.
+- A8 another person's rows do not count; A9 only transfer/hold/bill/purchase, out, pending or completed count (top_up, earning, refund, reversal, failed, reversed do not).
+- A10 provider errors on the quote's balance read: quote still 200 from the copy, W35 still 200. B3 nuvion-named AccountLimits never reads a fintava row's limit and a fintava server never reads a nuvion row's.
+- Builder specs rerun against my DB: 3 suites, 44 tests pass (account-limits.contract, account-limits-http.contract, fintava-account-limits).
+- CI 4b844fa: 3 suite shards, contract, protected routes, netns, baseline, deploy-in-sync green; Executable gates fail with the same 16 FAIL lines as main 56f94d0 (diffed, none in a WALLET-23 file). Mobile: `check_tasks.py` 283 ok; backend `check_baseline.py` 108 entries ok.
+- W35 at 390 px, light and dark, from the web export with FintavaWallet.dailyLimitKobo seeded (50,000,000 and a 12,000,000 purchase today): row reads "Daily limit / N500,000 daily . N380,000 left today", same card, shield tile and spacing as the artboard's first card. The artboard's extra rows (Face ID, Cards, Statements, Help) are not drawn (R-47) and the artboard's "Tier 2 account ... BVN + NIN verified" text is replaced by no tier (BRIEF W35, WALLET-06 model). Pictures in .../scratchpad/wallet-23-v/pics: w35-side-light.png, w35-side-dark.png (artboard left, app right), w35-hidden-both.png (limit null: row hidden), w35-spent-both.png (N0 left today).
+
+## Findings (all low; none needs a fix round)
+1. low: a balance answer with no tier keeps the old copy for good. src/fintava/fintava-wallet-provider.ts:359 omits accountLimits when tier is null and src/money/limits/account-limits.service.ts `record` returns on undefined, so a TIER_1 copy keeps being enforced and shown if Fintava stops sending a tier. Repro: A5 in my spec. Safe-side.
+2. low: the day counts amount before fees (by design), so the last purchase can pass WAWU's check while price + fee takes the wallet one fee over the limit (A6: 49,999,000 + 1,575 fee = 50,000,575 out of a 50,000,000 limit). Whether Fintava counts the fee is open (question 16).
+3. low: the copy is filled only by a balance read, and opening a wallet reads none (src/money/opening/wallet-opening.service.ts:321 only reads the copy). So A8's "Limit" row (WalletOpenScreen.tsx:159) is hidden right after opening, and W35 is hidden until the first balance read. Task scope names W35 only.
+4. low (mobile, docs-only branch): stale comment at src/features/wallet/settings/WalletSettingsScreen.tsx:44 says the server "sends none today, BACKEND_GAPS G-7".
+5. note: only wallet payments call MoneyLimits.assertMayMove today; transfers and bills are not served yet, so they must call it when they are (builder said so). A trailing comma in FINTAVA_TIER_DAILY_LIMITS_KOBO stops the app at boot (documented fail-fast).
+Not exercised: a replayed Fintava webhook through the real webhook route (ledger merge by reference is MONEY-08's; the daily sum reads one row per movement, and A1/A6 show one row after a completed payment).
