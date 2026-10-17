@@ -13,12 +13,11 @@ import type { WalletTransaction } from '@/features/wallet/api/home';
 export const ADD_TITLE = 'Add money';
 export const ACCOUNT_HEAD = 'Your wallet account';
 export const ACCOUNT_LINE = 'Send money here from any Nigerian bank app.';
-/** The pill beside the head, as the 16 Oct board words it (R-42: a bank transfer in costs the person nothing). */
-export const FREE_WORD = 'Free';
-/** The clock line under the card and the waiting card's right side, as the board and the task word them. */
-export const ARRIVES_LINE = 'Money you send arrives in a few minutes.';
+/*
+ * Not drawn: the board's "Free" pill (the Hub serves no inflow fee, G-WALLET-05-5) and its "arrives in a few minutes" and "Usually a
+ * few minutes" lines (nothing the Hub serves says how long a transfer in takes, G-WALLET-05-3). Each is drawn when the Hub serves it.
+ */
 export const WAITING_TITLE = 'Waiting for your transfer';
-export const WAITING_NOTE = 'Usually a few minutes';
 export const SHARE_LABEL = 'Share details';
 
 /** How often the balance is asked for while a transfer is awaited. Default (agent), owner may override. */
@@ -67,11 +66,17 @@ export function shortfallNote(kobo: number): { title: string; body: string } {
 const isTopUp = (row: WalletTransaction): boolean => row.direction === 'in' && row.category === 'top_up' && row.status === 'completed';
 
 /**
- * The transfer that landed while the screen waited: the newest top-up the screen had not seen when the wait began. Rows are the
- * newest first, as the Hub sends them. A row the person already had (`known`) is never "this transfer".
+ * The transfers that landed while the screen waited: every top-up the screen had not seen when the wait began, newest first, as the
+ * Hub sends the rows. A row the person already had (`known`) is never "this transfer". Two close together are both here, so W46 never
+ * names one while the balance holds both.
  */
-export function landingOf(rows: readonly WalletTransaction[], known: ReadonlySet<string>): WalletTransaction | null {
-  return rows.find((row) => isTopUp(row) && !known.has(row.id)) ?? null;
+export function landingsOf(rows: readonly WalletTransaction[], known: ReadonlySet<string>): WalletTransaction[] {
+  return rows.filter((row) => isTopUp(row) && !known.has(row.id));
+}
+
+/** W46's head when more than one transfer landed: how many. The Hub serves no total of them, so each row is listed under it and none is added up here. */
+export function manyReceived(count: number): string {
+  return `${count} transfers received`;
 }
 
 /** W46's line under the amount: "From GTBank ••0921". The bank's own words; a sender with neither bank nor name has no line. */

@@ -10,10 +10,9 @@ import { Card, GroupedList } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
-import { KeyValueRow, rowMetrics } from '@/components/ListRow';
+import { KeyValueRow, ListRow, rowMetrics } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
-import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -28,14 +27,12 @@ import {
   ACCOUNT_HEAD,
   ACCOUNT_LINE,
   ADD_TITLE,
-  ARRIVES_LINE,
-  FREE_WORD,
+  manyReceived,
   POLL_MS,
   senderLine,
   shareText,
   SHARE_LABEL,
   shortfallNote,
-  WAITING_NOTE,
   WAITING_TITLE,
   type AccountRow,
 } from './model';
@@ -43,8 +40,8 @@ import { useLanding, type Landing } from './useLanding';
 
 /** kit.js line 61, `copyBtn`: 32 high, 12 at the sides, a pill on the sunken surface, the Copy glyph 14, the word 13 / 600, 6 between. */
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, ms: 2000 } as const;
-/** W15's card: the head's label is 12, the clock line's glyph 16 with 12 beside it; W46's mark is 88 and its figure 36 (W12's own). */
-const LOOK = { label: 12, clock: 16, clockGap: 12, dot: 10, mark: 88, figure: 36, rowValue: 14.5, headGap: 12, headTop: 20 } as const;
+/** W15's card: the head's label is 12; W46's mark is 88 and its figure 36 (W12's own). */
+const LOOK = { label: 12, dot: 10, mark: 88, figure: 36, rowValue: 14.5, headGap: 12, headTop: 20 } as const;
 
 export type AddMoneyScreenProps = {
   /** What a pay sheet was short by (kobo), when it sent the person here: shown above the card. */
@@ -60,10 +57,11 @@ export type AddMoneyScreenProps = {
  * W15 · Add money, with W45 (waiting) and W46 (received) as its states (WALLET-05, the 16 Oct board, R-42).
  *
  * Adding money is a bank transfer to the person's own wallet account, so the card draws what the Hub holds: the account name, the
- * account number and the bank's name, each with Copy, and Share details (the phone's share sheet, R-33). "Free" is the board's word
- * for a transfer in. After the person copies or shares the details the screen waits (W45): the bank's balance is asked for every few
- * seconds, and when it changes with a transfer in on the ledger, W46 shows that transfer, the new balance and its reference. Nothing
- * on this screen is a sum of our own records.
+ * account number and the bank's name, each with Copy, and Share details (the phone's share sheet, R-33). The board's "Free" and its
+ * "arrives in a few minutes" are not drawn: the Hub serves neither an inflow fee nor an arrival time (G-WALLET-05-5, -3). After the
+ * person copies or shares the details the screen waits (W45): the bank's balance is asked for every few seconds, and when it changes
+ * with a transfer in on the ledger, W46 shows that transfer, the new balance and its reference; when more than one landed, W46 says
+ * how many and lists each. Nothing on this screen is a sum of our own records.
  *
  * Nobody has a wallet until they open one (R-6): with none, this leads to Open your wallet. A wallet still opening, a read that
  * failed and a read in flight each have their own state. When a pay sheet sent the person here, the note above the card names what
@@ -174,7 +172,6 @@ function AccountCard({ account, waiting, notice, onSent, onNotice }: CardProps) 
           <Text variant="label" style={styles.headLabel}>
             {ACCOUNT_HEAD}
           </Text>
-          <StatusPill testID="add-money-free" label={FREE_WORD} tone="positive" />
         </View>
         <Text variant="secondary" style={styles.line}>
           {ACCOUNT_LINE}
@@ -205,21 +202,8 @@ function AccountCard({ account, waiting, notice, onSent, onNotice }: CardProps) 
           {notice}
         </Text>
       ) : null}
-      {waiting ? <Waiting /> : <Arrives />}
+      {waiting ? <Waiting /> : null}
     </>
-  );
-}
-
-/** The clock line under the card, before anything has been sent. */
-function Arrives() {
-  const { colors } = useWawu();
-  return (
-    <View testID="add-money-arrives" style={styles.arrives}>
-      <Icon name="Clock" size={LOOK.clock} color={colors.textMuted} />
-      <Text variant="secondary" tone="textMuted" style={styles.arrivesText}>
-        {ARRIVES_LINE}
-      </Text>
-    </View>
   );
 }
 
@@ -232,9 +216,6 @@ function Waiting() {
         <View style={[styles.dot, { backgroundColor: colors.warning }]} />
         <Text variant="body" style={[font(600), styles.waitingTitle]}>
           {WAITING_TITLE}
-        </Text>
-        <Text variant="secondary" tone="textMuted" style={styles.waitingNote}>
-          {WAITING_NOTE}
         </Text>
       </View>
     </Card>
@@ -280,10 +261,16 @@ function CopyPill({ row, onCopied }: { row: AccountRow; onCopied: () => void }) 
   );
 }
 
-/** W46: what landed, the bank's balance after it, and the ledger's reference for it. */
+/**
+ * W46: what landed, the bank's balance after it, and the ledger's reference for it. When more than one transfer landed since the
+ * wait began, the head says how many and each row is listed with its sender and reference: the Hub serves no total of them, so none
+ * is added up here, and the balance line is the bank's own.
+ */
 function Received({ landing, onDone }: { landing: Extract<Landing, { phase: 'landed' }>; onDone: () => void }) {
-  const { credit } = landing;
-  const from = senderLine(credit);
+  const { credits } = landing;
+  const first = credits[0];
+  const many = credits.length > 1;
+  const from = first && !many ? senderLine(first) : null;
   return (
     <AuthFrame
       testID="add-money-received"
@@ -293,29 +280,51 @@ function Received({ landing, onDone }: { landing: Extract<Landing, { phase: 'lan
       <View style={styles.receivedBody}>
         <View style={styles.receivedHead}>
           <IconTile icon="ArrowDownLeft" tone="in" size={LOOK.mark} strokeWidth={2.4} />
-          <View style={styles.figureRow}>
-            <Money testID="add-money-amount" minorUnits={credit.amountKobo} size={LOOK.figure} weight={700} decimals={credit.amountKobo % 100 !== 0} />
-            <Text variant="title" style={styles.figureWord}>
-              received
+          {first && !many ? (
+            <View style={styles.figureRow}>
+              <Money testID="add-money-amount" minorUnits={first.amountKobo} size={LOOK.figure} weight={700} decimals={first.amountKobo % 100 !== 0} />
+              <Text variant="title" style={styles.figureWord}>
+                received
+              </Text>
+            </View>
+          ) : (
+            <Text variant="title" testID="add-money-count" style={styles.centre}>
+              {manyReceived(credits.length)}
             </Text>
-          </View>
+          )}
           {from ? (
             <Text variant="secondary" tone="textSecondary" testID="add-money-from" style={styles.centre}>
               {from}
             </Text>
           ) : null}
         </View>
+        {many ? (
+          <GroupedList testID="add-money-credits">
+            {credits.map((credit, i) => (
+              <ListRow
+                key={credit.id}
+                testID={`add-money-credit-${i}`}
+                title={senderLine(credit) ?? credit.description}
+                subtitle={credit.reference}
+                subtitleSelectable
+                trailing={<Money minorUnits={credit.amountKobo} size={LOOK.rowValue} weight={600} decimals={credit.amountKobo % 100 !== 0} />}
+              />
+            ))}
+          </GroupedList>
+        ) : null}
         <GroupedList testID="add-money-receipt">
           <KeyValueRow label="New balance" testID="add-money-balance" value={<Money minorUnits={landing.balanceKobo} size={LOOK.rowValue} weight={600} />} />
-          <KeyValueRow
-            label="Reference"
-            testID="add-money-reference"
-            value={
-              <Text variant="kvValue" numberOfLines={1} ellipsizeMode="middle" selectable>
-                {credit.reference}
-              </Text>
-            }
-          />
+          {first && !many ? (
+            <KeyValueRow
+              label="Reference"
+              testID="add-money-reference"
+              value={
+                <Text variant="kvValue" numberOfLines={1} ellipsizeMode="middle" selectable>
+                  {first.reference}
+                </Text>
+              }
+            />
+          ) : null}
         </GroupedList>
       </View>
     </AuthFrame>
@@ -340,13 +349,10 @@ const styles = StyleSheet.create({
   copy: { height: COPY.height, paddingHorizontal: COPY.padX, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: COPY.iconGap, flexShrink: 0 },
   copyLabel: { fontSize: COPY.label },
   share: { paddingTop: space.md, paddingBottom: space.sm },
-  arrives: { flexDirection: 'row', alignItems: 'center', gap: LOOK.clockGap },
-  arrivesText: { flex: 1 },
   waiting: { paddingVertical: space.md },
   waitingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   dot: { width: LOOK.dot, height: LOOK.dot, borderRadius: LOOK.dot / 2 },
   waitingTitle: { flexShrink: 1 },
-  waitingNote: { flex: 1, textAlign: 'right' },
   receivedBody: { flex: 1, gap: space.lg, paddingTop: LOOK.headTop },
   receivedHead: { alignItems: 'center', gap: LOOK.headGap },
   figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm },

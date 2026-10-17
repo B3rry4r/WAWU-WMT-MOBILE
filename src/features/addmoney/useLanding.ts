@@ -5,20 +5,20 @@ import { queryClient } from '@/api/query';
 import type { WalletTransaction } from '@/features/wallet/api/home';
 
 import { fetchLatestRows } from './api';
-import { LEDGER_GRACE_MS, landingOf } from './model';
+import { LEDGER_GRACE_MS, landingsOf } from './model';
 
 export type Landing =
   /** The person has not copied or shared the details yet: nothing is awaited. */
   | { phase: 'idle' }
   /** The details went out: the bank's balance is asked for until it changes. */
   | { phase: 'waiting' }
-  /** A transfer landed: the ledger row that says what it was, and the bank's balance after it. */
-  | { phase: 'landed'; credit: WalletTransaction; balanceKobo: number };
+  /** Transfers landed: the ledger rows that say what they were (newest first, one or more), and the bank's balance after them. */
+  | { phase: 'landed'; credits: WalletTransaction[]; balanceKobo: number };
 
 /**
  * W45 to W46: once `started`, the bank's balance is asked for every `pollMs` (`GET /money/wallet/balance`, never a sum of ours).
  * The rows the person already had are read first, then the balance. When the balance changes, the newest ledger row that is a
- * settled transfer in and was not there before is the landing (W46). A change with no such row (an earning, a payment) only moves
+ * settled transfer in and was not there before is the landing (W46); when more than one landed, all of them are. A change with no such row (an earning, a payment) only moves
  * the baseline, and the wait goes on. An answer that does not come, or a ledger that cannot be read, is asked again on the next
  * tick: a landing is never guessed from a balance alone, and nothing here ends the wait but a landing or the screen going away.
  *
@@ -29,7 +29,7 @@ export type Landing =
  * When it lands, every money read is asked again once, so the Wallet tab shows the new balance the next time it is seen.
  */
 export function useLanding(owner: string | null, started: boolean, pollMs: number): Landing {
-  const [landed, setLanded] = useState<{ credit: WalletTransaction; balanceKobo: number } | null>(null);
+  const [landed, setLanded] = useState<{ credits: WalletTransaction[]; balanceKobo: number } | null>(null);
 
   useEffect(() => {
     if (!owner || !started) return undefined;
@@ -49,9 +49,11 @@ export function useLanding(owner: string | null, started: boolean, pollMs: numbe
         } else {
           const balance = await fetchWalletBalance();
           if (balance.availableKobo !== baseline || unexplainedSince !== null) {
-            const credit = landingOf(await fetchLatestRows(), known);
-            if (credit) {
-              if (live) setLanded({ credit, balanceKobo: balance.availableKobo });
+            const credits = landingsOf(await fetchLatestRows(), known);
+            if (credits.length > 0) {
+              // The balance is read again after the rows, so it holds every transfer the rows name (a second one may have landed between the two reads).
+              const after = await fetchWalletBalance();
+              if (live) setLanded({ credits, balanceKobo: after.availableKobo });
               void queryClient.invalidateQueries({ queryKey: ['money'] });
               return;
             }

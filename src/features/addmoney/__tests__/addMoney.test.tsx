@@ -57,6 +57,8 @@ const hub = {
   balanceReads: 0,
   ledgerReads: 0,
   ledgerFails: 0,
+  /** Runs once at the start of the next ledger read: a transfer that lands between the balance read and the ledger read. */
+  onLedger: null as (() => void) | null,
 };
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -69,6 +71,9 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/money/transactions') {
     hub.ledgerReads += 1;
+    const during = hub.onLedger;
+    hub.onLedger = null;
+    during?.();
     if (hub.ledgerFails > 0) {
       hub.ledgerFails -= 1;
       return json(500, { statusCode: 500, message: 'Something went wrong' });
@@ -144,7 +149,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { wallet: { state: 'open', account: ACCOUNT }, walletStatus: 200, balanceKobo: 48_525_075, rows: [], balanceReads: 0, ledgerReads: 0, ledgerFails: 0 });
+  Object.assign(hub, { wallet: { state: 'open', account: ACCOUNT }, walletStatus: 200, balanceKobo: 48_525_075, rows: [], balanceReads: 0, ledgerReads: 0, ledgerFails: 0, onLedger: null });
   Clipboard.setStringAsync.mockClear();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0, retry: false } });
@@ -180,13 +185,17 @@ const tick = async (ms: number) => {
 };
 
 describe('Add money (W15)', () => {
-  it('a user taps Add money on the Wallet tab and sees their own account name, number and bank, each with Copy, and "Free"', async () => {
+  it('a user taps Add money on the Wallet tab and sees their own account name, number and bank, each with Copy, and no fee claim', async () => {
     await toAddMoney();
     expect(pathname()).toBe('/add-money');
     expect(screen.getByTestId('add-money-name-value').props.children).toBe('Lennox Emmanuel');
     expect(screen.getByTestId('add-money-number-value').props.children).toBe('812 345 6789');
     expect(screen.getByTestId('add-money-bank-value').props.children).toBe('Nuvion');
-    expect(screen.getByText('Free')).toBeTruthy();
+    // The Hub serves no inflow fee and no arrival time, so the board's "Free" and "arrives in a few minutes" are not drawn (G-WALLET-05-5, -3).
+    expect(screen.queryByText(/free/i)).toBeNull();
+    expect(screen.queryByText(/few minutes/i)).toBeNull();
+    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.queryByTestId('add-money-arrives')).toBeNull();
     for (const name of ['Copy account name', 'Copy account number', 'Copy bank name', 'Share details']) expect(screen.getByRole('button', { name })).toBeTruthy();
     expect(screen.getByText('Send money here from any Nigerian bank app.')).toBeTruthy();
   });
@@ -203,8 +212,8 @@ describe('Add money (W15)', () => {
     expect(Clipboard.setStringAsync).toHaveBeenCalledWith('8123456789');
     expect(await screen.findByTestId('add-money-waiting')).toBeTruthy();
     expect(screen.getByText('Waiting for your transfer')).toBeTruthy();
-    expect(screen.getByText('Usually a few minutes')).toBeTruthy();
-    expect(screen.queryByTestId('add-money-arrives')).toBeNull();
+    expect(screen.queryByText(/few minutes/i)).toBeNull();
+    expect(screen.queryByText(/usually/i)).toBeNull();
   });
 
   it('shares the details through the phone’s share sheet (R-33) and waits; a dismissed sheet does not start the wait', async () => {
@@ -258,6 +267,60 @@ describe('a transfer lands (W45 to W46)', () => {
     const reads = hub.balanceReads;
     await tick(120);
     expect(hub.balanceReads).toBe(reads);
+  });
+
+  it('says how many landed and lists each, when two came close together, with no total of ours (L2)', async () => {
+    await toAddMoney();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
+    await screen.findByTestId('add-money-waiting');
+    // Two transfers land before the next read: the bank's balance holds both, and so does the ledger.
+    hub.balanceKobo = 48_525_075 + 3_300_000;
+    hub.rows = [
+      row('b', { amountKobo: 2_200_000, totalKobo: 2_200_000, reference: 'NUV-BBBB', counterparty: { kind: 'bank_account', name: 'Ada', avatarUrl: null, wawuUserId: null, bankName: 'Access Bank', accountNumberLast4: '1122' } }),
+      row('a', { amountKobo: 1_100_000, totalKobo: 1_100_000, reference: 'NUV-AAAA' }),
+    ];
+    expect(await screen.findByTestId('add-money-received', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(screen.getByText('2 transfers received')).toBeTruthy();
+    expect(screen.queryByTestId('add-money-amount')).toBeNull();
+    expect(screen.queryByTestId('add-money-reference')).toBeNull();
+    // Each row, newest first, with its own sender, amount and reference.
+    expect(screen.getByText('From Access Bank ••1122')).toBeTruthy();
+    expect(screen.getByText('From GTBank ••0921')).toBeTruthy();
+    expect(screen.getByText('NUV-BBBB')).toBeTruthy();
+    expect(screen.getByText('NUV-AAAA')).toBeTruthy();
+    const drawn = JSON.stringify(screen.toJSON());
+    expect(drawn).toContain('22,000');
+    expect(drawn).toContain('11,000');
+    // The new balance is the bank's; the two amounts are never added into a figure of ours.
+    expect(drawn).toContain('518,250');
+    expect(drawn).not.toContain('33,000');
+  });
+
+  it('a single landing is drawn as before: the amount, the sender and the reference, with no count', async () => {
+    await toAddMoney();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
+    await screen.findByTestId('add-money-waiting');
+    hub.balanceKobo = 53_525_075;
+    hub.rows = [row('new')];
+    await screen.findByTestId('add-money-received', undefined, { timeout: 4000 });
+    expect(screen.queryByTestId('add-money-count')).toBeNull();
+    expect(screen.queryByTestId('add-money-credits')).toBeNull();
+    expect(screen.getByTestId('add-money-reference')).toBeTruthy();
+  });
+
+  it('shows a balance that holds every transfer it names, when a second lands between the balance read and the ledger read', async () => {
+    await toAddMoney();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
+    await screen.findByTestId('add-money-waiting');
+    hub.balanceKobo = 48_525_075 + 1_100_000;
+    hub.rows = [row('a', { amountKobo: 1_100_000, totalKobo: 1_100_000, reference: 'NUV-AAAA' })];
+    hub.onLedger = () => {
+      hub.balanceKobo = 48_525_075 + 3_300_000;
+      hub.rows = [row('b', { amountKobo: 2_200_000, totalKobo: 2_200_000, reference: 'NUV-BBBB' }), ...hub.rows];
+    };
+    expect(await screen.findByTestId('add-money-received', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(screen.getByText('2 transfers received')).toBeTruthy();
+    expect(JSON.stringify(screen.toJSON())).toContain('518,250');
   });
 
   it('does not call a rise with no transfer in on the ledger a landing (an earning), and keeps waiting for the real one', async () => {
