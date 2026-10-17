@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 291.**
+**Launch tasks done: 176 of 292.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 98 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 65 | 0 | 0 | 0 |
+| verifying | 66 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
