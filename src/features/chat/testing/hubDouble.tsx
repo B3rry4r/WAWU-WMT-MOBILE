@@ -25,6 +25,8 @@ export const hub = {
   mode: 'completed' as Mode,
   balanceKobo: 48_525_075,
   canMessage: true,
+  /** The other side is the support account (SUPPORT-01): `other.support` is true. */
+  supportThread: false,
   messages: [] as Record<string, unknown>[],
   sentTexts: [] as { text: string; clientMessageId: string | null }[],
   textMode: 'ok' as 'ok' | 'lost_before' | 'lost_after',
@@ -50,6 +52,7 @@ export function resetHub() {
     mode: 'completed',
     balanceKobo: 48_525_075,
     canMessage: true,
+    supportThread: false,
     messages: [],
     sentTexts: [],
     textMode: 'ok',
@@ -76,7 +79,7 @@ export const person = (wawuId: string, name: string, handle: string | null) => (
 export function chatSummary(over: Record<string, unknown> = {}) {
   return {
     id: CHAT,
-    other: person(OTHER, 'Femi Bankole', 'femib'),
+    other: hub.supportThread ? { ...person('support-account', 'Who Made This?', null), support: true } : person(OTHER, 'Femi Bankole', 'femib'),
     createdAt: '2026-10-16T10:00:00.000Z',
     lastActivityAt: '2026-10-16T17:52:00.000Z',
     lastMessage: null,

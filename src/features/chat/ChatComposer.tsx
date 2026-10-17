@@ -40,8 +40,11 @@ export type ChatComposerProps = {
   onSend: (text: string) => boolean;
   /** A message is on its way: Send waits. */
   busy?: boolean;
-  /** The + button opens "Add to chat" (I13). */
-  onPlus: () => void;
+  /**
+   * The + button opens "Add to chat" (I13). Left out, the button is not drawn: the support chat (SUPPORT-01) carries no money, and
+   * Add to chat offers only Send money and Request money.
+   */
+  onPlus?: () => void;
   testID?: string;
 };
 
@@ -72,20 +75,22 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
       testID={testID}
       style={[styles.bar, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}
     >
-      <Pressable
-        testID="chat-plus"
-        accessibilityRole="button"
-        accessibilityLabel="Add to chat"
-        onPress={onPlus}
-        {...ring.handlers}
-        style={[
-          styles.round,
-          { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: composerMetrics.ringIdle, color: colors.borderHairline, inset: true }] },
-          ring.style,
-        ]}
-      >
-        <Icon name="Plus" size={composerMetrics.plus} color={colors.textPrimary} strokeWidth={composerMetrics.plusStroke} />
-      </Pressable>
+      {onPlus ? (
+        <Pressable
+          testID="chat-plus"
+          accessibilityRole="button"
+          accessibilityLabel="Add to chat"
+          onPress={onPlus}
+          {...ring.handlers}
+          style={[
+            styles.round,
+            { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: composerMetrics.ringIdle, color: colors.borderHairline, inset: true }] },
+            ring.style,
+          ]}
+        >
+          <Icon name="Plus" size={composerMetrics.plus} color={colors.textPrimary} strokeWidth={composerMetrics.plusStroke} />
+        </Pressable>
+      ) : null}
       <TextInput
         ref={input}
         testID={`${testID}-input`}

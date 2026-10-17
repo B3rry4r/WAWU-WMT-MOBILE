@@ -65,7 +65,8 @@ export function ChatInboxRow({ item }: { item: InboxItem }) {
       time={rowTime(item.lastActivityAt)}
       unread={item.unreadCount}
       tick={rowTick(chat.other)}
-      lead={<Avatar name={chat.other.name} hue={hueFor(chat.other.wawuId)} size={ROW_AVATAR} source={chat.other.avatarUrl ?? undefined} decorative />}
+      // The support thread (SUPPORT-01) is the app's own row: its mark on the sunken surface, as the board draws "Who Made This?".
+      lead={<Avatar name={chat.other.name} hue={hueFor(chat.other.wawuId)} size={ROW_AVATAR} source={chat.other.avatarUrl ?? undefined} brand={chat.other.support === true} testID={`row-${item.id}-avatar`} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } })}
     />
   );

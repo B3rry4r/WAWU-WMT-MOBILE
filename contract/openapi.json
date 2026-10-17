@@ -18384,6 +18384,141 @@
         "x-wawu-built-by": "NUV-03"
       }
     },
+    "/api/hub/admin/support/threads": {
+      "get": {
+        "operationId": "AdminSupportController_threads",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque: send back the `nextCursor` of the previous page as given.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1 to 100, 20 when left out.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSummaryPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The support threads, newest activity first. Each item's `other` is the\nperson, `lastMessage.mine` is false while it waits for a reply, and\n`unreadCount` is how many of their messages no reply has followed.",
+        "tags": [
+          "AdminSupport"
+        ]
+      }
+    },
+    "/api/hub/admin/support/threads/{chatId}/messages": {
+      "get": {
+        "operationId": "AdminSupportController_messages",
+        "parameters": [
+          {
+            "name": "chatId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque: send back the `nextCursor` of the previous page as given.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1 to 100, 20 when left out.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessagePage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One thread's messages, newest first, cursor-paged.",
+        "tags": [
+          "AdminSupport"
+        ]
+      },
+      "post": {
+        "operationId": "AdminSupportController_reply",
+        "parameters": [
+          {
+            "name": "chatId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reply in a thread. The person sees it in their chat from \"Who Made\nThis?\". The same `clientMessageId` sent again returns the first reply\ninstead of posting it twice.",
+        "tags": [
+          "AdminSupport"
+        ]
+      }
+    },
     "/api/hub/admin/events": {
       "get": {
         "operationId": "AdminEventsController_list",
@@ -29356,6 +29491,43 @@
         ]
       }
     },
+    "/api/hub/support/thread": {
+      "post": {
+        "operationId": "SupportController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenSupportThreadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportThreadView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "H18 \"Contact support\", W27 \"Report a problem\" and W35 \"Help with a\npayment\": open the caller's support thread, or get the one that exists,\nwith the payment they are asking about already written into it. The same\nreference sent again returns the same thread and the same message. A\nreference that does not exist, or is someone else's, is 404.",
+        "tags": [
+          "Support"
+        ]
+      }
+    },
     "/api/hub/chats": {
       "post": {
         "operationId": "ChatController_open",
@@ -39999,6 +40171,40 @@
             "description": "Rail order, lowest first. Default 0.",
             "minimum": 0,
             "maximum": 1000
+          }
+        }
+      },
+      "SupportReferenceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "`transaction` is a row of the wallet's history (W27's id); `payment` is a\npayment the person made, such as an unlock (the id the unlock answered).",
+            "enum": [
+              "transaction",
+              "payment"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ]
+      },
+      "OpenSupportThreadDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "description": "What the person wants help with. Left out: the thread opens with nothing attached.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupportReferenceDto"
+              }
+            ]
           }
         }
       },
@@ -56674,6 +56880,50 @@
           "userSaved"
         ]
       },
+      "SupportReferenceView": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "transaction",
+              "payment"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "reference"
+        ]
+      },
+      "SupportThreadView": {
+        "type": "object",
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/SupportReferenceView",
+            "nullable": true
+          },
+          "messageId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "chatId",
+          "reference",
+          "messageId"
+        ]
+      },
       "ChatPerson": {
         "type": "object",
         "properties": {
@@ -56693,6 +56943,10 @@
           },
           "verification": {
             "$ref": "#/components/schemas/VerificationState"
+          },
+          "support": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "required": [
@@ -57389,6 +57643,10 @@
           },
           "verification": {
             "$ref": "#/components/schemas/VerificationState"
+          },
+          "support": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "required": [

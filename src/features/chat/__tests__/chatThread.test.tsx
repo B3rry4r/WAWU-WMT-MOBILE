@@ -75,6 +75,29 @@ describe('I12: the chat', () => {
     expect(rtl.screen.getByTestId('chat-composer-input')).toBeTruthy();
   });
 
+  it('the support thread (SUPPORT-01) is "Who Made This?" with the app\'s own mark, no "on Who Made This?" line and no + for money', async () => {
+    hub.supportThread = true;
+    hub.messages = [textMessage('We can see it. Looking now.', false, '2026-10-16T17:52:00.000Z'), textMessage('Help with a payment: Tip · ₦2,000.00 · Reference WAW-T1P9-7ZQA', true, '2026-10-16T17:40:00.000Z')];
+    await boot();
+    expect(rtl.screen.getByTestId('chat-name').props.children).toBe('Who Made This?');
+    expect(rtl.screen.queryByTestId('chat-sub')).toBeNull();
+    expect(rtl.screen.queryByTestId('chat-plus')).toBeNull();
+    expect(rtl.screen.getByText('Help with a payment: Tip · ₦2,000.00 · Reference WAW-T1P9-7ZQA')).toBeTruthy();
+    expect(rtl.screen.getByText('We can see it. Looking now.')).toBeTruthy();
+    // Words can still be sent, in the same thread.
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('chat-composer-input'), 'Thank you');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('chat-composer-send'));
+    await rtl.screen.findByText('Thank you');
+    expect(hub.sentTexts).toHaveLength(1);
+  });
+
+  it('a support thread with nothing in it yet says so, in its own words (SUPPORT-01)', async () => {
+    hub.supportThread = true;
+    await renderWith(<ChatScreen chatId={CHAT} {...handlers()} />);
+    expect(await rtl.screen.findByText('Tell us what you need help with.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Say hello/)).toBeNull();
+  });
+
   it('a user types and sends: one message, with the app\'s own id for it', async () => {
     hub.messages = [textMessage('Hi', false)];
     await boot();
