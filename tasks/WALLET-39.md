@@ -7,7 +7,7 @@ order: 261
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [INBOX-03, WALLET-10, NUV-05, MONEY-10]
 decisions: [R-54]
 passes: [V1, V2, V3, V4, V7, V8, V9]
@@ -17,11 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 1 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below. Nothing blocks it; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/WALLET-39.md.
+As of 17 Oct 2026, built on `wmt/WALLET-39`; waiting for a verifier.
+- **Status:** verifying. Backend `wmt/WALLET-39` 2194ffb on backend main a5e48fc (batch 5). This repo: the same branch, with this file, SHARED-CHANGES rows `WALLET-39 #1` and `#2`, BACKEND_GAPS (G-730, G-731, G-732 closed) and LOG.
+- **Built (backend, additive):** the WALLET-10 sweep now tells every credit to a person's wallet: a received send (`transfer`), earnings landing (`earning`, WALLET-16's rows included, no hook needed), a refund (`refund`) and a bank transfer in (`top_up`). One `money_in` notification per ledger row, the mark `MoneyInNotice` as before.
+- **Words:** "You received ₦5,000 from Tolu B.", "...in earnings.", "...from your points.", "You received a refund of ₦1,200.", "...by bank transfer." / "...from Ada Obi (****1291)." (the WALLET-10 words, unchanged). Never a whole account number; no person's number at all for a send from inside WAWU.
+- **Opens the right screen:** the notice carries the ledger row's id as a `transaction` target in `GET /me/notifications` and in the push `data` (`target: {kind: "transaction", id}`), the id `GET /money/transactions/{id}` answers. The app (INBOX-21 routes the tap) opens the receipt (WALLET-04), or W46 for a bank transfer in while the person is on W45.
+- **Corrections:** a told credit the ledger later reverses is followed by one `money_in_reversed` notice ("The ₦5,000 you received from Tolu B. was reversed."), written with `MoneyInNotice.correctedAt` in one transaction, up to 30 days after the credit. The list always carries it; "Money in" off silences only its push. A credit nobody was told of (muted, before, reversed before it was told) is not corrected.
+- **Migration:** `20261024070000_money_in_all_credits` (two nullable columns, backfills so old credits and old reversals are not news, `rollback.sql`). The lead renames it at merge if needed.
+- **After the merge:** run `npm run api -- --backend ../wawu-backend` (the contract gains `transaction` as a `NotificationTargetView.kind`); nothing in the app calls it yet.
+- **Decisions (Default (agent), owner may override):** (1) target kind is `transaction`, not `ledger_entry` (G-731's guess): the app thinks in transaction ids. (2) The correction is a second kind, not a second `money_in`, so a list never has two "received" rows for one credit. (3) A told credit is corrected even with "Money in" off (a stale "received" must not stand); only the push is muted. (4) A person from inside WAWU is "Tolu B." (first name and last initial); one with no name on record is "a WAWU user". (5) Earnings and refunds name nobody. (6) The correction window is 30 days from the credit (PROVISIONAL(MONEY-IN-CORRECTION-WINDOW), owner=YOU).
+- **Not done / open:** the bank's name appears in the words only when a provider gives one (none does today, so "from GTBank ****0921" shows only if one starts to); WALLET-16 is not merged, so its earning rows were checked in the shape its branch writes them. `dm_refunded` (the web's DM refund) is a separate event and still fires beside a wallet refund's `money_in`.
+- **Next:** a verifier. Reports go to tasks/history/WALLET-39.md.
 
 ## Read first
 
@@ -48,13 +54,9 @@ Every credit to a wallet sends the person a notice: money from a Who Made This? 
 - [ ] The notice shows the amount and source, no account number.
 - [ ] A reversed credit does not leave a "received" notice standing without a following correction notice.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-39.md](history/WALLET-39.md).
 
 ## Owner sign-off
 
