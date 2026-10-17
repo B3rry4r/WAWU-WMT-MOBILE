@@ -24,6 +24,15 @@ jest.mock('expo-secure-store', () => {
   };
 });
 
+// FIX-48's setup points '@/api/env' at a closed port; this test needs its own address, so it mocks '@/api/env' itself
+// (the way jest.network-guard.js says to). The address is read when the client is first loaded, after beforeAll set it.
+jest.mock('@/api/env', () => ({
+  get apiBaseUrl() {
+    return process.env.EXPO_PUBLIC_API_URL as string;
+  },
+  identityBaseUrl: 'http://localhost:9',
+}));
+
 type Seen = { method: string; path: string; headers: http.IncomingHttpHeaders; bytes: number };
 type Part = { key: string; value?: string; name?: string; type?: string; size?: number };
 

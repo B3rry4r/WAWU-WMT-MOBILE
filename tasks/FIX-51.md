@@ -26,6 +26,7 @@ As of 17 Oct 2026.
 - **Test:** new `__tests__/documentsWire.test.ts` (3 tests). The real `api` client and the real `uploadDocument` talk to an HTTP server on 127.0.0.1 that reads multipart the way the Hub does; only the transport is swapped (jest's global `fetch` is Expo's native one and reaches no socket). On the old code all 3 fail (the Hub's 400); with the fix all 3 pass.
 - **Stack proof:** stack `fix51_test` (backend `wmt/MERGE-7` `432f017`, the Nuvion stand-in, mock WAWU ID, mobile web export of this branch). A new person walked A31 to A27 and pressed Submit with no route rewrite: both document POSTs were multipart, no HTTP error, the Hub then listed identity (front and back) and proof of address as `uploaded`, `submitted` true, and the stand-in took two documents (201 each).
 - **Not run:** a real device (the phone's `{ uri, name, type }` file part goes through the same `body`, but node cannot build it), GitHub CI, a real Nuvion page, the full suite (the batch merge runs it). The web export, after Submit, ended on A26 in a shallow browser history (the flow's own `history.go(-3)`), not touched here.
+- **MERGE-9 note:** batch 8's jest network guard (FIX-48) points `@/api/env` at a closed port, which stopped `documentsWire.test.ts` reaching its local Hub (3 tests, "No connection"). The test now mocks `@/api/env` itself with the address of its own server, as `jest.network-guard.js` says a test may; no assertion changed and the 3 tests pass.
 - **Open findings:** none.
 - **Next:** a fresh verifier.
 - **History:** tasks/history/FIX-51.md.
