@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -16,6 +16,7 @@ import {
   failureMessage,
   isRefusedAccount,
   nameCheckQuery,
+  nameCheckWait,
   payoutAccountQuery,
   payoutProblem,
   savePayoutAccount,
@@ -133,6 +134,23 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
       if (payoutProblem(error) !== 'other') void queryClient.invalidateQueries({ queryKey: payoutAccountQuery.queryKey });
     },
   });
+
+  // A refusal for the hour's name check limit ends (R-51): when the wait the Hub named has passed, a refused check
+  // is made again for the same number, and a refused save is cleared so Save opens; the person edits nothing.
+  const checkWait = check.isError ? nameCheckWait(check.error) : null;
+  const refetchCheck = check.refetch;
+  useEffect(() => {
+    if (checkWait === null) return;
+    const timer = setTimeout(() => void refetchCheck(), checkWait * 1000);
+    return () => clearTimeout(timer);
+  }, [check.error, checkWait, refetchCheck]);
+  const saveWait = save.isError ? nameCheckWait(save.error) : null;
+  const resetSave = save.reset;
+  useEffect(() => {
+    if (saveWait === null) return;
+    const timer = setTimeout(() => resetSave(), saveWait * 1000);
+    return () => clearTimeout(timer);
+  }, [save.error, saveWait, resetSave]);
 
   const nameCheck: NameCheck = !shouldCheckName(form, saved)
     ? { status: 'idle' }

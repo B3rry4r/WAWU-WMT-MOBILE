@@ -1,7 +1,8 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError, isApiError } from '@/api/errors';
+import { ApiError, isApiError, toApiError } from '@/api/errors';
 import type { MoneyErrorCode } from '@/api/money';
 import type { components } from '@/api/schema.generated';
+import { retryAfterOf } from '@/features/open-wallet/api/check';
 
 /**
  * A21's calls, as the backend contract types them.
@@ -30,6 +31,21 @@ export const ACCOUNT_NUMBER_LENGTH = 10;
 
 function unreadable(): ApiError {
   return new ApiError('unknown', 200, 'Your payout account could not be read. Try again.');
+}
+
+/**
+ * `unwrap`, keeping the wait a refusal for the hour's name check limit carried (429 `name_check_rate_limited`,
+ * R-51): the Hub gives it as `reason.retryAfterSeconds` and `Retry-After`, which the shared `ApiError` does not
+ * read (SHARED-CHANGES KYC-05 #3). The screen opens the form again when it has passed.
+ */
+async function unwrapKeepingWait<T, E>(request: Promise<{ data?: T; error?: E; response: Response }>): Promise<T> {
+  const { data, error, response } = await request;
+  if (!response.ok) {
+    const refused = toApiError(response.status, error);
+    const wait = refused.code === 'name_check_rate_limited' ? retryAfterOf(error, response.headers) : null;
+    throw wait === null ? refused : Object.assign(refused, { retryAfterSeconds: wait });
+  }
+  return data as T;
 }
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
@@ -64,7 +80,7 @@ export async function fetchPayoutAccount(): Promise<PayoutAccount | null> {
  * not confirm the account, `provider_unreachable` (503) when it does not answer.
  */
 export async function savePayoutAccount(input: PayoutAccountInput): Promise<PayoutAccount> {
-  const body = (await unwrap(
+  const body = (await unwrapKeepingWait(
     api.PUT('/api/hub/money/payout-account', { body: { bankCode: input.bankCode, accountNumber: input.accountNumber } }),
   )) as unknown as Envelope<PayoutAccount>;
   return readPayoutAccount(body?.data);
@@ -80,7 +96,7 @@ export async function fetchBanks(): Promise<Bank[]> {
 
 /** POST /money/banks/name-check (WALLET-09): the bank's name for this account. */
 export async function checkAccountName(input: PayoutAccountInput): Promise<AccountName> {
-  const body = (await unwrap(
+  const body = (await unwrapKeepingWait(
     api.POST('/api/hub/money/banks/name-check', { body: { bankCode: input.bankCode, accountNumber: input.accountNumber } }),
   )) as unknown as Envelope<AccountName>;
   const v = body?.data;
@@ -147,11 +163,19 @@ export function isUnconfirmedAccount(error: unknown): boolean {
   return isApiError(error) && error.code === 'name_check_failed';
 }
 
+/** The wait ahead after a refusal for the hour's name check limit, in seconds; null for any other error. */
+export function nameCheckWait(error: unknown): number | null {
+  if (!isApiError(error) || error.code !== 'name_check_rate_limited') return null;
+  // The Hub always names it; if it ever does not, the shortest wait it names is one minute.
+  return typeof error.retryAfterSeconds === 'number' && error.retryAfterSeconds > 0 ? error.retryAfterSeconds : 60;
+}
+
 /**
  * A refusal the person fixes by changing the account, read on the account number field (R-51, WALLET-37):
  * - 422 `name_check_failed`: the bank did not confirm the account;
  * - 409 `account_not_in_your_name`: the account is not in the name on their wallet (the sentence names both);
- * - 429 `name_check_rate_limited`: too many name checks this hour (the sentence gives the minutes left).
+ * - 429 `name_check_rate_limited`: too many name checks this hour (the sentence gives the minutes left; the form
+ *   opens again when that wait has passed, `nameCheckWait`).
  * Each carries its own sentence written for people, so the screen shows `message` as it is.
  */
 export function isRefusedAccount(error: unknown): boolean {

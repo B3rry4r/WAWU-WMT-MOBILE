@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 74, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 75, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -121,6 +121,7 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | FIX-42 | F4 | Hub: `joinNotes` caps a payment's discrepancy at 1000 characters; a payment whose notes already fill that would never carry the late-success marker and would be re-looked every pass (harmless, idempotent). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-40.md`, finding 5 |
 | WALLET-02 | F1 | App: sign-out (`src/features/send/intent.ts` `settleIntentsAtSignOut`) writes out only the expired rows this run loaded into memory. An unknown intent older than 23 h that sits in the store and was never loaded (app reopened, signed out without a send) stays there with person id, amount, note and quote token (S18c: 1 row left). No PIN; it is ignored on load and overwritten by the next put for that account. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-02.md`, finding 1 (round 3) |
 | WALLET-02 | F2 | App (known limit, as round 2): tab 1 completes and drops its intent; tab 2, opened before, then presses Send on the same review: a second payment with a new key (S16d). A phone has one runtime; a second device is the same. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-02.md`, finding 2 (round 3) |
+| WALLET-37 | V-2 | Hub: the wallet-name match (`accountNameIsWalletName`, `src/money/identity/bvn-name.ts`) accepts two given names without the surname: wallet `John Paul Smith` saves a payout account named `JOHN PAUL`, and `Ada Okoro-Eze` accepts `ADA EZE`. Within the lead's ruling as worded (every word of the shorter name is a word of the longer, at least two words match); the lead ruled it accepted in round 5, recorded here so a later reader knows it is known. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-37.md`, finding 2 |
 
 ## Builder report
 

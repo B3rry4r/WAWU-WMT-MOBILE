@@ -278,6 +278,57 @@ describe('A21 · Payout bank', () => {
     expect(sent.some((s) => s.method === 'PUT')).toBe(false);
   });
 
+  // Round 5 (verifier finding 3): a refusal for the hour's limit ends. The wait is the server's own figure
+  // (`reason.retryAfterSeconds`; one second here so the test does not sit), and when it has passed the person
+  // goes on without editing the number.
+  const limited = (message: string, seconds: number) => ({
+    status: 429,
+    body: { statusCode: 429, message, data: null, reason: { code: 'name_check_rate_limited', message, retryAfterSeconds: seconds } },
+  });
+  const ADA = { bankCode: '000013', bankName: 'GTBANK PLC', accountNumber: '0123456788', accountName: 'ADA OKORO' };
+
+  it('after a name check was refused for the hour’s limit, the check runs again when the wait ends and Save opens, without editing the number', async () => {
+    const wait = 'You have checked a lot of accounts this hour. Try again in 1 minute.';
+    answers = {
+      [`GET ${PAYOUT}`]: ok(saved),
+      [`POST ${NAME}`]: [limited(wait, 1), ok(ADA)],
+    };
+    await boot();
+    await screen.findByText('SIMI MICHELLE · matches your BVN');
+    await fireEvent.changeText(screen.getByTestId('payout-number'), '0123456788');
+    expect(await screen.findByText(wait)).toBeTruthy();
+    expect(screen.getByTestId('payout-save')).toBeDisabled();
+    // The wait passes: the sentence goes, the bank is asked again for the same number, its name shows, Save opens.
+    expect(await screen.findByText('ADA OKORO', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(screen.queryByText(wait)).toBeNull();
+    expect(sent.filter((s) => s.method === 'POST' && s.path === NAME)).toHaveLength(2);
+    expect(screen.getByTestId('payout-save')).not.toBeDisabled();
+  });
+
+  it('after a save was refused for the hour’s limit, Save opens again when the wait ends, without editing the number', async () => {
+    const onSaved = jest.fn();
+    const wait = 'You have checked a lot of accounts this hour. Try again in 1 minute.';
+    answers = {
+      [`GET ${PAYOUT}`]: ok(saved),
+      [`POST ${NAME}`]: ok(ADA),
+      [`PUT ${PAYOUT}`]: [limited(wait, 1), ok({ ...ADA, matchesBvnName: true, updatedAt: '2026-10-17T10:00:00.000Z' })],
+    };
+    await boot(onSaved);
+    await screen.findByText('SIMI MICHELLE · matches your BVN');
+    await fireEvent.changeText(screen.getByTestId('payout-number'), '0123456788');
+    await screen.findByText('ADA OKORO');
+    await fireEvent.press(screen.getByTestId('payout-save'));
+    expect(await screen.findByText(wait)).toBeTruthy();
+    expect(screen.getByTestId('payout-save')).toBeDisabled();
+    await waitFor(() => expect(screen.queryByText(wait)).toBeNull(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByTestId('payout-save')).not.toBeDisabled());
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('payout-save'));
+    });
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ accountName: 'ADA OKORO' })));
+    expect(sent.filter((s) => s.method === 'PUT')).toHaveLength(2);
+  });
+
   it('a save answered "no wallet" reads the account again and shows why', async () => {
     answers = {
       [`GET ${PAYOUT}`]: [ok(saved), refusal(409, 'wallet_not_open', 'Open your wallet first.')],
@@ -325,6 +376,24 @@ describe('A21 calls', () => {
     await expect(api.fetchBanks()).resolves.toEqual([{ code: '000013', name: 'GTBANK PLC' }]);
     answers = { [`POST ${NAME}`]: ok({ bankCode: '000013', bankName: 'GTBANK PLC', accountNumber: '9999999999', accountName: 'SOMEONE' }) };
     await expect(api.checkAccountName({ bankCode: '000013', accountNumber: '0123456789' })).rejects.toMatchObject({ kind: 'unknown' });
+  });
+
+  it('a refusal for the hour’s name check limit keeps the wait the Hub named; any other refusal is unchanged', async () => {
+    const message = 'You have checked a lot of accounts this hour. Try again in 12 minutes.';
+    const input = { bankCode: '000013', accountNumber: '0123456788' };
+    answers = { [`POST ${NAME}`]: { status: 429, body: { statusCode: 429, message, data: null, reason: { code: 'name_check_rate_limited', message, retryAfterSeconds: 720 } } } };
+    const named = await api.checkAccountName(input).catch((e: unknown) => e);
+    expect(named).toMatchObject({ status: 429, code: 'name_check_rate_limited', message, retryAfterSeconds: 720 });
+    expect(api.nameCheckWait(named)).toBe(720);
+    answers = { [`PUT ${PAYOUT}`]: { status: 429, body: { statusCode: 429, message, data: null, reason: { code: 'name_check_rate_limited', message, retryAfterSeconds: 90 } } } };
+    expect(api.nameCheckWait(await api.savePayoutAccount(input).catch((e: unknown) => e))).toBe(90);
+    // No figure from the Hub: the shortest wait it ever names, one minute.
+    answers = { [`POST ${NAME}`]: { status: 429, body: { statusCode: 429, message, data: null, reason: { code: 'name_check_rate_limited', message } } } };
+    expect(api.nameCheckWait(await api.checkAccountName(input).catch((e: unknown) => e))).toBe(60);
+    // Another code, and another error, carry no wait.
+    answers = { [`POST ${NAME}`]: refusal(422, 'name_check_failed', 'We could not confirm that account.') };
+    expect(api.nameCheckWait(await api.checkAccountName(input).catch((e: unknown) => e))).toBeNull();
+    expect(api.nameCheckWait(new Error('x'))).toBeNull();
   });
 
   it('each refusal maps to the state the screen shows', () => {
