@@ -125,6 +125,27 @@ describe('M31 · Notifications', () => {
     expect(screen.queryByRole('button', { name: /Zainab Bello followed you/ })).toBeNull();
   });
 
+  it('a double tap on a new row with nothing to open sends the read once, and a refused read can be sent again', async () => {
+    const unknown = note('n8', 'something_new', 'Another kind the app has not met', 'Still shown.', { category: 'other' });
+    let refuse: (v: { status: number; body: unknown }) => void = () => undefined;
+    hub.answers[`GET ${LIST}`] = page([unknown]);
+    // The Hub has not answered yet when the second tap lands.
+    hub.answers['POST /api/hub/notifications/n8/read'] = new Promise((resolve) => {
+      refuse = resolve;
+    });
+    await open();
+    await screen.findByText('Another kind the app has not met');
+    await fireEvent.press(screen.getByTestId('notification-row-n8'));
+    await fireEvent.press(screen.getByTestId('notification-row-n8'));
+    await waitFor(() => expect(calls('POST', '/api/hub/notifications/n8/read')).toHaveLength(1));
+    // The Hub refused, so the dot is back and the next tap sends it again.
+    refuse(refusal(500, 'Something went wrong on our side.'));
+    await waitFor(() => expect(screen.getByTestId('notification-dot-n8')).toBeTruthy());
+    hub.answers['POST /api/hub/notifications/n8/read'] = ok(null);
+    await fireEvent.press(screen.getByTestId('notification-row-n8'));
+    await waitFor(() => expect(calls('POST', '/api/hub/notifications/n8/read')).toHaveLength(2));
+  });
+
   it('See why on a piece sent back opens M26 for that piece', async () => {
     const { open: opened } = await open();
     await screen.findByText("Pricing playbook wasn't approved");
@@ -164,6 +185,14 @@ describe('M31 · Notifications', () => {
     expect(screen.getByText('Sales, tips, paid questions and reviews show up here.')).toBeTruthy();
     expect(screen.queryByRole('radio', { name: 'Money' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Notification settings' })).toBeTruthy();
+  });
+
+  it('M32 centres its words in the space under the bar, as the board draws them, not at the top', async () => {
+    hub.answers[`GET ${LIST}`] = page([]);
+    await open();
+    await screen.findByText("You're all caught up");
+    // The block fills what is left of the scrolling body and centres in it, lifted by the board's 120 at the foot (20 kept by the frame).
+    expect(screen.getByTestId('notifications-empty-body')).toHaveStyle({ flexGrow: 1, justifyContent: 'center', paddingBottom: 100 });
   });
 
   it('keeps the chips when one chip is empty, so the person can go back', async () => {

@@ -145,6 +145,61 @@ describe('M30 · Saved', () => {
     await waitFor(() => expect(calls('DELETE', '/api/hub/content/w6/save')).toHaveLength(1));
   });
 
+  describe('two take-backs in flight', () => {
+    type Plain = { status: number; body: unknown };
+    /** An answer the test gives when it chooses, so two requests can be in flight together. */
+    const later = (key: string) => {
+      let give: (v: Plain) => void = () => undefined;
+      hub.answers[key] = new Promise<Plain>((resolve) => {
+        give = resolve;
+      });
+      return (v: Plain) => give(v);
+    };
+    const shown = () => screen.getAllByTestId(/^saved-tile-/).map((tile) => tile.props.testID as string);
+    const FIRST = ['saved-tile-s-w6', 'saved-tile-s-e1', 'saved-tile-s-w3', 'saved-tile-s-c1', 'saved-tile-s-e2', 'saved-tile-s-m1'];
+
+    it('puts both tiles back, each in its place, when the Hub refuses both', async () => {
+      const refuseW6 = later('DELETE /api/hub/content/w6/save');
+      const refuseE1 = later('DELETE /api/hub/events/e1/save');
+      await open();
+      await screen.findByText('Agency breakdown');
+      await fireEvent.press(screen.getByTestId('saved-remove-s-w6'));
+      await fireEvent.press(screen.getByTestId('saved-remove-s-e1'));
+      await waitFor(() => expect(shown()).toEqual(FIRST.slice(2)));
+      refuseW6(refusal(500, 'Something went wrong on our side.'));
+      await waitFor(() => expect(shown()).toEqual(['saved-tile-s-w6', ...FIRST.slice(2)]));
+      refuseE1(refusal(500, 'Something went wrong on our side.'));
+      await waitFor(() => expect(shown()).toEqual(FIRST));
+      expect(screen.getByText("Couldn't remove it. Try again.")).toBeTruthy();
+    });
+
+    it.each([
+      ['the refusal comes first', true],
+      ['the success comes first', false],
+    ])('puts back only the refused tile when the other take-back went through (%s)', async (_name, refusedFirst) => {
+      const refuseW6 = later('DELETE /api/hub/content/w6/save');
+      const agreeE1 = later('DELETE /api/hub/events/e1/save');
+      const { queryClient } = await open();
+      await screen.findByText('Agency breakdown');
+      await fireEvent.press(screen.getByTestId('saved-remove-s-w6'));
+      await fireEvent.press(screen.getByTestId('saved-remove-s-e1'));
+      await waitFor(() => expect(shown()).toEqual(FIRST.slice(2)));
+      if (refusedFirst) {
+        refuseW6(refusal(500, 'Something went wrong on our side.'));
+        await waitFor(() => expect(shown()).toEqual(['saved-tile-s-w6', ...FIRST.slice(2)]));
+        agreeE1(ok({ saved: false }));
+      } else {
+        agreeE1(ok({ saved: false }));
+        await waitFor(() => expect(staleCounts(queryClient)).toBe(true));
+        expect(shown()).toEqual(FIRST.slice(2));
+        refuseW6(refusal(500, 'Something went wrong on our side.'));
+      }
+      await waitFor(() => expect(shown()).toEqual(['saved-tile-s-w6', ...FIRST.slice(2)]));
+      await waitFor(() => expect(staleCounts(queryClient)).toBe(true));
+      expect(screen.queryByText('Lagos Creators Meetup')).toBeNull();
+    });
+  });
+
   it('says what each tab holds when it is empty', async () => {
     hub.answers[`GET ${LIST}`] = page([]);
     await open();

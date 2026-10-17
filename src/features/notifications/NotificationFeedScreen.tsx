@@ -19,6 +19,9 @@ import { font, space, useWawu } from '@/theme';
 import { feedKey, feedRoot, fetchFeedPage, markRead, type FeedCategory, type FeedItem, type FeedPage } from './api';
 import { CAUGHT_UP, CHIPS, actionOf, iconOf, routeOf, toneOf, whenOf } from './model';
 
+/** design/_gen/kit.js `body` pads 120 at the foot and M32 centres its words in what is left under the bar; CreateFrame already keeps `space.xl` of it, so the empty block lifts by the rest. */
+const EMPTY_LIFT = 120 - space.xl;
+
 /** design/_gen/me.js `nRow`: a 44 circle, 12 to the words, 14 above and below; the title 15 (700 unread, 600 read), the words 13.5 on a 1.4 line 3 under it, the button 8 under them; the time 12 and the unread dot 8, 8 apart. */
 const rowMetrics = { between: 12, padV: 14, circle: 44, title: 15, titleLead: 20, body: 13.5, bodyLead: 1.4, bodyGap: 3, actionGap: 8, time: 12, dot: 8, sideGap: 8, partsBetween: 12 } as const;
 
@@ -77,14 +80,19 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
     }, [refetch]),
   );
 
+  // A row's read is sent once: a second tap before the list has redrawn (item.read still false) sends nothing.
+  const sentRead = useRef(new Set<string>());
   const read = useMutation({
     mutationFn: markRead,
     onMutate: async (id: string) => {
       await queryClient.cancelQueries({ queryKey: feedRoot });
       queryClient.setQueriesData<InfiniteData<FeedPage, string | null>>({ queryKey: feedRoot }, (data) => withRead(data, id));
     },
-    // Whatever the Hub says is true: on a refusal the row goes back to what it holds.
-    onError: () => void queryClient.invalidateQueries({ queryKey: feedRoot }),
+    // Whatever the Hub says is true: on a refusal the row goes back to what it holds, and a tap can send the read again.
+    onError: (_error, id) => {
+      sentRead.current.delete(id);
+      void queryClient.invalidateQueries({ queryKey: feedRoot });
+    },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: countsKey }),
   });
 
@@ -97,14 +105,20 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
   // M32 draws no chips: they come back as soon as there is a list to filter. A chip with nothing in it keeps them.
   const caughtUp = category === 'all' && list.isSuccess && items.length === 0;
 
+  const readOnce = (item: FeedItem) => {
+    if (item.read || sentRead.current.has(item.id)) return;
+    sentRead.current.add(item.id);
+    read.mutate(item.id);
+  };
+
   const open = (item: FeedItem) => {
-    if (!item.read) read.mutate(item.id);
+    readOnce(item);
     const href = routeOf(item);
     if (href) onOpen(href);
   };
 
   const raiseTopUp = (item: FeedItem) => {
-    if (!item.read) read.mutate(item.id);
+    readOnce(item);
     setTopUp(true);
   };
 
@@ -129,7 +143,9 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
             onRetry={() => void list.refetch()}
           />
         ) : items.length === 0 ? (
-          <EmptyState testID="notifications-empty" icon="Bell" title={CAUGHT_UP.title} message={CAUGHT_UP.message} />
+          <View testID="notifications-empty-body" style={styles.empty}>
+            <EmptyState testID="notifications-empty" icon="Bell" title={CAUGHT_UP.title} message={CAUGHT_UP.message} />
+          </View>
         ) : (
           <View testID="notifications-list">
             {items.map((item) => (
@@ -197,6 +213,7 @@ function Row({ item, when, onOpen, onAction }: RowProps) {
 }
 
 const styles = StyleSheet.create({
+  empty: { flexGrow: 1, justifyContent: 'center', paddingBottom: EMPTY_LIFT },
   row: { flexDirection: 'row', gap: rowMetrics.between, paddingVertical: rowMetrics.padV, borderBottomWidth: StyleSheet.hairlineWidth },
   words: { flex: 1, minWidth: 0 },
   title: { fontSize: rowMetrics.title, lineHeight: rowMetrics.titleLead },

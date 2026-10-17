@@ -32,7 +32,7 @@ export type SavedScreenProps = {
   onOpenEvent: (id: string) => void;
 };
 
-/** One page of the cache without the save that was taken back. */
+/** The cache without the save the Hub has taken back. */
 function without(data: InfiniteData<SavedPage, string | null> | undefined, id: string) {
   if (!data) return data;
   return { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((entry) => entry.id !== id) })) };
@@ -40,8 +40,8 @@ function without(data: InfiniteData<SavedPage, string | null> | undefined, id: s
 
 /**
  * M30 · Saved. What the person kept, newest first, from `GET /me/saved`, by the chips All, Content, Events and Creators. The mark on a
- * tile takes the save back (`DELETE` on the piece, the event or the creator): the tile goes at once and comes back with a notice if the
- * Hub refuses. A saved event opens E2; a piece (HOME-03) and a creator (ME-02) open nothing until those screens add their entries.
+ * tile takes the save back (`DELETE` on the piece, the event or the creator): the tile goes at once and comes back, in its place and with
+ * a notice, if the Hub refuses (each take-back on its own, so two in flight cannot undo each other). A saved event opens E2; a piece (HOME-03) and a creator (ME-02) open nothing until those screens add their entries.
  */
 export function SavedScreen({ onBack, onOpenEvent }: SavedScreenProps) {
   const queryClient = useQueryClient();
@@ -68,22 +68,33 @@ export function SavedScreen({ onBack, onOpenEvent }: SavedScreenProps) {
     }, [refetch]),
   );
 
+  // A save being taken back is hidden by its id while the Hub is asked; the cache is not written until the Hub agrees. A refusal only
+  // stops hiding that one entry, so it comes back in its own place whatever else is in flight.
+  const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
+  const stopHiding = (id: string) =>
+    setLeaving((current) => {
+      if (!current.has(id)) return current;
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
   const remove = useMutation({
     mutationFn: removeSaved,
-    onMutate: async (entry: SavedEntry) => {
-      await queryClient.cancelQueries({ queryKey: savedRoot });
-      const before = queryClient.getQueriesData<InfiniteData<SavedPage, string | null>>({ queryKey: savedRoot });
-      queryClient.setQueriesData<InfiniteData<SavedPage, string | null>>({ queryKey: savedRoot }, (data) => without(data, entry.id));
-      return { before };
+    onMutate: (entry: SavedEntry) => {
+      setLeaving((current) => new Set(current).add(entry.id));
     },
-    onError: (_error, _entry, context) => {
-      context?.before.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    onSuccess: (_data, entry) => {
+      queryClient.setQueriesData<InfiniteData<SavedPage, string | null>>({ queryKey: savedRoot }, (data) => without(data, entry.id));
+      stopHiding(entry.id);
+    },
+    onError: (_error, entry) => {
+      stopHiding(entry.id);
       setNotice("Couldn't remove it. Try again.");
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: countsKey }),
   });
 
-  const entries = useMemo(() => list.data?.pages.flatMap((page) => page.items) ?? [], [list.data]);
+  const entries = useMemo(() => (list.data?.pages.flatMap((page) => page.items) ?? []).filter((entry) => !leaving.has(entry.id)), [list.data, leaving]);
   const now = new Date();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = list;
   const more = useCallback(() => {
