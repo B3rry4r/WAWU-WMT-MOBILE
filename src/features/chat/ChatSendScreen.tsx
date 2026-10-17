@@ -5,7 +5,7 @@ import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { balanceProblem, walletBalanceQuery } from '@/api/money';
 import { Avatar } from '@/components/Avatar';
-import { AmountKeypad, deleteLast, koboOfText, pressKey, textOfKobo } from '@/components/amount-entry';
+import { AmountKeypad, deleteLast, koboOfText, pressKey } from '@/components/amount-entry';
 import { Button } from '@/components/Button';
 import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
@@ -29,12 +29,11 @@ import {
   limitLine,
   NOT_READY_LINE,
   quoteAddsUp,
-  quoteSpent,
   type Payee,
 } from '@/features/send/model';
 import { PayeeTick, useSettled } from '@/features/send/parts';
 import { newRequestKey } from '@/features/wallet/api/settings';
-import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, space, useWawu } from '@/theme';
 
 import { addChatSend, chatSends } from './sends';
 
@@ -95,21 +94,20 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
   }, [problem, entry]);
 
   // The phone is asked for a send already made for this person and amount: undefined while it is asked, null when none is kept.
-  const [kept, setKept] = useState<SendIntent | null | undefined>(undefined);
+  const sig = `${payee.wawuUserId}:${amountKobo}`;
+  const [keptFor, setKeptFor] = useState<{ sig: string; intent: SendIntent | null } | null>(null);
+  const kept: SendIntent | null | undefined = !owner || amountKobo <= 0 ? null : keptFor?.sig === sig ? keptFor.intent : undefined;
   useEffect(() => {
-    if (!owner || amountKobo <= 0) {
-      setKept(null);
-      return undefined;
-    }
+    if (!owner || amountKobo <= 0) return undefined;
     let current = true;
-    setKept(undefined);
     void findIntent(owner, payee.wawuUserId, amountKobo).then((found) => {
-      if (current) setKept(found);
+      if (current) setKeptFor({ sig, intent: found });
     });
     return () => {
       current = false;
     };
-  }, [owner, payee.wawuUserId, amountKobo]);
+  }, [owner, payee.wawuUserId, amountKobo, sig]);
+  const setKept = (intent: SendIntent | null) => setKeptFor({ sig, intent });
 
   const [round, setRound] = useState(0);
   const [fresh, setFresh] = useState<FeeQuote | null>(null);
@@ -124,10 +122,13 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
     retry: false,
   });
   const quote: FeeQuote | null = (kept?.phase === 'unknown' ? kept.quote : null) ?? (fresh && fresh.amountKobo === amountKobo ? fresh : null) ?? (quoted.data && quoted.data.amountKobo === amountKobo ? quoted.data : null);
-  if (quoted.isError && isApiError(quoted.error) && quoted.error.code === 'wallet_not_open' && !led.current) {
-    led.current = true;
-    entry.open();
-  }
+  const quoteNoWallet = quoted.isError && isApiError(quoted.error) && quoted.error.code === 'wallet_not_open';
+  useEffect(() => {
+    if (quoteNoWallet && !led.current) {
+      led.current = true;
+      entry.open();
+    }
+  }, [quoteNoWallet, entry]);
 
   const [status, setStatus] = useState<PayStatus>({ kind: 'review' });
   const [pinOpen, setPinOpen] = useState(false);
@@ -150,7 +151,6 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
     setShowShort(false);
   };
 
-  const total = quote?.totalKobo ?? null;
   const balanceKobo = shortOf ?? balance.data?.availableKobo ?? null;
   const limit = quote ? limitLine(quote) : null;
   const blockedLine = quote && !quoteAddsUp(quote) ? 'We couldn’t work out the total. Change the amount to ask again.' : limit;

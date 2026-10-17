@@ -65,31 +65,23 @@ export function useBuyCredits(args: BuyCreditsArgs) {
   const [shortOf, setShortOf] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [status, setStatus] = useState<PayStatus>({ kind: 'review' });
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [confirmingPack, setConfirmingPack] = useState<PackId | null>(null);
+  const [pendingIdNow, setPendingId] = useState<string | null>(null);
+  const [confirmingNow, setConfirmingPack] = useState<PackId | null>(null);
   const [added, setAdded] = useState<CreditsAdded | null>(null);
   const handled = useRef<string | null>(null);
   const led = useRef(false);
 
   const packs = useQuery({ queryKey: packsKey, queryFn: fetchPacks, enabled: visible, staleTime: 0 });
-  const list = packs.data ?? [];
-  const pack: PackId | null = chosen ?? defaultPack(list);
-
+  const list = useMemo(() => packs.data ?? [], [packs.data]);
   // The sheet opens on the pack the Hub marks popular; a held attempt for another pack shows that pack, whose purchase is still open.
-  useEffect(() => {
-    if (!visible || chosen !== null) return;
-    const held = list.find((candidate) => attemptFor(subjectOf(candidate.pack)) !== null);
-    if (held) setChosen(held.pack);
-  }, [visible, chosen, list]);
+  const heldPack = list.find((candidate) => attemptFor(subjectOf(candidate.pack)) !== null)?.pack ?? null;
+  const pack: PackId | null = chosen ?? heldPack ?? defaultPack(list);
 
   const held = pack ? attemptFor<PackQuote>(subjectOf(pack)) : null;
-
   // A purchase kept as pending is read again by its id. It is not bought again.
-  useEffect(() => {
-    if (!visible || !held || held.phase !== 'pending' || !held.paymentId) return;
-    setPendingId(held.paymentId);
-    setConfirmingPack(held.quote.pack);
-  }, [visible, held]);
+  const keptPending = held?.phase === 'pending' ? held : null;
+  const pendingId = pendingIdNow ?? keptPending?.paymentId ?? null;
+  const confirmingPack = confirmingNow ?? (keptPending ? keptPending.quote.pack : null);
 
   const quoted = useQuery(
     {

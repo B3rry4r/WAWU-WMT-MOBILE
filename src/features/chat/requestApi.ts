@@ -1,6 +1,5 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema.generated';
 import { fetchFeeQuote, readQuote, readTransfer, type FeeQuote, type Transfer } from '@/features/send/api';
 import { HTTP_CREATED, filled, reasonOf, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
 
