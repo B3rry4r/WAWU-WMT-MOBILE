@@ -58,8 +58,8 @@ export type ReviewScreenProps = {
   onFailed?: (transferId: string) => void;
   /** Leave without a receipt: the wallet. */
   onLeave: () => void;
-  /** Add money for the shortfall (kobo). */
-  onAddMoney: (shortfallKobo: number) => void;
+  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05): the short notice shows without the button. */
+  onAddMoney?: (shortfallKobo: number) => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back here. */

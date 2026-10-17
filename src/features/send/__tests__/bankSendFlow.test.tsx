@@ -334,6 +334,15 @@ describe('W8 · send to a bank account', () => {
     expect(await screen.findByText(ACCOUNT.accountName)).toBeTruthy();
   });
 
+  it('a check the bank did not answer says only that the name could not be checked, and never talks about saving', async () => {
+    hub.nameCheck = 'down';
+    await toResolved();
+    expect(await screen.findByTestId('send-bank-unchecked')).toBeTruthy();
+    expect(screen.getByText('We could not check the name now.')).toBeTruthy();
+    expect(screen.queryByText(/Saving/)).toBeNull();
+    expect(screen.getByTestId('send-bank-continue').props.accessibilityState?.disabled).toBe(true);
+  });
+
   it('a user sees My payout account (tagged withdraw) and a saved account, and taps one to go straight to W9 with the Hub’s name', async () => {
     hub.saved = [{ id: 'b-9', kind: 'bank_account', wawuUser: null, bankAccount: SAVED, createdAt: '2026-10-10T09:00:00.000Z' }];
     await toBank();
@@ -457,6 +466,17 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     expect(await screen.findByText(/Not enough/i)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Send ₦/ })).toBeNull();
     expect(hub.sends).toHaveLength(0);
+  });
+
+  it('a short notice on W10 draws no Add button, because Add money is WALLET-05’s (R-47); the notice and Cancel stand', async () => {
+    hub.balanceKobo = 2_503_000;
+    await toAmount();
+    for (const k of '25000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await fireEvent.press(screen.getByTestId('send-continue'));
+    await screen.findByTestId('send-review-screen');
+    expect(await screen.findByText('Not enough in your Naira wallet')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Add / })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
   });
 
   it('a quote that changed since the review puts the new total on screen and sends nothing until it is read again', async () => {

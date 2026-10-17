@@ -94,7 +94,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
           ? { status: 'error', unconfirmed: isRefusedAccount(check.error), message: check.error.message }
           : { status: 'pending' };
   const line = nameLine(form, null, nameCheck);
-  const hint = nameLineHint(line);
+  const hint = nameLineHint(line, 'send');
   const savedRows = useMemo(() => (saved.data ?? []).filter((row) => row.kind === 'bank_account' && row.bankAccount), [saved.data]);
   const resolved = complete !== null && check.isSuccess ? check.data : null;
 

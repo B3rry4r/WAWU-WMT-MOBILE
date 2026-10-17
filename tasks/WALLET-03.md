@@ -26,6 +26,7 @@ As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `o
 - **W13 differs:** the board draws neither the quick amounts nor the note on the over-balance state and draws an Add money pill; W9's own parts stay and the pill is WALLET-05's.
 - **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wa-b/pics/` W7, W8, W9, W10, W12, W13, W14, each light and dark with `side-<ID>-<theme>.png` beside the board (W12 light only).
 - **Gaps:** G-880. **Not drawn:** W13's Add money (WALLET-05).
+- **Round 2 (verifier F3, F4):** W8's unreachable-name line on Send reads "We could not check the name now." (nothing about saving; A21 keeps its "Saving checks it" line; `nameLineHint(line, 'send')`). W10's not-enough notice no longer draws "Add ₦X" (`onAddMoney` optional on `PaySheet` and `ReviewScreen`, `send/review.tsx` passes none until WALLET-05; SHARED-CHANGES WALLET-02 #4). New cases in `bankSendFlow.test.tsx` and `PaySheet.test.tsx`. F1 and F2 are backend, not changed here.
 - **Next:** the verifier.
 
 ## Read first

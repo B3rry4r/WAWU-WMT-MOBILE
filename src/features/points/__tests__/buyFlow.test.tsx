@@ -47,6 +47,7 @@ const hub = {
   shortfall: false,
   expiryDays: 365,
   priceDrift: 0,
+  needed: null as number | null,
   quotes: [] as string[],
   buys: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   created: {} as Record<string, Record<string, unknown>>,
@@ -108,7 +109,7 @@ function purchase(status: string, body: Record<string, unknown>, method = 'walle
     payment: null,
     transfer:
       status === 'awaiting_transfer'
-        ? { accountNumber: '8100000417', accountName: 'Test Holder', bankName: 'Test MFB', bankCode: '090', priceKobo: quote.packMinor, bankChargeKobo: BANK_CHARGE, totalKobo: quote.payment.totalKobo, balanceKobo: 0, amountNeededKobo: quote.payment.totalKobo, expiresAt: '2099-01-01T00:00:00.000Z' }
+        ? { accountNumber: '8100000417', accountName: 'Test Holder', bankName: 'Test MFB', bankCode: '090', priceKobo: quote.packMinor, bankChargeKobo: BANK_CHARGE, totalKobo: quote.payment.totalKobo, balanceKobo: 0, amountNeededKobo: hub.needed ?? quote.payment.totalKobo, expiresAt: '2099-01-01T00:00:00.000Z' }
         : null,
     grant: status === 'paid' ? { points: quote.points, bonusPoints: quote.bonusPoints, totalPoints: quote.totalPoints, expiresAt: '2027-10-16T00:00:00.000Z' } : null,
     createdAt: '2026-10-16T09:42:00.000Z',
@@ -206,7 +207,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', tier: 'none', balanceKobo: 48_525_075, shortfall: false, expiryDays: 365, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0, points: 1240 });
+  Object.assign(hub, { mode: 'ok', tier: 'none', balanceKobo: 48_525_075, shortfall: false, expiryDays: 365, priceDrift: 0, needed: null, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0, points: 1240 });
   (require('../buyIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -396,5 +397,25 @@ describe('PT4b and PT4c · paying with the PIN', () => {
     await sleep(4100);
     expect(await screen.findByTestId('buy-added-title')).toHaveTextContent('2,750 points added');
     expect(hub.payments).toBe(1);
+  });
+
+  it('by bank transfer with a wallet that already covers the pack, the card shows the pack’s full price, never "Send ₦0.00"', async () => {
+    hub.needed = 0;
+    await toBuy();
+    await fireEvent.press(screen.getByTestId('buy-method-transfer'));
+    await pay();
+    expect(await screen.findByTestId('buy-transfer')).toBeTruthy();
+    expect(screen.getByTestId('transfer-amount')).toHaveTextContent(/₦2,523\.25/);
+    expect(screen.queryByText(/₦0\.00/)).toBeNull();
+  });
+
+  it('by bank transfer with a short wallet, the card shows what is still needed', async () => {
+    hub.shortfall = true;
+    hub.needed = 152_325;
+    await toBuy();
+    await fireEvent.press(screen.getByTestId('buy-method-transfer'));
+    await pay();
+    expect(await screen.findByTestId('buy-transfer')).toBeTruthy();
+    expect(screen.getByTestId('transfer-amount')).toHaveTextContent(/₦1,523\.25/);
   });
 });

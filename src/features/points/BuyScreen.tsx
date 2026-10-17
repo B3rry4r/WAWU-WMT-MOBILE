@@ -531,7 +531,9 @@ function Radio({ on }: { on: boolean }) {
 function TransferCard({ purchase }: { purchase: PackPurchase }) {
   const t = purchase.transfer;
   if (!t) return null;
-  const send = t.amountNeededKobo ?? t.totalKobo;
+  // A wallet that already covers the pack leaves the Hub needing 0 from the transfer (it pays from the wallet itself); "Send ₦0.00"
+  // reads as a fault, so that case shows the pack's full price.
+  const send = t.amountNeededKobo !== null && t.amountNeededKobo !== undefined && t.amountNeededKobo > 0 ? t.amountNeededKobo : t.totalKobo;
   return (
     <View style={styles.transfer}>
       <GroupedList testID="buy-transfer">
