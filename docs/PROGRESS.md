@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 300.**
+**Launch tasks done: 149 of 301.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 110 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 73 | 0 | 0 | 0 |
+| verifying | 74 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -20,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [INBOX-21](../tasks/INBOX-21.md) Turn on phone notifications in the app (You)
 - [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
