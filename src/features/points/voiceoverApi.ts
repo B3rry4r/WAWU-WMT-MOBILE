@@ -1,0 +1,105 @@
+import { api, unwrap } from '@/api/client';
+import type { components } from '@/api/schema.generated';
+import { unreadable, type Envelope } from '@/features/wallet/api/home';
+
+/**
+ * The calls behind one AI tool's screen (PT2, PT2a, PT2b, PT2c), as the backend contract types them (AITOOLS-01).
+ *
+ * - `POST /ai-tools/voiceover/jobs`: starts a job from the words, a voice id from `GET /ai-tools` and the `quoteToken` of the
+ *   `POST /points/quote` the person saw. The `Idempotency-Key` is one per job and travels again, unchanged, on every retry of the same
+ *   job: the Hub answers a key it knows with the first job (`200`) and holds nothing more. It answers `202` with the job `working`.
+ * - `GET /ai-tools/jobs/{id}`: one job as it stands now: `working`, `done` with an audio link, or `failed` with the Hub's own sentence.
+ *
+ * The Hub's refusals carry a `reason.code` and its own words, and the shared `ApiError` keeps only the code, so the start reads its own
+ * answer and hands the screen one of `StartOutcome`.
+ */
+export type VoiceJob = components['schemas']['AiJobView'];
+
+const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+const whole = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const STATES = ['working', 'done', 'failed'] as const;
+
+/** A job the screen can draw: a known state and whole figures. A `done` job with no audio link yet is still `done`; the link comes on the next read. */
+export function readVoiceJob(value: unknown): VoiceJob {
+  const j = value as Partial<VoiceJob> | null;
+  const ok = j && typeof j === 'object' && filled(j.id) && STATES.includes(j.state as (typeof STATES)[number]) && whole(j.costPoints) && whole(j.units) && whole(j.characters);
+  if (!ok) throw unreadable('job');
+  return {
+    ...(j as VoiceJob),
+    audioUrl: filled(j.audioUrl) ? j.audioUrl : null,
+    message: filled(j.message) ? j.message : null,
+    finishedAt: j.finishedAt ?? null,
+  };
+}
+
+/** GET /ai-tools/jobs/{id}. */
+export async function fetchVoiceJob(id: string): Promise<VoiceJob> {
+  const body = (await unwrap(api.GET('/api/hub/ai-tools/jobs/{id}', { params: { path: { id } } }))) as unknown as Envelope<VoiceJob>;
+  return readVoiceJob(body?.data);
+}
+
+/** Read again while the job is working (the Hub makes the audio after it has answered). */
+export const voiceJobQuery = (owner: string | null, id: string | null) =>
+  ({ queryKey: ['ai-tools', 'job', owner ?? '', id ?? ''] as const, queryFn: () => fetchVoiceJob(id as string), staleTime: 0, enabled: Boolean(owner) && Boolean(id) }) as const;
+
+/** How often a working job is read again, in ms. */
+export const JOB_POLL_MS = 2000;
+
+/** What the screen branches on after a start. Never a thrown error. */
+export type StartOutcome =
+  /** The Hub has the job (new, or the first one for this key): it is `working`, `done` or `failed`. */
+  | { kind: 'started'; job: VoiceJob }
+  /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME request again. */
+  | { kind: 'unanswered' }
+  /** The Hub refused and nothing was held, in its own sentence. The key is free to use once the cause is fixed. */
+  | { kind: 'refused'; code: string | null; message: string };
+
+export type StartInput = {
+  text: string;
+  voiceId: string;
+  quoteToken: string;
+  /** One per job, kept across retries of the same job. */
+  key: string;
+};
+
+const HTTP_OK = 200;
+const HTTP_ACCEPTED = 202;
+const HTTP_SERVER_MIN = 500;
+
+type Reason = { code?: unknown; message?: unknown };
+
+function reasonOf(error: unknown): { code: string | null; message: string } {
+  const record = typeof error === 'object' && error !== null ? (error as { reason?: unknown; message?: unknown }) : {};
+  const reason: Reason = typeof record.reason === 'object' && record.reason !== null ? (record.reason as Reason) : {};
+  const raw = record.message;
+  const message = Array.isArray(raw) ? raw.filter((p) => typeof p === 'string').join('. ') : typeof raw === 'string' ? raw : '';
+  return { code: typeof reason.code === 'string' ? reason.code : null, message: typeof reason.message === 'string' && reason.message ? reason.message : message };
+}
+
+/**
+ * POST /ai-tools/voiceover/jobs. A request that got no answer is `unanswered`, and so is every 5xx and the key still running: points may
+ * be held, so only the SAME key is safe to send again.
+ */
+export async function startVoiceover(input: StartInput): Promise<StartOutcome> {
+  const { key, ...body } = input;
+  let result;
+  try {
+    result = await api.POST('/api/hub/ai-tools/voiceover/jobs', { params: { header: { 'Idempotency-Key': key } }, body });
+  } catch {
+    return { kind: 'unanswered' };
+  }
+  const { data, error, response } = result;
+  if (response.status === HTTP_ACCEPTED || response.status === HTTP_OK) {
+    try {
+      return { kind: 'started', job: readVoiceJob((data as unknown as Envelope<VoiceJob> | undefined)?.data) };
+    } catch {
+      // The Hub said it took the job and the answer cannot be read: the job may exist, so it is not a refusal.
+      return { kind: 'unanswered' };
+    }
+  }
+  const { code, message } = reasonOf(error);
+  // The one 5xx that is an answer: the Hub says the tool is off and that nothing was held.
+  if (code === 'ai_tool_unavailable' && message) return { kind: 'refused', code, message };
+  if (response.status >= HTTP_SERVER_MIN || code === 'idempotency_in_progress') return { kind: 'unanswered' };
+  return { kind: 'refused', code, message: message || 'That did not start. Try again.' };
+}
