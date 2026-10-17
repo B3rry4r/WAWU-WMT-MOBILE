@@ -12,12 +12,13 @@ import { feeLines, limitLine, NO_TOTAL_TITLE, NOT_READY_LINE, OVER_LIMIT_TITLE, 
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
-import { enrolKeys, fetchEnrolment, fetchFeeQuote, payFee, type Enrolment } from './enrolApi';
+import { enrolKeys, fetchEnrolment, fetchFeeQuote, fetchPayment, OpenPaymentError, payFee, type Enrolment, type FeePayment } from './enrolApi';
 import { dropEnrolIntent, findEnrolIntent, putEnrolIntent, type EnrolIntent } from './enrolIntent';
-import { PRICE_UNREADABLE } from './enrolModel';
+import { failedLine, PRICE_UNREADABLE } from './enrolModel';
 
 /**
- * How often an enrolment whose payment the Hub has not finished is read again (`GET /schools/enrolments/{id}`, our own records).
+ * How often an enrolment whose payment the Hub has not finished is read again (`GET /schools/enrolments/{id}`, our own records), and
+ * the payment itself beside it (`GET /money/payments/{id}`, MONEY-17), so a payment that fails is told.
  * PROVISIONAL(SCHOOL-ENROL-POLL, owner=SCHOOLS-06, why=no ruling sizes it; four seconds is the send's and the tickets' own read).
  */
 const POLL_MS = 4000;
@@ -81,12 +82,19 @@ export function useEnrolPay(args: EnrolPayArgs) {
   const [shortOf, setShortOf] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
+  // A payment of this person's that the Hub has not finished and this phone did not start (a second phone): the Hub named it when it
+  // refused the quote. Never kept: asking for the quote again names it again.
+  const [openId, setOpenId] = useState<string | null>(null);
 
   // One key per payment attempt: the same quote is paid with the same key.
   const payKey = useRef<{ token: string; key: string } | null>(null);
   const startedFor = useRef<string | null>(null);
   // Set when a quote could not be asked for because there is no wallet yet: the person is already being taken to Open your wallet.
   const walletLed = useRef(false);
+  // Set when a quote was refused because a payment is already being confirmed: the screen is already drawing that, not leaving.
+  const waiting = useRef(false);
+  // The payment whose failure was already handled, so a read that comes twice shows it once.
+  const failureHandled = useRef<string | null>(null);
   // Counts the times the screen is shown again after being left (Open your wallet, A9, Wallet): the quote is asked for again then.
   const [shown, setShown] = useState(0);
   const left = useRef(false);
@@ -130,7 +138,9 @@ export function useEnrolPay(args: EnrolPayArgs) {
     setPayOpen(false);
   };
 
-  const confirming = intent?.phase === 'processing';
+  const confirming = intent?.phase === 'processing' || openId !== null;
+  // The Hub's id for the payment being waited for: the one its answer gave this phone, or the one it named to a second phone.
+  const watched = intent?.phase === 'processing' ? (intent.paymentId ?? openId) : openId;
 
   // The enrolment read again while a payment the Hub has not finished is waited for. When it is decided here, the screen redraws as the receipt.
   const polled = useQuery(
@@ -139,6 +149,18 @@ export function useEnrolPay(args: EnrolPayArgs) {
       queryFn: () => fetchEnrolment(enrolment.id),
       enabled: Boolean(owner && confirming),
       refetchInterval: confirming ? POLL_MS : false,
+      staleTime: 0,
+    },
+    queryClient,
+  );
+
+  // The payment read beside it while confirming: when it fails the person is told, the money is back, and Pay runs again.
+  const paymentRead = useQuery(
+    {
+      queryKey: ['money', 'payment', watched],
+      queryFn: () => fetchPayment(watched ?? ''),
+      enabled: Boolean(owner && confirming && watched),
+      refetchInterval: confirming && watched ? POLL_MS : false,
       staleTime: 0,
     },
     queryClient,
@@ -157,9 +179,16 @@ export function useEnrolPay(args: EnrolPayArgs) {
 
   const askQuote = async (): Promise<PaymentQuote | undefined> => {
     walletLed.current = false;
+    waiting.current = false;
     try {
       return await fetchFeeQuote(enrolment.id);
     } catch (error) {
+      if (error instanceof OpenPaymentError) {
+        // A payment of theirs is already being confirmed: no Pay is drawn, the screen waits for it like the phone that started it.
+        waiting.current = true;
+        setOpenId(error.paymentId);
+        return undefined;
+      }
       if (!leadToWallet(error)) setNotice(isApiError(error) && error.message ? error.message : PRICE_UNREADABLE);
       return undefined;
     }
@@ -198,7 +227,7 @@ export function useEnrolPay(args: EnrolPayArgs) {
             setFresh(quote);
             setStatus({ kind: 'review' });
             setPayOpen(true);
-          } else if (!walletLed.current) {
+          } else if (!walletLed.current && !waiting.current) {
             args.onLeave();
           }
         })
@@ -213,6 +242,34 @@ export function useEnrolPay(args: EnrolPayArgs) {
   useEffect(() => {
     if (decided && intent) queueMicrotask(() => void keep(null, intent));
   }, [decided, intent, keep]);
+
+  // The payment being waited for came back failed (or reversed): nothing was taken, the money is back. The attempt is let go, the
+  // failure is shown on the pay sheet, and Pay runs again with a fresh quote and a new key.
+  const failedPayment: FeePayment | null =
+    paymentRead.data && (paymentRead.data.status === 'failed' || paymentRead.data.status === 'reversed') ? paymentRead.data : null;
+  useEffect(() => {
+    if (!failedPayment || failureHandled.current === failedPayment.id) return;
+    failureHandled.current = failedPayment.id;
+    const line = failedLine(failedPayment.failureReason ?? failedPayment.statusMessage);
+    // Started as a callback after this render: reacting to a read is not part of drawing the screen.
+    queueMicrotask(() => {
+      payKey.current = null;
+      setOpenId(null);
+      if (intent) void keep(null, intent);
+      afterMoney();
+      void askQuote().then((quote) => {
+        if (quote) {
+          setFresh(quote);
+          setStatus({ kind: 'failed', message: line });
+          setPayOpen(true);
+        } else if (!waiting.current && !walletLed.current) {
+          setNotice(line);
+        }
+      });
+    });
+    // `askQuote` and `afterMoney` are rebuilt each render; the failure is handled once per payment (the ref above).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [failedPayment, intent, keep]);
 
   const pay = async () => {
     if (!payment) return;
@@ -276,14 +333,15 @@ export function useEnrolPay(args: EnrolPayArgs) {
           afterMoney();
           return { code: 'approved' };
         }
-        // Completed or pending: the Hub has the payment. The enrolment is read until it is decided; the person is never asked to pay again.
-        void keep({ ...sending, phase: 'processing' });
+        // Completed or pending: the Hub has the payment. The enrolment and the payment are read until it is decided; the person is never
+        // asked to pay again.
+        void keep({ ...sending, phase: 'processing', paymentId: outcome.payment.id });
         closeSheets();
         afterMoney();
         return { code: 'approved' };
       }
       case 'in_progress':
-        void keep({ ...sending, phase: 'processing' });
+        void keep({ ...sending, phase: 'processing', paymentId: outcome.paymentId ?? sending.paymentId ?? null });
         closeSheets();
         return { code: 'approved' };
       case 'pin_not_set':
@@ -374,8 +432,11 @@ export function useEnrolPay(args: EnrolPayArgs) {
     loadingQuote,
     /** The Hub has the payment and has not finished: the enrolment is read until it is decided. */
     confirming,
-    refreshing: polled.isFetching,
-    refresh: () => void polled.refetch(),
+    refreshing: polled.isFetching || paymentRead.isFetching,
+    refresh: () => {
+      void polled.refetch();
+      if (watched) void paymentRead.refetch();
+    },
     refreshFailed: confirming && polled.isError,
     /** A notice for the screen to show (the price moved, the phone could not keep a record, a quote that could not be read). */
     notice,

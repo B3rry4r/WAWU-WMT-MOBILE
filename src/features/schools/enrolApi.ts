@@ -120,6 +120,7 @@ type Reason = {
   totalKobo?: unknown;
   shortfallKobo?: unknown;
   paymentQuote?: unknown;
+  paymentId?: unknown;
 };
 
 /** The refusal's `reason`, read defensively: the Hub answers `{ statusCode, message, reason }`. */
@@ -167,11 +168,27 @@ export async function enrol(intakeId: string): Promise<EnrolOutcome> {
   return { kind: 'refused', code, message: message || 'We could not hold a place in this class. Nothing was taken.' };
 }
 
-/** GET /money/payments/quote?kind=school_fee: SC5's fee, Bank charge and total, the balance, and the token the payment must carry. A fresh one per tap. */
+/** The quote was refused because this student already has a payment for the order that is not finished: `paymentId` is that payment. */
+export class OpenPaymentError extends Error {
+  constructor(readonly paymentId: string) {
+    super('payment_in_progress');
+  }
+}
+
+const HTTP_CONFLICT = 409;
+
+/**
+ * GET /money/payments/quote?kind=school_fee: SC5's fee, Bank charge and total, the balance, and the token the payment must carry. A fresh
+ * one per tap. A `409 payment_in_progress` (a payment of theirs for this order is still being confirmed, `reason.paymentId`) is an
+ * `OpenPaymentError`, so a second phone waits for that payment and draws no Pay.
+ */
 export async function fetchFeeQuote(enrolmentId: string): Promise<PaymentQuote> {
-  const body = (await unwrap(
-    api.GET('/api/hub/money/payments/quote', { params: { query: { kind: 'school_fee', targetId: enrolmentId } } }),
-  )) as unknown as Envelope<PaymentQuote>;
+  const result = await api.GET('/api/hub/money/payments/quote', { params: { query: { kind: 'school_fee', targetId: enrolmentId } } });
+  if (result.response.status === HTTP_CONFLICT) {
+    const { reason } = reasonOf(result.error);
+    if (reason.code === 'payment_in_progress' && filled(reason.paymentId)) throw new OpenPaymentError(reason.paymentId);
+  }
+  const body = (await unwrap(Promise.resolve(result))) as unknown as Envelope<PaymentQuote>;
   return readPaymentQuote(body?.data);
 }
 
@@ -190,8 +207,8 @@ export type FeeOutcome =
   | { kind: 'insufficient_funds'; balanceKobo: number; totalKobo: number; shortfallKobo: number }
   /** `409 quote_changed`: the price moved; this is the quote as it stands now (null when the Hub sent none). */
   | { kind: 'quote_changed'; quote: PaymentQuote | null }
-  /** `409 payment_in_progress`: a payment for this order is already being confirmed. Read the enrolment; never pay again. */
-  | { kind: 'in_progress' }
+  /** `409 payment_in_progress`: a payment for this order is already being confirmed (`paymentId` when the Hub names it). Read it; never pay again. */
+  | { kind: 'in_progress'; paymentId: string | null }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
@@ -213,6 +230,12 @@ function readPayment(value: unknown): FeePayment {
   const p = value as Partial<FeePayment> | null;
   if (!p || typeof p !== 'object' || !filled(p.id) || !PAYMENT_STATUSES.includes(p.status as FeePayment['status']) || !isKobo(p.totalKobo)) throw unreadable('payment');
   return p as FeePayment;
+}
+
+/** GET /money/payments/{id}: one payment as it stands now (our own record, never the provider). `pending` becomes `completed`, `failed` or `reversed`. */
+export async function fetchPayment(id: string): Promise<FeePayment> {
+  const body = (await unwrap(api.GET('/api/hub/money/payments/{id}', { params: { path: { id } } }))) as unknown as Envelope<FeePayment>;
+  return readPayment(body?.data);
 }
 
 /**
@@ -255,7 +278,7 @@ export async function payFee(input: FeeInput): Promise<FeeOutcome> {
     case 'idempotency_in_progress':
       return { kind: 'unanswered' };
     case 'payment_in_progress':
-      return { kind: 'in_progress' };
+      return { kind: 'in_progress', paymentId: filled(reason.paymentId) ? reason.paymentId : null };
     case 'insufficient_funds':
       if (isKobo(reason.balanceKobo) && isKobo(reason.totalKobo) && isKobo(reason.shortfallKobo)) {
         return { kind: 'insufficient_funds', balanceKobo: reason.balanceKobo, totalKobo: reason.totalKobo, shortfallKobo: reason.shortfallKobo };

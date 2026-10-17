@@ -33,6 +33,7 @@ jest.mock('expo-router', () => ({ useFocusEffect: () => undefined }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
+const paymentView = (status: string) => ({ id: 'pay-1', kind: 'school_fee', targetId: ENR, title: 'Product Design Bootcamp', status, priceKobo: 15_000_000, fee: { providerFeeKobo: 1575, wawuFeeKobo: 0, totalFeeKobo: 1575 }, totalKobo: 15_001_575, reference: 'WAW-PAY', hold: null, failureReason: status === 'failed' ? 'The bank did not take it.' : null, delivered: status === 'completed', statusMessage: null, createdAt: '2026-10-16T09:42:00.000Z', completedAt: null });
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 const ENR = '66666666-6666-4666-8666-666666666666';
@@ -89,7 +90,7 @@ const quoteView = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-type PayMode = 'paid' | 'pending' | 'failed' | 'lost_after' | 'short' | 'no_wallet';
+type PayMode = 'paid' | 'pending' | 'failed' | 'lost_after' | 'short' | 'no_wallet' | 'in_progress';
 const hub = {
   mode: 'paid' as PayMode,
   balanceKobo: 48_525_075,
@@ -100,6 +101,11 @@ const hub = {
   pays: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   paidKeys: new Set<string>(),
   payments: 0,
+  // How the Hub's record of payment pay-1 stands when it is read (`GET /money/payments/pay-1`), and the reads made.
+  payment: 'pending' as 'pending' | 'completed' | 'failed' | 'reversed',
+  paymentReads: 0,
+  // A payment of this person's for the order that this phone did not start: the quote is refused and names it.
+  openPayment: false,
   wrongFirst: false,
   list: { current: [] as unknown[], finished: [] as unknown[] },
   listFails: false,
@@ -129,16 +135,21 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === `/schools/enrolments/${ENR}` && method === 'GET') return ok(enrolmentView(hub.status));
   if (path === '/money/payments/quote') {
+    if (hub.openPayment) return refuse(409, { code: 'payment_in_progress', message: 'Your payment is still being confirmed.', paymentId: 'pay-1' });
     hub.quotes += 1;
     return ok(quoteView());
+  }
+  if (path === '/money/payments/pay-1' && method === 'GET') {
+    hub.paymentReads += 1;
+    return ok(paymentView(hub.payment));
   }
   if (path === '/money/payments' && method === 'POST') {
     const body = (await request.json()) as Record<string, unknown>;
     const key = request.headers.get('idempotency-key') ?? '';
     hub.pays.push({ pin: request.headers.get('x-transaction-pin'), key, body });
-    const paymentView = (status: string) => ({ id: 'pay-1', kind: 'school_fee', targetId: ENR, title: 'Product Design Bootcamp', status, priceKobo: 15_000_000, fee: { providerFeeKobo: 1575, wawuFeeKobo: 0, totalFeeKobo: 1575 }, totalKobo: 15_001_575, reference: 'WAW-PAY', hold: null, failureReason: status === 'failed' ? 'The bank did not take it.' : null, delivered: status === 'completed', statusMessage: null, createdAt: '2026-10-16T09:42:00.000Z', completedAt: null });
     // The Hub answers a key it knows with the first payment, before it looks at the PIN or the quote.
     if (hub.paidKeys.has(key)) return json(201, { statusCode: 201, message: 'Created', data: paymentView('completed') });
+    if (hub.mode === 'in_progress') return refuse(409, { code: 'payment_in_progress', message: 'Your payment is still being confirmed.', paymentId: 'pay-1' });
     if (hub.mode === 'no_wallet') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
     if (hub.wrongFirst && hub.pays.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
     if (hub.mode === 'short') return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 500_000, totalKobo: Number(body.expectedTotalKobo), shortfallKobo: Number(body.expectedTotalKobo) - 500_000 });
@@ -192,6 +203,9 @@ beforeEach(() => {
     pays: [],
     paidKeys: new Set<string>(),
     payments: 0,
+    payment: 'pending',
+    paymentReads: 0,
+    openPayment: false,
     wrongFirst: false,
     list: { current: [], finished: [] },
     listFails: false,
@@ -436,6 +450,112 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
     await rtl.screen.findByTestId('enrolment-receipt');
     expect(hub.payments).toBe(1);
+  });
+
+  const BACK_LINE = 'The bank did not take it. Your money is back in your wallet.';
+
+  /** The Hub's record of the payment it first answered pending now says failed, and the money is back. */
+  const bankRefusesLater = () => {
+    hub.payment = 'failed';
+    hub.payments = 0;
+  };
+
+  async function payAgainWithNewKey(firstKey: string | null) {
+    hub.mode = 'paid';
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: /Try again/ }));
+    await rtl.fireEvent.press(await payButton());
+    await rtl.screen.findByText(/^Approve /);
+    await enterPin('4829');
+    await rtl.screen.findByTestId('enrolment-receipt');
+    expect(hub.pays[hub.pays.length - 1].key).not.toBe(firstKey);
+    expect(hub.payments).toBe(1);
+  }
+
+  it('a payment answered pending that then fails says so, the money is back, and Pay runs again with a fresh quote and a new key', async () => {
+    hub.mode = 'pending';
+    await reachPin();
+    await enterPin('4829');
+    await rtl.screen.findByText('Paid, still confirming');
+    expect(hub.pays).toHaveLength(1);
+    const quotes = hub.quotes;
+    bankRefusesLater();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.screen.findByText("Payment didn't go through");
+    expect(rtl.screen.getByText(BACK_LINE)).toBeTruthy();
+    expect(rtl.screen.queryByText('Paid, still confirming')).toBeNull();
+    expect(hub.paymentReads).toBeGreaterThan(0);
+    expect(hub.quotes).toBe(quotes + 1);
+    await payAgainWithNewKey(hub.pays[0].key);
+    expect(hub.pays).toHaveLength(2);
+    expect(hub.pays[1].body.quoteToken).not.toBe(hub.pays[0].body.quoteToken);
+  });
+
+  it('a payment answered pending that then completes is waited for, shown as the receipt, and never paid again', async () => {
+    hub.mode = 'pending';
+    await reachPin();
+    await enterPin('4829');
+    await rtl.screen.findByText('Paid, still confirming');
+    // The Hub has the money and has not opened the place yet: still confirming, and the payment is read, not paid again.
+    hub.payment = 'completed';
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.waitFor(() => expect(hub.paymentReads).toBeGreaterThan(0));
+    expect(rtl.screen.getByText('Paid, still confirming')).toBeTruthy();
+    expect(rtl.screen.queryByText("Payment didn't go through")).toBeNull();
+    hub.status = 'enrolled';
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.screen.findByTestId('enrolment-receipt');
+    expect(hub.pays).toHaveLength(1);
+    expect(hub.payments).toBe(1);
+  });
+
+  it('a reload between pending and failed still tells the failure, then Pay runs again with a new key', async () => {
+    hub.mode = 'pending';
+    const first = await render(<EnrolmentScreen id={ENR} {...handlers()} />);
+    await rtl.fireEvent.press(await payButton());
+    await rtl.screen.findByText(/^Approve /);
+    await enterPin('4829');
+    await rtl.screen.findByText('Paid, still confirming');
+    await first.unmount();
+    // The app is closed and opened again: only what the phone wrote survives, and the payment id is in it.
+    forgetEnrolIntentsInMemory();
+    queryClient.clear();
+    bankRefusesLater();
+    const reads = hub.paymentReads;
+    await render(<EnrolmentScreen id={ENR} {...handlers()} />);
+    await rtl.screen.findByText("Payment didn't go through");
+    expect(rtl.screen.getByText(BACK_LINE)).toBeTruthy();
+    expect(hub.paymentReads).toBeGreaterThan(reads);
+    expect(hub.pays).toHaveLength(1);
+    await payAgainWithNewKey(hub.pays[0].key);
+    expect(hub.pays).toHaveLength(2);
+  });
+
+  it('a second phone is told a payment is being confirmed, draws no Pay, and tells the failure when it comes', async () => {
+    hub.openPayment = true;
+    await render(<EnrolmentScreen id={ENR} {...handlers()} />);
+    await rtl.screen.findByText('Paid, still confirming');
+    expect(rtl.screen.queryByRole('button', { name: /^Pay · / })).toBeNull();
+    expect(hub.pays).toHaveLength(0);
+    expect(hub.quotes).toBe(0);
+    hub.openPayment = false;
+    bankRefusesLater();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.screen.findByText("Payment didn't go through");
+    expect(rtl.screen.getByText(BACK_LINE)).toBeTruthy();
+    await payAgainWithNewKey(null);
+  });
+
+  it('a Pay the Hub refuses because a payment is being confirmed waits for that payment instead of paying again', async () => {
+    hub.mode = 'in_progress';
+    await reachPin();
+    await enterPin('4829');
+    await rtl.screen.findByText('Paid, still confirming');
+    expect(hub.pays).toHaveLength(1);
+    expect(hub.payments).toBe(0);
+    bankRefusesLater();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.screen.findByText("Payment didn't go through");
+    await payAgainWithNewKey(hub.pays[0].key);
   });
 
   it('a payment the bank refused says why and can be tried again with a new key', async () => {

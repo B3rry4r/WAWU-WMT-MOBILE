@@ -27,6 +27,8 @@ export type EnrolIntent = {
   /** The payment's `Idempotency-Key`. */
   key: string;
   phase: 'unknown' | 'processing';
+  /** The Hub's id for the payment it took (`processing` only): read while confirming, so a payment that fails is told. Absent in entries written before it was kept. */
+  paymentId?: string | null;
   /** When the request was first sent (ms). */
   at: number;
 };
@@ -57,7 +59,7 @@ export function readIntent(value: unknown): EnrolIntent | null {
   if (v.phase !== 'unknown' && v.phase !== 'processing') return null;
   if (typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
   try {
-    return { enrolmentId: v.enrolmentId, payment: readPaymentQuote(v.payment), key: v.key, phase: v.phase, at: v.at };
+    return { enrolmentId: v.enrolmentId, payment: readPaymentQuote(v.payment), key: v.key, phase: v.phase, paymentId: filled(v.paymentId) ? v.paymentId : null, at: v.at };
   } catch {
     return null;
   }

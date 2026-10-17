@@ -93,7 +93,7 @@ export function ApplySheet({ visible, courseId, school, onClose, onEnroll }: App
           {notice}
         </Text>
       ) : null}
-      <Button testID="apply-continue" label="Continue to their site" iconRight="ArrowUpRight" full loading={going} disabled={!link.data} onPress={() => void go()} />
+      <Button testID="apply-continue" label="Continue to their site" full loading={going} disabled={!link.data} onPress={() => void go()} />
       {onEnroll ? <Button testID="apply-enroll" label="Enroll on Who Made This? instead" variant="secondary" full disabled={going} onPress={onEnroll} /> : null}
     </BottomSheet>
   );

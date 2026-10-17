@@ -24,6 +24,7 @@ As of 17 Oct 2026, after the first build (Sonnet builder, branch `wmt/S5`, one b
 - **Checks:** same run as SCHOOLS-06 (one branch): tsc EXIT 0, eslint EXIT 0, gates EXIT 0, jest green (`enrolFlow.test.tsx` has the SC8, SC9 and Me cases).
 - **Pictures:** SC8-my-courses, SC8-finished-empty, SC8-error, SC9-apply in the same folder as SCHOOLS-06's, beside `board-SC8` and `board-SC9`.
 - **NOT RUN:** a real phone browser opening the link (jest checks `Linking.openURL` is called with the Hub's `url`; the stack run recorded the click path through the Hub only in the unit cases), the Finished tab with rows (no class on the stack ends this year), the current-tab empty state on the stack (every seeded student holds a place).
+- **Round 2 (17 Oct 2026):** F4 fixed: SC9's "Continue to their site" no longer draws the trailing arrow the board lacks (`ApplySheet.tsx`). Same schools run: tsc EXIT 0, eslint EXIT 0, jest 156 of 156.
 - **Next:** a verifier (V1, V4, V5, V6, V7, V9).
 
 ## Read first

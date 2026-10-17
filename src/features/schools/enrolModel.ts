@@ -8,8 +8,17 @@ export const CONFIRMING_LINE = "Don't pay again. Your place shows up in a minute
 export const CLOSED_TITLE = 'This place was given back';
 export const CLOSED_LINE = 'A place is held for a short time. This one went back to the class and nothing was taken. Pick the class again.';
 export const REFUNDED_TITLE = 'The class filled up';
+export const FAILED_LINE = 'The payment didn’t go through.';
+export const MONEY_BACK_LINE = 'Your money is back in your wallet.';
 export const NOT_HELD_LINE = 'Check your connection and try again.';
 export const PRICE_UNREADABLE = 'The price could not be read. Try again.';
+
+/** What the pay sheet says when a payment the Hub was still confirming then failed: the Hub's reason (when it gave one), then that the money is back. */
+export function failedLine(reason: string | null | undefined): string {
+  const why = reason?.trim() ?? '';
+  const said = why === '' ? FAILED_LINE : /[.!?]$/.test(why) ? why : `${why}.`;
+  return `${said} ${MONEY_BACK_LINE}`;
+}
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
 

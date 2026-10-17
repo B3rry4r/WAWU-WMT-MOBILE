@@ -27,7 +27,9 @@ As of 17 Oct 2026, after the first build (Sonnet builder, branch `wmt/S5`, one b
 - **Fee on the stack:** the stand-in's Bank charge is ₦0, so the pictures read "Bank charge ₦0"; the tests use the 16 Oct figure (₦15.75, total ₦150,015.75).
 - **NOT RUN:** the still-confirming and "place went back" screens on the stack (the stand-in settles at once and a place takes 30 minutes to go back): tests only; no real device or Fintava; the unit tests of the shared sheets are untouched.
 - **Open:** the sheet's logo tile (G-853) and the dot-less button (SHARED-CHANGES SCHOOLS-06 #1).
-- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9).
+- **Round 2 (17 Oct 2026, builder, from be5454f2; fixes the verifier's F1 medium and F2 low):** a payment the Hub answered `pending` that then FAILS now ends the "Paid, still confirming" wait. The phone keeps the payment id from the pay answer (and from `409 payment_in_progress` `reason.paymentId`; `enrolIntent.ts` `paymentId`, older entries read as none) and, while confirming, reads `GET /money/payments/{id}` beside the order. On `failed` or `reversed` it lets the attempt go, asks a fresh quote and draws the pay sheet's "Payment didn't go through" with the Hub's reason and "Your money is back in your wallet."; Pay then runs again with the new quote and a new key. A reload in between finds the id on the phone and tells the same. F2: a second phone is named the open payment when the Hub refuses the quote or the Pay (`payment_in_progress`) and draws "still confirming", no Pay; the Hub does not refuse the quote yet (G-SCHOOLS-06-1), so until it does the second phone meets it at the PIN tap. F3 and F5 stay with their SHARED rows.
+- **Round 2 checks:** `tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest `src/features/schools` 5 suites, 156 tests, EXIT 0 (5 new in `enrolFlow.test.tsx`: pending then failed, pending then paid, a reload in between, a second phone, a Pay refused as in progress). NOT RUN: the stand-in settling a transfer failed on a stack (tests only).
+- **Next:** the verifier again on F1 and F2 (V6, V8).
 
 ## Read first
 
