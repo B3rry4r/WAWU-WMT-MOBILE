@@ -85,6 +85,8 @@ export type MeScreenProps = {
   onOpenPaid?: () => void;
   /** Settings, the last row of the Menu sheet (Z1): opens Z2. */
   onOpenSettings: () => void;
+  /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
+  onOpenInvite?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
 };
@@ -105,7 +107,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile is not
  * pressed yet: the screen that finishes a draft is VERIFY-01's (VF2).
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -169,7 +171,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
   return (
     <View testID="me-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <ProfileTop coverUrl={me.data?.coverUrl ?? null} top={insets.top} canShare={ready !== null} onShare={() => void share()} onOpenMenu={() => setMenuOpen(true)} />
+        <ProfileTop
+          coverUrl={me.data?.coverUrl ?? null}
+          top={insets.top}
+          canShare={ready !== null}
+          onShare={() => void share()}
+          onOpenInvite={onOpenInvite}
+          onOpenMenu={() => setMenuOpen(true)}
+        />
         <View style={[styles.body, { paddingTop: bodyTop(insets.top) }]}>
           {failed ? (
             <ErrorState
