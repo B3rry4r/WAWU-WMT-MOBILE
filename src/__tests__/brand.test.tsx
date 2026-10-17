@@ -21,8 +21,8 @@ const flat = (style: unknown): Record<string, unknown> => Object.assign({}, ...[
 const sourceOf = (testID: string) => [screen.getByTestId(`${testID}-art`, hiddenOk).props.source].flat()[0] as unknown;
 
 describe('Brand (R-37)', () => {
-  it('names the app Who Made This, with no WAWU in the launcher name', async () => {
-    expect(APP_NAME).toBe('Who Made This');
+  it('names the app Who Made This?, with no WAWU in the launcher name', async () => {
+    expect(APP_NAME).toBe('Who Made This?');
     expect(appConfig.expo.name).toBe(APP_NAME);
     expect(appConfig.expo.name).not.toMatch(/wawu/i);
   });

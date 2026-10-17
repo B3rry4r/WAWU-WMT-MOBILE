@@ -89,7 +89,7 @@ describe('A1: welcome', () => {
     expect(screen.getByText('Sell your work and answer paid questions.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    expect(screen.getByRole('image', { name: 'Who Made This' })).toBeTruthy();
+    expect(screen.getByRole('image', { name: 'Who Made This?' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 

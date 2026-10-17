@@ -12,13 +12,13 @@ import type { CancelAnswer } from './organiserApi';
 
 /**
  * The Hub's check on a reason (`CancelEventDto`: 10 to 500 characters, shown to every ticket holder).
- * PROVISIONAL(CANCEL-REASON, owner=EVENTS, why=GET /events/options serves no limit for a call-off reason; BACKEND_GAPS G-830)
+ * PROVISIONAL(CANCEL-REASON, owner=EVENTS, why=GET /events/options serves no limit for a call-off reason; BACKEND_GAPS G-EVENTS-08-1)
  */
 export const REASON = { min: 10, max: 500 } as const;
 
 /**
  * The Hub's check on a shared link's name (`CreateReferralDto`: 2 to 60 characters).
- * PROVISIONAL(LINK-LABEL, owner=EVENTS, why=the Hub serves no limit for it; BACKEND_GAPS G-830)
+ * PROVISIONAL(LINK-LABEL, owner=EVENTS, why=the Hub serves no limit for it; BACKEND_GAPS G-EVENTS-08-1)
  */
 export const LABEL = { min: 2, max: 60 } as const;
 
