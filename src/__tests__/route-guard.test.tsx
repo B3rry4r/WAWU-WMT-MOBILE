@@ -92,6 +92,7 @@ const PUBLIC: Record<string, string> = {
   'c/[slug]': 'app link (LINKS-01): a room, signed out draws "Sign in to open this community"',
   'content/[id]': 'app link (FIX-60): a piece, signed out goes to the welcome screen',
   'claim-code': 'signed out goes to sign-in and the sign-in comes back here (JOIN-03 round 3, N14)',
+  '+not-found': 'an address no screen answers: it leaves, signed out to the welcome screen and signed in to Home (SWEEP-APP-1, CHECK-1 F-1)',
   'dev/components': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/auth': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/pay-sheet': 'development only, a release build leaves (LeaveDevRoute)',

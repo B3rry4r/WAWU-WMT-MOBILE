@@ -163,6 +163,10 @@ export default function RootLayout() {
           <Stack.Screen name="chat/send" />
           <Stack.Screen name="checkout" />
           <Stack.Screen name="community/[id]" />
+          <Stack.Screen name="community/created/[id]" />
+          <Stack.Screen name="community/new" />
+          <Stack.Screen name="community/pass/[id]" />
+          <Stack.Screen name="community/requests/[id]" />
           <Stack.Screen name="create" />
           <Stack.Screen name="create-details" />
           <Stack.Screen name="create-format" />
@@ -197,6 +201,7 @@ export default function RootLayout() {
           <Stack.Screen name="library/index" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="paid-message-settings" />
+          <Stack.Screen name="paid-questions/[wawuId]" />
           <Stack.Screen name="pass" />
           <Stack.Screen name="points" />
           <Stack.Screen name="points-buy" />
@@ -205,6 +210,7 @@ export default function RootLayout() {
           <Stack.Screen name="professional-listings" />
           <Stack.Screen name="professionals/[id]" />
           <Stack.Screen name="professionals/index" />
+          <Stack.Screen name="profile/[wawuId]" />
           <Stack.Screen name="publish" />
           <Stack.Screen name="purchases" />
           <Stack.Screen name="reset-pin" />
@@ -226,6 +232,7 @@ export default function RootLayout() {
           <Stack.Screen name="settings/delete-account/index" />
           <Stack.Screen name="settings/delete-account/scheduled" />
           <Stack.Screen name="studio" />
+          <Stack.Screen name="studio-tool" />
           <Stack.Screen name="tgif" />
           <Stack.Screen name="tier-done" />
           <Stack.Screen name="tiers" />
