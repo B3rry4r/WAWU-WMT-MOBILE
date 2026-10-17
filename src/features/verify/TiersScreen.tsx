@@ -24,6 +24,8 @@ const HEAD = { title: 22, tracking: -0.03 } as const;
 const CARD = { padV: 14, padH: 16, between: 8 } as const;
 
 export type TiersScreenProps = {
+  /** False closes the sheet (its Modal) while this screen stays mounted, so the choice made on it is still there when it opens again. */
+  open?: boolean;
   onClose: () => void;
   /** The button: `tier` for a person with none (or an ended one), `upgrade` for a person whose tier is running. */
   onContinue: (kind: 'tier' | 'upgrade', tierId: string) => void;
@@ -39,7 +41,7 @@ const running = (tier: MyTier | undefined): tier is MyTier & { tier: NonNullable
  * `kind=upgrade`), never a subtraction made here. The dollar tiers (VF5a) are not built at launch (R-16, R-65). The board's first line,
  * "Your intro is ready", is true only once a Voice Intro exists (VERIFY-03), so the title is the board's name for the sheet.
  */
-export function TiersScreen({ onClose, onContinue }: TiersScreenProps) {
+export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenProps) {
   const owner = useSessionAccount(undefined);
   const plans = useQuery(plansQuery(owner), queryClient);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
@@ -134,7 +136,7 @@ export function TiersScreen({ onClose, onContinue }: TiersScreenProps) {
   const ready = !failed && !waiting && selected !== null && price !== null;
   return (
     <View testID="tiers-screen" style={styles.page}>
-      <BottomSheet visible onClose={onClose} label="Choose a tier">
+      <BottomSheet visible={open} onClose={onClose} label="Choose a tier">
         {body}
         {ready && selected ? (
           <Button

@@ -53,8 +53,9 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
   const owner = useSessionAccount(undefined);
   const plans = useQuery(plansQuery(owner), queryClient);
   const tier = plans.data?.tiers.find((t) => t.id === tierId) ?? null;
-  // VF6 draws the points offer ticked. It is the person's to untick; the quote and the purchase carry whichever it is.
-  const [bump, setBump] = useState(true);
+  // An offer that adds to the amount paid starts unticked (lead ruling, S7 round 2): the person opts in, and Pay shows the tier's own
+  // total until they do. The quote and the purchase carry whichever it is.
+  const [bump, setBump] = useState(false);
   const offer = plans.data?.checkoutBump ?? null;
   const target = { kind, tierId, bump: bump && offer !== null && offer.priceMinor > 0 } as const;
   const purchase = usePlanPurchase(target, {

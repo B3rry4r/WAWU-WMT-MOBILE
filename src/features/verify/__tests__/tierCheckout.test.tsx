@@ -287,6 +287,38 @@ describe('VF5 · Make it official', () => {
     expect(await screen.findByTestId('checkout-screen')).toBeTruthy();
   });
 
+  it('Continue closes the sheet before the checkout shows, so Pay is not under a Modal, and back from the checkout opens it again as it was (S7 F1)', async () => {
+    await renderRouter(routes, { initialUrl: '/tiers' });
+    await screen.findByTestId('tiers-list');
+    await fireEvent.press(screen.getByTestId('tier-plus'));
+    await fireEvent.press(screen.getByTestId('tiers-continue'));
+    await screen.findByTestId('checkout-fees');
+    // The sheet (the tiers screen's Modal) holds nothing while the checkout is in front: a Modal left open would cover Pay on a phone.
+    // Hidden elements are counted on purpose: the stack hides the screen under the checkout, but a real Modal sits above the stack.
+    const all = { includeHiddenElements: true } as const;
+    expect(screen.queryByTestId('tiers-continue', all)).toBeNull();
+    expect(screen.queryByTestId('tiers-list', all)).toBeNull();
+    expect(screen.queryByRole('dialog', all)).toBeNull();
+    expect(screen.getByTestId('checkout-pay')).toBeTruthy();
+    // Back from the checkout is the tiers again, with the choice made there.
+    await fireEvent.press(screen.getByTestId('points-back'));
+    await screen.findByTestId('tiers-list');
+    expect(screen.getByTestId('tier-plus').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByText('Continue with Verify Plus')).toBeTruthy();
+  });
+
+  it('two taps on Continue open one checkout', async () => {
+    await renderRouter(routes, { initialUrl: '/tiers' });
+    await screen.findByTestId('tiers-list');
+    const go = screen.getByTestId('tiers-continue');
+    await fireEvent.press(go);
+    await fireEvent.press(go);
+    await screen.findByTestId('checkout-fees');
+    await fireEvent.press(screen.getByTestId('points-back'));
+    await screen.findByTestId('tiers-list');
+    expect(screen.queryByTestId('checkout-screen')).toBeNull();
+  });
+
   it('a person on Verify sees their own tier and the others at the Hub’s difference (VF5b), and Upgrade opens the checkout for an upgrade', async () => {
     hub.held = 'verify';
     await renderRouter(routes, { initialUrl: '/tiers' });
@@ -300,32 +332,38 @@ describe('VF5 · Make it official', () => {
     expect(screen.getAllByRole('radio')).toHaveLength(2);
     expect(screen.getByText('Upgrade · pay ₦4,000')).toBeTruthy();
     expect(hub.quotes.every((q) => q.kind === 'upgrade')).toBe(true);
+    const before = hub.quotes.length;
     await fireEvent.press(screen.getByTestId('tiers-continue'));
     expect(await screen.findByTestId('checkout-screen')).toBeTruthy();
-    await waitFor(() => expect(hub.quotes.some((q) => q.kind === 'upgrade' && q.tierId === 'founding' && q.bump === 'true')).toBe(true));
+    // The sheet is closed once the checkout shows (S7 F1), and the checkout asks for the upgrade without the offer (S7 F2).
+    expect(screen.queryByTestId('tiers-continue', { includeHiddenElements: true })).toBeNull();
+    await waitFor(() => expect(hub.quotes.slice(before).some((q) => q.kind === 'upgrade' && q.tierId === 'founding' && q.bump === 'false')).toBe(true));
+    expect(hub.quotes.slice(before).some((q) => q.bump === 'true')).toBe(false);
   });
 });
 
 describe('VF6 and VF7 · pay with the PIN', () => {
-  it('a user sees the tier, the way to pay, the offer ticked and the total with the Bank charge, pays once with the PIN, and lands on what the Hub granted', async () => {
+  it('a user sees the tier, the way to pay, the offer unticked and the tier’s own total with the Bank charge, pays once with the PIN, and lands on what the Hub granted', async () => {
     await toCheckout();
     expect(screen.getByTestId('checkout-line')).toHaveTextContent('12 months · 10 products');
     expect(screen.getByText('Balance ₦485,250.75')).toBeTruthy();
-    expect(screen.getByTestId('checkout-bump').props.accessibilityState.checked).toBe(true);
+    // The offer adds to the amount paid, so it starts unticked (S7 F2): Pay is the tier alone until the person opts in.
+    expect(screen.getByTestId('checkout-bump').props.accessibilityState.checked).toBe(false);
     expect(screen.getByText('Add 1,000 points for ₦800')).toBeTruthy();
-    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦5,825/);
-    expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,800 + ₦25 Bank charge');
-    expect(screen.getByText('Pay ₦5,825')).toBeTruthy();
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦5,025/);
+    expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,000 + ₦25 Bank charge');
+    expect(screen.getByText('Pay ₦5,025')).toBeTruthy();
+    expect(hub.quotes.every((q) => q.bump === 'false')).toBe(true);
     // The wallet covers it, so the Hub pays from the wallet and no transfer card is offered (POINTS-06's ruling).
     expect(screen.queryByTestId('checkout-method-transfer')).toBeNull();
     await pay();
     expect(await screen.findByTestId('official-title')).toHaveTextContent("You're official");
-    expect(screen.getByTestId('official-points')).toHaveTextContent(/600 \+ 1,000/);
+    expect(screen.getByTestId('official-points')).toHaveTextContent(/^Points added600$/);
     expect(screen.getByTestId('official-products')).toHaveTextContent(/10$/);
     expect(screen.getByTestId('official-pass')).toHaveTextContent(/Maker Pass, priority/);
     expect(hub.buys).toHaveLength(1);
     expect(hub.buys[0].pin).toBe('1234');
-    expect(hub.buys[0].body).toEqual({ kind: 'tier', tierId: 'founding', bump: true, method: 'wallet', expectedTotalKobo: 582_500, quoteToken: 'tok-founding-b-582500' });
+    expect(hub.buys[0].body).toEqual({ kind: 'tier', tierId: 'founding', bump: false, method: 'wallet', expectedTotalKobo: 502_500, quoteToken: 'tok-founding-p-502500' });
     expect(Object.values(hub.buys[0].body)).not.toContain('1234');
     expect(hub.payments).toBe(1);
     // The board's "Record my voice" opens VF8, which VERIFY-03 builds: it is not drawn here.
@@ -333,13 +371,15 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     await fireEvent.press(screen.getByTestId('official-done'));
   });
 
-  it('a user who unticks the offer pays the tier alone, and the Hub is sent no offer', async () => {
+  it('a user who ticks the offer pays the tier and the offer, and the Hub is sent it', async () => {
     await toCheckout();
     await fireEvent.press(screen.getByTestId('checkout-bump'));
-    await screen.findByText('Pay ₦5,025');
+    await screen.findByText('Pay ₦5,825');
+    expect(screen.getByTestId('checkout-bump').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,800 + ₦25 Bank charge');
     await pay();
-    expect(await screen.findByTestId('official-points')).toHaveTextContent(/^Points added600$/);
-    expect(hub.buys[0].body).toMatchObject({ bump: false, expectedTotalKobo: 502_500 });
+    expect(await screen.findByTestId('official-points')).toHaveTextContent(/600 \+ 1,000/);
+    expect(hub.buys[0].body).toEqual({ kind: 'tier', tierId: 'founding', bump: true, method: 'wallet', expectedTotalKobo: 582_500, quoteToken: 'tok-founding-b-582500' });
   });
 
   it('a user who taps Pay twice is asked for one PIN and debited once (V8)', async () => {
@@ -388,14 +428,14 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     hub.mode = 'changed';
     await toCheckout();
     await pay();
-    expect(await screen.findByText('Pay ₦5,875')).toBeTruthy();
+    expect(await screen.findByText('Pay ₦5,075')).toBeTruthy();
     expect(hub.buys).toHaveLength(1);
     expect(hub.payments).toBe(0);
     await pay();
     await screen.findByTestId('official-title');
     expect(hub.buys).toHaveLength(2);
     expect(hub.buys[1].key).not.toBe(hub.buys[0].key);
-    expect(hub.buys[1].body).toMatchObject({ expectedTotalKobo: 587_500 });
+    expect(hub.buys[1].body).toMatchObject({ bump: false, expectedTotalKobo: 507_500 });
     expect(hub.payments).toBe(1);
   });
 
@@ -418,12 +458,12 @@ describe('VF6a to VF6d · the states', () => {
     hub.shortfall = true;
     await toCheckout();
     expect(screen.getByTestId('checkout-short')).toBeTruthy();
-    expect(screen.getByText('You need ₦5,825. Your wallet has ₦3,200.')).toBeTruthy();
+    expect(screen.getByText('You need ₦5,025. Your wallet has ₦3,200.')).toBeTruthy();
     expect(screen.getByTestId('checkout-pay')).toBeDisabled();
     // A short wallet may pay by bank transfer instead (the Hub gives the wallet's own account with the PIN).
     expect(screen.getByTestId('checkout-method-transfer')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('checkout-add-money'));
-    expect(await screen.findByTestId('where')).toHaveTextContent('/add-money?short=262500');
+    expect(await screen.findByTestId('where')).toHaveTextContent('/add-money?short=182500');
     expect(hub.buys).toHaveLength(0);
   });
 
@@ -433,7 +473,7 @@ describe('VF6a to VF6d · the states', () => {
     await fireEvent.press(screen.getByTestId('checkout-method-transfer'));
     await pay();
     expect(await screen.findByTestId('transfer-number')).toHaveTextContent(/9021184473/);
-    expect(screen.getByTestId('transfer-amount')).toHaveTextContent(/₦2,625/);
+    expect(screen.getByTestId('transfer-amount')).toHaveTextContent(/₦1,825/);
     expect(screen.getByTestId('transfer-bank')).toHaveTextContent(/Test MFB/);
     expect(screen.getByTestId('checkout-sent')).toBeTruthy();
     expect(hub.buys[0].body).toMatchObject({ method: 'transfer' });

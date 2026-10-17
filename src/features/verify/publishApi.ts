@@ -5,7 +5,8 @@ import type { components } from '@/api/schema.generated';
  * Publishing a draft (VERIFY-04, VF12): `POST /product-drafts/{id}/publish` takes the two files that went up under the draft's format
  * (`previewAsset`, the part buyers see before paying, and `fullAsset`) and turns the draft into a product waiting for review, exactly as
  * `POST /content` would. The Hub refuses it, with the person's own numbers, when no tier is running (`402 tier_required`), when every
- * place is used (`402 product_limit_reached`, with the offers), when the draft still lacks something (`400 draft_incomplete`), or when
+ * place is used (`402 product_limit_reached`, with the offers), when the identity check is paused (`403 identity_paused`, with the Hub's own
+ * sentence), when the draft still lacks something (`400 draft_incomplete`), or when
  * the draft is gone (a first answer that was lost: `404`, or `409` for a publish a moment ago).
  *
  * The call never rejects: the screen branches on one `PublishOutcome`.
@@ -21,6 +22,8 @@ export type PublishOutcome =
   | { kind: 'tier_required'; message: string }
   /** Every place is used: VF13, with the Hub's own sentence. */
   | { kind: 'limit_reached'; message: string }
+  /** The person's identity check is paused (`403 identity_paused`): VF15b, with the Hub's own sentence. */
+  | { kind: 'identity_paused'; message: string }
   /** The draft lacks something: the Hub names it. */
   | { kind: 'incomplete'; message: string }
   /** The draft is gone: published a moment ago (a lost first answer), or deleted elsewhere. */
@@ -58,6 +61,7 @@ export async function publishDraft(id: string, files: { previewAsset: string; fu
   const code = (error as Wire | undefined)?.reason?.code;
   if (code === 'tier_required') return { kind: 'tier_required', message: messageOf(error, 'You need a tier to publish.') };
   if (code === 'product_limit_reached') return { kind: 'limit_reached', message: messageOf(error, 'You have used all your places.') };
+  if (code === 'identity_paused') return { kind: 'identity_paused', message: messageOf(error, 'Publishing is paused until your identity check passes.') };
   if (code === 'draft_incomplete') return { kind: 'incomplete', message: messageOf(error, 'Finish your draft first.') };
   if (response.status === 404 || response.status === 409) return { kind: 'gone' };
   return { kind: 'refused', message: messageOf(error, 'We could not publish this. Try again.') };

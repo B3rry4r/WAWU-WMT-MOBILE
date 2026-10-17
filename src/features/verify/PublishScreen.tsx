@@ -61,8 +61,8 @@ export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onForgotPin' | 'o
  * format, the Hub's own type and size rules); the meter is the Hub's own count (`GET /me/tier`). Before the first publish the category
  * is asked here (the draft form stays without it), then `POST /product-drafts/{id}/publish`.
  *
- * Gates, in the Hub's order: no running tier is VF5 (or Renew, once ended); the identity check (VF15 to VF15b) has to have passed;
- * every place used is VF13. Share is the phone's own share sheet (R-33): no card is drawn. The Hub puts a published product up for
+ * Gates, in the Hub's order: no running tier is VF5 (or Renew, once ended); the identity check (VF15 to VF15b) has to have passed (the
+ * Hub refuses a paused one itself, `403 identity_paused`, and its sentence is what VF15b shows); every place used is VF13. Share is the phone's own share sheet (R-33): no card is drawn. The Hub puts a published product up for
  * review first, so the note says "live" only when the Hub says it is.
  */
 export function PublishScreen(props: PublishScreenProps) {
@@ -89,6 +89,8 @@ export function PublishScreen(props: PublishScreenProps) {
   const identity = progress.data ? identityStateOf(progress.data) : null;
 
   const [continued, setContinued] = useState(false);
+  // The Hub refused with `identity_paused` (a publish, or a file for a product): its own sentence is shown as VF15b says it.
+  const [hubPause, setHubPause] = useState<string | null>(null);
 
   const [full, setFull] = useState<Slot>({ state: 'empty' });
   const [preview, setPreview] = useState<Slot>({ state: 'empty' });
@@ -144,6 +146,12 @@ export function PublishScreen(props: PublishScreenProps) {
         set({ state: 'empty' });
         return;
       }
+      if (isApiError(error) && error.code === 'identity_paused') {
+        setHubPause(error.message);
+        void progress.refetch();
+        set({ state: 'empty' });
+        return;
+      }
       set({ state: 'failed', message: isApiError(error) ? error.message : 'That file did not upload. Try again.' });
     }
   };
@@ -172,6 +180,10 @@ export function PublishScreen(props: PublishScreenProps) {
           break;
         case 'limit_reached':
           setLimit(true);
+          break;
+        case 'identity_paused':
+          setHubPause(outcome.message);
+          void progress.refetch();
           break;
         case 'incomplete':
         case 'refused':
@@ -239,6 +251,21 @@ export function PublishScreen(props: PublishScreenProps) {
         title={ended ? 'Your tier has ended' : 'Make it official to publish'}
         message={ended ? 'Published products stay up. New publishing is paused until you renew.' : 'Publishing needs a tier. Drafts stay free.'}
         onRetry={ended ? props.onYourTier : props.onSeeTiers}
+      />
+    );
+  } else if (hubPause !== null) {
+    // The Hub's sentence is the reason (it names what went wrong and what to do), so no steps are listed under it. Try again opens
+    // Open your wallet when the wallet's own state says it is the way forward, else asks the Hub again.
+    const canOpen = identity?.kind === 'paused' ? identity.canOpen : identity?.kind !== 'checking';
+    body = (
+      <IdentityCheck
+        state={{ kind: 'paused', reason: hubPause, fixes: [], canOpen }}
+        onContinue={() => setHubPause(null)}
+        onTryAgain={() => {
+          setHubPause(null);
+          if (canOpen) entry.open();
+          else void progress.refetch();
+        }}
       />
     );
   } else if (identity && (identity.kind !== 'passed' || (watched && !continued))) {

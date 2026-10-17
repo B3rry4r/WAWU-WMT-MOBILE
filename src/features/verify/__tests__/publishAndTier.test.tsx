@@ -40,6 +40,8 @@ const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data }
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 const DAY = 86_400_000;
+/** The Hub's own sentence for a paused identity check (`403 identity_paused`, S7 round 2). */
+const HUB_PAUSE = 'Publishing is paused until your identity check passes. Your wallet is not finished opening. Send the documents the bank asked for.';
 const hub = {
   tier: 'active' as 'none' | 'active' | 'ending' | 'ended',
   used: 2,
@@ -52,6 +54,7 @@ const hub = {
   patches: [] as Record<string, unknown>[],
   buys: [] as { key: string | null; body: Record<string, unknown> }[],
   full: false,
+  paused: false,
 };
 const FORMATS = [{ id: 'pdf', full: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000 }, preview: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000, kind: 'extract', seconds: null } }];
 const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: 'pdf', description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: 'paid', price: 4500, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
@@ -87,6 +90,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/product-drafts/d1/publish' && method === 'POST') {
     const body = (await request.json()) as Record<string, unknown>;
+    if (hub.paused) return refuse(403, { code: 'identity_paused', message: HUB_PAUSE, stage: 'needs_documents' });
     if (hub.full) return refuse(402, { code: 'product_limit_reached', message: 'You have used all 3 of your products.' });
     hub.publishes.push(body);
     hub.used += 1;
@@ -165,7 +169,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { tier: 'active', used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false });
+  Object.assign(hub, { tier: 'active', used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -249,6 +253,26 @@ describe('VF12 · publish your first product', () => {
     expect(screen.getByTestId('identity-line')).toHaveTextContent("The name on your NIN doesn't match your BVN.");
     expect(screen.getByTestId('identity-fixes')).toHaveTextContent(/Update your NIN details with NIMC, then try again/);
     expect(screen.queryByTestId('publish-submit')).toBeNull();
+    await fireEvent.press(screen.getByTestId('identity-try-again'));
+    expect(await screen.findByTestId('where')).toHaveTextContent(/\/open-wallet/);
+  });
+
+  it('the Hub’s own pause: a publish it refuses with identity_paused shows its sentence as VF15b, publishes nothing, and Try again opens Open your wallet (S7 F3)', async () => {
+    hub.paused = true;
+    hub.category = 'technology';
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    await screen.findByTestId('publish-submit');
+    await fireEvent.press(screen.getByTestId('publish-preview'));
+    await sleep(900);
+    await fireEvent.press(screen.getByTestId('publish-file'));
+    await screen.findByText('18 MB · ready');
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('identity-title')).toHaveTextContent('Uploads are paused');
+    // The Hub's sentence as it is: no steps are added under it, and the form is gone.
+    expect(screen.getByTestId('identity-line')).toHaveTextContent(HUB_PAUSE);
+    expect(screen.queryByTestId('identity-fixes')).toBeNull();
+    expect(screen.queryByTestId('publish-submit')).toBeNull();
+    expect(hub.publishes).toHaveLength(0);
     await fireEvent.press(screen.getByTestId('identity-try-again'));
     expect(await screen.findByTestId('where')).toHaveTextContent(/\/open-wallet/);
   });
