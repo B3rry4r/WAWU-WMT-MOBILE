@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { lagos, MONTHS } from '@/features/wallet/history/lagosTime';
 import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import { Skeleton } from './Skeleton';
@@ -25,7 +26,11 @@ export function productsMeterLine(used: number, allowed: number): string {
   return `${used} of ${allowed} ${allowed === 1 ? 'product' : 'products'}`;
 }
 
-const dayFormat = () => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' });
+/** "26 Nov", "30 Sep": the Lagos clock's day and the board's three-letter month (the history's MONTHS table, never Intl, which writes "Sept"). */
+function lagosDayAndMonth(at: Date): string {
+  const local = lagos(at);
+  return `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]}`;
+}
 
 /**
  * The caption's text: "Verify · ends 26 Nov". The day is read in Lagos time, where the tier is sold and renewed, so a
@@ -33,7 +38,7 @@ const dayFormat = () => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month
  */
 export function productsMeterCaption(tierName: string | null | undefined, endsAt?: string | Date | null): string | undefined {
   const day = endsAt ? new Date(endsAt) : undefined;
-  const ends = day && !Number.isNaN(day.getTime()) ? `ends ${dayFormat().format(day)}` : undefined;
+  const ends = day && !Number.isNaN(day.getTime()) ? `ends ${lagosDayAndMonth(day)}` : undefined;
   if (tierName && ends) return `${tierName} · ${ends}`;
   return tierName || ends || undefined;
 }

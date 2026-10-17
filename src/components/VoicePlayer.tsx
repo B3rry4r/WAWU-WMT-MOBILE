@@ -29,9 +29,8 @@ export const voicePlayerMetrics = {
   label: { height: 22, padH: 8, font: 11, icon: 11, iconStroke: 2.4, iconToWord: 4 },
   /** The "AI voice" tag is not on the boards (R-66 adds it): smaller than the Bio label, in the sunken tone, so it reads as a note. */
   aiVoiceTag: { height: 20, padH: 7, font: 10 },
-  /** On a phone too narrow for 26 bars, fewer are drawn so none is thinner than this, and never fewer than the floor. */
+  /** On a phone too narrow for 26 bars, fewer are drawn so none is thinner than this (down to none in a strip too small for one). */
   minBar: 2,
-  minBars: 8,
 } as const;
 
 /** The bar heights the kit draws, in percent of the strip, repeating every 12 bars (me.js line 13). */
@@ -51,11 +50,14 @@ export function voiceClock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 
-/** How many bars fit the strip's width: all 26 where the board draws them, fewer on a narrow phone (an unmeasured strip draws all). */
+/**
+ * How many bars fit the strip's width: all 26 where the board draws them, fewer in a narrow strip so no bar is thinner than
+ * `minBar` ("fewer bars, never thinner"). A strip that is not measured yet, or has no room for one bar, draws none.
+ */
 export function barCountFor(width: number | undefined): number {
   const m = voicePlayerMetrics;
-  if (width === undefined || !(width > 0)) return m.bars;
-  return Math.min(m.bars, Math.max(m.minBars, Math.floor((width + m.barGap) / (m.minBar + m.barGap))));
+  if (width === undefined || !(width > 0)) return 0;
+  return Math.min(m.bars, Math.floor((width + m.barGap) / (m.minBar + m.barGap)));
 }
 
 /** How many of the bars are drawn as played, from how far through the clip the listener is (0 to 1). */
@@ -124,6 +126,9 @@ export type VoicePlayerProps = {
 
 const defaultError = "Couldn't play this. Tap to try again.";
 
+/** The error row is the button, so its touch area runs out over the pill's own padding: the whole pill answers a tap. */
+const errorRowSlop = { top: voicePlayerMetrics.padV, bottom: voicePlayerMetrics.padV, left: voicePlayerMetrics.padLeft, right: voicePlayerMetrics.padRight };
+
 /**
  * The Voice Intro: play and pause, a bar strip that fills as it plays, the clip's length, and the "Bio" label with the small "AI voice"
  * tag (R-66). It plays nothing itself: the screen owns the audio and passes its status and position, so the same pill is the
@@ -136,19 +141,46 @@ export function VoicePlayer({ status, progress, durationSeconds, onToggle, label
   const [waveWidth, setWaveWidth] = useState<number | undefined>();
   const bars = barCountFor(waveWidth);
   const played = playedBars(progress, bars);
+  const percent = playedBars(progress, 100);
   const loading = status === 'loading';
   const failed = status === 'error';
   const clock = voiceClock(durationSeconds);
   const buttonLabel = failed ? 'Try again' : loading ? 'Loading Bio' : status === 'playing' ? 'Pause Bio' : `Play Bio, ${clock}`;
 
+  const pillLook = [
+    styles.pill,
+    { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: edge, color: colors.borderHairline, inset: true }] },
+  ];
+
+  if (failed) {
+    return (
+      <View testID={testID} style={pillLook}>
+        <Pressable
+          testID={testID ? `${testID}-button` : undefined}
+          accessibilityRole="button"
+          accessibilityLabel={buttonLabel}
+          onPress={onToggle}
+          hitSlop={errorRowSlop}
+          {...ring.handlers}
+          style={[styles.errorRow, ring.style]}
+        >
+          {({ pressed }) => (
+            <>
+              <View style={[styles.button, { backgroundColor: colors.accent, transform: [{ scale: pressed ? pressScale : 1 }] }]}>
+                <Icon name="RotateCcw" size={m.buttonIcon} color={colors.textOnAccent} strokeWidth={m.buttonIconStroke} fill="none" />
+              </View>
+              <Text variant="errorLine" accessibilityRole="alert" style={styles.error}>
+                {errorMessage}
+              </Text>
+            </>
+          )}
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
-    <View
-      testID={testID}
-      style={[
-        styles.pill,
-        { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: edge, color: colors.borderHairline, inset: true }] },
-      ]}
-    >
+    <View testID={testID} style={pillLook}>
       <Pressable
         testID={testID ? `${testID}-button` : undefined}
         accessibilityRole="button"
@@ -164,42 +196,34 @@ export function VoicePlayer({ status, progress, durationSeconds, onToggle, label
           <ActivityIndicator testID={testID ? `${testID}-spinner` : undefined} size="small" color={colors.textOnAccent} />
         ) : (
           <Icon
-            name={failed ? 'RotateCcw' : status === 'playing' ? 'Pause' : 'Play'}
+            name={status === 'playing' ? 'Pause' : 'Play'}
             size={m.buttonIcon}
             color={colors.textOnAccent}
             strokeWidth={m.buttonIconStroke}
-            fill={failed ? 'none' : colors.textOnAccent}
+            fill={colors.textOnAccent}
           />
         )}
       </Pressable>
 
-      {failed ? (
-        <Text variant="errorLine" accessibilityRole="alert" style={styles.error}>
-          {errorMessage}
-        </Text>
-      ) : (
-        <>
+      <View
+        testID={testID ? `${testID}-wave` : undefined}
+        accessibilityRole="progressbar"
+        accessibilityLabel="Bio"
+        accessibilityValue={{ min: 0, max: 100, now: percent }}
+        onLayout={(e) => setWaveWidth(e.nativeEvent.layout.width)}
+        style={styles.wave}
+      >
+        {Array.from({ length: bars }, (_, i) => (
           <View
-            testID={testID ? `${testID}-wave` : undefined}
-            accessibilityRole="progressbar"
-            accessibilityLabel="Bio"
-            accessibilityValue={{ min: 0, max: 100, now: Math.round((played / bars) * 100) }}
-            onLayout={(e) => setWaveWidth(e.nativeEvent.layout.width)}
-            style={styles.wave}
-          >
-            {Array.from({ length: bars }, (_, i) => (
-              <View
-                key={i}
-                style={[styles.bar, { height: `${waveShape[i % waveShape.length]}%`, backgroundColor: i < played ? colors.accent : colors.borderStrong }]}
-              />
-            ))}
-          </View>
-          <Text variant="body" tone="textMuted" style={styles.time}>
-            {clock}
-          </Text>
-          {label === 'inline' ? <VoiceLabel aiVoice={aiVoice} testID={testID ? `${testID}-label` : undefined} /> : null}
-        </>
-      )}
+            key={i}
+            style={[styles.bar, { height: `${waveShape[i % waveShape.length]}%`, backgroundColor: i < played ? colors.accent : colors.borderStrong }]}
+          />
+        ))}
+      </View>
+      <Text variant="body" tone="textMuted" style={styles.time}>
+        {clock}
+      </Text>
+      {label === 'inline' ? <VoiceLabel aiVoice={aiVoice} testID={testID ? `${testID}-label` : undefined} /> : null}
     </View>
   );
 }
@@ -225,6 +249,7 @@ const styles = StyleSheet.create({
   wave: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: voicePlayerMetrics.barGap, height: voicePlayerMetrics.waveHeight },
   bar: { flex: 1, borderRadius: voicePlayerMetrics.barRadius },
   time: { fontSize: voicePlayerMetrics.time, lineHeight: Math.round(voicePlayerMetrics.time * type.leading.snug), flexShrink: 0, fontVariant: ['tabular-nums'] },
+  errorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: voicePlayerMetrics.between },
   error: { flex: 1, paddingVertical: space.xs },
   labels: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexShrink: 0 },
   tag: {

@@ -26,6 +26,8 @@ export type TierBadgeProps = {
   name: string;
   /** A numbered tier's number as the Hub serves it (`badge.number`, Founding Maker #128). Null or missing: the name alone, in the soft look. */
   number?: number | null;
+  /** Fill the width the parent gives it, name at the start (VF14 draws the chip across the tier card). Off: the pill is as wide as its name. */
+  stretch?: boolean;
   testID?: string;
 };
 
@@ -35,7 +37,7 @@ export function tierBadgeLabel(name: string, number?: number | null): string {
 }
 
 /** The tier a person holds, as a small pill by their name or on their tier card. It is read, never pressed. */
-export function TierBadge({ name, number, testID }: TierBadgeProps) {
+export function TierBadge({ name, number, stretch, testID }: TierBadgeProps) {
   const { colors } = useWawu();
   const look = looks[number === null || number === undefined ? 'soft' : 'solid'];
   const label = tierBadgeLabel(name, number);
@@ -44,7 +46,7 @@ export function TierBadge({ name, number, testID }: TierBadgeProps) {
       testID={testID}
       accessible
       accessibilityLabel={number === null || number === undefined ? `${name} tier` : `${name} tier, number ${number}`}
-      style={[styles.pill, { backgroundColor: colors[look.background] }]}
+      style={[styles.pill, stretch ? styles.stretch : null, { backgroundColor: colors[look.background] }]}
     >
       <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Icon name="BadgeCheck" size={tierBadgeMetrics.icon} color={colors[look.ink]} strokeWidth={tierBadgeMetrics.iconStroke} />
@@ -67,5 +69,6 @@ const styles = StyleSheet.create({
     gap: tierBadgeMetrics.iconToName,
     borderRadius: radius.chip,
   },
+  stretch: { alignSelf: 'stretch' },
   label: { fontSize: tierBadgeMetrics.font, lineHeight: Math.round(tierBadgeMetrics.font * type.leading.snug), flexShrink: 1 },
 });

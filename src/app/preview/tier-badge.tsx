@@ -11,12 +11,13 @@ import { layout, space, useWawu } from '@/theme';
  * badge): /preview/tier-badge?state=<name>, or no state for every one. The names and the number are the brief's example values,
  * not tiers: the app reads them from the Hub. A release build redirects home.
  */
-const cases: Record<string, { name: string; number?: number | null; note: string }> = {
+const cases: Record<string, { name: string; number?: number | null; stretch?: boolean; note: string }> = {
   verify: { name: 'Verify', note: 'Verify (soft)' },
   plus: { name: 'Verify Plus', note: 'Verify Plus (soft)' },
   founding: { name: 'Founding Maker', note: 'Founding Maker, no number yet (soft)' },
   numbered: { name: 'Founding Maker', number: 128, note: 'Founding Maker, numbered (dark)' },
   long: { name: 'Founding Maker', number: 12840, note: 'A long number still fits one line' },
+  stretch: { name: 'Verify', stretch: true, note: 'Across the card (VF14), name at the start' },
 };
 
 export default function TierBadgePreview() {
@@ -30,7 +31,7 @@ export default function TierBadgePreview() {
       {keys.map((key) => (
         <View key={key} style={styles.item}>
           <Text variant="meta">{cases[key].note}</Text>
-          <TierBadge name={cases[key].name} number={cases[key].number} testID={`tier-${key}`} />
+          <TierBadge name={cases[key].name} number={cases[key].number} stretch={cases[key].stretch} testID={`tier-${key}`} />
         </View>
       ))}
     </ScrollView>

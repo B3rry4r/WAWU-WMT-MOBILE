@@ -16,3 +16,16 @@ Files changed: `src/components/TierBadge.tsx`, `ProductsMeter.tsx`, `PointsFigur
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+
+## Builder report, round 2
+
+Files changed: `src/components/PointsFigure.tsx`, `ProductsMeter.tsx`, `TierBadge.tsx`, `VoicePlayer.tsx`; `src/app/preview/points-figure.tsx` (six fit cases: 7 and 9 digits in a 150, 182 and 200 px parent), `tier-badge.tsx` (a `stretch` case); `src/__tests__/dv2-comp.test.tsx` (43 to 60 tests); this file, `docs/LOG.md`, `docs/PROGRESS.md`.
+- **1 (medium) "Sept":** `productsMeterCaption` imports `lagos` and `MONTHS` from `lagosTime.ts`; no Intl. Tests: September (30 Sep 12:00Z, 1 Sep), all 12 months, 30 Sep 22:59:59Z to 30 Sep and 23:00Z to 1 Oct, 31 Dec 22:59Z and 23:59Z, 28 Feb 2026 and 2028, offsets -05:00 and +01:00, a Date.
+- **2 (medium) points overflow:** phone: row `flexShrink` and `maxWidth 100%`, count and word `numberOfLines 1`, `adjustsFontSizeToFit`, `minimumFontScale 0.5`. Web: the box takes the layout's width, the row reports its own, `pointsFitScale` rounds down so a pixel never pushes it over; the star and gaps keep their size, the two texts scale (never below 0.5). Pure helpers and the web path are tested (Platform.OS replaced); the phone path is tested by its props (no device here).
+  Measured in a dev export (own TMPDIR, ports 7620 and 7627 baked), figure inside its parent, one line, nothing clipped, 12 of 12 (light and dark): 7 digits 15.6, 19.8 and 22 px; 9 digits 13.2, 16.9 and 18.9 px for 150, 182 and 200. Pictures: `scratchpad/dv2-comp-b/r2/shots/sheet-fit-dark.png`, `sheet-fit-light.png`; script `fit.py`.
+- **3 (low) error row:** the whole row (circle, words) is one Pressable "Try again" (`vp-button`), with a hit slop over the pill's padding; the circle still scales on press. Test: one button, a press on the words fires `onToggle`. Browser: clicking the words leaves the error.
+- **4 (low) bars:** `barCountFor` is `floor((width + gap) / (2 + gap))` capped at 26, 0 for an unmeasured or empty strip, no floor of 8; no bars until `onLayout`. Measured: 390 px 26 at 3.22, 360 26 at 2.08, 320 16 at 2.13, 280 6 at 2.31, 240 none. A test walks widths 1 to 400: never under 2 px.
+- **5 (low) `stretch`:** `TierBadge stretch` is `alignSelf: stretch`; in the preview and a test (350 px wide against 72 px).
+- **6 (low):** `boardLeading = 1.2` named; `figureStyles(size, scale)` builds the text styles once per size and scale (the Button and FilterChips pattern). The meter's `aria-valuenow` on web is not changed (the label already carries "2 of 3 products").
+- **Not done:** below about 280 px of screen the inline Bio and AI voice label leaves no strip and, at 240, the tag meets the pill's edge: not in the findings, noted only.
+- **Checks:** dv2-comp 60 passed; eslint on the 7 changed files EXIT 0; typecheck; gates EXIT 0 (10 run, 0 fail, 5 warn as before, 710 files); full check, once at the end, EXIT 0 (log `scratchpad/dv2-comp-b/r2/logs/mobile-check.log`).
