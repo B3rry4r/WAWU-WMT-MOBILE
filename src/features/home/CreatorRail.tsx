@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -45,15 +45,17 @@ export type CreatorRailProps = {
   creators: CreatorSuggestion[] | null;
   onRetry: () => void;
   retrying: boolean;
+  /** "See all" at the end of the heading opens All creators (X4). Not drawn without it. */
+  onSeeAll?: () => void;
 };
 
 /**
  * "Who Made This?" (H1, R-69): a sideways rail of creators, each with Follow in place. The
  * Hub's answer is changed at once and put right by its reply; a refused follow goes back and
- * says so. "See all" (X4) and a card opening the profile (M5) are added by EXPLORE-02 and
- * ME-02 with their screens (R-27, R-41).
+ * says so. "See all" opens All creators (X4, EXPLORE-02); a card opening the profile (M5) is added by
+ * ME-02 with its screen (R-27, R-41).
  */
-export function CreatorRail({ creators, onRetry, retrying }: CreatorRailProps) {
+export function CreatorRail({ creators, onRetry, retrying, onSeeAll }: CreatorRailProps) {
   const client = useTodayClient();
   const [failed, setFailed] = useState<string | null>(null);
   const follow = useMutation(
@@ -120,7 +122,14 @@ export function CreatorRail({ creators, onRetry, retrying }: CreatorRailProps) {
 
   return (
     <View style={styles.section}>
-      <WawuText variant="h2">Who Made This?</WawuText>
+      <View style={styles.heading}>
+        <WawuText variant="h2">Who Made This?</WawuText>
+        {onSeeAll ? (
+          <Pressable testID="today-creators-see-all" accessibilityRole="button" accessibilityLabel="See all creators" hitSlop={space.md} onPress={onSeeAll}>
+            <WawuText variant="linkStrong">See all</WawuText>
+          </Pressable>
+        ) : null}
+      </View>
       {body}
       {failed ? (
         <WawuText variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="today-follow-failed">
@@ -133,6 +142,7 @@ export function CreatorRail({ creators, onRetry, retrying }: CreatorRailProps) {
 
 const styles = StyleSheet.create({
   section: { gap: m.railGap },
+  heading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   rail: { marginRight: -gutter },
   railRow: { gap: m.cardsApart, paddingRight: gutter },
   problem: { alignItems: 'flex-start', gap: space.md },
