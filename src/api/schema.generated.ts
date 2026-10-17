@@ -9264,9 +9264,9 @@ export interface components {
             startsAt: string;
             /** @enum {string} */
             source: "config" | "first_run";
-            total: number;
+            count: number;
             items: components["schemas"]["UnsweptSaleView"][];
-            nextAfter: string | null;
+            nextCursor: string | null;
         };
         EarningStreamView: {
             /** @enum {string} */

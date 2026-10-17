@@ -32858,7 +32858,7 @@
        "first_run"
       ]
      },
-     "total": {
+     "count": {
       "type": "number"
      },
      "items": {
@@ -32867,7 +32867,7 @@
        "$ref": "#/components/schemas/UnsweptSaleView"
       }
      },
-     "nextAfter": {
+     "nextCursor": {
       "type": "string",
       "nullable": true
      }
@@ -32875,9 +32875,9 @@
     "required": [
      "startsAt",
      "source",
-     "total",
+     "count",
      "items",
-     "nextAfter"
+     "nextCursor"
     ]
    },
    "EarningStreamView": {
