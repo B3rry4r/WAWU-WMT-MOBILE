@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 297.**
+**Launch tasks done: 176 of 298.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 63 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 106 | 0 | 0 | 0 |
+| verifying | 107 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-63](../tasks/FIX-63.md) Signed-in screens are guarded (every route that needs a session sits in the signed-in group) (You)
 - [FIX-59](../tasks/FIX-59.md) My purchases lists every paid kind (tickets, credit packs, school fees, community passes) (You)
 - [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
@@ -320,6 +321,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · FIX-63 · Built (Sonnet builder, T1; mobile `wmt/FIX-63` on `origin/wmt/MERGE-14` `d76612f6`; no backend change, no migration; status verifying): the 84 route files that need a session and were not listed in `_layout.tsx` (SWEEP-APP row 51) are listed in the signed-in group, so a signed-out visit or a deep link lands on the welcome screen from the layout; the public ones (About, Terms, Privacy policy, the seven app links, `/claim-code`, the development screens) are a written list; `src/__tests__/route-guard.test.tsx` fails on a route file that is neither (SHARED-CHANGES FIX-63 #1). SWEEP-APP rows 46 and 61 written as ruled no with the true reason; the comment at `src/features/ads/api.ts` says the chip is the fixed word SPONSORED.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, S1b round 2): the locked course's foot is padded by its measured height so nothing sits under it (H25); Send posts a comment once (H21); the preview pill no longer covers the book's page count (H19, H20); `Pill` gains `flush` (SHARED-CHANGES HOME-03 #5); tests added, none loosened; status verifying.
 - 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
@@ -334,4 +336,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · SETTINGS-05 · Built (Sonnet builder, T2 identity; mobile `wmt/SETTINGS-05` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `8f2efc8d` merged, backend `wmt/SETTINGS-05` `56c4b61` on `origin/wmt/SETTINGS-08`; migration `20261025181000`, contract changed; status verifying): Z2's Delete account line, Z6 (the bank's balance, Withdraw, no wallet warning without a wallet), Z7 (optional reason the Hub now keeps, type DELETE, the Hub's refusal in its words) and Z8 (the Hub's date, Done signs out); checked on a stack with the real wawu-id (blocked with money, blocked with an owed earning, scheduled, a sign-in cancelled once, a double tap made one schedule); gaps G-SETTINGS-05-1 and -2.
 - 17 Oct 2026 · POINTS-07 · Built (Sonnet builder, T2; mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4`, contract from backend `90ab9aa`; no backend change; status verifying): Studio (`/studio`, PT1 and PT1a) lists the tools `GET /ai-tools` gives with the Hub's costs, from the Home Studio tile and the Create hub's Studio card (M19, with the points count); `useJobCheck` shows PT3, PT3a, PT3b or PT7 from `POST /points/quote` and buys exactly the missing points with the PIN, once (stack: 1,000 + 250 = 1,250 points, 1 debit after a wrong PIN; limit reached by 3 real jobs); gaps G-POINTS-07-1 to -4.
 - 17 Oct 2026 · AITOOLS-01 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`, mobile `wmt/AITOOLS-01` on `47555987`; migration `20261025182000_ai_tool_jobs`; status verifying): `GET /ai-tools` lists VoiceOver with its cost, `POST /ai-tools/voiceover/jobs` holds the points, makes the audio through one provider seam and keeps them only on success, `GET /ai-tools/jobs/{id}` says working, done or "No points were taken"; two jobs at once never go below zero, each cap is named with nothing held, a lost answer and a retry run one job. NOT RUN against the real voice provider (no key on any build machine); run against a local stand-in. G-AITOOLS-01-1 to -5 filed.
-- 17 Oct 2026 · ME-12, VERIFY-04, VERIFY-05 · Built (Sonnet builder, bundle S7; mobile `wmt/S7` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `4817f904` merged, both sides kept; no backend change, no migration; status verifying): `/tiers` (VF5, VF5b), `/checkout` (VF6 to VF6d, one fresh quote and one `Idempotency-Key` per attempt, the shared PIN sheet, a short wallet to Add money), `/tier-done` (VF7, VF7a), `/publish` (VF12 to VF12c with the identity check VF15 to VF15b), the VF13 sheet and `/your-tier` (VF14 to VF14b); entries on Create, the upload step, the draft form, Me and Settings. E21's See tiers is not drawn (G-ME-12-2).
