@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CreateEntry } from '@/features/create/CreateEntry';
 import { FeedScreen } from '@/features/feed/FeedScreen';
+import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 
 import type { HomeView } from './model';
 import { TodayScreen } from './TodayScreen';
@@ -14,7 +15,7 @@ import { TodayScreen } from './TodayScreen';
  * The screen's title is "Home" for a screen reader (the tab row is what the eye reads; the
  * canvas draws no title), as every other tab names its own screen.
  */
-export function HomeScreen({ onCreate }: { onCreate?: () => void }) {
+export function HomeScreen({ onCreate, pay }: { onCreate?: () => void; pay?: FlowHandlers }) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -25,7 +26,7 @@ export function HomeScreen({ onCreate }: { onCreate?: () => void }) {
       {view === 'today' ? (
         <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} />
       ) : (
-        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} />
+        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} pay={pay} />
       )}
       {onCreate ? <CreateEntry onPress={onCreate} /> : null}
     </View>

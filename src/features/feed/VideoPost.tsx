@@ -31,6 +31,17 @@ export function VideoPost(props: PostProps) {
     if (active) setPaused(false);
   }
 
+  // The post was just unlocked (H16, Watch now): the preview's end is over, and the full video plays from the start.
+  const [wasLocked, setWasLocked] = useState(locked);
+  if (locked !== wasLocked) {
+    setWasLocked(locked);
+    if (!locked) {
+      setEnded(false);
+      setPaused(false);
+      setSeek(null);
+    }
+  }
+
   const previewEnded = locked && ended;
   const playing = active && !paused && !ended;
   const seekTo = (to: number) => {
