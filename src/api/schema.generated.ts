@@ -4768,6 +4768,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/schools/enrolments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My courses (SC8): this student's enrolments, newest first. `tab` is
+         *     `current` or `finished` (left out: both). Each row carries its class's
+         *     start date, the course's end date and the tab it belongs in. A place that
+         *     was given back unpaid is not listed. Pages by `cursor` (CONVENTIONS).
+         */
+        get: operations["SchoolEnrolmentsController_list"];
+        put?: never;
+        /**
+         * SC4 Continue: holds a place in the class the student picked and answers
+         *     the order (the course, school and class, the fee that will be asked for,
+         *     and `reservedUntil`, when the place goes back to the class if it is not
+         *     paid). Pay it with `POST /money/payments`. The same request again answers
+         *     the same order and keeps the place a while longer; asking for another
+         *     class of the same course moves the place. A class with no seat left is
+         *     `409 reason.code class_full` with `reason.nextIntake`, the soonest other
+         *     class of the course that has a seat (SC11), or null; a class that has
+         *     started is `409 intake_closed`; a student already enrolled in the course
+         *     is `409 already_enrolled` with `reason.enrolmentId`; a student holding
+         *     too many unpaid places is `409 reservation_limit`. An unknown or hidden
+         *     class is 404. A course with no fee enrols at once (`status enrolled`,
+         *     nothing to pay).
+         */
+        post: operations["SchoolEnrolmentsController_enrol"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/schools/enrolments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One enrolment as it stands now: what the app polls after a payment, and
+         *     SC7's receipt (the course, class, fee and what the wallet was actually
+         *     debited). Only its student reads it; another person's and an id nobody
+         *     holds are the same 404. It reads our own records only.
+         */
+        get: operations["SchoolEnrolmentsController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/schools": {
         parameters: {
             query?: never;
@@ -4844,59 +4903,6 @@ export interface paths {
         put?: never;
         /** One tap on "Continue to their site": records one click, answers with the link to open. */
         post: operations["SchoolLinkController_click"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/schools/enrolments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * SC4 Continue: holds a place in the class the student picked and answers
-         *     the order (the course, school and class, the fee that will be asked for,
-         *     and `reservedUntil`, when the place goes back to the class if it is not
-         *     paid). Pay it with `POST /money/payments`. The same request again answers
-         *     the same order and keeps the place a while longer; asking for another
-         *     class of the same course moves the place. A class with no seat left is
-         *     `409 reason.code class_full` with `reason.nextIntake`, the soonest other
-         *     class of the course that has a seat (SC11), or null; a class that has
-         *     started is `409 intake_closed`; a student already enrolled in the course
-         *     is `409 already_enrolled` with `reason.enrolmentId`; a student holding
-         *     too many unpaid places is `409 reservation_limit`. An unknown or hidden
-         *     class is 404. A course with no fee enrols at once (`status enrolled`,
-         *     nothing to pay).
-         */
-        post: operations["SchoolEnrolmentsController_enrol"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/schools/enrolments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One enrolment as it stands now: what the app polls after a payment, and
-         *     SC7's receipt (the course, class, fee and what the wallet was actually
-         *     debited). Only its student reads it; another person's and an id nobody
-         *     holds are the same 404. It reads our own records only.
-         */
-        get: operations["SchoolEnrolmentsController_read"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5467,6 +5473,82 @@ export interface paths {
         get: operations["AboutController_policy"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/schools/{id}/payee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The bank account the school is paid at; 404 when it has none yet. */
+        get: operations["SchoolSettlementAdminController_payee"];
+        /**
+         * Saves the school's bank account after the bank confirms it (the holder's
+         *     name is what the bank gives). A miss saves nothing: 422.
+         */
+        put: operations["SchoolSettlementAdminController_setPayee"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/school-settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settlements, newest first: what is owed to schools, what was paid, what went back. */
+        get: operations["SchoolSettlementAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/school-intakes/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calls a class off: no more enrolments, unpaid places go back, and every
+         *     paid enrolment's fee goes back to the student's wallet. A fee already paid
+         *     to the school is counted in `alreadyPaidOut`, not refunded.
+         */
+        post: operations["SchoolSettlementAdminController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/school-enrolments/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sends one paid enrolment's fee back to the student. 409 once it is on its way to the school. */
+        post: operations["SchoolSettlementAdminController_refund"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8565,6 +8647,18 @@ export interface components {
             capacity?: number;
             hidden?: boolean;
         };
+        SetPayeeDto: {
+            /**
+             * @description The bank's code in the provider's list.
+             * @example 058
+             */
+            bankCode: string;
+            /**
+             * @description Ten digits. The bank is asked for the holder's name before anything is saved.
+             * @example 0123456789
+             */
+            accountNumber: string;
+        };
         UpdatePlanSettingsDto: {
             /**
              * @description Setting key to its new value; null puts the setting back to its default.
@@ -11460,6 +11554,47 @@ export interface components {
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
         };
+        SchoolPayeeView: {
+            schoolId: string;
+            bankCode: string;
+            bankName: string;
+            accountNumberLast4: string;
+            accountName: string;
+            verifiedAt: string;
+        };
+        SchoolSettlementView: {
+            id: string;
+            enrolmentId: string;
+            reference: string;
+            schoolId: string;
+            schoolName: string;
+            courseTitle: string;
+            /** @enum {string} */
+            action: "refund" | "payout";
+            /** @enum {string} */
+            status: "pending" | "review" | "refunded" | "paid" | "sent";
+            priceKobo: number;
+            schoolShareKobo: number;
+            wawuShareKobo: number;
+            providerFeeKobo: number | null;
+            /** @enum {string|null} */
+            waiting: "provider" | "no_payee" | "funds" | "refused" | null;
+            reviewNote: string | null;
+            decidedAt: string;
+            paidAt: string | null;
+            refundedAt: string | null;
+        };
+        SchoolSettlementPage: {
+            items: components["schemas"]["SchoolSettlementView"][];
+            nextCursor: string | null;
+        };
+        CancelIntakeView: {
+            intakeId: string;
+            cancelledAt: string;
+            refunding: number;
+            alreadyPaidOut: number;
+            placesReleased: number;
+        };
         AdminSchoolSummary: {
             id: string;
             name: string;
@@ -12086,6 +12221,42 @@ export interface components {
             createdAt: string;
             enrolledAt: string | null;
             returned: components["schemas"]["EnrolmentReturnView"];
+        };
+        SchoolEnrolmentListItem: {
+            weeks: number;
+            endDate: string;
+            /** @enum {string} */
+            tab: "current" | "finished";
+            id: string;
+            /** @enum {string} */
+            status: "released" | "refunded" | "reserved" | "enrolled";
+            reference: string;
+            course: {
+                id: string;
+                title: string;
+            };
+            school: {
+                id: string;
+                name: string;
+            };
+            intake: {
+                id: string;
+                startDate: string;
+                schedule: string;
+                location: string | null;
+            };
+            priceKobo: number;
+            paymentId: string | null;
+            providerFeeKobo: number | null;
+            totalKobo: number | null;
+            reservedUntil: string | null;
+            createdAt: string;
+            enrolledAt: string | null;
+            returned: components["schemas"]["EnrolmentReturnView"];
+        };
+        SchoolEnrolmentPage: {
+            items: components["schemas"]["SchoolEnrolmentListItem"][];
+            nextCursor: string | null;
         };
         SchoolApplyLinkView: {
             courseId: string;
@@ -23209,6 +23380,85 @@ export interface operations {
             };
         };
     };
+    SchoolEnrolmentsController_list: {
+        parameters: {
+            query?: {
+                /** @description `current` or `finished`; left out, both tabs together. */
+                tab?: "current" | "finished";
+                /** @description Rows per page. */
+                limit?: number;
+                /** @description The `nextCursor` of the page before. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolEnrolmentPage"];
+                };
+            };
+        };
+    };
+    SchoolEnrolmentsController_enrol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrolDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolEnrolmentView"];
+                };
+            };
+            /** @description reason.code class_full (reason.nextIntake), intake_closed, already_enrolled (reason.enrolmentId), reservation_limit, or payment_in_progress (reason.paymentId) when the place being moved already has a payment started. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolEnrolmentErrorEnvelope"];
+                };
+            };
+        };
+    };
+    SchoolEnrolmentsController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolEnrolmentView"];
+                };
+            };
+        };
+    };
     SchoolsPublicController_list: {
         parameters: {
             query?: {
@@ -23321,59 +23571,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchoolApplyLinkView"];
-                };
-            };
-        };
-    };
-    SchoolEnrolmentsController_enrol: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EnrolDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchoolEnrolmentView"];
-                };
-            };
-            /** @description reason.code class_full (reason.nextIntake), intake_closed, already_enrolled (reason.enrolmentId), reservation_limit, or payment_in_progress (reason.paymentId) when the place being moved already has a payment started. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchoolEnrolmentErrorEnvelope"];
-                };
-            };
-        };
-    };
-    SchoolEnrolmentsController_read: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchoolEnrolmentView"];
                 };
             };
         };
@@ -24253,6 +24450,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyView"];
+                };
+            };
+        };
+    };
+    SchoolSettlementAdminController_payee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolPayeeView"];
+                };
+            };
+        };
+    };
+    SchoolSettlementAdminController_setPayee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPayeeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolPayeeView"];
+                };
+            };
+        };
+    };
+    SchoolSettlementAdminController_list: {
+        parameters: {
+            query?: {
+                status?: "pending" | "sent" | "paid" | "refunded" | "review";
+                action?: "payout" | "refund";
+                schoolId?: string;
+                limit?: number;
+                /** @description The `nextCursor` of the previous page: opaque, sent back as given. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolSettlementPage"];
+                };
+            };
+        };
+    };
+    SchoolSettlementAdminController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelIntakeView"];
+                };
+            };
+        };
+    };
+    SchoolSettlementAdminController_refund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolSettlementView"];
                 };
             };
         };
