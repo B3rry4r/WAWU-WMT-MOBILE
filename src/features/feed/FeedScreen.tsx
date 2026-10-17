@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -12,6 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconButton } from '@/components/Button';
+import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { HomeTabs } from '@/features/home/HomeTabs';
@@ -86,9 +89,9 @@ function FeedLoading({ height }: { height: number }) {
  * On Home (HOME-01) the tab row also holds Today: `onToday` is called when it is pressed, and
  * the feed opens on `initialScope`, the tab pressed on Today.
  */
-export type FeedScreenProps = { initialScope?: FeedScope; onToday?: () => void };
+export type FeedScreenProps = { initialScope?: FeedScope; onToday?: () => void; /** The search button at the end of the tab row opens Search (X5, EXPLORE-02). Not drawn without it. */ onSearch?: () => void };
 
-export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch }: FeedScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
@@ -234,6 +237,24 @@ export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProp
         onChange={changeView}
         style={[styles.tabs, { top: chromeTop + metrics.tabsGap }]}
       />
+      {onSearch ? (
+        showsMedia ? (
+          <Pressable
+            testID="feed-search"
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            hitSlop={space.md}
+            onPress={onSearch}
+            style={[styles.search, { top: chromeTop + metrics.tabsGap }]}
+          >
+            <Icon name="Search" size={24} color={media.ink} />
+          </Pressable>
+        ) : (
+          <View style={[styles.search, { top: chromeTop + metrics.tabsGap }]}>
+            <IconButton icon="Search" label="Search" size={40} onPress={onSearch} testID="feed-search" />
+          </View>
+        )
+      ) : null}
     </View>
   );
 }
@@ -241,6 +262,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProp
 const styles = StyleSheet.create({
   root: { flex: 1 },
   tabs: { position: 'absolute', left: metrics.tabsSide, right: metrics.tabsSide, zIndex: 7 },
+  search: { position: 'absolute', right: metrics.tabsSide, zIndex: 8 },
   centre: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xl },
   loadingRail: { position: 'absolute', right: metrics.railRight, alignItems: 'center', gap: metrics.railGap },
   loadingWords: { position: 'absolute', left: metrics.side, right: metrics.captionRight, gap: metrics.stack },

@@ -28,7 +28,7 @@ import { ExploreSkeleton } from './ExploreSkeleton';
 import { ExploreSlider } from './ExploreSlider';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 import { LoadFailedBanner } from './LoadFailedBanner';
-import { CreatorsRailEmpty, ExploreEventsEmpty, SectionHeading } from './parts';
+import { CreatorsRailEmpty, ExploreEventsEmpty, SectionHeading, SeeAllCreators } from './parts';
 import { sliderSlides } from './slider';
 
 /**
@@ -60,6 +60,10 @@ export type ExploreScreenProps = {
   onCreate?: () => void;
   /** The TGIF card was tapped (X1): opens today's reader (H29, `/tgif`). */
   onOpenTgif: () => void;
+  /** The search pill in the bar opens Search (X5, EXPLORE-02). Not drawn without it. */
+  onSearch?: () => void;
+  /** Featured creators' See all opens All creators (X4, EXPLORE-02). Not drawn without it. */
+  onSeeAllCreators?: () => void;
 };
 
 /**
@@ -78,7 +82,7 @@ export type ExploreScreenProps = {
  * nothing to show keeps its heading and draws neutral frames (`parts.tsx`). X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -169,7 +173,10 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
         />
         <View testID="explore-featured" style={styles.section}>
-          <SectionHeading title="Who Made This?" />
+          <SectionHeading
+            title="Who Made This?"
+            action={onSeeAllCreators ? <SeeAllCreators onPress={onSeeAllCreators} testID="explore-featured-see-all" /> : undefined}
+          />
           {creators.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
               {creators.map((creator) => (
@@ -197,7 +204,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
 
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <ExploreBar />
+      <ExploreBar onSearch={onSearch} />
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}

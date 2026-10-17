@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 96 | 0 | 0 | 0 |
+| todo | 95 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 67 | 0 | 0 | 0 |
+| verifying | 68 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -25,6 +25,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
 - [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
+- [EXPLORE-02](../tasks/EXPLORE-02.md) All creators and search (You)
 - [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
 - [INBOX-13](../tasks/INBOX-13.md) Out of credits, buy credits, credits added (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
@@ -281,6 +282,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.
 - 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
 - 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
@@ -295,4 +297,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
 - 17 Oct 2026 · DV2-05 · Built (Sonnet builder; mobile `wmt/DV2-05` on `origin/wmt/MERGE-7` `0aca612c`, no backend, wawu-id or migration change; status verifying): A3 asks email, phone, password and the required terms line (R-67); A4 and A15 end their line with a period as drawn; A6 and A7 are the hand-off to Nuvion's hosted selfie (`GET` and `POST /money/identity/liveness`), after A27's Submit because the Hub starts a selfie only for an opening that exists, and drawn only while `enabled` is true (it is false on the stack Hub, so the selfie step is dropped there, R-39); the camera selfie stays for the older opening; A8 loses its button arrow; A14's BVN hint is its error line. Gap G-827 (no https return address for the app).
 - 17 Oct 2026 · REF-03 · Builder report (Sonnet builder; mobile `wmt/REF-03` on `origin/wmt/DV2-03` `d4a0e95` plus `origin/wmt/DV2-COMP` `c6da2af`, no backend, wawu-id or migration change; status verifying): Invite and earn is built, RF1 to RF4. RF1, RF1a and RF1b read `GET /me/referrals`; RF3 and RF3a tell a reward or milestone the Hub made available, once per phone; RF4 prints the Hub's hold days; RF2 draws the card on the phone and hands its picture to the phone's share sheet (`react-native-view-shot`, SHARED-CHANGES REF-03 #1 applied), with no outside brand (R-68). The gift button on Me opens it; a `wawu/r/<code>` link keeps the code and claims it after sign-in, drawing nothing (G-812). Gaps G-812 (updated), G-830, G-831.
-- 17 Oct 2026 · EVENTS-06 · Built (Sonnet builder; mobile `wmt/EVENTS-06` on `wmt/MERGE-7` `0aca612c`; no backend, migration or contract change; status verifying): E2 draws the steppers, the running total and Get tickets; Get tickets makes the wallet order, E3 is the shared pay sheet with the Hub's bank charge, E4 the PIN sheet, E10 the Hub's still-confirming (polled, kept on the phone, never paid twice), E5 `/events/orders/<id>` the ticket with Add to calendar and My tickets; a ₦0 basket is issued with no wallet, sheet or PIN (R-8); the Hub's message shows for `event_order_limit`. Pictures beside the boards at 390 px light and dark. Filed G-827, G-828, SHARED-CHANGES EVENTS-06 #1 (the pay button's dot).
