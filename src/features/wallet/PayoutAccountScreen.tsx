@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -14,8 +14,9 @@ import { space, useWawu } from '@/theme';
 
 import {
   failureMessage,
-  isUnconfirmedAccount,
+  isRefusedAccount,
   nameCheckQuery,
+  nameCheckWait,
   payoutAccountQuery,
   payoutProblem,
   savePayoutAccount,
@@ -134,16 +135,34 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
     },
   });
 
+  // A refusal for the hour's name check limit ends (R-51): when the wait the Hub named has passed, a refused check
+  // is made again for the same number, and a refused save is cleared so Save opens; the person edits nothing.
+  const checkWait = check.isError ? nameCheckWait(check.error) : null;
+  const refetchCheck = check.refetch;
+  useEffect(() => {
+    if (checkWait === null) return;
+    const timer = setTimeout(() => void refetchCheck(), checkWait * 1000);
+    return () => clearTimeout(timer);
+  }, [check.error, checkWait, refetchCheck]);
+  const saveWait = save.isError ? nameCheckWait(save.error) : null;
+  const resetSave = save.reset;
+  useEffect(() => {
+    if (saveWait === null) return;
+    const timer = setTimeout(() => resetSave(), saveWait * 1000);
+    return () => clearTimeout(timer);
+  }, [save.error, saveWait, resetSave]);
+
   const nameCheck: NameCheck = !shouldCheckName(form, saved)
     ? { status: 'idle' }
     : check.isSuccess
       ? { status: 'success', data: check.data }
       : check.isError
-        ? { status: 'error', unconfirmed: isUnconfirmedAccount(check.error), message: check.error.message }
+        ? { status: 'error', unconfirmed: isRefusedAccount(check.error), message: check.error.message }
         : { status: 'pending' };
 
-  // A save the bank refused says so on the field, exactly as a refused name check does.
-  const refusedOnSave = save.isError && isUnconfirmedAccount(save.error);
+  // A save the bank refused, or one refused because the account is not in the person's own name (R-51), says so
+  // on the field, exactly as a refused name check does; changing the bank or the number clears it.
+  const refusedOnSave = save.isError && isRefusedAccount(save.error);
   const line: NameLine = refusedOnSave ? { kind: 'unconfirmed', message: save.error.message } : nameLine(form, saved, nameCheck);
   const footError = save.isError && !refusedOnSave ? failureMessage(save.error) : null;
 
