@@ -13,7 +13,10 @@ import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { useWawu } from '@/theme';
 
 import { askAgain, fetchThread, legalKeys, resolveThread, sendMessage, sendToConsultant, type LegalQuickReply, type LegalSend, type LegalThread } from './api';
+import { FixedPriceCard, MatterCard, matterCardOf } from './cards';
 import { readDraft, writeDraft } from './draft';
+import { fetchServices, fixedKeys } from './fixed/api';
+import { FIXED_PRICE_MATTERS, fixedPriceFor } from './fixed/model';
 import { legalMetrics as m } from './look';
 import {
   briefToConfirm,
@@ -21,6 +24,7 @@ import {
   canTryAgain,
   failureKind,
   failureText,
+  hasSpoken,
   headerOf,
   isLegalLiveEvent,
   needsAnotherAsk,
@@ -40,7 +44,7 @@ type Problem = { text: string; retry: (() => void) | null };
  * S14 to S17: the WAWU Legal assistant. One conversation (`GET /legal/assistant/{id}`) drawn as it stands: the
  * assistant's opening lines and its taps (S14), its questions and the person's answers (S15), the brief to check
  * and "Send to a consultant" (S16), then the consultant's conversation once the brief is sent, where a consultant
- * joins and the assistant stops (S17). Book (S17's card, S18) is LEGAL-04's.
+ * joins and the assistant stops (S17), with the card that books a consultation (S18, LEGAL-04). A fixed-price matter shows S24's card (LEGAL-06).
  *
  * The conversation is read when the screen opens, when it is shown again, when the app comes back to the
  * foreground and when the live connection says it changed (`legal.thread`, BACKEND_GAPS G-502) or comes back; a
@@ -104,7 +108,19 @@ export function LegalChatScreen() {
 
   let body;
   if (thread) {
-    body = <Chat key={thread.id} thread={thread} refreshFailed={query.isError} onRefresh={refresh} onLeave={leave} bottom={bottom} />;
+    body = (
+      <Chat
+        key={thread.id}
+        thread={thread}
+        refreshFailed={query.isError}
+        onRefresh={refresh}
+        onLeave={leave}
+        bottom={bottom}
+        onBook={(requestId) => router.push({ pathname: '/legal-book', params: { requestId } })}
+        onOpenMatter={(id) => router.push({ pathname: '/legal-matter', params: { id } })}
+        onStartFixed={(code) => router.push({ pathname: '/legal-fixed', params: { code } })}
+      />
+    );
   } else {
     body = (
       <>
@@ -152,10 +168,27 @@ function LoadingBubbles() {
   );
 }
 
-type ChatProps = { thread: LegalThread; refreshFailed: boolean; onRefresh: () => void; onLeave: () => void; bottom: number };
+type ChatProps = {
+  thread: LegalThread;
+  refreshFailed: boolean;
+  onRefresh: () => void;
+  onLeave: () => void;
+  bottom: number;
+  /** S17's Book: the consultant's card opens the booking (S18) of the matter this conversation became. */
+  onBook: (requestId: string) => void;
+  /** Once booked the same card opens the matter (S20 to S23). */
+  onOpenMatter: (requestId: string) => void;
+  /** S24's Start this request opens the fixed-price request (S26). */
+  onStartFixed: (serviceCode: string) => void;
+};
 
-function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom }: ChatProps) {
+function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpenMatter, onStartFixed }: ChatProps) {
   const scroll = useRef<ScrollView>(null);
+  // S24: the services the Hub lists are asked for only when this conversation's matter is one that starts as a fixed-price service.
+  const fixedMatter = thread.stage === 'profiling' && hasSpoken(thread) && thread.matter in FIXED_PRICE_MATTERS;
+  const services = useQuery({ queryKey: fixedKeys.catalogue, queryFn: fetchServices, enabled: fixedMatter, staleTime: 60_000 }, queryClient);
+  const fixed = fixedMatter ? fixedPriceFor(thread.matter, services.data) : null;
+  const matterCard = thread.consultant && thread.legalRequestId ? matterCardOf(thread.requestStatus) : null;
   const [draft, setDraft] = useState(() => readDraft(thread.id));
   const [working, setWorking] = useState<Working | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -242,6 +275,14 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom }: ChatProps) 
         ))}
         {working?.kind === 'message' ? <Bubble mine body={working.shown} testID="legal-bubble-sending" dim /> : null}
         {working?.kind === 'message' || working?.kind === 'ask' ? <Typing /> : null}
+        {matterCard && thread.legalRequestId ? (
+          <MatterCard
+            kind={matterCard}
+            matterLabel={thread.matterLabel}
+            onPress={() => (matterCard === 'book' ? onBook(thread.legalRequestId as string) : onOpenMatter(thread.legalRequestId as string))}
+          />
+        ) : null}
+        {fixed && !sending ? <FixedPriceCard service={fixed} onStart={() => onStartFixed(fixed.code)} /> : null}
         {taps.length > 0 && !sending ? <QuickReplies taps={taps} onTap={tap} disabled={working !== null} /> : null}
         {brief && working?.kind !== 'message' ? <BriefCard brief={brief} onSend={send} sending={working?.kind === 'send'} /> : null}
         {slow && working === null && !problem ? (

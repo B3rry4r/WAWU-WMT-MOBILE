@@ -7,7 +7,7 @@ order: 116
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, LEGAL-02, LEGAL-03, LEGAL-05, UI-02]
 decisions: [R-14, R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
@@ -17,10 +17,17 @@ artboards: [S18, S19, S20, S25]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): LEGAL-05.
-- **History:** none yet. Reports go to tasks/history/LEGAL-04.md.
+As of 17 Oct 2026, built (bundle S4, Sonnet builder), waiting for a verifier.
+- **Status:** verifying. Mobile `wmt/S4` on `origin/wmt/MERGE-8` `cc436a53`, with `origin/wmt/B1` merged (LEGAL-05's contract copy, backend `wmt/B1` `e41210e`). No backend change, no migration, no PR. LEGAL-06 is built in the same branch.
+- **Built** (`src/features/legal/book`, `pay`, `matter`, routes `src/app/legal-book.tsx` and `legal-matter.tsx`): **S17's card** in the chat ("Book a consultation", then the way back to the matter once booked); **S18** (cards from `GET /legal/consultation/options`, days and hours from the Hub's calendar per kind, a taken hour greyed, "Pay ₦X" with the price of the kind picked); **S19** (the shared pay sheet and PIN sheet over S18: price, "Bank charge", total, "Pay from wallet"); **S20** (the matter's steps, "Consultation booked.", Add to calendar through the phone's own new-event screen); **S25** ("No slots in the next three weeks" from the Hub's horizon, Request in person).
+- **Rules held:** a fresh quote per tap on Pay; one `Idempotency-Key` per attempt, sent again unchanged after a wrong PIN and after an answer that never came; a payment the Hub took and has not finished is only read, never sent again; no wallet goes to Open your wallet (R-6); every figure is the Hub's.
+- **Attacks on the stack** (Hub 7740, Nuvion stand-in, ledger read after each; the app's behaviour is in `LegalPayments.test.tsx`): double tap one debit; wrong PIN nothing moved, then the right PIN with the same key one debit; short balance 402 nothing moved; a lost answer then a retry one debit; a quote that changed (price changed and re-booked after the quote) 409 `quote_changed` nothing moved; a request cancelled before paying 409 `target_not_payable` nothing moved. Record: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/../logs/live-attacks.txt`.
+- **Differs from the board, on purpose:** the pay sheet's button reads "Pay · ₦X" (SHARED-CHANGES EVENTS-06 #1) and its header has no icon tile (LEGAL-04 #1); S20 does not say "Details are in your email" (G-883: the Hub sends none); the S17 card's second state ("Open", the matter's name) is not drawn on the board and is how S20 to S23 are reached again; the chat header still reads "WAWU Legal" (LEGAL-02's file, DV2-COPY).
+- **Filed:** BACKEND_GAPS G-883, G-885. SHARED-CHANGES LEGAL-04 #1.
+- **Known, not mine:** a consultation grant waits for delivery review after a refusal (backend verify/B1.md F5).
+- **NOT RUN:** V10 on a real Android phone (the calendar screen); a payment through Fintava (never used); the Nuvion stand-in's bank charge is 0 on this stack, so the live pictures show "Bank charge ₦0" (the tests use the board's ₦15.75).
+- **Pictures** (390 px, light and dark, boards beside them as `*-board-*`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/`.
+- **History:** `tasks/history/LEGAL-04.md`.
 
 ## Read first
 
@@ -95,13 +102,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - S18: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 - S19: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-04.md](history/LEGAL-04.md).
 
 ## Owner sign-off
 

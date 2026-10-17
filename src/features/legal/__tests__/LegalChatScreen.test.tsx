@@ -377,7 +377,8 @@ describe('S17 · a consultant joins', () => {
     expect(rtl.screen.getByText('Adaora Nnaji · Consultant')).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Message Adaora')).toBeTruthy();
     expect(rtl.screen.queryByTestId('legal-taps')).toBeNull();
-    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    // S17's card: LEGAL-04 builds it (it was absent until then); its taps are in LegalBook.test.tsx.
+    expect(rtl.screen.getByText('Book a consultation')).toBeTruthy();
   });
 
   it('a user can Message Adaora: the words go to the messages route and no assistant is waited on', async () => {
