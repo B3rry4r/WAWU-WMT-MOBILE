@@ -39,6 +39,15 @@ export function ticksOf(me: Pick<MyProfile, 'verification'>): ('creator' | 'pro'
   return out;
 }
 
+/**
+ * The line under Verification on the Me menu (M7, R-6, R-43): the tick state only, in the words the tick is named by ("Creator tick",
+ * "Professional tick"), and nothing when the person holds none (there is no "ID check in review" at launch).
+ */
+export function tickLine(ticks: readonly ('creator' | 'pro')[]): string | undefined {
+  if (ticks.length === 0) return undefined;
+  return ticks.map((kind) => (kind === 'pro' ? 'Professional tick' : 'Creator tick')).join(' · ');
+}
+
 /** One social chip above the counts: the platform, what is written on the chip, and where a tap goes. */
 export type SocialLink = { platform: SocialPlatform; label: string; url: string };
 
