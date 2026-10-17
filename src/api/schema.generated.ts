@@ -5875,6 +5875,17 @@ export interface paths {
          *     and body answer the first result again (`Idempotent-Replayed: true`)
          *     without checking the PIN. Not enough money is `402 insufficient_funds`
          *     with the shortfall; no wallet is `409 wallet_not_open`.
+         *
+         *     `method: transfer` (TIER-05, VF6 "transfer details shown") confirms the
+         *     purchase with the PIN at the quote the person saw and takes nothing. It
+         *     answers 201 with a `PlanTransferOrderView`, `awaiting_transfer`: the
+         *     wallet's own account number, bank and account name, the Bank charge and
+         *     the amount still needed (the total less the available balance, never
+         *     below 0). The purchase is paid from the wallet, once, the moment the
+         *     balance covers the total, and then reads like any other purchase under
+         *     the same id. A quote that changed is `409 quote_changed`; the time to send
+         *     the money (an admin setting) runs out as `expired`, with nothing taken.
+         *     Two requests for one item leave one waiting purchase.
          */
         post: operations["PlanPurchasesController_buy"];
         delete?: never;
@@ -5891,9 +5902,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * One purchase as it stands now: what the app polls after `pending`.
-         *     Only the buyer reads it; another person's purchase and an id nobody
-         *     holds are the same `404 not_found`. It reads our own records only.
+         * One purchase as it stands now: what the app polls after `pending`, and
+         *     while it waits for a bank transfer (`awaiting_transfer`, with the amount
+         *     still needed read from the provider's balance; `null` when the provider
+         *     does not answer). Only the buyer reads it; another person's purchase and
+         *     an id nobody holds are the same `404 not_found`.
          */
         get: operations["PlanPurchasesController_read"];
         put?: never;
@@ -8284,10 +8297,12 @@ export interface components {
             /** @description Buy the checkout bump's extra points with it. Default: no. */
             bump?: boolean;
             /**
-             * @description How it is paid: from the wallet.
+             * @description How it is paid: `wallet` from the balance now, or `transfer`: the answer
+             *     carries the wallet's own account number and the amount still needed, and
+             *     the purchase is paid from the wallet when the money lands.
              * @enum {string}
              */
-            method: "wallet";
+            method: "wallet" | "transfer";
             /** @description `payment.totalKobo` from the purchase quote the person saw. A different server total is `quote_changed`. */
             expectedTotalKobo: number;
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this purchase, and not past its end. */
@@ -12322,7 +12337,7 @@ export interface components {
             fromTierId: string | null;
             bump: boolean;
             /** @enum {string} */
-            method: "wallet";
+            method: "transfer" | "wallet";
             /** @enum {string} */
             currency: "NGN" | "USD";
             amountMinor: number;
@@ -12330,6 +12345,39 @@ export interface components {
             status: "pending" | "failed" | "reversed" | "refunded" | "paid";
             statusMessage: string | null;
             payment: components["schemas"]["PaymentView"];
+            grant: components["schemas"]["PlanPurchaseGrantView"] | null;
+            createdAt: string;
+            paidAt: string | null;
+        };
+        PlanPurchaseTransferView: {
+            accountNumber: string;
+            accountName: string;
+            bankName: string;
+            bankCode: string;
+            priceKobo: number;
+            bankChargeKobo: number;
+            totalKobo: number;
+            balanceKobo: number | null;
+            amountNeededKobo: number | null;
+            expiresAt: string;
+        };
+        PlanTransferOrderView: {
+            id: string;
+            /** @enum {string} */
+            kind: "tier" | "renew" | "upgrade";
+            tierId: string;
+            fromTierId: string | null;
+            bump: boolean;
+            /** @enum {string} */
+            method: "transfer";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            amountMinor: number;
+            /** @enum {string} */
+            status: "pending" | "failed" | "expired" | "awaiting_transfer";
+            statusMessage: string | null;
+            payment: components["schemas"]["PaymentView"] | null;
+            transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
@@ -24257,7 +24305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
                 };
             };
             /** @description reason.code: idempotency_key_required, amount_out_of_range */
@@ -24341,7 +24389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
                 };
             };
             /** @description reason.code: not_found */
