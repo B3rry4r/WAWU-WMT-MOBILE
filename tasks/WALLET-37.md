@@ -7,7 +7,7 @@ order: 255
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [WALLET-09, WALLET-14]
 decisions: [R-51, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,16 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** S. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-09.
-- **History:** none yet. Reports go to tasks/history/WALLET-37.md.
+As of 17 Oct 2026, built by a Sonnet builder; waiting for a fresh verifier (V1 to V4, V6 to V9).
+- **Status:** verifying. Backend `wmt/WALLET-37` `2f42476` on `a5e48fc` (batch 5 live, WALLET-09 included). Mobile `wmt/WALLET-37` on `7de785d` (this file, BACKEND_GAPS G-58/G-764/G-765, SHARED-CHANGES WALLET-37 #1 to #3, LOG, and the A21 change). No migration, no schema change, nothing in `src/common/**`, `app.module.ts` or the guards of other routes.
+- **Built (backend):** `PUT /money/payout-account` refuses a bank name that is not the BVN name (`matchesBvnName` false): `409 account_not_in_your_name` with `accountName`, `bankName` (the bank's) and `verifiedName` (the name on the wallet), nothing stored. A withdrawal (a bank send to the saved payout account, even when the same account is also a beneficiary) whose holder at the bank is not the verified name is the same 409 from `PayoutOwnNameGuard`, after `BankSendTargetGuard` and before the PIN, key given back. A holder that differs from the one kept stays `account_name_changed` first (G-762). Sends to other accounts (W8) are unchanged.
+- **Built (name checks):** one hourly count per signed-in person, never per address: `NameCheckBudget` (`NAME_CHECK_PER_HOUR`, launch value 30, stands in for the `name_check_per_hour` admin setting until TIER-06 lands). It covers `POST /money/banks/name-check`, `PUT /money/payout-account` and `POST /money/beneficiaries` for a bank account. The 31st is `429 name_check_rate_limited`, "Try again in N minutes", `Retry-After`, no check made. A 503 gives its place back. Decided in memory in one step: no transaction, connection or lock is held while the bank is asked.
+- **Built (app):** A21 shows the reason sentence of `account_not_in_your_name` and `name_check_rate_limited` on the account number field, Save shut until the bank or number is changed (`isRefusedAccount`). No other screen changed.
+- **Checked:** backend tsc and lint clean; 16 related money specs (277 tests) pass on a local stack; the 20-parallel measure passes (30 of 60 allowed, another person under 1 s). CI on `2f42476` (runs 38993994694 branch checks, 38993994678 protected routes, 38993994657 gates): all three test shards, contract, protected routes, baseline, netns and deploy-test-in-sync green; executable gates show only main's 5 FAIL lines. Mobile full check (typecheck, lint, 184 suites / 3245 tests, gates 0 fail / 5 warn, tasks) EXIT 0.
+- **Lead decisions open:** (1) no kept BVN name (`matchesBvnName: null`: every Nuvion wallet, an old check, no hash key) still saves and withdraws; Nuvion needs a name source before R-51 holds after the move. (2) The name shown beside the bank's is the wallet's account name (the BVN name is only hashes). (3) The count is per process, like the other per-person limits.
+- **One existing test rewritten:** `saved-accounts.contract.spec.ts` "flags an account whose name is not the BVN name, and saves it" asserted what R-51 reverses; it now asserts the refusal.
+- **Next:** a verifier; at the merge the lead re-syncs `contract/` and `src/api/schema.generated.ts` (SHARED-CHANGES WALLET-37 #3) and moves `NAME_CHECK_PER_HOUR` into the registry when TIER-06 lands (#2).
+- **History:** `tasks/history/WALLET-37.md` (the builder report).
 
 ## Read first
 
@@ -49,13 +54,9 @@ A person can set a payout account only in their own verified name, and a withdra
 - [ ] The 31st name check in an hour from one person answers 429 and a second person on the same address is not blocked.
 - [ ] A bank send to someone else's account (W8) still works and still confirms the name.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-37.md](history/WALLET-37.md).
 
 ## Owner sign-off
 

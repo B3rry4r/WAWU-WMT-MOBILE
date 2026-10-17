@@ -14,7 +14,7 @@ import { space, useWawu } from '@/theme';
 
 import {
   failureMessage,
-  isUnconfirmedAccount,
+  isRefusedAccount,
   nameCheckQuery,
   payoutAccountQuery,
   payoutProblem,
@@ -139,11 +139,12 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
     : check.isSuccess
       ? { status: 'success', data: check.data }
       : check.isError
-        ? { status: 'error', unconfirmed: isUnconfirmedAccount(check.error), message: check.error.message }
+        ? { status: 'error', unconfirmed: isRefusedAccount(check.error), message: check.error.message }
         : { status: 'pending' };
 
-  // A save the bank refused says so on the field, exactly as a refused name check does.
-  const refusedOnSave = save.isError && isUnconfirmedAccount(save.error);
+  // A save the bank refused, or one refused because the account is not in the person's own name (R-51), says so
+  // on the field, exactly as a refused name check does; changing the bank or the number clears it.
+  const refusedOnSave = save.isError && isRefusedAccount(save.error);
   const line: NameLine = refusedOnSave ? { kind: 'unconfirmed', message: save.error.message } : nameLine(form, saved, nameCheck);
   const footError = save.isError && !refusedOnSave ? failureMessage(save.error) : null;
 

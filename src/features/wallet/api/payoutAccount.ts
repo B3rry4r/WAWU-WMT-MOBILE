@@ -146,3 +146,14 @@ export function failureMessage(error: unknown): string {
 export function isUnconfirmedAccount(error: unknown): boolean {
   return isApiError(error) && error.code === 'name_check_failed';
 }
+
+/**
+ * A refusal the person fixes by changing the account, read on the account number field (R-51, WALLET-37):
+ * - 422 `name_check_failed`: the bank did not confirm the account;
+ * - 409 `account_not_in_your_name`: the account is not in the name on their wallet (the sentence names both);
+ * - 429 `name_check_rate_limited`: too many name checks this hour (the sentence gives the minutes left).
+ * Each carries its own sentence written for people, so the screen shows `message` as it is.
+ */
+export function isRefusedAccount(error: unknown): boolean {
+  return isUnconfirmedAccount(error) || (isApiError(error) && (error.code === 'account_not_in_your_name' || error.code === 'name_check_rate_limited'));
+}
