@@ -9,6 +9,7 @@ import {
   OPEN_WALLET_DETAILS_AGAIN,
   OPEN_WALLET_ID_PATH,
   OPEN_WALLET_REJECTED_PATH,
+  OPEN_WALLET_SELFIE_PATH,
 } from './entry';
 import { expireKeptCheck } from './keptCheck';
 
@@ -81,6 +82,8 @@ export type OpenWalletWay = {
   checking: () => void;
   /** The review said no (A28): A29 takes the place of every step so far. */
   rejected: () => void;
+  /** The documents are in and the hosted selfie is all that is left (DV2-05): A6 takes the place of every step so far. */
+  selfie: () => void;
   /** Upload again (A29): A26 or A27 takes the place of A29. */
   uploadAgain: (to: 'id' | 'address') => void;
   /** The documents are needed (A28 found nothing sent, or a correction reopened them): A26. */
@@ -140,6 +143,7 @@ export function useOpenWalletWay(): OpenWalletWay {
       },
       checking: () => replaceFlow(OPEN_WALLET_CHECKING_PATH),
       rejected: () => replaceFlow(OPEN_WALLET_REJECTED_PATH),
+      selfie: () => replaceFlow(OPEN_WALLET_SELFIE_PATH),
       uploadAgain: (to) => replaceFlow(to === 'address' ? OPEN_WALLET_ADDRESS_PATH : OPEN_WALLET_ID_PATH),
       needsDocuments: () => replaceFlow(OPEN_WALLET_ID_PATH),
       details: () => {

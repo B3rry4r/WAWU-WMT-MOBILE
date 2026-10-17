@@ -22,7 +22,11 @@ import type { MoneyErrorCode } from '@/api/money';
 export const OPEN_WALLET_PATH = '/open-wallet' as const;
 /** A5, Confirm your details (KYC-03), pushed on top of A31 when a check passes (or the review opening's numbers are held, KYC-07). */
 export const OPEN_WALLET_DETAILS_PATH = '/open-wallet-details' as const;
-/** A6, the selfie, with A7 (matched, the account opening) and A16 (no match) as its states (KYC-03). */
+/**
+ * A6, the selfie (KYC-03): under the review opening the hand-off to Nuvion's hosted selfie with A7 (back from the
+ * secure page) as its state, after A27's Submit (DV2-05); under the older opening the camera, with A7 (matched, the
+ * account opening) and A16 (no match) as its states.
+ */
 export const OPEN_WALLET_SELFIE_PATH = '/open-wallet-selfie' as const;
 /** A8, the account just opened (KYC-04): in place of every earlier step once the account is open. */
 export const OPEN_WALLET_ACCOUNT_PATH = '/open-wallet-account' as const;

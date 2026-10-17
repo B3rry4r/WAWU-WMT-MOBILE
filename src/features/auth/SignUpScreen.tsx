@@ -11,6 +11,7 @@ import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
 import { Banner } from '@/components/Banner';
 import { signupFailure, type SignupFailure } from './signupFailure';
+import { ConsentBox } from '@/features/open-wallet/ConsentBox';
 
 /** The shortest password WAWU ID takes (`contract/identity/openapi.json`, `SignupDto.password.minLength`); A3's hint "At least 8 characters". */
 export const MIN_PASSWORD = 8;
@@ -43,23 +44,30 @@ export type SignUpScreenProps = {
    * A4 will then name. Null or left out while it is not known: the line is not drawn, never guessed.
    */
   channel?: SignupChannel | null;
+  /** The terms and the privacy policy behind the consent line's two words (public screens, readable before sign-up). */
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
   /** What the fields start with (a preview, never the app). */
   initial?: Partial<SignUpValues>;
   /** A refusal to show at first (a preview, never the app). */
   initialFailure?: SignupFailure;
 };
 
-type Missing = { email?: string; phone?: string; password?: string };
+type Missing = { email?: string; phone?: string; password?: string; agreed?: string };
+
+/** A3's consent line is required: the sign-up goes ahead only with it ticked (R-67). */
+const AGREE_NEEDS = 'Tick the box to agree before you continue.';
 
 /**
- * A3: Email, Phone number, Password and Continue. No BVN and no NIBSS line:
+ * A3: Email, Phone number, Password, the terms line and Continue. No BVN and no NIBSS line:
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, channel, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms, onOpenPrivacy, channel, initial, initialFailure }: SignUpScreenProps) {
   const [email, setEmail] = useState(initial?.email ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [password, setPassword] = useState(initial?.password ?? '');
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<SignupFailure | null>(initialFailure ?? null);
   const [missing, setMissing] = useState<Missing>({});
@@ -81,8 +89,9 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, channel, ini
       email: !typed.email ? 'Enter your email.' : EMAIL_SHAPE.test(typed.email) ? undefined : 'Enter a valid email.',
       phone: typed.phone.replace(/\D/g, '').length < MIN_PHONE ? 'Enter your phone number.' : undefined,
       password: typed.password.length < MIN_PASSWORD ? `Use at least ${MIN_PASSWORD} characters.` : undefined,
+      agreed: agreed ? undefined : AGREE_NEEDS,
     };
-    if (gaps.email || gaps.phone || gaps.password) {
+    if (gaps.email || gaps.phone || gaps.password || gaps.agreed) {
       setMissing(gaps);
       return;
     }
@@ -119,8 +128,9 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, channel, ini
       <View style={styles.body}>
         <View style={styles.titleBlock}>
           <Text variant="h1" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size }}>
-            {"Let's get you started"}
+            Create your account
           </Text>
+          <Text variant="muted">Free. Takes a minute.</Text>
           {/* MECHANISM: WAWU ID POST /auth/signup sends the 6-digit code the way its SIGNUP_VERIFY_CHANNEL says (GET /auth/signup/channel): texted by default, mailed through Resend with `email` (EmailSignupService, R-39). */}
           {channel ? <Text variant="muted">{CHANNEL_LINE[channel]}</Text> : null}
         </View>
@@ -174,6 +184,18 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, channel, ini
           textContentType="newPassword"
           returnKeyType="go"
           onSubmitEditing={() => void submit()}
+        />
+        <ConsentBox
+          testID="sign-up-consent"
+          agreed={agreed}
+          busy={busy}
+          problem={missing.agreed}
+          onOpenTerms={onOpenTerms}
+          onOpenPrivacy={onOpenPrivacy}
+          onToggle={() => {
+            setAgreed((now) => !now);
+            setMissing((now) => ({ ...now, agreed: undefined }));
+          }}
         />
       </View>
     </AuthFrame>

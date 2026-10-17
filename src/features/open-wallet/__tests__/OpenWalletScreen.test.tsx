@@ -273,6 +273,18 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(checksSent().map((s) => JSON.parse(s.body).bvn)).toEqual(['22190000222', BVN]);
   });
 
+  it('DV2-05: under A14 the BVN field draws its own hint as its error line (red, with the alert), as the board does, and edits take it back to a plain hint', async () => {
+    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 })];
+    const app = await boot();
+    await typeNumbers(app, '22190000222');
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBeUndefined();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-phone-mismatch');
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBe('alert');
+    await typeInto(app.screen.getByTestId('open-wallet-bvn'), BVN);
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBeUndefined();
+  });
+
   it('a user whose BVN is not found sees the server’s sentence under the BVN', async () => {
     const said = 'We could not confirm that BVN. Check the number and try again.';
     routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_not_confirmed', said, { checksLeft: 1 })];

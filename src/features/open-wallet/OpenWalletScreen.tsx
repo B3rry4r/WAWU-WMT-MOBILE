@@ -392,7 +392,8 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
           value={bvn}
           onChangeText={edit(setBvn, 'bvn')}
           hint={BVN_HINT}
-          error={missing.bvn ?? bvnError}
+          // A14 draws the field's own hint as its error line (red, with the alert), the sentence about the phone being the banner's.
+          error={missing.bvn ?? bvnError ?? (phoneMismatch ? BVN_HINT : undefined)}
           invalid={phoneMismatch}
           keyboardType="number-pad"
           inputMode="numeric"
