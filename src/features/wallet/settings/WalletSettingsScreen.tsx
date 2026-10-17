@@ -46,7 +46,7 @@ export type WalletSettingsScreenProps = {
 /**
  * W35 · Wallet settings, read from `GET /money/wallet`: the PIN's age, the beneficiaries' count and the account the
  * bank gave. The bank's name is the server's (BRIEF W35: a slot, "Loma Bank" by default, R-1), and there is no tier:
- * the limits row is drawn only when the server sends a limit (it sends none today, BACKEND_GAPS G-7) and hidden
+ * the limits row is drawn only when the server sends a limit (the Hub fills it only from a provider that reports an account tier; Nuvion reports none) and hidden
  * otherwise.
  *
  * Drawn: what has a screen behind it or says something true by itself (R-47). Statements (WALLET-35) leads to W38 and
