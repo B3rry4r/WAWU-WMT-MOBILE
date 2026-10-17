@@ -13,11 +13,11 @@ export const MONEY_BACK_LINE = 'Your money is back in your wallet.';
 export const NOT_HELD_LINE = 'Check your connection and try again.';
 export const PRICE_UNREADABLE = 'The price could not be read. Try again.';
 
-/** What the pay sheet says when a payment the Hub was still confirming then failed: the Hub's reason (when it gave one), then that the money is back. */
+/** What the pay sheet says when a payment the Hub was still confirming then failed: the Hub's reason alone when it gave one (it already says what happened to the money); the app's own two lines only when it gave none. */
 export function failedLine(reason: string | null | undefined): string {
   const why = reason?.trim() ?? '';
-  const said = why === '' ? FAILED_LINE : /[.!?]$/.test(why) ? why : `${why}.`;
-  return `${said} ${MONEY_BACK_LINE}`;
+  if (why === '') return `${FAILED_LINE} ${MONEY_BACK_LINE}`;
+  return /[.!?]$/.test(why) ? why : `${why}.`;
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;

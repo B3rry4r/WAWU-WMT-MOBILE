@@ -452,7 +452,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(hub.payments).toBe(1);
   });
 
-  const BACK_LINE = 'The bank did not take it. Your money is back in your wallet.';
+  const BACK_LINE = 'The bank did not take it.';
 
   /** The Hub's record of the payment it first answered pending now says failed, and the money is back. */
   const bankRefusesLater = () => {
@@ -479,7 +479,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(hub.pays).toHaveLength(1);
     const quotes = hub.quotes;
     bankRefusesLater();
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Refresh' }));
     await rtl.screen.findByText("Payment didn't go through");
     expect(rtl.screen.getByText(BACK_LINE)).toBeTruthy();
     expect(rtl.screen.queryByText('Paid, still confirming')).toBeNull();
@@ -497,12 +497,12 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     await rtl.screen.findByText('Paid, still confirming');
     // The Hub has the money and has not opened the place yet: still confirming, and the payment is read, not paid again.
     hub.payment = 'completed';
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Refresh' }));
     await rtl.waitFor(() => expect(hub.paymentReads).toBeGreaterThan(0));
     expect(rtl.screen.getByText('Paid, still confirming')).toBeTruthy();
     expect(rtl.screen.queryByText("Payment didn't go through")).toBeNull();
     hub.status = 'enrolled';
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Refresh' }));
     await rtl.screen.findByTestId('enrolment-receipt');
     expect(hub.pays).toHaveLength(1);
     expect(hub.payments).toBe(1);
@@ -539,7 +539,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(hub.quotes).toBe(0);
     hub.openPayment = false;
     bankRefusesLater();
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Refresh' }));
     await rtl.screen.findByText("Payment didn't go through");
     expect(rtl.screen.getByText(BACK_LINE)).toBeTruthy();
     await payAgainWithNewKey(null);
@@ -553,7 +553,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(hub.pays).toHaveLength(1);
     expect(hub.payments).toBe(0);
     bankRefusesLater();
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Refresh' }));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Refresh' }));
     await rtl.screen.findByText("Payment didn't go through");
     await payAgainWithNewKey(hub.pays[0].key);
   });
