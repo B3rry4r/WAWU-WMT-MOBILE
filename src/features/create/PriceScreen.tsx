@@ -32,7 +32,7 @@ const freeMetrics = { padV: 14, padH: space.lg, between: space.md, icon: 44, tit
 /** Alan Sans has no Naira sign (U+20A6), so the platform font draws it, as `Money` does (D15 in DECISIONS.md). */
 const platformFont = 'System';
 
-const MODES = [
+export const MODES = [
   { value: 'paid', label: 'Paid' },
   { value: 'free', label: 'Free' },
 ] as const satisfies readonly { value: AccessType; label: string }[];
@@ -147,7 +147,7 @@ function NoteLine() {
 }
 
 /** kit `field` with the figure at 22: a sign, then the digits, grouped in threes as they are typed. Whole naira only. */
-function PriceField({ details, onChange }: { details: Details; onChange: (digits: string) => void }) {
+export function PriceField({ details, onChange }: { details: Details; onChange: (digits: string) => void }) {
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
   const sign = formatMoney(0, { decimals: false }).replace(/\d/g, '');
@@ -216,7 +216,7 @@ function PieceCard({ format, title, meta, cover }: { format: FormatId; title: st
 }
 
 /** M37's card: "Free for everyone", then what that means: anyone can open it and fans can still tip (R-8). */
-function FreeCard() {
+export function FreeCard() {
   return (
     <Card padded testID="price-free" style={styles.free}>
       <View style={styles.freeRow}>
