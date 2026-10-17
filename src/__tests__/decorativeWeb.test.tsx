@@ -40,8 +40,8 @@ describe('decorative tiles hide from the web too', () => {
   it('the brand mark hides only when it is decorative', async () => {
     await render(
       <>
-        <BrandMark layout="submark" decorative testID="mark-decor" />
-        <BrandMark layout="submark" testID="mark-named" />
+        <BrandMark layout="submark" width={40} decorative testID="mark-decor" />
+        <BrandMark layout="submark" width={40} testID="mark-named" />
       </>,
     );
     expect(screen.getByTestId('mark-decor', hidden).props['aria-hidden']).toBe(true);

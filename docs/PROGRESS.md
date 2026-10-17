@@ -7,8 +7,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 72 | 0 | 0 | 0 |
-| building | 0 | 0 | 0 | 0 |
+| todo | 71 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 96 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -115,6 +115,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
+
+## Being built (or fixing verifier findings)
+
+- [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
 
