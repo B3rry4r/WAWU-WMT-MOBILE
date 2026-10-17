@@ -3,7 +3,7 @@ id: HARNESS-NUV
 title: The shared backend test helpers run on Nuvion, not the Fintava double
 owner: YOU
 area: FIX
-order: 131
+order: -1
 priority: launch
 repo: wawu-backend
 type: setup
@@ -18,8 +18,8 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying. Built once; not yet checked by an independent verifier.
-- **Id and order:** filed at launch priority, order 131, a free number below CHECK-3 (order 298; 131, 135 and 311 were the only unused numbers up to 339). The work is test setup only and changes nothing a person sees.
+- **Status:** merging (lead). Accepted on the lead's review of the diff (test setup only: 7 files, nothing Fintava, no assertion changed); no verifier. Stacked in batch 9 by MERGE-9.
+- **Id and order:** filed at launch priority below CHECK-3 (order 298). It was filed as order 131, which FIX-50 already holds in batch 8; MERGE-9 gave it order -1 because no positive number below CHECK-3 is free (FIX-48 holds 0, the earlier merge's choice). The work is test setup only and changes nothing a person sees.
 - **History:** the builder report is in [history/HARNESS-NUV.md](history/HARNESS-NUV.md).
 - **Open findings:** none yet.
 - **Next:** an independent verifier repeats the before and after runs. Backend branch `wmt/HARNESS-NUV` from `432f017` (batch 7).
