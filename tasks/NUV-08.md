@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-17 Oct 2026. Built by a Sonnet builder; push to verify. Backend `wmt/NUV-08` `5b756e2` on `wmt/MERGE-7` `0be61a4`. No PR.
+17 Oct 2026. Built by a Sonnet builder; push to verify. Backend `wmt/NUV-08` `f48fddd` on `wmt/MERGE-7` `0be61a4`. No PR.
 - **Status:** verifying. Nuvion stood in everywhere; no real host called.
 - **Migration:** `20261025050000_nuvion_reconcile_findings` (one new table, `NuvionReconcileFinding`; the lead may rename at merge).
 - **Next:** a verifier (not the builder). The (key) check waits for the sandbox key.
@@ -67,7 +67,7 @@ papered over.
 
 ## Builder report
 
-Builder, 17 Oct 2026. Backend `wmt/NUV-08` `5b756e2` (on `wmt/MERGE-7` `0be61a4`). Specs run on the Nuvion stand-in only.
+Builder, 17 Oct 2026. Backend `wmt/NUV-08` `f48fddd` (on `wmt/MERGE-7` `0be61a4`; pushes `5b756e2`, `b515d78`). Specs run on the Nuvion stand-in only.
 
 **Docs were not on the machine.** The lead's saved Nuvion docs (`nuvion/docs/`) were wiped with the container, so the
 wire shapes for statements, webhook subscriptions and fee simulations are ASSUMED from the task text and the transfer
@@ -100,6 +100,10 @@ object other pages show. Every one is read in `src/nuvion/areas/reconcile-reader
 `src/money/check` all pass; gates 0 fail, baseline ok; `contract:build` leaves `contract/` unchanged. One edit to a test
 I did not write: `nuvion-adapter.spec.ts` FILLED list gains `listTransactions` (its title says "until its task fills it";
 NUV-06 did the same). `data-export*.contract.spec.ts` fail on my empty database (a Comment foreign key), not on this change.
+CI: `5b756e2` failed `webhook-retention-readers.spec.ts` (the sweep reads the table: now in the readers registry) and a
+`shop.contract.spec.ts` infra flake ("mock-wawu-id did not become healthy"). `b515d78` then failed NUV-07's
+`no-fee-or-limit-figures.spec.ts` (my setting name began `NUVION_FEE_`: renamed `NUVION_SIMULATE_FEES_HOURS` in `f48fddd`)
+and `account-deletion-round4.contract.spec.ts` T6b (SETTINGS-06, a file this task does not touch; not re-run by me).
 
 ## Verifier report
 
