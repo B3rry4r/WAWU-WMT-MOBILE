@@ -38,7 +38,12 @@ export type AmountScreenProps = {
 /**
  * W9 · Send · amount: who it goes to, the amount typed on the keypad (kobo included, whole numbers only), the wallet's balance
  * beneath it (the bank's figure, never a sum), the Hub's quick amounts, an optional note, and Continue. Continue is off until
- * there is an amount; whether the wallet can cover it and what it costs are W10's (the fee quote), not guessed here.
+ * there is an amount that the balance covers; what it costs on top is W10's (the fee quote), not guessed here.
+ *
+ * W13: an amount over the balance is drawn in the danger tone with "Over your balance of ₦485,250.75" in place of the balance line, and
+ * Continue stays off. The bank's own figure is the one compared (never a sum). Add money, one tap away on the board, is WALLET-05's
+ * to add (R-47). An amount the balance covers but the fees do not is W10's "not enough", which names the total.
+ * The same screen serves a bank account (W8): the line under the name is its bank and number (`payeeLine`).
  */
 export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -51,6 +56,8 @@ export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScree
   const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(owner) }, queryClient);
   const presets = useQuery(presetsQuery(owner), queryClient);
   const problem = balance.isError ? balanceProblem(balance.error) : null;
+  // W13: the bank's figure is read and the amount is more than it.
+  const over = balance.data !== undefined && amountKobo > balance.data.availableKobo;
 
   const led = useRef(false);
   useEffect(() => {
@@ -61,7 +68,14 @@ export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScree
   }, [problem, entry]);
 
   let balanceLine;
-  if (balance.data) {
+  if (balance.data && over) {
+    balanceLine = (
+      <Text variant="secondary" tone="danger" testID="send-over-balance" accessibilityLiveRegion="polite" style={styles.balance}>
+        Over your balance of{' '}
+        <Money minorUnits={balance.data.availableKobo} size={AMOUNT.balanceSize} weight={600} tone="danger" />
+      </Text>
+    );
+  } else if (balance.data) {
     balanceLine = (
       <Text variant="secondary" tone="textMuted" testID="send-balance" style={styles.balance}>
         {BALANCE_LABEL}{' '}
@@ -90,7 +104,7 @@ export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScree
           testID="send-continue"
           label="Continue"
           full
-          disabled={amountKobo === 0}
+          disabled={amountKobo === 0 || over}
           onPress={() => onContinue({ amountKobo, note: note.trim() })}
         />
       }
@@ -118,7 +132,7 @@ export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScree
             size={AMOUNT.size}
             weight={700}
             decimals={text.includes('.')}
-            tone={amountKobo === 0 ? 'textMuted' : 'textPrimary'}
+            tone={amountKobo === 0 ? 'textMuted' : over ? 'danger' : 'textPrimary'}
           />
           {balanceLine}
         </View>

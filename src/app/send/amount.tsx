@@ -11,6 +11,7 @@ export default function SendAmountRoute() {
   const { status } = useSession();
   const params = useLocalSearchParams();
   const payee = payeeFromParams(params);
+  const start = typeof params.amount === 'string' && /^[0-9]+$/.test(params.amount) && Number(params.amount) > 0 ? Number(params.amount) : null;
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/send'));
   useSystemBack(leave);
   if (status === 'restoring') return null;
@@ -19,6 +20,7 @@ export default function SendAmountRoute() {
   return (
     <AmountScreen
       payee={payee}
+      initial={start === null ? undefined : { amountKobo: start, note: '' }}
       onBack={leave}
       onContinue={({ amountKobo, note }) =>
         router.push({ pathname: '/send/review', params: { ...payeeParams(payee), amount: String(amountKobo), ...(note ? { note } : {}) } })

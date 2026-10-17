@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Avatar } from '@/components/Avatar';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { GroupedList } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
 import { SkeletonRows } from '@/components/Skeleton';
@@ -17,7 +18,7 @@ import { space } from '@/theme';
 
 import { recentRecipientsQuery, searchRecipientsQuery, SEARCH_MIN_CHARS, type Recipient } from './api';
 import { hueOfPayee, payeeLine, payeeOf, searchText, type Payee } from './model';
-import { PayeeTick, RecentChip, RecipientSearch, SEND, useSettled } from './parts';
+import { PayeeTick, RecentChip, RecipientSearch, SEND, SEND_WAYS, useSettled, type SendWay } from './parts';
 
 /** The Hub's search text is 60 characters at most (`GET /money/recipients`, `q` maxLength). */
 const SEARCH_MAX = 60;
@@ -27,16 +28,18 @@ const SETTLE_MS = 350;
 export type RecipientScreenProps = {
   onBack: () => void;
   onPick: (payee: Payee) => void;
+  /** The Bank account tab: W8. */
+  onBank: () => void;
 };
 
 /**
  * W7 · Send · to a WAWU user: search by name, @handle or phone, the people sent to most recently, and the people the search finds
  * (people with an open wallet; blocked people never appear). Picking one goes to W9.
  *
- * The Bank account tab is WALLET-03's (it opens W8), so there is no tab strip here yet (R-47). The canvas's "On WAWU" list under
+ * The Bank account tab opens W8 (WALLET-03), which replaces this screen so the two tabs never pile up. The canvas's "On WAWU" list under
  * Recent is the search result: the Hub serves no list of suggestions, so with nothing typed the screen shows Recent and what to type.
  */
-export function RecipientScreen({ onBack, onPick }: RecipientScreenProps) {
+export function RecipientScreen({ onBack, onPick, onBank }: RecipientScreenProps) {
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const [typed, setTyped] = useState('');
@@ -75,6 +78,15 @@ export function RecipientScreen({ onBack, onPick }: RecipientScreenProps) {
   return (
     <AuthFrame testID="send-recipient-screen" navTitle="Send money" onBack={onBack}>
       <View style={styles.body}>
+        <SegmentedTabs<SendWay>
+          testID="send-ways"
+          label="Who to send to"
+          items={SEND_WAYS}
+          value="user"
+          onChange={(way) => {
+            if (way === 'bank') onBank();
+          }}
+        />
         <RecipientSearch testID="send-search" value={typed} maxLength={SEARCH_MAX} onChange={setTyped} />
         {body}
       </View>

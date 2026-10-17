@@ -16,5 +16,11 @@ export default function SendRecipientRoute() {
   useSystemBack(leave);
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
-  return <RecipientScreen onBack={leave} onPick={(payee) => router.push({ pathname: '/send/amount', params: payeeParams(payee) })} />;
+  return (
+    <RecipientScreen
+      onBack={leave}
+      onBank={() => router.replace('/send/bank')}
+      onPick={(payee) => router.push({ pathname: '/send/amount', params: payeeParams(payee) })}
+    />
+  );
 }
