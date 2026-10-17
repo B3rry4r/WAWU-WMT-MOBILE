@@ -107,7 +107,7 @@ function EventCard({ event, sold, now, onOpen }: { event: EventView; sold: numbe
   const line = rowLine(event, sold, now);
   const note = event.status === 'rejected' ? event.lastDecisionReason : null;
   const body = (
-    <Card style={styles.card} testID={`my-event-${event.id}`}>
+    <Card padded style={styles.card} testID={`my-event-${event.id}`}>
       <View style={styles.top}>
         <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
           {event.bannerUrl ? <Image source={event.bannerUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden /> : null}
@@ -120,7 +120,9 @@ function EventCard({ event, sold, now, onOpen }: { event: EventView; sold: numbe
             {line}
           </Text>
         </View>
-        <StatusPill label={pill.label} tone={pill.tone} icon={pill.icon} testID={`my-event-pill-${event.id}`} />
+        <View>
+          <StatusPill label={pill.label} tone={pill.tone} icon={pill.icon} testID={`my-event-pill-${event.id}`} />
+        </View>
       </View>
       {note ? (
         <Text variant="body" tone="textSecondary" style={{ fontSize: rowMetrics.line }} testID={`my-event-note-${event.id}`}>
@@ -150,7 +152,7 @@ function EventCard({ event, sold, now, onOpen }: { event: EventView; sold: numbe
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
   body: { paddingHorizontal: layout.gutter, paddingTop: rowMetrics.top, gap: rowMetrics.gap },
-  card: { padding: rowMetrics.pad, gap: space.sm },
+  card: { gap: space.sm },
   top: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   thumb: { width: rowMetrics.thumb, height: rowMetrics.thumb, borderRadius: rowMetrics.thumbCorner, overflow: 'hidden' },
   words: { flex: 1, gap: space.xs },
