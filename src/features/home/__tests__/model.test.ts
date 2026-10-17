@@ -1,6 +1,6 @@
 import { ApiError } from '@/api/errors';
 
-import { discoverable, moneyCard, showsTgif, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
+import { discoverable, moneyCard, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
 
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
 const person = (wawuId: string, over: Record<string, unknown> = {}) => ({
@@ -51,15 +51,6 @@ describe('the TGIF card words', () => {
 
   it('never writes a reading time, which nothing serves', () => {
     expect(tgifMeta(day, 12400)).not.toMatch(/min/);
-  });
-});
-
-describe('the TGIF switch', () => {
-  it('follows the person, and stays on while it cannot be read', () => {
-    expect(showsTgif({ show: false }, false)).toBe(false);
-    expect(showsTgif({ show: true }, false)).toBe(true);
-    expect(showsTgif(undefined, true)).toBe(true);
-    expect(showsTgif(undefined, false)).toBe(false);
   });
 });
 
@@ -121,14 +112,14 @@ describe('the page as a whole', () => {
   const wallet = (r: { pending: boolean; failed: boolean }, walletAnswer = false) => ({ ...r, walletAnswer });
 
   it('loads until every read Today draws from has answered', () => {
-    expect(todayPhase({ balance: wallet(waiting), tgifSwitch: done, tgifDay: done, creators: done })).toBe('loading');
-    expect(todayPhase({ balance: wallet(done), tgifSwitch: done, tgifDay: waiting, creators: done })).toBe('loading');
-    expect(todayPhase({ balance: wallet(done), tgifSwitch: done, tgifDay: null, creators: done })).toBe('ready');
+    expect(todayPhase({ balance: wallet(waiting), creators: done })).toBe('loading');
+    expect(todayPhase({ balance: wallet(done), creators: waiting })).toBe('loading');
+    expect(todayPhase({ balance: wallet(done), creators: done })).toBe('ready');
   });
 
   it('fails as a whole only when everything failed and the wallet did not answer', () => {
-    expect(todayPhase({ balance: wallet(failed), tgifSwitch: failed, tgifDay: failed, creators: failed })).toBe('error');
-    expect(todayPhase({ balance: wallet(failed, true), tgifSwitch: failed, tgifDay: failed, creators: failed })).toBe('ready');
-    expect(todayPhase({ balance: wallet(failed), tgifSwitch: failed, tgifDay: failed, creators: done })).toBe('ready');
+    expect(todayPhase({ balance: wallet(failed), creators: failed })).toBe('error');
+    expect(todayPhase({ balance: wallet(failed, true), creators: failed })).toBe('ready');
+    expect(todayPhase({ balance: wallet(failed), creators: done })).toBe('ready');
   });
 });

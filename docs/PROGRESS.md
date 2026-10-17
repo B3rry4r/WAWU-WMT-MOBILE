@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 98 | 0 | 0 | 0 |
+| todo | 97 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 65 | 0 | 0 | 0 |
+| verifying | 66 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -65,6 +65,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [DV2-03](../tasks/DV2-03.md) Me follows the 16 Oct design: the profile header (You)
 - [DV2-05](../tasks/DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design (You)
 - [DV2-06](../tasks/DV2-06.md) Settings: TGIF each morning, and the provider wording (You)
+- [DV2-RM](../tasks/DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card (You)
 - [HOME-17](../tasks/HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up) (You)
 - [WALLET-40](../tasks/WALLET-40.md) Alert when your account number is ready (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)

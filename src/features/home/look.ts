@@ -32,9 +32,9 @@ const metricsBase = {
   flag: 22,
   chipWords: 13,
   /**
-   * `balanceCard`'s action row (Send, Add, Bills, Scan): the figure's `margin:14px 0 18px` leaves 18 under it, then each
+   * `balanceCard`'s action row (Send, Add, Scan): the figure's `margin:14px 0 18px` leaves 18 under it, then each
    * action is a 64 column holding a 48 circle (the glass colour; the first, Send, is the accent), a 20 icon at 2.2, 6, and
-   * the word at 12 semi-bold at 85%. Only Bills is built (BILLS-01); the others are added by their tasks (R-41), and the
+   * the word at 12 semi-bold at 85%. Only Send is built (no Bills: bills are off, R-52); the others are added by their tasks (R-41), and the
    * present actions pack from the left as the services row's tiles do (U-H1).
    */
   actionsTop: 18,
@@ -78,8 +78,8 @@ const metricsBase = {
   cardTick: 13,
   /**
    * `todayLoading` (H11): the heading 70% by 20 at 8, the cards 146 by 196. Its money card (203)
-   * and TGIF bar (64) are drawn for a card with Send, Add, Bills and Scan and a shorter TGIF row;
-   * "skeletons match the real layout" (H11's note), so here they take the built cards' heights.
+   * is drawn for a card with Send, Add and Scan; "skeletons match the real layout" (H11's note), so here
+   * it takes the built card's height. Today has no TGIF card (R-59, DV2-RM), so no TGIF bar is drawn.
    */
   skeletonHeading: 20,
   skeletonHeadingCorner: 8,

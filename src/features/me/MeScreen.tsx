@@ -102,9 +102,10 @@ export type MeScreenProps = {
  *
  * Menu (BRAND-01) raises the Me menu (Z1) and its Settings row opens Z2, so a signed-in person always has a way
  * into Settings, also while the profile is loading or has failed. Not drawn yet (the task that builds
- * where each leads adds it, R-47): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
+ * where each leads adds it, R-47): QR (WALLET-20, after launch), the
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
- * (PROS-03) are in.
+ * (PROS-03) are in. There is no "Get your professional tick" card (R-43, DV2-RM: M11 to M14 are replaced by VF5 to VF7); the tick is
+ * only a mark beside the name, from the Hub's `verification`.
  *
  * DV2-03: a person with a running tier sees its badge by their name and the "N of M products" meter under the counts (`GET /me/tier`);
  * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). The Voice Intro player (Bio, AI voice, R-66) is
