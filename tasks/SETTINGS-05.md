@@ -7,7 +7,7 @@ order: 179
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [SETTINGS-06, SETTINGS-08, MONEY-11, MONEY-13, UI-02, SETTINGS-01, WALLET-05]
 decisions: [R-17, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,10 +17,17 @@ artboards: [Z6, Z7, Z8]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): SETTINGS-06, SETTINGS-08, WALLET-05.
-- **History:** none yet. Reports go to tasks/history/SETTINGS-05.md.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
+- **Status:** merging (lead). Verdict: PASS (3 lows; protected suite 244/244 including DELETE /account with no body) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main.
+- **Merge:** conflicts in SHARED-CHANGES, SOURCE_COMMIT, PROGRESS, MoneyCard, TodayScreen, HomeScreen.test, send model.test. Every side kept: WALLET-05's Add action stays, Bills stays gone (DV2-RM, R-52); recorded as SHARED-CHANGES SETTINGS-05 #3.
+- **Built:** Z2's muted "Delete account" under Sign out (drawn because Z6 exists), Z6 (`/settings/delete-account`: the bank's balance read as the Wallet tab reads it; money shows the figure and Withdraw (W17) and holds Continue; no wallet (R-6) shows no warning and no wallet row and Continue is open; a balance that cannot be read says so and is never taken as empty), Z7 (`/confirm`: optional reason, type DELETE, one request per tap; the Hub's refusal shown in its words, with Withdraw when the wallet holds money), Z8 (`/scheduled?on=`: the Hub's date; Done and Android back sign out, gesture back is off). Feature code `src/features/delete-account/`.
+- **Backend (additive):** `AccountDeletion.leavingReason` (nullable, migration `20261025181000`), `DELETE /account` takes optional `reason` (five codes, validated; no body is what it always was); spec `account-deletion-reason.contract.spec.ts` (7). Contract regenerated; the app's copy updated by the delta (SHARED-CHANGES SETTINGS-05 #1).
+- **Decisions:** the select's five choices are mine (the board shows only "I don't use it enough"); tapping the chosen one clears it; "Your wallet and cards" reads "Your wallet" (BRIEF Z6) and is left out when there is no wallet; the board's "30 days" is not drawn (G-SETTINGS-05-1); Z8's 88 tile uses tone `neutral`, which the design system has no colour for, so the board draws no circle or mark: built as the picture (room kept, nothing drawn), designer note below.
+- **Checks:** mobile tsc EXIT 0; eslint on 71 changed files EXIT 0; jest delete-account (2 suites, 34 tests) and settings, home, send model, withdraw, addmoney (10 suites, 234) pass; `npm run gates` EXIT 0 (0 fail, 11 warn, 926 files; the 11 are PROVISIONAL notes, none mine; count before not run, the base's last record was 0 fail, 11 warn). Backend: tsc EXIT 0, eslint on changed files EXIT 0, reason spec 7 pass, `account.contract.spec` 6 pass on the stack's mock WAWU ID, `zz-v2-nuvion` and `round9` pass, gates and baseline EXIT 0 (0 fail, 127 warn).
+- **On the stack set05_test** (real wawu-id `01b751f`, Hub on the Nuvion stand-in, ports 7850-7857, down and dropped): wallet with the board's ₦485,250.75: Z6 warning and Withdraw (opens W17), Continue closed; Z7 refused in the Hub's words, nothing scheduled, Withdraw opens W17. Owed earning: the Hub's refusal in its words, no Withdraw, no row. Nothing in the way: scheduled with reason `privacy` stored, Hub and wawu-id hold the same date, Z8 reads "On 16 November", Done signs out to the welcome screen; signing in again at WAWU ID cancelled once (Hub `cancelled`, WAWU ID `active`), a second sign-in changed nothing. Double tap on Delete my account: one DELETE, one row, one window.
+- **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/set05-b/pics/` 390 wide, light and dark: `board-*` and `side-*` (board left, built right) for Z2 foot, Z6, Z7, Z8; Z6 loading, error and no wallet; Z7 empty, sheet, refused (wallet, earning), error. Not run: V10 (phone), a real bank outage (the unreachable pictures answer the Hub's own 503 body in the browser).
+- **Gaps and shared changes:** G-SETTINGS-05-1 (no served waiting period), G-SETTINGS-05-2 (no read says a deletion is waiting); SHARED-CHANGES SETTINGS-05 #1 (contract copy), #2 (Banner action, Button danger), #3 (merge).
+- **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-AUTH (L1 to L3).
 
 ## Read first
 
@@ -81,15 +88,11 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Designer notes (⚠, unresolved)
 
-- None.
+- Z8: the tile is drawn with tone `neutral` (`result('neutral', 'Clock', ...)`), a tone the design system has no colour for, so the board shows no circle and no clock (the 88 of room is there). Built as the picture. If a neutral tile with a clock is wanted, the designer names its colours.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SETTINGS-05.md](history/SETTINGS-05.md).
 
 ## Owner sign-off
 

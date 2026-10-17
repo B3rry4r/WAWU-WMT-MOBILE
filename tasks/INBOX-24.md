@@ -7,7 +7,7 @@ order: 259
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [WALLET-17, INBOX-16, MONEY-19]
 decisions: [R-63, R-10, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
+- **Status:** merging (lead). Verdict: PASS (no blocker, high or medium; 3 lows); round 2 (backend 0116060) closed the naira sign and a removed member's re-join of a pass room on the lead's diff read; branch CI red only on the Fintava-double earning-settlement spec (red the same way on the base, owner question Q-42) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-24.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main. Built: Backend `wmt/INBOX-24` `0116060` (round 1 `28cea21`, from `wmt/B3a` `242ce9d`, WALLET-17's earnings); mobile `wmt/INBOX-24` (records only). Migration `20261025180000_community_pass`. Nothing merged.
 - **Size:** L. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, INBOX-16.
-- **History:** none yet. Reports go to tasks/history/INBOX-24.md.
+- **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-MONEY (L1) and SWEEP-INBOX (L3, G-INBOX-24-1, G-INBOX-24-6).
+- **Records:** SHARED-CHANGES INBOX-24 #1 to #4; BACKEND_GAPS G-INBOX-24-1 to -6.
 
 ## Read first
 
@@ -52,13 +52,9 @@ A person can join a private community by paying for 30 days from the wallet and 
 - [ ] After the end date the member can no longer read or send until they renew.
 - [ ] No pass is ever renewed without a PIN-confirmed request.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-24.md](history/INBOX-24.md).
 
 ## Owner sign-off
 

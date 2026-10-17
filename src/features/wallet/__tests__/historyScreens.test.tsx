@@ -18,7 +18,7 @@ jest.mock('expo-secure-store', () => ({
 }));
 jest.mock('expo-router', () => {
   const router = { push: (to: unknown) => mockPushed.push(to) };
-  return { useRouter: () => router };
+  return { useRouter: () => router, router };
 });
 jest.mock('@/features/open-wallet/copy', () => ({
   copyText: jest.fn(async (value: string) => {
@@ -32,9 +32,10 @@ jest.mock('@/features/open-wallet/copy', () => ({
  * the canvas's samples, so a screen that drew the canvas's figures or a figure of its own would fail.
  */
 type Reply = { status: number; body: unknown } | 'offline' | 'hold';
-type Ask = { method: string; path: string; query: URLSearchParams };
+type Ask = { method: string; path: string; query: URLSearchParams; body?: unknown };
 
 const OWNER = '00000000-0000-4000-8000-0000000000e4';
+const SUPPORT_CHAT = '00000000-0000-4000-8000-0000000000c9';
 let asks: Ask[] = [];
 let answer: (ask: Ask) => Reply = () => ({ status: 404, body: {} });
 
@@ -45,7 +46,12 @@ const pageOf = (items: unknown[], nextCursor: string | null = null) => ok({ item
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
-  const ask = { method: request.method, path: url.pathname.replace(/^\/api\/hub/, ''), query: url.searchParams };
+  const ask: Ask = {
+    method: request.method,
+    path: url.pathname.replace(/^\/api\/hub/, ''),
+    query: url.searchParams,
+    body: request.method === 'POST' ? ((await request.clone().json().catch(() => undefined)) as unknown) : undefined,
+  };
   asks.push(ask);
   const reply = answer(ask);
   if (reply === 'offline') throw new TypeError('Network request failed');
@@ -130,8 +136,11 @@ const UNLOCKS = {
 const SUMMARY = { month: MONTH_KEY, inKobo: 98_700_050, outKobo: 41_250_025 };
 
 /** A Hub with these rows: the list, the month's totals and each row by id. */
-function hubWith(rows: unknown[], over: { list?: (ask: Ask) => Reply; summary?: Reply } = {}) {
+function hubWith(rows: unknown[], over: { list?: (ask: Ask) => Reply; summary?: Reply; support?: Reply } = {}) {
   answer = (ask) => {
+    if (ask.path === '/support/thread') {
+      return over.support ?? ok({ chatId: SUPPORT_CHAT, reference: (ask.body as { reference?: unknown } | undefined)?.reference ?? null, messageId: 'message-1' });
+    }
     if (ask.path === '/money/transactions') return (over.list ?? (() => pageOf(rows)))(ask);
     if (ask.path === '/money/transactions/summary') return over.summary ?? ok(SUMMARY);
     const one = ask.path.match(/^\/money\/transactions\/(.+)$/);
@@ -612,13 +621,32 @@ describe('W27 · Transaction detail', () => {
     expect(app.screen.getByText('Tip from Bayo Test')).toBeTruthy();
   });
 
-  it('draws what is built: Back and Share receipt, and not Report a problem, which is SUPPORT-01’s (R-47)', async () => {
+  it('draws what is built: Back, Copy reference, Share receipt and Report a problem (SUPPORT-01 adds the last, as drawn)', async () => {
     const app = await detail('tip-1');
     expect(await app.screen.findByTestId('detail-head')).toBeTruthy();
-    expect(buttonNames(app).sort()).toEqual(['Back', 'Copy reference', 'Share receipt']);
-    expect(app.screen.queryByText(/Report a problem/i)).toBeNull();
+    expect(buttonNames(app).sort()).toEqual(['Back', 'Copy reference', 'Report a problem', 'Share receipt']);
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Back' }));
     expect(handlers.onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('Report a problem opens the support chat with this transaction already attached (SUPPORT-01)', async () => {
+    const app = await detail('tip-1');
+    await app.fireEvent.press(await app.screen.findByRole('button', { name: 'Report a problem' }));
+    await app.waitFor(() => expect(mockPushed).toHaveLength(1));
+    const asked = asks.filter((a) => a.method === 'POST' && a.path === '/support/thread');
+    expect(asked).toHaveLength(1);
+    expect(asked[0].body).toEqual({ reference: { kind: 'transaction', id: 'tip-1' } });
+    expect(mockPushed).toEqual([{ pathname: '/chat/[id]', params: { id: SUPPORT_CHAT } }]);
+  });
+
+  it('a support chat the Hub refuses says so in its words, and the receipt stays (SUPPORT-01)', async () => {
+    hubWith([TIP], { support: refusal(404, 'not_found', 'We could not find that payment.') });
+    const app = await detail('tip-1');
+    await app.fireEvent.press(await app.screen.findByRole('button', { name: 'Report a problem' }));
+    expect(await app.screen.findByTestId('detail-notice')).toBeTruthy();
+    expect(app.screen.getByText('We could not find that payment.')).toBeTruthy();
+    expect(mockPushed).toEqual([]);
+    expect(app.screen.getByText('Tip from Bayo Test')).toBeTruthy();
   });
 
   it('shows the status in words for a transaction that is not done', async () => {

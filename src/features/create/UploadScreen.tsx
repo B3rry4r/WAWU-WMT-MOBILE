@@ -28,15 +28,15 @@ const dropMetrics = { height: 200, corner: 24, ring: 1.5, icon: 56, between: 10,
 type Stage = { state: 'idle' } | { state: 'uploading'; file: ChosenFile; share: number } | { state: 'done'; name: string } | { state: 'failed'; file: ChosenFile | null; message: string; retry: boolean };
 
 /** A failed upload is worth asking again for when nothing about the file is wrong: no answer, a server fault, or the bytes themselves not landing. */
-const retryable = (error: unknown): boolean => !isApiError(error) || error.status === 0 || error.status >= 500 || error.code === 'upload_failed';
+export const retryable = (error: unknown): boolean => !isApiError(error) || error.status === 0 || error.status >= 500 || error.code === 'upload_failed';
 
-export type UploadScreenProps = { format: FormatId; onBack: () => void; onContinue: () => void };
+export type UploadScreenProps = { format: FormatId; onBack: () => void; onContinue: () => void; onOpenLibrary?: () => void };
 
 /**
  * M21 · Upload the full file for the chosen format. The line under the heading and the limit on it come from the Hub's
  * rule for the format; the bar is the real share of the file that has gone up. Continue waits until it has all landed.
  */
-export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) {
+export function UploadScreen({ format, onBack, onContinue, onOpenLibrary }: UploadScreenProps) {
   const formats = useQuery({ queryKey: formatsKey, queryFn: fetchFormats });
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   const { full } = useDraft();
@@ -111,7 +111,7 @@ export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) 
         <Skeleton testID="upload-loading" height={dropMetrics.height} radius={dropMetrics.corner} />
       ) : (
         <>
-          {allowance.data && noRoom ? <SlotsFullNotice allowance={allowance.data} /> : null}
+          {allowance.data && noRoom ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} /> : null}
           <DropBox format={format} limit={rule.full.maxBytes} disabled={uploading || noRoom || !canPickFile} onPress={() => void choose()} />
           {stage.state === 'uploading' || stage.state === 'failed' ? (
             stage.file ? (
@@ -135,7 +135,7 @@ export function UploadScreen({ format, onBack, onContinue }: UploadScreenProps) 
   );
 }
 
-function DropBox({ format, limit, disabled, onPress }: { format: FormatId; limit: number; disabled: boolean; onPress: () => void }) {
+export function DropBox({ format, limit, disabled, onPress }: { format: FormatId; limit: number; disabled: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (

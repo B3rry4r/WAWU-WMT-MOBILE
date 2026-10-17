@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockVault = new Map<string, string>();
 const mockCopied: string[] = [];
+const mockPush = jest.fn();
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
@@ -14,6 +15,10 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async (key: string) => {
     mockVault.delete(key);
   }),
+}));
+jest.mock('expo-router', () => ({
+  ...jest.requireActual<typeof import('expo-router')>('expo-router'),
+  router: { push: (...args: unknown[]) => mockPush(...args) },
 }));
 jest.mock('@/features/open-wallet/copy', () => ({
   copyText: jest.fn(async (value: string) => {
@@ -40,6 +45,8 @@ const DAY = 24 * 60 * 60 * 1000;
 const pin = (over: Record<string, unknown> = {}) => ({ isSet: true, changedAt: new Date(Date.now() - 90 * DAY).toISOString(), triesLeft: 5, lockedUntil: null, ...over });
 
 let sent: { method: string; path: string }[] = [];
+/** The JSON body of each POST, in order. */
+let posted: unknown[] = [];
 let fallback: Record<string, Answer> = {};
 
 const ok = (data: unknown): Reply => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
@@ -50,6 +57,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   sent.push({ method: request.method, path: url.pathname });
+  if (request.method === 'POST') posted.push(await request.clone().json().catch(() => undefined));
   const answer = fallback[`${request.method} ${url.pathname.replace(/^\/api\/hub/, '')}`];
   if (!answer) throw new Error(`no answer for ${request.method} ${url.pathname}`);
   if (answer === 'offline') throw new TypeError('Network request failed');
@@ -95,6 +103,8 @@ beforeEach(() => {
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, retry: false, gcTime: 0 } });
   Dimensions.set({ window: { width: 390, height: 844, scale: 2, fontScale: 1 } });
   sent = [];
+  posted = [];
+  mockPush.mockClear();
   mockCopied.length = 0;
   mockVault.clear();
   mockVault.set('wawu.session.access', tokenFor(OWNER));
@@ -133,13 +143,33 @@ describe('W35 · Wallet settings', () => {
     expect(text()).not.toMatch(/Tier|Fintava|Loma Bank|812 345 6789|—/);
   });
 
-  it('draws only what has a screen behind it: no Cards, Statements, Help with a payment, and no fingerprint or face switch (R-47)', async () => {
+  it('draws only what has a screen behind it: no Cards, Statements, and no fingerprint or face switch (R-47)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-settings-pin');
-    for (const name of ['Cards', 'Statements', 'Help with a payment', 'Fingerprint or face for payments', 'Face ID for payments']) {
+    for (const name of ['Cards', 'Statements', 'Fingerprint or face for payments', 'Face ID for payments']) {
       expect(rtl.screen.queryByText(name)).toBeNull();
     }
     expect(rtl.screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('Help with a payment is the last row, and opens the support chat with nothing attached (SUPPORT-01)', async () => {
+    fallback['POST /support/thread'] = ok({ chatId: '00000000-0000-4000-8000-0000000000c9', reference: null, messageId: null });
+    await boot();
+    const help = await rtl.screen.findByTestId('wallet-settings-help');
+    expect(rtl.screen.getByText('Help with a payment')).toBeTruthy();
+    await rtl.fireEvent.press(help);
+    await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
+    expect(posted).toEqual([{}]);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/chat/[id]', params: { id: '00000000-0000-4000-8000-0000000000c9' } });
+  });
+
+  it('a support chat that cannot be opened says so and stays on the page (SUPPORT-01)', async () => {
+    fallback['POST /support/thread'] = 'offline';
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('wallet-settings-help'));
+    expect(await rtl.screen.findByText('We couldn’t open the support chat. Try again.')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(rtl.screen.getByText('Transaction PIN')).toBeTruthy();
   });
 
   it('shows no limits row while the server sends no limit', async () => {

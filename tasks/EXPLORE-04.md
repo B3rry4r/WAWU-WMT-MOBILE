@@ -7,7 +7,7 @@ order: 106
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [EXPLORE-05, UI-02, INBOX-05]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -17,11 +17,16 @@ artboards: [X8, X9, X10, X11, X12]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EXPLORE-05.
-- **History:** none yet. Reports go to tasks/history/EXPLORE-04.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
+- **Status:** merging (lead). Verdict: merge (Creators, Communities, nothing found, no recent searches and failed states; the search filters and follow/join/Ask once); no low is this task's (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/P1-EX02.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main. Built: Mobile `wmt/P1`, after ME-08. Nothing merged or live.
+- **Where the screens come from:** X8 to X12 are states of the Search screen that `wmt/EXPLORE-02` (`86bbe0d9`, verifying, not in batch 10) already built with X5 to X7. A second build would collide on every file, so this branch carries that commit's own diff of `src/features/search/**`, `src/app/search.tsx`, the contract and types for `GET /search/people`, and `follow.ts` (SHARED-CHANGES EXPLORE-04 #1). It does not carry EXPLORE-02's entries on Explore, Home and the feed (10 conflicts with batch 10): search opens from nowhere until EXPLORE-02 merges.
+- **Fixed on top:** `@/components/shadow` is gone (the locked veil takes `colors.mediaBlack25`); `nairaToKobo` comes from `@/api/kobo`; the placeholder reads "Search Who Made This?" (R-69, X11) and the one assertion naming the old words names the new; `entries.test.tsx` is not carried, as the entries are not.
+- **Drawn:** X8 Creators (Follow; Following where the board draws Profile, M5 is ME-02's), X9 Communities (Ask on a private room sends the request, Join opens an open one), X10 nothing found with the closest things, X11 no recent searches with popular and creators, X12 failed with Try again (network cause). The hooks send `include=communities` and `include=recent`.
+- **Checks:** tsc EXIT 0; eslint EXIT 0; jest create + search + explore 9 suites / 183 tests; gates 0 fail, 896 files.
+- **Pictures** (390 px, light and dark, board beside built): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/p1-b/pics/pair-x8-*.png` to `pair-x12-*`. Hub answered by browser-side fixtures.
+- **NOT RUN:** V9 against a real Hub (batch 10's has no `/search/people`, G-EXPLORE-04-1).
+- **Open findings:** none known.
+- **Next:** the batch 13 pull request (the lead). No low is left open.
 
 ## Read first
 
@@ -88,13 +93,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EXPLORE-04.md](history/EXPLORE-04.md).
 
 ## Owner sign-off
 

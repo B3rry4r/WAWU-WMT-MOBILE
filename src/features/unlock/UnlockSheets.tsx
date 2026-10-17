@@ -11,6 +11,8 @@ import { PinSheet } from '@/components/pin-sheet';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
 import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { Text } from '@/components/Text';
+import { useOpenSupport } from '@/features/support/useOpenSupport';
+import { paymentReference } from '@/features/support/api';
 import { font, layout, space, text } from '@/theme';
 import { ICON_STROKE } from '@/components/icon';
 
@@ -24,7 +26,8 @@ const MARK_STROKE = ICON_STROKE.fab;
 /**
  * H14 to H18, and the states between. H14 and H17 are the shared pay sheet (the piece, Price, the bank's charge, the total, Pay from
  * wallet, "Unlock · ₦2,523.25"; "Not enough in your Naira wallet" with the shortfall and Add). Pay opens H15, the shared PIN sheet,
- * "Approve ₦2,523.25 to Chidi Eze". A paid unlock ends on H16. When the money has left and the opening is not finished, H18.
+ * "Approve ₦2,523.25 to Chidi Eze". A paid unlock ends on H16. When the money has left and the opening is not finished, H18, whose
+ * Contact support opens the support chat (I12) with this payment already attached as its first message (SUPPORT-01, R-30).
  */
 export function UnlockSheets({
   unlock,
@@ -38,6 +41,7 @@ export function UnlockSheets({
   onForgotPin: () => void;
 }) {
   const { flow, item, quote, fees, balanceKobo } = unlock;
+  const support = useOpenSupport();
   if (!item) return null;
 
   const view = flow.view;
@@ -81,6 +85,19 @@ export function UnlockSheets({
         line={openingLine(item, view.payment.totalKobo)}
       >
         <Button testID="unlock-refresh" label="Refresh" icon="RotateCcw" onPress={flow.refresh} loading={flow.refreshing} full />
+        <Button
+          testID="unlock-support"
+          label="Contact support"
+          variant="secondary"
+          onPress={() => void support.open(paymentReference(view.payment.id))}
+          loading={support.opening}
+          full
+        />
+        {support.error ? (
+          <Text variant="errorLine" tone="danger" accessibilityRole="alert" style={styles.supportError} testID="unlock-support-error">
+            {support.error}
+          </Text>
+        ) : null}
       </StatusSheet>
     );
   }
@@ -136,4 +153,5 @@ export function UnlockSheets({
 
 const styles = StyleSheet.create({
   reference: { fontSize: text.kvValue.fontSize, flexShrink: 1, textAlign: 'right' },
+  supportError: { textAlign: 'center' },
 });

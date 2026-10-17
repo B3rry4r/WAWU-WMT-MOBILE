@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -12,6 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconButton } from '@/components/Button';
+import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
@@ -91,6 +94,8 @@ function FeedLoading({ height }: { height: number }) {
 export type FeedScreenProps = {
   initialScope?: FeedScope;
   onToday?: () => void;
+  /** The search button at the end of the tab row opens Search (X5, EXPLORE-02). Not drawn without it. */
+  onSearch?: () => void;
   /**
    * Where the feed's wallet payments lead when they need somewhere else (Open your wallet, a PIN to set, Forgot PIN, add money).
    * With it, the rail draws ₦ Tip (H26, HOME-13); left out, no payment can start from the feed.
@@ -98,7 +103,7 @@ export type FeedScreenProps = {
   pay?: FlowHandlers;
 };
 
-export function FeedScreen({ initialScope = 'for_you', onToday, pay: payHandlers }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers }: FeedScreenProps = {}) {
   const pay = useFeedPay(payHandlers);
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
@@ -249,6 +254,24 @@ export function FeedScreen({ initialScope = 'for_you', onToday, pay: payHandlers
         onChange={changeView}
         style={[styles.tabs, { top: chromeTop + metrics.tabsGap }]}
       />
+      {onSearch ? (
+        showsMedia ? (
+          <Pressable
+            testID="feed-search"
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            hitSlop={space.md}
+            onPress={onSearch}
+            style={[styles.search, { top: chromeTop + metrics.tabsGap }]}
+          >
+            <Icon name="Search" size={24} color={media.ink} />
+          </Pressable>
+        ) : (
+          <View style={[styles.search, { top: chromeTop + metrics.tabsGap }]}>
+            <IconButton icon="Search" label="Search" size={40} onPress={onSearch} testID="feed-search" />
+          </View>
+        )
+      ) : null}
     </View>
   );
 }
@@ -256,6 +279,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday, pay: payHandlers
 const styles = StyleSheet.create({
   root: { flex: 1 },
   tabs: { position: 'absolute', left: metrics.tabsSide, right: metrics.tabsSide, zIndex: 7 },
+  search: { position: 'absolute', right: metrics.tabsSide, zIndex: 8 },
   centre: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xl },
   loadingRail: { position: 'absolute', right: metrics.railRight, alignItems: 'center', gap: metrics.railGap },
   loadingWords: { position: 'absolute', left: metrics.side, right: metrics.captionRight, gap: metrics.stack },

@@ -3342,6 +3342,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's chats, newest activity first, cursor-paged. */
+        get: operations["ChatController_list"];
+        put?: never;
+        /** Open the chat with one person, or get the one that already exists. */
+        post: operations["ChatController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChatController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Messages, newest first, cursor-paged. */
+        get: operations["ChatController_messages"];
+        put?: never;
+        post: operations["ChatController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move the caller's read mark forward. */
+        post: operations["ChatController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Where to upload one photo, video or PDF for this chat. */
+        post: operations["ChatController_presignAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/email/unsubscribe": {
         parameters: {
             query?: never;
@@ -3369,7 +3454,9 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Asks to delete the account (R-17: it waits 30 days). Refused with
+         * Asks to delete the account (R-17: it waits 30 days). The body may carry
+         *     `reason`, why the person is leaving (Z7, SETTINGS-05), kept on the
+         *     deletion row. Refused with
          *     `409 account_deletion_blocked` while the wallet holds money, a hold is
          *     open or earnings are waiting (SETTINGS-06). `503 provider_unreachable`
          *     when the wallet provider does not answer, so "empty" is never guessed.
@@ -4748,6 +4835,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/search/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * EXPLORE-02. The names the app draws on result rows and "Creators to know":
+         *     for each account asked about, who they are (real name or handle, picture,
+         *     what they do, both ticks) and whether the caller follows them. A person
+         *     the caller may not see is left out of the answer. New route: nothing the
+         *     web calls changes.
+         */
+        get: operations["SearchResponseController_people"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/search/closest": {
         parameters: {
             query?: never;
@@ -5592,58 +5702,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/chats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The caller's chats, newest activity first, cursor-paged. */
-        get: operations["ChatController_list"];
-        put?: never;
-        /** Open the chat with one person, or get the one that already exists. */
-        post: operations["ChatController_open"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/{chatId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ChatController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/{chatId}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Messages, newest first, cursor-paged. */
-        get: operations["ChatController_messages"];
-        put?: never;
-        post: operations["ChatController_send"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/{chatId}/read": {
+    "/api/hub/support/thread": {
         parameters: {
             query?: never;
             header?: never;
@@ -5652,25 +5711,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Move the caller's read mark forward. */
-        post: operations["ChatController_markRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/{chatId}/attachments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Where to upload one photo, video or PDF for this chat. */
-        post: operations["ChatController_presignAttachment"];
+        /**
+         * H18 "Contact support", W27 "Report a problem" and W35 "Help with a
+         *     payment": open the caller's support thread, or get the one that exists,
+         *     with the payment they are asking about already written into it. The same
+         *     reference sent again returns the same thread and the same message. A
+         *     reference that does not exist, or is someone else's, is 404.
+         */
+        post: operations["SupportController_open"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6442,6 +6490,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/{id}/pass": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the caller stands with this room's pass: the host's price, when
+         *     their pass ends, and whether they can buy or renew. Needs no wallet, so
+         *     the landing (I30) can open before one exists.
+         */
+        get: operations["CommunityPassController_pass"];
+        put?: never;
+        /**
+         * Pays for 30 days from the wallet, once: the person is in when the payment
+         *     is confirmed. Paying before the end extends from the current end date.
+         *     Answers 201 with the purchase: `paid`, `pending` while the provider has
+         *     not confirmed the debit yet (poll `GET /communities/{id}/pass/{paymentId}`;
+         *     it is never sent again), `failed` when the provider refused it and nothing
+         *     moved, or `refunded` when the pass could not be given and everything paid
+         *     is going back. The same Idempotency-Key and body answer the first result
+         *     again (`Idempotent-Replayed: true`) without checking the PIN. Not enough
+         *     money is `402 insufficient_funds` with the shortfall; no wallet is `409
+         *     wallet_not_open`. Nothing is ever debited without this request.
+         */
+        post: operations["CommunityPassController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/pass/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet before the PIN: the host's price, the wallet provider's
+         *     charge and WAWU's fee on top, the total, the wallet's balance and the
+         *     shortfall, when the pass would end, and the signed quote
+         *     `POST /communities/{id}/pass` sends back. Nothing is reserved.
+         */
+        get: operations["CommunityPassController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/pass/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One purchase as it stands now: what the app polls after `pending`. Only
+         *     the payer reads it, for the room in the path; another person's purchase
+         *     and an id nobody holds are the same `404 not_found`.
+         */
+        get: operations["CommunityPassController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tips/wallet/quote": {
         parameters: {
             query?: never;
@@ -7010,6 +7134,81 @@ export interface paths {
          *     points quote shows the wallet money for a shortfall.
          */
         put: operations["PointsSettingsController_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The tools the Hub can run, each with its points per unit, whether it is
+         *     on, its limits and its voices, and the caps that stop a job (PT1, PT7).
+         *     Costs and caps are settings. Read-only.
+         */
+        get: operations["AiToolsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/voiceover/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a VoiceOver job (PT2): `text`, a `voiceId` from the list and the
+         *     `quoteToken` of the `POST /points/quote` the person saw. Holds the job's
+         *     points, answers `202` with the job `working` and makes the audio after the
+         *     answer; `GET /ai-tools/jobs/{id}` is what the app polls. The points are
+         *     kept only when the audio is made and given back when it is not.
+         *
+         *     Needs an `Idempotency-Key` (8 to 128 of `[A-Za-z0-9_-]`): the same key and
+         *     words again answer the first job (`200`, `Idempotent-Replayed: true`)
+         *     and hold nothing more; the same key with other words is `409
+         *     idempotency_key_reused`. Refused with nothing held: `422
+         *     points_cap_reached` naming the cap (characters, minutes or the day's
+         *     points), `402 insufficient_points`, `409 quote_changed` (the cost is not
+         *     what the quote showed), `400 ai_voice_unknown`, `503 ai_tool_unavailable`.
+         *     A refusal leaves the key free to use once the cause is fixed.
+         */
+        post: operations["AiToolsController_createVoiceover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One job as it stands now: `working`, `done` with `audioUrl`, or `failed`
+         *     with the words "No points were taken" (PT2c). Only the person who ran it
+         *     reads it; another person's job and one that is not there are the same
+         *     `404 not_found`.
+         */
+        get: operations["AiToolsController_readJob"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -8173,7 +8372,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -8258,6 +8457,52 @@ export interface components {
              */
             redirectUrl?: string;
         };
+        AdminSupportReplyDto: {
+            text: string;
+            /**
+             * @description The dashboard's own id for this reply. Sending the same one again returns
+             *     the reply already stored instead of posting it twice.
+             */
+            clientMessageId?: string;
+        };
+        OpenChatDto: {
+            /**
+             * Format: uuid
+             * @description The other person's WAWU ID (uuid).
+             */
+            wawuId: string;
+        };
+        ChatAttachmentDto: {
+            /** @description The `key` POST /chats/:chatId/attachments returned, after the upload. */
+            key: string;
+            /** @description The file's own name, shown on a PDF bubble. */
+            name?: string;
+        };
+        ChatSendMessageDto: {
+            text?: string;
+            attachment?: components["schemas"]["ChatAttachmentDto"];
+            /**
+             * @description The app's own id for this message. Sending the same one again returns
+             *     the message already stored instead of posting it twice.
+             */
+            clientMessageId?: string;
+        };
+        MarkChatReadDto: {
+            /** Format: uuid */
+            messageId?: string;
+        };
+        ChatUploadDto: {
+            /**
+             * @description image/png, image/jpeg, image/webp, video/mp4, video/quicktime or application/pdf.
+             * @enum {string}
+             */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "video/mp4" | "video/quicktime" | "application/pdf";
+            /**
+             * @description Exact size in bytes; the upload link is signed for this length. Up to
+             *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
+             */
+            contentLength: number;
+        };
         EventDecisionReasonDto: {
             reason: string;
         };
@@ -8324,7 +8569,13 @@ export interface components {
             templateId: string;
             limit?: number;
         };
-        DeleteAccountDto: Record<string, never>;
+        DeleteAccountDto: {
+            /**
+             * @description Why the person is leaving; left out when they did not say.
+             * @enum {string}
+             */
+            reason?: "not_using_enough" | "another_account" | "privacy" | "too_many_notifications" | "something_else";
+        };
         AccountDeletionBlockedReason: {
             /** @enum {string} */
             code: "account_deletion_blocked";
@@ -8692,6 +8943,50 @@ export interface components {
             message: string;
             reason: components["schemas"]["SchoolEnrolmentErrorReason"];
         };
+        CreateRoomDto: {
+            /**
+             * @description What a member pays for 30 days, in kobo, set by the host (I32). Private
+             *     rooms only. The bounds are checked by the service (a figure of the
+             *     launch settings, COMMUNITY_PASS_MIN_KOBO and COMMUNITY_PASS_MAX_KOBO).
+             *     Omitted, a private room has no pass and keeps the older join request flow.
+             */
+            passPriceKobo?: number;
+            /**
+             * @description Bound: 3-80 characters. A community name is a list-row heading on both
+             *     the mobile and desktop community surfaces, so it is deliberately far
+             *     shorter than ContentPiece.title (200) — anything longer is a
+             *     description, not a name. `\S` rejects an all-whitespace name, which
+             *     @IsNotEmpty alone lets through and which renders as a blank, unclickable
+             *     row.
+             */
+            name: string;
+            /**
+             * @description Bound: 1-500 characters. This is the "what this community is for" blurb
+             *     shown on the community card / join screen, not long-form content — an
+             *     order of magnitude shorter than ContentPiece.description (5000), which
+             *     backs a full detail page. Required, because `Community.description` is
+             *     a non-nullable column and a community with no stated purpose is the
+             *     thing nobody joins.
+             */
+            description: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            /**
+             * Format: uri
+             * @description The room's cover image, as the `fileUrl` handed back by
+             *     `POST /uploads/presign` for the `community/image` folder. Optional — a
+             *     community without one is normal and the client falls back to its
+             *     placeholder tile, so hosting is never blocked on finding a picture.
+             *
+             *     No `@MaxLength` here, matching every other asset-URL field in this
+             *     backend (CreateContentDto's previewAssetUrl/fullAssetUrl, CreateEventDto's
+             *     bannerUrl — neither caps length). A presigned S3 GET URL carries the
+             *     bucket, region, path and a full signed query string, routinely well past
+             *     500 characters; a cap this field alone had meant every community created
+             *     with a picture 400'd against this backend's own presign output.
+             */
+            imageUrl?: string;
+        };
         CreateCommunityDto: {
             /**
              * @description Bound: 3-80 characters. A community name is a list-row heading on both
@@ -9000,43 +9295,19 @@ export interface components {
             /** @description Rail order, lowest first. Default 0. */
             position?: number;
         };
-        OpenChatDto: {
+        SupportReferenceDto: {
             /**
-             * Format: uuid
-             * @description The other person's WAWU ID (uuid).
-             */
-            wawuId: string;
-        };
-        ChatAttachmentDto: {
-            /** @description The `key` POST /chats/:chatId/attachments returned, after the upload. */
-            key: string;
-            /** @description The file's own name, shown on a PDF bubble. */
-            name?: string;
-        };
-        ChatSendMessageDto: {
-            text?: string;
-            attachment?: components["schemas"]["ChatAttachmentDto"];
-            /**
-             * @description The app's own id for this message. Sending the same one again returns
-             *     the message already stored instead of posting it twice.
-             */
-            clientMessageId?: string;
-        };
-        MarkChatReadDto: {
-            /** Format: uuid */
-            messageId?: string;
-        };
-        ChatUploadDto: {
-            /**
-             * @description image/png, image/jpeg, image/webp, video/mp4, video/quicktime or application/pdf.
+             * @description `transaction` is a row of the wallet's history (W27's id); `payment` is a
+             *     payment the person made, such as an unlock (the id the unlock answered).
              * @enum {string}
              */
-            contentType: "image/png" | "image/jpeg" | "image/webp" | "video/mp4" | "video/quicktime" | "application/pdf";
-            /**
-             * @description Exact size in bytes; the upload link is signed for this length. Up to
-             *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
-             */
-            contentLength: number;
+            kind: "transaction" | "payment";
+            /** Format: uuid */
+            id: string;
+        };
+        OpenSupportThreadDto: {
+            /** @description What the person wants help with. Left out: the thread opens with nothing attached. */
+            reference?: components["schemas"]["SupportReferenceDto"];
         };
         CreateMoneyRequestDto: {
             /** @description What is asked for, in kobo. */
@@ -9118,6 +9389,12 @@ export interface components {
             /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
             expectedTotalKobo: number;
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this pack, and not past its end. */
+            quoteToken: string;
+        };
+        CommunityPassDto: {
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
             quoteToken: string;
         };
         TipWalletDto: {
@@ -9214,6 +9491,14 @@ export interface components {
         PointsSettingsDto: {
             /** @description "Use wallet": when points run short, the quote shows the wallet money for the shortfall. Off by default. */
             useWallet: boolean;
+        };
+        CreateVoiceoverJobDto: {
+            /** @description The words to speak. Never stored: the job keeps only how long it was. */
+            text: string;
+            /** @description A voice id from `GET /ai-tools`. */
+            voiceId: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
+            quoteToken: string;
         };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
@@ -9375,7 +9660,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
         };
@@ -9655,7 +9940,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -9709,7 +9994,7 @@ export interface components {
         };
         EarningStreamView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             earnedKobo: number;
             sales: number;
         };
@@ -9732,7 +10017,7 @@ export interface components {
         };
         EarningContentView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             earnedKobo: number;
@@ -9746,7 +10031,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -9764,7 +10049,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -11745,6 +12030,80 @@ export interface components {
             /** @enum {string} */
             state: "expired" | "unchanged";
         };
+        ChatPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+            support?: boolean | null;
+        };
+        ChatAttachment: {
+            url: string | null;
+            contentType: string;
+            bytes: number;
+            name: string | null;
+        };
+        MoneyRequestView: {
+            id: string;
+            chatId: string;
+            messageId: string | null;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            requesterWawuId: string;
+            payerWawuId: string;
+            amountKobo: number;
+            memo: string | null;
+            /** @enum {string} */
+            status: "pending" | "paid" | "cancelled" | "declined";
+            paying: boolean;
+            createdAt: string;
+            resolvedAt: string | null;
+        };
+        ChatMessage: {
+            id: string;
+            chatId: string;
+            senderWawuId: string;
+            mine: boolean;
+            /** @enum {string} */
+            kind: "video" | "image" | "text" | "file" | "money_request";
+            text: string | null;
+            attachment: components["schemas"]["ChatAttachment"] | null;
+            moneyRequest: components["schemas"]["MoneyRequestView"] | null;
+            clientMessageId: string | null;
+            createdAt: string;
+            /** @enum {string|null} */
+            readState: "read" | "sent" | null;
+        };
+        ChatSummary: {
+            id: string;
+            other: components["schemas"]["ChatPerson"];
+            createdAt: string;
+            lastActivityAt: string;
+            lastMessage: components["schemas"]["ChatMessage"] | null;
+            unreadCount: number;
+            myLastReadAt: string | null;
+            otherLastReadAt: string | null;
+            canMessage: boolean;
+        };
+        ChatSummaryPage: {
+            items: components["schemas"]["ChatSummary"][];
+            nextCursor: string | null;
+        };
+        ChatMessagePage: {
+            items: components["schemas"]["ChatMessage"][];
+            nextCursor: string | null;
+        };
+        ChatReadMark: {
+            chatId: string;
+            lastReadAt: string | null;
+            lastReadMessageId: string | null;
+            unreadCount: number;
+        };
+        ChatUpload: {
+            uploadUrl: string;
+            key: string;
+        };
         EventSpeakerView: {
             name: string;
             title: string | null;
@@ -12597,6 +12956,18 @@ export interface components {
             popularSearches: string[];
             suggestedCreators: components["schemas"]["CreatorProfile"][];
         };
+        SearchPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            avatarUrl: string | null;
+            field: string | null;
+            verification: components["schemas"]["VerificationState"];
+            following: boolean;
+        };
+        SearchPeople: {
+            items: components["schemas"]["SearchPerson"][];
+        };
         ClosestSearchResult: {
             items: components["schemas"]["ContentPieceResponse"][];
         };
@@ -12951,78 +13322,16 @@ export interface components {
             eventId: string;
             userSaved: boolean;
         };
-        ChatPerson: {
-            wawuId: string;
-            name: string;
-            handle: string | null;
-            avatarUrl: string | null;
-            verification: components["schemas"]["VerificationState"];
-        };
-        ChatAttachment: {
-            url: string | null;
-            contentType: string;
-            bytes: number;
-            name: string | null;
-        };
-        MoneyRequestView: {
+        SupportReferenceView: {
+            /** @enum {string} */
+            kind: "transaction" | "payment";
             id: string;
+            reference: string;
+        };
+        SupportThreadView: {
             chatId: string;
+            reference: components["schemas"]["SupportReferenceView"];
             messageId: string | null;
-            /** @enum {string} */
-            direction: "outgoing" | "incoming";
-            requesterWawuId: string;
-            payerWawuId: string;
-            amountKobo: number;
-            memo: string | null;
-            /** @enum {string} */
-            status: "pending" | "paid" | "cancelled" | "declined";
-            paying: boolean;
-            createdAt: string;
-            resolvedAt: string | null;
-        };
-        ChatMessage: {
-            id: string;
-            chatId: string;
-            senderWawuId: string;
-            mine: boolean;
-            /** @enum {string} */
-            kind: "video" | "image" | "text" | "file" | "money_request";
-            text: string | null;
-            attachment: components["schemas"]["ChatAttachment"] | null;
-            moneyRequest: components["schemas"]["MoneyRequestView"] | null;
-            clientMessageId: string | null;
-            createdAt: string;
-            /** @enum {string|null} */
-            readState: "read" | "sent" | null;
-        };
-        ChatSummary: {
-            id: string;
-            other: components["schemas"]["ChatPerson"];
-            createdAt: string;
-            lastActivityAt: string;
-            lastMessage: components["schemas"]["ChatMessage"] | null;
-            unreadCount: number;
-            myLastReadAt: string | null;
-            otherLastReadAt: string | null;
-            canMessage: boolean;
-        };
-        ChatSummaryPage: {
-            items: components["schemas"]["ChatSummary"][];
-            nextCursor: string | null;
-        };
-        ChatMessagePage: {
-            items: components["schemas"]["ChatMessage"][];
-            nextCursor: string | null;
-        };
-        ChatReadMark: {
-            chatId: string;
-            lastReadAt: string | null;
-            lastReadMessageId: string | null;
-            unreadCount: number;
-        };
-        ChatUpload: {
-            uploadUrl: string;
-            key: string;
         };
         TgifDayView: {
             date: string;
@@ -13118,6 +13427,7 @@ export interface components {
             handle: string | null;
             avatarUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+            support?: boolean | null;
         };
         InboxChat: {
             chatId: string;
@@ -13300,7 +13610,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "paid_question" | "profile" | "transaction";
+            kind: "community" | "content" | "transaction" | "paid_question" | "profile";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -13596,6 +13906,42 @@ export interface components {
             /** @enum {string|null} */
             badge: "popular" | "best_value" | null;
         };
+        CommunityPassView: {
+            communityId: string;
+            sellsPass: boolean;
+            priceKobo: number | null;
+            periodDays: number;
+            passUntil: string | null;
+            active: boolean;
+            canRenew: boolean;
+            canBuy: boolean;
+            isHost: boolean;
+        };
+        CommunityPassQuoteView: {
+            communityId: string;
+            title: string;
+            host: components["schemas"]["MoneyPartyView"];
+            priceKobo: number;
+            periodDays: number;
+            passUntil: string | null;
+            newPassUntil: string;
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        CommunityPassPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            communityId: string;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            priceKobo: number;
+            passUntil: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            paidAt: string | null;
+        };
         UnlockWalletQuoteView: {
             contentId: string;
             title: string;
@@ -13813,6 +14159,7 @@ export interface components {
             balancePoints: number;
             shortfallPoints: number;
             useWallet: boolean;
+            quoteToken: string;
             canRun: boolean;
             cap: components["schemas"]["PointsCapView"] | null;
             wallet: components["schemas"]["PointsShortfallOfferView"] | null;
@@ -13837,6 +14184,51 @@ export interface components {
         };
         PointsSettingsView: {
             useWallet: boolean;
+        };
+        AiVoiceView: {
+            id: string;
+            name: string;
+            description: string;
+        };
+        AiToolView: {
+            /** @enum {string} */
+            id: "voiceover";
+            action: string;
+            name: string;
+            description: string;
+            /** @enum {string} */
+            unit: "minute";
+            costPointsPerUnit: number;
+            enabled: boolean;
+            input: {
+                maxCharacters: number;
+                charactersPerUnit: number;
+            };
+            voices: components["schemas"]["AiVoiceView"][];
+        };
+        AiToolCapsView: {
+            dailyPoints: number;
+            maxCharactersPerJob: number;
+            maxAudioMinutesPerJob: number;
+        };
+        AiToolsView: {
+            tools: components["schemas"]["AiToolView"][];
+            caps: components["schemas"]["AiToolCapsView"];
+        };
+        AiJobView: {
+            id: string;
+            /** @enum {string} */
+            tool: "voiceover";
+            /** @enum {string} */
+            state: "failed" | "done" | "working";
+            voiceId: string;
+            characters: number;
+            units: number;
+            costPoints: number;
+            audioUrl: string | null;
+            message: string | null;
+            createdAt: string;
+            finishedAt: string | null;
         };
         AdminWaitlistRegistrationView: {
             id: string;
@@ -19787,7 +20179,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -20993,6 +21385,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ChatController_list: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummaryPage"];
+                };
+            };
+        };
+    };
+    ChatController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenChatDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummary"];
+                };
+            };
+        };
+    };
+    ChatController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSummary"];
+                };
+            };
+        };
+    };
+    ChatController_messages: {
+        parameters: {
+            query?: {
+                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
+                cursor?: string;
+                /** @description 1 to 100, 20 when left out. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessagePage"];
+                };
+            };
+        };
+    };
+    ChatController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+        };
+    };
+    ChatController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkChatReadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatReadMark"];
+                };
+            };
+        };
+    };
+    ChatController_presignAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatUploadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatUpload"];
                 };
             };
         };
@@ -23883,6 +24444,31 @@ export interface operations {
             };
         };
     };
+    SearchResponseController_people: {
+        parameters: {
+            query: {
+                /**
+                 * @description The accounts to describe, as a comma-separated list of ids (1 to 50), in
+                 *     the order the answer should keep.
+                 */
+                ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPeople"];
+                };
+            };
+        };
+    };
     SearchResponseController_closest: {
         parameters: {
             query: {
@@ -24253,7 +24839,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCommunityDto"];
+                "application/json": components["schemas"]["CreateRoomDto"];
             };
         };
         responses: {
@@ -24447,6 +25033,8 @@ export interface operations {
                         communityId: string;
                         /** Format: date-time */
                         joinedAt: string | null;
+                        passUntil?: string | null;
+                        canRenew?: boolean | null;
                     } | null;
                 };
             };
@@ -25153,31 +25741,7 @@ export interface operations {
             };
         };
     };
-    ChatController_list: {
-        parameters: {
-            query?: {
-                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
-                cursor?: string;
-                /** @description 1 to 100, 20 when left out. */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSummaryPage"];
-                };
-            };
-        };
-    };
-    ChatController_open: {
+    SupportController_open: {
         parameters: {
             query?: never;
             header?: never;
@@ -25186,7 +25750,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OpenChatDto"];
+                "application/json": components["schemas"]["OpenSupportThreadDto"];
             };
         };
         responses: {
@@ -25195,129 +25759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatSummary"];
-                };
-            };
-        };
-    };
-    ChatController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                chatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSummary"];
-                };
-            };
-        };
-    };
-    ChatController_messages: {
-        parameters: {
-            query?: {
-                /** @description Opaque: send back the `nextCursor` of the previous page as given. */
-                cursor?: string;
-                /** @description 1 to 100, 20 when left out. */
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                chatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatMessagePage"];
-                };
-            };
-        };
-    };
-    ChatController_send: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                chatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatSendMessageDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatMessage"];
-                };
-            };
-        };
-    };
-    ChatController_markRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                chatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkChatReadDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatReadMark"];
-                };
-            };
-        };
-    };
-    ChatController_presignAttachment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                chatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatUploadDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatUpload"];
+                    "application/json": components["schemas"]["SupportThreadView"];
                 };
             };
         };
@@ -26727,6 +27169,210 @@ export interface operations {
             };
         };
     };
+    CommunityPassController_pass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassView"];
+                };
+            };
+        };
+    };
+    CommunityPassController_buy: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityPassDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassPurchaseView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CommunityPassController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CommunityPassController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     TipWalletController_quote: {
         parameters: {
             query: {
@@ -28114,6 +28760,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PointsSettingsView"];
+                };
+            };
+        };
+    };
+    AiToolsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiToolsView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createVoiceover: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVoiceoverJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_readJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
                 };
             };
         };

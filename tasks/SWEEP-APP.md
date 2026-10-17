@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 144, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 149, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged. The rows of SHARED-06 wait for batch 7 to merge (the code they name is on its branch until then). The rows of AUTH-06, VERIFY-01 and FIX-51 wait for batch 9 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -191,6 +191,11 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | WALLET-05 | L3 | W46 (`AddMoneyScreen.tsx:350`): the built head sits about 80 px higher than the board's. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-05.md`, L3 |
 | WALLET-05 | L4 | Unclear, not reproduced: once, in the first dark pass, the second withdrawal after a completed first one did not open the PIN sheet within 20 s. Re-run in isolation (same sequence, dark) it passed. Listed so the lead can decide. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-05.md`, L4 |
 | WALLET-13 | L1 | `src/features/wallet/earnings/EarningsScreen.tsx:268-276` (shared `TransactionRow`, fenced): each By content amount shows ".00" on whole naira (+₦4,250.00) where the board draws +₦42,000 with none. `TransactionRow` has no decimals option; a fix needs a SHARED-CHANGES row (a `decimals` prop). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-13.md`, finding 1 |
+| EXPLORE-02 | EX02 F2 | Search room rows show Ask or Join again on a later visit for a room already asked or joined: `CommunityResponse` has no membership, "Requested" is screen state. No double write (a repeated `POST /communities/:id/join` returns 200 and leaves one membership row), only a stale label. Needs the Hub to serve the caller's membership on search; there is no BACKEND_GAPS row for it yet (file it as G-EXPLORE-02-n). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/P1-EX02.md`, Findings 2 |
+| ME-08 | EX02 F3 | M23 draws a "38 / 5000" counter under the description (the board has none); M24 draws the naira sign apart from the figure ("₦ 3,000", the board "₦3,000"). Styling only. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/P1-EX02.md`, Findings 3 |
+| EXPLORE-02 | EX02 F4 | `SearchField` (`src/features/search/parts.tsx`) is a third copy of the search pill (SHARED-CHANGES EXPLORE-02 #2; the swap to one shared field is WALLET-04 #1). Keep the row open until the shared field exists, then delete the copy. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/P1-EX02.md`, Findings 4 |
+| ME-07 | LOW-2 | M27 says "or take something down" but no screen takes a live or in-review piece down (rows are not pressed, G-ME-07-1 and G-ME-07-2); Open library leads to a list with no such action. Needs the designer. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-07.md`, Findings LOW-2 |
+| ME-07 | LOW-5 | Long titles truncate in M26's bar ("The Freelancer Pricing Playbo..."); the board's title is short. `RejectedScreen.tsx`, the CreateFrame title. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-07.md`, Findings LOW-5 |
 
 ## Builder report
 

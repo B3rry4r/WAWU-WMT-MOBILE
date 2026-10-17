@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 20, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 23, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the INBOX-12 rows wait for batch 4 to merge; the other rows' source tasks are merged. The WALLET-40 rows wait for batch 7 to merge (the code they name is on its branch until then). The HOME-17 rows wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -67,6 +67,9 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | HOME-17 | info 3 | Backend (note, no change asked): a second server follows an edit of a setting within 15 s (`PLAN_SETTINGS_REFRESH_SECONDS`, TIER-06's design). For the TGIF time that can mean up to 15 s early or late on one server, never a second notice (the once-a-day marker). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-17.md`, finding 3 (info) |
 | INBOX-20 | L1 | The shared pay sheet's header (`src/components/pay-sheet/PaySheet.tsx:383`, `Header`) draws an empty rounded tile before the title on the "Not enough" sheets of a request ("Pay Ada", `RequestPaySheet.tsx:56`) and a send ("Send to Ada Seeded", `ChatSendScreen.tsx:401`); nothing is passed as `image`. Filed as SHARED-CHANGES INBOX-13 #3 (open). The credits short state no longer uses the sheet. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F2 and round 2 notes |
 | INBOX-19 | L1 | Known limit (G-880): the "You sent" bubble is kept on the sender's phone only (`src/features/chat/sends.ts`). A send whose answer was lost and never retried has no bubble, the receiver never sees one, and a new phone loses it. It survives a cold restart. Needs the Hub to write a chat message for a send. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F4 |
+| INBOX-24 | L3 | `POST /communities/rooms` still creates a new private room with no `passPriceKobo` (`src/community/rooms/community-rooms.service.ts:96-107`); that room keeps host approval, which R-63 says does not exist. INBOX-14 must always send the price; the server does not require it. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-24.md`, Findings 3 |
+| INBOX-24 | R2-1 | G-INBOX-24-6: in a pass room a removed member becomes a pending request (round 2), so the host's list of requests shows a person the host removed; and a removal in the seconds between a pay and its delivery is undone by the delivery (no money moves in that window). Decide whether the list tells the two apart, and close the window. | merge-notes.md, 17 Oct 21:25 (INBOX-24 round 2) |
+| INBOX-24 | G-1 | G-INBOX-24-1: the pass reminder `community_pass_ending` is pushed and no Z3 switch covers it (R-63 asks for the reminder). It is on the push-policy spec's short list of kinds the owner confirms. If the owner wants a switch (for example "Community messages"), it is one line in `SETTINGS_GATE`. | BACKEND_GAPS.md, G-INBOX-24-1 (builder, low) |
 
 ## Builder report
 

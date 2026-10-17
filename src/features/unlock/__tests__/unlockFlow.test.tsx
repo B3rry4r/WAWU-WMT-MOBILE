@@ -9,7 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
  * still opening), on the real feed with the Hub as a stand-in `fetch`. The stand-in answers in the Hub's shapes, records every quote and
  * payment (headers and body), and answers a key it knows with the first payment before it looks at the PIN, as the Hub does.
  */
-jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useIsFocused: () => true, router: { push: (...args: unknown[]) => mockPush(...args) } }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => json(200, { statusCode: 200, message: 'OK', data, ...extra });
@@ -67,6 +68,11 @@ const hub = {
   wrongFirst: false,
   quoteNoWallet: false,
   reads: 0,
+  /** What POST /support/thread was sent (SUPPORT-01), and whether the Hub refuses it. */
+  support: [] as Record<string, unknown>[],
+  supportRefused: false,
+  /** While set, POST /support/thread waits for it. */
+  supportHold: null as null | Promise<void>,
   state: 'pending' as 'pending' | 'opening' | 'paid' | 'refunded',
 };
 
@@ -169,6 +175,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.reads += 1;
     return ok(unlockView(hub.state));
   }
+  if (path === '/support/thread' && method === 'POST') {
+    const body = (await request.json()) as Record<string, unknown>;
+    hub.support.push(body);
+    if (hub.supportHold) await hub.supportHold;
+    if (hub.supportRefused) return refuse(404, { message: 'We could not find that payment.' });
+    return ok({ chatId: '00000000-0000-4000-8000-0000000000c9', reference: body.reference ?? null, messageId: 'message-1' });
+  }
   throw new Error(`no answer for ${method} ${path}`);
 }) as typeof fetch;
 
@@ -204,7 +217,8 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, reads: 0, state: 'pending' });
+  Object.assign(hub, { mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
+  mockPush.mockClear();
 });
 
 afterEach(async () => {
@@ -394,11 +408,43 @@ describe('H14 to H18: paying', () => {
     await enterPin('4829');
     await screen.findByText('Paid, still opening');
     expect(screen.getByText("₦2,523.25 left your wallet and we couldn't finish opening the video. You won't be charged twice.")).toBeTruthy();
-    expect(screen.queryByText('Contact support')).toBeNull(); // SUPPORT-01 adds it (R-47)
+    expect(screen.getByRole('button', { name: 'Contact support' })).toBeTruthy(); // SUPPORT-01 adds it, as H18 draws it
     hub.state = 'paid';
     await rtl.fireEvent.press(await screen.findByText('Refresh'));
     await screen.findByText('Unlocked');
     expect(hub.pays).toHaveLength(1);
+  });
+
+  it('H18: Contact support opens the support chat with this unlock\'s payment already attached, and a tap while it is on its way asks nothing more (SUPPORT-01)', async () => {
+    hub.mode = 'opening';
+    const screen = await reachPin();
+    await enterPin('4829');
+    await screen.findByText('Paid, still opening');
+    let release = () => {};
+    hub.supportHold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Contact support' }));
+    await rtl.waitFor(() => expect(hub.support).toHaveLength(1));
+    // The first ask is on its way: a second tap finds the button busy and asks nothing.
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Contact support' }));
+    expect(hub.support).toHaveLength(1);
+    release();
+    await rtl.waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
+    expect(hub.support).toEqual([{ reference: { kind: 'payment', id: PAYMENT } }]);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/chat/[id]', params: { id: '00000000-0000-4000-8000-0000000000c9' } });
+  });
+
+  it('H18: a support chat the Hub will not open says so in the Hub\'s words and stays on the sheet (SUPPORT-01)', async () => {
+    hub.mode = 'opening';
+    hub.supportRefused = true;
+    const screen = await reachPin();
+    await enterPin('4829');
+    await screen.findByText('Paid, still opening');
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Contact support' }));
+    expect(await screen.findByText('We could not find that payment.')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByText('Paid, still opening')).toBeTruthy();
   });
 
   it('a piece taken down meanwhile is refunded by the Hub: its words are shown, the post stays locked and nothing is sent again', async () => {
