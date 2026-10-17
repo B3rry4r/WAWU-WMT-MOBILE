@@ -18,7 +18,7 @@ artboards: [H2, H4, H5, H6, H35, M35]
 ## Current state
 
 As of 16 Oct 2026 (builder, Sonnet, round 3).
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). Round 3 of the check. Mobile only, app-only.
+- **Status:** live (backend main a5e48fc, PR #141). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). Round 3 of the check. Mobile only, app-only.
 - **Built:**
   - H2, H5, H6: `src/features/feed/player/index.tsx` plays through `expo-video` (a texture view, so H5's frame can blur and grow) and `expo-audio`; `canPlay` is true, so the feed and M35 and M34 draw play, pause, scrub, back and on, and the ended preview.
   - H4: `src/features/feed/reader/index.tsx` reads the PDF in a `react-native-webview` under the title. iOS's web view shows a PDF itself. Android's does not, so `reader/pdfPage.ts` draws the pages with pdf.js 3.11.174 (pinned, from cdnjs), loaded with the file's own address as base so no CORS answer is needed. Any failure (a bad link, an HTTP error, pdf.js not reachable) opens the phone's own viewer and returns to the feed, as before.

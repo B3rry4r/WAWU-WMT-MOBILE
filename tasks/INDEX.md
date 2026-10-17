@@ -305,6 +305,7 @@ Builder and verifier are always different sessions.
 35. [FIX-41](FIX-41.md) A failed bank send that is later seen completed is put in front of a person, and a send to an unsaved account needs the name token
 36. [FIX-40](FIX-40.md) The daily limit no longer counts a held payment that was refunded
 37. [FIX-42](FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure
+38. [FIX-43](FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking
 
 ## Developer
 

@@ -45,7 +45,7 @@ describe('A21 form rules', () => {
 
   it('before saving, the bank’s name shows with no BVN claim, since the name check does not compare it (G-58)', () => {
     const form: PayoutForm = { bank: access, accountNumber: '0987654321' };
-    const ok: NameCheck = { status: 'success', data: { bankCode: access.code, bankName: access.name, accountNumber: '0987654321', accountName: 'LENNOX EMMANUEL' } };
+    const ok: NameCheck = { status: 'success', data: { bankCode: access.code, bankName: access.name, accountNumber: '0987654321', accountName: 'LENNOX EMMANUEL', nameToken: 'x' } };
     expect(nameLine(form, saved, ok)).toEqual({ kind: 'resolved', name: 'LENNOX EMMANUEL', match: null });
     expect(nameLine(form, saved, { status: 'pending' })).toEqual({ kind: 'checking' });
     expect(nameLine(form, saved, { status: 'error', unconfirmed: true, message: 'We could not confirm that account.' })).toEqual({

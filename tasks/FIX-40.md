@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-40.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). FIX-42 shares this report.
+- **Status:** live (backend main a5e48fc, PR #141). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-40.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). FIX-42 shares this report.
 - **What was wrong:** `movedSince` (`src/money/limits/money-limits.service.ts`, WALLET-23) added up every completed `out` row of the person, so a bill that failed and was refunded still used up the day. With a one-bill limit the next bill answered `403 limit_reached`. The same held for a refunded paid DM and a refunded ticket.
 - **What it does now:** a payment whose hold is `refunded` is not counted. The database allows `refunded` only with the whole price back, so a refund that is decided, waiting, sent or not yet confirmed leaves the hold `held` and the payment still counts. A completed bill, a released hold and a payment with no hold count as before. Window rules are unchanged (Lagos day and month).
 - **Not changed:** `AccountLimits.movedToday` (the provider's own daily limit on the account) still counts a refunded payment, because the provider counts the debit. No route, schema or contract change.

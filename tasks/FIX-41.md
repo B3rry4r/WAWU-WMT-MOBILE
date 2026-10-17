@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-41.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`).
+- **Status:** live (backend main a5e48fc, PR #141). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-41.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`).
 - **Id and order:** filed after-launch at order 290, the way FIX-38 (289) is (the task check keeps launch orders before full QA); it follows WALLET-09, which is launch.
 - **History:** the builder report is in [history/FIX-41.md](history/FIX-41.md).
 - **Open findings:** none yet. Two things left for the sweep are in tasks/SWEEP-MONEY.md (F1, F2).
