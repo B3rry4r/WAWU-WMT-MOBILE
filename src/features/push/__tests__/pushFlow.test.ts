@@ -341,7 +341,7 @@ describe('how a push looks while the app is open and on Android', () => {
   it('makes the default channel, silent until Z2 Sound is on', async () => {
     await signedInAs('access-A');
     await syncPush({ ask: true });
-    expect(mockPhone.channels.get('default')).toMatchObject({ name: 'WAWU', importance: 4, sound: null });
+    expect(mockPhone.channels.get('default')).toMatchObject({ name: 'Who Made This?', importance: 4, sound: null });
     mockVault.set(SOUND_KEY, 'on');
     await syncPush({ ask: true });
     expect(mockPhone.channels.get('default')).toMatchObject({ sound: 'default' });

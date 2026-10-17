@@ -5,6 +5,7 @@ import type { ChipItem } from '@/components/FilterChips';
 import { formatMoney } from '@/components/Money';
 import type { PillTone } from '@/components/StatusPill';
 import { hueFor } from '@/features/feed/model';
+import { APP_NAME_COPY } from '@/lib/appName';
 
 import type { HistoryFilter, Transaction } from '../api/history';
 import { clockTime, dayKey, dayLabel, longDateTime } from './lagosTime';
@@ -170,11 +171,10 @@ export const OWN_WALLET = 'Naira wallet';
 
 /**
  * The words of a debit's parts, BRIEF W27: the amount, the provider's charge, WAWU's fee (when there is one) and the
- * total. "Fintava's charge" and "WAWU's fee" are the brief's words, and the Hub's own receipt (W41, W42) prints the same,
- * so the two receipts agree. R-45 moved wallets to Nuvion, so the provider's name may need to follow in all three
- * places (Default (agent), owner may override).
+ * total. The provider's part reads "Bank charge", never the provider's name (R-53, DV2-COPY), and WAWU's part keeps
+ * "WAWU's fee" (R-10); the send screens and the receipts take both from here.
  */
-export const FEE_LABELS = { amount: 'Amount', provider: "Fintava's charge", wawu: "WAWU's fee", total: 'Total' } as const;
+export const FEE_LABELS = { amount: 'Amount', provider: 'Bank charge', wawu: "WAWU's fee", total: 'Total' } as const;
 
 type StatusLook = { label: string; tone: PillTone; icon: IconName };
 const STATUS_LOOK: Record<Transaction['status'], StatusLook> = {
@@ -263,7 +263,7 @@ export function receiptOf(row: Transaction): Receipt {
 export function shareText(row: Transaction): string {
   const receipt = receiptOf(row);
   const closing = ['date', 'reference'];
-  const out = ['Who Made This receipt', receipt.headline, `${formatMoney(receipt.amountKobo)} ${receipt.status.label.toLowerCase()}`];
+  const out = [`${APP_NAME_COPY} receipt`, receipt.headline, `${formatMoney(receipt.amountKobo)} ${receipt.status.label.toLowerCase()}`];
   for (const line of receipt.lines) if (!closing.includes(line.key)) out.push(`${line.label}: ${line.value}`);
   if (receipt.cost) for (const part of receipt.cost) out.push(`${part.label}: ${formatMoney(part.kobo)}`);
   for (const line of receipt.lines) if (closing.includes(line.key)) out.push(`${line.label}: ${line.value}`);

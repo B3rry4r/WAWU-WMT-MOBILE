@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { getAccessToken, isCurrentSessionToken } from '@/api/session';
 import { loadPrefs } from '@/features/settings/devicePrefs';
+import { APP_NAME_COPY } from '@/lib/appName';
 
 import { registerPushToken, removePushToken } from './api';
 import { forgetToken, markAsked, rememberToken, rememberedToken, wasAsked } from './storage';
@@ -30,7 +31,7 @@ async function ensureChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   const { sound } = await loadPrefs();
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-    name: 'WAWU',
+    name: APP_NAME_COPY,
     importance: Notifications.AndroidImportance.HIGH,
     // Z2's Sound switch is off until the person turns it on. Android fixes a channel's sound when the
     // channel is made, so this is the switch's value on the first start.

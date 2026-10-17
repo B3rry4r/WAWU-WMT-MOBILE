@@ -4,7 +4,7 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useWawu } from '@/theme';
 
 /** The app's name as a person reads it (R-37). The logo spells it in capitals; the text does not. */
-export const APP_NAME = 'Who Made This';
+export const APP_NAME = 'Who Made This?';
 
 export type BrandLayout = 'horizontal' | 'vertical' | 'submark';
 

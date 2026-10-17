@@ -153,7 +153,7 @@ describe('the professionals routes', () => {
   it('P2 route: the profile route reads the listing named in the link', async () => {
     mockParams = { id: 'p1' };
     await rtl.render(wrap(<ProfileRoute />));
-    expect(await rtl.screen.findByText('Issued by ICAN · checked by WAWU')).toBeTruthy();
+    expect(await rtl.screen.findByText('Issued by ICAN · checked by Who Made This?')).toBeTruthy();
     expect(rtl.screen.getByText('I help creators file taxes.')).toBeTruthy();
   });
 });

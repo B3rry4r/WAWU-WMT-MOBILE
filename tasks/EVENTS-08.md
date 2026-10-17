@@ -29,12 +29,12 @@ As of 17 Oct 2026.
 - **Decisions the task did not name (change if the lead rules otherwise):**
   - Copy follows the lead's call-off ruling (EVENTS-10: the buyer gets everything back, the provider's charge included; the wallet provider is Nuvion, R-39 and R-45, and nothing here is built for Fintava), so E25 reads "All 64 buyers get their money back." and E11 does not say "ticket price"; BRIEF E25 and E11 (R-10 default) are superseded and not edited here.
   - A void ticket still shows no QR or code (EVENTS-03's tested behaviour); the board draws a dimmed QR.
-  - E17's "Taken down 20 Sep" has no date source (G-831): the row says "Taken down".
+  - E17's "Taken down 20 Sep" has no date source (G-EVENTS-08-2): the row says "Taken down".
   - `tests`: `host/__tests__/hostScreens.test.tsx` had one assertion that the My events tab is not drawn until this task; it now expects the three tabs.
 - **Not built (filed, not drawn, R-47):** E18's Edit event and Ticket types rows. Two Hub rules decide them (G-833): every `PATCH` sends a live event back to review, and `PUT /tickets` is refused once any tier has sold. They need an owner answer before the wizard's steps are mounted in edit mode.
-- **Gaps and shared changes filed:** BACKEND_GAPS G-830 to G-833; SHARED-CHANGES EVENTS-08 #1 (a `danger` Button variant; `DangerButton` stands in), #2, #3 (contract).
+- **Gaps and shared changes filed:** BACKEND_GAPS G-EVENTS-08-1, G-EVENTS-08-2, G-832 and G-833; SHARED-CHANGES EVENTS-08 #1 (a `danger` Button variant; `DangerButton` stands in), #2, #3 (contract).
 - **Pictures:** 390 px, light and dark, from the stack's web export, beside the boards (`render_design.py E17 E18 E25 E11`): scratch `events-08-b/pics/` (E17, E18, E25, E25-result, links, E11).
-- **Checks (local, mobile CI is off):** full run 194 suites, 3380 tests passed; typecheck, lint, gates (0 fail, 7 warn: two new PROVISIONAL, G-830), baseline and tasks all exit 0; the 21 new tests in `organiser/__tests__`. Backend: typecheck, lint, contract:build; the specs run in GitHub. No Fintava code was touched, run or tested; the stack's Hub ran with the repo default provider setting at a closed port and made no provider call.
+- **Checks (local, mobile CI is off):** full run 194 suites, 3380 tests passed; typecheck, lint, gates (0 fail, 7 warn: two new PROVISIONAL, G-EVENTS-08-1), baseline and tasks all exit 0; the 21 new tests in `organiser/__tests__`. Backend: typecheck, lint, contract:build; the specs run in GitHub. No Fintava code was touched, run or tested; the stack's Hub ran with the repo default provider setting at a closed port and made no provider call.
 - **Next:** a verifier; the lead rules the two decisions above and G-833.
 
 ## Design v2 update (16 Oct 2026)

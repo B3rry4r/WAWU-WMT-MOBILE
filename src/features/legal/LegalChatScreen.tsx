@@ -23,6 +23,7 @@ import {
   failureText,
   headerOf,
   isLegalLiveEvent,
+  LEGAL_NAME,
   needsAnotherAsk,
   placeholderOf,
   tapsOf,
@@ -37,7 +38,7 @@ type Working = { kind: 'message'; shown: string } | { kind: 'ask' } | { kind: 's
 type Problem = { text: string; retry: (() => void) | null };
 
 /**
- * S14 to S17: the WAWU Legal assistant. One conversation (`GET /legal/assistant/{id}`) drawn as it stands: the
+ * S14 to S17: the Who Made This? Legal assistant. One conversation (`GET /legal/assistant/{id}`) drawn as it stands: the
  * assistant's opening lines and its taps (S14), its questions and the person's answers (S15), the brief to check
  * and "Send to a consultant" (S16), then the consultant's conversation once the brief is sent, where a consultant
  * joins and the assistant stops (S17). Book (S17's card, S18) is LEGAL-04's.
@@ -108,7 +109,7 @@ export function LegalChatScreen() {
   } else {
     body = (
       <>
-        <ChatBar header={{ title: 'WAWU Legal', sub: '', human: false }} onBack={leave} />
+        <ChatBar header={{ title: LEGAL_NAME, sub: '', human: false }} onBack={leave} />
         <View style={styles.fill}>
           {query.isError ? <Failed error={query.error} onRetry={() => void refetch()} /> : <LoadingBubbles />}
         </View>

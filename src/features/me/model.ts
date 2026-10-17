@@ -1,6 +1,6 @@
 import { formatMoney } from '@/components/Money';
 import { productsMeterCaption } from '@/components/ProductsMeter';
-import { APP_NAME } from '@/components/BrandMark';
+import { APP_NAME_COPY } from '@/lib/appName';
 import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
 import { profileLink } from '@/lib/appLinks';
@@ -102,7 +102,7 @@ export function countsOf(stats: { followerCount: number; followingCount: number;
 
 /** What the share sheet carries: who this is and their profile link, `https://wawuafrica.com/u/<handle>` (LINKS-01, A2). */
 export function profileShareText(name: string, handle: string | null | undefined): string {
-  const who = name ? `${name} on ${APP_NAME}` : APP_NAME;
+  const who = name ? `${name} on ${APP_NAME_COPY}` : APP_NAME_COPY;
   const bare = (handle ?? '').trim().replace(/^@+/, '');
   return bare ? `${who}\n${profileLink(bare)}` : who;
 }
@@ -209,13 +209,13 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 /** Lagos is UTC+1 all year (no daylight saving), so a month is read an hour ahead of UTC (wawu-backend CONVENTIONS section 7). */
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 
-/** "On Who Made This since March 2025" (M4, with the app's name, R-37), from the date the profile was made. */
+/** "On Who Made This? since March 2025" (M4, with the app's name, R-37, R-69), from the date the profile was made. */
 export function memberSinceLine(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const at = Date.parse(iso);
   if (Number.isNaN(at)) return null;
   const lagos = new Date(at + LAGOS_OFFSET_MS);
-  return `On ${APP_NAME} since ${MONTHS[lagos.getUTCMonth()]} ${lagos.getUTCFullYear()}`;
+  return `On ${APP_NAME_COPY} since ${MONTHS[lagos.getUTCMonth()]} ${lagos.getUTCFullYear()}`;
 }
 
 /** The year a role started or ended: the Hub sends a month, `YYYY-MM`. */

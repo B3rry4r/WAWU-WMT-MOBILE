@@ -34,7 +34,7 @@ As of 17 Oct 2026, round 3 built by a Sonnet builder (T1), after round 2 and the
 ## Read first
 
 - `docs/WORKFLOW.md`, `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`
-- `BACKEND_GAPS.md` G-812 and G-827 (the two links this task closes), G-67 (the receipt link)
+- `BACKEND_GAPS.md` G-812 and G-DV2-05-1 (the two links this task closes), G-67 (the receipt link)
 
 ## Goal
 
@@ -68,7 +68,7 @@ How to read it: **Today** is where the link lands before this task, **Now** afte
 | A3 | Room link `wawu/c/<slug>` (the Hub's `link` on a room) | Hub issues; the app shows none today | Text with no scheme; the app route `/c/<slug>` exists for `wawu://c/<slug>` only. **Broken** | `https://wawuafrica.com/c/<slug>` opens the room (app route `/c/<slug>` already existed), or the fallback page; the one link-building helper is `roomLink(slug)`. The app shows no room link today (nothing to change on screen), the Hub's `link` field still says `wawu/c/<slug>`. **Fixed** (round 2) |
 | A4 | A work's own link in its share | App share | The creator's own address, or none. Works as typed | Unchanged |
 | A5 | TGIF "WhatsApp" `https://wa.me/?text=` | App | Outbound to WhatsApp. Works | Unchanged |
-| R1 | Hosted selfie return (Nuvion `redirect_url`) | Hub, from the app | None sent (G-827): the person switched back by hand. **Broken** | `https://wawuafrica.com/selfie`: opens the app on the selfie step, or the fallback page with an "Open the app" button. **Fixed** once the Hub lists it; until then the app starts the selfie again with no address (round 3) |
+| R1 | Hosted selfie return (Nuvion `redirect_url`) | Hub, from the app | None sent (G-DV2-05-1): the person switched back by hand. **Broken** | `https://wawuafrica.com/selfie`: opens the app on the selfie step, or the fallback page with an "Open the app" button. **Fixed** once the Hub lists it; until then the app starts the selfie again with no address (round 3) |
 | R2 | Join checkout return `${origin}/join/paid` | Web, to Flutterwave | Open. Works | Unchanged |
 | R3 | Web checkout return `${origin}/payment/return` | Web, to Flutterwave | Closed in join-only, but every web flow that starts it is closed too | Unchanged (web paused, R-49) |
 | R4 | Policy record `url` `https://wawuafrica.com/privacy` (wawu-id seed) | wawu-id data | Closed, and it is the privacy settings page, not the policy. Nothing in the app or the web reads it | Unchanged (low) |

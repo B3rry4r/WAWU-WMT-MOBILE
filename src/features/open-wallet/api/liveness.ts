@@ -60,7 +60,7 @@ export async function fetchLiveness(): Promise<Liveness> {
  * POST /money/identity/liveness: starts the hosted selfie or answers the one already running. The return address is
  * the website's own `/selfie` (an app link, LINKS-01): the Hub takes an https address only when its
  * `NUVION_LIVENESS_REDIRECT_ORIGINS` lists it, so that list is set whenever `NUVION_HOSTED_LIVENESS` is on (the Hub
- * logs an error at boot when it is not, G-827). The selfie page then sends the person back to the app, or to the
+ * logs an error at boot when it is not, G-DV2-05-1). The selfie page then sends the person back to the app, or to the
  * website's "Open in the WAWU app" page, when they finish. A Hub that does not list it yet answers
  * `document_request_invalid` for the address; the selfie is then started once more with no address (the old
  * behaviour), so this step never breaks on a Hub without the setting.

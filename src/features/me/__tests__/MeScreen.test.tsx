@@ -181,7 +181,7 @@ describe('M1 · Me', () => {
     await boot();
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-share'));
-    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This\nhttps://wawuafrica.com/u/lennox' });
+    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This?\nhttps://wawuafrica.com/u/lennox' });
 
     share.mockRejectedValueOnce(new Error('no share sheet'));
     await fireEvent.press(screen.getByTestId('me-share'));
@@ -229,7 +229,7 @@ describe('M1 · Me', () => {
     expect(screen.getByTestId('me-works-room-0')).toBeTruthy();
     expect(screen.getByTestId('me-works-room-1')).toBeTruthy();
     expect(screen.getByTestId('me-about-location')).toHaveTextContent('Lagos, Nigeria');
-    expect(screen.getByTestId('me-about-since')).toHaveTextContent('On Who Made This since March 2025');
+    expect(screen.getByTestId('me-about-since')).toHaveTextContent('On Who Made This? since March 2025');
     expect(screen.getByTestId('me-about-website')).toHaveTextContent('lennoxfilms.com');
     expect(screen.getByText('Lennox Films · 2021 to now')).toBeTruthy();
     expect(screen.getByText('Pricing')).toBeTruthy();

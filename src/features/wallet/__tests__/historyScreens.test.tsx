@@ -560,7 +560,7 @@ describe('W27 · Transaction detail', () => {
       expect(line.getByLabelText(spoken)).toBeTruthy();
     };
     part('amount', 'Amount', '17,000 naira');
-    part('provider', "Fintava's charge", '53 naira');
+    part('provider', "Bank charge", '53 naira');
     part('wawu', "WAWU's fee", '31 naira');
     part('total', 'Total', '17,084 naira');
     expect(app.screen.getByText('Test Bank ••5521')).toBeTruthy();
@@ -572,7 +572,7 @@ describe('W27 · Transaction detail', () => {
     const app = await detail('bill-1');
     expect(await app.screen.findByTestId('detail-cost')).toBeTruthy();
     expect(app.screen.queryByTestId('detail-cost-wawu')).toBeNull();
-    expect(rtl.within(app.screen.getByTestId('detail-cost-provider')).getByText("Fintava's charge")).toBeTruthy();
+    expect(rtl.within(app.screen.getByTestId('detail-cost-provider')).getByText("Bank charge")).toBeTruthy();
     expect(rtl.within(app.screen.getByTestId('detail-cost-provider')).getByLabelText('0 naira')).toBeTruthy();
     expect(rtl.within(app.screen.getByTestId('detail-cost-total')).getByLabelText('4,500 naira')).toBeTruthy();
   });

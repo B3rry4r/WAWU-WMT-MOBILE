@@ -1,6 +1,7 @@
 import type { ChipItem } from '@/components/FilterChips';
 import type { ProField } from '@/features/pro-listing/api';
 import { CREDENTIAL_KINDS } from '@/features/pro-listing/model';
+import { APP_NAME_COPY } from '@/lib/appName';
 
 import type { DirectoryEntry, DirectoryPage, DirectoryProfile, FieldId } from './api';
 
@@ -69,11 +70,11 @@ export function credentialTitle(kind: string): string | null {
 }
 
 /**
- * The line under the credential: who issued it, and that a person at WAWU checked it. Only an approved application is
+ * The line under the credential: who issued it, and that a person at Who Made This? checked it. Only an approved application is
  * listed (the Hub's directory reads `status: approved`), and approving is a person's review in admin, so the check is a
  * fact for every listing shown.
  */
 export function credentialLine(issuingBody: string | null | undefined): string {
   const issuer = issuingBody?.trim();
-  return issuer ? `Issued by ${issuer} · checked by WAWU` : 'Checked by WAWU';
+  return issuer ? `Issued by ${issuer} · checked by ${APP_NAME_COPY}` : `Checked by ${APP_NAME_COPY}`;
 }

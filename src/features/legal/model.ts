@@ -1,6 +1,10 @@
 import { isApiError } from '@/api/errors';
+import { APP_NAME_COPY } from '@/lib/appName';
 
 import type { LegalBrief, LegalMessage, LegalQuickReply, LegalThread } from './api';
+
+/** The assistant's name in a chat header (S14 to S17): the app's name, then Legal (R-69). */
+export const LEGAL_NAME = `${APP_NAME_COPY} Legal`;
 
 /** The consultant's first name ("Adaora" for "Adaora Nnaji"), or null when the Hub holds no name. */
 export function firstNameOf(name: string | null | undefined): string | null {
@@ -59,10 +63,10 @@ export function hasSpoken(thread: LegalThread): boolean {
 /** The bar's name and the line under it, from where the conversation stands. */
 export function headerOf(thread: LegalThread): ChatHeader {
   if (thread.consultant) {
-    return { title: thread.consultant.name?.trim() || 'Consultant', sub: thread.consultant.name?.trim() ? 'Consultant · WAWU Legal' : 'WAWU Legal', human: true };
+    return { title: thread.consultant.name?.trim() || 'Consultant', sub: thread.consultant.name?.trim() ? `Consultant · ${LEGAL_NAME}` : LEGAL_NAME, human: true };
   }
-  if (thread.stage === 'sent') return { title: 'WAWU Legal', sub: 'Waiting for a consultant', human: false };
-  return { title: 'WAWU Legal', sub: hasSpoken(thread) ? 'Assistant' : 'Assistant · a consultant takes over', human: false };
+  if (thread.stage === 'sent') return { title: LEGAL_NAME, sub: 'Waiting for a consultant', human: false };
+  return { title: LEGAL_NAME, sub: hasSpoken(thread) ? 'Assistant' : 'Assistant · a consultant takes over', human: false };
 }
 
 /** The composer's hint: S14 "Type your message", S16 "Add anything else", S17 "Message Adaora". */

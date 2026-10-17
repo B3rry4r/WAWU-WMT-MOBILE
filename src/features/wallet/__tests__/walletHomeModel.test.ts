@@ -128,7 +128,7 @@ describe('a recent row', () => {
     expect(recentRow(row(), now).groupKey).toBeUndefined();
   });
 
-  it('shows money in as a plus, with the person’s avatar when they are on Who Made This', () => {
+  it('shows money in as a plus, with the person’s avatar when they are on Who Made This?', () => {
     const shown = recentRow(
       row({
         direction: 'in',
