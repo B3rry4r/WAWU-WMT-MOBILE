@@ -31,7 +31,7 @@ const lockedItem = () => ({
   title: 'How I built a ₦2M a month agency',
   creatorWawuId: CREATOR,
   slug: PIECE,
-  contentType: 'video',
+  contentType: hub.kind,
   description: 'The full lesson.',
   category: 'Business',
   specializations: [],
@@ -53,11 +53,14 @@ const lockedItem = () => ({
   followsCreator: false,
   shares: 0,
   creator: { wawuId: CREATOR, displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, verification: { creator: tick(true), professional: tick(false) } },
-  media: { contentId: PIECE, contentType: 'video', durationLabel: '18:04', pageCount: null, frameCount: 0, frames: [] },
+  media: { contentId: PIECE, contentType: hub.kind, durationLabel: hub.kind === 'video' ? '18:04' : null, pageCount: null, frameCount: 0, frames: [] },
 });
 
 type Mode = 'paid' | 'pending' | 'opening' | 'refunded' | 'lost_after' | 'short_at_pay' | 'no_wallet';
+type Kind = 'video' | 'course' | 'template';
 const hub = {
+  /** What the feed's one post is (HOME-07: a course or a template is unlocked from the feed as a video is). */
+  kind: 'video' as Kind,
   mode: 'paid' as Mode,
   balanceKobo: 48_525_075,
   feeKobo: FEE,
@@ -144,7 +147,21 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (path === '/users/me') return ok({ wawuUserId: ME });
   if (path.endsWith('/view')) return ok({ views: 1, counted: true });
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
-  if (path === `/content/${PIECE}/media`) return ok({ contentId: PIECE, contentType: 'video', durationLabel: '18:04', pageCount: null, frameCount: 0, frames: [] });
+  if (path === `/content/${PIECE}/media`) return ok({ contentId: PIECE, contentType: hub.kind, durationLabel: hub.kind === 'video' ? '18:04' : null, pageCount: null, frameCount: 0, frames: [] });
+  if (path === `/content/${PIECE}/detail`) {
+    // A course's post reads its lessons here (HOME-07); nothing else asks.
+    return ok({
+      contentId: PIECE,
+      contentType: 'course',
+      updatedAt: '',
+      purchasedAt: null,
+      buyerCount: 0,
+      studentCount: 1280,
+      freePreview: { pages: null, seconds: null, lessons: 1 },
+      lessons: Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: null, isFree: i === 0 })),
+      rating: { average: null, count: 0, myRating: null, canRate: false, cannotRateReason: 'not_purchased' },
+    });
+  }
   if (path === `/content/${PIECE}/unlock/wallet/quote`) {
     hub.quotes += 1;
     if (hub.quoteNoWallet) return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
@@ -217,7 +234,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
+  Object.assign(hub, { kind: 'video', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
   mockPush.mockClear();
 });
 
@@ -288,6 +305,36 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     });
     await unlockButton();
     expect(hub.quotes).toBe(1);
+  });
+});
+
+describe('HOME-07: a course or a template unlocked from the feed', () => {
+  const cases: [Kind, string][] = [
+    ['course', "The full course is yours, and it's in My purchases from now on."],
+    ['template', "The full template is yours, and it's in My purchases from now on."],
+  ];
+
+  it.each(cases)('a %s opens the same unlock sheet from its offer bar, and ends on Done (no player to open into), which closes the sheet', async (kind, line) => {
+    hub.kind = kind;
+    const screen = await reachPin();
+    // H14 named the piece before the PIN; the payment is the ordinary one.
+    expect(hub.quotes).toBe(2);
+    await enterPin('4829');
+    await screen.findByText('Unlocked');
+    expect(screen.getByText(line)).toBeTruthy();
+    expect(hub.pays).toHaveLength(1);
+    expect(hub.pays[0].body).toEqual({ expectedTotalKobo: PRICE + FEE, quoteToken: `tok-${FEE}` });
+    // The button is Done, not Watch now: a course or a template has no player in the feed.
+    const done = screen.getByTestId('unlock-open');
+    expect(rtl.within(done).getByText('Done')).toBeTruthy();
+    expect(screen.queryByText('Watch now')).toBeNull();
+    // Until Done the post is locked; after it the sheet is gone and the post is the person's, with nothing opened.
+    expect(screen.queryByTestId(`offer-${PIECE}`)).toBeTruthy();
+    await rtl.fireEvent.press(done);
+    await rtl.waitFor(() => expect(screen.queryByText('Unlocked')).toBeNull());
+    await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(hub.pays).toHaveLength(1);
   });
 });
 

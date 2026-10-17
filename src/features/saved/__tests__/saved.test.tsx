@@ -58,10 +58,10 @@ const COUNTS = ['me', 'counts'] as const;
 const staleCounts = (client: { getQueryState: (key: readonly string[]) => { isInvalidated: boolean } | undefined }) => client.getQueryState(COUNTS)?.isInvalidated === true;
 
 const open = async () => {
-  const handlers = { back: jest.fn(), openEvent: jest.fn() };
+  const handlers = { back: jest.fn(), openEvent: jest.fn(), openContent: jest.fn() };
   const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { retry: false } } });
   client.setQueryData(COUNTS, { purchases: 1, saved: 6, unreadNotifications: 0 });
-  const view = await renderFrame(<SavedScreen onBack={handlers.back} onOpenEvent={handlers.openEvent} />, client);
+  const view = await renderFrame(<SavedScreen onBack={handlers.back} onOpenEvent={handlers.openEvent} onOpenContent={handlers.openContent} />, client);
   return { ...handlers, ...view };
 };
 
@@ -97,13 +97,35 @@ describe('M30 · Saved', () => {
     expect(calls('GET', LIST).at(-1)?.search).toContain('type=creators');
   });
 
-  it('opens a saved event, and a piece or a creator opens nothing until their screens are built (R-47)', async () => {
-    const { openEvent } = await open();
+  it('opens a saved event, and a saved creator opens nothing until their profile is built (ME-02, R-47)', async () => {
+    const { openEvent, openContent } = await open();
     await screen.findByText('Agency breakdown');
     await fireEvent.press(screen.getByTestId('saved-open-s-e1'));
     expect(openEvent).toHaveBeenCalledWith('e1');
-    expect(screen.queryByTestId('saved-open-s-w6')).toBeNull();
+    expect(openContent).not.toHaveBeenCalled();
     expect(screen.queryByTestId('saved-open-s-m1')).toBeNull();
+  });
+
+  it('a saved piece opens its own page by the piece\'s id, bought or not, and the mark still takes the save back without opening it', async () => {
+    const { openContent, openEvent } = await open();
+    await screen.findByText('Agency breakdown');
+    await fireEvent.press(screen.getByTestId('saved-open-s-w6'));
+    expect(openContent).toHaveBeenLastCalledWith('w6');
+    await fireEvent.press(screen.getByTestId('saved-open-s-c1'));
+    expect(openContent).toHaveBeenLastCalledWith('c1');
+    expect(openContent).toHaveBeenCalledTimes(2);
+    expect(openEvent).not.toHaveBeenCalled();
+    hub.answers['DELETE /api/hub/content/w6/save'] = { status: 200, body: { statusCode: 200, message: 'OK', data: { saved: false } } };
+    await fireEvent.press(screen.getByTestId('saved-remove-s-w6'));
+    await waitFor(() => expect(calls('DELETE', '/api/hub/content/w6/save')).toHaveLength(1));
+    expect(openContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('with nowhere to lead a piece\'s tile is not pressed (R-47)', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { retry: false } } });
+    await renderFrame(<SavedScreen onBack={jest.fn()} onOpenEvent={jest.fn()} />, client);
+    await screen.findByText('Agency breakdown');
+    expect(screen.queryByTestId('saved-open-s-w6')).toBeNull();
   });
 
   it('a user can take a save back: the tile goes at once, the Hub is asked, and the menu count is read again', async () => {

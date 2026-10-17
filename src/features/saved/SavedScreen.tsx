@@ -28,8 +28,10 @@ export const NOTICE_MS = 4000;
 
 export type SavedScreenProps = {
   onBack: () => void;
-  /** A saved event opens E2. A piece and a creator open nothing yet: their screens are built by HOME-03 and ME-02, which add them. */
+  /** A saved event opens E2. */
   onOpenEvent: (id: string) => void;
+  /** A saved piece opens its own page (HOME-03, `/content/<id>`). Left out, a piece's tile is not pressed. A saved creator opens nothing until ME-02 adds their profile. */
+  onOpenContent?: (id: string) => void;
 };
 
 /** The cache without the save the Hub has taken back. */
@@ -41,9 +43,9 @@ function without(data: InfiniteData<SavedPage, string | null> | undefined, id: s
 /**
  * M30 · Saved. What the person kept, newest first, from `GET /me/saved`, by the chips All, Content, Events and Creators. The mark on a
  * tile takes the save back (`DELETE` on the piece, the event or the creator): the tile goes at once and comes back, in its place and with
- * a notice, if the Hub refuses (each take-back on its own, so two in flight cannot undo each other). A saved event opens E2; a piece (HOME-03) and a creator (ME-02) open nothing until those screens add their entries.
+ * a notice, if the Hub refuses (each take-back on its own, so two in flight cannot undo each other). A saved event opens E2 and a saved piece its own page (HOME-03); a creator opens nothing until ME-02 adds their profile.
  */
-export function SavedScreen({ onBack, onOpenEvent }: SavedScreenProps) {
+export function SavedScreen({ onBack, onOpenEvent, onOpenContent }: SavedScreenProps) {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<SavedTab>('all');
@@ -130,7 +132,7 @@ export function SavedScreen({ onBack, onOpenEvent }: SavedScreenProps) {
                     key={entry.id}
                     entry={entry}
                     meta={metaOf(entry, now)}
-                    onOpen={entry.kind === 'event' && entry.event ? () => onOpenEvent(entry.event!.id) : undefined}
+                    onOpen={openerOf(entry, onOpenEvent, onOpenContent)}
                     onRemove={() => remove.mutate(entry)}
                   />
                 ))}
@@ -149,6 +151,19 @@ export function SavedScreen({ onBack, onOpenEvent }: SavedScreenProps) {
       <Toast message={notice} tone="alert" placement="bottom" offset={insets.bottom + space.s2xl} duration={NOTICE_MS} onHide={() => setNotice(null)} testID="saved-notice" />
     </View>
   );
+}
+
+/** What a tap on a tile does: a saved event opens its page, a saved piece its own page (when that opens somewhere), a creator nothing yet. */
+function openerOf(entry: SavedEntry, onOpenEvent: (id: string) => void, onOpenContent: ((id: string) => void) | undefined): (() => void) | undefined {
+  if (entry.kind === 'event' && entry.event) {
+    const id = entry.event.id;
+    return () => onOpenEvent(id);
+  }
+  if (entry.kind === 'content' && entry.content && onOpenContent) {
+    const id = entry.content.id;
+    return () => onOpenContent(id);
+  }
+  return undefined;
 }
 
 function pictureOf(entry: SavedEntry): string | null {

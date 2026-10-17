@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 const mockVault = new Map<string, string>();
@@ -53,6 +53,7 @@ const routes = {
   'schools/mine': stub('courses'),
   saved: stub('saved'),
   notifications: stub('notifications'),
+  'your-tier': stub('your tier'),
   verification: stub('verification'),
   'settings/index': stub('settings'),
 };
@@ -91,6 +92,18 @@ function hubAs(accountType: 'creator' | 'user') {
     '/api/hub/users/me/profile-fields': { wawuUserId: 'u1', location: null, skills: [], openTo: [], threadsHandle: null, socialOrder: [], memberSince: '2025-03-10T09:00:00.000Z' },
     '/api/hub/users/me/profile-stats': { wawuUserId: 'u1', followerCount: 0, followingCount: 0, postCount: 0 },
     '/api/hub/me/counts': { purchases: 12, saved: 31, unreadNotifications: 3, enrolledCourses: 1 },
+    '/api/hub/me/tier': {
+      state: 'active',
+      tier: { id: 'verify_plus', name: 'Verify Plus', badge: { id: 'verify_plus', numbered: false } },
+      activeFrom: '2026-10-01T00:00:00.000Z',
+      activeUntil: '2026-11-26T00:00:00.000Z',
+      productsAllowed: 5,
+      productsUsed: 4,
+      extraProducts: 0,
+      pointsIncluded: 0,
+      firstVoiceIntroIncluded: false,
+      eventPass: null,
+    },
     '/api/hub/money/earnings': {
       month: '2026-10',
       walletOpen: true,
@@ -129,7 +142,7 @@ beforeEach(() => {
   resetSessionForTests();
 });
 
-const ROW_IDS = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification', 'settings'] as const;
+const ROW_IDS = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'tier', 'verification', 'settings'] as const;
 const WHERE: Record<(typeof ROW_IDS)[number], [string, string]> = {
   dashboard: ['/creator', 'creator'],
   content: ['/library', 'library'],
@@ -137,6 +150,7 @@ const WHERE: Record<(typeof ROW_IDS)[number], [string, string]> = {
   courses: ['/schools/mine', 'courses'],
   saved: ['/saved', 'saved'],
   notifications: ['/notifications', 'notifications'],
+  tier: ['/your-tier', 'your tier'],
   verification: ['/verification', 'verification'],
   settings: ['/settings', 'settings'],
 };
@@ -149,12 +163,14 @@ async function raiseMenu() {
 }
 
 describe('ME-03: a user can open every screen the Me menu names, from the Me tab', () => {
-  it('a creator sees all eight rows and each row leads to its screen, then Back is the Me tab', async () => {
+  it('a creator sees all nine rows and each row leads to its screen, then Back is the Me tab', async () => {
     hubAs('creator');
     await raiseMenu();
     expect(await screen.findByText('1 enrolled')).toBeTruthy();
     expect(await screen.findByText('₦128,400 this month')).toBeTruthy();
     expect(await screen.findByText('Creator tick')).toBeTruthy();
+    // Your tier says the name of the tier the Hub says the person holds.
+    expect(await within(screen.getByTestId('me-menu-tier')).findByText('Verify Plus')).toBeTruthy();
     for (const id of ROW_IDS) expect(screen.getByTestId(`me-menu-${id}`)).toBeTruthy();
     for (const id of ROW_IDS) {
       if (!screen.queryByTestId('me-menu-list')) {
@@ -172,17 +188,38 @@ describe('ME-03: a user can open every screen the Me menu names, from the Me tab
     }
   });
 
-  it('a fan sees six rows: no Creator dashboard and no My content, and the Hub is not asked for earnings', async () => {
+  it('a fan sees seven rows: no Creator dashboard and no My content, and the Hub is not asked for earnings', async () => {
     hubAs('user');
     await raiseMenu();
     expect(await screen.findByText('1 enrolled')).toBeTruthy();
     expect(screen.queryByTestId('me-menu-dashboard')).toBeNull();
     expect(screen.queryByTestId('me-menu-content')).toBeNull();
-    for (const id of ['purchases', 'courses', 'saved', 'notifications', 'verification', 'settings'] as const) {
+    for (const id of ['purchases', 'courses', 'saved', 'notifications', 'tier', 'verification', 'settings'] as const) {
       expect(screen.getByTestId(`me-menu-${id}`)).toBeTruthy();
     }
     expect(screen.queryByText(/this month/)).toBeNull();
     expect(asked).not.toContain('/api/hub/money/earnings');
     expect(asked).not.toContain('/api/hub/uploads/allowance');
+  });
+  it('Your tier sits after Notifications and before Verification and Settings, as the canvas orders the tick row', async () => {
+    hubAs('creator');
+    await raiseMenu();
+    await within(screen.getByTestId('me-menu-tier')).findByText('Verify Plus');
+    const order = within(screen.getByTestId('me-menu-list'))
+      .getAllByTestId(/^me-menu-(?!list)/)
+      .map((node) => String(node.props.testID).replace('me-menu-', ''));
+    expect(order).toEqual(['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'tier', 'verification', 'settings']);
+  });
+
+  it('a person the Hub says has no tier sees the row with its title alone, and it still opens Your tier', async () => {
+    hubAs('user');
+    answers['/api/hub/me/tier'] = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+    await raiseMenu();
+    await screen.findByText('1 enrolled');
+    await waitFor(() => expect(asked).toContain('/api/hub/me/tier'));
+    expect(within(screen.getByTestId('me-menu-tier')).queryByText('Verify Plus')).toBeNull();
+    expect(within(screen.getByTestId('me-menu-tier')).getByText('Your tier')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-tier'));
+    await waitFor(() => expect(pathname()).toBe('/your-tier'));
   });
 });
