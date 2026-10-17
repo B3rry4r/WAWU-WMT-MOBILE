@@ -87,6 +87,8 @@ export type MeScreenProps = {
   onOpenSettings: () => void;
   /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
   onOpenInvite?: () => void;
+  /** My courses (SCHOOLS-08): the menu's row, drawn only when given. */
+  onOpenCourses?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
   onOpenVerification?: () => void;
   /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
@@ -111,7 +113,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -243,6 +245,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        onOpenCourses={
+          onOpenCourses
+            ? () => {
+                setMenuOpen(false);
+                onOpenCourses();
+              }
+            : undefined
+        }
         onOpenVerification={
           onOpenVerification
             ? () => {

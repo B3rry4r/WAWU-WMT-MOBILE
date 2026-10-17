@@ -7,7 +7,7 @@ order: 136
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [SCHOOLS-03, SCHOOLS-09, SCHOOLS-10, UI-02, SCHOOLS-06]
 decisions: [R-12, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,11 +17,14 @@ artboards: [SC8, SC9]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-09, SCHOOLS-10, SCHOOLS-06.
-- **History:** none yet. Reports go to tasks/history/SCHOOLS-08.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+As of 17 Oct 2026, after the first build (Sonnet builder, branch `wmt/S5`, one branch with SCHOOLS-06).
+- **Status:** verifying. Built after SCHOOLS-06 in the same branch; reads SCHOOLS-09's `GET /schools/enrolments` (never LearnCourse) and SCHOOLS-10's apply-link calls.
+- **Built:** SC8 `MyCoursesScreen` (`/schools/mine`): Current and Finished tabs, newest first, cursor pages, one pill per row ("School will contact you" before the class starts, "In progress" once begun, "Not paid yet" for a held place that opens the pay screen, "Finished", "Refunded"); loading, empty per tab (with "Find a school"), error with retry, pull to refresh. "week 3 of 6" is left out (G-851). The Me menu gets its My courses row, first, as the canvas orders it (SHARED-CHANGES SCHOOLS-08 #1; no "1 enrolled" line, G-854). SC7's My courses button leads to SC8.
+- **SC9** `ApplySheet` over SC3, drawn with Enroll and only for a school that gave a site: the link comes from `GET .../apply-link` (printed without `https://`), "Continue to their site" records one click with `POST .../apply-click` and opens the answer in the phone's browser, "Enroll on Who Made This? instead" opens SC4 (not drawn when no class can be joined). The raw `applyUrl` is never opened.
+- **Checks:** same run as SCHOOLS-06 (one branch): tsc EXIT 0, eslint EXIT 0, gates EXIT 0, jest green (`enrolFlow.test.tsx` has the SC8, SC9 and Me cases).
+- **Pictures:** SC8-my-courses, SC8-finished-empty, SC8-error, SC9-apply in the same folder as SCHOOLS-06's, beside `board-SC8` and `board-SC9`.
+- **NOT RUN:** a real phone browser opening the link (jest checks `Linking.openURL` is called with the Hub's `url`; the stack run recorded the click path through the Hub only in the unit cases), the Finished tab with rows (no class on the stack ends this year), the current-tab empty state on the stack (every seeded student holds a place).
+- **Next:** a verifier (V1, V4, V5, V6, V7, V9).
 
 ## Read first
 
@@ -77,7 +80,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Files (mobile only): `src/features/schools/MyCoursesScreen.tsx`, `ApplySheet.tsx`, `enrolApi.ts` (list, apply-link, apply-click calls); `src/app/schools/mine.tsx`; edits `src/features/me/MeMenuSheet.tsx`, `MeScreen.tsx` and `src/app/(tabs)/me.tsx` (one optional `onOpenCourses`, SHARED-CHANGES SCHOOLS-08 #1); tests in `enrolFlow.test.tsx`.
+Capability checks: SC8 switch Current/Finished and open a row (test), empty per tab and error (test); SC9 Continue records one click and opens the Hub's link, Enroll instead leads to SC4 (test; the click and link calls on the stack in the SCHOOLS-10 task's own run).
+Gaps filed: G-851 (progress), G-852 (row picture), G-854 (menu line). No backend change.
 
 ## Verifier report
 

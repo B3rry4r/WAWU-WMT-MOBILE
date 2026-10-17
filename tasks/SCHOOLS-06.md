@@ -7,7 +7,7 @@ order: 129
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, SCHOOLS-03, SCHOOLS-07, UI-02]
 decisions: [R-12, R-1, R-6, R-10, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,17 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-07.
-- **History:** none yet. Reports go to tasks/history/SCHOOLS-06.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+As of 17 Oct 2026, after the first build (Sonnet builder, branch `wmt/S5`, one branch with SCHOOLS-08).
+- **Status:** verifying. Mobile `wmt/S5` from `origin/wmt/MERGE-9` 72bc8d6c with `origin/wmt/B2` (be8d9cb) merged; no backend change, no migration, no contract change (types are the merged ones).
+- **Built (all `src/features/schools/`):** SC4 `EnrolScreen` (details from `GET /users/me`, the classes not yet begun as a radio list, "<school> gets these details...", Continue holds a place with `POST /schools/enrolments`); SC5 and SC6 `EnrolmentScreen` over the shared `PaySheet` and `PinSheet` (a fresh `GET /money/payments/quote?kind=school_fee` per tap on Pay, one `Idempotency-Key` per attempt kept across a wrong PIN and a lost answer, written to the phone before it is sent: `enrolIntent.ts`, `useEnrolPay.ts`); SC7 the receipt (Share receipt opens the phone's share sheet with text and reference); SC11 class full on SC3's bar and on SC4 when Continue answers `409 class_full`. Also kept, undrawn on the boards: paid-still-confirming (Refresh, never pays again), a place that went back, a refunded enrolment, no wallet (Open your wallet), no PIN, short balance, over today's limit, price moved.
+- **Words from the 16 Oct boards:** "Bank charge" (never Fintava), "Who Made This?". SC5 button reads "Pay · ₦150,015.75" until the shared prop lands (SHARED-CHANGES SCHOOLS-06 #1). SC7 leaves out "within 2 working days" (G-850). "One payment" under the fee is added (G-626): drawn when the course has a fee and a class to join.
+- **Attacks, once each on the stack (`/tmp/claude-0/.../s5-b/logs/live-attacks.txt`, stack s5_test on ports 7700-7707, Nuvion stand-in):** double Continue 201 and 201, one order, seats 20 to 19; double Pay one key 409 `idempotency_in_progress` and 201, one debit; wrong PIN 403 `pin_incorrect`, no debit, same key right PIN 201; short balance 402 `insufficient_funds` with the bank figures, no debit, enrolment still reserved; lost answer then retry 201 and 201 `Idempotent-Replayed: true`, one payment, one debit, one My courses row; class filled between view and Continue 409 `class_full` with `nextIntake`, no debit, no enrolment; free course 201 `enrolled` at once, no PIN, no payment, no quote. All also in `enrolFlow.test.tsx`.
+- **Checks:** `tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest `src/features/schools`, `src/features/me` and `buyTickets` green (see the final log line in the hand-back); `npm run gates` EXIT 0 (0 fail, 0 accepted; the new PROVISIONAL(SCHOOL-ENROL-POLL) is a warn).
+- **Pictures** (390 px, light and dark, beside the boards as `board-SC*`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s5-b/pics` (SC3, SC4, SC5, SC5-short-balance, SC6, SC6-wrong-pin, SC7, SC11-course-full, SC11-on-SC4).
+- **Fee on the stack:** the stand-in's Bank charge is ₦0, so the pictures read "Bank charge ₦0"; the tests use the 16 Oct figure (₦15.75, total ₦150,015.75).
+- **NOT RUN:** the still-confirming and "place went back" screens on the stack (the stand-in settles at once and a place takes 30 minutes to go back): tests only; no real device or Fintava; the unit tests of the shared sheets are untouched.
+- **Open:** the sheet's logo tile (G-853) and the dot-less button (SHARED-CHANGES SCHOOLS-06 #1).
+- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9).
 
 ## Read first
 
@@ -111,7 +117,10 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Files (mobile only): `src/features/schools/` new `enrolApi.ts`, `enrolModel.ts`, `enrolIntent.ts`, `useEnrolPay.ts`, `enrolParts.tsx`, `EnrolScreen.tsx`, `EnrolmentScreen.tsx`; edited `CourseScreen.tsx` (Enroll, "One payment", the class-full bar, the apply link); routes `src/app/schools/enrol/[courseId].tsx`, `src/app/schools/enrolments/[id].tsx`, and `courses/[id].tsx` (gives `onEnroll`); test `__tests__/enrolFlow.test.tsx` (26 cases: SC4 6, pay 12, SC8 2, course page 4, plus the empty and closed states).
+Capability checks: SC4 pick and Continue, SC5 total and Pay from the wallet, SC6 PIN, SC7 Share receipt (spy on `Share.share`: text and reference), SC11 Enroll for January, no wallet leads to Open your wallet: each is a test in `enrolFlow.test.tsx`; the attacks also ran once each on the stack (see Current state).
+Decisions: Continue replaces SC4 with SC5 so Back lands on the course; closing the pay sheet leaves the screen (the place stays held); the PIN sheet hides the page's words as SC6 draws; a place held and unpaid opens the pay screen from My courses; "will contact you" stays, the two-day figure is out (G-850); a student with details not loaded cannot Continue (the disclosure names what is shared).
+Gate counts: `npm run gates` before: 0 fail (MERGE-9); after: 0 fail, 0 accepted, 11 warn (one new PROVISIONAL). No assertion of another task's test was edited (SHARED-CHANGES SCHOOLS-06 #2).
 
 ## Verifier report
 
