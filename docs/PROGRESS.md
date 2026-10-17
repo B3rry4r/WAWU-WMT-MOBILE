@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 135 | 0 | 0 | 0 |
+| todo | 134 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 40 | 0 | 0 | 0 |
+| verifying | 41 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -46,6 +46,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-39](../tasks/WALLET-39.md) A notice for all money in (You)
 - [TIER-06](../tasks/TIER-06.md) The new money figures as admin settings (You)
 - [TIER-07](../tasks/TIER-07.md) A person's tier badge on their public profile (You)
+- [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)

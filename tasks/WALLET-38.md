@@ -7,7 +7,7 @@ order: 285
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [TIER-03, TIER-06, WALLET-01]
 decisions: [R-43, R-65]
 passes: [V1, V4, V5, V6, V9]
@@ -17,11 +17,16 @@ artboards: [W44]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** S. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): TIER-06.
-- **History:** none yet. Reports go to tasks/history/WALLET-38.md.
+As of 17 Oct 2026, built by a Sonnet builder; waits for a verifier (never the builder).
+- **Status:** verifying.
+- **Branch:** mobile `wmt/WALLET-38` on `origin/wmt/MERGE-6` `70a7895`. No backend change, no wawu-id change. Migration: none.
+- **Built:** W44 `/pass` (`src/app/pass.tsx`, `src/features/wallet/pass/`) and the Passes card on Wallet (W1), drawn only when `GET /me/tier` has an `eventPass`. The Hub's own words only: the pass name, the tier's name, the day (or "Date to be announced") and the Hub's benefit lines. Nothing is drawn for a line the Hub does not send.
+- **Not drawn (R-47), in `BACKEND_GAPS.md` as G-814:** the event's name ("Christmas event" above the pass name and under it on the Passes card) and the QR code. The board's "Example values." footnote is a designer note and is not printed.
+- **Decisions:** the Passes card is full width because the Points card (DV2-02) is not built; it sits in a row (`wallet-info-row`) so Points joins it at half width each, as drawn. On the Passes card the date line stands where the board has the event name. Pass card ground is `tgifVerseGround` (same #2A0C3E as the board; no pass token exists). A failed read on W1 draws no card and no error (the tab is the bank's, not the pass's); W44 has the loading, empty and error states.
+- **Checks:** see tasks/history/WALLET-38.md (tests, the full mobile check, pictures at 390 px light and dark beside W44 and W1).
+- **Open findings:** none known.
+- **Next:** a verifier runs V1, V4, V5, V6 and V9. DV2-02 adds the Points card beside the Passes card.
+- **History:** tasks/history/WALLET-38.md.
 
 ## Read first
 
@@ -50,9 +55,9 @@ A person with a tier sees their event pass: its type, the event (date to be anno
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Builder report and later rounds, word for word, oldest first: [history/WALLET-38.md](history/WALLET-38.md).
 
 ## Verifier report
 
