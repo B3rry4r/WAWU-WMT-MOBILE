@@ -62,6 +62,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
+- [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SUPPORT-01](../tasks/SUPPORT-01.md) Support chat that opens with the payment or piece it is about (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
