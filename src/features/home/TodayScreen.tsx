@@ -13,6 +13,7 @@ import { metrics as feedMetrics } from '@/features/feed/look';
 import { CompleteAccountFlag } from '@/features/open-wallet/CompleteAccountFlag';
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { fetchMe, meKey as profileKey } from '@/features/profile-edit/api';
 import { fetchTgif, settingsKeys } from '@/features/settings/api/hub';
 import { dayKey, fetchDay, fetchStats, statsKey } from '@/features/tgif/api/tgif';
 import { localDay } from '@/features/tgif/model';
@@ -38,7 +39,7 @@ export type TodayScreenProps = {
 };
 
 /**
- * H1 · Today, Home's first tab (with H11 while it loads and H36 with TGIF off). It reads:
+ * H1 · Today, Home's first tab (with H11 while it loads; H36 is the same screen with the daily TGIF notification over it). It reads:
  * - the wallet and its balance through the Wallet tab's own reads (`GET /money/wallet`, then
  *   `GET /money/wallet/balance` once it is open; WALLET-01, MONEY-11), or why there is none;
  * - the person's TGIF switch (`GET /settings/tgif`, HOME-11) and, when it is on, today's day and
@@ -47,10 +48,10 @@ export type TodayScreenProps = {
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
  * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), See all (EXPLORE-02),
- * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The sponsored
- * card that takes TGIF's place when it is off (H36, ADS-01) reads `GET /ads?placement=today_slot`; with no
- * campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The Events tile
- * (E1) is EVENTS-01's, in the services row (`Services`).
+ * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The ad card (H1, H36)
+ * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot` whatever the person's TGIF
+ * switch says; with no campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The
+ * TGIF card below it is DV2-RM's to remove. The services row (`Services`) draws Monetize for a creator account only.
  */
 export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) {
   const insets = useSafeAreaInsets();
@@ -88,11 +89,13 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
   const tgifOn = showsTgif(tgifSwitch.data, tgifSwitch.isError);
   const tgifDay = useQuery({ queryKey: dayKey(date), queryFn: () => fetchDay(date), staleTime: Infinity, enabled: tgifOn }, client);
   const tgifStats = useQuery({ queryKey: statsKey(date), queryFn: () => fetchStats(date), enabled: tgifOn && tgifDay.isSuccess }, client);
-  // TGIF's place is the sponsored card's only when the switch has been read and is off.
-  const adSlot = !tgifSwitch.isPending && !tgifOn;
-  const ad = useAd('today_slot', adSlot, client);
+  // The ad card is always in TGIF's old place (R-59), so it is asked for whatever the TGIF switch says.
+  const ad = useAd('today_slot', true, client);
   const creators = useQuery({ queryKey: suggestionsKey, queryFn: fetchCreatorSuggestions }, client);
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId, staleTime: Infinity }, client);
+  // Monetize opens the Create hub, which is for creator accounts (R-38): the person's own profile says whether this is one.
+  // It is the same answer the Create button reads, under the same key; until it has come Monetize is not drawn.
+  const isCreator = useQuery({ queryKey: profileKey, queryFn: fetchMe, select: (profile) => profile.accountType === 'creator' }, client).data === true;
 
   const money = moneyCard(homeView(wallet, balance));
   const read = (q: { isPending: boolean; isError: boolean }) => ({ pending: q.isPending, failed: q.isError });
@@ -106,7 +109,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
 
   // The card is on screen once Today is drawn (not its loading or error view) and this tab is the one in front.
   const focused = useIsFocused();
-  const sponsored = adSlot && phase === 'ready' ? ad.data ?? null : null;
+  const sponsored = phase === 'ready' ? ad.data ?? null : null;
   const reports = useAdReports(sponsored, focused);
 
   const retryAll = () => {
@@ -150,15 +153,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         onSend={() => router.push('/send')}
         onOpenBills={() => router.push('/bills')}
       />
-      {tgifOn && tgifDay.data ? (
-        <TgifCard
-          day={tgifDay.data}
-          readers={typeof tgifStats.data?.readers === 'number' ? tgifStats.data.readers : null}
-          onOpen={() => router.push('/tgif')}
-        />
-      ) : tgifOn && tgifDay.isError ? (
-        <TgifProblem date={date} onRetry={() => void tgifDay.refetch()} retrying={tgifDay.isFetching} />
-      ) : sponsored ? (
+      {sponsored ? (
         <SponsoredSlot
           ad={sponsored}
           onOpen={() => {
@@ -167,7 +162,22 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
           }}
         />
       ) : null}
-      <Services onOpenBills={() => router.push('/bills')} onOpenEvents={() => router.push('/events')} onOpenLegal={() => router.push('/legal')} onOpenSchools={() => router.push('/schools')} />
+      {tgifOn && tgifDay.data ? (
+        <TgifCard
+          day={tgifDay.data}
+          readers={typeof tgifStats.data?.readers === 'number' ? tgifStats.data.readers : null}
+          onOpen={() => router.push('/tgif')}
+        />
+      ) : tgifOn && tgifDay.isError ? (
+        <TgifProblem date={date} onRetry={() => void tgifDay.refetch()} retrying={tgifDay.isFetching} />
+      ) : null}
+      <Services
+        onOpenLearn={() => router.push('/schools')}
+        onOpenLegal={() => router.push('/legal')}
+        onOpenMonetize={isCreator ? () => router.push('/create') : undefined}
+        onOpenBills={() => router.push('/bills')}
+        onOpenEvents={() => router.push('/events')}
+      />
       <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} />
     </>
   );

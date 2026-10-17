@@ -29,17 +29,30 @@ export const adMetrics = {
   skip: 13,
   /** `tgifAd`'s shade over the picture: the page colour at 55%, 20% a third of the way down and 92% three quarters down. */
   shade: { colors: [0.55, 0.2, 0.92], locations: [0, 0.35, 0.75] },
-  /** `adSlot`: 104 high, the picture 104 wide, `padding:12px 14px`, `gap:4px`; words 11, 15.5 and 12.5; the button word 13.5. */
+  /**
+   * `adSlot` (H1 and H36, 16 Oct 2026): 104 high at corner 22, the picture across the whole card under a shade that runs
+   * from the page colour at 88% on the left to 25% on the right, `padding:12px 16px`, the chip row over the words row.
+   * The AD chip is 22 high, `padding:0 9px`, 10.5 at 700, 0.08em apart, white at 20%. The headline is 17 at 700
+   * (-0.02em), the line under it 12.5 at 85%, 2 below; the button word is 13 at 700 on a 32 high white pill, 14 in.
+   */
   slotHeight: 104,
   slotPadY: 12,
-  slotPadX: 14,
-  slotGap: 4,
-  slotLabel: 11,
-  slotLabelTracking: 0.08,
-  slotHeadline: 15.5,
+  slotPadX: 16,
+  slotShade: { colors: [0.88, 0.25], locations: [0, 1] },
+  slotChipHeight: 22,
+  slotChipPadX: 9,
+  slotChip: 10.5,
+  slotChipTracking: 0.08,
+  slotChipFill: 0.2,
+  slotWordsGap: 10,
+  slotHeadline: 17,
+  slotHeadlineTracking: -0.02,
   slotSubline: 12.5,
-  slotAction: 13.5,
-  slotActionRight: 14,
+  slotSublineFaint: 0.85,
+  slotSublineAbove: 2,
+  slotButtonHeight: 32,
+  slotButtonPadX: 14,
+  slotButton: 13,
 } as const;
 
 /** White text and controls over the picture, whatever the theme: the card is dark in both, as the reader's cards are. */
@@ -50,6 +63,9 @@ export const shadeAt = (alpha: number) => darkColors.lockedVeil.replace(/[\d.]+\
 
 /** White at a strength: the chip's fill over the picture (`surfaceGlass` is white at 14%). */
 export const chipFill = darkColors.surfaceGlass.replace(/[\d.]+\)$/, `${adMetrics.chipFill})`);
+
+/** The slot's AD chip: white at 20%. */
+export const slotChipFill = darkColors.surfaceGlass.replace(/[\d.]+\)$/, `${adMetrics.slotChipFill})`);
 
 const type = (size: number, weight: 400 | 600 | 700, extra: TextStyle = {}): TextStyle => ({ ...font(weight), fontSize: size, ...extra });
 
@@ -62,8 +78,8 @@ export const adWords = StyleSheet.create({
   }),
   subline: type(adMetrics.subline, 400, { color: adInk, opacity: adMetrics.sublineFaint }),
   skip: type(adMetrics.skip, 700, { color: adInk }),
-  slotLabel: type(adMetrics.slotLabel, 700, { letterSpacing: adMetrics.slotLabel * adMetrics.slotLabelTracking }),
-  slotHeadline: type(adMetrics.slotHeadline, 700),
-  slotSubline: type(adMetrics.slotSubline, 400),
-  slotAction: type(adMetrics.slotAction, 700),
+  slotChip: type(adMetrics.slotChip, 700, { letterSpacing: adMetrics.slotChip * adMetrics.slotChipTracking, color: adInk }),
+  slotHeadline: type(adMetrics.slotHeadline, 700, { letterSpacing: adMetrics.slotHeadline * adMetrics.slotHeadlineTracking, color: adInk }),
+  slotSubline: type(adMetrics.slotSubline, 400, { color: adInk, opacity: adMetrics.slotSublineFaint }),
+  slotButton: type(adMetrics.slotButton, 700, { color: darkColors.textOnLight }),
 });

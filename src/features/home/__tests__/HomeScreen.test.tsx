@@ -476,18 +476,22 @@ describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
   });
 });
 
-describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11)', () => {
-  it('a user sees Pay bills first in the row, then Events, Legal and Schools, with no empty slot (BILLS-01)', async () => {
+describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11; R-61, DV2-01)', () => {
+  it('a user sees Learn and Legal first, then the two tiles DV2-RM removes (Pay bills, Events), with no empty slot', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const column = screen.getByTestId('today-service-bills').parent!;
+    const column = screen.getByTestId('today-service-schools').parent!;
     const grid = column.parent!;
     expect(grid.children).toHaveLength(4);
     expect(grid.children[0]).toBe(column);
-    expect(grid.children[1]).toBe(screen.getByTestId('today-service-events').parent);
+    expect(grid.children[1]).toBe(screen.getByTestId('today-service-legal').parent);
+    expect(grid.children[2]).toBe(screen.getByTestId('today-service-bills').parent);
+    expect(grid.children[3]).toBe(screen.getByTestId('today-service-events').parent);
+    // Monetize opens the Create hub, which is for creator accounts: this person is not one, so there is no tile to send them Home.
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
   });
 
-  it('a user can tap Pay bills, the first tile, and land on Pay a bill (S2, BILLS-01)', async () => {
+  it('a user can tap Pay bills and land on Pay a bill (S2, BILLS-01)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Pay bills' }));
@@ -501,23 +505,24 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     expect(screen.getByTestId('today-service-bills')).toBeTruthy();
   });
 
-  it('a user can tap Legal, the third tile, and land on the legal chat (S14, LEGAL-02)', async () => {
+  it('a user can tap Legal and land on the legal chat (S14, LEGAL-02)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Legal' }));
     expect(mockPush).toHaveBeenCalledWith('/legal');
   });
 
-  it('a user can tap Schools, the fourth tile, and land on the schools list (SC1, SCHOOLS-03)', async () => {
+  it('a user can tap Learn, the first tile (Schools, renamed by R-61), and land on the schools list (SC1, SCHOOLS-03)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const grid = screen.getByTestId('today-service-events').parent!.parent!;
-    expect(grid.children[3]).toBe(screen.getByTestId('today-service-schools').parent);
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Schools' }));
+    expect(grid.children[0]).toBe(screen.getByTestId('today-service-schools').parent);
+    expect(screen.queryByText('Schools')).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     expect(mockPush).toHaveBeenCalledWith('/schools');
   });
 
-  it('a user with TGIF off still has the Schools tile (H36)', async () => {
+  it('a user with TGIF off still has the Learn tile (H36)', async () => {
     answers[T.tgif] = [ok({ show: false })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
@@ -529,5 +534,49 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     await rtl.render(<TodayLoading withTgif />);
     const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
     expect(shapes).toHaveLength(4);
+  });
+});
+
+// DV2-01 (R-61, R-69): the drawn row is Studio, Learn, Monetize, Legal; Monetize opens the Create hub (M19), which is for
+// creator accounts, and the rail is called "Who Made This?".
+describe('H1 · Monetize, and the rail title (R-61, R-69)', () => {
+  const asCreator = () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+  };
+
+  it('a creator sees Monetize between Learn and Legal and taps it to land on the Create hub (M19)', async () => {
+    asCreator();
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
+    const grid = screen.getByTestId('today-service-schools').parent!.parent!;
+    const order = grid.children.map((column) => (column as { children: { props: { testID?: string } }[] }).children[0].props.testID);
+    expect(order).toEqual(['today-service-schools', 'today-service-monetize', 'today-service-legal', 'today-service-bills', 'today-service-events']);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Monetize' }));
+    expect(mockPush).toHaveBeenCalledWith('/create');
+  });
+
+  it('a person whose account type is not creator has no Monetize tile, so no tap sends them back Home', async () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'user' })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
+    expect(screen.queryByText('Monetize')).toBeNull();
+  });
+
+  it('a profile that cannot be read leaves Monetize out and Today still draws', async () => {
+    answers[T.me] = ['offline'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
+  });
+
+  it('titles the creators rail "Who Made This?" and no longer "Creators to discover"', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByText('Who Made This?')).toBeTruthy();
+    expect(screen.queryByText('Creators to discover')).toBeNull();
   });
 });
