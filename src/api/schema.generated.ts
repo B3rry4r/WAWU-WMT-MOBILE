@@ -6072,6 +6072,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/purchases/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My purchases across every paid kind (M29, FIX-59): unlocks, tickets,
+         *     credit packs, school fees and community passes, newest first, searchable
+         *     by title, paid-back ones marked `refunded`. A separate route so
+         *     `GET /me/purchases` above answers exactly as it always has.
+         */
+        get: operations["MeController_paidPurchaseList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/lessons/{lessonId}/done": {
         parameters: {
             query?: never;
@@ -7589,6 +7611,35 @@ export interface components {
              */
             data: Record<string, never> | null;
             reason: components["schemas"]["TierGateReasonDto"];
+            /** @description Same as reason.message. */
+            message: string;
+        };
+        IdentityPausedReasonDto: {
+            /** @enum {string} */
+            code: "identity_paused";
+            /**
+             * @description Where the check stands: `needs_documents` (the documents the bank asked
+             *     for are still needed), `rejected`, `stopped` (for good) or `expired`
+             *     (left unfinished too long). The same words as `review.stage` on
+             *     `GET /money/wallet`.
+             * @enum {string}
+             */
+            stage: "needs_documents" | "rejected" | "stopped" | "expired";
+            /** @description The Hub's sentence: what is paused, why, and what to do. The app shows it as it is. No em-dash. */
+            message: string;
+        };
+        IdentityPausedErrorEnvelope: {
+            /**
+             * @description 403.
+             * @example 403
+             */
+            statusCode: number;
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            reason: components["schemas"]["IdentityPausedReasonDto"];
             /** @description Same as reason.message. */
             message: string;
         };
@@ -13615,6 +13666,25 @@ export interface components {
             items: components["schemas"]["PurchaseEntryView"][];
             nextCursor: string | null;
         };
+        PaidPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            kind: "content_unlock" | "credit_pack" | "school_fee" | "event_ticket" | "community_pass";
+            title: string;
+            amountKobo: number;
+            totalKobo: number | null;
+            purchasedAt: string;
+            /** @enum {string} */
+            status: "refunded" | "paid";
+            openId: string | null;
+            content: components["schemas"]["PurchasedPieceView"] | null;
+            lessons: components["schemas"]["LessonProgressView"] | null;
+            credits: number | null;
+        };
+        PaidPurchasePage: {
+            items: components["schemas"]["PaidPurchaseView"][];
+            nextCursor: string | null;
+        };
         LessonDoneState: {
             lessonId: string;
             contentId: string;
@@ -14575,35 +14645,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        IdentityPausedReasonDto: {
-            /** @enum {string} */
-            code: "identity_paused";
-            /**
-             * @description Where the check stands: `needs_documents` (the documents the bank asked
-             *     for are still needed), `rejected`, `stopped` (for good) or `expired`
-             *     (left unfinished too long). The same words as `review.stage` on
-             *     `GET /money/wallet`.
-             * @enum {string}
-             */
-            stage: "needs_documents" | "rejected" | "stopped" | "expired";
-            /** @description The Hub's sentence: what is paused, why, and what to do. The app shows it as it is. No em-dash. */
-            message: string;
-        };
-        IdentityPausedErrorEnvelope: {
-            /**
-             * @description 403.
-             * @example 403
-             */
-            statusCode: number;
-            /**
-             * @description Always null on an error.
-             * @example null
-             */
-            data: Record<string, never> | null;
-            reason: components["schemas"]["IdentityPausedReasonDto"];
-            /** @description Same as reason.message. */
-            message: string;
         };
     };
     responses: never;
@@ -26397,6 +26438,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PurchasePage"];
+                };
+            };
+        };
+    };
+    MeController_paidPurchaseList: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 100. */
+                limit?: number;
+                /**
+                 * @description "Search what you've bought": trimmed, then 2 to 60 characters. Matches
+                 *     part of a piece's title or its creator's handle, ignoring case.
+                 */
+                q?: string;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidPurchasePage"];
                 };
             };
         };
