@@ -17,10 +17,11 @@ artboards: []
 
 ## Current state
 
-17 Oct 2026. Built by a Sonnet builder; push to verify. Backend `wmt/NUV-08` `f48fddd` on `wmt/MERGE-7` `0be61a4`. No PR.
-- **Status:** verifying. Nuvion stood in everywhere; no real host called.
+17 Oct 2026. Round 2 (fix of the verifier's findings 1 to 4, 6, 7) pushed: backend `wmt/NUV-08` `ecebab9` on `wmt/MERGE-7` `0be61a4`. No PR.
+- **Status:** verifying (round 2, a fresh verifier). Nuvion stood in everywhere; no real host called.
 - **Migration:** `20261025050000_nuvion_reconcile_findings` (one new table, `NuvionReconcileFinding`; the lead may rename at merge).
-- **Next:** a verifier (not the builder). The (key) check waits for the sandbox key.
+- **Next:** a verifier (not the builder). The (key) check waits for the sandbox key and must also confirm that a statement's `transaction_id` is the transfer id, and ask Nuvion for a fee-reading call (see the fee check).
+- **Sweep list (lows, not fixed):** 5 (the extra day after the window asks next month), 8 (the schema comment names old finding kinds), the sweep's `seen` keyed on transfer id alone.
 - **History:** reports go to tasks/history/NUV-08.md.
 
 ## Read first
@@ -50,8 +51,8 @@ papered over.
 ## Scope
 
 - `src/nuvion/areas/reconcile.ts`: `listTransactions` from `GET /accounts/{id}/statements` (month by month, `include_pending`) and `GET /transfers`; a sweep every `PROVISIONAL(NUVION-SWEEP-MINUTES, ...)` minutes that re-fetches pending sends and reads the last day's statement lines of every Nuvion account with movement, and feeds any inflow or outflow with no stored delivery into the same handlers a webhook would (deduplicated on Nuvion's transfer id).
-- The webhook subscription is renewed before its `expires_in` runs out; a failed renewal is reported.
-- `POST /fee-simulations` per kind, compared with NUV-07's setting; a difference is reported with both figures and the setting is never changed automatically.
+- The webhook subscription is read, not renewed (round 2): Nuvion's docs give no renewal call, so a missing or inactive subscription is reported.
+- The fee check says once "fee check not available" (round 2): Nuvion's docs describe no fee simulation, so none is called and the settings are not compared.
 - Not in scope: the nightly job and its email (MONEY-16).
 
 **Stand-in, not the sandbox.** The Nuvion sandbox key does not work yet (401). Every spec runs against the Nuvion stand-in that NUV-01 builds (`test/nuvion/nuvion-standin.ts`, from the docs' own request and response examples). No spec or run calls `api.nuvion.dev`, `api.nuvion.co`, any Fintava host or any wawuafrica.com host. Checks marked **(key)** need the sandbox: until a lead brief allows `api.nuvion.dev` and `GET https://api.nuvion.dev/bank-codes/NG` answers 200 with the key in the local `.env`, the verifier reports them NOT RUN with that fact. Everything else is built and verified now.
@@ -61,8 +62,8 @@ papered over.
 - [ ] An inflow whose delivery never arrived is found by the sweep and credited once; when the late delivery then arrives, nothing changes (V8).
 - [ ] A bank send or book transfer whose outcome delivery was lost is settled by the sweep once.
 - [ ] `listTransactions` returns every movement of a month across pages, with fee and running balance, for a person and for the operational account.
-- [ ] A webhook subscription about to expire is renewed; a renewal failure is reported, not silent.
-- [ ] A difference between `/fee-simulations` and the fee setting is reported with both figures, and the setting is unchanged.
+- [ ] A webhook subscription that is missing, inactive or unreadable is reported, not silent; nothing is renewed (round 2).
+- [ ] The fee check reports once that it is not available and calls no fee route (round 2).
 - [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run.
 
 ## Builder report
@@ -104,6 +105,20 @@ CI: `5b756e2` failed `webhook-retention-readers.spec.ts` (the sweep reads the ta
 `shop.contract.spec.ts` infra flake ("mock-wawu-id did not become healthy"). `b515d78` then failed NUV-07's
 `no-fee-or-limit-figures.spec.ts` (my setting name began `NUVION_FEE_`: renamed `NUVION_SIMULATE_FEES_HOURS` in `f48fddd`)
 and `account-deletion-round4.contract.spec.ts` T6b (SETTINGS-06, a file this task does not touch; not re-run by me).
+
+**Round 2 (17 Oct 2026, Sonnet builder, backend `ecebab9`; verifier report findings 1 to 4, 6, 7).** Shapes now come
+from the saved public docs (`nuvion-docs/`), not guesses; the stand-in serves the docs' shapes.
+1. HIGH statements: lines are `data.transactions[]`, paging `data.pagination` (`NuvionClient.statementPage`), line id
+   `transaction_id`, time `date` (ISO), `type` credit|debit, `fee`, `running_balance`, `reference`, status completed|pending
+   (`statementOutcome`). Docs: `api-reference__accounts.md` 804-910 (fields), 929+ (example). Specs run the docs' own example body.
+   This also fixes MONEY-16's `listTransactions` and, with dates readable, the sweep's 24-hour filter (6).
+2. MEDIUM subscriptions: the renewal call, the expiry date and the renewal timer are gone (`webhooks.md` 27-28, 692-740: the
+   update takes only `url`, `rotate_secret`, `entity_id`; the object has `expires_in`, `status`, no expiry date). The check reads
+   `status` and reports missing, inactive or unreadable. `NUVION_WEBHOOK_RENEW_HOURS` removed.
+3. MEDIUM fees: `/fee-simulations` is in none of the docs, so it is never called; the fee check opens one finding
+   "Fee check not available" (once; a rerun while it is open does nothing). `NUVION_SIMULATE_FEES_HOURS` removed.
+4. LOW status is read (3). 7. LOW a read-back that fails (or is not a transfer) now adds to `sweep_incomplete`.
+Open: `transaction_id` is taken as the transfer id (docs silent); the sweep list above. CI and check lines: see the hand-back.
 
 ## Verifier report
 
