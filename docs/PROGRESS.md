@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 288.**
+**Launch tasks done: 176 of 289.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 106 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -25,6 +25,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
+- [FIX-52](../tasks/FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote (You)
 - [FIX-47](../tasks/FIX-47.md) No blank page while Open your wallet sends the ID and address details (You)
 - [ME-13](../tasks/ME-13.md) Tick still confirming, wallet not opened, identity not matched (You)
 - [INBOX-15](../tasks/INBOX-15.md) Money requests in chat (You)
