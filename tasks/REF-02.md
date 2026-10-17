@@ -7,7 +7,7 @@ order: 264
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [REF-01, POINTS-01, TIER-03, TIER-06]
 decisions: [R-43, R-65]
 passes: [V1, V2, V3, V4, V9]
@@ -17,11 +17,18 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): TIER-06.
-- **History:** none yet. Reports go to tasks/history/REF-02.md.
+As of 17 Oct 2026, built by a Sonnet builder and checked by an independent Sonnet verifier. Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/REF-02.md`): verdict merge, nothing medium or worse. Stacked on batch 7 (backend and mobile `wmt/MERGE-7`).
+- **Branches:** backend `wmt/REF-02` `1165e79` on `origin/wmt/MERGE-6` `fbf391f`; mobile `wmt/REF-02` on `origin/wmt/MERGE-6` `70a7895` (docs only: this file, history, SHARED-CHANGES rows, LOG, PROGRESS). wawu-id and web untouched.
+- **Migration:** `20261024190000_referral_points` (restamped from `20261024140000` at the batch 7 merge so it sorts after every folder in the stack; applied nowhere yet) (additive: enum `ReferralRewardState` and tables `PersonReferralCode`, `PersonReferral`, `ReferralReward`, `ReferralMilestone`). Rollback: drop the four tables, the trigger function and the enum; points already granted stay in their lots.
+- **Checks:** backend CI on `1165e79`: Branch checks run 38999309021 green (contract, suite shards 1 to 3, netns, deploy-test-in-sync, baseline), Protected routes (V3) run 38999308931 green, Gates run 38999309018 green. Local: `tsc` 0, eslint 0, gates 0 FAIL, baseline ok, `contract:build` additions only (2 routes, 7 schemas); mobile full check: typecheck 0, lint 0, jest 3,257 of 3,258 with 2 workers (one timing flake under load in `src/features/create/__tests__/create.test.tsx:514`, a file this task does not touch; it passes alone, 44 of 44), gates and task check exit 0.
+- **Built:** `GET /me/referrals` (link, code, brought, verified, pending, points earned and pending apart, multiplier, level, ladder, next milestone, milestones, hold and claim days, newest 20 rewards) and `POST /me/referrals/claim` (once, in the first days, never your own, never a loop, before any paid tier). A first paid tier makes one reward (unique per referral), held, then paid as POINTS-01 lots (source `referral`) by a minute job; the milestones are paid once each; every figure is a TIER-06 setting.
+- **Default (agent), owner may override:** `verified` counts rewards past the hold (RF1 draws Verified and Pending apart); the multiplier is fixed when the reward is made, from the `verified` count then; a code is refused to someone who already paid for a tier; a referrer whose tier ended before the hold did loses the reward; the claim window runs from the profile's creation.
+- **For the lead:** nothing in the Hub refunds a tier payment after it was granted (the purchase table only allows `paid`). The reward is cancelled when a refund hold exists for the payment, the payment is `reversed`, the purchase row is gone, or a refund path calls `ReferralRewardService.cancelForPurchase(paymentRef)`; a future refund path must call it. `data-export.contract.spec.ts` could not run on my stack (its mail-outbox read from the stack's stand-in WAWU ID returns nothing); CI runs it.
+- **Gaps:** G-802 is served (REF-03 regenerates the app types with `npm run api`, SHARED-CHANGES REF-02 #2). G-812 (a claim from the deep link) is REF-03's.
+- **PROVISIONAL (owner):** `REF-SWEEP-BATCH` (50 rewards a pass, technical). The referral figures were already listed by TIER-06; REF-02 adds none.
+- **Open findings:** none medium or worse; the verifier's lows are in `tasks/SWEEP-MONEY.md` (REF-02 L1 to L4).
+- **Next:** the lead merges it on batch 7; REF-03 regenerates the app types for the referral routes (SHARED-CHANGES REF-02 #2).
+- **History:** tasks/history/REF-02.md.
 
 ## Read first
 
@@ -50,13 +57,9 @@ A person shares their link and code, and earns points (never cash) when someone 
 - [ ] A refund inside the hold cancels the reward. At the milestone count the milestone points are granted once.
 - [ ] `GET /me/referrals` shows pending and earned points apart and the next milestone.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/REF-02.md](history/REF-02.md).
 
 ## Owner sign-off
 
