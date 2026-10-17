@@ -333,7 +333,8 @@ describe('I2 and I8 · Message with its price, and Messages off (INBOX-10)', () 
     answers = page({ [`GET ${AVAILABLE}`]: ok({ ...open, paused: true, pausedUntil: '2026-10-24T00:00:00.000Z' }) });
     await bootAsk();
     expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Messages off' }).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText('Messages off')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Messages off' })).toBeNull();
     expect(screen.getByText("Lennox isn't taking paid messages right now")).toBeTruthy();
     expect(screen.getByText("You can still follow, tip and buy Lennox's work.")).toBeTruthy();
     expect(screen.queryByTestId('visitor-message')).toBeNull();

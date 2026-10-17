@@ -26,7 +26,6 @@ import type { Education } from './api';
  * Message is drawn only when the screen it opens is wired (R-47); until then Follow and the tip button share the row.
  */
 const actionMetrics = { gap: space.sm, tip: 44, tipFont: 18, messageGrow: 1.3 } as const;
-const noop = () => undefined;
 
 export type VisitorTopProps = {
   coverUrl: string | null;
@@ -101,7 +100,7 @@ export function Actions({ following, busy, onToggleFollow, onTip, wide, ask }: A
         ask.kind === 'on' ? (
           <Button testID="visitor-message" label={ask.label} icon="MessageCircle" variant="secondary" size="md" onPress={ask.onPress} style={styles.messageButton} />
         ) : (
-          <Button testID="visitor-message-off" label="Messages off" icon="MessageCircleOff" variant="secondary" size="md" disabled onPress={noop} style={styles.messageButton} />
+          <MessagesOff />
         )
       ) : null}
       {onTip && !wide ? (
@@ -125,6 +124,24 @@ export function Actions({ following, busy, onToggleFollow, onTip, wide, ask }: A
           </Text>
         </Pressable>
       ) : null}
+    </View>
+  );
+}
+
+/** I8's "Messages off": the secondary button's disabled look (sunken, a hairline ring, the disabled ink) on a part that is not a control, since nothing can be pressed. */
+function MessagesOff() {
+  const { colors } = useWawu();
+  return (
+    <View
+      testID="visitor-message-off"
+      accessible
+      accessibilityLabel="Messages off"
+      style={[styles.messageButton, styles.off, { backgroundColor: colors.surfaceSunken, borderColor: colors.borderHairline }]}
+    >
+      <Icon name="MessageCircleOff" size={17} color={colors.textDisabled} strokeWidth={2.2} />
+      <Text variant="body" style={[font(700), styles.offText, { color: colors.textDisabled }]}>
+        Messages off
+      </Text>
     </View>
   );
 }
@@ -297,6 +314,8 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: actionMetrics.gap },
   followButton: { flex: 1 },
   messageButton: { flex: actionMetrics.messageGrow },
+  off: { height: 44, borderRadius: radius.button, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs + space.xs / 2, paddingHorizontal: space.lg + space.xs / 2 },
+  offText: { fontSize: 14.5 },
   tip: { width: actionMetrics.tip, height: actionMetrics.tip, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   tipMark: { ...font(700), fontSize: actionMetrics.tipFont, lineHeight: canvasNormalLineHeight(actionMetrics.tipFont) },
   foot: { paddingTop: space.md, paddingHorizontal: layout.gutter, gap: space.sm },

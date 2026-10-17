@@ -113,7 +113,7 @@ export async function fetchThread(wawuId: string): Promise<ThreadDetail> {
   return detail;
 }
 
-/** Whether the creator has switched paid messages off for now (I8). Read on its own: a failed read leaves the creator's own switch to decide. */
+/** Whether the Hub has paused the creator's paid messages (I8). Read on its own: a failed read leaves the creator's own switch to decide. */
 export async function fetchAvailability(wawuId: string): Promise<Availability> {
   const body = (await unwrap(api.GET('/api/hub/paid-dm/creators/{wawuId}/availability', { params: { path: { wawuId } } }))) as unknown as Envelope<Availability>;
   const value = body?.data;

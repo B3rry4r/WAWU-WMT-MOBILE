@@ -7,7 +7,7 @@ order: 166
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-17, ME-02, UI-02, ME-11, HOME-07, INBOX-04, PROS-01]
 decisions: [R-6, R-10, R-19, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -22,6 +22,17 @@ As of 16 Oct 2026.
 - **Next:** a builder starts from the brief below after these are done (or in review): INBOX-17, ME-02, HOME-07.
 - **History:** none yet. Reports go to tasks/history/INBOX-10.md.
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+
+## Current state
+
+As of 17 Oct 2026, built (Sonnet builder, T2), waiting for a verifier.
+- **Status:** verifying. Mobile `wmt/S3` on `origin/wmt/ME-02` `0bf05b8c` with `origin/wmt/MERGE-13` `4c7b2acd` merged (conflicts kept every side: BACKEND_GAPS, SHARED-CHANGES, PROGRESS, SOURCE_COMMIT, the Home props of ME-02 with MERGE-13's pay handlers). Backend `wmt/S3` on `origin/wmt/MERGE-13` `6bc7b20` with `origin/wmt/ME-02` `e8e8a1d` merged (conflicts in `user-profile.controller.ts` and `.module.ts`: kept both). **INBOX-18 is not in this base** (its branch is on MERGE-12): the creator answered in the stack run through the Hub's reply route; its `rows.tsx` change is the same `draws` filter (SHARED-CHANGES INBOX-10 #2 says how to combine the two paid renderers).
+- **Built:** `src/features/paid-ask/`, `/paid-thread/<creator>`. I2: Message with its price beside Follow on the profile (M5), drawn when the Hub says paid messages are on and the route can open the thread. I3: the ask sheet (words, window, what comes back, who holds it, the breakdown, Pay from wallet, "Send · total") then the PIN. I4, I5, I7: the fan's thread with the Hub's state under each question (countdown and where the money is; the creator's bubbles and "Replied in"; the refund with the amount and time from the wallet's hold). The composer is locked while one waits, then "Ask a follow-up" or "Try again" (the old words come back). The Inbox row for a fan's paid question (I1). One draft per rested words, a fresh quote per tap of Send, one Idempotency-Key per attempt kept until the Hub decides.
+- **Backend (additive, no migration):** `PaidQuestionDraftView.usualReplyMinutes` (I3's "Usually replies in", G-146 closed for the wallet path). Spec case added to `paid-dm-wallet.contract.spec.ts` (13 pass). No route was missing.
+- **Truth over the brief's words:** the refund line says the quote's total ("your ₦1,523.25 comes back"), not the price: the Hub returns the charge too since B3a round 2 (G-INBOX-10-4). "so they've been paid" for "he's" (G-INBOX-10-3). "Bank charge" for "Fintava's charge" (R-53).
+- **Not drawn, by R-47:** the "+" in the I5 and I7 composers and the "..." in the thread header (nothing built behind them); the Ask a question button on P2 (`professionals/ProfileScreen`), Message on H10's card and on M35: those routes do not pass the ask sheet yet, so INBOX-10's capability check for them is NOT DONE (one prop and one route line each, the hook `useAsk` and `AskSheets` are ready).
+- **Gaps and shared changes:** `BACKEND_GAPS.md` G-INBOX-10-1 to 5 (G-146, G-ME-02-1 noted); `SHARED-CHANGES.md` INBOX-10 #1 to #4.
+- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9). Pictures at 390 px, light and dark, board beside build, every state: scratchpad `s3-m/e2e/pics/` (`beside-<board>-<theme>.png` for I2 to I8; the rest stand alone). Stack `s3_test` was taken down.
 
 ## Read first
 
@@ -99,7 +110,7 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Files: `src/features/paid-ask/` (api, model, useAsk, AskSheets, PaidThreadScreen, PaidFanRow, parts, routes, tests), `src/app/paid-thread/[wawuId].tsx`, `src/app/profile/[wawuId].tsx`, `src/features/visitor/` (Message and Messages off), `src/features/inbox/rows.tsx`, `src/features/chat/Bubbles.tsx` (one prop); backend `PaidQuestionDraftView.usualReplyMinutes` and its spec. Checks and the stack run are in Current state; the ask, the pay and the retry are tested in `askFlow.test.tsx` against the Hub's shapes and on the real stack. Not done: Message on P2, H10 and M35; the "+" and "..." (R-47).
 
 ## Verifier report
 

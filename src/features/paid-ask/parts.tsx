@@ -10,7 +10,7 @@ import { font, radius, space, text as textStyles, useWawu } from '@/theme';
 import type { StatusCard } from './model';
 
 /** design/_gen/inbox.js `heldCard`: an 18 corner on the tone's tint, 12 by 14 inside, an 18 mark 11 from the words; the title 14 / 600, the line 12.5 on a 1.4, 2 under it. */
-const cardMetrics = { corner: 18, padV: 12, padH: 14, gap: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2 } as const;
+const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2 } as const;
 
 const looks: Record<StatusCard['tone'], { tint: 'warningTint' | 'positiveTint'; ink: 'warning' | 'positive'; icon: IconName }> = {
   waiting: { tint: 'warningTint', ink: 'warning', icon: 'Clock' },
@@ -115,7 +115,7 @@ export function WaitingComposer() {
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', alignItems: 'flex-start', gap: cardMetrics.gap, borderRadius: cardMetrics.corner, paddingVertical: cardMetrics.padV, paddingHorizontal: cardMetrics.padH, alignSelf: 'stretch' },
+  card: { flexDirection: 'row', alignItems: 'flex-start', gap: cardMetrics.between, borderRadius: cardMetrics.corner, paddingVertical: cardMetrics.padV, paddingHorizontal: cardMetrics.padH, alignSelf: 'stretch' },
   words: { flex: 1, minWidth: 0 },
   body: { fontSize: cardMetrics.body, lineHeight: cardMetrics.body * cardMetrics.bodyLine, marginTop: cardMetrics.bodyTop },
   bar: { paddingTop: composerMetrics.padTop, paddingHorizontal: composerMetrics.padH, borderTopWidth: StyleSheet.hairlineWidth },

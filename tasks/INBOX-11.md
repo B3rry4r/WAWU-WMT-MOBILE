@@ -7,7 +7,7 @@ order: 168
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [INBOX-10, INBOX-09, MONEY-03, MONEY-19, HOME-13, UI-02, WALLET-05]
 decisions: [R-2, R-9, R-10, R-13, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -22,6 +22,14 @@ As of 16 Oct 2026.
 - **Next:** a builder starts from the brief below after these are done (or in review): INBOX-10, HOME-13, WALLET-05.
 - **History:** none yet. Reports go to tasks/history/INBOX-11.md.
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+
+## Current state
+
+As of 17 Oct 2026, built with INBOX-10 (Sonnet builder, T2), waiting for a verifier.
+- **Status:** verifying. Same branches as INBOX-10 (`wmt/S3`, mobile and backend).
+- **Built:** I6 is the ask sheet's not-enough state: "Not enough in your Naira wallet / You need ₦1,523.25. You have ₦900.00." (the Hub's total and balance) and "Add ₦623.25" (the Hub's shortfall), which opens Add money (W15) with that shortfall (`/add-money?short=62325` in tests, `?short=60000` on the stack). I7 is the thread after the window passed: the amount and the time are the wallet's own record (`refundedKobo`, `settledAt`), "coming back" while the refund is moving, and a question with no wallet record says only that it was refunded; "Try again · ₦1,500" opens the sheet with the old words. I8: "Messages off" and the note on the profile, and the same state in the thread's composer, for a creator who switched it off and for one the no-reply rule paused (read from `GET /paid-dm/creators/{id}/availability`, G-ME-02-1).
+- **Stack run (`s3_test`, ports 7890 to 7897, backend `wmt/S3` on the Nuvion stand-in; Hub balance = stand-in after each step):** a fan paid ₦1,500: a DOUBLE TAP on Send made one question and one debit (5,000,000 to 4,850,000); a wrong PIN moved nothing; a lost answer (the Hub took the payment, the phone heard 500) then the PIN again: the same key twice, one payment, one question, one debit (4,850,000 to 4,700,000); the creator answered with two bubbles and the thread showed "Replied in" and the follow-up offer; the window passed unanswered and the sweep paid every naira back in 56 s (4,700,000 to 4,850,000; "you got ₦1,500 back ... today at 22:36"); the no-reply rule then paused that creator and the thread said so in place of the composer; a fan with ₦900 saw I6 and Add opened W15 with the shortfall; a creator switched off and a creator paused showed Messages off. The stack charges a ₦0 bank charge, so ₦23.25 is only in the jest cases (the quote's shape).
+- **Checks:** mobile tsc 0, eslint 0 on changed files; jest paid-ask, inbox, chat, visitor 213 pass (45 new: 18 model, 19 flow, 3 row, 5 profile); gates and `check_tasks` 0 fail. Backend tsc 0, eslint 0, gates 0 fail, contract:build, wallet spec 13 pass. NOT RUN: full suites (CI), Fintava (never), a verifier. Mobile CI fails in seconds while billing is off.
 
 ## Read first
 
@@ -85,7 +93,7 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Built with INBOX-10 (same files): I6 in `AskSheets.tsx`, I7 in `model.refundedCard` and `PaidThreadScreen.tsx`, I8 in `visitor/parts.tsx`, the thread composer and `useAskTerms.ts`. Tests: `askFlow.test.tsx` (I6, I7, I8 in the thread), `VisitorProfileScreen.test.tsx` (I2, I8), `model.test.ts`. Not done: the pause date is not drawn (no board draws it, R-47).
 
 ## Verifier report
 
