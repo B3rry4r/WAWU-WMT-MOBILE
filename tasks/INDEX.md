@@ -311,6 +311,7 @@ Builder and verifier are always different sessions.
 36. [FIX-40](FIX-40.md) The daily limit no longer counts a held payment that was refunded
 37. [FIX-42](FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure
 38. [FIX-43](FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking
+39. [HARNESS-NUV](HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double
 
 ## Developer
 
