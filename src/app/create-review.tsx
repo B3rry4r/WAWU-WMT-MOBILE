@@ -7,7 +7,7 @@ import { ReviewScreen } from '@/features/create/ReviewScreen';
 
 /**
  * M25 · Sent for review (`/create-review`). Opened with no piece just sent (a reload, a link) it goes to Create, since there is
- * nothing to say. Done leaves the flow and returns to where it began.
+ * nothing to say. Done leaves the flow and returns to where it began; View in library leaves it for My content (M28).
  */
 export default function CreateReviewRoute() {
   const router = useRouter();
@@ -19,5 +19,14 @@ export default function CreateReviewRoute() {
   if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
   if (!sent) return <Redirect href="/create" />;
 
-  return <ReviewScreen title={sent.title} onDone={() => router.dismissTo('/')} />;
+  return (
+    <ReviewScreen
+      title={sent.title}
+      onDone={() => router.dismissTo('/')}
+      onOpenLibrary={() => {
+        router.dismissTo('/');
+        router.push('/library');
+      }}
+    />
+  );
 }

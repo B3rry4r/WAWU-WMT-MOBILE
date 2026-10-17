@@ -87,12 +87,18 @@ export type MeScreenProps = {
   onOpenSettings: () => void;
   /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
   onOpenInvite?: () => void;
+  /** My courses (SCHOOLS-08): the menu's row, drawn only when given. */
+  onOpenCourses?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
   onOpenVerification?: () => void;
   /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
   onOpenShop?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
+  /** Creator dashboard (M18, ME-07): the menu's first row for a creator account, drawn only when given. */
+  onOpenDashboard?: () => void;
+  /** My content (M28, ME-07): the menu's second row for a creator account, drawn only when given. */
+  onOpenLibrary?: () => void;
 };
 
 /**
@@ -112,7 +118,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -244,11 +250,35 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        onOpenCourses={
+          onOpenCourses
+            ? () => {
+                setMenuOpen(false);
+                onOpenCourses();
+              }
+            : undefined
+        }
         onOpenVerification={
           onOpenVerification
             ? () => {
                 setMenuOpen(false);
                 onOpenVerification();
+              }
+            : undefined
+        }
+        onOpenDashboard={
+          creator && onOpenDashboard
+            ? () => {
+                setMenuOpen(false);
+                onOpenDashboard();
+              }
+            : undefined
+        }
+        onOpenLibrary={
+          creator && onOpenLibrary
+            ? () => {
+                setMenuOpen(false);
+                onOpenLibrary();
               }
             : undefined
         }

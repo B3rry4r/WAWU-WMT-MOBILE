@@ -43,7 +43,7 @@ export type BuyCreditsSheetProps = Omit<BuyCreditsArgs, 'onOpenWallet'> & {
  * I28 · Buy WAWU Credits and I29 · Credits added (INBOX-13), over whatever opened them (a room, the communities list). The sheet
  * is the packs, the bank's charge and the total from the Hub's quote, "Pay from wallet" and "Buy N credits · total"; the PIN is the
  * shared PIN sheet. A purchase the Hub has not finished and a refusal are the shared pay sheet's own states. A short wallet is not: the packs
- * stay drawn, so a person can pick a smaller one, and the "Not enough" note speaks for the chosen pack only (Add money joins it once WALLET-05 builds it, R-47).
+ * stay drawn, so a person can pick a smaller one, and the "Not enough" note and Add money speak for the chosen pack only.
  */
 export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   const entry = useOpenWalletEntry();

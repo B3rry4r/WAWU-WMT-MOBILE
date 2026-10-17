@@ -31,6 +31,8 @@ function installFetch() {
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const refusal = (statusCode: number, message: string) => ({ status: statusCode, body: { statusCode, message, data: null } });
 
+jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'u1' }));
+
 installFetch();
 const { MeScreen } = require('../MeScreen') as typeof import('../MeScreen');
 const { postProfileSaved, clearProfileSaved, PROFILE_SAVED_MS } = require('../savedNotice') as typeof import('../savedNotice');
@@ -104,13 +106,26 @@ function frame(children: React.ReactNode) {
   );
 }
 
-async function boot() {
+async function boot(creatorRows = false) {
   const onEditProfile = jest.fn();
   const onAddWork = jest.fn();
   const onOpenWork = jest.fn();
   const onOpenSettings = jest.fn();
-  await render(frame(<MeScreen onEditProfile={onEditProfile} onAddWork={onAddWork} onOpenWork={onOpenWork} onOpenSettings={onOpenSettings} />));
-  return { onEditProfile, onAddWork, onOpenWork, onOpenSettings };
+  const onOpenDashboard = jest.fn();
+  const onOpenLibrary = jest.fn();
+  await render(
+    frame(
+      <MeScreen
+        onEditProfile={onEditProfile}
+        onAddWork={onAddWork}
+        onOpenWork={onOpenWork}
+        onOpenSettings={onOpenSettings}
+        onOpenDashboard={creatorRows ? onOpenDashboard : undefined}
+        onOpenLibrary={creatorRows ? onOpenLibrary : undefined}
+      />,
+    ),
+  );
+  return { onEditProfile, onAddWork, onOpenWork, onOpenSettings, onOpenDashboard, onOpenLibrary };
 }
 
 beforeEach(() => {
@@ -490,5 +505,58 @@ describe('M10 · Profile saved', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('Z1 · Creator dashboard and My content (ME-07)', () => {
+  const EARNINGS = '/api/hub/money/earnings';
+  const ALLOWANCE = '/api/hub/uploads/allowance';
+  const earned = {
+    month: '2026-09',
+    walletOpen: true,
+    allTime: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    thisMonth: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    waiting: { count: 0, amountKobo: 0 },
+    held: { count: 0, amountKobo: 0 },
+  };
+  const room = { tickHeld: false, uploads: { used: 4, allowed: 5, remaining: 1 }, storage: { usedBytes: 0, limitBytes: 1, remainingBytes: 1 }, free: { uploads: 5, storageBytes: 1 }, withTick: { uploads: 25, storageBytes: 1 } };
+
+  it('a creator sees both rows first, each with the Hub\u2019s own line, and each opens its screen and closes the menu', async () => {
+    answers = { ...header(), [`GET ${EARNINGS}`]: ok(earned), [`GET ${ALLOWANCE}`]: ok(room) };
+    const { onOpenDashboard, onOpenLibrary } = await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    const list = within(await screen.findByTestId('me-menu-list'));
+    expect(list.getAllByRole('button').map((row) => row.props.testID)).toEqual(['me-menu-dashboard', 'me-menu-content', 'me-menu-settings']);
+    expect(await screen.findByText('\u20a6128,400 this month')).toBeTruthy();
+    expect(await screen.findByText('4 of 5 uploads')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-dashboard'));
+    expect(onOpenDashboard).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-content'));
+    expect(onOpenLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it('an account that is not a creator is shown neither row, whatever the screen was given', async () => {
+    answers = { ...header(), [`GET ${ME}`]: ok(profile({ accountType: 'user' })) };
+    await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    expect(screen.queryByTestId('me-menu-dashboard')).toBeNull();
+    expect(screen.queryByTestId('me-menu-content')).toBeNull();
+    expect(asked).not.toContain(`GET ${EARNINGS}`);
+  });
+
+  it('still opens both screens when their lines cannot be read, and draws no line it was not given', async () => {
+    answers = { ...header(), [`GET ${EARNINGS}`]: 'offline', [`GET ${ALLOWANCE}`]: 'offline' };
+    const { onOpenDashboard } = await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-dashboard'));
+    expect(onOpenDashboard).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/this month/)).toBeNull();
+    expect(screen.queryByText(/uploads/)).toBeNull();
   });
 });
