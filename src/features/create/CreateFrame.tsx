@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -22,14 +22,29 @@ export type CreateFrameProps = {
   onLeave: () => void;
   /** Pinned under the body: the Continue button. */
   foot?: ReactNode;
+  /** The bar's right-hand slot (M28's Plus): a 42 round button, so the title stays centred. */
+  trailing?: ReactNode;
+  /** Space between the body's parts (default 18, the Create screens'; M18 and M26 draw 16, M28 14). */
+  gap?: number;
+  /** Called while the body is scrolled to within this many points of its end, so a long list asks for its next page (M28). */
+  onNearEnd?: () => void;
   children: ReactNode;
   testID?: string;
 };
 
+/** How near the end of the body (in points) the next page of a long list is asked for. */
+const MORE_WITHIN = 600;
+
 /** The Create screens' frame: safe areas, the bar (a round button, a title with a line under it), the scrolling body and a pinned foot. */
-export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, children, testID }: CreateFrameProps) {
+export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, children, testID }: CreateFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const onScroll = onNearEnd
+    ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+        if (contentSize.height - (contentOffset.y + layoutMeasurement.height) < MORE_WITHIN) onNearEnd();
+      }
+    : undefined;
   return (
     <View testID={testID} style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
@@ -46,12 +61,15 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
             </Text>
           ) : null}
         </View>
-        <View style={styles.side} />
+        <View style={styles.side}>{trailing}</View>
       </View>
       <ScrollView
+        testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right, paddingBottom: bodyMetrics.bottom }]}
+        onScroll={onScroll}
+        scrollEventThrottle={onScroll ? 100 : undefined}
+        contentContainerStyle={[styles.content, gap === undefined ? null : { gap }, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right, paddingBottom: bodyMetrics.bottom }]}
       >
         {children}
       </ScrollView>

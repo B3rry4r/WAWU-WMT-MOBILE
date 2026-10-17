@@ -14,6 +14,7 @@ import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEv
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
 import { todayMetrics } from '@/features/home/look';
+import { countsKey, fetchCounts } from '@/features/me/counts';
 import { dayKey, fetchDay, fetchStats, statsKey } from '@/features/tgif/api/tgif';
 import { localDay } from '@/features/tgif/model';
 import { layout, radius, space, useWawu } from '@/theme';
@@ -60,6 +61,8 @@ export type ExploreScreenProps = {
   onCreate?: () => void;
   /** The TGIF card was tapped (X1): opens today's reader (H29, `/tgif`). */
   onOpenTgif: () => void;
+  /** The bell in the bar opens Notifications (M31, ME-14). Not drawn without it. */
+  onOpenNotifications?: () => void;
 };
 
 /**
@@ -78,7 +81,7 @@ export type ExploreScreenProps = {
  * nothing to show keeps its heading and draws neutral frames (`parts.tsx`). X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onOpenNotifications }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -100,16 +103,19 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   const tgifRead = tgifDay.isSuccess;
   const [pulled, setPulled] = useState(false);
 
+  // The bell's dot: how many notifications are unread (`GET /me/counts`). A failed read draws the bell without a dot, never an error.
+  const counts = useQuery({ queryKey: countsKey, queryFn: fetchCounts, enabled: Boolean(onOpenNotifications) }, queryClient);
+  const refetchCounts = counts.refetch;
   const refetchCategories = categories.refetch;
   const refetchFeatured = featured.refetch;
   // One list of reads for coming back to the tab, a pull and Try again.
   const refetchAll = useCallback(
-    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchAds(), tgifRead ? refetchTgifStats() : refetchTgifDay()]),
-    [refetchCategories, refetchFeatured, refetchEvents, refetchAds, tgifRead, refetchTgifStats, refetchTgifDay],
+    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchAds(), tgifRead ? refetchTgifStats() : refetchTgifDay(), onOpenNotifications ? refetchCounts() : undefined]),
+    [refetchCategories, refetchFeatured, refetchEvents, refetchAds, tgifRead, refetchTgifStats, refetchTgifDay, onOpenNotifications, refetchCounts],
   );
 
   // Coming back to the tab reads again when what is held has gone stale (a read that failed holds nothing, so it is stale).
-  const stale = categories.isStale || featured.isStale || ads.isStale;
+  const stale = categories.isStale || featured.isStale || ads.isStale || (Boolean(onOpenNotifications) && counts.isStale);
   const wasFocused = useRef(focused);
   useEffect(() => {
     if (focused && !wasFocused.current && stale) void refetchAll();
@@ -197,7 +203,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
 
   return (
     <View testID="explore-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <ExploreBar />
+      <ExploreBar onOpenNotifications={onOpenNotifications} unread={counts.data?.unreadNotifications ?? 0} />
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}

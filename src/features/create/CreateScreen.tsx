@@ -33,6 +33,8 @@ export type CreateScreenProps = {
   onService: () => void;
   /** The draft row opens Your shop (VF2, VERIFY-01). The row is not drawn without it. */
   onShop?: () => void;
+  /** The full-state note's Open library button (M27) opens My content (M28). The button is not drawn without it. */
+  onOpenLibrary?: () => void;
 };
 
 /**
@@ -40,7 +42,7 @@ export type CreateScreenProps = {
  * count. Community (opens I32, INBOX-14) and the meter's "Get verified" (opens M11, ME-12) are added by the tasks that build where they
  * lead (R-47).
  */
-export function CreateScreen({ onClose, onContent, onEvent, onService, onShop }: CreateScreenProps) {
+export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, onOpenLibrary }: CreateScreenProps) {
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   // The draft count is the Hub's; a read that fails leaves the row with its fixed words and Your shop says why when it opens.
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: Boolean(onShop) });
@@ -56,7 +58,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService, onShop }:
 
   return (
     <CreateFrame testID="create-screen" title="Create" leading="close" onLeave={onClose}>
-      {allowance.data && full ? <SlotsFullNotice allowance={allowance.data} /> : null}
+      {allowance.data && full ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} /> : null}
       <View style={styles.grid}>
         {rows.map((row) => (
           <View key={row[0].id} style={styles.pair}>
