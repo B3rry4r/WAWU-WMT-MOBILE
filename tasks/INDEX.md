@@ -105,11 +105,11 @@ Builder and verifier are always different sessions.
 87. [SCHOOLS-07](SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend)
 88. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02 from Developer first
 89. [HOME-12](HOME-12.md) Unlock from the feed · needs UI-02 from Developer first
-90. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs UI-02 from Developer first
-91. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01 from Developer first
-92. [FIX-50](FIX-50.md) The BVN step names no checker
-93. [FIX-52](FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote
-94. [FIX-54](FIX-54.md) A bank send on Nuvion shows its true outcome
+90. [FIX-54](FIX-54.md) A bank send on Nuvion shows its true outcome
+91. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs UI-02 from Developer first
+92. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01 from Developer first
+93. [FIX-50](FIX-50.md) The BVN step names no checker
+94. [FIX-52](FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote
 95. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
 96. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
 97. [FIX-47](FIX-47.md) No blank page while Open your wallet sends the ID and address details

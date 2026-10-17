@@ -18,15 +18,15 @@ tier: T0
 
 ## Current state
 
-As of 17 Oct 2026, built by a Sonnet builder (T0); waiting for a verifier or the lead's read of the diff.
-- **Status:** verifying. Branch `wmt/OPS-R1` in the mobile repo only, from `origin/wmt/DV2-COPY` `af5a2760` (it holds DV2-COPY too). No backend change.
+As of 17 Oct 2026, built by a Sonnet builder (T0); accepted by the lead.
+- **Status:** merging (lead). Accepted by the lead (T0, 17 Oct 2026). Stacked in batch 11 by MERGE-11 (mobile `9e69b451` merged into `wmt/MERGE-11`; it holds DV2-COPY `af5a2760`). Branch `wmt/OPS-R1` in the mobile repo only, from `origin/wmt/DV2-COPY` `af5a2760`. No backend change.
 - **Brand:** `BrandMark.tsx` `APP_NAME` (the logo's accessibility label) and `app.json` `expo.name` (the launcher name) say "Who Made This?" (R-69). `brand.test.tsx` and `auth-welcome.test.tsx` expect the question mark; `Avatar.tsx` has the comment only. SHARED-CHANGES DV2-COPY #2 is marked applied (the brief from the lead names it approved, R-69). The launcher name shows from the next development build.
 - **Gap ids:** 6 ids were used by more than one row in `BACKEND_GAPS.md`. 11 rows are renamed, 422 ids now, none twice. DV2-05 G-DV2-05-1 (was G-827, A6); DV2-01 G-DV2-01-1 (was G-828); REF-03 G-REF-03-1 and -2 (was G-830, G-831); EVENTS-06 G-EVENTS-06-1 and -2 (was G-827, G-828); EVENTS-08 G-EVENTS-08-1 and -2 (was G-830, G-831); INBOX-15 G-INBOX-15-1 (was G-827, I20); ME-04 G-ME-04-1 and -2 (was G-690, G-691).
 - **Kept on purpose:** MONEY-16's own G-690 and G-691 keep their ids, because `wawu-backend` cites G-690 in five places (`.env.example`, `docs/contract/CONVENTIONS.md`, `mock-wawu-id/server.js`, `src/money/check/money-check-mailer.ts`, `test/money/wawu-id-mail-double.ts`) and this task changes one repo.
 - **References updated:** `liveness.ts`, `organiserFormat.ts` (two), `hostedSelfie.test.tsx` (a comment), the task files DV2-01, DV2-05, EVENTS-06, EVENTS-08, INBOX-20, LINKS-01, ME-04, REF-03, SWEEP-APP, and `docs/LOG.md` (`docs/PROGRESS.md` regenerated). Comments and records only, no behaviour.
 - **Not edited:** `tasks/history/*` (round records; they keep the ids of the day they were written).
 - **Checks:** all exit 0 (builder report).
-- **Next:** a read of the diff; then merge.
+- **Next:** the batch 11 pull request.
 
 ## Read first
 
@@ -49,14 +49,8 @@ The app names itself "Who Made This?" everywhere it can be read: the strings (DV
 - [ ] A search of `BACKEND_GAPS.md` finds each gap id once.
 - [ ] A task file or code comment that names a renamed gap reads the new id.
 
-## Builder report
+## History
 
-- **Brand (4 files and a comment):** `BrandMark.tsx`, `app.json`, `brand.test.tsx`, `auth-welcome.test.tsx`, plus the `Avatar.tsx` comment. Nothing else in `src` says the name without the question mark where the app names itself.
-- **Gap ids:** found with a script over `BACKEND_GAPS.md` (6 ids used twice or three times: G-690, G-691, G-827 x3, G-828, G-830, G-831). Which row owns a reference was read from the row's artboard and the task that filed it (`git log -S` gave the filing order). Re-run after the edit: no id twice, no bare use of a renamed id outside `tasks/history/`.
-- **Checks (full output in the builder's scratchpad `ops-r1-b/`):** `npx tsc --noEmit` EXIT 0; `eslint` on the 7 changed source files EXIT 0; jest on `brand.test`, `auth-welcome.test` and `hostedSelfie.test` EXIT 0 (3 suites, 69 tests); `check_tasks.py --write` EXIT 0; `npm run tasks` EXIT 0 (345 tasks); `npm run gates` EXIT 0 (0 fail, 9 warn, baseline 0 entries).
-- **Not run:** the full jest suite and the app on a phone (the full check runs once per batch). The launcher name needs a development build to show.
-- **For the lead:** `tasks/history/*` still says the old bare ids; `CLAUDE.md` still says `The app is "Who Made This" (R-37)` (a doc line, not in this task's scope).
-
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-R1.md](history/OPS-R1.md).
 
 ## Owner sign-off

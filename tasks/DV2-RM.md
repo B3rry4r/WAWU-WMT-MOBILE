@@ -18,12 +18,13 @@ artboards: [H1, W1, W5, W6, W26, M1, M2, Z2]
 ## Current state
 
 As of 17 Oct 2026 (builder, Sonnet; mobile `wmt/DV2-RM` from `origin/wmt/MERGE-10` 4b854ee4; no backend, wawu-id or migration change; no PR).
-- **Status:** verifying. Built; a fresh session verifies, the builder does not.
+- **Status:** merging (lead). Accepted by the lead (diff read, 17 Oct 2026). Stacked in batch 11 by MERGE-11 (mobile `daee2046` merged into `wmt/MERGE-11`, no code conflict; `src/features/send/__tests__/model.test.tsx` merged by git with OPS-R1's edit). Mobile `wmt/DV2-RM` from `origin/wmt/MERGE-10` `4b854ee4`; no backend, wawu-id or migration change.
 - **Done:** Home's services row has no Events tile (R-61) and no Pay bills tile (R-52); the balance card has no Bills button (R-52); Today draws no TGIF card and reads no TGIF (switch, day or stats; R-59), so its loading shapes lost the TGIF bar and `todayPhase` reads only the balance and the creators.
 - **Already gone before this task:** the bill tiles on Wallet and the Bills history chip (DV2-02, BILLS-04 r2), the "TGIF on Home" Settings row (DV2-06 wrote "TGIF each morning" in its place), the ad slot's "TGIF off" rule (DV2-01), and the Me tick card (Me never drew it; DV2-03). Only stale comments changed there (`MeScreen.tsx`, `home/api.ts`, `look.ts`).
 - **Kept on purpose:** `TgifCard.tsx` and `TgifProblem` (Explore draws them, EXPLORE-07), the reader screen and `/tgif`, the tick mark beside a name (`ticksOf`), `src/app/bills/` and `src/features/bills/` (switched off, unreachable from Home, Wallet and history), the contract's `bills` history filter value (no chip offers it).
-- **Not touched:** the dead share files DV2-01 left unreferenced (`ShareSheet.tsx`, `cardFile*.ts`, the share-card fetch): this task's scope names none of them, so they wait for the lead's call.
+- **Not touched:** the dead share files DV2-01 left unreferenced (`ShareSheet.tsx`, `cardFile*.ts`, the share-card fetch): this task's scope names none of them. They are the removals list's open item, filed as a low in `tasks/SWEEP-APP.md` (DV2-RM L1).
 - **Pictures** (390 px, light and dark, `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/dv2-rm-b/pics/<home|explore|wallet|settings>-<light|dark>.png`): from this branch's web export with the Hub answered by fixtures in the browser (no stack). Home: Send only, Learn and Legal only, no TGIF card. Explore: TGIF card and Upcoming events (the events fixture was empty, so the cards are placeholders). Wallet: Send, Buy points, To cash, no bills. Settings: "TGIF each morning", no "TGIF on Home". Served on port 7921 (7920 was busy); nothing of mine is listening.
+- **Next:** the batch 11 pull request.
 
 ## Read first
 
@@ -56,18 +57,9 @@ The boards the 16 Oct export dropped stop being drawn by built screens (law 6: t
 - [ ] Me shows no tick-purchase card; tests that asserted the removed pieces are changed with the removal, none weakened.
 - [ ] V7: walk Home, Wallet, Me, Settings and Explore as a new person, a person with a wallet and a creator: no dead end appears where an entry was.
 
-## Builder report
+## History
 
-- **Files:** `src/features/home/` `Services.tsx`, `MoneyCard.tsx`, `TodayScreen.tsx`, `TodayLoading.tsx`, `model.ts` (`showsTgif` removed, `todayPhase` takes balance and creators), `look.ts`, `api.ts`, `TgifCard.tsx` (comments only); `MeScreen.tsx` (comment only). Tests: `home/__tests__/HomeScreen.test.tsx` and `model.test.ts`, `ads/__tests__/TodaySponsored.test.tsx`, `bills/__tests__/billsFlow.test.tsx`, `send/__tests__/model.test.tsx`.
-- **Tests removed or changed, each by a ruling, none weakened** (SHARED-CHANGES DV2-RM #5): Today TGIF card, "TGIF off" and "TGIF cannot be read" cases removed and one case added (R-59: no card, no TGIF read); Bills action, Events tile and Pay bills cases replaced by absence checks (R-52, R-61); services row now two tiles; `showsTgif` cases removed; ad tests no longer have a TGIF card beside the ad (R-59); the Home-to-Pay-a-bill walk now asserts no entry (R-52); the Send-before-Bills order is now "no Bills".
-- **Checks:** typecheck EXIT 0; eslint on the 14 changed files EXIT 0; jest home, explore, wallet, settings, tgif, ads, bills, me, send, push and the two tgif root tests: 68 suites, 1196 tests, EXIT 0; `npm run gates` before 10 run, 880 files, 0 fail, 9 warn, after the same (log lines below).
-- **A search of `src/`** finds no push to `/bills` and no `Pay bills` or `today-action-bills` outside the bills feature and tests that assert absence.
-- **Gaps and shared-change requests:** none filed (no new data or fenced file); SHARED-CHANGES DV2-RM #1 to #4 closed, #5 records the tests.
-- **Not run:** the V7 walk on a real Hub (no stack, by the brief); the pictures use fixtures.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/DV2-RM.md](history/DV2-RM.md).
 
 ## Owner sign-off
 

@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 134, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 136, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged. The rows of SHARED-06 wait for batch 7 to merge (the code they name is on its branch until then). The rows of AUTH-06, VERIFY-01 and FIX-51 wait for batch 9 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -181,6 +181,8 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | AUTH-06 | L4 | A13's role line shows the creator's category label ("Music & Audio") where the board shows a profession ("VFX artist"); the lead ruled to show the profession when the Hub has one. Needs a profession field on the Hub (BACKEND_GAPS G-1711). Names fall back to the handle when a profile has none. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/AUTH-06.md, finding 4 (and round 2 item 5)` |
 | VERIFY-01 | L1 | Create (M19) for a fresh creator reads "Your 0 free uploads are used ... 0 of 0 used" (round 1 finding 7). Not checked on the base and not in this task's diff; the lead left it for the sweep. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/VERIFY-01.md, finding 7 (round 1)` |
 | FIX-51 | L1 | After Submit on the web export of the app, the flow ends on A26 instead of the next screen: the flow's own `history.go(-3)` runs in a shallow browser history. Web export only (a phone has the full stack); the two document POSTs themselves are stored on the Hub. | `tasks/FIX-51.md, Current state (Not run)` |
+| FIX-57 | L1 | `mock-wawu-id/server.js` (backend repo, Express 5) calls the `app.listen` callback on EADDRINUSE too, so its log says "listening" after it lost the port, and it exits 0. `scripts/dev/stack.sh` now says the truth (`why:` line, NOT OURS), the log line stays misleading. | `tasks/FIX-57.md`, Current state (accepted by the lead, 17 Oct; no verifier report) |
+| DV2-RM | L1 | Removals list, open item: DV2-01 left files unreferenced and DV2-RM's scope names none of them: `src/features/tgif/ShareSheet.tsx`, `cardFile*.ts` and the share-card fetch (the phone share sheet replaced them). Delete them in a removal task, searching every reference first: on the merged head `ShareSheet.tsx` has no importer outside its tests, but `cardFile.ts` is still imported by `src/features/referral/ShareCardScreen.tsx`. | `tasks/DV2-RM.md`, Current state ("Not touched"); `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-01.md` |
 
 ## Builder report
 

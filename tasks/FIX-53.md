@@ -18,12 +18,12 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying. Built by the H1 bundle builder (Sonnet); not yet checked by a second session.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/H1.md`: FIX-53 PASS, end to end on the stack, two lows). Backend stacked in batch 11 by MERGE-11 (`wmt/H1` `13fe440`, which holds `a5d0a7d`'s note and the mail stand-in); mobile H1 `00ee90b8`. The wawu-id commit `a984298` is NOT in this batch: it stays on wawu-id `wmt/H1`.
 - **Branches:** wawu-id `wmt/H1` `a984298` from `origin/main` `8e4ee10`: the route and its spec. Backend `wmt/H1` `a5d0a7d` (the Hub's note, a mail stand-in for the stack, `scripts/dev/stack.sh` passes `STACK_RESEND_API_KEY` through). Mobile `wmt/H1`: this file and the records.
 - **Found by:** LINKS-01's audit, row H1 (`tasks/LINKS-01.md`): the Hub's account data export asks wawu-id for `POST /internal/users/:id/data-export`, which wawu-id did not have, so the export email was never sent and every request ended `failed` after 24 hours (BACKEND_GAPS G-131).
-- **Merged and live:** nothing of this task.
+- **Merged and live:** nothing of this task (the Hub half is in `wmt/MERGE-11`).
 - **Open findings:** none known. **Not run:** a real mail service (never called), the live host. GitHub CI runs on `wmt/**` pushes of both repos: run ids in the hand-back.
-- **Next:** a fresh verifier (V1 to V4, V9 on the stack); the lead merges wawu-id and the backend together, then deploys wawu-id first.
+- **Next:** the batch 11 pull request merges the backend; wawu-id `wmt/H1` `a984298` merges and deploys first. When SETTINGS-08 (wawu-id `01b751f`) is also on wawu-id main, `sendDataExportLink`'s select needs `status: true, deletedAt: true` (`auth.service.ts` about :1433). The two lows are in `tasks/SWEEP-MONEY.md` (link host not pinned; `fulfil` holds a transaction across the wawu-id call).
 
 ## Read first
 
@@ -50,15 +50,9 @@ A person who asks for a copy of their data gets an email with the link. The Hub 
 - [ ] No em-dash in the mail; the name is escaped; the deadline reads in Lagos time.
 - [ ] Nothing else in wawu-id changes: `src/mail` and `src/auth` specs unchanged and green; tsc and lint on the changed files exit 0.
 
-## Builder report
+## History
 
-Builder (H1 bundle, Sonnet), 17 Oct 2026. wawu-id `wmt/H1` `a984298` (from `origin/main` `8e4ee10`), backend `wmt/H1` `a5d0a7d` (from `origin/wmt/MERGE-9` `4e444ca`), mobile `wmt/H1`.
-- **Built:** the route (`internal.controller.ts` `dataExport`, `auth.service.ts` `sendDataExportLink`, `mail.service.ts` `sendDataExportLink`, new `src/mail/data-export-link.ts` with `parseDataExportLink` and the Lagos deadline text), the contract paragraph in `WAWUAfrica_API_Contracts.md`, and 28 tests (`src/auth/data-export-email.spec.ts`, the mail goes through the real `MailService` to a local stand-in for Resend). The Hub side needed no code: its call already matches; only its mailer comment and README line changed.
-- **Proof on the stack** (`h1_test`, ports 7980 to 7987, real Hub and real wawu-id built from these branches, wawu-id's transport pointed at `scripts/dev/mail-standin.cjs` on 7982, Nuvion stand-in as always): a throwaway account signed up and proved its email through wawu-id (the code mail landed in the stand-in too); `POST /settings/privacy/export` answered 201 `pending`; the sweep asked wawu-id and the request became `sent` about 60 seconds later; the stand-in holds one mail "Your WAWUAfrica data is ready to download" to that address, the button link opens the export (200, JSON with `exportedAt`, `requestId`, `accountId`, `notIncluded`, `data`), the deadline reads "Tue 20 Oct 2026 at 16:50" (72 hours, Lagos time), no em-dash; the route without the key is 401. Evidence in the lead's scratchpad folder `h1-b/` (`mail-recorded.keep`, `e2e*.py`).
-- **Checks:** wawu-id `npx tsc --noEmit` 0; eslint on the 5 changed files 0; `src/auth/data-export-email.spec.ts` 28/28 and `money-check-report.spec.ts` 27/27; `src/mail` and `src/auth` together 586/588, the 2 failures are `phone-signup.service.spec.ts` timing out at 5 s with load average 21 (a file this task does not touch; see Not run). Backend: no source change for this task, so the FIX-17 checks below cover it.
-- **Decisions** (Default (agent), the owner may override): (1) the address rule is `provenEmail`, the one every wawu-id mail uses (an account that typed an email on the phone and never proved it gets 409, a web or legacy account gets the mail), not the stricter verified-only rule of the money check; (2) the link host is not pinned to a configured list (wawu-id knows the Hub only by its loopback address), the path and shape are; a leaked key can mail a person a link of that exact shape to any host, which is no more than `unpaid-warning` allows today; (3) a week is the longest deadline taken (the Hub's is 72 hours).
-- **Not run:** a real mail service (never called), the live host. wawu-id gates: 0 fail, 22 warn, 0 accepted (as on main).
-- **Found, not fixed (Hub, not this task):** `DataExportFulfilmentService.fulfil` holds a database transaction across the call to wawu-id (up to the 10 s timeout, `FOR UPDATE SKIP LOCKED` row lock) where the common rules say decide, call holding nothing, record. Safe today (batch of 20, one row locked at a time) but a sweep follow-up.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-53.md](history/FIX-53.md).
 
 ## Owner sign-off
 
