@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 106 | 0 | 0 | 0 |
+| todo | 104 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 77 | 0 | 0 | 0 |
+| verifying | 79 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -33,8 +33,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-05](../tasks/LEGAL-05.md) Pay legal fees from the wallet (backend) (You)
 - [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
+- [HOME-13](../tasks/HOME-13.md) Tip a creator (You)
 - [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
+- [HOME-12](../tasks/HOME-12.md) Unlock from the feed (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
 - [FIX-47](../tasks/FIX-47.md) No blank page while Open your wallet sends the ID and address details (You)
 - [ME-13](../tasks/ME-13.md) Tick still confirming, wallet not opened, identity not matched (You)
@@ -265,6 +267,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · HOME-12 · Built (bundle S1, Sonnet builder; mobile `wmt/S1` on `origin/wmt/MERGE-8` `cc436a53` with `origin/wmt/B1` merged; no backend change; status verifying): the offer bar under a locked post opens the unlock sheet (H14) on a fresh quote, Pay opens the shared PIN sheet (H15), a paid unlock ends on Unlocked (H16, Watch now plays the whole piece in place), a short wallet shows Not enough (H17) and a payment the Hub has not finished shows H18 or Still confirming; one key per attempt; every attack run once on a local stack.
+- 17 Oct 2026 · HOME-13 · Built (bundle S1, Sonnet builder; mobile `wmt/S1`, no backend change; status verifying): the rail's ₦ Tip opens the tip sheet (H26: quick amounts, other amount, note, the Hub's breakdown with the Bank charge, Pay from wallet), Tip opens the shared PIN sheet (H27) and a paid tip ends on Tip sent (H28, Total paid); no wallet leads to Open your wallet; one key per attempt; every attack run once on a local stack.
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · WALLET-16 · Merged onto batch 7 and the start-time cutoff built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e` on `origin/wmt/MERGE-7` `432f017` with `wmt/WALLET-16` `315b69b` merged, mobile `wmt/B1`; migrations `20261025120000_earning_settlements` (renamed from `20261021180000`) and `20261025130000_earning_sweep_start`; status verifying): the sweep pays only sales made on or after `EARNINGS_SWEEP_START`, else the moment the code first reached the environment (stored once); older unsettled sales get no earning and are listed at `GET /admin/money/earnings/before-start`. The earnings section of CONVENTIONS is now 26. R-55 (one move a day, 200 naira floor, 72 h after the first refusal) is NOT built.
 - 17 Oct 2026 · HOME-14 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a tip is paid from the wallet (`GET /tips/wallet/quote`, `POST /tips/wallet`, `GET /tips/wallet/{id}`), the creator's 85% lands by the sweep, the web's tip row is written once per payment, an undeliverable tip is paid back. 8 Nuvion stand-in specs: double submit, twice in parallel, wrong PIN, short balance, a lost provider answer then a retry, a refund; the ledger equals the stand-in after each.
@@ -278,5 +282,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · EVENTS-08 · Built (Sonnet builder; backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478`, mobile `wmt/EVENTS-08` on `0aca612c`; no migration): My events (E17) with its tab and E16's button, the organiser dashboard (E18), call it off (E25) and Shared links, and the called-off ticket (E11); `GET /events/{id}/call-off` added (the buyers a call-off refunds). Edit event and Ticket types are not built (G-833, the owner).
 - 17 Oct 2026 · ME-13 · Built (Sonnet builder; backend `wmt/ME-13` `ca103ec` on `wmt/MERGE-7` `9c40478`, mobile `wmt/ME-13` on `0aca612c`; no migration; status verifying): Verification at `/verification`, opened from a new Me menu row. The Identity check row is the wallet's state from the Hub (M16 no wallet, M17 a rejected review or a selfie step out of tries) and opens Open your wallet; M15 "Paid, still confirming" reads the new additive `GET /plans/purchases/pending`. Gaps G-870 to G-872, SHARED-CHANGES ME-13 #1 and #2.
 - 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
-- 17 Oct 2026 · EVENTS-13 · Round 2 (Sonnet builder; backend `wmt/EVENTS-13` `bce009c`, was `b22e1b6`): the twenty-buyers test counts `ordersRefunded: 20` again and fails when `CONCURRENCY` is 1 (5 refunded), passes at 5; the cancel answer is two declared shapes so the contract no longer calls `ordersLeftToSweep` nullable (`contract:build` twice identical); 29 of 30 runs of the twenty-buyers test, the 1 failure on its unchanged read-latency assertion (1521 ms read after the cancel ended). Status verifying.
-- 17 Oct 2026 · EVENTS-13 · Builder report (Sonnet builder; backend `wmt/EVENTS-13` `b22e1b6` on `wmt/MERGE-7` `ca9ec13`, mobile record on `3817f5b`; no migration; status verifying): a buyer holds at most N open paid ticket orders per event (admin setting `events.open_orders_per_buyer`, default 10; order N+1 is 409 `event_order_limit` before anything is recorded, held under a lock inside the payment's claim); two cancels at once answer one 201; a free order at the instant of a cancel keeps no valid ticket; the call-off answer says `ordersLeftToSweep` (EVENTS-10 F2 closed); the twenty-buyers test sends its cancel first and passes 30 of 30 under load (its flake was another process's hold sweep on the same database, not the 15 s budget). CI green except the gates job's one pre-existing FAIL.
