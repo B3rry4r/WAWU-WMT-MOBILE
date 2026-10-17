@@ -8,22 +8,42 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
+import { ProductsMeter } from '@/components/ProductsMeter';
 import { CreateEntry } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { readFailure } from '@/features/profile-edit/failure';
 import { layout, radius, space, useWawu } from '@/theme';
 
-import { aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
+import {
+  aboutWorksKey,
+  draftsKey,
+  fetchAboutWorks,
+  fetchDrafts,
+  fetchGridPage,
+  fetchListings,
+  fetchMyTier,
+  fetchProfileStats,
+  fetchServiceState,
+  gridKey,
+  listingsKey,
+  servicesKey,
+  statsKey,
+  tierKey,
+  type MyProfile,
+} from './api';
 import { AboutTab } from './AboutTab';
 import { ContentGrid, GridSkeleton } from './ContentGrid';
 import { MeMenuSheet } from './MeMenuSheet';
 import {
   countsOf,
+  draftTileOf,
+  headerBadgeOf,
   liveListings,
   memberSinceLine,
   nameOf,
   openableLink,
   paidMessagesOf,
+  productsMeterOf,
   profileShareText,
   roleLinesOf,
   socialLinksOf,
@@ -34,6 +54,7 @@ import {
 } from './model';
 import { Counts, HeaderSkeleton, NameBlock, ProfileTop, SocialChips, bodyTop } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
+import { RetryNote } from './RetryNote';
 import { useProfileSaved } from './savedNotice';
 import { ServicesTab } from './ServicesTab';
 
@@ -78,6 +99,11 @@ export type MeScreenProps = {
  * where each leads adds it, R-47): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
  * (PROS-03) are in.
+ *
+ * DV2-03: a person with a running tier sees its badge by their name and the "N of M products" meter under the counts (`GET /me/tier`);
+ * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). The Voice Intro player (Bio, AI voice, R-66) is
+ * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile is not
+ * pressed yet: the screen that finishes a draft is VERIFY-01's (VF2).
  */
 export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
@@ -86,6 +112,8 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe }, cache);
   const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields }, cache);
   const stats = useQuery({ queryKey: statsKey, queryFn: fetchProfileStats }, cache);
+  // The tier and its meter are read apart from the page: a failure here leaves the profile on screen with a note and a retry.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier }, cache);
   const [tab, setTab] = useState<ProfileTab>('content');
   const [notice, setNotice] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,6 +125,8 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
   }, [toast]);
 
   const wawuId = me.data?.wawuUserId ?? null;
+  // Drafts are for creator accounts (the Hub refuses the rest), so only a creator asks.
+  const creator = me.data?.accountType === 'creator';
   // The whole-page error only when there is nothing to show: a refresh that fails (after a save on M8, say) keeps the profile on screen.
   const failed = (me.isError && !me.data) || (fields.isError && !fields.data) || (stats.isError && !stats.data);
   const ready = me.data && fields.data && stats.data ? { profile: me.data, details: fields.data, counts: stats.data } : null;
@@ -128,6 +158,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
     getNextPageParam: (last) => last.nextPage ?? undefined,
     enabled: wawuId !== null && tab === 'content',
   }, cache);
+  const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: creator && tab === 'content' }, cache);
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (tab !== 'content' || !grid.hasNextPage || grid.isFetchingNextPage) return;
@@ -164,14 +195,16 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
                 name={nameOf(ready.profile)}
                 avatarUrl={ready.profile.avatarUrl}
                 ticks={ticksOf(ready.profile)}
+                badge={headerBadgeOf(tier.data, ready.details.badge)}
                 bio={ready.profile.bio}
                 onEditProfile={onEditProfile}
               />
               {notice ? <Banner tone="warning" title="That did not open" body={notice} testID="me-notice" /> : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf(ready.counts)} />
+              <TierMeter tier={tier} />
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
               {tab === 'about' ? (
                 <AboutBody
@@ -204,23 +237,46 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
 
 type GridQuery = ReturnType<typeof useInfiniteQuery<Awaited<ReturnType<typeof fetchGridPage>>>>;
 
-function ContentBody({ query }: { query: GridQuery }) {
+type TierQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchMyTier>>>>;
+type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDrafts>>>>;
+
+/**
+ * The products meter under the counts. Loading is a block the meter's size; a person with no running tier sees nothing here
+ * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
+ */
+function TierMeter({ tier }: { tier: TierQuery }) {
+  if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" onRetry={() => void tier.refetch()} />;
+  if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
+  const meter = productsMeterOf(tier.data);
+  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
+}
+
+function ContentBody({ query, drafts, creator }: { query: GridQuery; drafts: DraftsQuery; creator: boolean }) {
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
-  if (!query.data) {
+  // A creator's drafts lead the grid, so the grid waits for them too (a failed read does not hold it: the note below tells them).
+  if (!query.data || (creator && drafts.isPending)) {
     return (
       <LoadingView label="Loading your content" testID="me-grid-loading">
         <GridSkeleton />
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(tileOf);
+  const draftsFailed = creator && drafts.isError && !drafts.data;
+  const note = draftsFailed ? <RetryNote testID="me-drafts-error" title="Your drafts did not load" onRetry={() => void drafts.refetch()} /> : null;
+  const tiles = [...(drafts.data ?? []).map(draftTileOf), ...query.data.pages.flatMap((page) => page.pieces).map(tileOf)];
   if (tiles.length === 0) {
-    return <EmptyState testID="me-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What you publish shows here, as people see it on your profile." />;
+    return (
+      <View style={styles.gridWrap}>
+        {note ? <View style={styles.note}>{note}</View> : null}
+        <EmptyState testID="me-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What you publish shows here, as people see it on your profile." />
+      </View>
+    );
   }
   return (
     <View style={styles.gridWrap}>
+      {note ? <View style={styles.note}>{note}</View> : null}
       <ContentGrid tiles={tiles} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
@@ -310,4 +366,5 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: layout.gutter, gap: BODY_GAP },
   skeleton: { gap: BODY_GAP },
   gridWrap: { gap: space.xs },
+  note: { marginBottom: space.sm },
 });

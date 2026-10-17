@@ -10,7 +10,9 @@ import type { components, operations } from '@/api/schema.generated';
  * - `GET /users/{wawuId}/content`: the live pieces, newest first, as a visitor sees them (the Content grid);
  * - `GET /creator/state`: paid messages on or off, the price and the reply window (M2's first row);
  * - `GET /professionals/applications/mine`: the person's professional listings (M2's other rows);
- * - `GET /users/me/featured-works?limit=3`: the works on the About tab (under ME-11's `['works']` key).
+ * - `GET /users/me/featured-works?limit=3`: the works on the About tab (under ME-11's `['works']` key);
+ * - `GET /me/tier`: the tier badge by the name and the products meter (DV2-03, M1);
+ * - `GET /product-drafts`: the person's drafts, tagged Draft in the Content grid (DV2-03, M1).
  *
  * The Hub's success body is `{ statusCode, message, data }` (and `pagination` on a list) and the contract types
  * only `data` (SHARED-CHANGES.md row 11), so each call reads `data` itself.
@@ -24,6 +26,8 @@ export type ProfileStats = components['schemas']['ProfileStatsView'];
 export type ContentPiece = components['schemas']['ContentPieceResponse'];
 export type ServiceState = components['schemas']['CreatorStateResponse'];
 export type Works = components['schemas']['ProfileWorksView'];
+export type MyTier = components['schemas']['MyTierView'];
+export type ProductDraft = components['schemas']['ProductDraftView'];
 export type Listing = operations['ProfessionalController_mine']['responses'][200]['content']['application/json'][number];
 
 const HTTP_FORBIDDEN = 403;
@@ -38,6 +42,9 @@ export const statsKey = ['profile', 'stats'] as const;
 export const gridKey = (wawuId: string) => ['profile', 'content', wawuId] as const;
 export const servicesKey = ['profile', 'services'] as const;
 export const listingsKey = ['profile', 'listings'] as const;
+/** The tier and the drafts change in the flows that sell a tier and save a draft (VERIFY-01, VERIFY-04): those invalidate these keys. */
+export const tierKey = ['profile', 'tier'] as const;
+export const draftsKey = ['profile', 'drafts'] as const;
 
 /** How many pieces one page of the grid asks for: four rows of three on a phone, and a little more. */
 export const GRID_PAGE_SIZE = 18;
@@ -113,4 +120,37 @@ export async function fetchAboutWorks(): Promise<Works> {
   const works = body?.data;
   if (!works || !Array.isArray(works.works) || typeof works.count !== 'number') throw unreadable('featured works');
   return works;
+}
+
+const TIER_STATES = ['none', 'active', 'ending', 'ended'];
+
+/** The person's own tier. An answer that is not a tier view is refused, never drawn as "no tier". */
+export async function fetchMyTier(): Promise<MyTier> {
+  const body = (await unwrap(api.GET('/api/hub/me/tier'))) as unknown as Envelope<MyTier>;
+  const tier = body?.data;
+  if (
+    !tier ||
+    typeof tier !== 'object' ||
+    !TIER_STATES.includes(tier.state) ||
+    typeof tier.productsAllowed !== 'number' ||
+    typeof tier.productsUsed !== 'number'
+  ) {
+    throw unreadable('tier');
+  }
+  return tier;
+}
+
+/**
+ * The person's drafts, newest first (creator accounts only). A plain account has none and the Hub answers 403, which means
+ * "no drafts", not a failure.
+ */
+export async function fetchDrafts(): Promise<ProductDraft[]> {
+  try {
+    const body = (await unwrap(api.GET('/api/hub/product-drafts'))) as unknown as Envelope<ProductDraft[]>;
+    if (!body || !Array.isArray(body.data)) throw unreadable('drafts');
+    return body.data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === HTTP_FORBIDDEN) return [];
+    throw error;
+  }
 }

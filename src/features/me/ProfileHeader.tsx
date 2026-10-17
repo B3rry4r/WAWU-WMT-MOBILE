@@ -9,12 +9,13 @@ import { VerifiedTick } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
+import { TierBadge } from '@/components/TierBadge';
 import { hueFor } from '@/features/feed/model';
 import { SOCIAL } from '@/features/profile-edit/social';
 import { SocialLogo, hasMark } from '@/features/profile-edit/SocialLogo';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
-import type { SocialLink } from './model';
+import type { HeaderBadge, SocialLink } from './model';
 
 /**
  * design/_gen/me.js lines 15 to 19 (`cover`, `profTop`, `nameBlock`, `profBody`):
@@ -101,11 +102,13 @@ export type NameBlockProps = {
   name: string;
   avatarUrl: string | null;
   ticks: readonly ('creator' | 'pro')[];
+  /** The tier pill after the ticks (M1): only for a person with a running tier, from the Hub. */
+  badge?: HeaderBadge | null;
   bio: string | null;
   onEditProfile: () => void;
 };
 
-export function NameBlock({ wawuId, name, avatarUrl, ticks, bio, onEditProfile }: NameBlockProps) {
+export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditProfile }: NameBlockProps) {
   const { colors } = useWawu();
   return (
     <>
@@ -130,6 +133,12 @@ export function NameBlock({ wawuId, name, avatarUrl, ticks, bio, onEditProfile }
               <VerifiedTick kind={kind} size={headerMetrics.tick} />
             </View>
           ))}
+          {/* The pill pins itself to the top of its row; this slot lets the name row centre it, as the board does. */}
+          {badge ? (
+            <View style={styles.badgeSlot}>
+              <TierBadge name={badge.name} number={badge.number} testID="me-tier-badge" />
+            </View>
+          ) : null}
         </View>
         {bio ? (
           <Text variant="body" tone="textSecondary" style={styles.bio} testID="me-bio">
@@ -229,6 +238,7 @@ const styles = StyleSheet.create({
   avatarRing: { borderRadius: radius.chip, padding: headerMetrics.avatarRing, margin: -headerMetrics.avatarRing },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: headerMetrics.tickGap, flexWrap: 'wrap' },
   name: { fontSize: headerMetrics.name, letterSpacing: headerMetrics.nameTracking * headerMetrics.name, lineHeight: canvasNormalLineHeight(headerMetrics.name), flexShrink: 1 },
+  badgeSlot: { flexShrink: 1 },
   bio: { fontSize: headerMetrics.bio, lineHeight: headerMetrics.bio * headerMetrics.bioLine, marginTop: headerMetrics.bioGap },
   chipScroller: { marginRight: -layout.gutter, flexGrow: 0 },
   chips: { gap: headerMetrics.chipsApart, paddingRight: layout.gutter },

@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 122 | 0 | 0 | 0 |
+| todo | 121 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 57 | 0 | 0 | 0 |
+| verifying | 58 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -58,6 +58,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
+- [DV2-03](../tasks/DV2-03.md) Me follows the 16 Oct design: the profile header (You)
 - [DV2-06](../tasks/DV2-06.md) Settings: TGIF each morning, and the provider wording (You)
 - [HOME-17](../tasks/HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up) (You)
 - [WALLET-40](../tasks/WALLET-40.md) Alert when your account number is ready (You)
