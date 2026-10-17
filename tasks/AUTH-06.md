@@ -7,7 +7,7 @@ order: 173
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, ME-04, KYC-05, PROS-03]
 decisions: [R-6, R-11]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,9 +17,13 @@ artboards: [A11, A12, A13]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-12, ME-04.
+As of 17 Oct 2026 (builder, round 1).
+- **Status:** verifying. Mobile `wmt/AUTH-06` from `origin/wmt/MERGE-7` ff5e90fb; backend `wmt/AUTH-06` from `origin/wmt/MERGE-7` 432f017, head 9cfddf6 (additive: no migration, no schema change; contract regenerated). wawu-id not changed.
+- **Built:** A11, A12, A13 and their routes; the gate that opens them from WAWU ID's progress; Become a creator on P10; the account type copied to the Hub's profile right after sign-up (`PUT /users/me/account-type`, no wallet, called from `signupGate.ts` before Home opens); backend `GET/PUT /users/me/interests`, `GET /explore/suggested-creators`.
+- **Checked:** mobile tsc 0, lint 0 errors on changed files, `npm run gates` 0 fail, `npm run tasks` exit 0, jest on the gate-copy tests and the pro-listing suites 62 of 62. Backend: tsc 0, 8 contract tests on brand-new people (EXIT 0 on the local stack DB), CI Gates and Protected routes green.
+- **NOT RUN / open (builder):** (1) the screen tests for A11, A12, A13 and P10 are written but fail when the file runs together (they pass alone for A13's empty state); withheld from the branch, kept by the lead's builder at the scratchpad `auth-06-b/afterSignup.screens.test.tsx.txt`; the verifier writes its own. (2) No pictures at 390 px (no web export taken). (3) No real wawu-id sign-up on the stack: its only code routes are SMS (wawu-id's SMS client is the Fintava-named one, off limits) and mail (no transport); the Hub side was proved on brand-new people from the mock WAWU ID in the backend spec. (4) Hub CI "Branch checks" was still running at hand-back.
+- **Defaults (agent), owner may override:** the Hub copy is its own route, not `PATCH /users/me`, so no Flutterwave wallet opens at sign-up (G-17, G-34); a creator is never moved back to a user by it; A11's count is of the four rows drawn (I32's row waits for INBOX-14); the bar's corner on A12 and A13 is the place among the steps WAWU ID lists, not the canvas's "3 of 3" on both; A13's role line is the first interest (G-1711).
+- **Findings:** none yet. **Next:** a verifier; then the lead merges backend `wmt/AUTH-06` before mobile (SHARED-CHANGES AUTH-06 #2).
 - **History:** none yet. Reports go to tasks/history/AUTH-06.md.
 
 ## Read first
@@ -89,13 +93,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/AUTH-06.md](history/AUTH-06.md).
 
 ## Owner sign-off
 

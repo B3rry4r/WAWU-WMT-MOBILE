@@ -47,7 +47,9 @@ function useStoredTheme(): boolean {
  * emptied whenever the session ends, so one account's answers are never drawn
  * for the next (FIX-04). A signed-in account whose sign-up has an email step
  * left opens that step before the tabs; the server's progress decides (AUTH-04,
- * SHARED-CHANGES AUTH-04 #2). Categories (EXPLORE-01 #2) and the featured works
+ * SHARED-CHANGES AUTH-04 #2). So do A11, A12 and A13 (AUTH-06, SHARED-CHANGES AUTH-06 #1): the tabs wait while the progress
+ * says `creator_setup`, `interests` or `follows`; A11 is also reachable from "Become a creator" once the sequence is over, and
+ * the screens A11's rows open stay reachable while it is the step. Categories (EXPLORE-01 #2) and the featured works
  * screens (ME-11 #3) sit with the tabs: a signed-out visit to one never draws it.
  * So do every other signed-in screen that is not a tab: Payout bank, Edit profile and Social
  * links, the five steps of Open your wallet, and the five Settings screens (SHARED-05). The
@@ -93,8 +95,19 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'interests'}>
+          <Stack.Screen name="interests" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'follows'}>
+          <Stack.Screen name="people-to-follow" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && (gate.setupStep === null || gate.setupStep === 'creator_setup')}>
+          <Stack.Screen name="creator-setup" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === null}>
           <Stack.Screen name="(tabs)" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />

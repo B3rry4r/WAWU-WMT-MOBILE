@@ -3896,6 +3896,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/explore/suggested-creators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExploreController_suggested"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/professionals/applications": {
         parameters: {
             query?: never;
@@ -4308,6 +4324,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["UserProfileController_upsertMe"];
+        trace?: never;
+    };
+    "/api/hub/users/me/account-type": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["UserProfileController_setAccountType"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/interests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UserProfileController_getMyInterests"];
+        put: operations["UserProfileController_saveMyInterests"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/hub/users/me/profile-stats": {
@@ -7949,6 +7997,13 @@ export interface components {
             avatarUrl?: string | null;
             /** Format: uri */
             coverUrl?: string | null;
+        };
+        SetAccountTypeDto: {
+            /** @enum {string} */
+            accountType: "user" | "creator";
+        };
+        SaveInterestsDto: {
+            interests: ("music_audio" | "film_video" | "photography" | "fashion_beauty" | "business_finance" | "technology" | "food_lifestyle" | "faith_spirituality" | "art_design" | "writing_publishing" | "sports_fitness" | "gaming_esports")[];
         };
         UpdateProfileFieldsDto: {
             /** @description Where the person is, free text ("Lagos, Nigeria"). null or "" clears it. */
@@ -11662,6 +11717,15 @@ export interface components {
             exp: number;
             verification: components["schemas"]["VerificationState"];
             experience: components["schemas"]["ProfileExperienceView"][];
+        };
+        InterestOption: {
+            id: string;
+            label: string;
+        };
+        InterestsView: {
+            minimum: number;
+            options: components["schemas"]["InterestOption"][];
+            selected: string[];
         };
         ProfileStatsView: {
             wawuUserId: string;
@@ -21202,6 +21266,35 @@ export interface operations {
             };
         };
     };
+    ExploreController_suggested: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The categories a person picked, as ids from GET /explore/categories, comma
+                 *     separated (`music_audio,film_video`) or repeated. Left out, it is every
+                 *     creator Explore may show.
+                 */
+                interests?: ("music_audio" | "film_video" | "photography" | "fashion_beauty" | "business_finance" | "technology" | "food_lifestyle" | "faith_spirituality" | "art_design" | "writing_publishing" | "sports_fitness" | "gaming_esports")[];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ExploreCreatorCard"][];
+                    };
+                };
+            };
+        };
+    };
     ProfessionalController_apply: {
         parameters: {
             query?: never;
@@ -22109,6 +22202,74 @@ export interface operations {
                         /** Format: date-time */
                         professionalVerifiedUntil: string | null;
                     };
+                };
+            };
+        };
+    };
+    UserProfileController_setAccountType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAccountTypeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        accountType: "creator" | "user";
+                    };
+                };
+            };
+        };
+    };
+    UserProfileController_getMyInterests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestsView"];
+                };
+            };
+        };
+    };
+    UserProfileController_saveMyInterests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveInterestsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestsView"];
                 };
             };
         };
