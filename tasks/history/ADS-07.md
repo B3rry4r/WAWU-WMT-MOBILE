@@ -12,6 +12,15 @@ _Sonnet builder, 17 Oct 2026._ **Files (backend):** `prisma/schema.prisma` (enum
 - **Shared changes filed:** ADS-07 #1 (schema, contract), #2 (the app's contract copy), F1 (`TgifReader.tsx`). **Gaps:** G-761 and G-805 closed by this task.
 - **Not done:** see Current state.
 
+## Builder report, round 2
+
+_Sonnet builder, 17 Oct 2026 (the lead's two rulings on the round 1 questions)._ **Files (backend):** `src/admin/ads/admin-ads.service.ts` (`transition`: schedule and resume throw the same `artworkRequired()` 422 as POST and PATCH, after the 409 for a move not allowed from the status and the no-card 409, before the window and event checks; pause and end untouched), `src/admin/ads/admin-ads.controller.ts` (two doc lines), `contract/openapi.json` (regenerated: two operation summaries), `README.md` (the lifecycle row), spec `src/admin/ads/tests/admin-ads.contract.spec.ts`. **Files (app):** `contract/openapi.json` and `contract/SOURCE_COMMIT` (copy of the backend's), this task file; no app code.
+- **schedule refuses a campaign with no artwork:** new spec, red first (200 where 422 was expected), then green: 422, the exact sentence, `reason.code` `artwork_required`, status still draft, audit rows unchanged, not served; after a PATCH that gives it artwork, schedule is 200 and `GET /ads` serves it.
+- **resume refuses a campaign with no artwork:** the same for a paused campaign (status still paused, no audit row); with artwork, resume is 200 and it is live.
+- **Pause and end are never refused for it:** one spec (a live campaign with no picture can be paused, then ended; a draft can be ended).
+- **No cap on the Explore slider:** unchanged; recorded in Current state.
+- **Checks:** backend tsc and eslint clean; the admin ads spec and the `src/ads/tests` specs against the local stack (admin 207 tests, the rest 173) pass; the events spec failed once in its afterAll on one stray `MoneyCheckRun` row written by the stack's own background job while it ran (not ADS code) and passed alone on the re-run. GitHub and the mobile check: see Current state.
+
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
