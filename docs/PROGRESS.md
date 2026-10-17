@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 288.**
+**Launch tasks done: 176 of 289.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 106 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
@@ -268,6 +269,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · FIX-57 · Built (Sonnet builder, tier T0; backend `wmt/FIX-57` `447887f` on `origin/wmt/MERGE-9` `4e444ca`, mobile record only; status verifying): the local test stack reports a service UP only when its own process holds the port; `up` refuses when any port of the range is listening, `status` says NOT OURS, and `scripts/dev/stack-selftest.sh` (18 checks, EXIT 0) proves it.
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
@@ -282,4 +284,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · AUTH-06 · Built, awaiting verification (DEV, YOU): A11, A12 and A13 open after sign-up from WAWU ID's progress, Become a creator (P10) opens A11, and the account type reaches the Hub's profile right after sign-up on a route of its own (`PUT /users/me/account-type`, no wallet); backend `GET/PUT /users/me/interests`, `GET /explore/suggested-creators`; gaps G-17, G-1711.
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
-- 17 Oct 2026 · REF-03 · Builder report (Sonnet builder; mobile `wmt/REF-03` on `origin/wmt/DV2-03` `d4a0e95` plus `origin/wmt/DV2-COMP` `c6da2af`, no backend, wawu-id or migration change; status verifying): Invite and earn is built, RF1 to RF4. RF1, RF1a and RF1b read `GET /me/referrals`; RF3 and RF3a tell a reward or milestone the Hub made available, once per phone; RF4 prints the Hub's hold days; RF2 draws the card on the phone and hands its picture to the phone's share sheet (`react-native-view-shot`, SHARED-CHANGES REF-03 #1 applied), with no outside brand (R-68). The gift button on Me opens it; a `wawu/r/<code>` link keeps the code and claims it after sign-in, drawing nothing (G-812). Gaps G-812 (updated), G-830, G-831.
