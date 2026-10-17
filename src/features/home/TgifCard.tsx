@@ -20,9 +20,10 @@ export type TgifCardProps = {
 };
 
 /**
- * Today's TGIF card (H1): the day, the series, how many cards and how many are reading, and the
+ * The TGIF card (X1): the day, the series, how many cards and how many are reading, and the
  * play disc. The whole card opens the reader (H29, `/tgif`). It is dark in both themes, as the
- * reader's cards are.
+ * reader's cards are. Explore draws it (EXPLORE-07); Home does not (R-59, DV2-RM), which is why the file
+ * still sits under `features/home`.
  */
 export function TgifCard({ day, readers, onOpen }: TgifCardProps) {
   const ring = useFocusRing();

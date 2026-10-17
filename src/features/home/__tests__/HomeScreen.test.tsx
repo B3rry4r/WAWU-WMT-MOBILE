@@ -4,8 +4,6 @@ import * as rtl from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { localDay } from '@/features/tgif/model';
-
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => '00000000-0000-4000-8000-0000000000aa' }));
@@ -57,7 +55,6 @@ const ME = '00000000-0000-4000-8000-0000000000aa';
 const ADA = '00000000-0000-4000-8000-0000000000a1';
 const FUNMI = '00000000-0000-4000-8000-0000000000a2';
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
-const DATE = localDay();
 
 function creator(wawuId: string, name: string, over: Record<string, unknown> = {}) {
   return {
@@ -74,29 +71,12 @@ function creator(wawuId: string, name: string, over: Record<string, unknown> = {
 }
 const creatorsPage = (items: unknown[]) => ok(items, { currentPage: 1, nextPage: null, perPage: 12, total: items.length });
 
-const day = {
-  date: '2026-09-25',
-  series: 'Sons, not slaves',
-  seriesTheme: 'Identity',
-  verse: 'The verse',
-  verseReference: 'Galatians 4:7',
-  reality: 'The reality',
-  remember: 'Remember this',
-  prayer: 'A prayer',
-  takeaway: 'The takeaway',
-  shareLink: null,
-};
-const stats = (readers: number) => ({ date: DATE, cards: [], readers, shares: 0, readByMe: false, sharedByMe: false });
-
 const account = { accountNumber: '1154079370', accountName: 'Ada Sandbox', bankName: 'Loma Bank' };
 const walletOpen = ok({ state: 'open', account });
 
 const T = {
   wallet: 'GET /money/wallet',
   balance: 'GET /money/wallet/balance',
-  tgif: 'GET /settings/tgif',
-  day: `GET /tgif/${DATE}`,
-  stats: `GET /tgif/${DATE}/stats`,
   creators: 'GET /creators',
   me: 'GET /users/me',
 };
@@ -105,9 +85,6 @@ function everyAnswer(): Record<string, Answer[]> {
   return {
     [T.wallet]: [walletOpen],
     [T.balance]: [ok({ availableKobo: 48525075, asOf: '2026-10-07T10:00:00Z' })],
-    [T.tgif]: [ok({ show: true })],
-    [T.day]: [ok(day)],
-    [T.stats]: [ok(stats(12400))],
     [T.creators]: [creatorsPage([creator(ME, 'Me Myself'), creator(ADA, 'Adaeze O.'), creator(FUNMI, 'Funmi A.', { field: 'Accountant', verification: { creator: tick(false), professional: tick(true) } })])],
     [T.me]: [ok({ wawuUserId: ME })],
   };
@@ -217,14 +194,15 @@ describe('H1 · Today', () => {
     expect(gradients).toEqual(['today-balance-glow']);
   });
 
-  it("a user sees today's TGIF from the Hub and opens the reader from it", async () => {
+  it('Today draws no TGIF card and asks for no TGIF: it is on Explore and in the morning notification (R-59, DV2-RM)', async () => {
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    expect(screen.getByText('TGIF · FRIDAY 25 SEP')).toBeTruthy();
-    expect(screen.getByText('Sons, not slaves')).toBeTruthy();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-meta')).toHaveTextContent('5 cards · 12.4K reading today'));
-    await rtl.fireEvent.press(screen.getByTestId('today-tgif'));
-    expect(mockPush).toHaveBeenCalledWith('/tgif');
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
+    expect(screen.queryByText(/TGIF/i)).toBeNull();
+    expect(screen.queryByText(/SPONSORED/i)).toBeNull();
+    expect(sent.filter((key) => /tgif/i.test(key))).toEqual([]);
   });
 
   it('a user sees creators to discover, never themselves, with the tick each has', async () => {
@@ -312,24 +290,6 @@ describe('H1 · Today', () => {
   });
 });
 
-describe('H36 · Today with TGIF off', () => {
-  it('a user with TGIF off sees Today without the TGIF card, and the day is never asked for', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
-    expect(screen.queryByText(/SPONSORED/i)).toBeNull();
-    expect(sent).not.toContain(T.day);
-    expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy();
-  });
-
-  it('a TGIF switch that cannot be read leaves TGIF on, as the Hub does for nobody who turned it off', async () => {
-    answers[T.tgif] = ['offline'];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-  });
-});
-
 describe('the balance card without a balance', () => {
   it('a user with no wallet is led to Open your wallet (A26), in the Wallet tab\'s words', async () => {
     answers[T.wallet] = [ok({ state: 'not_open', account: null })];
@@ -387,29 +347,6 @@ describe('the balance card without a balance', () => {
   });
 });
 
-describe("today's TGIF that cannot be read", () => {
-  it('says so in its own card with Try again, and is not taken for TGIF switched off', async () => {
-    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }, ok(day)];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-error')).toBeTruthy());
-    expect(screen.getByText("Today's TGIF didn't load.")).toBeTruthy();
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
-    expect(screen.getByTestId('today-balance')).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByTestId('today-tgif-retry'));
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
-  });
-
-  it('with TGIF off, neither the card nor its error shows', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
-  });
-});
-
 describe('Today empty and in error', () => {
   it('with no creators to suggest, a user is told so', async () => {
     answers[T.creators] = [creatorsPage([creator(ME, 'Me Myself')])];
@@ -436,73 +373,53 @@ describe('Today empty and in error', () => {
     expect(screen.getByText("Today didn't load")).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
   });
 });
 
-describe('H1 · the Bills action on the balance card (BILLS-01, R-41)', () => {
-  it('a user can tap Bills on the balance card and land on Pay a bill (S2)', async () => {
+describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
+  it('draws Send and only Send among the card actions: Add and Scan have no screen yet, and bills are off', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByText('Bills')).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByTestId('today-action-bills'));
-    expect(mockPush).toHaveBeenCalledWith('/bills');
+    expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
+    expect(screen.queryByTestId('today-action-bills')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
+    for (const label of ['Bills', 'Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
   });
 
-  it('draws Bills and only Bills among the card actions: Send, Add and Scan have no screen yet', async () => {
+  it('a user can still tap Send on the balance card and land on Send money', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
-    for (const label of ['Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    await rtl.fireEvent.press(screen.getByTestId('today-action-send'));
+    expect(mockPush).toHaveBeenCalledWith('/send');
   });
 });
 
-describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
-  it('a user can tap Events under "What would you like to do today?" and land on Events (E1)', async () => {
+describe('H1 · no Events tile and no Pay bills tile (R-61, R-52, DV2-RM)', () => {
+  it('a user sees "What would you like to do today?" with no Events tile and no Pay bills tile, and no Shop (R-2)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
-    expect(mockPush).toHaveBeenCalledWith('/events');
-    // The canvas's fourth, Shop, is retired (R-2): Schools takes its place and nothing else is drawn.
-    expect(screen.queryByText('Shop')).toBeNull();
-  });
-
-  it('a user with TGIF off still has the Events tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-events')).toBeTruthy();
+    expect(screen.queryByTestId('today-service-events')).toBeNull();
+    expect(screen.queryByTestId('today-service-bills')).toBeNull();
+    for (const label of ['Events', 'Pay bills', 'Shop']) {
+      expect(screen.queryByRole('button', { name: label })).toBeNull();
+      expect(screen.queryByText(label)).toBeNull();
+    }
   });
 });
 
-describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11; R-61, DV2-01)', () => {
-  it('a user sees Learn and Legal first, then the two tiles DV2-RM removes (Pay bills, Events), with no empty slot', async () => {
+describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11; R-61, DV2-01, DV2-RM)', () => {
+  it('a user sees Learn and Legal, packed from the left with no empty slot', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const column = screen.getByTestId('today-service-schools').parent!;
     const grid = column.parent!;
-    expect(grid.children).toHaveLength(4);
+    expect(grid.children).toHaveLength(2);
     expect(grid.children[0]).toBe(column);
     expect(grid.children[1]).toBe(screen.getByTestId('today-service-legal').parent);
-    expect(grid.children[2]).toBe(screen.getByTestId('today-service-bills').parent);
-    expect(grid.children[3]).toBe(screen.getByTestId('today-service-events').parent);
     // Monetize opens the Create hub, which is for creator accounts: this person is not one, so there is no tile to send them Home.
     expect(screen.queryByTestId('today-service-monetize')).toBeNull();
-  });
-
-  it('a user can tap Pay bills and land on Pay a bill (S2, BILLS-01)', async () => {
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Pay bills' }));
-    expect(mockPush).toHaveBeenCalledWith('/bills');
-  });
-
-  it('a user with TGIF off still has the Pay bills tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-bills')).toBeTruthy();
   });
 
   it('a user can tap Legal and land on the legal chat (S14, LEGAL-02)', async () => {
@@ -515,25 +432,18 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
   it('a user can tap Learn, the first tile (Schools, renamed by R-61), and land on the schools list (SC1, SCHOOLS-03)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const grid = screen.getByTestId('today-service-events').parent!.parent!;
+    const grid = screen.getByTestId('today-service-legal').parent!.parent!;
     expect(grid.children[0]).toBe(screen.getByTestId('today-service-schools').parent);
     expect(screen.queryByText('Schools')).toBeNull();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     expect(mockPush).toHaveBeenCalledWith('/schools');
   });
 
-  it('a user with TGIF off still has the Learn tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-schools')).toBeTruthy();
-  });
-
-  it('the loading view draws one tile shape for each of the four tiles present (H11)', async () => {
+  it('the loading view draws one tile shape for each of the two tiles every account has, and no TGIF bar (H11)', async () => {
     const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
-    await rtl.render(<TodayLoading withTgif />);
+    await rtl.render(<TodayLoading />);
     const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(4);
+    expect(shapes).toHaveLength(2);
   });
 });
 
@@ -550,7 +460,7 @@ describe('H1 · Monetize, and the rail title (R-61, R-69)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
     const grid = screen.getByTestId('today-service-schools').parent!.parent!;
     const order = grid.children.map((column) => (column as { children: { props: { testID?: string } }[] }).children[0].props.testID);
-    expect(order).toEqual(['today-service-schools', 'today-service-monetize', 'today-service-legal', 'today-service-bills', 'today-service-events']);
+    expect(order).toEqual(['today-service-schools', 'today-service-monetize', 'today-service-legal']);
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Monetize' }));
     expect(mockPush).toHaveBeenCalledWith('/create');
   });

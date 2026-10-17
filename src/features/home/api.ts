@@ -9,8 +9,7 @@ import type { components, operations } from '@/api/schema.generated';
  * - `POST` and `DELETE /creators/{wawuId}/follow`: Follow and Following, in place.
  *
  * Today also reads, through their owners' modules so each answer is cached once: the balance
- * (`@/api/money`, MONEY-11), the TGIF switch (`settings/api/hub`, HOME-11) and today's TGIF
- * day and numbers (`tgif/api/tgif`, HOME-09 and HOME-10).
+ * (`@/api/money`, MONEY-11). It reads no TGIF (R-59, DV2-RM).
  *
  * The Hub's success body is `{ statusCode, message, data }`; the contract types only `data`
  * (SHARED-CHANGES.md row 11), so each call reads the envelope itself.

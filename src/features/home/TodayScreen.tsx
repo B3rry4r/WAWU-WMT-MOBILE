@@ -14,9 +14,6 @@ import { CompleteAccountFlag } from '@/features/open-wallet/CompleteAccountFlag'
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { fetchMe, meKey as profileKey } from '@/features/profile-edit/api';
-import { fetchTgif, settingsKeys } from '@/features/settings/api/hub';
-import { dayKey, fetchDay, fetchStats, statsKey } from '@/features/tgif/api/tgif';
-import { localDay } from '@/features/tgif/model';
 import { homeBalanceQuery, walletHomeQuery } from '@/features/wallet/api/home';
 import { homeView } from '@/features/wallet/home/model';
 import { useWawu } from '@/theme';
@@ -25,11 +22,10 @@ import { fetchCreatorSuggestions, suggestionsKey } from './api';
 import { CreatorRail } from './CreatorRail';
 import { HomeTabs } from './HomeTabs';
 import { gutter, todayMetrics as m } from './look';
-import { discoverable, homeViews, moneyCard, showsTgif, todayPhase, type HomeView } from './model';
+import { discoverable, homeViews, moneyCard, todayPhase, type HomeView } from './model';
 import { useTodayClient } from './client';
 import { MoneyCard } from './MoneyCard';
 import { Services } from './Services';
-import { TgifCard, TgifProblem } from './TgifCard';
 import { TodayLoading } from './TodayLoading';
 
 export type TodayScreenProps = {
@@ -42,16 +38,16 @@ export type TodayScreenProps = {
  * H1 · Today, Home's first tab (with H11 while it loads; H36 is the same screen with the daily TGIF notification over it). It reads:
  * - the wallet and its balance through the Wallet tab's own reads (`GET /money/wallet`, then
  *   `GET /money/wallet/balance` once it is open; WALLET-01, MONEY-11), or why there is none;
- * - the person's TGIF switch (`GET /settings/tgif`, HOME-11) and, when it is on, today's day and
- *   its readers (`GET /tgif/{date}` and `/stats`, HOME-09 and HOME-10);
  * - creators to discover (`GET /creators`), without the viewer (`GET /users/me`).
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
  * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), See all (EXPLORE-02),
  * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The ad card (H1, H36)
- * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot` whatever the person's TGIF
- * switch says; with no campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The
- * TGIF card below it is DV2-RM's to remove. The services row (`Services`) draws Monetize for a creator account only.
+ * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot`; with no campaign, while it loads and
+ * when it cannot be read nothing shows, never an empty frame. Today draws no TGIF card and reads no TGIF (R-59, DV2-RM): TGIF is
+ * on Explore (EXPLORE-07) and in the morning notification (HOME-16), and the notification opens the reader. The services row
+ * (`Services`) draws Monetize for a creator account only. No Bills button on the money card and no Pay bills or Events tile
+ * (R-52, R-61, DV2-RM).
  */
 export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) {
   const insets = useSafeAreaInsets();
@@ -68,7 +64,7 @@ export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) 
         <HomeTabs views={homeViews} selected="today" tone="page" onChange={onView} />
       </View>
       <ScrollView testID="today-scroll" contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} /> : <TodayLoading withTgif />}
+        {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} /> : <TodayLoading />}
       </ScrollView>
     </View>
   );
@@ -78,18 +74,13 @@ export function TodayScreen({ onView, masked, onToggleMask }: TodayScreenProps) 
 function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | 'onToggleMask'>) {
   const router = useRouter();
   const client = useTodayClient();
-  const date = localDay();
 
   // The Wallet tab's own reads, keyed by the account (WALLET-01): the card and the tab share one cached answer.
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletHomeQuery(owner), client);
   const open = wallet.data?.state === 'open' || wallet.data?.state === 'frozen';
   const balance = useQuery(homeBalanceQuery(owner, open), client);
-  const tgifSwitch = useQuery({ queryKey: settingsKeys.tgif, queryFn: fetchTgif }, client);
-  const tgifOn = showsTgif(tgifSwitch.data, tgifSwitch.isError);
-  const tgifDay = useQuery({ queryKey: dayKey(date), queryFn: () => fetchDay(date), staleTime: Infinity, enabled: tgifOn }, client);
-  const tgifStats = useQuery({ queryKey: statsKey(date), queryFn: () => fetchStats(date), enabled: tgifOn && tgifDay.isSuccess }, client);
-  // The ad card is always in TGIF's old place (R-59), so it is asked for whatever the TGIF switch says.
+  // The ad card is always in TGIF's old place (R-59).
   const ad = useAd('today_slot', true, client);
   const creators = useQuery({ queryKey: suggestionsKey, queryFn: fetchCreatorSuggestions }, client);
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId, staleTime: Infinity }, client);
@@ -102,8 +93,6 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
   const moneyFailed = money.kind === 'notice' && (money.state === 'wallet_error' || money.state === 'balance_error');
   const phase = todayPhase({
     balance: { pending: money.kind === 'loading', failed: moneyFailed, walletAnswer: money.kind === 'notice' && !moneyFailed },
-    tgifSwitch: read(tgifSwitch),
-    tgifDay: tgifSwitch.isPending || tgifOn ? read(tgifDay) : null,
     creators: read(creators),
   });
 
@@ -115,8 +104,6 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
   const retryAll = () => {
     void wallet.refetch();
     if (open) void balance.refetch();
-    void tgifSwitch.refetch();
-    if (tgifOn) void tgifDay.refetch();
     void creators.refetch();
     void me.refetch();
   };
@@ -124,7 +111,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
   const people = creators.data ? discoverable(creators.data, me.data) : null;
 
   if (phase === 'loading') {
-    return <TodayLoading withTgif={tgifSwitch.isPending || tgifOn} />;
+    return <TodayLoading />;
   }
   if (phase === 'error') {
     return (
@@ -151,7 +138,6 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         onRetryBalance={() => void balance.refetch()}
         retrying={wallet.isFetching || balance.isFetching}
         onSend={() => router.push('/send')}
-        onOpenBills={() => router.push('/bills')}
       />
       {sponsored ? (
         <SponsoredSlot
@@ -162,21 +148,10 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
           }}
         />
       ) : null}
-      {tgifOn && tgifDay.data ? (
-        <TgifCard
-          day={tgifDay.data}
-          readers={typeof tgifStats.data?.readers === 'number' ? tgifStats.data.readers : null}
-          onOpen={() => router.push('/tgif')}
-        />
-      ) : tgifOn && tgifDay.isError ? (
-        <TgifProblem date={date} onRetry={() => void tgifDay.refetch()} retrying={tgifDay.isFetching} />
-      ) : null}
       <Services
         onOpenLearn={() => router.push('/schools')}
         onOpenLegal={() => router.push('/legal')}
         onOpenMonetize={isCreator ? () => router.push('/create') : undefined}
-        onOpenBills={() => router.push('/bills')}
-        onOpenEvents={() => router.push('/events')}
       />
       <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} />
     </>

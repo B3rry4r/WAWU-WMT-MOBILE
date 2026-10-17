@@ -227,38 +227,32 @@ describe('H1 and H36 · the ad card on Today', () => {
   });
 });
 
-describe('Today with the TGIF card still on it (DV2-RM removes that card)', () => {
-  it("with TGIF on, the ad card is asked for and drawn too, in TGIF's old place above the TGIF card (R-59)", async () => {
+describe('Today has no TGIF card: the ad card holds its old place alone (R-59, DV2-RM)', () => {
+  it('the ad card is asked for and drawn, and Today asks for no TGIF switch and no TGIF day, whatever the Hub would have said', async () => {
     answers[T.tgif] = [ok({ show: true })];
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
     expect(calls(T.ads)).toHaveLength(1);
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
+    expect(calls(T.tgif)).toHaveLength(0);
+    expect(calls(T.day)).toHaveLength(0);
+    expect(calls(T.stats)).toHaveLength(0);
     const ids = (JSON.stringify(screen.toJSON()).match(/"testID":"[^"]+"/g) ?? []).map((m) => m.slice(10, -1));
     expect(ids.indexOf('today-sponsored')).toBeGreaterThan(ids.indexOf('today-balance-card'));
-    expect(ids.indexOf('today-sponsored')).toBeLessThan(ids.indexOf('today-tgif'));
     await rtl.waitFor(() => expect(reported()).toEqual(['view']));
   });
 
-  it('a TGIF switch that cannot be read leaves TGIF on and the ad card is still asked for and drawn', async () => {
-    answers[T.tgif] = ['offline'];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
-    expect(calls(T.ads)).toHaveLength(1);
-  });
-
-  it('with TGIF on and no live campaign, the TGIF card is there and no ad frame is drawn', async () => {
-    answers[T.tgif] = [ok({ show: true })];
+  it('with no live campaign, neither a TGIF card nor an ad frame is drawn', async () => {
     answers[T.ads] = [ok(null)];
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.waitFor(() => expect(calls(T.ads)).toHaveLength(1));
     await settle();
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
     expect(screen.queryByTestId('today-sponsored')).toBeNull();
     expect(screen.queryByText('AD')).toBeNull();
   });
-
 });
 
 describe('Today with nothing sponsored to show', () => {
@@ -302,7 +296,8 @@ describe('Today with nothing sponsored to show', () => {
   });
 
   it('while Today itself is loading, the card is not drawn and no view is reported', async () => {
-    answers[T.tgif] = ['hold'];
+    // Today no longer reads the TGIF switch (R-59, DV2-RM): the creators read is held to keep it loading.
+    answers[T.creators] = ['hold'];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
     await settle();

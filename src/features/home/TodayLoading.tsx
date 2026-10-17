@@ -18,12 +18,11 @@ const tileShape = { labelAbove: 10, labelWidth: 46, labelHeight: 10, labelCorner
  * 46 by 10 label bar) per tile present, packed from the left as the row packs them (U-H1); a tile added later
  * adds its shape through `servicesPresent`.
  */
-export function TodayLoading({ withTgif }: { withTgif: boolean }) {
+export function TodayLoading() {
   return (
     <LoadingView testID="today-loading" label="Loading Today">
       <View style={styles.stack}>
         <Skeleton height={m.skeletonMoney} radius={radius.money} />
-        {withTgif ? <Skeleton height={m.tgifHeight} radius={radius.card} /> : null}
         <Skeleton width="70%" height={m.skeletonHeading} radius={m.skeletonHeadingCorner} />
         <View style={styles.tiles}>
           {Array.from({ length: servicesPresent }, (_, i) => (
