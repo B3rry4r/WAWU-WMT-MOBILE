@@ -7,7 +7,7 @@ order: 147
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [WALLET-02, WALLET-09, WALLET-14, MONEY-19]
 decisions: [R-10, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,13 @@ artboards: [W8, W13, W14]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-02, WALLET-09.
-- **History:** none yet. Reports go to tasks/history/WALLET-03.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; the backend (WALLET-09, MONEY-19) is served on MERGE-8, so no backend change, no migration). Status: verifying.
+- **Built (`src/features/send/`, routes `src/app/send/{bank,failed}.tsx`):** W7 draws the Bank account tab beside Who Made This? user; W8 (`BankRecipientScreen`): the bank (`GET /money/banks`, the A21 sheet), ten digits, the BANK's name for them (`POST /money/banks/name-check`, with its `nameToken`) before Continue opens, a refused account or a wait for the hour's checks in the Hub's words, Try again when the bank did not answer, then "Saved": My payout account (tagged withdraw) and each saved bank account (a tap goes straight to W9, no name check). W9 is W13: an amount over the bank's balance is drawn in danger with "Over your balance of ₦485,250.75" and Continue stays off; the board's Add money is WALLET-05's (R-47).
+- **W10 and W11 for a bank:** `ReviewScreen` takes the bank as a payee: the fee quote is `kind=bank_transfer`, the parts are "Bank charge" and "WAWU's fee" with Fees and Total, the button is the total ("Send ₦25,065"), "They get ₦25,000", the bank and number as rows. One request on one `Idempotency-Key`, kept on the phone with its `nameToken` (`intent.ts`): a wrong PIN, a lost answer and a second tap send the same request. A saved account sends no name token.
+- **W12:** the receipt names the account, prints "Bank charge", and "Save as a beneficiary" saves the BANK account (the Hub keeps the bank's name). **W14 (`FailedScreen`):** a transfer the Hub accepted and the bank did not take. "Reversed to your wallet", "Returned to your wallet" (the Hub's `returnedKobo`), "Charge kept" (its `keptKobo`), the reference, the date, "Your money is back / ₦25,025 is back in your Naira wallet.". No reversal on record yet: the Failed pill, no word about the money, read again every 4 seconds. Try again starts from W8 with the bank, the number and the amount (a new name check, quote and key).
+- **Tests changed:** `sendFlow.test.tsx` one assertion (the tab is now drawn; SHARED-CHANGES WALLET-03 #1). New `bankSendFlow.test.tsx` (18 cases).
+- **Gaps:** G-880. **Not drawn:** W13's Add money (WALLET-05).
+- **Next:** the verifier.
 
 ## Read first
 
@@ -102,13 +104,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-03.md](history/WALLET-03.md).
 
 ## Owner sign-off
 

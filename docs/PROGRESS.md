@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 110 | 0 | 0 | 0 |
+| todo | 107 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 73 | 0 | 0 | 0 |
+| verifying | 76 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -36,6 +36,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ME-13](../tasks/ME-13.md) Tick still confirming, wallet not opened, identity not matched (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
+- [WALLET-03](../tasks/WALLET-03.md) Send to a bank, not enough money, failed send (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
@@ -66,12 +67,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
+- [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [EXPLORE-07](../tasks/EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [DV2-01](../tasks/DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count (You)
+- [DV2-02](../tasks/DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills (You)
 - [DV2-03](../tasks/DV2-03.md) Me follows the 16 Oct design: the profile header (You)
 - [DV2-05](../tasks/DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design (You)
 - [DV2-06](../tasks/DV2-06.md) Settings: TGIF each morning, and the provider wording (You)
@@ -261,6 +264,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · DV2-02, WALLET-03, POINTS-06 · Built (Sonnet builder, one branch `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): the Wallet tab is the 16 Oct board (Points and Passes cards, five-column actions with Send, Buy points and To cash, no bills, History without Bills and with W28's No content sales, the card's bank line "Who Made This? · <bank>"); Send to a bank account (W7's Bank account tab, W8, W13's shortfall line on W9, W10 with the Bank charge, W12 for a bank, W14 for a transfer the bank did not take); Buy points (PT4, PT4b, PT4c, by wallet or bank transfer, Buy on Wallet, Your points and Convert).
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
@@ -275,4 +279,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · REF-02 · Builder report (Sonnet builder; backend `wmt/REF-02` `1165e79` on `origin/wmt/MERGE-6` `fbf391f`, mobile `wmt/REF-02` on `70a7895` (docs only); migration `20261024140000_referral_points`; status verifying): a person has one code (`wawu/r/<code>`), `GET /me/referrals` and `POST /me/referrals/claim` are served, a first paid tier makes one reward (unique per referral), held for the plan's hold days and paid as `referral` point lots by a minute job, cancelled when the tier payment was refunded inside the hold or the referrer held no tier, milestones each once; every figure is a TIER-06 setting. 36 new tests green, backend CI green (Branch checks 38999309021, Protected routes 38999308931, Gates 38999309018).
 - 17 Oct 2026 · EVENTS-10 · Builder report (Sonnet builder; backend `wmt/EVENTS-10` `1b0ea03` on `wmt/MERGE-6` `fbf391f`, mobile record on `70a7895`; no migration; status verifying): calling an event off sends each wallet buyer everything they paid back, Fintava's charge included, through the hold, once per order under races, repeated cancels and sweeps; the order reads refunded with void tickets; a minute sweep finishes what the request did not reach; no ticket is made for an event called off a moment before; G-793.
 - 17 Oct 2026 · DV2-06 · Builder report (Sonnet builder; mobile `wmt/DV2-06` `d83fca12` on `origin/wmt/SHARED-06` `d563eb3`, no backend change; status verifying): Z2 switch is "TGIF each morning" (still `PATCH /settings/tgif`, names no time); "Who Made This?" with the question mark on Z2, Z3, Z9; Z9 draws "Banking by <Hub bank name>" and nothing licence, CBN or tier (R-67), and no bank row while the name is blank (G-826).
-- 17 Oct 2026 · DV2-COMP · Builder report, round 2 (Sonnet builder; mobile `wmt/DV2-COMP` on the round 1 head `51235be`, no backend or wawu-id change; status verifying): the verifier's six findings fixed. The meter caption reads Lagos months from the history's `MONTHS` table ("Sep", no Intl); `PointsFigure` shrinks the count and the word to fit a narrow parent (phone: `adjustsFontSizeToFit`; web: measured scale), proven at 150, 182 and 200 px, 7 and 9 digits, light and dark; the voice error row is one "Try again" button; bars never thinner than 2 px and none until measured; `TierBadge` takes `stretch`; the 1.2 line height is named. 60 dv2-comp tests; full check `EXIT 0`.
