@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
@@ -33,7 +33,7 @@ export const gridMetrics = {
 } as const;
 
 /** The grid, as rows of three: a flex row keeps every tile the same width at any screen width. */
-export function ContentGrid({ tiles }: { tiles: readonly GridTile[] }) {
+export function ContentGrid({ tiles, onOpenDraft }: { tiles: readonly GridTile[]; onOpenDraft?: () => void }) {
   const rows: GridTile[][] = [];
   for (let i = 0; i < tiles.length; i += gridMetrics.columns) rows.push(tiles.slice(i, i + gridMetrics.columns));
   return (
@@ -41,7 +41,7 @@ export function ContentGrid({ tiles }: { tiles: readonly GridTile[] }) {
       {rows.map((row) => (
         <View key={row[0].id} style={styles.row}>
           {row.map((tile) => (
-            <Tile key={tile.id} tile={tile} />
+            <Tile key={tile.id} tile={tile} onOpenDraft={onOpenDraft} />
           ))}
           {Array.from({ length: gridMetrics.columns - row.length }, (_, i) => (
             <View key={`gap-${i}`} style={styles.cell} />
@@ -52,16 +52,20 @@ export function ContentGrid({ tiles }: { tiles: readonly GridTile[] }) {
   );
 }
 
-function Tile({ tile }: { tile: GridTile }) {
+function Tile({ tile, onOpenDraft }: { tile: GridTile; onOpenDraft?: () => void }) {
   const { colors } = useWawu();
   // A still that will not load (a link that has expired) shows the kind of file instead, never an empty box.
   const [broken, setBroken] = useState(false);
   const still = tile.still && !broken ? tile.still : null;
+  // A draft opens the shop that finishes it (VF2, VERIFY-01); a published piece is not pressed here.
+  const opens = tile.draft && onOpenDraft ? onOpenDraft : null;
+  const Frame = opens ? Pressable : View;
   return (
-    <View
+    <Frame
       testID={`me-tile-${tile.id}`}
       accessible
       accessibilityLabel={tile.spoken}
+      {...(opens ? { accessibilityRole: 'button' as const, onPress: opens } : {})}
       style={[styles.cell, styles.tile, { backgroundColor: colors.surfaceSunken }]}
     >
       {still ? (
@@ -107,7 +111,7 @@ function Tile({ tile }: { tile: GridTile }) {
           </Text>
         </View>
       )}
-    </View>
+    </Frame>
   );
 }
 

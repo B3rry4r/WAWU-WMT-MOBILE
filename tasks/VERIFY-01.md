@@ -7,7 +7,7 @@ order: 269
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [AUTH-07, ME-04, ME-01, TIER-02, DV2-COMP]
 decisions: [R-43, R-6, R-47]
 passes: [V1, V4, V5, V6, V9]
@@ -17,11 +17,23 @@ artboards: [VF1, VF2, VF2a, VF2b]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 3 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): ME-04, DV2-COMP.
-- **History:** none yet. Reports go to tasks/history/VERIFY-01.md.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by a Sonnet builder, mobile `wmt/VERIFY-01` on `origin/wmt/MERGE-7` `04e49020` with `origin/wmt/REF-03` `0668a6d` and `origin/wmt/DV2-05` `960c40d` merged (merge commits). No backend, wawu-id or migration change (the Hub already serves `GET /plans` and `/product-drafts`, TIER-02).
+- **Built** (`src/features/verify/`, routes `/verify-bonus`, `/shop`, `/shop-product`):
+  - VF1 `BonusScreen`: the preselected tier's `bonusPoints`, `firstVoiceIntroIncluded` and `eventPass` from `GET /plans`, shown locked; "Build my shop". The AI tool names come from the Hub's priced `actions`. Error keeps the button.
+  - VF2, VF2a, VF2b `ShopScreen`: ring, "N drafts · drafts are free", each draft tagged Draft with "No file yet · price", plus and "Add a product". Loading, error, empty.
+  - Draft form `DraftFormScreen`: title, how it looks (kind), description, Paid or Free and price; `POST`, `GET`, `PATCH` (only what changed) and `DELETE /product-drafts`, delete asks once. A draft with no file saves free; the cap is the Hub's: its own words show when it refuses (G-662).
+  - "Shop ready" is worked out on the phone: the most finished draft's share of four fields (title, kind, description, price or Free), 0 with no drafts (the board's 10%, 40%, 80% are example values).
+  - Entries: Me's draft tile opens `/shop` (M1); Create (M19) has a "Your shop" row under the tiles (drawn with VF2's own words because M19 draws no draft row; verifier to confirm).
+  - `bonusStep.ts`: the once-after-sign-up mark VF1 needs, modelled on the access-code step.
+- **Not drawn (R-47):** the Voice Intro prompt on Me and VF2's "Hear your name" row (VF3, VF4 are VERIFY-02, the Hub serves no Voice Intro, G-800); the Voice Intro player; publishing (VERIFY-04); the tier badge entry (VERIFY-05).
+- **Shared-change rows filed:** SHARED-CHANGES VERIFY-01 #1 (the A4 hand-on to VF1: mark in `confirmSignupCode`, a `Stack.Protected` step group in `_layout.tsx`) and #2 (`shop` and `shop-product` in the signed-in group). Not applied here (fenced), so a new account does not yet land on VF1 and the capability check "lands on VF1 after the code" is NOT RUN until the queue is applied (V7 walk).
+- **Gaps filed:** G-840 (a draft has no picture), G-841 (event pass line: no benefits served), G-842 (a description cannot be cleared).
+- **Checks:** full mobile check (typecheck, lint, jest 209 suites and 3639 tests, gates, tasks) run once, then the three gate findings it raised (literal gaps in `parts.tsx`) were fixed and typecheck, lint, the 23 verify tests, gates (0 fail, 5 warn as main) and tasks re-run to EXIT 0. No GitHub mobile CI (billing).
+- **NOT RUN:** pictures at 390 px beside the rendered boards (the builder's step budget ended; the boards were rendered and read: `python3 scripts/design/render_design.py VF1 VF2 VF2a VF2b`). The V7 walk of sign-up to VF1. Both are for the verifier.
+- **Open findings:** none yet.
+- **Next:** a verifier, fresh, runs V1, V4, V5, V6, V9 with the stack `--with mobile`, takes the four boards in light and dark, and walks VF1 to VF2 to the form by URL (`/verify-bonus`) until the queue is applied.
+- **History:** reports go to tasks/history/VERIFY-01.md.
 
 ## Read first
 
@@ -53,13 +65,9 @@ Right after sign-up a person sees what a tier unlocks (locked), builds draft pro
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/VERIFY-01.md](history/VERIFY-01.md).
 
 ## Owner sign-off
 
