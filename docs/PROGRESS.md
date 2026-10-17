@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 297.**
+**Launch tasks done: 149 of 298.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 117 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 63 | 0 | 0 | 0 |
+| verifying | 64 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -29,6 +29,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
+- [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
