@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 82, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 83, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged.
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -129,6 +129,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SCHOOLS-07 | F1 | Hub: `eslint --no-fix` on the builder's `src/schools/enrolment/tests/school-enrolment.contract.spec.ts` reports 1 error (`no-unsafe-assignment` on `expect.stringMatching`, line 1040; line 913 at 79b24be, same text). No CI job lints specs. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SCHOOLS-07.md`, finding 5 (round 2) |
 | SHARED-07 | 1 | iOS has no short-circuit for a non-web address: `reader/index.tsx` sends a non-http(s) address straight to the phone viewer on Android only (`source === null`); on iOS `source` is always `{ uri }`, so the address is handed to the native web view, and no test covers that path. Low risk in practice (`playableUrl()` returns only the Hub's https storage addresses). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`, finding 3 |
 | SHARED-07 | 2 | `src/features/tgif/ShareSheet.tsx` `sharesPicture()` / `whatsapp()` (about lines 123-130): if the phone's `Sharing.isAvailableAsync()` never answers, a WhatsApp tap waits for ever with nothing shown (no spinner, no error, no wa.me, no share sheet; a second tap is ignored; Story and Save are never drawn; it lasts until the app restarts). Reachability is very low: `isAvailableAsync` is a local native call that resolves at once, and `canShareCard` catches throws. Optional hardening: race the wait against about 2 s and fall back to the text. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-07.md`, finding 1 (round 3) |
+| GATES-02 | L1 | Backend: `scripts/gates/baseline.json` keys the five GATES-02 entries to line numbers, so any edit that shifts those lines re-surfaces the finding (the forks entry already had to be re-keyed after batch 5). Key them by their evidence text, not a line. Not a defect of GATES-02. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/GATES-02.md`, finding 1 |
 
 ## Builder report
 

@@ -7,7 +7,7 @@ order: 254
 priority: launch
 repo: wawu-backend
 type: backend-refactor
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-60]
 passes: [V1, V2, V3, V9]
@@ -17,11 +17,12 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** S. **Wave:** 1 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below. Nothing blocks it; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/GATES-02.md.
+As of 16 Oct 2026.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/GATES-02.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend `wmt/GATES-02` at `1d03bc2` (main `a5e48fc`, batch 5, merged in; the forks entry for `FlutterwaveConfigResponse` re-keyed to its new line `content-piece.service.ts:62`, same owner and reason; gates 0 fail, baseline check passes; CI green, run 38985246402, Executable gates included); mobile `wmt/GATES-02` (this record). Migration: none. No PR.
+- **Built:** five entries added to `scripts/gates/baseline.json` in the backend (88 accepted, was 83). Nothing else changed: no gate, test, source file or contract. The two stale GATES-01 L1 entries are untouched.
+- **The five:** four false positives of the deferral check (`admin-notifications.controller.ts:40`, `compose-campaign.dto.ts:44`, `notification-event.ts:496`, `flutterwave-wallet.gateway.ts:72`) and the forks finding `content-piece.service.ts:48` (`FlutterwaveConfigResponse` declared in 3 files, the web's Flutterwave path kept as built until the after-launch removal, R-1). The lead named the fifth in the dispatch; the owner approved all five on 16 Oct 2026 (R-60). Owner on each entry: "YOU, owner-approved 16 Oct 2026 (R-60)".
+- **Gates:** `python3 scripts/gates/run.py` 5 fail before, 0 fail after. `python3 scripts/gates/check_baseline.py` passes (124 entries).
+- **Next:** the lead merges it with batch 6.
 
 ## Read first
 
@@ -48,13 +49,9 @@ The backend gates' baseline holds the gate findings the owner said to record on 
 - [ ] `python3 scripts/gates/check_baseline.py` passes: every entry has an owner and a reason.
 - [ ] The gate fail count on main does not go up, and no gate or test file is edited (diff shows only the baseline).
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/GATES-02.md](history/GATES-02.md).
 
 ## Owner sign-off
 
