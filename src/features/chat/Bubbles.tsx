@@ -45,15 +45,17 @@ export type TextBubbleProps = {
   mine: boolean;
   /** When it was sent. Left out for a message that is still on its way. */
   at?: string;
+  /** A line under the bubble in place of its time ("09:51 · ₦1,500 paid", a paid question, INBOX-10). */
+  stamp?: string;
   /** A message the Hub has not confirmed: dimmed, with its state under it. */
   pending?: { status: 'sending' | 'failed'; error?: string; onRetry: () => void; onDiscard: () => void };
 };
 
 /** One text message: the person's own on the right in the accent, theirs on the left on a card. */
-export function TextBubble({ id, text, mine, at, pending }: TextBubbleProps) {
+export function TextBubble({ id, text, mine, at, stamp, pending }: TextBubbleProps) {
   const { colors } = useWawu();
   return (
-    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : ''}, ${text}`}>
+    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : stamp ? `, ${stamp}` : ''}, ${text}`}>
       <View
         style={[
           styles.bubble,
@@ -80,6 +82,10 @@ export function TextBubble({ id, text, mine, at, pending }: TextBubbleProps) {
             </View>
           ) : null}
         </View>
+      ) : stamp ? (
+        <Text variant="caption" tone="textMuted" style={[{ fontSize: bubbleMetrics.time }, mine ? styles.timeMine : null]} testID={`bubble-${id}-stamp`}>
+          {stamp}
+        </Text>
       ) : at ? (
         <Time iso={at} mine={mine} />
       ) : null}

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryClient } from '@/api/query';
 import { isApiError } from '@/api/errors';
 import { BottomSheet } from '@/components/BottomSheet';
+import { Banner } from '@/components/Banner';
 import { Button, IconButton } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
@@ -23,6 +24,11 @@ import { ContentGrid, GridSkeleton } from '@/features/me/ContentGrid';
 import { countsOf, roleLinesOf, socialLinksOf, tileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
 import { Counts, HeaderSkeleton, NameBlock, SocialChips, bodyTop } from '@/features/me/ProfileHeader';
 import { ProfileTabs } from '@/features/me/ProfileTabs';
+import { AskSheets } from '@/features/paid-ask/AskSheets';
+import { askButtonLabel, offBody, offTitle } from '@/features/paid-ask/model';
+import { useAsk } from '@/features/paid-ask/useAsk';
+import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { tickOf } from '@/features/chat/api';
 import { ServicesTab } from '@/features/me/ServicesTab';
 import { readFailure } from '@/features/profile-edit/failure';
 import { TipSheets } from '@/features/tips/TipSheets';
@@ -51,7 +57,7 @@ import {
   visitorName,
   visitorTicks,
 } from './model';
-import { Actions, EducationCard, ExperienceCard, FootBar, IntroCard, SkillsCard, VisitorTop, WorksCard } from './parts';
+import { Actions, type ActionsProps, EducationCard, ExperienceCard, FootBar, IntroCard, SkillsCard, VisitorTop, WorksCard } from './parts';
 
 /** How near the end of the page (in points) the next page of pieces is asked for. */
 const MORE_WITHIN = 600;
@@ -78,10 +84,13 @@ export type VisitorProfileScreenProps = {
   onOpenListing: (listingId: string) => void;
   /** After Block: the profile is gone for both people, so the route leaves it. */
   onBlocked: () => void;
-  /** Where the tip's wallet steps lead (Open your wallet, a PIN to set, Forgot PIN, add money). The ₦ button is drawn only when given (R-47). */
+  /** Where the tip's and the question's wallet steps lead (Open your wallet, a PIN to set, Forgot PIN, add money). The ₦ button is drawn only when given (R-47). */
   pay?: FlowHandlers;
+  /** A question was paid: the thread (I4) opens. Message and its price are drawn only when this and `pay` are given (R-47). */
+  onOpenPaidThread?: (wawuId: string) => void;
 };
 
+type ActionsAsk = NonNullable<ActionsProps['ask']>;
 const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () => undefined, onForgotPin: () => undefined, onAddMoney: () => undefined };
 
 /**
@@ -91,10 +100,11 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  *
  * One call (`GET /users/{wawuId}/visitor-profile`) decides the whole page, so a person the Hub hides (blocked either way, deleted,
  * no public profile) shows the Hub's answer and nothing else, never a half-drawn profile. Follow and Following write once per tap
- * with what the Hub answers; the counts are re-read after. Not drawn yet (the task that builds each screen adds it, R-47): Message
- * with its price (INBOX-10, paid questions) and the Bio voice player (VOICE-01).
+ * with what the Hub answers; the counts are re-read after. Message with its price (I2) opens the ask sheet (I3) when the Hub says the
+ * creator takes paid questions; when it does not, "Messages off" and the note under it (I8). Not drawn yet (the task that builds the
+ * screen adds it, R-47): the Bio voice player (VOICE-01).
  */
-export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay }: VisitorProfileScreenProps) {
+export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -104,10 +114,13 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
   const tip = useTip(pay ?? NOT_WIRED);
+  const asking = Boolean(pay && onOpenPaidThread);
+  const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who));
 
   const view = profile.data ?? null;
   const person = view?.profile.wawuUserId ?? null;
   const name = view ? visitorName(view) : '';
+  const terms = useAskTerms(asking && view && !view.own ? person : null, asking && view && !view.own ? view.profile : null);
 
   useEffect(() => {
     if (view?.own) onOwn();
@@ -197,6 +210,25 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   };
 
   const hidden = profile.isError && isApiError(profile.error) && profile.error.status === 404;
+  const askAction: ActionsAsk | undefined =
+    !asking || !view || !terms
+      ? undefined
+      : terms.kind === 'off'
+        ? { kind: 'off' }
+        : {
+            kind: 'on',
+            label: askButtonLabel(terms.priceKobo),
+            onPress: () =>
+              ask.begin({
+                wawuId: view.profile.wawuUserId,
+                name,
+                avatarUrl: view.profile.avatarUrl,
+                hue: hueFor(view.profile.wawuUserId),
+                tick: tickOf(view.profile),
+                priceKobo: terms.priceKobo,
+                windowHours: terms.windowHours,
+              }),
+          };
   const tipHandler = pay && view ? () => tip.begin({ wawuId: view.profile.wawuUserId, name, avatarUrl: view.profile.avatarUrl, hue: hueFor(view.profile.wawuUserId) }) : undefined;
   const toast = (
     <Toast message={notice} tone="alert" placement="bottom" offset={insets.bottom + space.xl} duration={FOLLOW_NOTICE_MS} onHide={() => setNotice(null)} testID="visitor-notice" />
@@ -227,6 +259,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
         </BottomSheet>
       ) : null}
       {pay ? <TipSheets tip={tip} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} /> : null}
+      {pay && asking ? <AskSheets ask={ask} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} /> : null}
     </>
   );
 
@@ -299,7 +332,8 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
               />
               <SocialChips links={socialLinksOf(view.profile, view.fields)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf({ followerCount: view.profile.followerCount, followingCount: view.profile.followingCount, postCount: view.profile.contentCount })} />
-              <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} />
+              <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />
+              {terms?.kind === 'off' ? <Banner tone="info" icon="Info" title={offTitle(name)} body={offBody(name)} testID="visitor-messages-off" /> : null}
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} /> : null}
               {tab === 'services' ? <ServicesBody view={view} onOpenListing={onOpenListing} /> : null}
