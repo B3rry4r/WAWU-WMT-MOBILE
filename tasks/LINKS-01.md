@@ -91,10 +91,6 @@ How to read it: **Today** is where the link lands before this task, **Now** afte
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/LINKS-01.md](history/LINKS-01.md).
 
-## Builder report
-
-(Filled below, then moved to history by `compact_task.py`.)
-
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._

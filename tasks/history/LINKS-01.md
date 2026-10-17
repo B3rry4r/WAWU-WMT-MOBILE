@@ -1,0 +1,16 @@
+# LINKS-01 · round history
+
+Moved out of [tasks/LINKS-01.md](../LINKS-01.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+17 Oct 2026, Sonnet builder, T1. Web `wmt/LINKS-01` `239cbcf` on `origin/main` `5b45d65`; mobile `wmt/LINKS-01` `bf541fd8` on `origin/wmt/MERGE-8` `cc436a53`.
+- **Web files:** `src/lib/app-links.ts` (+ test), `site-mode.ts`, `middleware.ts`, `src/app/r/[code]/page.tsx`, `src/app/selfie/page.tsx`, `src/app/.well-known/{apple-app-site-association,assetlinks.json}/route.ts`, `src/components/open-in-app/OpenInApp.tsx`, `(auth)/reset-password` and `forgot-password` pages and forms (a `signInHref` prop, default unchanged), `scripts/check-site-mode.mjs` (only additions, and a resolve hook for the new import), `.env.example`.
+- **Mobile files:** `src/lib/appLinks.ts`, `app.json`, `src/app/selfie.tsx`, `referral/{api,parts,ShareCard}`, `open-wallet/api/liveness.ts`, specs `appLinks`, `selfieLink`, `referralLink` (https cases added); `SHARED-CHANGES` row LINKS-01 #1; `BACKEND_GAPS` G-812 and G-827 resolved in the app, G-67 clash noted.
+- **Checks (EXIT):** web typecheck 0; web lint on 11 changed files 0 (one `<img>` warning, as elsewhere on the site); web `app-links` test 10 pass; `check:copy` clean; production build 0; `check:site-mode` static 233 pass 0, live join-only on `next start` 333 pass 0, live full 295 pass 0. Mobile typecheck 0; eslint `--max-warnings 0` on 12 changed files 0; jest 12 suites, 145 tests pass; gates 0 fail (9 warn, none in changed files) 0; baseline 0; `npm run tasks` 0.
+- **Pictures (390 px, dark, no sideways scroll):** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/links-01-b/shots/` `invite-390-dark.png`, `selfie-390-dark.png`, `reset-390-dark.png`, `forgot-390-dark.png` (join-only build).
+- **Tests whose assertion changed with the behaviour (nothing weakened):** `hostedSelfie.test.tsx` (empty body is now `{ redirectUrl }`), `InviteScreen.test.tsx` and `ShareCardScreen.test.tsx` (the link shown, copied and shared).
+- **Decisions (agent, owner may override):** the app builds the shared invite from the code, so no Hub change; RF1 and the card show `wawuafrica.com/r/<code>`, copy and share carry the https link. `/selfie` is the return path. The fallback pages take a button to `wawu://...` because a phone does not hand a same-site or redirected link to the app. `/forgot-password` is reopened with `/reset-password` (the sign-in alert links to it). Both pages draw no link into the closed sign-in page and say to open the app. With no signing value set, each `.well-known` file is valid and names no app. The `/join` registration page, the closed videos and every other route are untouched.
+- **Found, not changed:** W3, H1, H6, A2, A3 (audit); the forgot-password page says 30 minutes while the token lasts 1 hour (copy, low); wawu-id's `.env.example` sets `APP_URL` to its Railway address, so `FRONTEND_URL` must be set in production.
+- **NOT RUN:** GitHub CI on either branch; a phone with a signed build (V10: the owner's two signing values are missing); the real Hub, wawu-id or website; Vercel serving the `.well-known` routes; a real universal-link round trip.
+
