@@ -391,8 +391,12 @@ const styles = StyleSheet.create({
   /** A count that breaks between its digit groups: whole groups only, as many to a line as fit. */
   groups: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', flexShrink: 1, minWidth: 0 },
   fixed: { flexShrink: 0 },
-  /** The count and the word keep their own width: they are never squeezed, the fit chooses their size. */
-  natural: { flexShrink: 0 },
+  /**
+   * The count and the word keep their own width: they are never squeezed, the fit chooses their size. A hugging figure in a parent
+   * narrower than the count lets it spill past the parent like the star and the word, and never cuts it: on the web a Text with
+   * `numberOfLines={1}` is capped at its box and ends in an ellipsis, so the overflow is left visible there (DV2-COMP L1).
+   */
+  natural: { flexShrink: 0, overflow: 'visible' },
   /**
    * The copies sit in a row box of no size that clips them, so they take their natural width (an absolute child of a column box is offered
    * the box's width, which would cut the count), add nothing to the page's scroll, and cannot be seen or touched. They carry no

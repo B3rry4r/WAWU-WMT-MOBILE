@@ -26,6 +26,9 @@ const cases: Record<string, { props: PointsFigureProps; note: string; width?: nu
   chip: { props: { count: 1250, size: 'chip' }, note: 'Studio card count (M19)' },
   tile: { props: { count: 1240, size: 'tile' }, note: 'Points tile (W1), the number alone' },
   ...fitCases(),
+  // a hugging figure (no `fit`) in a parent narrower than its count: it spills past the parent like the star and the word, never cut
+  'hug-9-120': { props: { count: 123456789, size: 'hero' }, width: 120, note: 'Hugging, 9 digits in 120 px (spills, never cut)' },
+  'hug-12-100': { props: { count: 123456789012, size: 'row' }, width: 100, note: 'Hugging, 12 digits in 100 px (spills, never cut)' },
 };
 
 /**

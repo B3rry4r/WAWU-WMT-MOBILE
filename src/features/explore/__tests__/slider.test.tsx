@@ -302,6 +302,20 @@ describe('what the Hub is told about an advert (ADS-05)', () => {
     expect(reportsFor('a1')).toEqual(['view', 'tap']);
   });
 
+  it('counts a tap for the advert that was pressed, not the one on screen, when a press lands on the slide beside it (EXPLORE-07 L1)', async () => {
+    answers[ADS] = [ok([a1, a2])];
+    const spies = entries();
+    await rtl.render(wrap(<ExploreScreen {...spies} />));
+    await rtl.screen.findByTestId('explore-hero');
+    await settle();
+    // a1 is the slide on screen; a2's slide is pressed while the strip is between two slides
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-ad-a2'));
+    await settle();
+    expect(spies.onOpenEvent).toHaveBeenCalledWith('dest-a2');
+    expect(reportsFor('a2')).toEqual(['tap']);
+    expect(reportsFor('a1')).toEqual(['view']);
+  });
+
   it('counts no view while Explore is not the tab on screen, and the view when it is', async () => {
     mockFocused = false;
     answers[ADS] = [ok([a1])];

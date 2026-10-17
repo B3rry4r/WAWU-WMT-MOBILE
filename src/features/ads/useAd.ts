@@ -70,5 +70,10 @@ export function useAdReports(ad: AdCard | null | undefined, showing: boolean) {
     skip: useCallback(() => {
       if (id) report(id, 'skip');
     }, [id, report]),
+    /**
+     * A tap on a card that is not the one this hook was given (EXPLORE-07 L1): the Explore slider is bound to the slide on
+     * screen, and a press can land on a slide beside it while the strip is between two. The tap is for the card pressed.
+     */
+    tapOf: useCallback((card: string) => report(card, 'tap'), [report]),
   };
 }
