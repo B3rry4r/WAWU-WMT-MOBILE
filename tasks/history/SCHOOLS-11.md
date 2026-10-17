@@ -15,3 +15,11 @@ Moved out of [tasks/SCHOOLS-11.md](../SCHOOLS-11.md) word for word, oldest first
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+
+## Round 2 · builder report · 17 Oct 2026
+
+Backend `wmt/B2` `be8d9cb` (on `9b41f13`). Fixes the verifier's M1 and two lows.
+- M1: the payout's ledger `out` row is `pending`, written in the transaction that takes the lease, and completes as the same row on the provider's confirmation. The provider's own charge replaces the quote on the pending row. A payout the provider says failed, or the bank returned, reverses its row; a send the provider never took reverses it and revives as the same row when taken later; a retry under `-2` has its own row and only one row per settlement is live at any moment. Six new specs fail before and pass after.
+- Low: `GET /admin/school-settlements` is a cursor page (`limit`, `cursor`, `nextCursor`). Contract and API types follow.
+- Low (SCHOOLS-09): a token with no name, email or phone is not "removed their account"; only a cleared `wawuUserId` is. One new spec, fails before and passes after.
+- Checks: tsc 0, eslint 0 on changed files, settlement spec 21 passed, report spec 12 passed.

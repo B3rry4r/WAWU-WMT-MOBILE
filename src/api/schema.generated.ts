@@ -11347,6 +11347,7 @@ export interface components {
         };
         SchoolSettlementPage: {
             items: components["schemas"]["SchoolSettlementView"][];
+            nextCursor: string | null;
         };
         CancelIntakeView: {
             intakeId: string;
@@ -24057,6 +24058,8 @@ export interface operations {
                 action?: "payout" | "refund";
                 schoolId?: string;
                 limit?: number;
+                /** @description The `nextCursor` of the previous page: opaque, sent back as given. */
+                cursor?: string;
             };
             header?: never;
             path?: never;
