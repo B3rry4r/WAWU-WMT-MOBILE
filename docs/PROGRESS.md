@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 111 | 0 | 0 | 0 |
+| todo | 110 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 69 | 0 | 0 | 0 |
+| verifying | 70 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -58,6 +58,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
+- [INBOX-24](../tasks/INBOX-24.md) Private community monthly pass (backend) (You)
 - [HOME-16](../tasks/HOME-16.md) Daily TGIF notification (You)
 - [WALLET-39](../tasks/WALLET-39.md) A notice for all money in (You)
 - [TIER-06](../tasks/TIER-06.md) The new money figures as admin settings (You)
