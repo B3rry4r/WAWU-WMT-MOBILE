@@ -26,7 +26,7 @@ export const barMetrics = {
 } as const;
 
 /** What the pill says and what a screen reader hears: the app's name with its question mark (R-69). */
-const searchWords = `Search ${APP_NAME}?`;
+const searchWords = `Search ${APP_NAME}`;
 
 export type ExploreBarProps = {
   /** The search pill was pressed (X5). The pill is not drawn without it. */
