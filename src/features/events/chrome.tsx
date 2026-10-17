@@ -17,29 +17,36 @@ export type NavBarProps = {
   /** The control at the right end; an empty 42 square keeps the title centred when there is none. */
   right?: ReactNode;
   backTestID?: string;
+  /** A second line under the title (E18: the event's date). */
+  subtitle?: string;
 };
 
 /** The Events screens' top bar: back, the title, and an optional control. */
-export function NavBar({ title, onBack, right, backTestID }: NavBarProps) {
+export function NavBar({ title, onBack, right, backTestID, subtitle }: NavBarProps) {
   return (
     <View style={styles.nav}>
       <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID={backTestID} />
-      <Text variant="body" accessibilityRole="header" numberOfLines={1} style={[styles.title, font(700)]}>
-        {title}
-      </Text>
+      <View style={styles.titles}>
+        <Text variant="body" accessibilityRole="header" numberOfLines={1} style={[styles.title, font(700)]}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.subtitle}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
       {right ?? <View style={styles.spacer} />}
     </View>
   );
 }
 
-export type EventsTab = 'discover' | 'host';
+export type EventsTab = 'discover' | 'mine' | 'host';
 
-/**
- * The tabs under the title (E1, E13 to E15): Discover and Host event. The canvas draws My events between them; it opens E17,
- * which EVENTS-08 builds, so the tab is not drawn until then (R-47) and that task adds it, as drawn, between the two.
- */
+/** The tabs under the title (E1, E17, E13 to E15): Discover, My events and Host event, as the canvas draws them. */
 const tabs: readonly { value: EventsTab; label: string }[] = [
   { value: 'discover', label: 'Discover' },
+  { value: 'mine', label: 'My events' },
   { value: 'host', label: 'Host event' },
 ];
 
@@ -83,7 +90,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: space.md,
   },
-  title: { flex: 1, textAlign: 'center', fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title },
+  titles: { flex: 1 },
+  subtitle: { textAlign: 'center' },
+  title: { textAlign: 'center', fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title },
   spacer: { width: navMetrics.button },
   tabs: { flexDirection: 'row', gap: tabMetrics.between, paddingHorizontal: layout.gutter, borderBottomWidth: StyleSheet.hairlineWidth },
   tab: { paddingBottom: tabMetrics.padBottom, marginBottom: -StyleSheet.hairlineWidth },

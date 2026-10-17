@@ -49,11 +49,8 @@ export function HostGate({ pricing, onBack }: { pricing: MyVerification['pricing
   );
 }
 
-/**
- * E16 · Sent for review. The canvas draws a secondary My events button left of Done; it opens E17, which EVENTS-08 builds,
- * so it is not drawn until then (R-47) and that task adds it, as drawn, beside Done.
- */
-export function Submitted({ name, onDone }: { name: string; onDone: () => void }) {
+/** E16 · Sent for review: a secondary My events button (E17) left of Done, as the canvas draws them. */
+export function Submitted({ name, onDone, onMyEvents }: { name: string; onDone: () => void; onMyEvents?: () => void }) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -73,7 +70,10 @@ export function Submitted({ name, onDone }: { name: string; onDone: () => void }
         </Text>
       </View>
       <View style={[styles.foot, { paddingBottom: footMetrics.bottom + insets.bottom }]}>
-        <Button testID="host-done" label="Done" full onPress={onDone} />
+        <View style={styles.pair}>
+          {onMyEvents ? <Button testID="host-my-events" label="My events" variant="secondary" onPress={onMyEvents} style={styles.half} /> : null}
+          <Button testID="host-done" label="Done" full={!onMyEvents} onPress={onDone} style={onMyEvents ? styles.half : undefined} />
+        </View>
       </View>
     </View>
   );
@@ -91,4 +91,6 @@ const styles = StyleSheet.create({
   line: { fontSize: RESULT.line, lineHeight: canvasNormalLineHeight(RESULT.line), textAlign: 'center' },
   note: { textAlign: 'center' },
   foot: { paddingTop: footMetrics.top, paddingHorizontal: layout.gutter, gap: space.sm },
+  pair: { flexDirection: 'row', gap: space.md },
+  half: { flex: 1 },
 });

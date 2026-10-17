@@ -11,5 +11,5 @@ export default function HostRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/events'));
-  return <HostScreen onBack={leave} onDiscover={() => router.replace('/events')} onDone={() => router.replace('/events')} />;
+  return <HostScreen onBack={leave} onDiscover={() => router.replace('/events')} onDone={() => router.replace('/events')} onMine={() => router.replace('/events/mine')} />;
 }

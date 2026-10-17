@@ -1,6 +1,8 @@
+import { formatMoney } from '@/components/Money';
+
 import type { EventView } from './api';
 import { placeOf, watOf, whenLine } from './format';
-import type { HeldEvent, HeldGroup, HeldStub, HeldTicket } from './ticketsApi';
+import type { HeldEvent, HeldGroup, HeldStub, HeldTicket, WalletOrder } from './ticketsApi';
 
 /** "1 × Regular", "2 × VIP" (E6): how many tickets one order holds of one tier. */
 export const groupLine = (group: Pick<HeldGroup, 'quantity' | 'tierName'>) => `${group.quantity} × ${group.tierName}`;
@@ -65,4 +67,20 @@ export function position(ticket: Pick<HeldTicket, 'id' | 'siblings'>): { index: 
     previous: index > 0 ? ticket.siblings[index - 1].id : null,
     next: index < count - 1 ? ticket.siblings[index + 1].id : null,
   };
+}
+
+type RefundOrder = Pick<WalletOrder, 'free' | 'ticketCount' | 'returned'>;
+
+/**
+ * E11's second line, from the Hub's order: what came back to the buyer's Naira wallet, or that it is on its way, or that it could not be sent by itself.
+ * A free order has no money to return, so it has no line (and no banner: the plain "not valid" note stands).
+ */
+export function refundBannerBody(order: RefundOrder): string | null {
+  if (order.free) return null;
+  const { returned } = order;
+  if (returned.returned && returned.returnedKobo !== null) {
+    const sum = formatMoney(returned.returnedKobo, { decimals: false });
+    return order.ticketCount > 1 ? `${sum} for your ${order.ticketCount} tickets is back in your Naira wallet.` : `${sum} is back in your Naira wallet.`;
+  }
+  return returned.holdStatus === 'released' ? 'Your refund could not be sent automatically.' : 'Your refund is on its way to your Naira wallet.';
 }

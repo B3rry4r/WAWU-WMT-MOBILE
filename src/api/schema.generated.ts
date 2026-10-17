@@ -16695,6 +16695,7 @@ export interface operations {
                         attendees: number;
                         grossNaira: number;
                         netNaira: number;
+                        buyersToRefund: number;
                         referrals: {
                             code: string;
                             label: string;

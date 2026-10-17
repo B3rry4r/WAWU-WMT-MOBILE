@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
+import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -11,9 +12,9 @@ import { Text } from '@/components/Text';
 import { layout, radius, space } from '@/theme';
 
 import { boostBrightness, canBoostBrightness } from './brightness';
-import { checkedInLine, position } from './ticketFormat';
+import { checkedInLine, position, refundBannerBody } from './ticketFormat';
 import { cardMetrics, Note, Page, RefreshFailed, TicketCard, TicketNav } from './ticketParts';
-import { fetchHeldTicket, heldTicketKey, isTicketId } from './ticketsApi';
+import { fetchHeldTicket, fetchWalletOrder, heldTicketKey, isTicketId, walletOrderKey } from './ticketsApi';
 
 /** design/_gen/events.js `ticketView`: 14 between the note, the card and the line under it. */
 const bodyGap = 14;
@@ -34,6 +35,16 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
   const ticket = useQuery({ queryKey: heldTicketKey(id), queryFn: () => fetchHeldTicket(id), enabled: valid });
   const [now] = useState(() => Date.now());
   const status = ticket.data?.status;
+  // E11: a void ticket of a called-off event asks the Hub what came back for its order. The answer is a nicety: until it
+  // arrives (or if it never does, or the order was free) the plain "not valid" note stands.
+  const calledOff = status === 'void' && Boolean(ticket.data?.event.cancelledAt);
+  const order = useQuery({
+    queryKey: walletOrderKey(ticket.data?.orderId ?? ''),
+    queryFn: () => fetchWalletOrder(ticket.data?.orderId as string),
+    enabled: calledOff,
+    retry: false,
+  });
+  const refundBody = order.data ? refundBannerBody(order.data) : null;
 
   useEffect(() => (status === 'valid' && canBoostBrightness ? boostBrightness() : undefined), [status]);
 
@@ -99,7 +110,10 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
           body={`${checkedInLine(data.checkedInAt as string, data.event, now)}.`}
         />
       ) : null}
-      {void_ ? (
+      {void_ && calledOff && refundBody ? (
+        <Banner testID="ticket-called-off" tone="danger" icon="CalendarX" title="This event was called off" body={refundBody} />
+      ) : null}
+      {void_ && !(calledOff && refundBody) ? (
         <Note
           testID="ticket-void"
           tone="warning"
