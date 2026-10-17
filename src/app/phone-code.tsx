@@ -12,7 +12,7 @@ const RESTART_AFTER = 4;
 /**
  * A4 and A15. Only reachable signed out. The right code issues the first session, and the root layout moves on.
  * Where the code went is what WAWU ID's answer says. By default (SIGNUP_VERIFY_CHANNEL `phone`) it is texted and the screen is
- * the phone one ("Verify your phone", "Sent by SMS to 0803 ••• 4412"); with `email` it is mailed to the address typed on A3
+ * the phone one ("Verify your phone", "Sent by SMS to 0803 ••• 4412."); with `email` it is mailed to the address typed on A3
  * ("Verify your email", "Sent to n•••@example.com", R-39). A mailed sign-up made without the number typed (another account
  * holds it) says so under the heading.
  * Opened with nothing in memory (the browser build reloaded on this address), it asks WAWU ID where the held
@@ -44,7 +44,7 @@ function PhoneCode() {
     <CodeScreen
       testID="phone-code"
       navTitle={mailed ? 'Verify your email' : 'Verify your phone'}
-      subtitle={mailed ? (state.maskedEmail ? `Sent to ${state.maskedEmail}` : 'Sent to your email address') : `Sent by SMS to ${maskedPhone(held.phone)}`}
+      subtitle={mailed ? (state.maskedEmail ? `Sent to ${state.maskedEmail}` : 'Sent to your email address') : `Sent by SMS to ${maskedPhone(held.phone)}.`}
       resendIn={resendIn}
       aside={mailed && state.phoneNotSaved ? PHONE_NOT_SAVED : undefined}
       extra={!mailed && state.emailCodeRequired ? { label: 'Code from your email', hint: 'We also emailed a code to confirm your email address.' } : undefined}

@@ -16,7 +16,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/components/Banner';
 
 import { OPEN_WALLET_KEY } from './api/account';
-import { DOCUMENTS_KEY, documentProblem, fetchDocuments, fileProblem, rowOf } from './api/documents';
+import { DOCUMENTS_KEY, documentProblem, fetchDocuments, fileProblem, rowOf, selfieOnlyLeft } from './api/documents';
 import { openingProgressQuery, type OpeningProgress } from './api/review';
 import { ChoiceField, ChoiceSheet } from './ChoiceField';
 import { DetailsNeeded } from './DetailsNeeded';
@@ -26,6 +26,8 @@ import { FileRow, UploadTile } from './DocumentParts';
 import { pickProofFile } from './documents/pick';
 import { clearFiles, setAddress, setPostalCode, setProof, setProofType, useDraft, useDraftLifetime } from './draft';
 import { readAddress } from './keptCheck';
+import { forgetSelfieDrop } from './selfieDrop';
+import { beginOpeningSend } from './sending';
 import { useSessionAccount } from './sessionAccount';
 import { detailsFromKept, NeedsDetails, needsOpening, sendOpening, useKeptDetailsHeld } from './submit';
 
@@ -59,6 +61,11 @@ export type ProofOfAddressScreenProps = {
   /** The bank is already checking (or the account is open). */
   onChecking: () => void;
   onOpened: () => void;
+  /**
+   * Both documents are in and the hosted selfie is all that is left (the Hub runs it for this opening and it has not
+   * passed): A6 takes this step's place instead of A28. Left out, A28 is next.
+   */
+  onSelfie?: () => void;
   /** The Hub asks for the details again and nothing holds them: the step that collects them. */
   onDetails: () => void;
 };
@@ -76,7 +83,7 @@ export type ProofOfAddressScreenProps = {
  * dead end: pressed with something missing it says what, under the field or in
  * a banner, and sends nothing.
  */
-export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened, onDetails }: ProofOfAddressScreenProps) {
+export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened, onSelfie, onDetails }: ProofOfAddressScreenProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
@@ -198,10 +205,14 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     setBusy(true);
     setFailure(null);
     setNeedsDetails(false);
+    // Until the send is over and this screen has routed by the Hub's last answer, no screen under it reads the
+    // half-way answers as "back to the documents" (DV2-05 round 2). A new send is a new chance for the selfie step.
+    const endSend = beginOpeningSend();
+    forgetSelfieDrop();
     const address = tidy(draft.address);
     let step: 'details' | 'documents' = needsOpening(current) ? 'details' : 'documents';
     try {
-      await sendOpening({
+      const sent = await sendOpening({
         progress: current,
         draft: { ...draft, address },
         details: detailsFromKept(owner, { address, postalCode: draft.postalCode, idType: draft.idType, idNumber: draft.idNumber, proofType: draft.proofType }),
@@ -213,7 +224,11 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       if (!live.current) return;
       clearFiles(owner);
       void queryClient.invalidateQueries({ queryKey: [OPEN_WALLET_KEY] });
-      onSubmitted();
+      // Nothing went up this time (the documents were already in): the Hub says what is left.
+      const after = sent ?? (await fetchDocuments().catch(() => null));
+      if (!live.current) return;
+      if (onSelfie && selfieOnlyLeft(after)) onSelfie();
+      else onSubmitted();
     } catch (error) {
       if (!live.current) return;
       if (error instanceof NeedsDetails) {
@@ -227,6 +242,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
         setFailure(sendFailure(error, step === 'details' ? "We couldn't send your details" : "We couldn't send your documents"));
       }
     } finally {
+      endSend();
       inFlight.current = false;
       if (live.current) setBusy(false);
     }

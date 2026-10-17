@@ -68,7 +68,7 @@ export function OpenWalletEnd({
       bare={!onBack}
       onBack={onBack}
       navTitle={navTitle}
-      contentTop={onBack ? undefined : (top ?? RESULT.top)}
+      contentTop={top ?? (onBack ? undefined : RESULT.top)}
       footer={
         <>
           <Button label={actionLabel} iconRight={actionIcon} full onPress={onAction} testID="open-wallet-end-action" />
