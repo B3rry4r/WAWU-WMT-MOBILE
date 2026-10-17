@@ -152,12 +152,18 @@ export async function forgetPush(waitMs = 3000): Promise<void> {
     ]);
     clearTimeout(timer);
     if (!settled) {
-      pending.run.owner ??= bearer;
+      // The newest token this session holds: the one the run started with may have run out and been refreshed since, and a late
+      // removal with a dead token would be refused (SWEEP-INBOX INBOX-21 R2-2).
+      pending.run.owner = bearer ?? pending.run.owner;
       abandon(pending);
       unsettled = pending.run.token;
     }
   }
   const remembered = await rememberedToken();
+  // Forgotten before the first request goes out, not after the last one comes back: a removal that hangs past the sign-out's 3 seconds
+  // returns when the next person has already signed in and registered, and forgetting then would wipe their token, so their own
+  // sign-out would send no removal (SWEEP-INBOX INBOX-21 R2-1).
+  await forgetToken();
   for (const token of new Set([unsettled, remembered])) {
     // Only while this person's session is the one running: a sign-out that stopped waiting must not go on to
     // remove the phone from whoever signs in next.
@@ -168,7 +174,6 @@ export async function forgetPush(waitMs = 3000): Promise<void> {
       // Signing out goes on: the phone cannot be reached or is not signed in any more (see above).
     }
   }
-  await forgetToken();
 }
 
 /** Sets how a push is shown while the app is open: as a banner, with a sound only when Z2's Sound is on, and no badge. */

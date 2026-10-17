@@ -61,6 +61,8 @@ const world = {
   liveRefresh: new Set<string>(),
   refreshCount: 0,
   hangDelete: false,
+  /** How long the Hub keeps a removal before it answers (a slow radio): it still happens, late. */
+  deleteDelay: 0,
   hangLogout: false,
   /** How long the Hub keeps a registration before it stores it (a slow radio, a busy Hub). */
   postDelay: 0,
@@ -104,6 +106,7 @@ const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<
   }
   if (url.pathname === '/api/hub/push-tokens' && request.method === 'DELETE') {
     if (world.hangDelete) return new Promise<Response>(() => undefined);
+    if (world.deleteDelay) await wait(world.deleteDelay);
     const mine = world.holder.get(body.expoPushToken) === world.person.get(auth);
     if (mine) world.holder.delete(body.expoPushToken);
     return ok({ removed: mine });
@@ -137,6 +140,7 @@ beforeEach(() => {
   world.liveRefresh = new Set();
   world.refreshCount = 0;
   world.hangDelete = false;
+  world.deleteDelay = 0;
   world.hangLogout = false;
   world.postDelay = 0;
   mockPhone.tokenHangs = false;
@@ -206,6 +210,27 @@ describe('signing out of a phone that is registered for push', () => {
   }, 15000);
 });
 
+describe('a removal that returns after the sign-out went on', () => {
+  it('INBOX-21 R2-1: does not forget the registration of the person who signed in meanwhile', async () => {
+    await signedIn('A');
+    await syncPush({ ask: true });
+    // The Hub takes 3.6 seconds to answer A's removal: the sign-out stops waiting at 3 seconds, B signs in and registers, then it returns.
+    world.deleteDelay = 3600;
+    await signOutOfThisPhone();
+    world.deleteDelay = 0;
+    await signedIn('B');
+    expect(await syncPush({ ask: true })).toBe('registered');
+    expect(mockVault.get(PUSH_TOKEN_KEY)).toBe('ExponentPushToken[phone-one]');
+    await wait(1500);
+    // A's removal has come back by now (it found the phone held by B and left it).
+    expect(mockVault.get(PUSH_TOKEN_KEY)).toBe('ExponentPushToken[phone-one]');
+    expect([...world.holder.values()]).toEqual(['B']);
+    // So B's own sign-out knows which phone to remove.
+    await signOutOfThisPhone();
+    expect(world.holder.size).toBe(0);
+  }, 20000);
+});
+
 describe('a registration that is still on its way when the person signs out', () => {
   it('does not leave the phone registered to the person who signed out when it lands after the sign-out', async () => {
     await signedIn('A');
@@ -237,6 +262,20 @@ describe('a registration that is still on its way when the person signs out', ()
     await wait(4500);
     expect([...world.holder.values()]).toEqual(['B']);
     expect(mockVault.get(ACCESS_KEY)).toBe('access-B');
+  }, 20000);
+
+  it('INBOX-21 R2-2: a registration that started on an expired token, refreshed, and lands after the sign-out is still taken off', async () => {
+    await signedIn('A');
+    // The access token the app opened with has run out; the registration's first try is refused, the app refreshes, and the second try is slow.
+    world.validAccess.delete('access-A');
+    world.postDelay = 4000;
+    void syncPush({ ask: true });
+    await wait(500);
+    await signOutOfThisPhone();
+    expect(mockVault.has(ACCESS_KEY)).toBe(false);
+    // The Hub stores the registration after the sign-out; the removal must carry the refreshed token, not the dead one the run began with.
+    await wait(4500);
+    expect(world.holder.size).toBe(0);
   }, 20000);
 
   // Last on purpose: a registration that never finishes stays in the module until the process ends.

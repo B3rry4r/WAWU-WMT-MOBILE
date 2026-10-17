@@ -33,6 +33,7 @@ import {
   warningBody,
   warningTitle,
   windowLabel,
+  windowsShown,
   type Form,
 } from './model';
 import { Note, PriceField, Presets, Raise, SwitchCard } from './parts';
@@ -155,7 +156,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
         <SegmentedTabs
           label="Time to reply"
           testID="paid-window"
-          items={data.options.responseWindowHours.map((hours) => ({ value: String(hours), label: windowLabel(hours) }))}
+          items={windowsShown(data.options.responseWindowHours, form.hours).map((hours) => ({ value: String(hours), label: windowLabel(hours) }))}
           value={form.hours === null ? '' : String(form.hours)}
           onChange={(value) => {
             if (!locked) change({ hours: Number(value) });
@@ -195,7 +196,8 @@ function Earn({ data, priceKobo, valid }: { data: PaidMessageSettings; priceKobo
     queryFn: () => fetchEarn(Number(settled)),
     enabled: rested && !isSaved,
     staleTime: 5 * 60 * 1000,
-    retry: 1,
+    // No second try: a refused read is asked again at the next typing pause, and a 429's retry would add to the per-IP bucket (INBOX-12 R2-2).
+    retry: 0,
   });
   const kobo = typed === null ? null : isSaved ? data.earnPerMessageKobo : rested ? (read.data ?? null) : null;
   return kobo === null ? <Text variant="kvValue">-</Text> : <Money minorUnits={kobo} size={14.5} weight={600} decimals={false} testID="paid-earn" />;

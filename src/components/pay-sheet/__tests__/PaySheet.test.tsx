@@ -43,6 +43,20 @@ describe('PaySheet', () => {
     expect(screen.getByText('· Video · 18 min')).toBeTruthy();
   });
 
+  it('INBOX-20 L1: a header with no picture is the title alone, with no empty tile before it', async () => {
+    const view = props({ item: { title: 'Pay Ada' }, wallet: { kind: 'open', balanceKobo: 100 } });
+    await render(<PaySheet {...view} />);
+    expect(screen.getByText('Pay Ada')).toBeTruthy();
+    // The head holds the words and nothing before them: one child, the words.
+    expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(1);
+  });
+
+  it('a header with a picture still draws it before the title', async () => {
+    await render(<PaySheet {...props({ item: { title: 'A talk', image: 'https://example.test/a.jpg' } })} />);
+    expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(2);
+    expect(screen.getByTestId('pay-sheet-head-image')).toBeTruthy();
+  });
+
   it('draws no tick for a seller who is not verified', async () => {
     await render(<PaySheet {...props({ item: { title: 'A talk', by: 'Ada', subtitle: 'Audio' } })} />);
     expect(screen.queryByTestId('tick-pro')).toBeNull();

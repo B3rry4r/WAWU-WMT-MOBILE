@@ -199,6 +199,30 @@ describe('Paid messages (I21)', () => {
     expect(isDisabled(saveButton())).toBe(false);
   });
 
+  it('INBOX-12 R2-2: a refused earn read is asked once for a typed price, not twice', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${EARN}`] = 'offline';
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.changeText(price(), '2000');
+    await waitFor(() => expect(earnAsks().length).toBeGreaterThan(0), { timeout: 3000 });
+    // A second try would come after React Query's one-second retry delay.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1400));
+    });
+    expect(earnAsks()).toEqual(['?priceKobo=200000']);
+  });
+
+  it('INBOX-12 finding 4: a reply time saved off the list (36 hours, set on the web) shows as a selected tab among the offered ones', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ responseHours: 36 }));
+    await open();
+    expect(await screen.findByText('Take paid messages')).toBeTruthy();
+    const labels = ['24 hours', '36 hours', '2 days', '3 days', '1 week'];
+    for (const label of labels) expect(screen.getByRole('tab', { name: label })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: '36 hours' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByRole('tab', { name: '24 hours' }).props.accessibilityState.selected).toBe(false);
+  });
+
   it('asks nothing for an empty price or one under the lowest, and shows a dash', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     await open();

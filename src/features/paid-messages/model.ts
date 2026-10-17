@@ -57,6 +57,15 @@ export function windowLabel(hours: number): string {
   return `${hours} hours`;
 }
 
+/**
+ * The reply times to draw: the ones the Hub offers, and the saved one too when it is off that list (the web allows 1 to 336 hours, for
+ * example 36), so the saved value always reads as the selected tab (INBOX-12 finding 4; decided in SWEEP-INBOX: an extra tab, in order).
+ */
+export function windowsShown(offered: readonly number[], saved: number | null): number[] {
+  if (saved === null || offered.includes(saved)) return [...offered];
+  return [...offered, saved].sort((a, b) => a - b);
+}
+
 /** "3 October", in Lagos time, where the creator's days are. */
 export function dayMonth(iso: string): string {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone: 'Africa/Lagos' }).format(new Date(iso));
