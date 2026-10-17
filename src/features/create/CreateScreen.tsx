@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { draftsKey, fetchDrafts, fetchMyTier, tierKey } from '@/features/me/api';
+import { StudioRow } from '@/features/points/StudioRow';
 import { draftCount } from '@/features/verify/model';
 import { font, radius, space, useWawu } from '@/theme';
 
@@ -39,6 +40,8 @@ export type CreateScreenProps = {
   onGetVerified?: () => void;
   /** At the limit of a running tier's products, Content opens VF13 (VERIFY-05) in place of starting a piece the Hub would refuse. */
   onProductsFull?: () => void;
+  /** The Studio card opens Studio (PT1, POINTS-07), the AI tools. The card is not drawn without it. */
+  onStudio?: () => void;
 };
 
 /**
@@ -46,7 +49,7 @@ export type CreateScreenProps = {
  * count. Community (opens I32, INBOX-14) and the meter's "Get verified" (opens M11, ME-12) are added by the tasks that build where they
  * lead (R-47).
  */
-export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, onOpenLibrary, onGetVerified, onProductsFull }: CreateScreenProps) {
+export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, onOpenLibrary, onGetVerified, onProductsFull, onStudio }: CreateScreenProps) {
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   // The draft count is the Hub's; a read that fails leaves the row with its fixed words and Your shop says why when it opens.
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: Boolean(onShop) });
@@ -77,6 +80,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, o
           </View>
         ))}
       </View>
+      {onStudio ? <StudioRow onPress={onStudio} /> : null}
       {onShop ? <ShopRow sub={drafts.data ? `${draftCount(drafts.data.length)} \u00b7 drafts are free` : 'Drafts are free'} onPress={onShop} /> : null}
       {allowance.data ? (
         <UploadsMeter allowance={allowance.data} onGetVerified={onGetVerified} />

@@ -155,6 +155,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators }: Pick<TodayScreenP
         />
       ) : null}
       <Services
+        onOpenStudio={() => router.push('/studio')}
         onOpenLearn={() => router.push('/schools')}
         onOpenLegal={() => router.push('/legal')}
         onOpenMonetize={isCreator ? () => router.push('/create') : undefined}

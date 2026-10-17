@@ -36,6 +36,7 @@ export default function CreateRoute() {
       onOpenLibrary={() => router.push('/library')}
       onGetVerified={() => router.push('/tiers')}
       onProductsFull={() => setFull(true)}
+      onStudio={() => router.push('/studio')}
     />
     {full ? <ProductsFullHost onClose={() => setFull(false)} /> : null}
     </>

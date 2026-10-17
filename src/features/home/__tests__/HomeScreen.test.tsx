@@ -419,14 +419,16 @@ describe('H1 · no Events tile and no Pay bills tile (R-61, R-52, DV2-RM)', () =
 });
 
 describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11; R-61, DV2-01, DV2-RM)', () => {
-  it('a user sees Learn and Legal, packed from the left with no empty slot', async () => {
+  it('a user sees Studio, Learn and Legal, packed from the left with no empty slot', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const column = screen.getByTestId('today-service-schools').parent!;
     const grid = column.parent!;
-    expect(grid.children).toHaveLength(2);
-    expect(grid.children[0]).toBe(column);
-    expect(grid.children[1]).toBe(screen.getByTestId('today-service-legal').parent);
+    // POINTS-07 added Studio as the first tile (R-61): three tiles every account has, in the canvas's order.
+    expect(grid.children).toHaveLength(3);
+    expect(grid.children[0]).toBe(screen.getByTestId('today-service-studio').parent);
+    expect(grid.children[1]).toBe(column);
+    expect(grid.children[2]).toBe(screen.getByTestId('today-service-legal').parent);
     // Monetize opens the Create hub, which is for creator accounts: this person is not one, so there is no tile to send them Home.
     expect(screen.queryByTestId('today-service-monetize')).toBeNull();
   });
@@ -438,21 +440,30 @@ describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7,
     expect(mockPush).toHaveBeenCalledWith('/legal');
   });
 
-  it('a user can tap Learn, the first tile (Schools, renamed by R-61), and land on the schools list (SC1, SCHOOLS-03)', async () => {
+  it('a user can tap Studio, the first tile, and land on Studio (PT1, POINTS-07)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     const grid = screen.getByTestId('today-service-legal').parent!.parent!;
-    expect(grid.children[0]).toBe(screen.getByTestId('today-service-schools').parent);
+    expect(grid.children[0]).toBe(screen.getByTestId('today-service-studio').parent);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Studio' }));
+    expect(mockPush).toHaveBeenCalledWith('/studio');
+  });
+
+  it('a user can tap Learn, the tile after Studio (Schools, renamed by R-61), and land on the schools list (SC1, SCHOOLS-03)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const grid = screen.getByTestId('today-service-legal').parent!.parent!;
+    expect(grid.children[1]).toBe(screen.getByTestId('today-service-schools').parent);
     expect(screen.queryByText('Schools')).toBeNull();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     expect(mockPush).toHaveBeenCalledWith('/schools');
   });
 
-  it('the loading view draws one tile shape for each of the two tiles every account has, and no TGIF bar (H11)', async () => {
+  it('the loading view draws one tile shape for each of the three tiles every account has, and no TGIF bar (H11)', async () => {
     const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
     await rtl.render(<TodayLoading />);
     const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(2);
+    expect(shapes).toHaveLength(3);
   });
 });
 
@@ -469,7 +480,7 @@ describe('H1 · Monetize, and the rail title (R-61, R-69)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
     const grid = screen.getByTestId('today-service-schools').parent!.parent!;
     const order = grid.children.map((column) => (column as { children: { props: { testID?: string } }[] }).children[0].props.testID);
-    expect(order).toEqual(['today-service-schools', 'today-service-monetize', 'today-service-legal']);
+    expect(order).toEqual(['today-service-studio', 'today-service-schools', 'today-service-monetize', 'today-service-legal']);
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Monetize' }));
     expect(mockPush).toHaveBeenCalledWith('/create');
   });

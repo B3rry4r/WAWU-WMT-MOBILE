@@ -91,6 +91,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [VERIFY-05](../tasks/VERIFY-05.md) Your tier, and when you have used all your products (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
 - [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
+- [POINTS-07](../tasks/POINTS-07.md) Studio: the AI tools, not enough points, the daily limit (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
