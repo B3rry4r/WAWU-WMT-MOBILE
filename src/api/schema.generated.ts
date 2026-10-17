@@ -6010,7 +6010,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** M7's figures in one read: purchases, saved, unread notifications. */
+        /** M7's figures in one read: purchases, saved, unread notifications, enrolled courses. */
         get: operations["MeController_counts"];
         put?: never;
         post?: never;
@@ -13552,6 +13552,7 @@ export interface components {
             purchases: number;
             saved: number;
             unreadNotifications: number;
+            enrolledCourses: number;
         };
         SavedContentView: {
             id: string;

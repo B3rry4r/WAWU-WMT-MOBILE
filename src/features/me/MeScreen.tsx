@@ -256,6 +256,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        ticks={me.data ? ticksOf(me.data) : undefined}
         onOpenCourses={
           onOpenCourses
             ? () => {
