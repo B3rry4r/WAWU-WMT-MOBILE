@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { Banner } from '@/components/Banner';
@@ -19,18 +20,21 @@ export function meterLine(a: Allowance): string {
 export const slotsFull = (a: Allowance): boolean => a.uploads.remaining <= 0;
 
 /**
- * M27's note, as drawn: "Your 5 free uploads are used", then the way up when there is one. The buttons under it on the artboard open
- * Get verified (M11) and the library (M28), which ME-07 and ME-12 build (R-47), so only the words are here.
+ * M27's note, as drawn: "Your 5 free uploads are used", then the way up when there is one. "Get verified" under it opens the tiers (VF5,
+ * ME-12), drawn when the screen gives it a place to go and the person has no tick; "Open library" (M28) is ME-07's and is not drawn (R-47).
  */
-export function SlotsFullNotice({ allowance }: { allowance: Allowance }) {
+export function SlotsFullNotice({ allowance, onGetVerified }: { allowance: Allowance; onGetVerified?: () => void }) {
   const { tickHeld, uploads, withTick } = allowance;
   return (
-    <Banner
-      tone="warning"
-      testID="create-slots-full"
-      title={`Your ${uploads.allowed} ${tickHeld ? '' : 'free '}uploads are used`}
-      body={tickHeld ? 'Take something down to make room for a new one.' : `Get verified for up to ${withTick.uploads} uploads, or take something down.`}
-    />
+    <View style={styles.notice}>
+      <Banner
+        tone="warning"
+        testID="create-slots-full"
+        title={`Your ${uploads.allowed} ${tickHeld ? '' : 'free '}uploads are used`}
+        body={tickHeld ? 'Take something down to make room for a new one.' : `Get verified for up to ${withTick.uploads} uploads, or take something down.`}
+      />
+      {!tickHeld && onGetVerified ? <Button testID="create-get-verified" label="Get verified" size="card" onPress={onGetVerified} style={styles.noticeButton} /> : null}
+    </View>
   );
 }
 
@@ -39,7 +43,7 @@ export function SlotsFullNotice({ allowance }: { allowance: Allowance }) {
  * level above it are read from `GET /uploads/allowance`, never typed here. The "Get verified" link under it opens M11 and is
  * added by ME-12 (R-47).
  */
-export function UploadsMeter({ allowance }: { allowance: Allowance }) {
+export function UploadsMeter({ allowance, onGetVerified }: { allowance: Allowance; onGetVerified?: () => void }) {
   const { colors } = useWawu();
   const { used, allowed } = allowance.uploads;
   return (
@@ -58,11 +62,14 @@ export function UploadsMeter({ allowance }: { allowance: Allowance }) {
       <Text variant="caption" tone="textMuted" testID="create-meter-line" style={styles.line}>
         {meterLine(allowance)}
       </Text>
+      {!allowance.tickHeld && onGetVerified ? <Button testID="create-meter-get-verified" label="Get verified" size="card" onPress={onGetVerified} style={styles.noticeButton} /> : null}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  notice: { gap: space.sm },
+  noticeButton: { alignSelf: 'flex-start' },
   card: { paddingVertical: meterMetrics.padV, paddingHorizontal: meterMetrics.padH, gap: meterMetrics.between },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   title: { flex: 1, fontSize: meterMetrics.title },

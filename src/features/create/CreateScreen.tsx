@@ -8,7 +8,7 @@ import type { IconName } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { draftsKey, fetchDrafts } from '@/features/me/api';
+import { draftsKey, fetchDrafts, fetchMyTier, tierKey } from '@/features/me/api';
 import { draftCount } from '@/features/verify/model';
 import { font, radius, space, useWawu } from '@/theme';
 
@@ -33,6 +33,10 @@ export type CreateScreenProps = {
   onService: () => void;
   /** The draft row opens Your shop (VF2, VERIFY-01). The row is not drawn without it. */
   onShop?: () => void;
+  /** "Get verified" under the uploads meter and the full note opens the tiers (VF5, ME-12). Not drawn without it. */
+  onGetVerified?: () => void;
+  /** At the limit of a running tier's products, Content opens VF13 (VERIFY-05) in place of starting a piece the Hub would refuse. */
+  onProductsFull?: () => void;
 };
 
 /**
@@ -40,14 +44,18 @@ export type CreateScreenProps = {
  * count. Community (opens I32, INBOX-14) and the meter's "Get verified" (opens M11, ME-12) are added by the tasks that build where they
  * lead (R-47).
  */
-export function CreateScreen({ onClose, onContent, onEvent, onService, onShop }: CreateScreenProps) {
+export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, onGetVerified, onProductsFull }: CreateScreenProps) {
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   // The draft count is the Hub's; a read that fails leaves the row with its fixed words and Your shop says why when it opens.
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: Boolean(onShop) });
   // At "5 of 5 used" a new piece would be refused when it is created, so Content does not start one (M27). Event and Service take no upload slot.
   const full = allowance.data ? slotsFull(allowance.data) : false;
+  // A running tier whose every place is used: Content opens VF13 (add five, or move up a tier) instead of a piece the Hub would refuse.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, enabled: Boolean(onProductsFull), staleTime: 0, retry: false });
+  const running = tier.data ? tier.data.state === 'active' || tier.data.state === 'ending' : false;
+  const atLimit = Boolean(onProductsFull) && running && tier.data !== undefined && tier.data.productsAllowed > 0 && tier.data.productsUsed >= tier.data.productsAllowed;
   const tiles: Tile[] = [
-    { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: onContent, disabled: full },
+    { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: atLimit && onProductsFull ? onProductsFull : onContent, disabled: full && !atLimit },
     { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs a verified tick', onPress: onEvent },
     { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
   ];
@@ -56,7 +64,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService, onShop }:
 
   return (
     <CreateFrame testID="create-screen" title="Create" leading="close" onLeave={onClose}>
-      {allowance.data && full ? <SlotsFullNotice allowance={allowance.data} /> : null}
+      {allowance.data && full && !atLimit ? <SlotsFullNotice allowance={allowance.data} onGetVerified={onGetVerified} /> : null}
       <View style={styles.grid}>
         {rows.map((row) => (
           <View key={row[0].id} style={styles.pair}>
@@ -69,7 +77,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService, onShop }:
       </View>
       {onShop ? <ShopRow sub={drafts.data ? `${draftCount(drafts.data.length)} \u00b7 drafts are free` : 'Drafts are free'} onPress={onShop} /> : null}
       {allowance.data ? (
-        <UploadsMeter allowance={allowance.data} />
+        <UploadsMeter allowance={allowance.data} onGetVerified={onGetVerified} />
       ) : allowance.isError ? (
         <MeterFailed message={isApiError(allowance.error) ? allowance.error.message : 'Check your connection and try again.'} onRetry={() => void allowance.refetch()} />
       ) : (

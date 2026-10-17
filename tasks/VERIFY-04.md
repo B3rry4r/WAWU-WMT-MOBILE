@@ -7,7 +7,7 @@ order: 273
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [VERIFY-01, ME-12, ME-04, TIER-02, KYC-05]
 decisions: [R-43, R-6, R-33]
 passes: [V1, V4, V5, V6, V9]
@@ -17,11 +17,12 @@ artboards: [VF12, VF12a, VF12b, VF12c, VF15, VF15a, VF15b]
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 4 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): VERIFY-01, ME-12, ME-04.
-- **History:** none yet. Reports go to tasks/history/VERIFY-04.md.
+As of 17 Oct 2026 (builder, bundle S7).
+- **Status:** verifying. Same branch as ME-12 (`wmt/S7`); no backend change.
+- **Built:** `/publish?id=` (VF12 to VF12c): the preview and the file go up through the create flow's own `pickFile` and `uploadFile` under the draft's format, the meter is `ProductsMeter` from `GET /me/tier`, the category is asked here before the first publish (the draft form stays without it), `POST /product-drafts/{id}/publish`, Share is the phone's share sheet (R-33). The identity check (VF15, VF15a, VF15b) reads the wallet's own opening state (`GET /money/wallet`): checking (spinner), passed (Continue, shown once when the person watched it run), paused with the Hub's reason and fixes and Try again to Open your wallet.
+- **Entries:** the draft form's Publish (saved draft, nothing unsaved) goes to `/tiers` with no tier, `/your-tier` once ended, else `/publish`; a 402 `tier_required` from an upload goes to `/tiers`, `product_limit_reached` to the VF13 sheet.
+- **Defaults (agent), owner may override:** a published product says "with our team for review" unless the Hub says `live` (G-VERIFY-04-2); the ring has no figure (G-VERIFY-04-1).
+- **Next:** a fresh verifier. NOT RUN by this builder: the stack run and the pictures.
 
 ## Read first
 
@@ -57,7 +58,10 @@ After paying, the draft accepts files and the person publishes their first produ
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+- Files: `src/features/verify/` `PublishScreen.tsx`, `publishApi.ts`, `IdentityCheck.tsx`, `identityModel.ts`, `ProductsFullHost.tsx`; `DraftFormScreen.tsx` (Publish); routes `publish`, `shop-product`, `create-upload`.
+- Checks: tsc EXIT 0; eslint on the changed files EXIT 0; jest `src/features/verify` 8 suites, 67 tests (12 checkout, 11 publish and tier, 44 earlier) EXIT 0, and `src/features/create`, `me`, `settings`, `home` with the send model test, 17 suites, 314 tests, passed. Tests: `publishAndTier.test.tsx` (pick two files, category, publish once with the two file links, review note, share link through `Share.share`; no tier; paused with the Hub's reason; checking then passed then form; full tier opens VF13; `identityStateOf`).
+- Gaps: G-VERIFY-04-1, G-VERIFY-04-2. Shared: SHARED-CHANGES ME-12 #2.
+- NOT RUN: stack run and pictures.
 
 ## Verifier report
 

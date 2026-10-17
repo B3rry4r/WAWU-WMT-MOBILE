@@ -18,6 +18,7 @@ export default function SettingsRoute() {
       onOpenNotifications={() => router.push('/settings/notifications')}
       onOpenPrivacy={() => router.push('/settings/privacy')}
       onOpenPassword={() => router.push('/settings/password')}
+      onOpenTier={() => router.push('/your-tier')}
       onOpenClaimCode={() => router.push('/claim-code')}
       onOpenWallet={() => router.push('/wallet-settings')}
       onOpenAbout={() => router.push('/about')}

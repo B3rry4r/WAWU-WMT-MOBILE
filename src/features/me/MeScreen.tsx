@@ -89,6 +89,8 @@ export type MeScreenProps = {
   onOpenInvite?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
   onOpenVerification?: () => void;
+  /** The tier pill by the name opens Your tier (VF14, VERIFY-05). */
+  onOpenTier?: () => void;
   /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
   onOpenShop?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
@@ -112,7 +114,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenTier, onOpenShop, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -212,6 +214,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
                 badge={headerBadgeOf(tier.data, ready.details.badge)}
                 bio={ready.profile.bio}
                 onEditProfile={onEditProfile}
+                onOpenTier={onOpenTier}
               />
               {notice ? <Banner tone="warning" title="That did not open" body={notice} testID="me-notice" /> : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
