@@ -6145,6 +6145,204 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/tips/wallet/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet (H26) before the PIN: the creator, the amount, the wallet
+         *     provider's charge on top, the total, the wallet's balance and the
+         *     shortfall, and the signed quote `POST /tips/wallet` sends back. Nothing
+         *     is reserved.
+         */
+        get: operations["TipWalletController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tips/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sends a tip from the wallet, once, with an optional note: answers 201
+         *     with the tip: `paid`, `pending` while the provider has not confirmed the
+         *     debit yet (poll `GET /tips/wallet/{id}`; it is never sent again), or
+         *     `failed` when the provider refused it and nothing moved. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. Not enough money
+         *     is `402 insufficient_funds` with the shortfall; no wallet is `409
+         *     wallet_not_open`.
+         */
+        post: operations["TipWalletController_tip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/tips/wallet/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One tip as it stands now: what the app polls after `pending`. Only the payer reads it. */
+        get: operations["TipWalletController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/unlock/wallet/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet (H14) before the PIN: the piece, its price, the wallet
+         *     provider's charge on top, the total, the wallet's balance and the
+         *     shortfall, and the signed quote `POST /content/:id/unlock/wallet` sends
+         *     back. Nothing is reserved.
+         */
+        get: operations["UnlockWalletController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/unlock/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlocks the piece from the wallet, once: access is given when the payment
+         *     is confirmed. Answers 201 with the unlock: `paid` (with `fullAssetUrl`),
+         *     `pending` while the provider has not confirmed the debit yet (poll
+         *     `GET /content/{id}/unlock/wallet/{paymentId}`; it is never sent again),
+         *     or `failed` when the provider refused it and nothing moved. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. Not enough money
+         *     is `402 insufficient_funds` with the shortfall; no wallet is `409
+         *     wallet_not_open`.
+         */
+        post: operations["UnlockWalletController_unlock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/unlock/wallet/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One unlock as it stands now: what the app polls after `pending`. Only the payer reads it. */
+        get: operations["UnlockWalletController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/pay/wallet/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet before the PIN: the fee that is due on the request (the
+         *     consultation fee once an hour is booked, the quoted fee once the
+         *     engagement letter is signed), the wallet provider's charge on top, the
+         *     total, the wallet's balance and the shortfall, and the signed quote
+         *     `POST /legal/requests/{id}/pay/wallet` sends back. Nothing is reserved.
+         */
+        get: operations["LegalFeeWalletController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/pay/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pays the fee that is due, once: the request moves on when the payment is
+         *     confirmed. Answers 201 with the payment: `paid`, `pending` while the
+         *     provider has not confirmed the debit yet (poll
+         *     `GET /legal/requests/{id}/pay/wallet/{paymentId}`; it is never sent
+         *     again), or `failed` when the provider refused it and nothing moved. The
+         *     same Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. Not enough money
+         *     is `402 insufficient_funds` with the shortfall; no wallet is `409
+         *     wallet_not_open`.
+         */
+        post: operations["LegalFeeWalletController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/legal/requests/{id}/pay/wallet/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One payment as it stands now: what the app polls after `pending`. Only the payer reads it. */
+        get: operations["LegalFeeWalletController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/{id}/orders/wallet": {
         parameters: {
             query?: never;
@@ -8498,6 +8696,29 @@ export interface components {
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this pack, and not past its end. */
             quoteToken: string;
         };
+        TipWalletDto: {
+            /** Format: uuid */
+            creatorWawuId: string;
+            amountKobo: number;
+            /** @description The message that goes with the tip, 500 characters at most. */
+            note?: string;
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
+        UnlockWalletDto: {
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
+        LegalFeeWalletDto: {
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
         EventOrderLineDto: {
             /** Format: uuid */
             ticketTypeId: string;
@@ -9011,9 +9232,45 @@ export interface components {
             items: components["schemas"]["HoldView"][];
             nextCursor: string | null;
         };
+        AdminUserView: {
+            id: string;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "superadmin" | "reviewer" | "support" | "finance";
+            /** @enum {string} */
+            status: "active" | "suspended";
+            /** Format: date-time */
+            lastLoginAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminSession: {
+            admin: components["schemas"]["AdminUserView"];
+            accessToken: string;
+            refreshToken: string;
+            expiresIn: number;
+        };
+        UnsweptSaleView: {
+            paymentId: string;
+            kind: string;
+            targetId: string;
+            title: string;
+            payeeWawuUserId: string;
+            payeeShareKobo: number;
+            completedAt: string;
+        };
+        UnsweptSalesPage: {
+            startsAt: string;
+            /** @enum {string} */
+            source: "config" | "first_run";
+            total: number;
+            items: components["schemas"]["UnsweptSaleView"][];
+            nextAfter: string | null;
+        };
         EarningStreamView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
             earnedKobo: number;
             sales: number;
         };
@@ -9036,7 +9293,7 @@ export interface components {
         };
         EarningContentView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
             targetId: string;
             title: string;
             earnedKobo: number;
@@ -9191,25 +9448,6 @@ export interface components {
             url: string | null;
             startedAt: string | null;
             canStart: boolean;
-        };
-        AdminUserView: {
-            id: string;
-            email: string;
-            name: string;
-            /** @enum {string} */
-            role: "superadmin" | "reviewer" | "support" | "finance";
-            /** @enum {string} */
-            status: "active" | "suspended";
-            /** Format: date-time */
-            lastLoginAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        AdminSession: {
-            admin: components["schemas"]["AdminUserView"];
-            accessToken: string;
-            refreshToken: string;
-            expiresIn: number;
         };
         PointNextExpiryView: {
             points: number;
@@ -12746,6 +12984,73 @@ export interface components {
             priceKobo: number;
             /** @enum {string|null} */
             badge: "popular" | "best_value" | null;
+        };
+        UnlockWalletQuoteView: {
+            contentId: string;
+            title: string;
+            creator: components["schemas"]["MoneyPartyView"];
+            priceKobo: number;
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        UnlockWalletView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            contentId: string;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            priceKobo: number;
+            purchased: boolean;
+            fullAssetUrl: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            paidAt: string | null;
+        };
+        LegalFeeWalletQuoteView: {
+            requestId: string;
+            /** @enum {string} */
+            stage: "consultation" | "service";
+            title: string;
+            priceKobo: number;
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        LegalFeeWalletView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            requestId: string;
+            /** @enum {string} */
+            stage: "consultation" | "service";
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            priceKobo: number;
+            requestStatus: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            paidAt: string | null;
+        };
+        TipWalletQuoteView: {
+            creator: components["schemas"]["MoneyPartyView"];
+            amountKobo: number;
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        TipWalletView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            creator: components["schemas"]["MoneyPartyView"];
+            amountKobo: number;
+            note: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            paidAt: string | null;
         };
         EventOrderEventView: {
             id: string;
@@ -25276,6 +25581,564 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreditWalletPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    TipWalletController_quote: {
+        parameters: {
+            query: {
+                /** @description The creator being tipped. */
+                creatorWawuId: string;
+                /** @description The tip in kobo, chosen by the payer: a whole number of naira (100 to 1,000,000,000). */
+                amountKobo: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipWalletQuoteView"];
+                };
+            };
+            /** @description reason.code: amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    TipWalletController_tip: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TipWalletDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipWalletView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    TipWalletController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipWalletView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    UnlockWalletController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlockWalletQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    UnlockWalletController_unlock: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlockWalletDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlockWalletView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    UnlockWalletController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlockWalletView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    LegalFeeWalletController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalFeeWalletQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    LegalFeeWalletController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalFeeWalletDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalFeeWalletView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    LegalFeeWalletController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalFeeWalletView"];
                 };
             };
             /** @description reason.code: not_found */

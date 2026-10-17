@@ -125,3 +125,12 @@ Builder, round 2, 16 Oct 2026 (Sonnet agent). Backend `wmt/WALLET-16` `315b69b` 
 - **Filed:** SHARED-CHANGES WALLET-16 #6 (the two services, MONEY-18's code among them, not fenced, listed for the lead).
 - **NOT RUN:** F8 (the production count of unsettled sales, the lead's); the real sandboxes (R-20), as in round 1.
 
+
+## Builder report, bundle B1
+
+Bundle B1, 17 Oct 2026 (Sonnet builder). Merged `wmt/WALLET-16` onto batch 7 and built the start-time cutoff.
+- Files: `prisma/schema.prisma` + migration `20261025130000_earning_sweep_start`; `src/money/payments/payment-config.ts` (`EARNINGS_SWEEP_START`, PROVISIONAL); `src/money/earnings/earning-settlement.service.ts` (`sweepStart`, `unsweptBeforeStart`, one shared sale filter); `admin-earnings.controller.ts`, its DTO and view type; `money.module.ts` (the admin guards); `.env.example`; CONVENTIONS 26 and WALLET.md.
+- The service constructor is unchanged, so the earlier specs construct it as before.
+- Checks: tsc 0; eslint 0 on changed files; gates 0 fail; 5 new tests and the 38 existing Nuvion earning tests pass; route inventories pass (61 tests).
+- Not done: R-55 (see Current state); the Fintava earning spec (not run); a mutation run of the new spec.
+

@@ -17,16 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, round 2 built (Sonnet builder), waiting for the verifier.
-- **Status:** verifying. Round 1 was verified: the code held on every money attack, three mediums stood. Round 2 fixes the three.
-- **Branches:** mobile `wmt/WALLET-16` (the tip of this branch; docs and the regenerated contract only). Backend `wmt/WALLET-16` `315b69b` (merged into `wmt/B1` on 17 Oct; the migration is `20261025120000_earning_settlements` there).
+As of 17 Oct 2026, merged onto batch 7 and the cutoff added (bundle B1, Sonnet builder), waiting for a verifier.
+- **Status:** verifying. Round 2 (verified earlier) is merged onto batch 7; the lead's start-time ruling of 17 Oct is built.
+- **Branches:** backend `wmt/B1` `e41210e` (on `origin/wmt/MERGE-7` `432f017`, with backend `wmt/WALLET-16` `315b69b` merged), mobile `wmt/B1` (records and the contract copy; docs only). Migrations `20261025120000_earning_settlements` (renamed from `20261021180000`, contents unchanged) and `20261025130000_earning_sweep_start` (new).
 - **Merged and live:** nothing of this task.
-- **Built in round 2:** F1 and F2 (tests only, the code was right): the rules about the provider's own record (absent is not a failure, pending is not finished, another amount is a stop), the lease (a sale no longer completed sends nothing, two stale readers lease once), the 72nd hour and the Lagos month edge, each killed by a mutant that reads it the other way (14 of 14 killed). F3: a `refused` earning goes to review past the review bound, and so does a `refused` hold (MONEY-18's `WalletHoldService`, the same dead branch), with tests that fail without the fix.
-- **Open findings:** nothing medium or worse is open. Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499 until HOME-14 and HOME-15 write wallet sales.
-- **For the lead:** (1) F8 stays yours: before the merge, count the unsettled completed sales with a payee on production (the first sweep pays them all). (2) The review bound for `refused` is counted from when the earning was made (a hold: from when the release or refund was asked for), as the dead code had it, so a refusal that comes after a long wait for a wallet goes to review at its first refusal. A `refusedSince` column would count from the first refusal instead; say if you want it. (3) G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
-- **Next:** the verifier checks round 2 (the 14 mutants in the round 2 builder report are the claim to test). Then the lead merges both branches.
-- **Records:** tasks/history/WALLET-16.md, last section "Builder report, round 2".
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** two owner rulings apply on top of round 2: R-55 (72 h review after the first refusal; one daily move per creator with a ₦200 floor). See the section below. The branch builder takes them in fix round 2.
+- **Merge onto batch 7:** two textual conflicts and one number clash: `money.module.ts` (both providers kept), `schema.prisma` (both models kept), and the earnings section of `CONVENTIONS.md` is now **section 26** (WALLET-07 holds 19); the comments, `WALLET.md` and the contract pointers say 26. `contract/openapi.json` was regenerated (additive over batch 7 only).
+- **The cutoff (lead ruling 17 Oct, default, the owner may override):** the sweep makes an earning only for a sale completed on or after the start. The start is `EARNINGS_SWEEP_START` when set (ISO with a zone, a bad value stops the app), else the moment the code first reached the environment, stored once in `EarningSweepStart` (one row, written by its migration). A sale before it is never paid by the sweep. `GET /admin/money/earnings/before-start` (superadmin and finance, `limit`, `after`) lists those sales oldest first; it moves nothing. A sale at exactly the start is paid, the millisecond before is not.
+- **Specs:** `earning-sweep-start.contract.spec.ts` (5 tests, Nuvion stand-in): both sides of the cutoff with the later sale landing once and the earlier getting no earning, the exact instant, the setting winning and bad values refused, the first-run row stored once, paging and the closed admin route. The existing Nuvion earning specs (38 tests) still pass; the Fintava spec was not run (never touched).
+- **NOT built:** R-55 (the daily move per creator with the 200 naira floor, and review 72 h after the FIRST refusal). The branch predates it, so the sweep still moves one earning per sale and the review bound is as round 2 left it. It needs a builder of its own.
+- **For the lead:** F8 (count the unsettled completed sales with a payee on production) matters less now: the first sweep pays none of them, they are listed. Decide whether the start should be a date the owner names. Set `EARNINGS_SWEEP_START` on the Hub before deploy if the owner wants older sales paid.
+- **Next:** a verifier on the cutoff; a builder for R-55.
+- **Records:** tasks/history/WALLET-16.md.
 
 ## Owner rulings of 16 Oct 2026 (R-55)
 

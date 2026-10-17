@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 117 | 0 | 0 | 0 |
+| todo | 113 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 63 | 0 | 0 | 0 |
+| verifying | 67 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -24,10 +24,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-12](../tasks/INBOX-12.md) Paid message settings, warning, switched off (You)
 - [ME-04](../tasks/ME-04.md) Create: pick a format, upload, preview (You)
 - [SCHOOLS-10](../tasks/SCHOOLS-10.md) Link to a school's own site, with the click recorded (You)
+- [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 - [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
 - [INBOX-16](../tasks/INBOX-16.md) Buy WAWU Credits from the wallet (backend) (You)
 - [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
+- [LEGAL-05](../tasks/LEGAL-05.md) Pay legal fees from the wallet (backend) (You)
+- [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
+- [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
@@ -83,10 +87,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
-
-## Being verified
-
-- [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 
 ## Done
 
@@ -255,6 +255,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · WALLET-16 · Merged onto batch 7 and the start-time cutoff built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e` on `origin/wmt/MERGE-7` `432f017` with `wmt/WALLET-16` `315b69b` merged, mobile `wmt/B1`; migrations `20261025120000_earning_settlements` (renamed from `20261021180000`) and `20261025130000_earning_sweep_start`; status verifying): the sweep pays only sales made on or after `EARNINGS_SWEEP_START`, else the moment the code first reached the environment (stored once); older unsettled sales get no earning and are listed at `GET /admin/money/earnings/before-start`. The earnings section of CONVENTIONS is now 26. R-55 (one move a day, 200 naira floor, 72 h after the first refusal) is NOT built.
+- 17 Oct 2026 · HOME-14 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a tip is paid from the wallet (`GET /tips/wallet/quote`, `POST /tips/wallet`, `GET /tips/wallet/{id}`), the creator's 85% lands by the sweep, the web's tip row is written once per payment, an undeliverable tip is paid back. 8 Nuvion stand-in specs: double submit, twice in parallel, wrong PIN, short balance, a lost provider answer then a retry, a refund; the ledger equals the stand-in after each.
+- 17 Oct 2026 · HOME-15 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a piece is unlocked from the wallet (`GET /content/{id}/unlock/wallet/quote`, `POST /content/{id}/unlock/wallet`, `GET /content/{id}/unlock/wallet/{paymentId}`), access is the web's purchase row written once per payment, a debited-but-not-granted payment is granted by the sweep or paid back. 8 Nuvion stand-in specs with the same attacks.
+- 17 Oct 2026 · LEGAL-05 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): consultation and service fees (business name registration included) are paid from the wallet (`GET /legal/requests/{id}/pay/wallet/quote`, `POST .../pay/wallet`, `GET .../pay/wallet/{paymentId}`) at the price on the request (R-14), bound to the stage and fee; a fee that cannot be applied is paid back. 10 Nuvion stand-in specs with the same attacks.
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
 - 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
@@ -266,7 +270,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · DV2-COMP · Builder report, round 2 (Sonnet builder; mobile `wmt/DV2-COMP` on the round 1 head `51235be`, no backend or wawu-id change; status verifying): the verifier's six findings fixed. The meter caption reads Lagos months from the history's `MONTHS` table ("Sep", no Intl); `PointsFigure` shrinks the count and the word to fit a narrow parent (phone: `adjustsFontSizeToFit`; web: measured scale), proven at 150, 182 and 200 px, 7 and 9 digits, light and dark; the voice error row is one "Try again" button; bars never thinner than 2 px and none until measured; `TierBadge` takes `stretch`; the 1.2 line height is named. 60 dv2-comp tests; full check `EXIT 0`.
 - 17 Oct 2026 · DV2-COMP · Builder report (Sonnet builder; mobile `wmt/DV2-COMP` on `origin/wmt/SHARED-06` `d563eb3`, no backend or wawu-id change; status verifying): the four shared pieces the tier, points and Voice Intro screens draw are built once, by props only: `TierBadge`, `ProductsMeter`, `PointsFigure`, `VoicePlayer` with `VoiceLabel` (the "Bio" label and the small "AI voice" tag, R-66), each with a development preview route and 43 tests; compared with M1, VF11, VF14, M19, PT5 and VF7a in light and dark. SHARED-CHANGES DV2-COMP #1 applied, #2 (two confetti tokens) filed for ME-12.
 - 17 Oct 2026 · SHARED-06 · Builder report (Sonnet builder; mobile `wmt/SHARED-06` on `origin/wmt/MERGE-7` `f45ffbd`, no backend change; status verifying): 17 of 19 SHARED-CHANGES rows applied (tokens, API client, `Banner`, `Switch`, `SwitchRow`, `ScreenFrame`, `PinDots`, `TextField` props, `ListRow` lines, `Button` props, `PaySheet` `onOpenWallet`, social marks) and 14 stand-ins deleted; HOME-02 #4 and row 11 listed for their own tasks; 56 picture pairs, 48 identical and 8 explained.
-- 17 Oct 2026 · TIER-05 · Builder report (Sonnet builder; backend `wmt/TIER-05` `2f88409` on batch 6 `fbf391f`, mobile `wmt/TIER-05` on `70a7895`; migration `20261024210000_plan_transfer_orders`; status verifying): a tier purchase can be paid by bank transfer at checkout. `POST /plans/purchases` with `method: transfer` takes the PIN and the quote and moves nothing; the answer carries the person's own wallet account number, bank, name, the Bank charge and the amount still needed. When the provider's balance covers the total the order is paid from the wallet through the same wallet payment as a wallet purchase, once (several transfers, a repeat, two servers: one payment and one grant), oldest first. A window (admin setting, 24 hours) expires it with nothing taken; a changed price or goods closes it. One TIER-03 test pinned `method: transfer` as a 400; it now sends `card` (lead's approval) and every check is green.
-- 17 Oct 2026 · WALLET-39 · Builder report (Sonnet builder; backend `wmt/WALLET-39` `2194ffb` on backend main `a5e48fc`, mobile `wmt/WALLET-39` on `origin/wmt/MERGE-5` `7de785d`; migration `20261024070000_money_in_all_credits`; status verifying): every credit to a wallet (a received send, earnings landing, a refund, a bank transfer in) is now told once as `money_in`, with the ledger row as a `transaction` target; a told credit the ledger reverses is followed by one `money_in_reversed` notice. G-730, G-731, G-732 closed; SHARED-CHANGES WALLET-39 #1 and #2.
-- 17 Oct 2026 · TIER-06 · Builder report, round 2 (Sonnet builder; backend `wmt/TIER-06` `361df74` on `317f464`, main `a5e48fc`; migration `20261024060100_wallet_payment_terms` plus a re-runnable `20261024060000_plan_settings`; status verifying): the verifier's findings fixed, each with a failing test first. A points cash-out is bound to its quote (`quoteToken`; a changed rate, minimum, cap or cash is `409 quote_changed`, nothing paid); a tier purchase grants the goods its quote showed (stored with the payment); the 25-verified referral step is off by default; the cash rate can never exceed what points are sold for (400 naming both settings); audit "from" is true under parallel saves; a failed reload after a save is logged as an error. Mobile: docs only (SHARED-CHANGES TIER-06 #4 and #5).
-- 17 Oct 2026 · TIER-06 · Builder report (Sonnet builder; backend `wmt/TIER-06` `c827262` on `origin/main` `a5e48fc`, mobile `wmt/TIER-06` on `origin/wmt/MERGE-5` `7de785d` (docs only); migration `20261024060000_plan_settings`; status verifying): 62 launch figures are admin settings behind `GET` and `PATCH /admin/plan-settings` with an audit row per change; `PLANS_CONFIG` is the live plan so `GET /plans`, the tier quote and the convert quote follow a change with no restart; passes carry optional `benefits` and `eventDate` (G-804). The W44 lines are not loaded by default (TIER-01 spec pins the pass shape), for the lead.
