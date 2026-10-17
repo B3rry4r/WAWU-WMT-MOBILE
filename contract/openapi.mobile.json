@@ -19364,6 +19364,7 @@
       "required": true,
       "in": "query",
       "schema": {
+       "maxLength": 100,
        "type": "string"
       }
      }
