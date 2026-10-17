@@ -53,6 +53,8 @@ export async function startSignup(values: { email: string; phone: string; passwo
 }
 
 let knownChannel: SignupChannel | null = null;
+/** Counts the asks of `signupChannel`; the highest one is the latest. */
+let lastAsk = 0;
 
 /**
  * A3: which way the code will travel, so the line under the heading names the channel A4 will then name (the
@@ -62,12 +64,17 @@ let knownChannel: SignupChannel | null = null;
  * then left out, never guessed.
  */
 export async function signupChannel(): Promise<SignupChannel | null> {
+  // Only the latest ask may set what a newly mounted A3 draws first: an answer to an earlier visit that lands after a
+  // later ask began is returned to its own caller and then forgotten (SWEEP-AUTH AUTH-07 N-2).
+  const mine = ++lastAsk;
+  let answer: SignupChannel | null;
   try {
-    knownChannel = await signupChannelRequest();
+    answer = await signupChannelRequest();
   } catch {
-    knownChannel = null;
+    answer = null;
   }
-  return knownChannel;
+  if (mine === lastAsk) knownChannel = answer;
+  return answer;
 }
 
 /** What the last ask of `signupChannel` learned (null before it has, or when it failed). */
@@ -78,6 +85,8 @@ export function knownSignupChannel(): SignupChannel | null {
 /** Forgets the learned channel (tests, and a sign-out that wants a fresh answer). */
 export function forgetSignupChannel(): void {
   knownChannel = null;
+  // An ask still on its way is older than this and may not set the channel back.
+  lastAsk += 1;
 }
 
 /**

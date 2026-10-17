@@ -8,7 +8,7 @@ import { heldSignup } from '@/features/auth/signupStore';
 
 /**
  * A3. Only reachable signed out (the root layout's guard). Continue sends the code (texted by default, mailed when WAWU ID's
- * SIGNUP_VERIFY_CHANNEL is `email`, R-39) and opens A4. The line under the heading names that channel, asked of WAWU ID on arrival.
+ * SIGNUP_VERIFY_CHANNEL is `email`, R-39) and opens A4. The line under the heading names that channel, asked of WAWU ID each time A3 comes into focus.
  * A refused Continue keeps the sign-up already waiting for its code; while one is held, a link goes back to it.
  */
 export default function SignUpRoute() {
