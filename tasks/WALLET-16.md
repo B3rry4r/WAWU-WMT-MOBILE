@@ -7,7 +7,7 @@ order: 98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-12]
 decisions: [R-11, R-55, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,15 +17,20 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (11 Oct 16:45) and the branch.
-- **Status:** building on its branches (round 1 verified: the code held on every money attack). This file on main still says todo.
-- **Branches:** mobile `wmt/WALLET-16` 66c375c. Backend `wmt/WALLET-16` 18ea4fb (migration `20261021180000_earning_settlements`).
+As of 17 Oct 2026, round 3 built on the cutoff round (R-55, Sonnet builder), waiting for a verifier.
+- **Status:** verifying (the cutoff round of 17 Oct and this R-55 round, one verifier for both).
+- **Branches:** backend `wmt/WALLET-16-R55` `9580bb0` (from `wmt/B1` `e41210e`; B1 not pushed to), mobile `wmt/WALLET-16-R55` (records and the contract copy). Migration `20261025140000_earning_daily_moves`, additive: table `EarningMove`, nullable `EarningSettlement.moveId`, CHECKs, two guard triggers. The stamps `20261025120000` and `20261025130000` are unchanged. SHARED-CHANGES WALLET-16 #8.
 - **Merged and live:** nothing of this task.
-- **Open findings:** medium: F1 (test gap on three money rules; the code is right), F2 (lease and bounds test gap) and F3 (a `refused` earning never goes to review, against CONVENTIONS section 19). The lead counts F2 and F3 as medium (16 Oct 2026), so all three get a fix round.
-  - Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499.
-- **Next:** fix round 2: tests for F1 and F2, the review path for F3 (MONEY-18's WalletHoldService has the same dead branch). Before the merge, count the unsettled completed sales with a payee on production (F8: the first sweep pays them all). G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
-- **Records:** on the branch, `wmt/WALLET-16`, in tasks/WALLET-16.md there (40 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-16`; the history goes to tasks/history/WALLET-16.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** two owner rulings apply on top of round 2: R-55 (72 h review after the first refusal; one daily move per creator with a ₦200 floor). See the section below. The branch builder takes them in fix round 2.
+- **Sweep start cutoff (lead ruling 17 Oct):** untouched; its spec passes.
+- **One move a day (R-55, built):** the sweep makes one `EarningMove` per creator per Lagos day, carrying every earning not yet in a move, as ONE wallet-to-wallet transfer; the provider's charge is paid once. Made when the creator has a wallet, a total of at least `EARNINGS_MOVE_MIN_KOBO` (20000; exactly N200 moves, N199.99 waits and joins the next day's), no open move, and no move made or landed today. The reference is `wawu-earn-d-<YYYYMMDD>-<24 hex of the creator>`; (creator, day) is unique and one open move per creator is a partial unique index, so two servers on one day make one. All earnings land with the move in one write; the ledger has one pair for the transfer. No wallet: the creator keeps earning (`waiting` `payee_wallet`) and the first sweep after the wallet opens moves it all.
+- **Review 72 h after the first refusal (R-55, built):** `firstRefusedAt` is written once (the provider refused, or its record says the move failed); at `EARNINGS_REFUSED_REVIEW_AFTER_HOURS` (72) after it the move goes to review, once (`reviewSince`), and the look after a refusal is never later than that hour. Later refusals do not restart it. A frozen wallet, a missing wallet, funds and an unreachable provider are not refusals and keep waiting, as before.
+- **B1 check fixes (lead, 17 Oct):** F1 medium: `GET /admin/money/earnings/before-start` is now the repo's cursor page `{ startsAt, source, count, items, nextCursor }` with `?limit&cursor`, so page 2 is reachable; tested over HTTP (superadmin, finance, support 403, no token 401, walked by the server's own cursor, bad limit and cursor 400). F3 low: `EARNINGS_SWEEP_START` refuses a day that does not exist (`2026-02-31`) and `T24:00`, `T23:60`, `T10:00:60`; unit tests in `earning-day.spec.ts`.
+- **Specs (Nuvion stand-in, ledger equals the stand-in after each):** `earning-daily-move.contract.spec.ts` 8 tests: many sales one transfer per creator, two servers one move and a later sale waits, 199.99 waits then joins and 200.00 moves, first refusal then 72 h then one review row, a refused move that lands is the day's transfer, no wallet then moved the day it opens, an earning whose sale is pulled leaves before sending, the database guards. `earning-day.spec.ts` (unit, 11). Run: these, the sweep-start spec (5, with the HTTP cursor test), `earning-settlement-nuvion`, `nuvion-earnings`, unlock, legal fee and tip wallet specs, `earning-rules`, money-in notice, account-data-map, data-export-map: 210 pass.
+- **Changed by the ruling, not to pass a check:** the three Nuvion earnings specs asserted one transfer per sale (`wawu-earn-<payment id>`) and now assert the creator's one move; the shared `wallet-pay-harness.ts` cleanup also removes moves.
+- **NOT RUN, for the lead:** `earning-settlement.contract.spec.ts` is the Fintava spec (per-sale transfers, the old bound); it was not touched or run and will fail in CI by design under R-55: it needs the owner's or the lead's decision on a Fintava task.
+- **Decisions to confirm (agent defaults):** the move is made at the first sweep of the day at which the total reaches the floor, not at a fixed hour, so a creator's later sales that day wait for the next day; a held kind's release (DM, ticket, bill) is still its own transfer; no admin view of moves in review yet.
+- **Next:** a verifier.
+- **Records:** tasks/history/WALLET-16.md.
 
 ## Owner rulings of 16 Oct 2026 (R-55)
 
@@ -54,16 +59,12 @@ Per-content earnings breakdown; automatic settlement into the wallet. A creator 
 
 ## Capability checks
 
-- [ ] Earnings shown equal the sum of that creator's sales after the split.
-- [ ] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
+- [x] Earnings shown equal the sum of that creator's sales after the split.
+- [x] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-16.md](history/WALLET-16.md).
 
 ## Owner sign-off
 
