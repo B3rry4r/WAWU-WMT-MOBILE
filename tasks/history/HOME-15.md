@@ -13,3 +13,15 @@ Bundle B1, 17 Oct 2026 (Sonnet builder), backend `wmt/B1` `e41210e`.
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+
+## Builder report (round 2, B3a, 17 Oct 2026)
+
+Lead ruling 3 (17 Oct): an undeliverable unlock returns the price and the charge, one transfer; WAWU's account agrees with the ledger afterwards.
+Files: backend `src/money/payments/deliver-or-refund.ts` (`holds.refund(..., { returnCharge: true })`, comment), the service's doc comment, the refund test of the task's spec (the assertion now expects the payer's opening balance back; it was the balance less the charge). Records only here.
+Checks: `tsc --noEmit` EXIT 0; the task's spec passes; the spec fails on `ed45009` (refund test) and passes after; 36 suites, 721 passed, 3 skipped (EXIT 0) over the B3a specs.
+Not run: Fintava specs (rule); the app.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-15.md](history/HOME-15.md).
+

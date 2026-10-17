@@ -12,3 +12,15 @@ Bundle B3a, 17 Oct 2026 (Sonnet builder), backend `wmt/B3a` `ed45009`.
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+## Builder report (round 2, B3a, 17 Oct 2026)
+
+Files: backend `src/event-ticketing/wallet/event-host-payout.service.ts` (release as earning), `src/money/holds/wallet-hold.service.ts` and `hold-rules.ts` (`asEarning`), migration `20261025170000_hold_release_earnings`, `src/money/earnings/earnings-view.service.ts`, `src/account/account-deletion-money.service.ts`, docs WALLET.md and CONVENTIONS.md section 18.
+Checks: `tsc --noEmit` EXIT 0; gates 0 fail; 36 suites, 721 passed, 3 skipped (EXIT 0).
+`event-host-payout.contract.spec.ts`: 3 of its 5 fail on `ed45009` (one transfer per order; a host without a wallet; the delay), pass after; all 5 pass. `host-share.contract.spec.ts` unchanged and green.
+Not run: Fintava specs (rule); the app.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-17.md](history/WALLET-17.md).
+

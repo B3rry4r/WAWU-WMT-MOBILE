@@ -17,15 +17,19 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, built (bundle B3a, Sonnet builder), waiting for a verifier.
+As of 17 Oct 2026, round 2 built (bundle B3a, Sonnet builder), waiting for a verifier.
 - **Status:** verifying.
-- **Branches:** backend `wmt/B3a` `ed45009` (on `origin/wmt/WALLET-16-R55` `9580bb0`, batch 7 with B1 and R-55), mobile `wmt/B3a` (records and the contract copy; docs only). Migration `20261025150000_paid_dm_drafts` (one new table).
+- **Branches:** backend `wmt/B3a` `242ce9d` (round 1 `ed45009`, on `origin/wmt/WALLET-16-R55` `9580bb0`, batch 7 with B1 and R-55), mobile `wmt/B3a` (records and the contract copy; docs only). Migrations `20261025150000_paid_dm_drafts` (one new table) and `20261025170000_hold_release_earnings` (a trigger function only).
 - **Merged and live:** nothing of this task.
-- **What is built:** `src/direct-message/wallet/`: the kind `paid_dm` registered with MONEY-17 and four routes: `POST /dm/{creatorWawuId}/send/wallet` (drafts the question, answers I3: price, window, the wallet quote), `GET /dm/send/wallet/{id}/quote`, `POST /dm/send/wallet/pay` (PIN, `Idempotency-Key`) and `GET /dm/send/wallet/{id}` (I4, I5). The words wait in `PaidDmDraft`, so the creator's inbox never shows an unpaid question; paying holds the price in WAWU's account (R-19) and sends the question once. The creator's answer (either reply route) flips it `responded` and releases the hold: 85% to their wallet or waiting for one (R-5, R-11). The window passing flips it `refunded` and refunds the price, not the provider's charge (R-10), and `dm_refunded` goes once when the provider confirms. A creator who is off, paused (INBOX-09), blocked or yourself is `target_not_payable`; a second question to one creator while one waits is the new `409 question_already_waiting` (G-75), refused at the draft and again in the payment's claim under a lock. A question that cannot be sent after the debit is paid back whole.
-- **Attacks (Nuvion stand-in, ledger equals stand-in after each, WAWU operational account included):** 11 tests: happy path with exact figures and one release; no reply, one refund of the price only, the fan told once; the same request twice and twice in parallel (one key, two keys); two drafts paid at once (one hold); a lost provider answer then a retry; reply racing the expiry sweep (4 rounds) and a release racing a refund at the hold (one way only); off, paused, blocked, self; the creator switching off before the debit confirms; a creator with no wallet; wrong PIN, short balance, someone else's question, a changed price.
-- **Fences touched:** SHARED-CHANGES INBOX-17 #1 to #4 (app.module, schema and migration, contract, route inventories, the error code).
-- **NOT RUN:** any call to Fintava or its sandbox (never used); the app screens (INBOX-10, INBOX-18); a load measurement.
-- **Open for the lead:** the web's `/dm/*` routes are untouched; the legacy refund sweeps now skip `wallet:` questions. A release is one transfer per answered question, as MONEY-18 builds it.
+- **What is built:** `src/direct-message/wallet/`: the kind `paid_dm` registered with MONEY-17 and four routes: `POST /dm/{creatorWawuId}/send/wallet` (drafts the question, answers I3: price, window, the wallet quote), `GET /dm/send/wallet/{id}/quote`, `POST /dm/send/wallet/pay` (PIN, `Idempotency-Key`) and `GET /dm/send/wallet/{id}` (I4, I5). The words wait in `PaidDmDraft`, so the creator's inbox never shows an unpaid question; paying holds the price in WAWU's account (R-19) and sends the question once. A creator who is off, paused (INBOX-09), blocked or yourself is `target_not_payable`; a second question to one creator while one waits is `409 question_already_waiting` (G-75). A question that cannot be sent after the debit is paid back whole.
+- **Round 2, the lead's rulings of 17 Oct (verifier findings 1 to 3 closed):**
+  1. The creator's answer releases the hold AS AN EARNING (R-55): one short database write makes the hold `released` and makes the creator's `EarningSettlement` (kind `paid_dm`, the 85%); it goes to their wallet in their ONE move a day with their other earnings (a day under N200 waits; WAWU pays the charge once). No provider call in the reply request any more (also closes finding 4). Held money still sits in WAWU's account until the move lands (R-19). The earnings read counts it once; a creator with such an earning still owed cannot delete the account.
+  2. A question that lapses returns EVERY naira: the price and the charge the payment took (the fan did not cause it); WAWU bears the refund transfer's own charge. `dm_refunded` is still sent once.
+  3. `PaidDmDraft` is in the data export (section `paidQuestionDrafts`; the idempotency key is not selected); `data-export-map.spec` is green.
+- **Attacks (Nuvion stand-in, ledger equals stand-in after each, WAWU operational account included):** 12 tests: round 1's 11 (the release and refund assertions updated to the rulings) plus two answers in a day landing in ONE move of the sum, a third answer waiting for the next day's move, the earnings read once, the lapsed question returning price plus charge (fan back to the opening balance), and a creator with no wallet (earning owed, `waiting_earnings` blocks deletion, lands once when a wallet opens).
+- **Fences touched:** SHARED-CHANGES INBOX-17 #1 to #4 and WALLET-17 #4 (the migration).
+- **NOT RUN:** any call to Fintava or its sandbox (never used; the Fintava hold and earning specs were not run, CI runs them); the app screens (INBOX-10, INBOX-18); a load measurement.
+- **Open for the lead:** the plain `holds.release` without `asEarning` stays for the hold service's own callers and the Fintava hold specs; nothing in production asks it for a payee any more. Low: G-WALLET-17-1.
 - **Next:** a verifier; passes V1, V2, V3, V4, V6, V7, V8, V9.
 - **Records:** tasks/history/INBOX-17.md.
 
@@ -49,8 +53,8 @@ Sending a paid DM holds the money; a reply releases it to the creator; expiry re
 ## Capability checks
 
 - [ ] A fan pays a paid question and the money sits in WAWU's merchant wallet, not the creator's (R-19).
-- [ ] The creator replies and 85% of the price lands in the creator's wallet, or waits until they open one (R-11).
-- [ ] No reply by the deadline and the fan gets the price back, not Fintava's charge (R-10).
+- [ ] The creator replies and 85% of the price lands in the creator's wallet in their one move of the day, or waits until they open one (R-11, R-55).
+- [ ] No reply by the deadline and the fan gets every naira back, the charge included (lead ruling 17 Oct 2026).
 - [ ] A creator switched off by INBOX-09 cannot receive a new paid question.
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
