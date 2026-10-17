@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 93 | 0 | 0 | 0 |
+| todo | 91 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 70 | 0 | 0 | 0 |
+| verifying | 72 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -24,7 +24,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
+- [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
 - [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
+- [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
 - [INBOX-13](../tasks/INBOX-13.md) Out of credits, buy credits, credits added (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [LEGAL-05](../tasks/LEGAL-05.md) Pay legal fees from the wallet (backend) (You)
@@ -285,6 +287,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
+- 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
 - 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
 - 17 Oct 2026 · LINKS-01 · Built (Sonnet builder; web `wmt/LINKS-01` on `origin/main` `5b45d65`, mobile `wmt/LINKS-01` on `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): 22 links WAWU sends or receives audited, 9 landed nowhere that works, 4 fixed (reset and sign-in-alert emails reopened in join-only mode; the invite shared as `https://wawuafrica.com/r/<code>`; the hosted selfie returns to `https://wawuafrica.com/selfie`), 5 left for a ruling. The website serves `/r/<code>` and `/selfie` as app links (small dark "Open in the WAWU app" page) and the two `.well-known` files; `app.json` registers them. Owner values missing: Apple team id and Android signing fingerprint. Order 298 taken by moving CHECK-3 and the 12 tasks after it up one.
@@ -298,4 +301,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · HOME-14 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a tip is paid from the wallet (`GET /tips/wallet/quote`, `POST /tips/wallet`, `GET /tips/wallet/{id}`), the creator's 85% lands by the sweep, the web's tip row is written once per payment, an undeliverable tip is paid back. 8 Nuvion stand-in specs: double submit, twice in parallel, wrong PIN, short balance, a lost provider answer then a retry, a refund; the ledger equals the stand-in after each.
 - 17 Oct 2026 · HOME-15 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): a piece is unlocked from the wallet (`GET /content/{id}/unlock/wallet/quote`, `POST /content/{id}/unlock/wallet`, `GET /content/{id}/unlock/wallet/{paymentId}`), access is the web's purchase row written once per payment, a debited-but-not-granted payment is granted by the sweep or paid back. 8 Nuvion stand-in specs with the same attacks.
 - 17 Oct 2026 · LEGAL-05 · Built (bundle B1, Sonnet builder; backend `wmt/B1` `e41210e`, no migration; status verifying): consultation and service fees (business name registration included) are paid from the wallet (`GET /legal/requests/{id}/pay/wallet/quote`, `POST .../pay/wallet`, `GET .../pay/wallet/{paymentId}`) at the price on the request (R-14), bound to the stage and fee; a fee that cannot be applied is paid back. 10 Nuvion stand-in specs with the same attacks.
-- 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
