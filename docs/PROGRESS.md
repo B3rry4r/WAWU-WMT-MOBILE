@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 94 | 0 | 0 | 0 |
+| todo | 93 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 73 | 0 | 0 | 0 |
+| verifying | 74 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -61,6 +61,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
 - [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
+- [POINTS-07](../tasks/POINTS-07.md) Studio: the AI tools, not enough points, the daily limit (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
@@ -287,6 +288,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · POINTS-07 · Built (Sonnet builder, T2; mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4`, contract from backend `90ab9aa`; no backend change; status verifying): Studio (`/studio`, PT1 and PT1a) lists the tools `GET /ai-tools` gives with the Hub's costs, from the Home Studio tile and the Create hub's Studio card (M19, with the points count); `useJobCheck` shows PT3, PT3a, PT3b or PT7 from `POST /points/quote` and buys exactly the missing points with the PIN, once (stack: 1,000 + 250 = 1,250 points, 1 debit after a wrong PIN; limit reached by 3 real jobs); gaps G-POINTS-07-1 to -4.
 - 17 Oct 2026 · AITOOLS-01 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`, mobile `wmt/AITOOLS-01` on `47555987`; migration `20261025182000_ai_tool_jobs`; status verifying): `GET /ai-tools` lists VoiceOver with its cost, `POST /ai-tools/voiceover/jobs` holds the points, makes the audio through one provider seam and keeps them only on success, `GET /ai-tools/jobs/{id}` says working, done or "No points were taken"; two jobs at once never go below zero, each cap is named with nothing held, a lost answer and a retry run one job. NOT RUN against the real voice provider (no key on any build machine); run against a local stand-in. G-AITOOLS-01-1 to -5 filed.
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
 - 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
@@ -301,4 +303,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · SCHOOLS-09 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025130000_school_enrolment_report`; status verifying): the school gets one mail with the student's name, email, phone, course, intake and consent time when an enrolment is paid (or free); `GET /schools/enrolments` is My courses with current and finished tabs.
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-DV2-01-1 filed.
-- 17 Oct 2026 · DV2-05 · Built (Sonnet builder; mobile `wmt/DV2-05` on `origin/wmt/MERGE-7` `0aca612c`, no backend, wawu-id or migration change; status verifying): A3 asks email, phone, password and the required terms line (R-67); A4 and A15 end their line with a period as drawn; A6 and A7 are the hand-off to Nuvion's hosted selfie (`GET` and `POST /money/identity/liveness`), after A27's Submit because the Hub starts a selfie only for an opening that exists, and drawn only while `enabled` is true (it is false on the stack Hub, so the selfie step is dropped there, R-39); the camera selfie stays for the older opening; A8 loses its button arrow; A14's BVN hint is its error line. Gap G-DV2-05-1 (no https return address for the app).

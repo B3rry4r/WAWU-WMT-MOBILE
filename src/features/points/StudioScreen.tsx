@@ -92,13 +92,25 @@ export function StudioScreen({ onBack, onHistory, onBuy, onOpenTool }: StudioScr
         <EmptyState testID="studio-empty" icon="Sparkles" title={STUDIO_WORDS.noToolsTitle} message={STUDIO_WORDS.noToolsBody} />
       ) : (
         <View testID="studio-tools" style={styles.grid}>
-          {list.map((tool) => (
-            <ToolTile key={tool.id} tool={tool} dim={none || !tool.enabled} onOpen={tool.enabled && onOpenTool ? () => onOpenTool(tool) : undefined} />
+          {pairs(list).map((row) => (
+            <View key={row[0].id} style={styles.pair}>
+              {row.map((tool) => (
+                <ToolTile key={tool.id} tool={tool} dim={none || !tool.enabled} onOpen={tool.enabled && onOpenTool ? () => onOpenTool(tool) : undefined} />
+              ))}
+              {row.length === 1 ? <View style={styles.cell} /> : null}
+            </View>
           ))}
         </View>
       )}
     </PointsFrame>
   );
+}
+
+/** Two to a line; an odd last tile keeps the width of the others (an empty half beside it). */
+function pairs(list: readonly AiTool[]): AiTool[][] {
+  const rows: AiTool[][] = [];
+  for (let i = 0; i < list.length; i += 2) rows.push(list.slice(i, i + 2));
+  return rows;
 }
 
 /** One tool: its mark, its name and what it costs, in the Hub's words. A card, and a button only when the tool's screen is there to open. */
@@ -164,9 +176,10 @@ function Loading() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: TILE.between },
+  grid: { gap: TILE.between },
+  pair: { flexDirection: 'row', gap: TILE.between },
   // Two to a line with the gap between: each cell is half the line less half the gap.
-  cell: { flexBasis: '47%', flexGrow: 1, minWidth: 0 },
+  cell: { flex: 1, minWidth: 0 },
   tile: { borderRadius: TILE.radius, padding: TILE.pad, gap: TILE.markToWords },
   cost: { flexDirection: 'row', alignItems: 'center', gap: TILE.starGap, marginTop: TILE.costTop },
   loading: { gap: BODY_GAP },
