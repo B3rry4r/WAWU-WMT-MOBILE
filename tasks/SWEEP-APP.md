@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 106, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 109, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged. The rows of SHARED-06 wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -153,6 +153,9 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | DV2-01 | L4 | Share has no re-entry guard: 3 quick taps open 3 sheets and send 3 share POSTs (the Hub keeps 1 row). The ad view POST repeats once per remount of Today (a tab round trip or back from the event); the Hub keeps 1 view and 1 tap (`useAd.ts` is unchanged, pre-existing ADS-05). Guard the share while a sheet is open. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-01.md, finding 4` |
 | DV2-01 | L5 | `SponsoredSlot` has no `onError`: a campaign whose artwork URL 404s draws a grey (light) or dark card with no picture. Pre-existing in kind. Draw nothing, as for a campaign with no artwork, when the picture fails. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-01.md, finding 5` |
 | DV2-01 | L6 | The Monetize tile (creators) appears when `/users/me` answers, after the rest of Today, so the tile row can reflow once. Hold the row until the profile has answered, or accept it. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-01.md, finding 6` |
+| DV2-03 | L1 | `src/features/me/MeScreen.tsx` (about line 262, `creator && drafts.isPending`): the Content grid stays in its skeleton while the `/product-drafts` request is pending. A request that never answers keeps the published pieces hidden (checked at 9 s, pieces never drawn). The API client has no request timeout (`src/api`), so this is the first time one slow read gates another. A drafts failure is fine (a note after the retries, about 3 s). Draw the pieces without waiting for the drafts. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-03.md, finding 1` |
+| DV2-03 | L2 | `src/features/me/ContentGrid.tsx`: the Draft tag uses `mediaInk55`; over a pure white picture the tag text is 4.4:1 (the canvas 0.7 gives 7.6:1). A draft has no picture today, so on the real tile it is 8.1:1 (light) and 19.2:1 (dark); in dark the chip itself is nearly invisible on the dark tile (1.06:1) while its text reads. Recorded builder decision (3); only matters if a draft ever gets a still. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-03.md, finding 2` |
+| DV2-03 | L4 | `RetryNote`: when both notes show (tier error and drafts error), two controls are named 'Try again'; a screen reader cannot tell them apart without the alert text. Give each an accessible name that says what it retries. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-03.md, finding 4` |
 
 ## Builder report
 

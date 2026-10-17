@@ -1,11 +1,12 @@
 import { formatMoney } from '@/components/Money';
+import { productsMeterCaption } from '@/components/ProductsMeter';
 import { APP_NAME } from '@/components/BrandMark';
 import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
 import { PROFILE_LINK_PREFIX } from '@/features/profile-edit/limits';
 import { PLATFORMS, SOCIAL, bareHandle, handleOf, orderOf, type SocialHandles, type SocialPlatform } from '@/features/profile-edit/social';
 
-import type { ContentPiece, Experience, Listing, MyProfile, ProfileFields, ServiceState } from './api';
+import type { ContentPiece, Experience, Listing, MyProfile, MyTier, ProductDraft, ProfileFields, ServiceState } from './api';
 
 /**
  * What the Me tab (M1, M2, M4, M10) decides from the Hub's data, kept apart from the drawing so each rule is
@@ -118,6 +119,8 @@ export type GridTile = {
   caption: string;
   /** What a screen reader says for the tile. */
   spoken: string;
+  /** A draft (DV2-03): it carries the Draft tag, has no file or views, and shows its title where a piece shows its figure. */
+  draft?: boolean;
 };
 
 export function tileOf(piece: ContentPiece): GridTile {
@@ -132,6 +135,23 @@ export function tileOf(piece: ContentPiece): GridTile {
     locked: paid,
     caption,
     spoken: paid ? `${piece.title}, paid, ${caption}` : `${piece.title}, free, ${views}`,
+  };
+}
+
+/**
+ * A draft as a tile of the grid (M1 draws it first, tagged Draft). A draft has no file, so no picture and no views: the tile shows
+ * the kind of file it will be (an image mark when none is chosen yet) and its title.
+ */
+export function draftTileOf(draft: ProductDraft): GridTile {
+  return {
+    id: draft.id,
+    title: draft.title,
+    still: null,
+    kind: draft.contentType ?? 'image',
+    locked: false,
+    caption: draft.title,
+    spoken: `${draft.title}, draft`,
+    draft: true,
   };
 }
 
@@ -222,4 +242,35 @@ export function roleLinesOf(experience: readonly Experience[]): RoleLine[] {
     const parts = [where, yearsOf(role)].filter((part): part is string => Boolean(part));
     return { id: role.id, title: role.title, detail: parts.length ? parts.join(' · ') : null };
   });
+}
+
+/** A tier is running while it is `active` or `ending`; `none` and `ended` have nothing to show beside the name (the Hub's PersonBadgeView rule). */
+function runningTier(tier: MyTier | null | undefined): MyTier | null {
+  return tier && tier.tier && (tier.state === 'active' || tier.state === 'ending') ? tier : null;
+}
+
+/** The badge by the name (M1): the tier's name, and the number a numbered badge (Founding Maker) carries. */
+export type HeaderBadge = { name: string; number: number | null };
+
+/**
+ * The pill beside the name for a person with a running tier, from `GET /me/tier`. A numbered badge's number is not on that answer: it
+ * is on the profile details' `badge` (`GET /users/me/profile-fields`), which the screen already reads. A tier with no badge, or no name,
+ * or no tier at all draws no pill.
+ */
+export function headerBadgeOf(tier: MyTier | null | undefined, personBadge: ProfileFields['badge'] | undefined): HeaderBadge | null {
+  const held = runningTier(tier);
+  const name = held?.tier?.name?.trim();
+  const badge = held?.tier?.badge;
+  if (!name || !badge) return null;
+  const number = badge.numbered && personBadge?.numbered && typeof personBadge.number === 'number' ? personBadge.number : null;
+  return { name, number };
+}
+
+/** The meter under the counts (M1): products used of what the tier allows, with "Verify · ends 26 Nov". Null with no running tier or no allowance. */
+export type ProductsMeterView = { used: number; allowed: number; caption: string | undefined };
+
+export function productsMeterOf(tier: MyTier | null | undefined): ProductsMeterView | null {
+  const held = runningTier(tier);
+  if (!held || !(held.productsAllowed > 0)) return null;
+  return { used: held.productsUsed, allowed: held.productsAllowed, caption: productsMeterCaption(held.tier?.name, held.activeUntil) };
 }
