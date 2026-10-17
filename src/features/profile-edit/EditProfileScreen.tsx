@@ -13,6 +13,7 @@ import { TextField, fieldMetrics } from '@/components/TextField';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { Banner } from '@/components/Banner';
+import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
@@ -20,7 +21,7 @@ import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './d
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { PICK_FAILED, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
-import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
+import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { PictureHeader } from './PictureHeader';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
@@ -234,7 +235,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           // The "@" is part of what is drawn, not of what is kept.
           value={`@${form.handle}`}
           onChangeText={(typed) => edit((current) => ({ ...current, handle: bareHandle(typed) }))}
-          hint={form.handle !== '' && HANDLE_PATTERN.test(form.handle) ? `${PROFILE_LINK_PREFIX}${form.handle}` : undefined}
+          hint={form.handle !== '' && HANDLE_PATTERN.test(form.handle) ? readableLink(profileLink(form.handle)) : undefined}
           error={handleError}
           autoCapitalize="none"
           autoCorrect={false}

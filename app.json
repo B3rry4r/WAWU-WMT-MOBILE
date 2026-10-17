@@ -46,6 +46,26 @@
               "scheme": "https",
               "host": "wawuafrica.com",
               "path": "/selfie"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/receipt/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/u/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/c/"
             }
           ],
           "category": [

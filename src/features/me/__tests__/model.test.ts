@@ -85,8 +85,9 @@ describe('the Me tab: what it reads from the Hub', () => {
     expect(countsOf({ followerCount: 1, followingCount: 0, postCount: 1 }).map((c) => `${c.value} ${c.label}`)).toEqual(['1 follower', '0 following', '1 piece']);
   });
 
-  it('shares the name and the wawu/ link, or the name alone without a handle', () => {
-    expect(profileShareText('Lennox Emmanuel', 'lennox')).toBe('Lennox Emmanuel on Who Made This\nwawu/lennox');
+  it('shares the name and the https profile link, or the name alone without a handle', () => {
+    expect(profileShareText('Lennox Emmanuel', 'lennox')).toBe('Lennox Emmanuel on Who Made This\nhttps://wawuafrica.com/u/lennox');
+    expect(profileShareText('Lennox Emmanuel', ' @lennox.films ')).toBe('Lennox Emmanuel on Who Made This\nhttps://wawuafrica.com/u/lennox.films');
     expect(profileShareText('Lennox Emmanuel', null)).toBe('Lennox Emmanuel on Who Made This');
   });
 
