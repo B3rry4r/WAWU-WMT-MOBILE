@@ -9,14 +9,17 @@ import { Skeleton, LoadingView } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { footMetrics } from '@/features/create/CreateFrame';
-import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
+import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchPlans, plansKey } from './api';
 import { bonusRowsOf } from './model';
 import { BonusRowCard } from './parts';
 
-/** VF1: a 72 round gift tile, the title at 28 bold, a 17 line under it, the rows 8 apart, "Build my shop" pinned at the foot. */
-const hero = { tile: 72, title: 28, sub: 17, subWidth: 300, top: 56, rows: space.sm, rowsTop: space.xl } as const;
+/**
+ * VF1: a 72 round gift tile, the title at 26 bold (design/_gen/verify.js `h1(..., { size: 26 })`, as AccountTypeScreen's), the line under it
+ * `muted` (13.5) held to 320 wide, 12 between each (the board's 10, the nearest space token), the rows 8 apart, "Build my shop" pinned at the foot.
+ */
+const hero = { tile: 72, title: 26, titleTracking: -0.03, titleLeading: 1.15, subWidth: 320, gap: space.md, top: 56, rows: space.sm, rowsTop: space.xl } as const;
 
 export type BonusScreenProps = {
   /** "Build my shop": opens VF2. */
@@ -41,13 +44,11 @@ export function BonusScreen({ onBuild }: BonusScreenProps) {
         contentContainerStyle={[styles.content, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}
       >
         <View style={styles.hero}>
-          <View style={styles.tile}>
-            <IconTile icon="Gift" tone="accent" size={hero.tile} strokeWidth={1.8} />
-          </View>
+          <IconTile icon="Gift" tone="accent" size={hero.tile} strokeWidth={1.8} />
           <Text variant="h1" style={styles.title}>
             Your bonus is waiting
           </Text>
-          <Text variant="body" tone="textSecondary" style={styles.sub}>
+          <Text variant="muted" style={styles.sub}>
             Build your shop for free. When you make it official, these unlock.
           </Text>
         </View>
@@ -85,10 +86,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
   content: { flexGrow: 1, paddingTop: hero.top, paddingBottom: space.xl, gap: hero.rowsTop },
-  hero: { alignItems: 'center', gap: space.md },
-  tile: { marginBottom: space.sm },
-  title: { ...font(700), fontSize: hero.title, lineHeight: canvasNormalLineHeight(hero.title), textAlign: 'center' },
-  sub: { fontSize: hero.sub, lineHeight: hero.sub * 1.4, textAlign: 'center', maxWidth: hero.subWidth },
+  hero: { alignItems: 'center', gap: hero.gap },
+  title: { ...font(700), fontSize: hero.title, letterSpacing: hero.titleTracking * hero.title, lineHeight: hero.title * hero.titleLeading, textAlign: 'center' },
+  sub: { textAlign: 'center', maxWidth: hero.subWidth },
   rows: { gap: hero.rows },
   foot: { paddingTop: footMetrics.top },
 });

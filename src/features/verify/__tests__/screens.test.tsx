@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -197,5 +198,69 @@ describe('the draft form', () => {
     answers = { 'GET /api/hub/product-drafts/x': refusal(404, 'Draft not found.') };
     await render(frame(<DraftFormScreen draftId="x" onBack={jest.fn()} onSaved={jest.fn()} onDeleted={jest.fn()} />));
     expect(await screen.findByTestId('draft-gone')).toBeTruthy();
+  });
+
+  it('a typed or old link whose id is no draft id (the Hub answers 400) says "This draft is gone", never the Hub\'s validation words', async () => {
+    answers = { 'GET /api/hub/product-drafts/not-a-draft': refusal(400, 'Validation failed (uuid is expected)') };
+    await render(frame(<DraftFormScreen draftId="not-a-draft" onBack={jest.fn()} onSaved={jest.fn()} onDeleted={jest.fn()} />));
+    expect(await screen.findByTestId('draft-gone')).toBeTruthy();
+    expect(screen.getByText('This draft is gone')).toBeTruthy();
+    expect(screen.queryByText(/uuid|Validation/)).toBeNull();
+    expect(screen.queryByText('Try again')).toBeNull();
+  });
+});
+
+describe('the words are the boards\' sizes on the type tokens (V5, VERIFY-01 round 3)', () => {
+  const size = (testID: string) => {
+    const style = StyleSheet.flatten(screen.getByTestId(testID).props.style) as { fontSize?: number };
+    return style.fontSize;
+  };
+
+  it('VF1: the line under the title is 13.5 and each row is 15 over 12.5', async () => {
+    answers = { [PLANS]: ok(plansView()) };
+    await render(frame(<BonusScreen onBuild={jest.fn()} />));
+    await screen.findByTestId('bonus-points');
+    expect(StyleSheet.flatten(screen.getByText(/Build your shop for free/).props.style).fontSize).toBe(13.5);
+    expect(StyleSheet.flatten(screen.getByText('Up to 600 points').props.style).fontSize).toBe(15);
+    expect(StyleSheet.flatten(screen.getByText(/For AI tools like VoiceOver/).props.style).fontSize).toBe(12.5);
+  });
+
+  it('VF2 and VF2b: Shop ready 16 over 13, the ring figure 15, each draft 15 over 12.5', async () => {
+    answers = { [LIST]: ok([draft('a')]) };
+    await render(frame(<ShopScreen onBack={jest.fn()} onAdd={jest.fn()} onOpenDraft={jest.fn()} />));
+    await screen.findByTestId('shop-draft-a');
+    expect(StyleSheet.flatten(screen.getByText('Shop ready').props.style).fontSize).toBe(16);
+    expect(size('shop-ready-line')).toBe(13);
+    expect(size('shop-ready-figure')).toBe(15);
+    expect(StyleSheet.flatten(screen.getByText('Draft a').props.style).fontSize).toBe(15);
+    expect(StyleSheet.flatten(screen.getByText(/No file yet/).props.style).fontSize).toBe(12.5);
+  });
+
+  it('VF2a: the title is 16 over a 13.5 line, and "Add a product" is the 44 high button', async () => {
+    answers = { [LIST]: ok([]) };
+    await render(frame(<ShopScreen onBack={jest.fn()} onAdd={jest.fn()} onOpenDraft={jest.fn()} />));
+    await screen.findByTestId('shop-empty');
+    expect(StyleSheet.flatten(screen.getByText('Add your first product').props.style).fontSize).toBe(16);
+    expect(StyleSheet.flatten(screen.getByText(/Title, price and how it looks/).props.style).fontSize).toBe(13.5);
+    expect(StyleSheet.flatten(screen.getByTestId('shop-empty-add').props.style).height).toBe(44);
+  });
+
+  it('a finished shop reads 100% at the same 15, which fits inside the ring', async () => {
+    answers = { [LIST]: ok([draft('a', { contentType: 'image', description: 'Ten LUTs for warm skin.' })]) };
+    await render(frame(<ShopScreen onBack={jest.fn()} onAdd={jest.fn()} onOpenDraft={jest.fn()} />));
+    await screen.findByTestId('shop-draft-a');
+    expect(screen.getByTestId('shop-ready-figure')).toHaveTextContent(/^100%$/);
+    expect(size('shop-ready-figure')).toBe(15);
+  });
+
+  it('the Draft tag has the top left of a draft\'s picture and the mark sits at the foot, clear of it', async () => {
+    answers = { [LIST]: ok([draft('a')]) };
+    await render(frame(<ShopScreen onBack={jest.fn()} onAdd={jest.fn()} onOpenDraft={jest.fn()} />));
+    const row = await screen.findByTestId('shop-draft-a');
+    const tag = screen.getByText('Draft').parent!;
+    expect(StyleSheet.flatten(tag.props.style)).toMatchObject({ position: 'absolute', top: 4, left: 4, height: 20 });
+    const picture = tag.parent!;
+    expect(StyleSheet.flatten(picture.props.style)).toMatchObject({ height: 56, justifyContent: 'flex-end', paddingBottom: 4 });
+    expect(row).toBeTruthy();
   });
 });

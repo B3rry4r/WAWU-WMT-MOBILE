@@ -105,7 +105,8 @@ export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted }: DraftFo
 
   const title = editing ? 'Edit draft' : 'New draft';
   if (editing && form === null) {
-    const gone = loaded.isError && isApiError(loaded.error) && loaded.error.status === 404;
+    // A draft that is not the person's (404) and an id that is no draft's at all (400: a typed or old link) are the same to them: it is gone.
+    const gone = loaded.isError && isApiError(loaded.error) && (loaded.error.status === 404 || loaded.error.status === 400);
     return (
       <ShopFrame testID="draft-form" title={title} onBack={onBack}>
         {loaded.isError ? (

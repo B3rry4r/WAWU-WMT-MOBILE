@@ -7,13 +7,16 @@ import { IconTile } from '@/components/IconTile';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { font, radius, space } from '@/theme';
+import { radius, space } from '@/theme';
 
 import { draftsKey, fetchDrafts } from './api';
 import { DraftCard, ReadyCard, ShopFrame } from './parts';
 
-/** VF2a: a 56 neutral tile, a 19 title, a 15 line held to 280 wide, a pill button; the block sits in the middle of the room under the ring. */
-const empty = { tile: 56, maxWidth: 280, title: 19, line: 15, gap: space.md } as const;
+/**
+ * VF2a (design/_gen/kit.js `empty`): a 56 neutral tile, a title (`h3`, 16), a line (`muted`, 13.5) held to 280 wide, and the board's 44 high
+ * button (`md`); the block sits in the middle of the room under the ring.
+ */
+const empty = { tile: 56, maxWidth: 280, gap: space.md } as const;
 
 export type ShopScreenProps = {
   onBack: () => void;
@@ -55,13 +58,13 @@ export function ShopScreen({ onBack, onAdd, onOpenDraft }: ShopScreenProps) {
           {list.length === 0 ? (
             <View testID="shop-empty" style={styles.empty}>
               <IconTile icon="Store" size={empty.tile} />
-              <Text variant="h3" accessibilityRole="header" style={[font(700), styles.emptyTitle]}>
+              <Text variant="h3" accessibilityRole="header" style={styles.emptyTitle}>
                 Add your first product
               </Text>
-              <Text variant="body" tone="textSecondary" style={styles.emptyLine}>
+              <Text variant="muted" style={styles.emptyLine}>
                 Title, price and how it looks. Files come later.
               </Text>
-              <Button testID="shop-empty-add" label="Add a product" onPress={onAdd} />
+              <Button testID="shop-empty-add" label="Add a product" size="md" onPress={onAdd} />
             </View>
           ) : (
             <View testID="shop-drafts" style={styles.list}>
@@ -79,6 +82,6 @@ export function ShopScreen({ onBack, onAdd, onOpenDraft }: ShopScreenProps) {
 const styles = StyleSheet.create({
   list: { gap: space.sm },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: empty.gap, paddingBottom: space.s3xl * 2 },
-  emptyTitle: { fontSize: empty.title, textAlign: 'center' },
-  emptyLine: { fontSize: empty.line, textAlign: 'center', maxWidth: empty.maxWidth, marginBottom: space.xs },
+  emptyTitle: { textAlign: 'center' },
+  emptyLine: { textAlign: 'center', maxWidth: empty.maxWidth, marginBottom: space.xs },
 });

@@ -61,8 +61,12 @@ export function ShopFrame({ title, onBack, trailing, foot, children, testID }: S
   );
 }
 
-/** VF2: the ring is 64 across with a 7 stroke and the figure at 18 bold; the card is 22 cornered with 16 inside. */
-const ring = { size: 64, stroke: 7, figure: 18, card: radius.card, pad: space.lg, gap: space.md, title: 19, sub: 14.5 } as const;
+/**
+ * VF2: the ring is 64 across with a 7 stroke; the card is 22 cornered with 16 inside. Its words are the board's (design/_gen/verify.js
+ * `ring`, `shopHead`) on the type tokens: the figure 15 bold (`body`), "Shop ready" 16 bold (`h3`), the line 13 (`meta`). "100%" at 15
+ * fits inside the ring's disc.
+ */
+const ring = { size: 64, stroke: 7, card: radius.card, pad: space.lg, gap: space.md } as const;
 const RADIUS = (ring.size - ring.stroke) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -92,7 +96,7 @@ export function ShopRing({ percent }: { percent: number }) {
         ) : null}
       </Svg>
       <View style={styles.ringFigure} pointerEvents="none">
-        <Text variant="body" style={[font(700), { fontSize: ring.figure, lineHeight: canvasNormalLineHeight(ring.figure) }]} testID="shop-ready-figure">
+        <Text variant="body" style={font(700)} testID="shop-ready-figure">
           {`${share}%`}
         </Text>
       </View>
@@ -107,10 +111,10 @@ export function ReadyCard({ drafts }: { drafts: readonly ProductDraft[] }) {
     <View testID="shop-ready" style={[styles.card, { backgroundColor: colors.surfaceCard, boxShadow: hairline(colors.borderHairline) }]}>
       <ShopRing percent={shopReady(drafts)} />
       <View style={styles.cardWords}>
-        <Text variant="body" style={[font(700), styles.cardTitle]}>
+        <Text variant="h3" style={font(700)}>
           Shop ready
         </Text>
-        <Text variant="body" tone="textMuted" style={styles.cardSub} testID="shop-ready-line">
+        <Text variant="meta" testID="shop-ready-line">
           {`${draftCount(drafts.length)} · drafts are free`}
         </Text>
       </View>
@@ -120,8 +124,8 @@ export function ReadyCard({ drafts }: { drafts: readonly ProductDraft[] }) {
 
 const hairline = (color: string) => [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color, inset: true }];
 
-/** VF2: a draft is a 56 picture tile 14 cornered, a 17 name, a 14 line, a chevron; the card has 10 inside. */
-const row = { pad: 10, tile: 56, tileCorner: 14, gap: space.md, title: 17, sub: 14, tag: { height: 20, padH: 7, font: 11, inset: 4 } } as const;
+/** VF2: a draft is a 56 picture tile 14 cornered, a name (`cardTitle`, 15), a line (`caption`, 12.5), a chevron; the card has 10 inside. */
+const row = { pad: 10, tile: 56, tileCorner: 14, gap: space.md, tag: { height: 20, padH: 7, font: 11, inset: 4 }, icon: 24 } as const;
 
 /** The "Draft" tag over a draft's picture (VF2, M1's grid tag). */
 export function DraftTag() {
@@ -140,7 +144,7 @@ export function DraftPicture({ kind }: { kind: FormatId | null }) {
   const { colors } = useWawu();
   return (
     <View style={[styles.picture, { backgroundColor: colors.surfaceSunken }]}>
-      <Icon name={iconOf(kind ?? 'image')} size={24} color={colors.textMuted} />
+      <Icon name={iconOf(kind ?? 'image')} size={row.icon} color={colors.textMuted} />
       <DraftTag />
     </View>
   );
@@ -161,10 +165,10 @@ export function DraftCard({ draft, onPress }: { draft: ProductDraft; onPress: ()
     >
       <DraftPicture kind={kind} />
       <View style={styles.draftWords}>
-        <Text variant="body" numberOfLines={1} style={[font(600), styles.draftTitle]}>
+        <Text variant="cardTitle" numberOfLines={1}>
           {draft.title}
         </Text>
-        <Text variant="body" tone="textMuted" numberOfLines={1} style={styles.draftSub}>
+        <Text variant="caption" numberOfLines={1}>
           {draftLine(draft)}
         </Text>
       </View>
@@ -173,8 +177,8 @@ export function DraftCard({ draft, onPress }: { draft: ProductDraft; onPress: ()
   );
 }
 
-/** VF1's rows: a 72 high card, a 44 accent tile, a 17 title with a 14 line under it, a lock on the right. */
-const bonus = { corner: radius.card, pad: space.lg, tile: 44, gap: space.md, title: 17, sub: 14, lock: 20 } as const;
+/** VF1's rows: a 72 high card, a 44 accent tile, a title (`cardTitle`, 15) with a line (`caption`, 12.5) under it, a lock on the right. */
+const bonus = { corner: radius.card, pad: space.lg, tile: 44, gap: space.md, lock: 20 } as const;
 
 export function BonusRowCard({ id, icon, title, sub }: { id: string; icon: IconName; title: string; sub: string | null }) {
   const { colors } = useWawu();
@@ -187,11 +191,9 @@ export function BonusRowCard({ id, icon, title, sub }: { id: string; icon: IconN
     >
       <IconTile icon={icon} tone="accent" size={bonus.tile} />
       <View style={styles.bonusWords}>
-        <Text variant="body" style={[font(600), styles.bonusTitle]}>
-          {title}
-        </Text>
+        <Text variant="cardTitle">{title}</Text>
         {sub ? (
-          <Text variant="body" tone="textMuted" style={styles.bonusSub}>
+          <Text variant="caption">
             {sub}
           </Text>
         ) : null}
@@ -213,17 +215,12 @@ const styles = StyleSheet.create({
   ringFigure: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   card: { flexDirection: 'row', alignItems: 'center', gap: ring.gap + space.xs, borderRadius: ring.card, padding: ring.pad },
   cardWords: { flex: 1, minWidth: 0, gap: space.xs },
-  cardTitle: { fontSize: ring.title },
-  cardSub: { fontSize: ring.sub },
   draft: { flexDirection: 'row', alignItems: 'center', gap: row.gap, borderRadius: ring.card, padding: row.pad },
   draftWords: { flex: 1, minWidth: 0, gap: space.xs },
-  draftTitle: { fontSize: row.title },
-  draftSub: { fontSize: row.sub },
-  picture: { width: row.tile, height: row.tile, borderRadius: row.tileCorner, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  // The tag takes the top left; the mark sits at the foot, clear of it.
+  picture: { width: row.tile, height: row.tile, borderRadius: row.tileCorner, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: row.tag.inset, overflow: 'hidden' },
   tag: { position: 'absolute', top: row.tag.inset, left: row.tag.inset, height: row.tag.height, paddingHorizontal: row.tag.padH, borderRadius: radius.chip, justifyContent: 'center' },
   tagText: { ...font(700), fontSize: row.tag.font, lineHeight: canvasNormalLineHeight(row.tag.font) },
   bonus: { flexDirection: 'row', alignItems: 'center', gap: bonus.gap, borderRadius: bonus.corner, padding: bonus.pad },
   bonusWords: { flex: 1, minWidth: 0, gap: space.xs },
-  bonusTitle: { fontSize: bonus.title },
-  bonusSub: { fontSize: bonus.sub },
 });

@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: verifying
-depends_on: [AUTH-07, ME-04, ME-01, TIER-02, DV2-COMP]
+depends_on: [AUTH-07, AUTH-06, ME-04, ME-01, TIER-02, DV2-COMP]
 decisions: [R-43, R-6, R-47]
 passes: [V1, V4, V5, V6, V9]
 artboards: [VF1, VF2, VF2a, VF2b]
@@ -31,10 +31,11 @@ As of 17 Oct 2026.
 - **Gaps filed:** G-840 (a draft has no picture), G-841 (event pass line: no benefits served), G-842 (a description cannot be cleared).
 - **Checks:** full mobile check (typecheck, lint, jest 209 suites and 3639 tests, gates, tasks) run once, then the three gate findings it raised (literal gaps in `parts.tsx`) were fixed and typecheck, lint, the 23 verify tests, gates (0 fail, 5 warn as main) and tasks re-run to EXIT 0. No GitHub mobile CI (billing).
 - **NOT RUN:** pictures at 390 px beside the rendered boards (the boards were rendered and read: `python3 scripts/design/render_design.py VF1 VF2 VF2a VF2b`); the V7 walk of the real sign-up to VF1 in a browser (the new test `bonusStepRoute.test.tsx` walks the code step to VF1 in the router). Both are for the verifier.
-- **Open findings:** none yet.
+- **Open findings:** the round-1 verifier's seven (17 Oct, `4c5c5e3e`): 1 to 3 and 4 to 6 fixed in round 3 below; 7 (M19 reads "0 of 0" for a fresh creator) stays for the sweep (lead).
 - **Rulings (lead, 17 Oct):** rows #1 and #2 approved; M19's "Your shop" row accepted; the category is collected by VERIFY-04 before the first publish and the draft form stays without it (one line added to `tasks/VERIFY-04.md`'s scope).
 - **Round 2:** applied rows #1 and #2 and added `src/features/verify/__tests__/bonusStepRoute.test.tsx` (7 tests): a new account goes access code, then VF1 once, "Build my shop" opens the shop, and VF1 does not come again on the next start or after the app was closed on it; an unmarked or finished account sees nothing; a signed-out visit to `/shop`, `/shop-product` or `/verify-bonus` lands on the signed-out screens; a signed-in person opens the shop and the draft form from it.
-- **Next:** a verifier, fresh, runs V1, V4, V5, V6, V7, V9 with the stack `--with mobile`, takes the four boards in light and dark, and walks sign-up to VF1 to VF2 to the form.
+- **Round 3** (17 Oct, on `4c5c5e3e`, lead rulings on the verifier's findings): (1, high) a new account's Hub profile has no `accountType` until AUTH-06 (added to `depends_on`), so VF1 now waits: `bonusGate.ts` reads the profile itself and, while the type is unknown (`null`) or the read is in flight, shows its loading state (`BonusGate.tsx`) and asks again (1, 2, 4, 8, 8, 8 s), then says so with Try again; it never finishes the step or sends Home on `null`. (2, medium) a failed profile read is the error with Try again, never `other`: only a known non-creator (`user`) finishes the step and goes Home, or "Build my shop". (3, medium) the words are the boards' sizes on the existing type tokens, no local sizes and no SHARED-CHANGES row: Shop ready `h3` 16 and `meta` 13, ring figure `body` 15, rows `cardTitle` 15 and `caption` 12.5 (VF1 and VF2), empty title `h3` 16 and line `muted` 13.5, "Add a product" `md` (44 high). VF1's hero is also the board's: the line under the title `muted` 13.5 held to 320, the title 26 (as AccountTypeScreen's local const; no 26 token) and 10 between tile, title and line. (4) "100%" at 15 sits inside the ring. (5) the Draft tag keeps the top left and the kind mark sits at the foot of the picture. (6) a draft read the Hub answers 400 (an id that is no draft's) is "This draft is gone", not the Hub's validation words. Tests: `bonusStepRoute.test.tsx` +4 (type unknown then known lands on VF1; never known stops with Try again; a failing read shows the error and never finishes the step; a known non-creator goes Home) and `screens.test.tsx` +6 (sizes per board, 100%, the tag over the foot-aligned mark, the 400 draft). Pictures at 390 px, light and dark, board left and app right: `scratchpad/verify01-b3/pics/` (VF1, VF2, VF2a, VF2b; the app side seeded with fixtures through a temporary preview route that is not committed). Not changed: finding 7.
+- **Next:** a verifier, fresh, re-checks round 3 and runs the rest of V1, V4, V5, V6, V7, V9 with the stack `--with mobile`, takes the four boards in light and dark, and walks sign-up to VF1 to VF2 to the form.
 - **History:** reports go to tasks/history/VERIFY-01.md.
 
 ## Read first

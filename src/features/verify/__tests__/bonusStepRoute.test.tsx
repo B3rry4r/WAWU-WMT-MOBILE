@@ -46,15 +46,18 @@ const plans = {
 const ADA = 'account-ada';
 // The Hub answers the three things the creator gate, VF1 and VF2 ask; WAWU ID and everything else cannot be reached. Installed
 // before the app is loaded: the API client keeps the fetch it finds when it is first loaded.
+const profile = (accountType: string | null) => ok({ wawuUserId: ADA, accountType });
 const hub: Record<string, unknown> = {
-  'GET /api/hub/users/me': ok({ wawuUserId: ADA, accountType: 'creator' }),
+  'GET /api/hub/users/me': profile('creator'),
   'GET /api/hub/plans': ok(plans),
   'GET /api/hub/product-drafts': ok([]),
 };
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
-  const answer = hub[`${request.method} ${new URL(request.url).pathname}`];
-  if (!answer) throw new TypeError('Network request failed');
+  const found = hub[`${request.method} ${new URL(request.url).pathname}`];
+  // A function answers afresh each time (the profile that is not known yet, then known); 'offline' is a read that fails.
+  const answer = typeof found === 'function' ? (found as () => unknown)() : found;
+  if (!answer || answer === 'offline') throw new TypeError('Network request failed');
   return new Response(JSON.stringify(answer), { status: 200, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
@@ -77,7 +80,9 @@ const { resetSignupGate } = require('@/features/auth/signupGate') as typeof impo
 const { setStarted } = require('@/features/auth/signupStore') as typeof import('@/features/auth/signupStore');
 const { resetOfferStep } = require('@/features/claim/offerStep') as typeof import('@/features/claim/offerStep');
 const { offerKey } = require('@/features/claim/localStore') as typeof import('@/features/claim/localStore');
+const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { resetBonusStep } = require('../bonusStep') as typeof import('../bonusStep');
+const { setBonusGateDelaysForTests } = require('../bonusGate') as typeof import('../bonusGate');
 
 const routes = {
   _layout: RootLayout,
@@ -104,6 +109,10 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
+  hub['GET /api/hub/users/me'] = profile('creator');
+  setBonusGateDelaysForTests([40, 40, 40, 40]);
+  // The app's one cache outlives a test: an earlier test's profile would answer this one's first read.
+  queryClient.clear();
   mockVault.clear();
   mockTokens = { accessToken: tokenFor(ADA), refreshToken: 'new-refresh' };
   resetSessionForTests();
@@ -189,6 +198,69 @@ describe('right after the code is accepted a new person lands on "Your bonus is 
     await renderRouter(routes);
     await waitFor(() => expect(home()).toBeTruthy());
     expect(screen.queryByTestId('bonus-screen')).toBeNull();
+  });
+});
+
+describe('VF1 waits until the Hub knows the account type (VERIFY-01 round 3)', () => {
+  /** The code was accepted and the access-code step skipped: VF1's route is the next screen. */
+  const toVf1 = async () => {
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('welcome-sign-in')).toBeTruthy());
+    await acceptCode();
+    await waitFor(() => expect(screen.getByTestId('claim-offer')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('claim-offer-skip'));
+  };
+  const notFinished = () => {
+    expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
+    expect(screen.queryByTestId('bonus-screen')).toBeNull();
+    expect(bonusFlag(ADA)).not.toBe('done');
+  };
+
+  it('a new account whose Hub profile has no account type yet is not sent Home, and VF1 lands once the Hub knows', async () => {
+    let asks = 0;
+    hub['GET /api/hub/users/me'] = () => (++asks <= 2 ? profile(null) : profile('creator'));
+    await toVf1();
+    await waitFor(() => expect(screen.getByTestId('bonus-gate-loading')).toBeTruthy());
+    notFinished();
+    await waitFor(() => expect(screen.getByTestId('bonus-screen')).toBeTruthy());
+    expect(asks).toBeGreaterThan(2);
+    expect(screen.queryByTestId('bonus-gate')).toBeNull();
+    // Drawn, so it settles: the next start does not bring it back.
+    await waitFor(() => expect(bonusFlag(ADA)).toBe('done'));
+  });
+
+  it('a type the Hub never learns stops asking, says so with "Try again", and still has not finished the step', async () => {
+    hub['GET /api/hub/users/me'] = profile(null);
+    await toVf1();
+    await waitFor(() => expect(screen.getByTestId('bonus-gate-waiting')).toBeTruthy());
+    notFinished();
+    expect(bonusFlag(ADA)).toBe('pending');
+
+    // The Hub knows now: Try again lands on VF1.
+    hub['GET /api/hub/users/me'] = profile('creator');
+    await fireEvent.press(screen.getByText('Try again'));
+    await waitFor(() => expect(screen.getByTestId('bonus-screen')).toBeTruthy());
+  });
+
+  it('a profile read that fails shows the error with "Try again" and never finishes the once-only step', async () => {
+    hub['GET /api/hub/users/me'] = 'offline';
+    await toVf1();
+    await waitFor(() => expect(screen.getByTestId('bonus-gate-error')).toBeTruthy());
+    notFinished();
+    expect(bonusFlag(ADA)).toBe('pending');
+
+    hub['GET /api/hub/users/me'] = profile('creator');
+    await fireEvent.press(screen.getByText('Try again'));
+    await waitFor(() => expect(screen.getByTestId('bonus-screen')).toBeTruthy());
+    expect(screen.queryByTestId('bonus-gate-error')).toBeNull();
+  });
+
+  it('a known non-creator ends the step and goes Home, without VF1', async () => {
+    hub['GET /api/hub/users/me'] = profile('user');
+    await toVf1();
+    await waitFor(() => expect(home()).toBeTruthy());
+    expect(screen.queryByTestId('bonus-screen')).toBeNull();
+    await waitFor(() => expect(bonusFlag(ADA)).toBe('done'));
   });
 });
 
