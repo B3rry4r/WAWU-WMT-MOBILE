@@ -261,7 +261,7 @@ async function render(child: ReactElement) {
   );
 }
 
-const handlers = () => ({ onOpenOrder: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn() });
+const handlers = () => ({ onOpenOrder: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
 
 async function bootDetail(buy = handlers(), tierId = 't-reg') {
   const onBack = jest.fn();
@@ -418,14 +418,14 @@ describe('E3 and E4: pay and PIN', () => {
     expect(rtl.screen.queryByText('Bank charge')).toBeNull();
   });
 
-  it('a user short of money sees the bank\'s figures and no Add button (Add money is WALLET-05\u2019s, R-47)', async () => {
+  it('a user short of money sees the bank\'s figures and can add money', async () => {
     hub.mode = 'short';
-    await bootDetail();
+    const buy = await bootDetail();
     await reachPin();
     await enterPin('1234');
     expect(await rtl.screen.findByText('Not enough in your Naira wallet')).toBeTruthy();
-    expect(rtl.screen.queryByRole('button', { name: /^Add / })).toBeNull();
-    expect(rtl.screen.getByText('Cancel')).toBeTruthy();
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: /^Add / }));
+    expect(buy.onAddMoney).toHaveBeenCalledWith(251_575);
     expect(hub.payments).toBe(0);
   });
 

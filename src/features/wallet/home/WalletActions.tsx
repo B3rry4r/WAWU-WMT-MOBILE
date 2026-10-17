@@ -16,8 +16,8 @@ import { useRowRoom } from './useRowRoom';
  * the same rule until five columns fit (`actionTileSize`): 54 from 390 up, 51 at 375, 48 at 360, 44 at 340, 40 at 320.
  *
  * Only the actions whose screens are built are drawn (R-47), packed from the left in the board's order, each in a column of the size
- * five columns give. The tile size and column width never depend on how many are drawn, so a task that adds its action (Add money,
- * WALLET-05; Withdraw, WALLET-17) draws one more column and resizes none of them.
+ * five columns give. The tile size and column width never depend on how many are drawn, so a task that adds its action draws one
+ * more column and resizes none of them.
  */
 export const ACTION_TILE = { square: 54, glyphRatio: 0.42, extra: 2 * space.sm, label: 12.5, gap: space.sm, count: 5 } as const;
 
@@ -31,7 +31,14 @@ export function actionGlyph(square: number): number {
   return Math.round(square * ACTION_TILE.glyphRatio);
 }
 
-export type WalletAction = { key: 'send' | 'buy-points' | 'to-cash'; icon: IconName; label: string; onPress: () => void };
+export type WalletAction = {
+  key: 'add-money' | 'send' | 'withdraw' | 'buy-points' | 'to-cash';
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  /** The glyph in the accent colour, as the board draws Add money's plus. */
+  accent?: boolean;
+};
 
 export type WalletActionsProps = {
   /** The actions that are built, in the board's order; the screen decides which these are. */
@@ -66,7 +73,7 @@ function Tile({ action, size }: { action: WalletAction; size: number }) {
       style={[styles.tile, { width: size + ACTION_TILE.extra }, ring.style]}
     >
       <View style={[styles.square, { width: size, height: size, backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-        <Icon name={action.icon} size={actionGlyph(size)} color={colors.textPrimary} />
+        <Icon name={action.icon} size={actionGlyph(size)} color={action.accent ? colors.accent : colors.textPrimary} />
       </View>
       <Text variant="body" tone="textSecondary" numberOfLines={1} style={[font(600), styles.label]}>
         {action.label}

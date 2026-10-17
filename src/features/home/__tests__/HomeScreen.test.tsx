@@ -283,7 +283,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Add', 'Scan', 'Shop', 'See all']) {
+    for (const label of ['Scan', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -378,13 +378,12 @@ describe('Today empty and in error', () => {
 });
 
 describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
-  it('draws Send and only Send among the card actions: Add and Scan have no screen yet, and bills are off', async () => {
+  it('draws Send and Add among the card actions, in the board’s order, and no Bills and no Scan: bills are off and Scan has no screen yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
+    for (const id of ['today-action-send', 'today-action-add']) expect(screen.getByTestId(id)).toBeTruthy();
     expect(screen.queryByTestId('today-action-bills')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
-    for (const label of ['Bills', 'Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    for (const label of ['Bills', 'Scan']) expect(screen.queryByText(label)).toBeNull();
   });
 
   it('a user can still tap Send on the balance card and land on Send money', async () => {
@@ -392,6 +391,13 @@ describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.fireEvent.press(screen.getByTestId('today-action-send'));
     expect(mockPush).toHaveBeenCalledWith('/send');
+  });
+
+  it('a user can tap Add on the balance card and reach Add money (WALLET-05, W15)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByTestId('today-action-add'));
+    expect(mockPush).toHaveBeenCalledWith('/add-money');
   });
 });
 
