@@ -109,7 +109,7 @@ function shareFor(avail: number, texts: { len: number; floor: number }[]): numbe
  * 4. Else the count is wider than its room even at 11 px: it is drawn at 11 px and breaks only between its digit groups, never inside a
  *    group and never with an ellipsis.
  *
- * Until all three are known the figure is drawn at full size (the figure itself stays hidden until they are, see `PointsFigure`).
+ * Until all three are known the figure is drawn at full size (a fitted figure stays hidden until its first reading, see `PointsFitted`).
  */
 export function pointsFit({ size, showWord, showIcon, room, count, word }: PointsFitInput): PointsFit {
   const m = pointsFigureMetrics[size];
@@ -159,8 +159,11 @@ function figureStyles(size: PointsFigureSize, fit: PointsFit) {
   };
 }
 
-/** A measured width: it counts only for the text and size it was measured for. */
-type Natural = { key: string; width: number };
+/** A measured width of the count or of the word at the board's size. It is kept (not dropped) while the next text is read. */
+type Natural = { size: PointsFigureSize; width: number };
+
+/** Where the figure sits inside its room when it is fitted (see `fit`): at the start edge, the middle or the end edge. */
+export type PointsFigureAlign = 'start' | 'center' | 'end';
 
 export type PointsFigureProps = {
   /** How many points, as the Hub serves them (`points`, a lot's `remaining`). A whole number, never a naira amount. */
@@ -170,51 +173,29 @@ export type PointsFigureProps = {
   word?: boolean;
   /** Draw the star mark before the number. Defaults to what the size's board draws. */
   icon?: boolean;
+  /**
+   * Fit a long number to a known width. Left out (the default), the figure hugs its content like a Text: it is as wide as the star, the
+   * count and the word at the board's size, it measures nothing and is never hidden, so a parent can centre it, end-align it, put it
+   * beside a title in a row, or wrap it in a pill exactly as the boards draw. Set (`true` is `'start'`, or `'start'`, `'center'`, `'end'`),
+   * the figure is as wide as its parent, shrinks to it as `pointsFit` works out, and sits in that width at the start, the middle or the
+   * end. Use it only where a long number must fit a width the screen knows (PT5's balance beside "Buy points"); the parent must have a
+   * width of its own, not one that comes from the figure.
+   */
+  fit?: boolean | PointsFigureAlign;
   testID?: string;
 };
 
-/**
- * A number of points as the app writes it: the star, the count and the word "points". Read as "1,240 points" by a screen reader.
- *
- * It fits its place without a loop, the same way on a phone and on the web. Three widths are read, and none of them depends on how the
- * figure is drawn: the ROOM, the width of the box the figure sits in (as wide as its parent gives, whatever is drawn inside it), and the
- * NATURAL width of the count and of the word at the board's size, read once per text and size from a copy that is out of the layout, clipped
- * to nothing, invisible and hidden from screen readers. `pointsFit` turns those three into the sizes. They change only when the room, the
- * count or the size does, so the figure settles in one render after they are known.
- *
- * Nothing shows before all three are known (the figure is drawn at full size, invisible, so it keeps its height). Give it a parent that has
- * a width (a column, or a row item that may shrink); it fills that width and draws from the start edge.
- */
-export function PointsFigure({ count, size = 'row', word, icon, testID }: PointsFigureProps) {
-  const { colors } = useWawu();
+/** The star, the count and the word as drawn at one fit; both modes draw the same pieces. */
+function drawFigure(
+  { count, size, showWord, showIcon, testID }: { count: number; size: PointsFigureSize; showWord: boolean; showIcon: boolean; testID?: string },
+  fit: PointsFit,
+  accent: string,
+) {
   const m = pointsFigureMetrics[size];
-  const showWord = word ?? m.showWord;
-  const showIcon = icon ?? m.showIcon;
   const countText = formatPointsCount(count);
   const wordText = wordFor(count);
-  const countKey = `${size}|${countText}`;
-  const wordKey = `${size}|${wordText}`;
-
-  const [room, setRoom] = useState<number>();
-  const [countNatural, setCountNatural] = useState<Natural>();
-  const [wordNatural, setWordNatural] = useState<Natural>();
-  const countWidth = countNatural?.key === countKey ? countNatural.width : undefined;
-  const wordWidth = wordNatural?.key === wordKey ? wordNatural.width : undefined;
-  const ready = room !== undefined && countWidth !== undefined && (!showWord || wordWidth !== undefined);
-
-  const fit = useMemo(
-    () => (ready ? pointsFit({ size, showWord, showIcon, room, count: countWidth, word: wordWidth }) : pointsFit({ size, showWord, showIcon })),
-    [ready, size, showWord, showIcon, room, countWidth, wordWidth],
-  );
-  const look = useMemo(() => figureStyles(size, fit), [size, fit]);
+  const look = figureStyles(size, fit);
   const apart = fit.stacked || fit.broken;
-
-  const onRoom = (e: LayoutChangeEvent) => setRoom(e.nativeEvent.layout.width);
-  const readNatural = (key: string, set: (next: (was: Natural | undefined) => Natural | undefined) => void) => (e: LayoutChangeEvent) => {
-    const width = e.nativeEvent.layout.width;
-    set((was) => (was?.key === key && was.width === width ? was : { key, width }));
-  };
-
   const star = showIcon ? (
     <View
       style={[styles.fixed, apart ? { height: look.number.lineHeight, justifyContent: 'center' } : undefined]}
@@ -222,7 +203,7 @@ export function PointsFigure({ count, size = 'row', word, icon, testID }: Points
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Icon name="Sparkles" size={m.icon} color={colors.accentFg} strokeWidth={iconStroke} />
+      <Icon name="Sparkles" size={m.icon} color={accent} strokeWidth={iconStroke} />
     </View>
   ) : null;
   const numberStyle = [font(700), m.tabular ? figures : undefined, look.number];
@@ -244,40 +225,11 @@ export function PointsFigure({ count, size = 'row', word, icon, testID }: Points
       {wordText}
     </Text>
   ) : null;
-
-  /** The copies the natural widths are read from: the board's size, never scaled, so drawing the figure never changes them. */
-  const probe = figureStyles(size, pointsFit({ size, showWord, showIcon }));
-  const copies = (
-    <View style={styles.probe} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Text
-        key={countKey}
-        testID={testID ? `${testID}-measure-count` : undefined}
-        variant="body"
-        onLayout={readNatural(countKey, setCountNatural)}
-        style={[font(700), m.tabular ? figures : undefined, probe.number, styles.copy]}
-      >
-        {countText}
-      </Text>
-      {showWord ? (
-        <Text
-          key={wordKey}
-          testID={testID ? `${testID}-measure-word` : undefined}
-          variant="body"
-          onLayout={readNatural(wordKey, setWordNatural)}
-          style={[font(500), probe.word, styles.copy]}
-        >
-          {wordText}
-        </Text>
-      ) : null}
-    </View>
-  );
-
-  return (
-    <View testID={testID} accessible accessibilityLabel={formatPoints(count)} onLayout={onRoom} style={styles.room}>
-      <View
-        testID={testID ? `${testID}-row` : undefined}
-        style={[styles.row, look.gap, apart ? styles.top : undefined, ready ? undefined : styles.pending]}
-      >
+  return {
+    apart,
+    gap: look.gap,
+    body: (
+      <>
         {star}
         {fit.stacked ? (
           <View testID={testID ? `${testID}-stack` : undefined} style={styles.stack}>
@@ -290,6 +242,131 @@ export function PointsFigure({ count, size = 'row', word, icon, testID }: Points
             {unit}
           </>
         )}
+      </>
+    ),
+  };
+}
+
+/**
+ * A number of points as the app writes it: the star, the count and the word "points". Read as "1,240 points" by a screen reader.
+ *
+ * Two modes, by `fit`:
+ * - DEFAULT: it hugs its content like a Text, at the board's size. Nothing is measured and nothing is hidden. The Studio card's count at
+ *   the end of its row, a value at the end of a key and value row, a figure centred or end-aligned by its parent, a figure in a pill:
+ *   all of these are the parent's layout, as on the boards.
+ * - FIT (`fit`): it fits a known width without a loop, the same way on a phone and on the web. See `PointsFitted`.
+ */
+export function PointsFigure({ count, size = 'row', word, icon, fit, testID }: PointsFigureProps) {
+  const { colors } = useWawu();
+  const m = pointsFigureMetrics[size];
+  const showWord = word ?? m.showWord;
+  const showIcon = icon ?? m.showIcon;
+  if (fit) {
+    const align: PointsFigureAlign = fit === true ? 'start' : fit;
+    return <PointsFitted count={count} size={size} showWord={showWord} showIcon={showIcon} align={align} accent={colors.accentFg} testID={testID} />;
+  }
+  const drawn = drawFigure({ count, size, showWord, showIcon, testID }, pointsFit({ size, showWord, showIcon }), colors.accentFg);
+  return (
+    <View testID={testID} accessible accessibilityLabel={formatPoints(count)} style={[styles.hug, drawn.gap]}>
+      {drawn.body}
+    </View>
+  );
+}
+
+/**
+ * FIT mode. Three widths are read, and none of them depends on how the figure is drawn: the ROOM, the width of the box the figure sits in
+ * (as wide as its parent gives, whatever is drawn inside it), and the NATURAL width of the count and of the word at the board's size, read
+ * once per text and size from a copy that is out of the layout, clipped to nothing, invisible and hidden from screen readers. `pointsFit`
+ * turns those three into the sizes. They change only when the room, the count or the size does, so the figure settles in one render
+ * after they are known. The figure sits in the room at the start, the middle or the end (`align`).
+ *
+ * Nothing shows before the FIRST reading (the figure is drawn at full size, invisible, so it keeps its height there; a narrow room then
+ * changes the height once, as it appears). After that it is always shown: while the copy of a new count is read, the figure keeps the
+ * fit it had (the fit is the room over the last natural widths), so a count that ticks never blinks and nothing below it moves.
+ */
+function PointsFitted({
+  count,
+  size,
+  showWord,
+  showIcon,
+  align,
+  accent,
+  testID,
+}: {
+  count: number;
+  size: PointsFigureSize;
+  showWord: boolean;
+  showIcon: boolean;
+  align: PointsFigureAlign;
+  accent: string;
+  testID?: string;
+}) {
+  const m = pointsFigureMetrics[size];
+  const countText = formatPointsCount(count);
+  const wordText = wordFor(count);
+  const countKey = `${size}|${countText}`;
+  const wordKey = `${size}|${wordText}`;
+
+  const [room, setRoom] = useState<number>();
+  const [countNatural, setCountNatural] = useState<Natural>();
+  const [wordNatural, setWordNatural] = useState<Natural>();
+  // the last reading at this size counts until the new text has been read: that is the fit kept, not a blank frame
+  const countWidth = countNatural?.size === size ? countNatural.width : undefined;
+  const wordWidth = wordNatural?.size === size ? wordNatural.width : undefined;
+  const ready = room !== undefined && countWidth !== undefined && (!showWord || wordWidth !== undefined);
+
+  const fit = useMemo(
+    () => (ready ? pointsFit({ size, showWord, showIcon, room, count: countWidth, word: wordWidth }) : pointsFit({ size, showWord, showIcon })),
+    [ready, size, showWord, showIcon, room, countWidth, wordWidth],
+  );
+  const drawn = drawFigure({ count, size, showWord, showIcon, testID }, fit, accent);
+
+  const onRoom = (e: LayoutChangeEvent) => setRoom(e.nativeEvent.layout.width);
+  const readNatural = (set: (next: (was: Natural | undefined) => Natural | undefined) => void) => (e: LayoutChangeEvent) => {
+    const width = e.nativeEvent.layout.width;
+    set((was) => (was?.size === size && was.width === width ? was : { size, width }));
+  };
+
+  /** The copies the natural widths are read from: the board's size, never scaled, so drawing the figure never changes them. */
+  const probe = figureStyles(size, pointsFit({ size, showWord, showIcon }));
+  const copies = (
+    <View style={styles.probe} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Text
+        key={countKey}
+        testID={testID ? `${testID}-measure-count` : undefined}
+        variant="body"
+        onLayout={readNatural(setCountNatural)}
+        style={[font(700), m.tabular ? figures : undefined, probe.number, styles.copy]}
+      >
+        {countText}
+      </Text>
+      {showWord ? (
+        <Text
+          key={wordKey}
+          testID={testID ? `${testID}-measure-word` : undefined}
+          variant="body"
+          onLayout={readNatural(setWordNatural)}
+          style={[font(500), probe.word, styles.copy]}
+        >
+          {wordText}
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View
+      testID={testID}
+      accessible
+      accessibilityLabel={formatPoints(count)}
+      onLayout={onRoom}
+      style={[styles.room, placeIn[align]]}
+    >
+      <View
+        testID={testID ? `${testID}-row` : undefined}
+        style={[styles.row, drawn.gap, drawn.apart ? styles.top : undefined, ready ? undefined : styles.pending]}
+      >
+        {drawn.body}
       </View>
       {copies}
     </View>
@@ -297,10 +374,16 @@ export function PointsFigure({ count, size = 'row', word, icon, testID }: Points
 }
 
 const styles = StyleSheet.create({
-  /** The room: as wide as the parent gives (down to what a row leaves it), whatever the figure inside it draws. */
+  /** The hugging figure: one row as wide as its content, like a Text. The parent places it. */
+  hug: { flexDirection: 'row', alignItems: 'center' },
+  /** The room (FIT): as wide as the parent gives (down to what a row leaves it), whatever the figure inside it draws. */
   room: { flexDirection: 'row', alignItems: 'flex-start', width: '100%', flexShrink: 1, minWidth: 0 },
   row: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, minWidth: 0 },
-  /** Before the room and the natural widths are known: drawn (so the height is kept) but not seen. */
+  /** Where the content sits in the room (FIT). */
+  placeStart: { justifyContent: 'flex-start' },
+  placeCenter: { justifyContent: 'center' },
+  placeEnd: { justifyContent: 'flex-end' },
+  /** Before the first reading of the room and the natural widths: drawn (so the height is kept) but not seen. */
   pending: { opacity: 0 },
   /** The word under the count: the star sits beside the count's first line, not the middle of both. */
   top: { alignItems: 'flex-start' },
@@ -319,3 +402,5 @@ const styles = StyleSheet.create({
   probe: { position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'hidden', flexDirection: 'row', opacity: 0 },
   copy: { position: 'absolute', top: 0, left: 0, flexShrink: 0 },
 });
+
+const placeIn = { start: styles.placeStart, center: styles.placeCenter, end: styles.placeEnd } satisfies Record<PointsFigureAlign, object>;
