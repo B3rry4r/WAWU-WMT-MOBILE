@@ -2676,7 +2676,10 @@ export interface paths {
         /**
          * Save or replace the payout account. The server name-checks it with the
          *     bank and compares the bank's name with the BVN name: an account in
-         *     another name is saved and flagged (`matchesBvnName: false`).
+         *     another name is refused, `409 account_not_in_your_name`, with the bank's
+         *     name beside the name on the wallet, and nothing is saved (WALLET-37,
+         *     R-51). The check spends the hourly name check budget (`429
+         *     name_check_rate_limited`).
          */
         put: operations["MoneySavedAccountsController_setPayoutAccount"];
         post?: never;
@@ -2978,7 +2981,13 @@ export interface paths {
          *     name the bank gives: the app never sends a name. A saved account whose
          *     holder or bank is no longer the one kept is `409 account_name_changed`,
          *     carrying both names as they stand now; nothing is sent until the person
-         *     confirms them by saving the account again. The same Idempotency-Key and
+         *     confirms them by saving the account again. A withdrawal to the payout
+         *     account while its holder is not the person's verified name is `409
+         *     account_not_in_your_name`, also before the PIN (WALLET-37, R-51); a send
+         *     to anyone else's account is unchanged. Asking the bank about an account
+         *     that is not saved, with a name token the person did not get for it, is a
+         *     name check: it spends one of the 30 an hour (`429 name_check_rate_limited`
+         *     past them, before the PIN, the bank not asked). The same Idempotency-Key and
          *     body answer the first result again (`Idempotent-Replayed: true`) without
          *     checking the PIN. fees_not_set comes before the wallet gate, the key and
          *     the PIN; limit_reached (WAWU's limit or the provider's, WALLET-23) before
@@ -3072,7 +3081,9 @@ export interface paths {
          *     after this answers. The name is the bank's, never one the app sent. It
          *     comes with a `nameToken` for this person (WALLET-09 round 2): the send to
          *     an account that is not saved carries it, so the money goes to the name
-         *     they were shown or nowhere.
+         *     they were shown or nowhere. At most `name_check_per_hour` (30) checks an
+         *     hour per signed-in person, never per address (WALLET-37, R-51): past it
+         *     is `429 name_check_rate_limited` with the minutes left, no check made.
          */
         post: operations["MoneyBanksController_nameCheck"];
         delete?: never;
@@ -5785,6 +5796,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The link and code, brought, verified, points earned and pending, the level and the next milestone. */
+        get: operations["ReferralsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/referrals/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uses someone's code: once, in your first days, never your own. */
+        post: operations["ReferralsController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/plans/purchases/quote": {
         parameters: {
             query?: never;
@@ -7132,7 +7177,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -7185,7 +7230,14 @@ export interface components {
              */
             accountName?: string;
             bankName?: string;
-            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
+            /**
+             * @description account_not_in_your_name: the name on the person's wallet, set beside
+             *     `accountName` (the bank's name for the account) and `bankName`. Left out
+             *     when the wallet holds no name to show. The comparison itself is made on
+             *     the verified name's keyed hashes, never on this text (WALLET-37).
+             */
+            verifiedName?: string;
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited, name_check_rate_limited: seconds to wait before trying again. */
             retryAfterSeconds?: number;
             /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
             checksLeft?: number;
@@ -8220,6 +8272,10 @@ export interface components {
              * @enum {string}
              */
             kind?: "amen";
+        };
+        ClaimReferralDto: {
+            /** @description The code to use, or the link it came in (`wawu/r/lennox`). Any case. */
+            code: string;
         };
         PlanPurchaseDto: {
             /** @enum {string} */
@@ -12051,6 +12107,56 @@ export interface components {
             chats: number;
             paidDms: number;
             communities: number;
+        };
+        ReferralLadderStepView: {
+            verified: number;
+            multiplier: number;
+            reached: boolean;
+        };
+        ReferralNextMilestoneView: {
+            verified: number;
+            points: number;
+            remaining: number;
+        };
+        ReferralMilestoneView: {
+            verified: number;
+            points: number;
+            reached: boolean;
+            grantedAt: string | null;
+        };
+        ReferralRewardView: {
+            id: string;
+            name: string;
+            tierId: string;
+            tierName: string;
+            basePoints: number;
+            multiplier: number;
+            points: number;
+            /** @enum {string} */
+            state: "pending" | "cancelled" | "available";
+            availableAt: string;
+            settledAt: string | null;
+        };
+        MyReferralsView: {
+            link: string;
+            code: string;
+            brought: number;
+            verified: number;
+            pending: number;
+            pointsEarned: number;
+            pendingPoints: number;
+            multiplier: number;
+            level: number;
+            ladder: components["schemas"]["ReferralLadderStepView"][];
+            nextMilestone: components["schemas"]["ReferralNextMilestoneView"];
+            milestones: components["schemas"]["ReferralMilestoneView"][];
+            holdDays: number;
+            claimDays: number;
+            rewards: components["schemas"]["ReferralRewardView"][];
+        };
+        ClaimReferralView: {
+            code: string;
+            claimedAt: string;
         };
         MeCountsView: {
             purchases: number;
@@ -17769,6 +17875,15 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
             /** @description reason.code: provider_unreachable */
             503: {
                 headers: {
@@ -17875,7 +17990,7 @@ export interface operations {
                     "application/json": components["schemas"]["PayoutAccountView"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening */
+            /** @description reason.code: wallet_not_open, wallet_opening, account_not_in_your_name */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -17895,6 +18010,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18672,7 +18796,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, account_name_changed */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, account_name_changed, account_not_in_your_name */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18692,6 +18816,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen, pin_locked */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18846,6 +18979,15 @@ export interface operations {
             };
             /** @description reason.code: name_check_failed */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23973,6 +24115,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EarningSalePage"];
+                };
+            };
+        };
+    };
+    ReferralsController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyReferralsView"];
+                };
+            };
+        };
+    };
+    ReferralsController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimReferralDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimReferralView"];
                 };
             };
         };
