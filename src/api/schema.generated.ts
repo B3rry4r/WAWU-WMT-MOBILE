@@ -3303,7 +3303,38 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Asks to delete the account (R-17: it waits 30 days). Refused with
+         *     `409 account_deletion_blocked` while the wallet holds money, a hold is
+         *     open or earnings are waiting (SETTINGS-06). `503 provider_unreachable`
+         *     when the wallet provider does not answer, so "empty" is never guessed.
+         */
         delete: operations["AccountController_deleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/account/cancel-deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels a deletion that is waiting (SETTINGS-06): the wallet is
+         *     unfrozen, the content comes back and phone push resumes. WAWU ID calls
+         *     it with the person's new token when they sign in during the 30 days
+         *     (SETTINGS-08). Answers 200 `cancelled: false` when nothing was waiting,
+         *     and 200 `cancelled: false, deletionInProgress: true` with a `message`
+         *     once the purge has started (data may already be gone, so it is never
+         *     answered as restored).
+         */
+        post: operations["AccountController_cancelDeletion"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -7484,6 +7515,33 @@ export interface components {
             limit?: number;
         };
         DeleteAccountDto: Record<string, never>;
+        AccountDeletionBlockedReason: {
+            /** @enum {string} */
+            code: "account_deletion_blocked";
+            /** @description What to settle first. The app leads with `wallet_balance` (Withdraw). */
+            blockers: ("wallet_balance" | "open_hold" | "waiting_earnings" | "payment_in_progress" | "cash_out_in_flight" | "wallet_opening")[];
+            /** @description The wallet provider's balance in kobo, when the person has a wallet. */
+            balanceKobo?: number;
+            /** @description Holds open for or against the person (paid DMs, tickets, bills). */
+            openHolds: number;
+            /** @description Sales whose share has not reached the person's wallet yet. */
+            waitingEarnings: number;
+            /** @description A sentence the app may show as it is. */
+            message: string;
+        };
+        AccountDeletionBlockedBody: {
+            data: null | null;
+            statusCode: number;
+            message: string;
+            reason: components["schemas"]["AccountDeletionBlockedReason"];
+        };
+        CancelDeletionResponseDto: {
+            cancelled: boolean;
+            walletUnfrozen: boolean;
+            contentRestored: number;
+            deletionInProgress?: boolean | null;
+            message?: string | null;
+        };
         RegisterPushTokenDto: {
             /** @description The phone's Expo push token, `ExponentPushToken[...]` or `ExpoPushToken[...]`, exactly as the app got it. */
             expoPushToken: string;
@@ -19446,6 +19504,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountDeletionResponse"];
+                };
+            };
+            /** @description account_deletion_blocked: money to settle first (reason.blockers, reason.balanceKobo). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletionBlockedBody"];
+                };
+            };
+        };
+    };
+    AccountController_cancelDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelDeletionResponseDto"];
                 };
             };
         };
