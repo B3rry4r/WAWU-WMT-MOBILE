@@ -7,7 +7,7 @@ order: 252
 priority: launch
 repo: all
 type: component
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-49]
 passes: [V1, V5, V6]
@@ -17,11 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 6, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** nothing (every source task is merged).
-- **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b` from `origin/wmt/MERGE-12`.
+- **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
+- **Rows:** 4 fixed, 2 ruled no with the reason in the row, 0 waiting.
+- **Next:** a verifier checks each row (the fixes have a test that fails before and passes after, or a measurement; the "no" rows carry their reason).
 
 ## Read first
 
@@ -45,18 +45,22 @@ Sign-up, sign-in and account recovery screens: AUTH tasks, and the findings of t
 
 ## Open lows
 
-| Source task | Id | Finding | Verifier report |
-|---|---|---|---|
-| AUTH-07 | N-2 | `knownSignupChannel()` is last-writer-wins at module level, so a late answer from an earlier visit can set what a newly mounted A3 draws first. | `tasks/AUTH-07.md`, Verifier report, round 4, line 517 |
-| AUTH-07 | N-3 | Nit: `sign-up.tsx`'s header comment says the line is asked on arrival; it is asked on each focus. | `tasks/AUTH-07.md`, Verifier report, round 4, line 518 |
-| CHECK-1 | F-6 | A3's heading sits 9 px lower than the render, the phone number is not grouped as drawn, A8's button carries an arrow the render does not. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 54 |
-| CHECK-1 | F-8 | An account whose email was never confirmed signs in to a message with no screen to finish confirming. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 56 |
-| SETTINGS-08 | L1 | A sign-in that waits behind another can be handed an access token that is already dead (`deletion-window.service.ts:171-174` returns the restored account at once on `not_pending`, while only the claimer waits for `sessionsRevokedAt`, `:221-224`). 5 of 18 tokens were 401 SESSION_INVALID in 3 parallel sign-ins within one second; the refresh token works and the new access token opens (self-heals). Make the `not_pending` branch wait for `sessionsRevokedAt` too. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 1 |
-| SETTINGS-08 | L2 | G-SETTINGS-08-2 stays low: the Hub accepts a pre-delete token for its 15 minutes, and a direct `POST /account/cancel-deletion` with it leaves WAWU ID `pending_deletion`; if the person never signs in, the right password after WAWU ID's day 30 gives 403 PERIOD_ENDED for an account the Hub holds as live. Needs a hand-made call plus 30 days away. Add the lock-out sentence to the gap row. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 2 |
+| Source task | Id | Finding | Verifier report | Closed by |
+|---|---|---|---|---|
+| AUTH-07 | N-2 | `knownSignupChannel()` is last-writer-wins at module level, so a late answer from an earlier visit can set what a newly mounted A3 draws first. | `tasks/AUTH-07.md`, Verifier report, round 4, line 517 | Fixed, mobile `c2f6cb5c`: only the latest ask of `signupChannel` sets what A3 draws first. New `auth-signup-channel.test.ts` (4 cases, 3 fail before) and N-1 in `auth-signup.test.tsx` now expects the latest answer to stand. |
+| AUTH-07 | N-3 | Nit: `sign-up.tsx`'s header comment says the line is asked on arrival; it is asked on each focus. | `tasks/AUTH-07.md`, Verifier report, round 4, line 518 | Fixed, mobile `c2f6cb5c`: the comment in `sign-up.tsx` says each focus. |
+| CHECK-1 | F-6 | A3's heading sits 9 px lower than the render, the phone number is not grouped as drawn, A8's button carries an arrow the render does not. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 54 | No: moot. DV2-05 rebuilt A3 to the 16 Oct design (`492385d7`, `960c40d3`, MERGE-8) and A8's arrow is gone (`OpenWalletEnd` gets no `actionIcon`). The board's grouped phone is a sample value; grouping a typed number changes the string sent to WAWU ID, not worth the risk in sign-up. |
+| CHECK-1 | F-8 | An account whose email was never confirmed signs in to a message with no screen to finish confirming. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 56 | No: `EMAIL_NOT_VERIFIED` comes only from web sign-ups whose emailed code was never entered (WAWU ID `auth.service.ts` login); the web is paused and the app's own sign-ups end in a code that `PHONE_NOT_CONFIRMED` resumes. A confirm screen needs a new WAWU ID resend route. The message already says to create the account again. |
+| SETTINGS-08 | L1 | A sign-in that waits behind another can be handed an access token that is already dead (`deletion-window.service.ts:171-174` returns the restored account at once on `not_pending`, while only the claimer waits for `sessionsRevokedAt`, `:221-224`). 5 of 18 tokens were 401 SESSION_INVALID in 3 parallel sign-ins within one second; the refresh token works and the new access token opens (self-heals). Make the `not_pending` branch wait for `sessionsRevokedAt` too. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 1 | Fixed, wawu-id `3a281d2`: the `not_pending` branch waits for `sessionsRevokedAt` as the claimer does. Spec in `deletion-window.spec.ts` (fails before, 28 pass after). |
+| SETTINGS-08 | L2 | G-SETTINGS-08-2 stays low: the Hub accepts a pre-delete token for its 15 minutes, and a direct `POST /account/cancel-deletion` with it leaves WAWU ID `pending_deletion`; if the person never signs in, the right password after WAWU ID's day 30 gives 403 PERIOD_ENDED for an account the Hub holds as live. Needs a hand-made call plus 30 days away. Add the lock-out sentence to the gap row. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 2 | Fixed, mobile `c2f6cb5c`: the lock-out sentence is on the G-SETTINGS-08-2 row. |
 
 ## Builder report
 
-_Filled in by the builder._
+Fixed 4 (AUTH-07 N-2, N-3; SETTINGS-08 L1, L2), ruled no 2 (CHECK-1 F-6, F-8), waiting 0.
+- Test N-1 in `auth-signup.test.tsx` pinned the old last-writer-wins answer; its one assertion now expects the latest ask's answer, because the row changes that behaviour.
+- Checks run (EXIT 0 unless noted): mobile `tsc --noEmit`, eslint on every changed file, `npm run gates` and `check_baseline`; jest of every touched area (communities 140, push 60, paid-messages 45, door 103, buyTickets 22, organiser 21) and a wider run of chat, credits, events, schools, legal, money-attempt and auth-signup (40 suites, 799 tests); backend `tsc`, eslint on changed files (warnings only, none new), gates, the earn spec (29) and the TGIF spec (19), the protected suite (253 of 253, on a seeded test database); wawu-id `tsc`, eslint, prettier and `deletion-window.spec.ts` (28 of 28) against a local Postgres.
+- Fail-before runs were made by putting the old file back for one run (no stash).
+- Test databases `w4b_test_wawu_id` and `w4b_test_wawu_hub_test`, mock WAWU ID on 7841; all removed or stopped at hand-back.
 
 ## Verifier report
 

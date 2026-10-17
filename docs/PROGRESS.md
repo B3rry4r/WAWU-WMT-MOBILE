@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 80 | 0 | 0 | 0 |
+| todo | 77 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 88 | 0 | 0 | 0 |
+| verifying | 91 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -68,6 +68,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
+- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
+- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
+- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
