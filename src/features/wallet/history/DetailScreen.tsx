@@ -17,6 +17,8 @@ import { StatusPill } from '@/components/StatusPill';
 import { EmptyState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
+import { transactionReference } from '@/features/support/api';
+import { useOpenSupport } from '@/features/support/useOpenSupport';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { radius, space, useWawu } from '@/theme';
@@ -30,7 +32,7 @@ import { receiptOf, shareText, type RowLead } from './model';
  * the secondary colour 6 under the picture, the pill 4 under the figure; the figure is 40 and the picture 64. The reference's
  * copy glyph is 14 in the muted colour.
  */
-const DETAIL = { parts: 20, headGap: 8, headTop: 6, picture: 64, lineTop: 6, line: 14, figure: 40, pillTop: 4, copy: 14, copyMs: 1600, noticeIcon: 15, partMoney: 14.5 } as const;
+const DETAIL = { parts: 20, headGap: 8, headTop: 6, picture: 64, lineTop: 6, line: 14, figure: 40, pillTop: 4, copy: 14, copyMs: 1600, noticeIcon: 15, partMoney: 14.5, actionsGap: 10 } as const;
 
 export type DetailScreenProps = {
   id: string;
@@ -43,7 +45,8 @@ export type DetailScreenProps = {
  * the card, the amount, the provider's charge, WAWU's fee when there is one and the total (BRIEF W27, R-10), so the charge behind
  * its row on W26 can be checked here. Share receipt opens the phone's share sheet with the receipt's text and reference (R-33).
  *
- * Not drawn, because what it opens is another task's (R-47): Report a problem, the support chat (SUPPORT-01 adds it, as drawn).
+ * Report a problem, beside Share receipt as drawn, opens the support chat (I12) with this transaction already written as its first
+ * message (SUPPORT-01, R-30), so nobody describes it twice. A chat that could not be opened says so in the same line a failed share does.
  *
  * Default (agent), owner may override: the debit's parts sit in their own card under the canvas's card, which stays as drawn.
  */
@@ -52,12 +55,15 @@ export function DetailScreen({ id, onBack }: DetailScreenProps) {
   const { colors } = useWawu();
   const read = useQuery(transactionQuery(owner, id), queryClient);
   const row = read.data;
-  const [notice, setNotice] = useState<string | null>(null);
+  const [shareNotice, setNotice] = useState<string | null>(null);
   const [pulled, setPulled] = useState(false);
+  const support = useOpenSupport();
+  const notice = shareNotice ?? support.error;
 
   const share = async () => {
     if (!row) return;
     setNotice(null);
+    support.clearError();
     try {
       await Share.share({ message: shareText(row) });
     } catch {
@@ -113,7 +119,20 @@ export function DetailScreen({ id, onBack }: DetailScreenProps) {
                 </Text>
               </View>
             ) : null}
-            <Button label="Share receipt" icon="Share" variant="secondary" full onPress={() => void share()} testID="detail-share" />
+            <View style={styles.actions}>
+              <Button label="Share receipt" icon="Share" variant="secondary" onPress={() => void share()} style={styles.action} testID="detail-share" />
+              <Button
+                label="Report a problem"
+                variant="outline"
+                onPress={() => {
+                  setNotice(null);
+                  void support.open(transactionReference(row.id));
+                }}
+                loading={support.opening}
+                style={styles.action}
+                testID="detail-report"
+              />
+            </View>
           </>
         ) : undefined
       }
@@ -229,6 +248,9 @@ function DetailSkeleton() {
 
 const styles = StyleSheet.create({
   body: { gap: DETAIL.parts },
+  /** design/_gen/wallet.js line 119: Share receipt and Report a problem side by side, 10 apart, each taking half. */
+  actions: { flexDirection: 'row', gap: DETAIL.actionsGap },
+  action: { flex: 1 },
   head: { alignItems: 'center', gap: DETAIL.headGap, paddingTop: DETAIL.headTop },
   line: { marginTop: DETAIL.lineTop, fontSize: DETAIL.line, textAlign: 'center' },
   pill: { marginTop: DETAIL.pillTop },

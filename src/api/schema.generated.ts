@@ -5589,6 +5589,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/support/thread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * H18 "Contact support", W27 "Report a problem" and W35 "Help with a
+         *     payment": open the caller's support thread, or get the one that exists,
+         *     with the payment they are asking about already written into it. The same
+         *     reference sent again returns the same thread and the same message. A
+         *     reference that does not exist, or is someone else's, is 404.
+         */
+        post: operations["SupportController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats": {
         parameters: {
             query?: never;
@@ -8905,6 +8928,20 @@ export interface components {
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
             position?: number;
+        };
+        SupportReferenceDto: {
+            /**
+             * @description `transaction` is a row of the wallet's history (W27's id); `payment` is a
+             *     payment the person made, such as an unlock (the id the unlock answered).
+             * @enum {string}
+             */
+            kind: "transaction" | "payment";
+            /** Format: uuid */
+            id: string;
+        };
+        OpenSupportThreadDto: {
+            /** @description What the person wants help with. Left out: the thread opens with nothing attached. */
+            reference?: components["schemas"]["SupportReferenceDto"];
         };
         OpenChatDto: {
             /**
@@ -12842,12 +12879,24 @@ export interface components {
             eventId: string;
             userSaved: boolean;
         };
+        SupportReferenceView: {
+            /** @enum {string} */
+            kind: "transaction" | "payment";
+            id: string;
+            reference: string;
+        };
+        SupportThreadView: {
+            chatId: string;
+            reference: components["schemas"]["SupportReferenceView"];
+            messageId: string | null;
+        };
         ChatPerson: {
             wawuId: string;
             name: string;
             handle: string | null;
             avatarUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+            support?: boolean | null;
         };
         ChatAttachment: {
             url: string | null;
@@ -13009,6 +13058,7 @@ export interface components {
             handle: string | null;
             avatarUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+            support?: boolean | null;
         };
         InboxChat: {
             chatId: string;
@@ -25013,6 +25063,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchoolSettlementView"];
+                };
+            };
+        };
+    };
+    SupportController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenSupportThreadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportThreadView"];
                 };
             };
         };

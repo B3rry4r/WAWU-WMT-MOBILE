@@ -7,7 +7,7 @@ order: 174
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: [INBOX-06, INBOX-19, HOME-12, WALLET-04, WALLET-06]
 decisions: [R-30]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -17,10 +17,15 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-19, HOME-12, WALLET-04.
-- **History:** none yet. Reports go to tasks/history/SUPPORT-01.md.
+As of 17 Oct 2026.
+- **Status:** verifying. Builder done (Sonnet, T1). No PR (the lead merges).
+- **Branches:** backend `wmt/SUPPORT-01` `757db70` on `origin/wmt/MERGE-10` `3cf5a4b`; mobile `wmt/SUPPORT-01` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/S1` `9d221172` merged (HOME-12's unlock screen holds H18; conflicts in BACKEND_GAPS.md and SHARED-CHANGES.md kept both sides, `docs/PROGRESS.md` rebuilt, `contract/SOURCE_COMMIT` re-pointed).
+- **Built:** a support thread is the person's free chat with a fixed support account, so the inbox row (I1), unread count, read marks and live updates come from the chat. `POST /support/thread` opens it with a payment or wallet transaction of the caller written as the first message, once per reference; staff reply through `/admin/support/threads` (superadmin, support). No table, no migration.
+- **Entries:** H18 Contact support (payment), W27 Report a problem (transaction), W35 Help with a payment (nothing attached); the chat is I12's, the row is I1's "Who Made This?" with the app's mark.
+- **Not built (R-47, gaps filed):** a board for the support chat (G-SUPPORT-01-1), who replied (G-SUPPORT-01-2), a dashboard screen for staff (G-SUPPORT-01-3).
+- **Shared changes asked:** SUPPORT-01 #1 (`app.module.ts`), #2 (contract and generated types), #3 (assertions that said the entries were left out).
+- **Open findings:** none yet. Lows go to `tasks/SWEEP-MONEY.md` or the lead's choice.
+- **Next:** a lean verifier (claims list, the affected specs, pictures beside the boards, every drawn state), then merge: backend `app.module.ts` rows first, then `npm run api -- --backend ../wawu-backend`.
 
 ## Read first
 
@@ -53,13 +58,9 @@ three entry points to the screens that draw them, exactly as drawn (docs/WORKFLO
 - [ ] A staff reply reaches the user's chat, and the thread shows on I1 as the WAWU thread.
 - [ ] Another user can never read this thread.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SUPPORT-01.md](history/SUPPORT-01.md).
 
 ## Owner sign-off
 
