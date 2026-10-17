@@ -7,7 +7,7 @@ order: 260
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [SETTINGS-01, HOME-11, INBOX-03]
 decisions: [R-59]
 passes: [V1, V2, V3, V4, V9]
@@ -17,11 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 1 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below. Nothing blocks it; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/HOME-16.md.
+As of 17 Oct 2026. Built; a fresh session verifies, the builder does not.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend branch `wmt/HOME-16` (`f3090ea`, off main a5e48fc); mobile branch `wmt/HOME-16` (`2965dbd`, off wmt/MERGE-5 7de785d). No PR. Backend CI on `f3090ea`: Branch checks run 38988169052 (3 suite shards, contract, netns all green), Protected routes run 38988169121 green, Gates run 38988169026 red only on the same five lines as main.
+- **Migration:** `20261024080000_tgif_daily_notice` (one new table `TgifDailyNotice`, rollback in its header). The lead renames at merge if the stamp is taken.
+- **What a person gets:** every morning from 07:00 Lagos, one in-app notice per person with TGIF on ("TGIF: Sons, Not Slaves" / "Today's TGIF is ready. Romans 8:15 (NIV)."), and the phone push through INBOX-03. Tapping either opens the reader on that day (`/tgif?date=`); a notice more than a day old opens today's.
+- **Settings:** `GET` and `PATCH /settings/tgif` unchanged in shape and values. The switch is read in three places: the job (at the claim), `NotificationService.emit` and the push sender (just before sending).
+- **Shared changes filed:** HOME-16 #1 to #3 in `SHARED-CHANGES.md` (schema and migration, `contract/openapi.json`, the app's copy of the contract not regenerated).
+- **Gap:** G-806 carries a "Served by HOME-16" note with the defaults below.
+- **Defaults (agent), owner may override:** (1) the time is the environment key `TGIF_NOTIFICATION_TIME` (HH:MM, Lagos), default 07:00; the admin-settings row waits for TIER-06's pattern to merge; (2) the job looks every 5 minutes and makes the day's notices from the set time until 4 hours later (PROVISIONAL TGIF-NOTICE-CATCH-UP), so a hub that was down still sends a morning notice and nothing is sent in the afternoon; (3) the notice title is the day's series in title case with "TGIF: " in front, the body names the day's verse; (4) markers are kept 3 days (PROVISIONAL TGIF-NOTICE-KEEP).
+- **Not done, and why:** no card or toggle is changed on Today or in Settings (DV2-RM, DV2-06). The in-app list row (M31) does not exist yet: `GET /me/notifications` serves `target: null` for this kind (its enum is unchanged), so that row routes by `kind` later. Pictures: this task draws no screen (no artboard).
+- **Open question for the owner (via the lead):** one in-app row per person per day, for ever: nothing prunes `Notification` rows. Does the owner want a retention window (for example 90 days) for `tgif_daily`?
+- **Next:** the lead merges it with batch 6.
 
 ## Read first
 
@@ -48,13 +54,9 @@ People who keep "TGIF each morning" on (Z2) get a notification every morning; ta
 - [ ] Tapping the notice opens that day's reader.
 - [ ] A day with no TGIF sends nothing.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-16.md](history/HOME-16.md).
 
 ## Owner sign-off
 

@@ -16,7 +16,7 @@ import { font, layout, space, useWawu } from '@/theme';
 import type { TgifCard, TgifDay } from './api/tgif';
 import { CardBackdrop } from './CardBackdrop';
 import { ink, looks } from './look';
-import { cardLabels, cardText, compactCount, fitSize, headerLine, localDay, readerSteps, sponsoredSlot, wordLeading, wordSize, type WordRoom } from './model';
+import { cardLabels, cardText, compactCount, fitSize, headerLine, readerDay, readerSteps, sponsoredSlot, wordLeading, wordSize, type WordRoom } from './model';
 import { partMetrics, Progress } from './parts';
 import { ShareSheet } from './ShareSheet';
 import { useAmen, useCountRead, useDay, useStats } from './useTgif';
@@ -89,6 +89,8 @@ export type TgifReaderProps = {
   onOpenEvent?: (eventId: string) => void;
   /** The moment the reader was opened; the day it reads is this moment's calendar day on the phone. */
   now?: Date;
+  /** The day a morning notice was made for (HOME-16, `YYYY-MM-DD`). Read when it is yesterday, today or tomorrow on the phone, otherwise today is read. */
+  date?: string;
 };
 
 /**
@@ -98,8 +100,8 @@ export type TgifReaderProps = {
  * person has said from `GET /tgif/{date}/stats`. When a campaign is live, the sponsored card (H33,
  * `GET /ads?placement=tgif_card`, ADS-01) is a sixth step before the takeaway; the cards never wait for it.
  */
-export function TgifReader({ onClose, onOpenInbox, onOpenEvent, now }: TgifReaderProps) {
-  const [date] = useState(() => localDay(now));
+export function TgifReader({ onClose, onOpenInbox, onOpenEvent, now, date: requested }: TgifReaderProps) {
+  const [date] = useState(() => readerDay(requested, now));
   const day = useDay(date);
   const ad = useAd('tgif_card', Boolean(onOpenEvent));
   useCountRead(date, Boolean(day.data));

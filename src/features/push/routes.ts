@@ -14,11 +14,15 @@ import type { Href } from 'expo-router';
  *   - new_follower: the other person's profile (ME-02)
  *   - content_published, content_rejected, review_received: a piece of content (ME-07 and the content screens)
  *   - dm_received, dm_deadline: the paid question itself (INBOX-18); today the Inbox, where the question is listed
+ * tgif_daily (HOME-16) is built: it opens the TGIF reader (`/tgif`) on the day in its target.
  */
 export type PushTap = { kind?: unknown; target?: unknown };
 
 /** An id the Hub made: letters, digits and dashes only, so it can sit in a path. */
 const SAFE_ID = /^[A-Za-z0-9-]{1,64}$/;
+
+/** A day the Hub names, YYYY-MM-DD. The reader checks it is a real day near today. */
+const TGIF_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function targetOf(data: PushTap, kind: string): string | null {
   const target = data.target;
@@ -43,6 +47,12 @@ export function routeForPush(raw: unknown): Href | null {
     case 'dm_received':
     case 'dm_deadline':
       return '/inbox';
+    case 'tgif_daily': {
+      // HOME-16: the morning TGIF notice opens the reader on the day it was made for. A
+      // notice with no day (or a day that is not a safe date) opens today's reader.
+      const day = targetOf(data, 'tgif_day');
+      return day && TGIF_DAY.test(day) ? { pathname: '/tgif', params: { date: day } } : '/tgif';
+    }
     default:
       return null;
   }
