@@ -17,7 +17,7 @@ import { NavBar } from '../chrome';
 import { useRefetchOnFocus } from '../useRefetchOnFocus';
 import { CancelSheet } from './CancelSheet';
 import { CallOffLink, NetCard, StatTile, dashMetrics } from './organiserParts';
-import { cancelEvent, dashboardKey, fetchDashboard, fetchReferrals, referralsKey, type CancelAnswer } from './organiserApi';
+import { callOffKey, cancelEvent, dashboardKey, fetchCallOff, fetchDashboard, fetchReferrals, referralsKey, type CancelAnswer } from './organiserApi';
 import { dashboardDate, linksLine, tiersLine } from './organiserFormat';
 
 const KOBO = 100;
@@ -50,6 +50,7 @@ export function DashboardScreen({ id, onBack, onDoor, onTickets, onLinks, onEdit
   const tickets = useQuery({ queryKey: ticketsKey(id), queryFn: () => fetchTickets(id), retry: false });
   const links = useQuery({ queryKey: referralsKey(id), queryFn: () => fetchReferrals(id), retry: false });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions, retry: false });
+  const callOffCount = useQuery({ queryKey: callOffKey(id), queryFn: () => fetchCallOff(id), retry: false });
   useRefetchOnFocus(['events', 'dashboard']);
   const [sheet, setSheet] = useState(false);
   const [at] = useState(() => now());
@@ -141,7 +142,7 @@ export function DashboardScreen({ id, onBack, onDoor, onTickets, onLinks, onEdit
         )}
       </ScrollView>
       {/* Kept up once the event reads as called off: the sheet is then showing what happened, and Done closes it. */}
-      {data ? <CancelSheet visible={sheet} onClose={() => setSheet(false)} buyers={data.buyersToRefund} onCancel={callOff} onDone={onCalledOff} /> : null}
+      {data ? <CancelSheet visible={sheet} onClose={() => setSheet(false)} buyers={callOffCount.data ?? null} onCancel={callOff} onDone={onCalledOff} /> : null}
     </View>
   );
 }

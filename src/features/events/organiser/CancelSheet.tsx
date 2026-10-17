@@ -18,8 +18,8 @@ export type CancelSheetProps = {
   visible: boolean;
   /** Keep the event: closes the sheet and changes nothing. */
   onClose: () => void;
-  /** How many people the call-off refunds, from the Hub's dashboard. */
-  buyers: number;
+  /** How many people the call-off refunds, from the Hub (`GET /events/{id}/call-off`); null while it has not arrived. */
+  buyers: number | null;
   /** Calls it off. Rejects with the Hub's own refusal; resolves with its answer. */
   onCancel: (reason: string) => Promise<CancelAnswer>;
   /** The host has read what happened. */

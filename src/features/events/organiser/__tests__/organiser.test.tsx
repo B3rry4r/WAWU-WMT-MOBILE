@@ -51,7 +51,7 @@ const event = (n: number, over: Partial<EventView> = {}): EventView =>
   }) as unknown as EventView;
 
 const dashboard = (over: Record<string, unknown> = {}) => ({
-  eventId: UUID(1), eventName: 'Event 1', ticketsSold: 64, checkedIn: 3, remaining: 56, attendees: 64, grossNaira: 480000, netNaira: 408000, buyersToRefund: 40, referrals: [], ...over,
+  eventId: UUID(1), eventName: 'Event 1', ticketsSold: 64, checkedIn: 3, remaining: 56, attendees: 64, grossNaira: 480000, netNaira: 408000, referrals: [], ...over,
 });
 const options = { types: [], categories: [], formats: [], tickets: { hostSharePercent: 85 } };
 
@@ -108,6 +108,7 @@ describe('E17 to E25 · the words come from the Hub', () => {
     expect(refundLine(64)).toBe('All 64 buyers get their money back.');
     expect(refundLine(1)).toBe('The 1 buyer gets their money back.');
     expect(refundLine(0)).toBe('Nobody has paid for a ticket, so no money moves.');
+    expect(refundLine(null)).toBe('Everyone who paid for a ticket gets their money back.');
     expect(reasonError('too short')).toBeDefined();
     expect(reasonError('The venue withdrew.')).toBeUndefined();
     expect(reasonError(' '.repeat(20))).toBeDefined();
@@ -203,6 +204,7 @@ describe('E18 and E25 · the dashboard and calling it off', () => {
       if (c.path === `/events/${UUID(1)}`) return ok(event(1, over.ev ?? {}));
       if (c.path === `/events/${UUID(1)}/dashboard`) return ok(dashboard(over.dash));
       if (c.path === '/events/options') return ok(options);
+      if (c.path === `/events/${UUID(1)}/call-off`) return ok({ buyersToRefund: 40 });
       if (c.path === `/events/${UUID(1)}/tickets`) return ok([{ name: 'Regular' }, { name: 'VIP' }]);
       if (c.path === `/events/${UUID(1)}/referrals`) return ok([{ id: 'l1', code: 'A', label: 'A', ticketsSold: 10 }, { id: 'l2', code: 'B', label: 'B', ticketsSold: 12 }]);
       if (c.path === `/events/${UUID(1)}/cancel`) return over.cancel ?? { status: 201, body: { statusCode: 201, message: 'Created', data: { cancelled: true, ordersRefunded: 40, refundsNeedingAttention: 0 } } };
@@ -250,6 +252,16 @@ describe('E18 and E25 · the dashboard and calling it off', () => {
     const { client } = await boot();
     await rtl.screen.findByTestId('dash-net-figure');
     expect(rtl.screen.queryByTestId('dash-net-percent')).toBeNull();
+    client.clear();
+  });
+
+  it('with no count from the Hub the sheet says it without a number', async () => {
+    serve();
+    const base = handler;
+    handler = (c) => (c.path.endsWith('/call-off') ? { status: 500, body: { statusCode: 500, message: 'no' } } : base(c));
+    const { client } = await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('dash-call-off'));
+    expect(await rtl.screen.findByText('Everyone who paid for a ticket gets their money back.')).toBeTruthy();
     client.clear();
   });
 

@@ -2215,6 +2215,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/{id}/call-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many people calling the event off would refund (E25). */
+        get: operations["EventRunningController_callOffPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/{id}/door-staff": {
         parameters: {
             query?: never;
@@ -10171,6 +10188,9 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        CallOffPreview: {
+            buyersToRefund: number;
+        };
         DoorStaffView: {
             id: string;
             wawuUserId: string;
@@ -16695,7 +16715,6 @@ export interface operations {
                         attendees: number;
                         grossNaira: number;
                         netNaira: number;
-                        buyersToRefund: number;
                         referrals: {
                             code: string;
                             label: string;
@@ -16819,6 +16838,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoorEventList"];
+                };
+            };
+        };
+    };
+    EventRunningController_callOffPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffPreview"];
                 };
             };
         };
