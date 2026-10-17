@@ -21,6 +21,6 @@ Checks:
 - `tier-badge-contract-shape.spec.ts` (8): every `badge` is `{ allOf: [{ $ref }], nullable: true }` and required, `number` is a nullable integer, and the web's schemas have no `badge`.
 - Mutants (7), each killed by a spec: keep-number removed, ended shown, state test removed, profile `badge` null, card `badge` null, number shown on a non-numbered badge, no number on upgrade.
 - Also green locally: `tier-grant.spec.ts`, `plans-contract-shape.spec.ts`, `plan-purchase-grant.contract.spec.ts`, `profile-fields.contract.spec.ts`. `data-export.contract.spec.ts` could not run on this stack (its mock WAWU ID outbox needs a service key the stack's mock does not share: 15 fail before and after, at `outbox()`); CI runs it.
-- Backend CI: see the hand-back for the run ids.
+- Backend CI on `493a276`: branch checks run 38991057829 green, protected route suite run 38991057824 green, baseline run 38991057843 green, executable gates red with the same 5 FAIL lines as main. Mobile full check: EXIT 0 (184 suites, 3243 tests).
 
 Not done: ranking by tier in search and Explore (G-420; the task says only if the owner asks); `?include=badge` on the web's routes; the badge on search hits and on the byline of a content card.
