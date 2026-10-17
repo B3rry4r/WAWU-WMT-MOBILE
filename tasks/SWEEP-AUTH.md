@@ -17,11 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026.
-- **Status:** verifying. Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b` from `origin/wmt/MERGE-12`.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 15.
+- **Status:** merging (lead). Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b`; verifier PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`: the 16 fixed rows check out, 12 red before and green after, the ruled-no reasons read hold). Stacked in batch 15 by MERGE-15 (backend, mobile and WAWU ID `wmt/MERGE-15`); not on main.
 - **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
-- **Rows:** 4 fixed, 2 ruled no with the reason in the row, 0 waiting; 3 more rows were added at MERGE-13 and stay open (last column).
-- **Next:** a verifier checks each row (the fixes have a test that fails before and passes after, or a measurement; the "no" rows carry their reason).
+- **Rows:** 4 fixed, 2 ruled no with the reason in the row, 0 waiting; 3 more rows were added at MERGE-13 and stay open (last column); 1 more row added at MERGE-15 from the verifiers' reports, open (last column).
+- **Next:** the batch 15 pull request (the lead). The verifier's lows are rows of this table (last column Open).
 
 ## Read first
 
@@ -56,6 +56,7 @@ Sign-up, sign-in and account recovery screens: AUTH tasks, and the findings of t
 | SETTINGS-05 | L1 | G-SETTINGS-05-2 is filed wrongly. `BACKEND_GAPS.md` says Android's back signs out on Z8 and that a phone closed without Done keeps its session. The route swallows back (`src/app/settings/delete-account/scheduled.tsx:18`, `useSystemBack(() => undefined)`), and wawu-id revokes refresh tokens when the deletion is scheduled (a refresh after scheduling answers 401, a control account 200), so such a phone is signed out when its access token ends. Fix the gap text. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 1 | Open: added at MERGE-13, after this sweep's base. |
 | SETTINGS-05 | L2 | A creator with an owed earning and no wallet gets Continue open on Z6 and learns of the refusal only at Z7, after typing DELETE. Correct by R-6 and the Hub being the authority; a Hub read for it would let Z6 say so earlier. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 2 | Open: added at MERGE-13, after this sweep's base. |
 | SETTINGS-05 | L3 | The backend reason spec (`account-deletion-reason.contract.spec.ts`) drives the service and the DTO pipe, not the HTTP route (the verifier checked the route on the stack). The owed earning in the builder's and the verifier's checks is a `WalletPayment` row of the shape B3a counts, not one made through a money route. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 3 | Open: added at MERGE-13, after this sweep's base. |
+| AUTH-07 | W4b N3 | Note. `forgetSignupChannel()` also bumps `lastAsk`; it has no product caller (tests only), so no behaviour change. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Notes 3 | Open: found by the verifier at batch 15. |
 
 ## Builder report
 

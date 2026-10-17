@@ -4613,6 +4613,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/users/{wawuId}/visitor-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ME-02: everything M5, M6 and M33 draw about somebody else, in one answer
+         *     (the public profile, the profile fields, the person's name, whether the
+         *     caller follows them, their live listings). A person the public profile
+         *     hides is a 404 here as well.
+         */
+        get: operations["UserProfileController_getVisitorProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/users/{wawuId}/profile-fields": {
         parameters: {
             query?: never;
@@ -7502,28 +7524,6 @@ export interface paths {
          *     its window) is a plain 404, the same for all of them.
          */
         post: operations["AdsEventsController_record"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/users/{wawuId}/visitor-profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ME-02: everything M5, M6 and M33 draw about somebody else, in one answer
-         *     (the public profile, the profile fields, the person's name, whether the
-         *     caller follows them, their live listings). A person the public profile
-         *     hides is a 404 here as well.
-         */
-        get: operations["UserProfileController_getVisitorProfile"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -12986,6 +12986,19 @@ export interface components {
             followingCount: number;
             communityCount: number;
         };
+        VisitorListingView: {
+            id: string;
+            headline: string;
+            category: string;
+        };
+        VisitorProfileView: {
+            name: string | null;
+            own: boolean;
+            following: boolean;
+            profile: components["schemas"]["CreatorProfile"];
+            fields: components["schemas"]["ProfileFieldsView"];
+            listings: components["schemas"]["VisitorListingView"][];
+        };
         ProfileWorkOwnerView: {
             wawuId: string;
             displayName: string | null;
@@ -14695,19 +14708,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        VisitorProfileView: {
-            name: string | null;
-            own: boolean;
-            following: boolean;
-            profile: components["schemas"]["CreatorProfile"];
-            fields: components["schemas"]["ProfileFieldsView"];
-            listings: components["schemas"]["VisitorListingView"][];
-        };
-        VisitorListingView: {
-            id: string;
-            headline: string;
-            category: string;
         };
     };
     responses: never;
@@ -24245,6 +24245,27 @@ export interface operations {
             };
         };
     };
+    UserProfileController_getVisitorProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitorProfileView"];
+                };
+            };
+        };
+    };
     UserProfileController_getProfileFields: {
         parameters: {
             query?: never;
@@ -29468,27 +29489,6 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
-                };
-            };
-        };
-    };
-    UserProfileController_getVisitorProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                wawuId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisitorProfileView"];
                 };
             };
         };

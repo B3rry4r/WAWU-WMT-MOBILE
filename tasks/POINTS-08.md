@@ -17,13 +17,14 @@ artboards: [PT2, PT2a, PT2b, PT2c]
 
 ## Current state
 
-As of 17 Oct 2026, built (Sonnet builder, T2). Status: verifying. Not yet checked by a verifier.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 15.
+- **Status:** merging (lead). Verdict: PASS (one job and one hold per key; done commits, failure releases; the poll stops; no provider name); 2 lows and a note (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-08.md`). Stacked in batch 15 by MERGE-15 (backend `wmt/MERGE-15`, mobile `wmt/MERGE-15`); not on main.
 - **Branch:** mobile `wmt/POINTS-08` on `origin/wmt/POINTS-07` `1cd84d3b` (contract synced from backend `90ab9aa`, no backend change, no PR).
 - **Built:** `/studio-tool?tool=voiceover` (`ToolScreen`, PT2, PT2a, PT2b, PT2c), driven by the tool's description from `GET /ai-tools` (name, text limit, characters per minute, cost, voices); Studio's VoiceOver tile now opens it. Run mounts `useJobCheck` (PT3, PT3a, PT3b, PT7) then `POST /ai-tools/voiceover/jobs` with one `Idempotency-Key` kept on the phone (`voiceoverIntent.ts`); working reads `GET /ai-tools/jobs/{id}` every 2 s; done plays the audio (`ResultPlayer`) and says what it took; failed shows the Hub's own sentence.
 - **Not drawn (R-47), gaps filed:** the play button on each voice row (G-POINTS-08-1), Save and "Use in a product" (G-POINTS-08-2, same fact as G-AITOOLS-01-4, so the capability check "attach the audio to a draft" is open), "Your voice" (G-AITOOLS-01-1), the "Bio" chip (it names the Voice Intro), "Example values". G-POINTS-08-3: the Hub has no job list, so a finished job seen once cannot be found again.
 - **Shared-change rows:** POINTS-08 #1 (`VoicePlayer` takes a `name`; until then `ResultPlayer` stands in and goes with it), #2 (one `studioFlow` case changed because its tile is now a button).
 - **NOT RUN:** a real voice provider (never called); V10 on a device; playing the audio on a phone (web export only: a click plays the stand-in's file).
-- **Next:** a lean verifier (V1, V4, V5, V6, V9 on the stack); the lead merges with the next batch.
+- **Next:** the batch 15 pull request (the lead). The verifier's lows are in SWEEP-APP (POINTS-08 L1, L2).
 - **History:** none yet. Reports go to tasks/history/POINTS-08.md.
 
 ## Read first
@@ -54,19 +55,9 @@ A person runs VoiceOver from text: the input, the voice, the cost, Run; sees it 
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-Mobile `wmt/POINTS-08` (T2). No backend change.
-- **Files:** new `src/features/points/` `ToolScreen`, `ResultPlayer`, `voiceoverApi`, `voiceoverModel`, `voiceoverIntent`, tests `toolFlow` (21) and `voiceoverModel` (6), `src/app/studio-tool.tsx`. Changed: `PointsFrame` (optional `subtitle`, PT2's "Points: 1,250"), `src/app/studio.tsx` (`onOpenTool`), `studioFlow.test.tsx` (one case, SHARED-CHANGES #2).
-- **Checks (user can ...):** type words and see the length and the Hub's own cost ("This uses 250 points", from `POST /points/quote`, minutes from the Hub's `charactersPerUnit`) before Run; Run once and play the finished audio; a failed job shows the Hub's words and the balance is unchanged; a cost that moved is shown again before anything runs; too few points opens PT3 and the daily limit PT7, nothing is sent; leave while it works and come back to the same job; a lost answer then Try again is one job (same key). Not done: attach the audio to a draft (G-POINTS-08-2).
-- **Stack (V9, `pts08`, ports 7860-7867, Nuvion and voice stand-ins, backend `90ab9aa`):** real jobs through the web export. Double tap Run: 1 request, balance 1,000 to 750. Lost answer (response dropped), then Try again: the same key twice, 750 to 500, one job. Failed job (stand-in refuses): banner "That didn't work / No points were taken. Try again." (the Hub's), balance 1,000 to 1,000. Daily limit after 3 big jobs: PT7. Pictures (390 px, light and dark, beside each board): `scratchpad/points-08-b/pics/beside-PT2`, `-PT2a`, `-PT2b`, `-PT2c` (`-light`, `-dark`); alone: PT2-empty, PT2-unsent, PT7, PT2-error (refused connection to `GET /ai-tools`), PT2-loading.
-- **Differences from the boards (recorded):** no play button on voice rows, no "Your voice" row, no "Example values", no "Bio" chip, no Save and Use in a product rows (gaps above); "Points: N" and "N points used · M left" are the Hub's reads (the board's 1,250 and 1,000 are examples); the player shows 0:00 until the audio reports its length; the screen reader hears "Play VoiceOver" not "Bio" (SHARED-CHANGES #1). The pictures with `[[slow:9000]]` or `[[fail]]` in the box are the stand-in's own commands to make a job slow or fail.
-- **Checks run:** tsc EXIT 0; eslint on changed files EXIT 0; jest `src/features/points` 6 suites 92 pass (toolFlow 21, voiceoverModel 6, studioFlow with one case changed); gates 0 fail, 9 warn, 0 accepted (`files scanned: 898`; first run had 4 fails in `ToolScreen`, fixed in the code).
-- **Not done:** Save and Use in a product; voice previews; the player's error state (the audio source reports none).
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-08.md](history/POINTS-08.md).
 
 ## Owner sign-off
 

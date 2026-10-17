@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 297.**
+**Launch tasks done: 176 of 299.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 63 | 0 | 0 | 0 |
+| todo | 57 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 106 | 0 | 0 | 0 |
+| verifying | 114 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-61](../tasks/FIX-61.md) A paid-question spec that failed for ten minutes of every day no longer meets Lagos midnight (You)
+- [FIX-60](../tasks/FIX-60.md) The content share link opens the app (You)
 - [FIX-59](../tasks/FIX-59.md) My purchases lists every paid kind (tickets, credit packs, school fees, community passes) (You)
 - [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
@@ -64,7 +66,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
+- [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
 - [ME-03](../tasks/ME-03.md) The Me menu (You)
+- [INBOX-18](../tasks/INBOX-18.md) Answer paid questions (creator) (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SUPPORT-01](../tasks/SUPPORT-01.md) Support chat that opens with the payment or piece it is about (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
@@ -80,6 +84,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
+- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
+- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
+- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
@@ -94,6 +101,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
 - [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
 - [POINTS-07](../tasks/POINTS-07.md) Studio: the AI tools, not enough points, the daily limit (You)
+- [POINTS-08](../tasks/POINTS-08.md) One AI tool: VoiceOver, working, done, failed (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
@@ -320,8 +328,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
+- 17 Oct 2026 · FIX-61 · Built (Sonnet builder, T1; backend `wmt/FIX-61` `cc0da36` on `origin/wmt/MERGE-13` `6bc7b20`, test files only; status verifying): `paid-dm-wallet` "two answers in a day" failed on CI for about ten minutes of every day (starts 22:11 to 22:21 UTC) because the pay harness sweeps at a clock that runs ahead of the wall clock and the third answer's sweep fell after Lagos midnight (23:00 UTC), where a new move is right (R-55): a test cause, not the product. The harness gets `keepInLagosDay`, called by the two one-move-a-day specs; the rule is pinned on both sides of midnight with no database; reproduced by starting the spec at 22:12 to 22:20 UTC (fails) and passing after.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, S1b round 2): the locked course's foot is padded by its measured height so nothing sits under it (H25); Send posts a comment once (H21); the preview pill no longer covers the book's page count (H19, H20); `Pill` gains `flush` (SHARED-CHANGES HOME-03 #5); tests added, none loosened; status verifying.
+- 17 Oct 2026 · ME-02 · Builder (Sonnet, T1; mobile `wmt/ME-02` on `origin/wmt/HOME-07` `32cff62d`, backend `wmt/ME-02` `e8e8a1d` on `61b6743`; additive, no migration; status verifying): someone else's profile at `/profile/<wawuId or handle>` (M5 with Follow and the ₦ tip, M6 Following with one write per tap, M33 About as a CV with Follow pinned; Content, Services, About; a blocked or gone person shows the Hub's answer), one new route `GET /users/{wawuId}/visitor-profile`, and the entries that lead to it (Home rail, feed creator card, Explore, All creators, Categories, Search, a work's creator, `/u/<handle>`). Message waits for INBOX-10.
 - 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, bundle S1b): a piece's own page `/content/<id>`: H19 locked, H20 unlocked, H21 comments, H22 share, H23 rate, H24 free video, H25 course, on HOME-12's unlock and HOME-13's tip sheets; backend `GET /content/{id}/detail` also carries who made it (`wmt/S1b` `b5f5538`); a feed caption and a Search result open it; mobile `wmt/S1b` on MERGE-11 with S1 and EXPLORE-02-R2 merged; gaps G-HOME-03-1 to 5, G-HOME-08-1 to 3; status verifying.
 - 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.
@@ -332,6 +343,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).
 - 17 Oct 2026 · SUPPORT-01 · Built (Sonnet builder, T1; backend `wmt/SUPPORT-01` `757db70` on `origin/wmt/MERGE-10` `3cf5a4b`, mobile `wmt/SUPPORT-01` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/S1` `9d221172` merged; no migration; status verifying): H18 Contact support, W27 Report a problem and W35 Help with a payment open the support chat (I12, row on I1 as "Who Made This?") with the payment or transaction already written as its first message (`POST /support/thread`, once per reference; someone else's or a missing reference is 404); staff reply through `/admin/support/threads`; gaps G-SUPPORT-01-1 to -4, shared changes SUPPORT-01 #1 to #3.
 - 17 Oct 2026 · SETTINGS-05 · Built (Sonnet builder, T2 identity; mobile `wmt/SETTINGS-05` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `8f2efc8d` merged, backend `wmt/SETTINGS-05` `56c4b61` on `origin/wmt/SETTINGS-08`; migration `20261025181000`, contract changed; status verifying): Z2's Delete account line, Z6 (the bank's balance, Withdraw, no wallet warning without a wallet), Z7 (optional reason the Hub now keeps, type DELETE, the Hub's refusal in its words) and Z8 (the Hub's date, Done signs out); checked on a stack with the real wawu-id (blocked with money, blocked with an owed earning, scheduled, a sign-in cancelled once, a double tap made one schedule); gaps G-SETTINGS-05-1 and -2.
-- 17 Oct 2026 · POINTS-07 · Built (Sonnet builder, T2; mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4`, contract from backend `90ab9aa`; no backend change; status verifying): Studio (`/studio`, PT1 and PT1a) lists the tools `GET /ai-tools` gives with the Hub's costs, from the Home Studio tile and the Create hub's Studio card (M19, with the points count); `useJobCheck` shows PT3, PT3a, PT3b or PT7 from `POST /points/quote` and buys exactly the missing points with the PIN, once (stack: 1,000 + 250 = 1,250 points, 1 debit after a wrong PIN; limit reached by 3 real jobs); gaps G-POINTS-07-1 to -4.
-- 17 Oct 2026 · AITOOLS-01 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`, mobile `wmt/AITOOLS-01` on `47555987`; migration `20261025182000_ai_tool_jobs`; status verifying): `GET /ai-tools` lists VoiceOver with its cost, `POST /ai-tools/voiceover/jobs` holds the points, makes the audio through one provider seam and keeps them only on success, `GET /ai-tools/jobs/{id}` says working, done or "No points were taken"; two jobs at once never go below zero, each cap is named with nothing held, a lost answer and a retry run one job. NOT RUN against the real voice provider (no key on any build machine); run against a local stand-in. G-AITOOLS-01-1 to -5 filed.
-- 17 Oct 2026 · ME-12, VERIFY-04, VERIFY-05 · Built (Sonnet builder, bundle S7; mobile `wmt/S7` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `4817f904` merged, both sides kept; no backend change, no migration; status verifying): `/tiers` (VF5, VF5b), `/checkout` (VF6 to VF6d, one fresh quote and one `Idempotency-Key` per attempt, the shared PIN sheet, a short wallet to Add money), `/tier-done` (VF7, VF7a), `/publish` (VF12 to VF12c with the identity check VF15 to VF15b), the VF13 sheet and `/your-tier` (VF14 to VF14b); entries on Create, the upload step, the draft form, Me and Settings. E21's See tiers is not drawn (G-ME-12-2).

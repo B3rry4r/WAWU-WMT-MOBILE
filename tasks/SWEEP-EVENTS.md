@@ -17,11 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026.
-- **Status:** verifying. Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b` from `origin/wmt/MERGE-12`.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 15.
+- **Status:** merging (lead). Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b`; verifier PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`: the 16 fixed rows check out, 12 red before and green after, the ruled-no reasons read hold). Stacked in batch 15 by MERGE-15 (backend, mobile and WAWU ID `wmt/MERGE-15`); not on main.
 - **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
-- **Rows:** 3 fixed, 7 ruled no with the reason in the row, 2 waiting.
-- **Next:** a verifier checks each row (the fixes have a test that fails before and passes after, or a measurement; the "no" rows carry their reason).
+- **Rows:** 3 fixed, 7 ruled no with the reason in the row, 2 waiting; 1 more row added at MERGE-15 from the verifiers' reports, open (last column).
+- **Next:** the batch 15 pull request (the lead). The verifier's lows are rows of this table (last column Open).
 
 ## Read first
 
@@ -59,6 +59,7 @@ Events, tickets and the door scan: EVENTS tasks. Backend and mobile. Only the ro
 | EVENTS-06 | L4 | E2 starts with the first tier the Hub lists; the Hub lists the free tier first, so a mixed event opens with "Free entry 1" and the priced tier at 0 (the artboard has the priced tier first). Unclear whose order is right: Hub list order or the app. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-06.md, finding 4` | No: the Hub's list order is the host's order of tiers; the app shows it and starts at the first listed tier. It does not re-sort for the buyer. If priced-first is wanted, it is the host's order (EVENTS-11 edits tiers). |
 | EVENTS-08 | L1 | A called-off event's E18 shows "Left 110" and Sold 0: the Hub counts all voided tickets as left. The figures are the Hub's own, but "Left" has no meaning for a called-off event. Hide "Left" once called off. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-08.md, finding 1` | Fixed, mobile `3c5cfee3`: E18 draws no "Left" tile once the event is called off. Test in `organiser.test.tsx`. |
 | EVENTS-08 | L2 | The buyer's refund line was only checked with a zero Nuvion fee (the stack's book-transfer fee is 0), so "the provider's charge comes back too" (EVENTS-10 ruling) was not seen on the stack; EVENTS-10's own spec covers it. Run it with a non-zero fee. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-08.md, finding 2` | No: the refund line is the Hub's figure shown as sent, never recomputed; EVENTS-10's own spec covers the non-zero fee at the Hub. A stack run with a non-zero stand-in fee is a verifier check, not a code change. |
+| EVENTS-06 | W4b N2 | Note. The reason given for L4 (ruled no), "does not re-sort", is loose: `EventDetailScreen` partitions open tiers before closed ones, each in the Hub's order. The ruling stands. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Notes 2 | Open: found by the verifier at batch 15. |
 
 ## Builder report
 
