@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 123 | 0 | 0 | 0 |
+| todo | 122 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 56 | 0 | 0 | 0 |
+| verifying | 57 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -27,6 +27,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EXPLORE-05](../tasks/EXPLORE-05.md) Search: communities, recent and popular searches, ticks (You)
 - [INBOX-16](../tasks/INBOX-16.md) Buy WAWU Credits from the wallet (backend) (You)
 - [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
+- [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
@@ -244,6 +245,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · EVENTS-06 · Built (Sonnet builder; mobile `wmt/EVENTS-06` on `wmt/MERGE-7` `0aca612c`; no backend, migration or contract change; status verifying): E2 draws the steppers, the running total and Get tickets; Get tickets makes the wallet order, E3 is the shared pay sheet with the Hub's bank charge, E4 the PIN sheet, E10 the Hub's still-confirming (polled, kept on the phone, never paid twice), E5 `/events/orders/<id>` the ticket with Add to calendar and My tickets; a ₦0 basket is issued with no wallet, sheet or PIN (R-8); the Hub's message shows for `event_order_limit`. Pictures beside the boards at 390 px light and dark. Filed G-827, G-828, SHARED-CHANGES EVENTS-06 #1 (the pay button's dot).
 - 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
 - 17 Oct 2026 · EVENTS-13 · Round 2 (Sonnet builder; backend `wmt/EVENTS-13` `bce009c`, was `b22e1b6`): the twenty-buyers test counts `ordersRefunded: 20` again and fails when `CONCURRENCY` is 1 (5 refunded), passes at 5; the cancel answer is two declared shapes so the contract no longer calls `ordersLeftToSweep` nullable (`contract:build` twice identical); 29 of 30 runs of the twenty-buyers test, the 1 failure on its unchanged read-latency assertion (1521 ms read after the cancel ended). Status verifying.
 - 17 Oct 2026 · EVENTS-13 · Builder report (Sonnet builder; backend `wmt/EVENTS-13` `b22e1b6` on `wmt/MERGE-7` `ca9ec13`, mobile record on `3817f5b`; no migration; status verifying): a buyer holds at most N open paid ticket orders per event (admin setting `events.open_orders_per_buyer`, default 10; order N+1 is 409 `event_order_limit` before anything is recorded, held under a lock inside the payment's claim); two cancels at once answer one 201; a free order at the instant of a cancel keeps no valid ticket; the call-off answer says `ordersLeftToSweep` (EVENTS-10 F2 closed); the twenty-buyers test sends its cancel first and passes 30 of 30 under load (its flake was another process's hold sweep on the same database, not the 15 s budget). CI green except the gates job's one pre-existing FAIL.
@@ -258,4 +260,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · TIER-07 · Builder report (Sonnet builder; backend `wmt/TIER-07` `493a276` on main `a5e48fc`, mobile `wmt/TIER-07` on `7de785d` (docs only); migration `20261024090000_maker_badge_number`; status verifying): a person's tier badge is on the profile fields, the feed, explore and directory cards while their tier runs, with the Founding Maker number (`badge.number`) taken once inside the tier grant, kept for life, gap-free and never reissued. The web's routes gain no key. 3 new specs, 7 mutants killed. G-803 built; G-420 (ranking by tier) not done, as the task says.
 - 17 Oct 2026 · KYC-07 · Built (status verifying; mobile `wmt/KYC-07` from KYC-06 `96f92d7`, no backend change): A30 flag on Home while the wallet is not open, A31 "Complete your account" 1 of 4, and the chain A31, A5, A26, A27, A28 made real under the review opening (numbers held in memory only, typed name and date of birth, no selfie); gaps G-824, G-825.
 - 17 Oct 2026 · KYC-06 · Round 2 built (status verifying; mobile `wmt/KYC-06`, no backend change): a rejected person with no details held is led to the first step to add them, never back to A29; photos and bill dropped on every way out; the four routes behind the signed-in guard (SHARED-CHANGES KYC-06 #1 applied); ID type and number, bill type and postal code sent in the open call (G-820); a passport has one side (G-822); A28 reads "This usually takes a few minutes." (G-821); the alert when the number is ready needs a backend notice (G-823); A27 Submit says what is missing and the A28 and A29 errors have Close.
-- 17 Oct 2026 · KYC-06 · Built (status verifying; mobile `wmt/KYC-06`, no backend change): Open your wallet's last steps, A26 your ID document (both sides, held in memory), A27 proof of address with the home address and Submit (details only while the Hub has no opening, then the ID in one multipart request, then the bill), A28 Checking your details (polls `GET /money/wallet`, A8 once the number is active), A29 Rejected (the Hub's reasons and fixes, Upload again only when `canResubmit`), and `/open-wallet` resumes by `review.stage`. V5 pictures and a built Hub on nuvion NOT RUN (builder report); G-820 to G-822 and SHARED-CHANGES KYC-06 #1 filed.
