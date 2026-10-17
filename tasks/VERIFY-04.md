@@ -43,6 +43,7 @@ After paying, the draft accepts files and the person publishes their first produ
 - VF12 to VF12c: add the file, uploading, published, and the share sheet (the phone's share sheet, R-33, no custom card). The meter is `ProductsMeter` (DV2-COMP).
 - VF15 to VF15b: after payment the BVN and NIN check runs as when opening a wallet (`GET /money/identity`, KYC-05 screens); the paused state reads the publish gate's reason (`TierGateReasonDto.code`, `message`). G-660 to G-662 apply.
 - A person with no tier who taps Publish or any upload is sent to VF5 (ME-12); this task adds that tap on the Create steps M20 to M22 as drawn.
+- The category: this task collects it before the first publish; the draft form (VERIFY-01) stays without it (lead ruling, 17 Oct 2026, VERIFY-01 round 2).
 
 ## Capability checks
 
