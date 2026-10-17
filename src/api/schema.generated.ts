@@ -5558,6 +5558,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/chats/{chatId}/money-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the other person in the chat for money. Writes the request into the
+         *     chat as a message of kind `money_request` and answers that message,
+         *     which carries the request. Nothing moves until they pay. The asker needs
+         *     an open wallet (to receive what they ask for): without one the answer is
+         *     `409` with `reason.code` `wallet_not_open` or `wallet_opening`. A block
+         *     in either direction is `403 chat_blocked`. `clientRequestId` makes a
+         *     resend after a lost answer return the first request.
+         */
+        post: operations["MoneyRequestController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/money-requests/{requestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One request as it stands now. A payment that was not confirmed when it
+         *     was made is settled from its send first, so this is the route the app
+         *     polls while a request shows `paying`.
+         */
+        get: operations["MoneyRequestController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/money-requests/{requestId}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pay a request: a send to the person who asked, for the amount asked, with
+         *     the wallet send's fees on top (R-10: the provider's charge and WAWU's
+         *     fee, quoted by `GET /money/fees/quote?kind=wawu_transfer`; the requester
+         *     gets exactly the amount). Only the person who was asked can pay, and only
+         *     while the request is `pending` and no payment for it is on its way. Answers
+         *     201 with the send, as `POST /money/transfers/wawu` does: completed (the
+         *     request is then `paid`), pending (not confirmed yet: the request shows
+         *     `paying`, and is never paid again), or failed (nothing moved; the request
+         *     is still `pending`). The same Idempotency-Key and body answer the first
+         *     result again (`Idempotent-Replayed: true`) without checking the PIN. The
+         *     key is tied to the request it was first used on: the same key on another
+         *     request is `409 idempotency_key_reused`, never that request's receipt. A
+         *     request that is not the caller's, no longer pending, or already being paid
+         *     is answered before the PIN is looked at: `403 money_request_not_yours`,
+         *     `409 money_request_not_pending`, `409 money_request_being_paid`.
+         */
+        post: operations["MoneyRequestController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/money-requests/{requestId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The person who was asked says no. Final; the same answer again is not an error. */
+        post: operations["MoneyRequestController_decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/money-requests/{requestId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The person who asked takes it back. Final; the same answer again is not an error. */
+        post: operations["MoneyRequestController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tgif/{date}": {
         parameters: {
             query?: never;
@@ -8504,6 +8617,23 @@ export interface components {
              *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
              */
             contentLength: number;
+        };
+        CreateMoneyRequestDto: {
+            /** @description What is asked for, in kobo. */
+            amountKobo: number;
+            /** @description What it is for ("Logo edits, round 2"). */
+            memo?: string;
+            /**
+             * @description The sender app's own id for this request, so a resend after a lost
+             *     answer returns the first request instead of asking twice.
+             */
+            clientRequestId?: string;
+        };
+        PayMoneyRequestDto: {
+            /** @description `totalKobo` from the fee quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `quoteToken` from that fee quote (`GET /money/fees/quote?kind=wawu_transfer`). */
+            quoteToken: string;
         };
         ReactTgifDto: {
             /**
@@ -12245,15 +12375,32 @@ export interface components {
             bytes: number;
             name: string | null;
         };
+        MoneyRequestView: {
+            id: string;
+            chatId: string;
+            messageId: string | null;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            requesterWawuId: string;
+            payerWawuId: string;
+            amountKobo: number;
+            memo: string | null;
+            /** @enum {string} */
+            status: "pending" | "paid" | "cancelled" | "declined";
+            paying: boolean;
+            createdAt: string;
+            resolvedAt: string | null;
+        };
         ChatMessage: {
             id: string;
             chatId: string;
             senderWawuId: string;
             mine: boolean;
             /** @enum {string} */
-            kind: "video" | "image" | "text" | "file";
+            kind: "video" | "image" | "text" | "file" | "money_request";
             text: string | null;
             attachment: components["schemas"]["ChatAttachment"] | null;
+            moneyRequest: components["schemas"]["MoneyRequestView"] | null;
             clientMessageId: string | null;
             createdAt: string;
             /** @enum {string|null} */
@@ -12344,6 +12491,13 @@ export interface components {
             lastReadMessageId: string | null;
             cursor: string;
         };
+        LiveMoneyRequestEvent: {
+            /** @enum {string} */
+            type: "money_request.updated";
+            chatId: string;
+            message: components["schemas"]["ChatMessage"];
+            cursor: string;
+        };
         LiveCommunityMessageEvent: {
             /** @enum {string} */
             type: "community.message";
@@ -12352,7 +12506,7 @@ export interface components {
             cursor: string;
         };
         LiveCatchUp: {
-            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
+            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
             cursor: string;
             hasMore: boolean;
         };
@@ -12363,6 +12517,11 @@ export interface components {
             mine: boolean;
             senderName: string | null;
             sentAt: string;
+            moneyRequest: {
+                amountKobo: number;
+                /** @enum {string} */
+                status: "pending" | "paid" | "cancelled" | "declined";
+            } | null;
         };
         InboxPerson: {
             wawuId: string;
@@ -12393,16 +12552,30 @@ export interface components {
             /** @enum {string} */
             role: "host" | "member";
         };
+        InboxMoneyRequest: {
+            requestId: string;
+            chatId: string;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            other: components["schemas"]["InboxPerson"];
+            amountKobo: number;
+            memo: string | null;
+            /** @enum {string} */
+            status: "pending" | "paid" | "cancelled" | "declined";
+            paying: boolean;
+            canMessage: boolean;
+        };
         InboxItem: {
             id: string;
             /** @enum {string} */
-            kind: "paid_dm" | "community" | "chat";
+            kind: "paid_dm" | "community" | "chat" | "money_request";
             lastActivityAt: string | null;
             unreadCount: number;
             preview: components["schemas"]["InboxPreview"] | null;
             chat: components["schemas"]["InboxChat"] | null;
             paidDm: components["schemas"]["InboxPaidDm"] | null;
             community: components["schemas"]["InboxCommunity"] | null;
+            moneyRequest: components["schemas"]["InboxMoneyRequest"] | null;
         };
         InboxPage: {
             items: components["schemas"]["InboxItem"][];
@@ -24253,6 +24426,211 @@ export interface operations {
             };
         };
     };
+    MoneyRequestController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMoneyRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyRequestController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyRequestView"];
+                };
+            };
+        };
+    };
+    MoneyRequestController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                chatId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayMoneyRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range, self_transfer */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded, recipient_blocked */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: recipient_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, recipient_has_no_wallet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyRequestController_decline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyRequestView"];
+                };
+            };
+        };
+    };
+    MoneyRequestController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyRequestView"];
+                };
+            };
+        };
+    };
     TgifController_day: {
         parameters: {
             query?: never;
@@ -24441,8 +24819,11 @@ export interface operations {
                 cursor?: string;
                 /** @description 1 to 100, 20 when left out. */
                 limit?: number;
-                /** @description Only rows of this kind (the Paid DMs and Communities chips). All kinds when left out. */
-                kind?: "chat" | "paid_dm" | "community";
+                /**
+                 * @description Only rows of this kind (the Paid DMs, Communities and Money chips; the
+                 *     Money chip is `money_request`). All kinds when left out.
+                 */
+                kind?: "chat" | "paid_dm" | "community" | "money_request";
             };
             header?: never;
             path?: never;
