@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 141 | 0 | 0 | 0 |
+| todo | 140 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 34 | 0 | 0 | 0 |
+| verifying | 35 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -40,6 +40,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-22](../tasks/FIX-22.md) A profiling turn asks the model for one JSON object (You)
 - [FIX-26](../tasks/FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read (You)
 - [DESIGN-V2-CUT](../tasks/DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks (You)
+- [HOME-16](../tasks/HOME-16.md) Daily TGIF notification (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
