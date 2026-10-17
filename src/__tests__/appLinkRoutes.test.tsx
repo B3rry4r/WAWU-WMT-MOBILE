@@ -51,9 +51,9 @@ function MeTabStandIn() {
 function TabsStandIn() {
   return <Slot />;
 }
-function WorksStandIn() {
+function ProfileStandIn() {
   const { wawuId } = useLocalSearchParams<{ wawuId: string }>();
-  return <View testID="works" accessibilityLabel={String(wawuId)} />;
+  return <View testID="profile" accessibilityLabel={String(wawuId)} />;
 }
 function CommunityStandIn() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -71,7 +71,7 @@ const routes = {
   'content/[id]': ContentLinkRoute,
   'community/[id]': CommunityStandIn,
   'transactions/index': TransactionsStandIn,
-  'works/[wawuId]/index': WorksStandIn,
+  'profile/[wawuId]': ProfileStandIn,
   '(tabs)/_layout': TabsStandIn,
   '(tabs)/index': HomeStandIn,
   '(tabs)/me': MeTabStandIn,
@@ -155,19 +155,19 @@ describe('LINKS-01 round 2: https://wawuafrica.com/u/<handle> (a profile)', () =
     expect(pathname()).toBe('/me');
   });
 
-  it("someone else's handle opens that person's works, which take the handle", async () => {
+  it("someone else's handle opens that person's profile, which takes the handle (ME-02)", async () => {
     signIn();
     await open('https://wawuafrica.com/u/ada.obi');
-    const works = await screen.findByTestId('works');
-    expect(works.props.accessibilityLabel).toBe('ada.obi');
-    expect(pathname()).toBe('/works/ada.obi');
+    const profile = await screen.findByTestId('profile');
+    expect(profile.props.accessibilityLabel).toBe('ada.obi');
+    expect(pathname()).toBe('/profile/ada.obi');
   });
 
-  it("when the Hub cannot be asked who the person is, the handle opens that person's works too", async () => {
+  it("when the Hub cannot be asked who the person is, the handle opens that person's profile too", async () => {
     signIn();
     me = 'offline';
     await open('https://wawuafrica.com/u/lennox');
-    expect((await screen.findByTestId('works')).props.accessibilityLabel).toBe('lennox');
+    expect((await screen.findByTestId('profile')).props.accessibilityLabel).toBe('lennox');
   });
 
   it('a handle that cannot be one opens Home and asks the Hub nothing about it', async () => {
