@@ -20,6 +20,8 @@ import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
+import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
@@ -116,6 +118,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchRoom(id) }, queryClient);
   const credits = useCredits();
   const messages = useRoomMessages(id, focused);
+  const [buying, setBuying] = useState(false);
   const [draft, setDraft] = useState<{ id: number; text: string } | undefined>(undefined);
   const edit = (localId: string) => {
     const entry = messages.outgoing.find((candidate) => candidate.localId === localId);
@@ -191,6 +194,9 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
 
   const showComposer = !hidden && !notMember && !room.isPending && !(room.isError && !room.data) && !messages.isPending && !(messages.isError && !messages.data);
 
+  // I27: no credits left in a room where a message costs one. Reading stays free; Buy credits opens I28.
+  const outOfCredits = showComposer && credits.data?.creditBalance === 0 && (room.data?.messageCostInCredits ?? 0) > 0;
+
   return (
     <KeyboardAvoidingView
       testID="room-screen"
@@ -199,7 +205,9 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
     >
       {header}
       <View style={styles.body}>{body}</View>
+      {outOfCredits ? <OutOfCreditsPanel onBuy={() => setBuying(true)} /> : null}
       {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} cost={room.data?.messageCostInCredits} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {buying ? <BuyCreditsEntry visible onClose={() => setBuying(false)} doneLabel="Back to chat" onAdded={() => void credits.refetch()} /> : null}
     </KeyboardAvoidingView>
   );
 }

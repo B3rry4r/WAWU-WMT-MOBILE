@@ -510,8 +510,8 @@ describe('sending (I26)', () => {
     expect(rtl.screen.getByText('one more')).toBeTruthy();
     expect(rtl.screen.getByText('Not sent')).toBeTruthy();
     await rtl.waitFor(() => expect(sent.filter((s) => s === 'GET /credits').length).toBeGreaterThanOrEqual(2));
-    // Buying credits is another task's screen: this one offers no way to it.
-    expect(rtl.screen.queryByText(/^Buy/)).toBeNull();
+    // Buying credits is INBOX-13's screen (I27, I28), which is now built: a person with none left is offered the way to it.
+    expect(rtl.screen.getByTestId('out-of-credits-buy')).toBeTruthy();
   });
 
   it('is not charged for reading: the balance is not asked to change by anything but a send', async () => {

@@ -268,7 +268,8 @@ describe('Communities (I24)', () => {
     expect(rtl.screen.queryByText('Founders under 30')).toBeNull();
     expect(rtl.screen.queryByLabelText(/Founders under 30/)).toBeNull();
     expect(rtl.screen.queryByText('Ask')).toBeNull();
-    expect(rtl.screen.queryByText('Buy')).toBeNull();
+    // The one Buy is the credits strip's (INBOX-13, I28); no room row offers one.
+    expect(rtl.screen.getAllByText('Buy')).toHaveLength(1);
     // Nothing on the screen is a row that does nothing: every suggestion is a button that joins.
     expect(rtl.screen.getAllByText('Join')).toHaveLength(1);
   });

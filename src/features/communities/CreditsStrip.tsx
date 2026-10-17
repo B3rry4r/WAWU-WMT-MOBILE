@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { formatCredits } from '@/components/Credits';
 import { IconTile } from '@/components/IconTile';
@@ -12,7 +13,7 @@ import { useCredits, useMessageCost } from './useCredits';
 
 /**
  * design/_gen/inbox.js line 70: a card with 12 and 14 of padding holding a 44 coin tile, the balance in 15 / 600 and a
- * 12.5 line under it. The Buy button the design puts on its right is INBOX-13's (docs/WORKFLOW.md section 7).
+ * 12.5 line under it, and a small Buy button on its right that opens I28 (INBOX-13).
  */
 const stripMetrics = { padV: 12, padH: 14, tile: 44, balance: 15, line: 12.5, lineGap: 2, between: space.md } as const;
 
@@ -22,7 +23,7 @@ const stripMetrics = { padV: 12, padH: 14, tile: 44, balance: 15, line: 12.5, li
  * 1 credit per message you send". Until the price is known (loading, or it could not be read) the strip says only
  * "Reading is free", which is always true because the room's history route never touches credits.
  */
-export function CreditsStrip() {
+export function CreditsStrip({ onBuy }: { onBuy?: () => void }) {
   const credits = useCredits();
   const cost = useMessageCost();
   const price = cost.data && cost.data.creditsPerMessage > 0 ? ` · ${formatCredits(cost.data.creditsPerMessage)} per message you send` : '';
@@ -46,6 +47,7 @@ export function CreditsStrip() {
             {credits.isError ? 'Your balance could not be read' : `Reading is free${price}`}
           </Text>
         </View>
+        {onBuy ? <Button testID="credits-strip-buy" label="Buy" variant="secondary" size="sm" onPress={onBuy} /> : null}
       </View>
     </Card>
   );
