@@ -62,6 +62,8 @@ describe('My purchases words', () => {
     expect(targetOf(other('community_pass'))).toEqual({ kind: 'room', id: 'x1' });
     expect(targetOf(other('credit_pack', { openId: null }))).toBeNull();
     expect(targetOf(other('event_ticket', { openId: null }))).toBeNull();
+    // A ticket the web paid by card (no wallet total) is not a wallet order, so its page cannot read it: the row opens nothing.
+    expect(targetOf(other('event_ticket', { totalKobo: null }))).toBeNull();
     for (const kind of ['event_ticket', 'school_fee', 'community_pass'] as const) expect(targetOf(other(kind, { status: 'refunded' }))).toBeNull();
     expect(targetOf({ ...entry(), status: 'refunded' })).toBeNull();
   });

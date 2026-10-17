@@ -7,7 +7,8 @@ import { PurchasesScreen } from '@/features/purchases/PurchasesScreen';
 
 /**
  * M29 · My purchases (`/purchases`), opened from the Me menu (M7). Signed in only: anyone else is sent to Welcome. A row opens what it
- * bought: a piece (`/content/<id>`), a ticket (its page, E5), My courses for a school fee, a community's room for a pass; Back returns here.
+ * bought: a piece (`/content/<id>`), a ticket the wallet paid for (its page, E5; a card-paid ticket opens nothing), My courses for a
+ * school fee, a community's room for a pass; Back returns here.
  */
 export default function PurchasesRoute() {
   const router = useRouter();

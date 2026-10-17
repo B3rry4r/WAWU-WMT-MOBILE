@@ -127,6 +127,21 @@ describe('M29 · My purchases', () => {
     expect(screen.getAllByRole('button', { name: /^(Watch|Read|Resume)$/ })).toHaveLength(1);
   });
 
+  it('a ticket the web paid by card is listed with its charge and opens nothing, while a wallet ticket opens its order', async () => {
+    hub.answers[`GET ${LIST}`] = page([
+      bought('t3', 'event_ticket', 'Web Gig', `${year}-03-02T10:00:00.000Z`, { totalKobo: null, amountKobo: 300000 }),
+      bought('t4', 'event_ticket', 'Wallet Gig', `${year}-03-01T10:00:00.000Z`),
+    ]);
+    const onOpen = jest.fn();
+    await open(onOpen);
+    expect(await screen.findByText('Web Gig')).toBeTruthy();
+    expect(screen.getByText('Ticket · 2 Mar · ₦3,000')).toBeTruthy();
+    expect(screen.queryByTestId('purchase-open-t3')).toBeNull();
+    await fireEvent.press(screen.getByTestId('purchase-open-t4'));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenLastCalledWith({ kind: 'ticket', orderId: 'open-t4' });
+  });
+
   it('a piece the Hub paid back is marked Refunded and has no button', async () => {
     hub.answers[`GET ${LIST}`] = page([{ ...four[0], status: 'refunded' }]);
     await open(jest.fn());

@@ -201,6 +201,22 @@ function AddMoneyStub() {
       <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()}>
         <Text>Back</Text>
       </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Go elsewhere" onPress={() => router.replace('/')}>
+        <Text>Go elsewhere</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Somewhere that is not the screen the person left from: it can step back, so the screen below is shown again later. */
+function ElsewhereStub() {
+  const router = useRouter();
+  return (
+    <View>
+      <Text accessibilityRole="header">Home</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Step back" onPress={() => router.back()}>
+        <Text>Step back</Text>
+      </Pressable>
     </View>
   );
 }
@@ -214,7 +230,7 @@ beforeAll(async () => {
         <Stack screenOptions={{ headerShown: false }} />
       </QueryClientProvider>
     ),
-    index: stub('Home'),
+    index: ElsewhereStub,
     welcome: stub('Welcome'),
     points: stub('Your points'),
     'add-money': AddMoneyStub,
@@ -506,6 +522,23 @@ describe('PT3, PT3a and PT3b · not enough points', () => {
     const settled = hub.quotes;
     await sleep(50);
     expect(hub.quotes).toBe(settled);
+  });
+
+  it('leaving Add money for somewhere else ends the trip: when the screen is shown again the Hub is not asked, and no sheet comes back unasked', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    await screen.findByTestId('add-money-short');
+    await fireEvent.press(screen.getByRole('button', { name: 'Go elsewhere' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Step back' }));
+    await screen.findByTestId('preview-run');
+    const settled = hub.quotes;
+    hub.walletKobo = 5_000_000;
+    await sleep(50);
+    expect(hub.quotes).toBe(settled);
+    expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
   });
 
   it('back from Add money with the points now covering the job, no sheet comes back', async () => {

@@ -68,7 +68,11 @@ export function rowLine(entry: PurchaseEntry, now: Date): string {
   return parts.filter(Boolean).join(' · ');
 }
 
-/** Where a purchase opens, where that screen exists. A refunded purchase opens nothing (nothing is held any more), nor does a credit pack. */
+/**
+ * Where a purchase opens, where that screen exists. A refunded purchase opens nothing (nothing is held any more), nor does a credit pack.
+ * A ticket opens its order (E5) only when the wallet paid for it: that page reads the wallet-order route, and an order the web paid by
+ * card (`totalKobo` null) is not there. The row carries the order's id and not the event's, so a card-paid ticket opens nothing.
+ */
 export type PurchaseTarget =
   | { kind: 'piece'; id: string }
   | { kind: 'ticket'; orderId: string }
@@ -83,7 +87,7 @@ export function targetOf(entry: PurchaseEntry): PurchaseTarget | null {
       return id ? { kind: 'piece', id } : null;
     }
     case 'event_ticket':
-      return entry.openId ? { kind: 'ticket', orderId: entry.openId } : null;
+      return entry.openId && entry.totalKobo !== null ? { kind: 'ticket', orderId: entry.openId } : null;
     case 'school_fee':
       return { kind: 'courses' };
     case 'community_pass':
