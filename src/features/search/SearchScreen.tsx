@@ -40,6 +40,8 @@ export type SearchScreenProps = {
   onCancel: () => void;
   /** A room was joined: open it (I25). */
   onOpenRoom: (id: string) => void;
+  /** A content result was pressed: open that piece's own page (H19, HOME-03). Left out, a content row only reads. */
+  onOpenContent?: (id: string) => void;
 };
 
 function Block({ children, testID }: { children: React.ReactNode; testID?: string }) {
@@ -74,11 +76,11 @@ function RowsSkeleton() {
  * it at once and remember it), it is the results: All, Content, Creators and Communities with their counts (X6 to X9), the nearest
  * content when nothing matched (X10) and a Try again when the search failed (X12).
  *
- * A content result opens its piece (H19, HOME-03) and a creator opens their profile (M5, ME-02); those two are added by the
- * tasks that build where they lead (R-27), so a result row opens nothing today. Follow works in place; a creator already
- * followed shows Following (tap to unfollow) where X6 draws Profile.
+ * A content result opens its piece (H19, HOME-03). A creator opens their profile (M5, ME-02), added by the task that builds it
+ * (R-27), so a person row opens nothing today. Follow works in place; a creator already followed shows Following (tap to
+ * unfollow) where X6 draws Profile.
  */
-export function SearchScreen({ onCancel, onOpenRoom }: SearchScreenProps) {
+export function SearchScreen({ onCancel, onOpenRoom, onOpenContent }: SearchScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const { text, setText, query, submit } = useSearchText(MAX_QUERY);
@@ -232,7 +234,7 @@ export function SearchScreen({ onCancel, onOpenRoom }: SearchScreenProps) {
               <SectionLabel title={words.closest} />
               <View style={styles.rows}>
                 {closest.map((r) => (
-                  <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} />
+                  <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} onPress={onOpenContent ? () => onOpenContent(r.id) : undefined} />
                 ))}
               </View>
             </Block>
@@ -247,7 +249,7 @@ export function SearchScreen({ onCancel, onOpenRoom }: SearchScreenProps) {
               <SectionLabel title="Content" action={content.length > PREVIEW.content ? { label: `See all ${content.length}`, onPress: () => setTab('content'), testID: 'search-see-all-content' } : undefined} />
               <View style={styles.rows}>
                 {content.slice(0, PREVIEW.content).map((r) => (
-                  <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} />
+                  <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} onPress={onOpenContent ? () => onOpenContent(r.id) : undefined} />
                 ))}
               </View>
             </Block>
@@ -279,7 +281,7 @@ export function SearchScreen({ onCancel, onOpenRoom }: SearchScreenProps) {
       list = (
         <View style={styles.rows}>
           {content.map((r) => (
-            <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} />
+            <ContentRow key={r.id} testID={`search-content-${r.id}`} row={r} onPress={onOpenContent ? () => onOpenContent(r.id) : undefined} />
           ))}
         </View>
       );

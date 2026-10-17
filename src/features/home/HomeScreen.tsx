@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CreateEntry } from '@/features/create/CreateEntry';
+import type { FeedItem } from '@/features/feed/api';
 import { FeedScreen } from '@/features/feed/FeedScreen';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 
@@ -24,9 +25,11 @@ export type HomeScreenProps = {
   onSeeAllCreators?: () => void;
   /** Where the feed's wallet payments lead when they need somewhere else (HOME-13). */
   pay?: FlowHandlers;
+  /** A feed post's caption opens that piece's own page (H19, HOME-03). */
+  onOpenPiece?: (item: FeedItem) => void;
 };
 
-export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, pay }: HomeScreenProps = {}) {
+export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, pay, onOpenPiece }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -37,7 +40,7 @@ export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, pay }: HomeSc
       {view === 'today' ? (
         <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} />
       ) : (
-        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} onSearch={onSearch} pay={pay} />
+        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} onSearch={onSearch} pay={pay} onOpenPiece={onOpenPiece} />
       )}
       {onCreate ? <CreateEntry onPress={onCreate} /> : null}
     </View>
