@@ -4,11 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Icon } from '@/components/icon';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
-import { SettingsFrame } from '@/features/settings/SettingsFrame';
 import { canvasNormalLineHeight, useWawu } from '@/theme';
 
 import { myPassQuery, type MyPass } from '../api/pass';
@@ -59,9 +59,9 @@ export function PassScreen({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <SettingsFrame title="Your pass" onBack={onBack} gap={BODY_GAP} testID="pass-screen">
+    <ScreenFrame idPrefix="settings" title="Your pass" onBack={onBack} gap={BODY_GAP} testID="pass-screen">
       {body}
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }
 

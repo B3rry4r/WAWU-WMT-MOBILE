@@ -1,8 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError, isApiError, toApiError } from '@/api/errors';
+import { ApiError, isApiError } from '@/api/errors';
 import type { MoneyErrorCode } from '@/api/money';
 import type { components } from '@/api/schema.generated';
-import { retryAfterOf } from '@/features/open-wallet/api/check';
 
 /**
  * A21's calls, as the backend contract types them.
@@ -31,21 +30,6 @@ export const ACCOUNT_NUMBER_LENGTH = 10;
 
 function unreadable(): ApiError {
   return new ApiError('unknown', 200, 'Your payout account could not be read. Try again.');
-}
-
-/**
- * `unwrap`, keeping the wait a refusal for the hour's name check limit carried (429 `name_check_rate_limited`,
- * R-51): the Hub gives it as `reason.retryAfterSeconds` and `Retry-After`, which the shared `ApiError` does not
- * read (SHARED-CHANGES KYC-05 #3). The screen opens the form again when it has passed.
- */
-async function unwrapKeepingWait<T, E>(request: Promise<{ data?: T; error?: E; response: Response }>): Promise<T> {
-  const { data, error, response } = await request;
-  if (!response.ok) {
-    const refused = toApiError(response.status, error);
-    const wait = refused.code === 'name_check_rate_limited' ? retryAfterOf(error, response.headers) : null;
-    throw wait === null ? refused : Object.assign(refused, { retryAfterSeconds: wait });
-  }
-  return data as T;
 }
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
@@ -80,7 +64,7 @@ export async function fetchPayoutAccount(): Promise<PayoutAccount | null> {
  * not confirm the account, `provider_unreachable` (503) when it does not answer.
  */
 export async function savePayoutAccount(input: PayoutAccountInput): Promise<PayoutAccount> {
-  const body = (await unwrapKeepingWait(
+  const body = (await unwrap(
     api.PUT('/api/hub/money/payout-account', { body: { bankCode: input.bankCode, accountNumber: input.accountNumber } }),
   )) as unknown as Envelope<PayoutAccount>;
   return readPayoutAccount(body?.data);
@@ -96,7 +80,7 @@ export async function fetchBanks(): Promise<Bank[]> {
 
 /** POST /money/banks/name-check (WALLET-09): the bank's name for this account. */
 export async function checkAccountName(input: PayoutAccountInput): Promise<AccountName> {
-  const body = (await unwrapKeepingWait(
+  const body = (await unwrap(
     api.POST('/api/hub/money/banks/name-check', { body: { bankCode: input.bankCode, accountNumber: input.accountNumber } }),
   )) as unknown as Envelope<AccountName>;
   const v = body?.data;
