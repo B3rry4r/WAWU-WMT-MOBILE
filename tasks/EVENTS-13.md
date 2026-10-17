@@ -3,7 +3,7 @@ id: EVENTS-13
 title: Call-off: order cap, cancel once, free tickets
 owner: YOU
 area: EVENTS
-order: 295
+order: 297
 priority: launch
 repo: wawu-backend
 type: money-path
