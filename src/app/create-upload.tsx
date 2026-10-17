@@ -16,5 +16,5 @@ export default function CreateUploadRoute() {
   if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
   if (!format) return <Redirect href="/create-format" />;
 
-  return <UploadScreen format={format} onBack={() => (router.canGoBack() ? router.back() : router.replace('/create-format'))} onContinue={() => router.push('/create-preview')} />;
+  return <UploadScreen format={format} onBack={() => (router.canGoBack() ? router.back() : router.replace('/create-format'))} onContinue={() => router.push('/create-preview')} onOpenLibrary={() => router.push('/library')} />;
 }
