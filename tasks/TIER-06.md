@@ -7,7 +7,7 @@ order: 262
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [TIER-03, NUV-07, POINTS-04]
 decisions: [R-65, R-43, R-23]
 passes: [V1, V2, V3, V4, V6, V9]
@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, builder round 2 done (Sonnet builder), after the verifier's `fix` verdict (1 high, 2 medium, 3 low; finding 7 raised to medium by the lead). Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 2): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`).
+As of 17 Oct 2026, builder round 2 done (Sonnet builder), after the verifier's `fix` verdict (1 high, 2 medium, 3 low; finding 7 raised to medium by the lead). Status: done (live on main; records pass OPS-R0, 17 Oct 2026). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 2): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`).
 - **Branches:** backend `wmt/TIER-06` `361df74` (round 1 `317f464`) on `origin/main` `a5e48fc`; mobile `wmt/TIER-06` on `origin/wmt/MERGE-5` `7de785d` (docs only: this file, history, SHARED-CHANGES rows #1 to #5, LOG, PROGRESS). wawu-id and web untouched.
 - **Checks:** backend CI on `361df74`: Branch checks run 38991756551 green (contract, suite shards 1 to 3, netns, deploy-test-in-sync, baseline); Protected routes (V3) run 38991756560 green; Gates run 38991756561 red with the same 5 FAIL lines as main (admin-notifications x2, notification-event, flutterwave-wallet.gateway, content-piece.service), none in this task's files. Local: tsc 0, eslint 0, 41 suites and 776 tests, `contract:build` twice identical, gates 5 FAIL as main, baseline ok. Mobile full check EXIT 0 (`npm run gates`, `npm run tasks`).
 - **Migrations:** `20261024060000_plan_settings` (table `PlanSetting`, two audit enum values; now `ADD VALUE IF NOT EXISTS`, so it re-applies after its rollback) and `20261024060100_wallet_payment_terms` (one nullable JSON column `WalletPayment.terms`). Both additive. Rollback: `DROP TABLE "PlanSetting"`; `ALTER TABLE "WalletPayment" DROP COLUMN "terms"`.

@@ -3,8 +3,8 @@ id: FIX-25
 title: A photo uploaded from the website or the app's web build carries no location
 owner: YOU
 area: FIX
-order: 233
-priority: launch
+order: 353
+priority: after-launch
 repo: wawuafrica, wawu-wmt-mobile
 type: web-port
 status: todo
@@ -18,6 +18,7 @@ artboards: [M8, M36]
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/FIX-25.md.

@@ -7,7 +7,7 @@ order: 65
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: done
 depends_on: [INBOX-09, UI-02, INBOX-04, PROS-03]
 decisions: [R-13, R-2, R-9]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -18,7 +18,7 @@ artboards: [I21, I22, I23]
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-12.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/GATES-01` (this branch contains it); API types regenerated from backend `wmt/INBOX-12` (38d97dd).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-12.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/GATES-01` (this branch contains it); API types regenerated from backend `wmt/INBOX-12` (38d97dd).
 - **Backend (done):** `GET` and `PUT /paid-dm/settings` (creator only): switch, price in kobo, reply hours, the share and what the creator keeps, the next preset to raise to, the options (price bounds, presets, reply times, from config), and the INBOX-09 standing with the missed and total counts. A save is refused with 403 `paid_messages_paused` while paid messages are off. The live `PATCH /creator/dm-settings` is untouched. Round 2: `PUT` refuses `null` for every field with a 400 (absent still keeps the saved value), and `GET /paid-dm/settings/earn?priceKobo=` (creator only, read only) returns what a creator keeps at a typed price. Round 1 GitHub run 38900290377: all three suites, protected routes, contract and baseline green; gates show main's 16 FAIL lines plus one new PROVISIONAL warn (G-722).
 - **App (done):** `src/features/paid-messages/` (screen, parts, model, api), route `src/app/paid-message-settings.tsx`. I21, I22 and I23 are one screen in three moments picked by the Hub's standing. Loading, error, a plain account (the creator gate) and the empty creator (switch off, empty price) are built and entered by their real causes. Round 2: "You earn per message" is the Hub's figure (the saved price from the settings read, a typed one from the earn route after the typing rests, a dash until the Hub has answered); the screen no longer multiplies or divides money (R-21).
 - **Entries (R-41, done):** I1 settings button in the Inbox header (creators only), M2 paid messages row (chevron and press), P8 "Inbox settings" link in the note.

@@ -7,7 +7,7 @@ order: 222
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [FIX-08]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-18.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-26` (this branch contains it); API types regenerated from backend `wmt/FIX-18` (e0ad2a0).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-18.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-26` (this branch contains it); API types regenerated from backend `wmt/FIX-18` (e0ad2a0).
 - **Branches:** backend `wmt/FIX-18` 0841821 (on main 56f94d0). Mobile `wmt/FIX-18` carries only this file, `docs/LOG.md` and `docs/PROGRESS.md`. No migration, no contract change (`contract/openapi.json` rebuilds byte-identical), no new route.
 - **Built:**
   - `GET /wallet/history`: `take` that is not a number (`abc`, `NaN`, `1_0`), sent twice or more, or a negative Prisma cannot take (`-Infinity`, `-1e21`, at or below -2^63) answers 400 "take must be a single number." or "take is out of range.". Code in `src/wallet/wallet-history-take.ts`.

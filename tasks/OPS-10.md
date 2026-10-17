@@ -3,8 +3,8 @@ id: OPS-10
 title: Money on the production backend: live keys, webhook and charges
 owner: YOU
 area: OPS
-order: 161
-priority: launch
+order: 344
+priority: after-launch
 repo: wawu-backend
 type: ops
 status: todo
@@ -18,6 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-39 and R-45: wallets run on Nuvion and Fintava is out of the launch money path (NUV-10 takes the place of OPS-10).
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): OPS-09, MONEY-16, WALLET-09.
 - **History:** none yet. Reports go to tasks/history/OPS-10.md.

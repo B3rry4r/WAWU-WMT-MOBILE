@@ -7,7 +7,7 @@ order: 52
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: done
 depends_on: [INBOX-03, SHELL-02]
 decisions: []
 passes: [V1, V6, V7, V9, V10]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-21-r2.md`): verdict FIX in round 1 (one high: sign-out left the phone registered once the access token had run out), MERGE in round 2 (report INBOX-21.md for round 1), nothing medium or worse. Batch 3: stacked on `wmt/FIX-22` (this branch contains it); mobile only, no backend change; API types regenerated from the last batch 3 backend head `wmt/FIX-22` (51f1bc2).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-21-r2.md`): verdict FIX in round 1 (one high: sign-out left the phone registered once the access token had run out), MERGE in round 2 (report INBOX-21.md for round 1), nothing medium or worse. Batch 3: stacked on `wmt/FIX-22` (this branch contains it); mobile only, no backend change; API types regenerated from the last batch 3 backend head `wmt/FIX-22` (51f1bc2).
 - **Built:** `src/features/push/`. After sign-in, once the tabs are reachable, the app makes the Android channel,
   asks the system for notification permission once per phone, and registers the phone with the Hub
   (`POST /push-tokens`, every live start and after 30 minutes away). Sign-out removes it (`DELETE /push-tokens`)

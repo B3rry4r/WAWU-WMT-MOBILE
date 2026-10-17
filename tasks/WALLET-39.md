@@ -7,7 +7,7 @@ order: 261
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [INBOX-03, WALLET-10, NUV-05, MONEY-10]
 decisions: [R-54]
 passes: [V1, V2, V3, V4, V7, V8, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026, built on `wmt/WALLET-39`; waiting for a verifier.
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-39.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend `wmt/WALLET-39` 2194ffb on backend main a5e48fc (batch 5). This repo: the same branch, with this file, SHARED-CHANGES rows `WALLET-39 #1` and `#2`, BACKEND_GAPS (G-730, G-731, G-732 closed) and LOG.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-39.md`): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Backend `wmt/WALLET-39` 2194ffb on backend main a5e48fc (batch 5). This repo: the same branch, with this file, SHARED-CHANGES rows `WALLET-39 #1` and `#2`, BACKEND_GAPS (G-730, G-731, G-732 closed) and LOG.
 - **Built (backend, additive):** the WALLET-10 sweep now tells every credit to a person's wallet: a received send (`transfer`), earnings landing (`earning`, WALLET-16's rows included, no hook needed), a refund (`refund`) and a bank transfer in (`top_up`). One `money_in` notification per ledger row, the mark `MoneyInNotice` as before.
 - **Words:** "You received ₦5,000 from Tolu B.", "...in earnings.", "...from your points.", "You received a refund of ₦1,200.", "...by bank transfer." / "...from Ada Obi (****1291)." (the WALLET-10 words, unchanged). Never a whole account number; no person's number at all for a send from inside WAWU.
 - **Opens the right screen:** the notice carries the ledger row's id as a `transaction` target in `GET /me/notifications` and in the push `data` (`target: {kind: "transaction", id}`), the id `GET /money/transactions/{id}` answers. The app (INBOX-21 routes the tap) opens the receipt (WALLET-04), or W46 for a bank transfer in while the person is on W45.

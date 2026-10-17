@@ -7,7 +7,7 @@ order: 234
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: done
 depends_on: [FIX-21]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-26.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/WALLET-23` (this branch contains it); API types regenerated from backend `wmt/FIX-26` (5c5b47a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-26.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/WALLET-23` (this branch contains it); API types regenerated from backend `wmt/FIX-26` (5c5b47a).
 - **Branches:** backend `wmt/FIX-26` at c98bd77 (two commits on main 56f94d0: 6860da9 the build, c98bd77 one more spec test). Mobile `wmt/FIX-26`: this file and the G-410 text in BACKEND_GAPS.md. wawu-id: none. Migration: none. No route, contract or answer changes.
 - **Merged / live:** nothing yet.
 - **Built:** `assertMayMove` and `assertWithinLimits` take `tx` as required (`MovementTx`, `src/money/limits/movement-tx.ts`); the service's own client does not type-check there, and at run time nothing, the service's own client or any root client throws `NotInTransactionError` (a 500, before fees_not_set and before anything is locked, read or written).

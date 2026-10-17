@@ -7,7 +7,7 @@ order: 103
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: done
 depends_on: [MONEY-18, MONEY-13, MONEY-16, WALLET-15, EVENTS-02]
 decisions: [R-8, R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-07.md`, rounds 2 and 3): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Built by a Sonnet builder. Backend `wmt/EVENTS-07` `6603fba` (round 2 `541b4bb`, round 1 `0da82ba`, from `wmt/FIX-42` `73f4eb5`, which holds batches 3 and 4, BILLS-04, FIX-40 and FIX-42); mobile `wmt/EVENTS-07` (this record). Migration `20261024010000_event_wallet_orders` (unchanged since round 1). No PR.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-07.md`, rounds 2 and 3): verdict merge, nothing medium or worse. Stacked in batch 6 (backend and mobile `wmt/MERGE-6`). Built by a Sonnet builder. Backend `wmt/EVENTS-07` `6603fba` (round 2 `541b4bb`, round 1 `0da82ba`, from `wmt/FIX-42` `73f4eb5`, which holds batches 3 and 4, BILLS-04, FIX-40 and FIX-42); mobile `wmt/EVENTS-07` (this record). Migration `20261024010000_event_wallet_orders` (unchanged since round 1). No PR.
 - **What is built** (backend `src/event-ticketing/wallet/`): `POST /events/{id}/orders/wallet` makes an order from lines (one per ticket type, so Regular and VIP are one payment, E2) and answers E3's quote (the tickets, the provider's charge, the total, the balance); `POST /events/orders/wallet/pay` pays it with the PIN; `GET /events/orders/wallet/{orderId}/quote` and `GET /events/orders/wallet/{orderId}` (E5's tickets and holder name, E10's Refresh). The web's Flutterwave routes keep their answers.
 - **How an order is paid:** a held `event_ticket` payment (R-19): the tickets' price moves into WAWU's account and waits there until the event, the provider's charge is on top (R-10), the 85/15 split is recorded with the payment (R-5). The tickets are made once the debit is confirmed, in one short transaction with the seats taken by conditional updates. If the seats went or the event was called off between the debit and the tickets, the order is `failed` and the buyer gets back everything the payment took, Fintava's charge included (WAWU carries the charge, as for a failed bill; the move is price + charge, the hold's `refundedKobo` stays the price, the ledger shows both sides of the whole sum). The hold is otherwise left alone: WALLET-17 releases the host's share, EVENTS-10 refunds a called-off event, both through `order.walletPaymentId` and `order.holdId`.
 - **A free basket (R-8)** is issued in the create request: no wallet, no PIN, no debit, `payment: null`. An optional `Idempotency-Key` makes one tap one order. A mixed basket (a free tier and a paid one) is priced at the paid lines only.

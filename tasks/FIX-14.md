@@ -7,7 +7,7 @@ order: 195
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: done
 depends_on: [SHARED-03]
 decisions: []
 passes: [V1, V5, V6]
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** merging (lead). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-14.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/SHARED-05` (this branch contains it); API types regenerated from backend `wmt/FIX-14` (b9cda2a).
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-14.md`): verdict merge, nothing medium or worse. Batch 4: stacked on `wmt/SHARED-05` (this branch contains it); API types regenerated from backend `wmt/FIX-14` (b9cda2a).
 - **Branches:** mobile `wmt/FIX-14` (code `208d87c` and `5238c29`, from main `3117807`, nothing newer to merge). Backend: none changed. wawu-id: none. Migration: none. Contract: unchanged.
 - **Built:** R1 row chips draw their outline inside the padding (15, or 11 and 14 in an icon row, less the border), so a chip is exactly the canvas's width; N1 decorative `Avatar` and the `MediaCard` placeholder pass `aria-hidden`; A5's consent box passes `aria-checked`; `settingsScreens.test.tsx` exits on its own (a mutation's 5 minute `gcTime` timer, now `Infinity` in that test's client); the fork gate reads function components (a copy of a component exported from `src/components/` fails).
 - **Checks:** typecheck, lint, jest (157 suites, 2,841 tests) and gates pass in one local run; tasks passes after `PROGRESS.md` is regenerated. No CI for mobile (billing).

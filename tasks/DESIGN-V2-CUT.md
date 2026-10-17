@@ -7,7 +7,7 @@ order: 253
 priority: launch
 repo: wawu-wmt-mobile
 type: ops
-status: verifying
+status: done
 depends_on: []
 decisions: [R-50, R-51, R-52, R-53, R-54, R-55, R-56, R-57, R-58, R-59, R-60, R-61, R-62, R-63, R-64, R-65, R-66, R-67, R-68, R-69]
 passes: []
@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026. Docs work only: `DECISIONS.md`, `tasks/`, `design/canvas-inventory.json`, `BACKEND_GAPS.md`, `SHARED-CHANGES.md`. No product code.
-- **Status:** verifying. Branch `wmt/DESIGN-V2-CUT` (from `wmt/DESIGN-V2` 7dfa914, main 74b1edb). A fresh session verifies; the builder does not.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Branch `wmt/DESIGN-V2-CUT` (from `wmt/DESIGN-V2` 7dfa914, main 74b1edb). A fresh session verifies; the builder does not.
 - **Rulings:** R-50 to R-69 hold all 28 owner answers of 16 Oct (map below). Old rows carry "Updated by" pointers; none deleted.
 - **Tasks:** 38 new task files, 2 re-cut (ME-12, INBOX-14), 1 cancelled (WALLET-36, file removed), 28 todo files updated in place (14 only get one copy line), this file. Of the 78 added boards, 75 are claimed and 3 dollar variants are not built (VF5a, VF13a, PT4a).
 - **Orders:** the block is 253 to 293; CHECK-3, RELEASE-02 and every after-launch task moved up by 45 (CHECK-3 is 298). ME-12 and INBOX-14 moved into the block (new dependencies).
