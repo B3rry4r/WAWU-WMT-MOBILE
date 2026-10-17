@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
-import { nairaToKobo, type FeedItem } from './api';
+import { nairaToKobo } from '@/api/kobo';
+
+import type { FeedItem } from './api';
 import { useEngagement } from './engagement';
 import { media, metrics } from './look';
 import { offerFor, pillFor, type PostKind } from './model';

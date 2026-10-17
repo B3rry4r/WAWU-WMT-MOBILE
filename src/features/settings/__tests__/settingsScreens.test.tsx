@@ -22,6 +22,7 @@ jest.mock('@/api/session', () => ({
   refreshAccessToken: async () => null,
   isCurrentSessionToken: () => true,
   adoptSession: (pair: { accessToken: string; refreshToken: string }) => mockAdopt(pair),
+  replaceTokens: (pair: { accessToken: string; refreshToken: string }) => mockAdopt(pair),
   signOut: () => mockSignOut(),
 }));
 

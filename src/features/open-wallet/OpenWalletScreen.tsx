@@ -20,7 +20,7 @@ import { Banner } from '@/features/auth/Banner';
 
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { openingProgressQuery } from './api/review';
-import { runBvnCheck } from './api/check';
+import { checkBvn } from '@/api/walletIdentity';
 import { checkFailure, type CheckFailure } from './checkFailure';
 import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
@@ -320,7 +320,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
     setBusy(true);
     setFailure(null);
     try {
-      const check = await runBvnCheck({ bvn: idDigits(bvn), nin: idDigits(nin) });
+      const check = await checkBvn({ bvn: idDigits(bvn), nin: idDigits(nin) });
       // An answer whose session has ended (its ticket void) writes nothing at
       // all: not the kept details, not the cache, not the screen.
       if (!live.current || session.current !== 'signedIn' || !keepCheck(ticket, check)) return;

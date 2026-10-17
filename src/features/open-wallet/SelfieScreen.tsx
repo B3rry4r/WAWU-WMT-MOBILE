@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Ellipse, Path } from 'react-native-svg';
 
-import { isApiError } from '@/api/errors';
+import { isApiError, retryAfterOf } from '@/api/errors';
 import { selfieProblem, fetchSelfieMatch } from '@/api/walletIdentity';
 import { Button, IconButton } from '@/components/Button';
 import { Text } from '@/components/Text';
@@ -15,7 +15,6 @@ import { darkColors, lightColors } from '@/theme/tokens.generated';
 
 import { fetchWalletState, OPEN_WALLET_KEY } from './api/account';
 import { checksLeftOf, matchSelfie, openWallet, type OpeningInput } from './api/opening';
-import { waitOf } from './api/check';
 import { addressLine, openingName } from './details';
 import { ticketFor, ticketIsLive, useKeptOpening, type KeepTicket } from './keptCheck';
 import { OpenWalletEnd } from './OpenWalletEnd';
@@ -431,7 +430,7 @@ function afterSelfieRefusal(error: unknown): Phase | Restart | 'open' {
     case 'not_matched':
       return { kind: 'not_matched', ...headed(message, NOT_MATCHED_TITLE), checksLeft: checksLeftOf(error) };
     case 'limit': {
-      const wait = waitOf(error);
+      const wait = retryAfterOf(error);
       return { kind: 'limit', message: wait === null ? message : `Try again ${waitPhrase(wait)}.` };
     }
     case 'already_matched':
@@ -446,7 +445,7 @@ function afterSelfieRefusal(error: unknown): Phase | Restart | 'open' {
       break;
   }
   if (isApiError(error) && error.kind === 'network') return { kind: 'ready', note: { title: 'No connection', body: message } };
-  if (isApiError(error) && error.kind === 'rate_limited') return { kind: 'ready', note: { title: 'Too many tries', body: `Try again ${waitPhrase(waitOf(error))}.` } };
+  if (isApiError(error) && error.kind === 'rate_limited') return { kind: 'ready', note: { title: 'Too many tries', body: `Try again ${waitPhrase(retryAfterOf(error))}.` } };
   return { kind: 'ready', note: { title: "We couldn't check your selfie", body: message } };
 }
 

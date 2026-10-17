@@ -1,6 +1,5 @@
-import { ApiError } from '@/api/errors';
+import { ApiError, toApiError } from '@/api/errors';
 
-import { retryAfterOf } from '../api/check';
 import { checkFailure } from '../checkFailure';
 import { isNoWallet, OPEN_WALLET_PATH, useOpenWalletEntry } from '../entry';
 import { forgetKeptCheck, keepCheck, readKeptCheck, ticketFor } from '../keptCheck';
@@ -138,11 +137,12 @@ describe('how long a limit says to wait', () => {
   });
 
   it('the wait is the body’s reason.retryAfterSeconds, else the longest Retry-After header', () => {
-    expect(retryAfterOf({ reason: { code: 'identity_checks_exhausted', message: 'x', retryAfterSeconds: 18000 } }, new Headers({ 'Retry-After-short': '60' }))).toBe(18000);
-    expect(retryAfterOf({ statusCode: 429 }, new Headers({ 'Retry-After-short': '60', 'Retry-After-medium': '3448' }))).toBe(3448);
-    expect(retryAfterOf(null, new Headers({ 'Retry-After': '120' }))).toBe(120);
-    expect(retryAfterOf(undefined, new Headers({ 'Retry-After-short': 'soon' }))).toBeNull();
-    expect(retryAfterOf({}, new Headers())).toBeNull();
+    const wait = (body: unknown, headers: Headers) => toApiError(429, body, headers).retryAfterSeconds;
+    expect(wait({ reason: { code: 'identity_checks_exhausted', message: 'x', retryAfterSeconds: 18000 } }, new Headers({ 'Retry-After-short': '60' }))).toBe(18000);
+    expect(wait({ statusCode: 429 }, new Headers({ 'Retry-After-short': '60', 'Retry-After-medium': '3448' }))).toBe(3448);
+    expect(wait(null, new Headers({ 'Retry-After': '120' }))).toBe(120);
+    expect(wait(undefined, new Headers({ 'Retry-After-short': 'soon' }))).toBeNull();
+    expect(wait({}, new Headers())).toBeNull();
   });
 
   it('the address limit with no figure says "Try again later.", never a made-up time', () => {

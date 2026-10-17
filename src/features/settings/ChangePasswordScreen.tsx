@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { adoptSession } from '@/api/session';
+import { changePassword } from '@/api/identity';
+import { replaceTokens } from '@/api/session';
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
+import { authed } from '@/features/auth/signupApi';
 import { space } from '@/theme';
 
-import { changePassword } from './api/identity';
 import { MIN_LENGTH, passwordFailure, passwordProblems, SIGNED_OUT_FIRST, type PasswordFailure } from './passwordFailure';
 import { startedInThisSession } from './sessionGuard';
 
@@ -72,7 +73,7 @@ export function ChangePasswordScreen({ onBack, onDone }: ChangePasswordScreenPro
     setFailure(null);
     const sameSession = startedInThisSession();
     try {
-      const pair = await changePassword(current, next);
+      const pair = await authed((token) => changePassword(token, current, next));
       // The person signed out (or another account signed in) while this was on its way: the new tokens are not
       // adopted, or the phone would be signed back in as the account that left.
       if (!sameSession()) {
@@ -80,7 +81,7 @@ export function ChangePasswordScreen({ onBack, onDone }: ChangePasswordScreenPro
         return;
       }
       try {
-        await adoptSession(pair);
+        await replaceTokens(pair);
       } catch {
         // The new session is already in memory; only a listener's cleanup failed. The password did change.
       }

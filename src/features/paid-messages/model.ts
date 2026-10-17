@@ -1,5 +1,5 @@
 import { formatMoney, moneyParts } from '@/components/Money';
-import { nairaToKobo } from '@/features/feed/api';
+import { nairaToKobo } from '@/api/kobo';
 
 import type { PaidMessageSettings, PaidMessageStanding } from './api';
 

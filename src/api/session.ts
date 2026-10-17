@@ -173,6 +173,15 @@ export async function adoptSession(next: StoredTokens): Promise<void> {
   await adopt(next, true);
 }
 
+/**
+ * Takes the new token pair WAWU ID hands this phone after a password change, as the same account's session: it
+ * does not end the session (the query cache and in-flight requests stay), unlike `adoptSession`. A pair for
+ * another account still ends the session, as every adopt does (SETTINGS-01 #1).
+ */
+export async function replaceTokens(next: StoredTokens): Promise<void> {
+  await adopt(next, false);
+}
+
 /** Removes the tokens from memory and from secure storage. */
 export async function signOut(): Promise<void> {
   await drop();

@@ -42,7 +42,7 @@ async function call<A>(method: 'GET' | 'POST', path: string, body?: unknown, tok
     throw networkError();
   }
   const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw toApiError(response.status, payload);
+  if (!response.ok) throw toApiError(response.status, payload, response.headers);
   return payload as Partial<A> | null;
 }
 
@@ -57,6 +57,25 @@ function readTokenPair(payload: { data?: Partial<TokenPair> } | null): TokenPair
     throw new ApiError('unknown', 0, 'Sign-in gave an unexpected answer. Try again.');
   }
   return { accessToken, refreshToken };
+}
+
+/**
+ * POST /auth/change-password (SETTINGS-03's route) with the signed-in access token. Resolves with the new token pair
+ * the caller must keep (every other device's refresh token stops working); rejects with an ApiError
+ * (`CURRENT_PASSWORD_WRONG`, `PASSWORD_UNCHANGED`, `RATE_LIMITED`, ...).
+ */
+export async function changePassword(token: string, currentPassword: string, newPassword: string): Promise<TokenPair> {
+  const payload = await call<Answer<'changePassword'>>('POST', '/auth/change-password', { currentPassword, newPassword }, token);
+  const pair = (payload as { data?: Partial<TokenPair> } | null)?.data;
+  if (typeof pair?.accessToken !== 'string' || typeof pair?.refreshToken !== 'string') {
+    throw new ApiError('unknown', 200, 'Your password was changed but the answer could not be read. Sign in again.');
+  }
+  return { accessToken: pair.accessToken, refreshToken: pair.refreshToken };
+}
+
+/** POST /auth/logout: ends this device's refresh token on the server. The server answers the same for a live, dead or unknown token. */
+export async function logoutRequest(refreshToken: string): Promise<void> {
+  await post<'logout'>('/auth/logout', { refreshToken });
 }
 
 /** Email or phone, plus password. Rejects with an ApiError (unauthorized, EMAIL_NOT_VERIFIED, ...). */
