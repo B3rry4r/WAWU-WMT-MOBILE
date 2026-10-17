@@ -10568,6 +10568,15 @@ export interface components {
             /** @enum {string|null} */
             cannotRateReason: "own_content" | "not_purchased" | null;
         };
+        DetailCreator: {
+            headline: string | null;
+            followerCount: number;
+            wawuId: string;
+            displayName: string | null;
+            handle: string | null;
+            avatarUrl: string | null;
+            verification: components["schemas"]["VerificationState"];
+        };
         ContentDetail: {
             contentId: string;
             contentType: string;
@@ -10578,6 +10587,7 @@ export interface components {
             freePreview: components["schemas"]["FreePreview"];
             lessons: components["schemas"]["DetailLesson"][];
             rating: components["schemas"]["RatingState"];
+            creator: components["schemas"]["DetailCreator"];
         };
         ProductDraftView: {
             id: string;

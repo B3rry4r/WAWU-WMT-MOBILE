@@ -224,10 +224,12 @@ export function PersonRow({ person, onToggleFollow, testID }: { person: SearchPe
 }
 
 /** `cRes`: a 64 picture (blurred, with a lock, when it is paid and not bought), the title, who made it and what kind, and the price or Free. */
-export function ContentRow({ row, testID }: { row: ContentRowModel; testID?: string }) {
+export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; testID?: string; /** Opens the piece's own page (H19, HOME-03). Left out, the row only reads. */ onPress?: () => void }) {
   const { colors } = useWawu();
-  return (
-    <View testID={testID} accessible accessibilityLabel={`${row.title}, ${row.byline}, ${row.priceKobo === null ? 'free' : 'paid'}`} style={styles.row}>
+  const ring = useFocusRing();
+  const label = `${row.title}, ${row.byline}, ${row.priceKobo === null ? 'free' : 'paid'}`;
+  const inner = (
+    <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {row.thumb ? <Image source={{ uri: row.thumb }} contentFit="cover" blurRadius={row.locked ? 6 : 0} style={StyleSheet.absoluteFill} /> : null}
         {row.locked ? (
@@ -249,7 +251,19 @@ export function ContentRow({ row, testID }: { row: ContentRowModel; testID?: str
       ) : (
         <Money minorUnits={row.priceKobo} decimals={false} size={rowMetrics.price} weight={700} />
       )}
-    </View>
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View testID={testID} accessible accessibilityLabel={label} style={styles.row}>
+        {inner}
+      </View>
+    );
+  }
+  return (
+    <Pressable testID={testID} accessible accessibilityRole="button" accessibilityLabel={label} onPress={onPress} {...ring.handlers} style={[styles.row, ring.style]}>
+      {inner}
+    </Pressable>
   );
 }
 

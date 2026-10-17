@@ -25,6 +25,8 @@ export type PostProps = {
   onUnlock?: (item: FeedItem) => void;
   /** The unlock sheet is being opened for this post (its price is being asked for). */
   unlocking?: boolean;
+  /** The caption was pressed (H19, HOME-03): the piece's own page. Left out, the caption only reads. */
+  onOpen?: (item: FeedItem) => void;
 };
 
 /** A distance the canvas measures from the phone's top, on this phone. */
@@ -50,7 +52,7 @@ type FrameProps = PostProps & {
 };
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
-export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, backdrop, middle, above, corner }: FrameProps) {
+export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, onOpen, backdrop, middle, above, corner }: FrameProps) {
   const [footHeight, setFootHeight] = useState(0);
   const [railTop, setRailTop] = useState(0);
   const onRailLayout = (e: LayoutChangeEvent) => {
@@ -90,7 +92,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
         {above}
         <View pointerEvents="box-none" style={styles.words}>
           <Pill icon={pill.icon} text={pill.text} testID={`pill-${item.id}`} />
-          <Byline item={item} follows={marks.follows} />
+          <Byline item={item} follows={marks.follows} onOpen={onOpen ? () => onOpen(item) : undefined} />
         </View>
         {offer ? (
           <OfferBar

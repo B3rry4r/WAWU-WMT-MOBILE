@@ -147,10 +147,16 @@ export function Pill({ icon, text, testID }: { icon: IconName; text: string; tes
   );
 }
 
-/** The name, its tick, "· Following" (H6), then the caption. */
-export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) {
+/** The name, its tick, "· Following" (H6), then the caption. The caption opens the piece's own page (H19) when `onOpen` is given. */
+export function Byline({ item, follows, onOpen }: { item: FeedItem; follows: boolean; onOpen?: () => void }) {
   const name = creatorName(item.creator);
   const tick = tickKind(item.creator);
+  const ring = useFocusRing();
+  const captionText = (
+    <Text numberOfLines={3} style={[words.caption, styles.captionText, { color: media.ink }]} testID={`caption-${item.id}`}>
+      {caption(item)}
+    </Text>
+  );
   return (
     <View>
       {name ? (
@@ -162,9 +168,20 @@ export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) 
           {follows ? <Text style={[words.following, { color: media.ink }]}>· Following</Text> : null}
         </View>
       ) : null}
-      <Text numberOfLines={3} style={[words.caption, styles.captionText, { color: media.ink }]} testID={`caption-${item.id}`}>
-        {caption(item)}
-      </Text>
+      {onOpen ? (
+        <Pressable
+          testID={`open-${item.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${item.title}`}
+          onPress={onOpen}
+          {...ring.handlers}
+          style={ring.style}
+        >
+          {captionText}
+        </Pressable>
+      ) : (
+        captionText
+      )}
     </View>
   );
 }

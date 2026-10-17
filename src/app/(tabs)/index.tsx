@@ -9,7 +9,8 @@ import { useClaimPendingReferral } from '@/features/referral/pendingCode';
  * also sees the Create button, which opens M19 (ME-04, R-38). Its search buttons open Search (X5) and Today's creators' See all
  * opens All creators (X4), both EXPLORE-02's. A code kept from a `wawu/r/<code>` link is claimed here once the person is signed
  * in, with nothing drawn for it (REF-03, G-812). The feed's wallet payments (a tip from the rail, HOME-13) lead to
- * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and the Wallet tab (add money).
+ * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and the Wallet tab (add money). A post's caption opens that
+ * piece's own page (H19, HOME-03).
  */
 export default function HomeTab() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function HomeTab() {
       }}
       onSearch={() => router.push('/search')}
       onSeeAllCreators={() => router.push('/creators')}
+      onOpenPiece={(item) => router.push({ pathname: '/content/[id]', params: { id: item.id } })}
     />
   );
 }

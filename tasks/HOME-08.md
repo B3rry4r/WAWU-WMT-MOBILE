@@ -7,13 +7,21 @@ order: 144
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [HOME-03, UI-02, HOME-13, HOME-12]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H24, H25]
 ---
 # HOME-08 · Content detail: free video and course layouts
+
+## Current state
+
+As of 17 Oct 2026, built with HOME-03 (bundle S1b, Sonnet builder, T1), waiting for a verifier.
+- **Status:** verifying. Same branches as HOME-03 (`wmt/S1b`, mobile and backend). H24 and H25 are layouts of the one screen `src/features/content-detail/ContentDetailScreen.tsx`: a free piece (H24) and a course (H25, lessons list, "See all N lessons", the unlock at the foot).
+- **Built:** H24: "Free · 1:50", "Video · 12.4K views · 3 days ago", Tip instead of a price, Follow, Share/Save/Rate, the comments. H25: "12 lessons · 2h 40m" (the lessons' own lengths added up), "Course · 1,280 students" (the Hub's `studentCount`), Free lesson tag and locks from `isFree`, "Unlock course · ₦8,000" (the price; the sheet shows the total), and the wallet line above it.
+- **Not built:** the parent-course row on H24 (G-HOME-08-1: no link from a free piece to its course); playing a free lesson (G-HOME-08-2: no file per lesson); a course total from the Hub (G-HOME-08-3).
+- **Next:** a verifier; passes V1, V4, V5, V6, V9. Records: this file, HOME-03, `BACKEND_GAPS.md` G-HOME-08-1 to 3.
 
 ## Current state
 
@@ -78,13 +86,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-08.md](history/HOME-08.md).
 
 ## Owner sign-off
 

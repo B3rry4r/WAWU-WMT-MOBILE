@@ -101,9 +101,11 @@ export type FeedScreenProps = {
    * With it, the rail draws ₦ Tip (H26, HOME-13); left out, no payment can start from the feed.
    */
   pay?: FlowHandlers;
+  /** A post's caption opens that piece's own page (H19, HOME-03). Left out, the caption only reads. */
+  onOpenPiece?: (item: FeedItem) => void;
 };
 
-export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece }: FeedScreenProps = {}) {
   const pay = useFeedPay(payHandlers);
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
@@ -236,6 +238,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
             onTip={pay.onTip}
             onUnlock={pay.onUnlock}
             unlocking={pay.unlockingId === item.id}
+            onOpen={onOpenPiece}
           />
         )}
       />
