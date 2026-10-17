@@ -1,0 +1,43 @@
+You are the BUILDER for task TIER-05 (Pay by bank transfer at checkout). Open tasks/TIER-05.md in the mobile repo (on the base branch named below) and follow it, with the
+rules below. Step budget: about 130 steps; at the budget, finish what is open, push, and hand back what remains.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it,
+especially "Spend less, check the same" and "The local test stack". Then the task file's Current state and the
+sections it points to (by line range). The mobile repo's DECISIONS.md outranks everything; read only the rulings the
+task names.
+
+Owner answers that bind this task: tier and points figures are TIER-06 admin settings (R-65); money in arrives by bank transfer to the person's own wallet account (R-42: transfer only); fees from config (R-10); 'Bank charge' is the fee label; licence lines hidden (R-67). The purchase completes from the wallet exactly once when the money lands (WALLET-10 money-in rows), even if several transfers land, a transfer lands twice, or the person also pays another way meanwhile; an amount still short leaves it waiting with the new shortfall; a quote binds price and goods (TIER-06 round 2: quote_changed). Never hold a transaction across a network call. R-39 provider seam (Nuvion and Fintava). The web's routes unchanged.
+
+## Where to work
+- Branch `wmt/TIER-05` in each repo you change (mobile always, for the record; backend, wawu-id only if the task needs
+  them). Worktrees under /home/user/wt/ named b-tier-05-m, bb-tier-05, bid-tier-05, from each origin/main (EXCEPTION, the lead's rule: build on batch 6, which is about to merge (PR #142): backend from origin/wmt/MERGE-6 fbf391f; mobile from origin/wmt/MERGE-6 70a7895 (read your task file there)).
+- Ports 7570-7577. Stack name and database prefix `tier_05` (names containing test). Start servers only with
+  `scripts/dev/stack.sh` from the backend repo and `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`.
+- A backend migration, if any, is stamped `20261024210000` (the lead renames at merge if needed).
+- Website (wawuafrica) work is paused (R-49) unless the task file says otherwise.
+
+## Checks before you push (quiet output, gate on each log's EXIT line)
+- Backend: `npx tsc --noEmit`, lint on the files you changed, and only the specs you added or touched. Then push:
+  GitHub runs the full suite, gates, protected routes and contract on every `wmt/**` push. Wait for that run within
+  4-minute looks (`gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`), fix anything red that your change
+  caused (gates: the same 5 FAIL lines as main are not yours), push again.
+- Mobile: GitHub cannot run mobile CI right now (billing), so run the full mobile check locally, once, at the end:
+  `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks; echo "EXIT $?") > <log> 2>&1`.
+  While you work, run only the test files you touched.
+- The task file's own "how to verify" items that are yours to run (pictures at 390 px, light and dark, beside the
+  rendered artboard, from a web export through the stack with `--with mobile`).
+- Fill the task file's builder report and its Current state (at most 60 lines), keep history out of it.
+
+Push each repo to refs/heads/wmt/TIER-05 with retries; confirm with ls-remote. No PR. `stack.sh down` and stop
+anything else you started before you hand back.
+
+Hand back in at most 15 lines: hashes per repo, the migration stamp, what was built, the checks and their results
+(CI run ids), anything not done, and any question for the owner (the lead asks; you never address the owner).
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never edit a test you did not write, a gate or a baseline to make a check pass; never call
+a real provider or a wawuafrica.com host; no em-dashes in anything a person reads.
+
+Commit trailers:
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YVWyVbutb6jEWsPXBkYeY9

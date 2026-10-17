@@ -1,0 +1,50 @@
+You are the BUILDER of TIER-05 ROUND 2 (Pay by bank transfer at checkout). Fix what the check found; change nothing
+else. Step budget: about 60 steps; at the budget, finish what is open, push, and hand back what remains. Quiet output to
+logs; read logs by line range.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md (all of it),
+then the check report /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-05.md. The
+verifier's specs are in /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/tier-05-v/
+(v-tier05-fintava.contract.spec.ts, v-tier05-nuvion.contract.spec.ts): run D1, F1, A4 and B2 from them to reproduce
+before you fix, and after. Bring the cases you need into your own specs (as yours; never edit a test you did not write).
+
+## Round 2: the check's findings; change only this
+1. HIGH: plan-transfer.service.ts sweep() reads the 64 oldest waiting orders (take: batch, oldest first) and filters
+   "due" afterwards, so with 64 or more unfunded orders waiting, a newer order whose money has landed is not looked at
+   until older ones expire (up to 24 h), and a few accounts can park orders to block everyone. Select only DUE orders
+   in the query (nextCheckAt <= now, or a credit newer than creditsSeenAt), oldest due first, with an index that serves
+   it if needed (an additive migration stamped 20261024210500, after your 20261024210000); or page through every
+   waiting order within a time budget. Prove it: 70 unfunded orders then one funded, the funded one pays on the next
+   sweep; 500 unfunded and 5 funded, all 5 pay within one sweep's budget; nothing held across a provider call.
+2. LOW: expireLapsed() ignores the order's transfer-<id> payment. If the payment was made, linking failed, and the
+   window lapses before the retry, the order reads "expired, nothing was taken" though the money was taken and the
+   tier granted. Before expiring, look for that payment and link it (settled), never expire a paid order.
+3. LOW: the settlement key transfer-<orderId> sits in the person's own Idempotency-Key space; a wallet purchase sent
+   with that key links the order to the wrong payment. Make the settlement key one a person cannot send (refuse
+   client keys with the reserved prefix in the money error shape, or link by order id, not by key). Smallest change.
+4. LOW: an unclassified provider refusal after the balance read leaves the order settled and linked to a FAILED
+   payment with no retry. A failed payment returns the order to waiting (next check later), unless the window has
+   lapsed (then expired, nothing taken), with one retry path, never two payments.
+5. Note only, no change: the 201 and 200 answers became oneOf (wallet or transfer); keep them.
+Re-run your own TIER-05 specs, the verifier's 17 (they must still pass), tsc, eslint on the files you changed ONLY,
+contract:build twice equal, push, wait for CI.
+
+## Where
+Continue wmt/TIER-05 from its heads (backend 2f88409, mobile b4ebadb); never restart. Worktrees /home/user/wt/bb-tier-05
+and /home/user/wt/b-tier-05-m. Ports 7570-7577, stack tier_05 (scripts/dev/stack.sh, --scratch
+/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks). Mobile: update tasks/TIER-05.md (round 2
+in the builder report, Current state), regenerate API types if the contract moved, check_tasks --write, then the full
+mobile check once (EXIT line). Wait for backend CI with
+/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wait_ci.sh B3rry4r/WAWU-Backend <sha> 8 in the
+background (this branch is on wmt/MERGE-6: gates should be green).
+
+Rules: never git stash, reset --hard, rebase, amend, force-push, `git checkout -- <file>` or an EMPTY COMMIT; never
+eslint --fix beyond your changed files; never pkill/pgrep -f; never disable git hooks; never push to main; never open,
+merge or comment on a PR. Never edit a gate, the baseline or a test you did not write. Never call a real provider. No
+em-dashes in anything a person reads. Remove your worktrees and stop what you start.
+Commit trailers:
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YVWyVbutb6jEWsPXBkYeY9
+
+Hand back in at most 15 lines: both heads, the migration if any, per finding what changed and the before/after
+evidence, CI run ids and conclusions, the mobile EXIT line, anything not done.

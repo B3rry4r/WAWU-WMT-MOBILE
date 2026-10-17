@@ -1,0 +1,46 @@
+You are the BUILDER of DV2-COMP ROUND 2 (Shared pieces for tiers, points and the Voice Intro). Fix what the check
+found; change nothing else. Step budget: about 50 steps. Quiet output to logs; read logs by line range.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md (all of it),
+then the check report /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-COMP.md
+(pictures and logs in .../scratchpad/dv2-comp-v/).
+
+## Round 2: the check's findings; change only this
+1. MEDIUM: ProductsMeter.tsx:28,36: Intl en-GB month 'short' writes September as "Sept"; the board writes "Sep"
+   (PT5 "30 Sep 2027"). Read the Lagos clock with the MONTHS table src/features/wallet/history/lagosTime.ts already has
+   (import it; never copy it), no Intl. Add September cases, plus the month-end, midnight and year-end cases the
+   verifier ran, to your tests.
+2. MEDIUM: PointsFigure.tsx:60-75,82: a 7-digit figure at hero ("1,250,000 points", 195 px) runs past a 150 to 200 px
+   parent (PT5's column beside "Buy points" is about 182 px on a 360 px phone). Let the row shrink and the number scale
+   down to fit (flexShrink on the row; numberOfLines 1 with adjustsFontSizeToFit and a sensible minimumFontScale on
+   native; on web the same visible result by the means react-native-web supports). Never clip, never wrap the word
+   'points' under a split number. Prove it at 150, 182 and 200 px wide, light and dark, with 7 and 9 digits.
+3. LOW: VoicePlayer.tsx:176-180: the error row says "Tap to try again." but only the 36 px circle is pressable: make
+   the whole row the Pressable (one accessible button "Try again").
+4. LOW: VoicePlayer.tsx:34,55-58: below about 300 px the 8-bar floor draws bars under 2 px; at 0 width barCountFor(0)
+   returns all 26; the first frame draws 26 bars before onLayout. Keep "fewer bars, never thinner": a minimum bar width
+   with fewer bars (down to as few as fit, none at 0), and draw nothing until the width is known.
+5. LOW: TierBadge.tsx:61: VF14 draws the chip full width; add a prop (e.g. `stretch`) so a screen can ask for it. Never
+   fork. Add it to the preview.
+6. LOW: PointsFigure.tsx:68,73: name the 1.2 line-height factor and move the inline style objects into the stylesheet
+   or named metrics (the Button and FilterChips pattern).
+Then: the dv2-comp tests (yours, extended), eslint on the files you changed ONLY, typecheck, gates, and the full mobile
+check once at the end: `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run
+tasks; echo "EXIT $?") > <log> 2>&1`. Pictures for 2, 4 and 5 from a dev web export (your own TMPDIR and ports
+7620-7627, as round 1).
+
+## Where
+Continue wmt/DV2-COMP from 51235be; never restart. Worktree /home/user/wt/b-dv2-comp-m. App only. Update
+tasks/DV2-COMP.md (round 2 in the builder report, Current state), check_tasks --write. Push to refs/heads/wmt/DV2-COMP
+with retries; confirm with ls-remote.
+
+Rules: never git stash, reset --hard, rebase, amend, force-push, `git checkout -- <file>` or an EMPTY COMMIT; never
+eslint --fix beyond your changed files; never pkill/pgrep -f; never push to main; never open, merge or comment on a PR.
+Never edit a gate, the baseline or a test you did not write. No em-dashes in anything a person reads. Stop what you
+start and remove your worktree.
+Commit trailers:
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YVWyVbutb6jEWsPXBkYeY9
+
+Hand back in at most 12 lines: the head, per finding what changed and the evidence, the full check's EXIT line,
+anything not done.

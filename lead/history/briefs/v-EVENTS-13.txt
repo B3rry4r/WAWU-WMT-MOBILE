@@ -1,0 +1,36 @@
+You are the VERIFIER for task EVENTS-13 (Call-off: order cap, cancel once, free tickets). You built none of it and change no product code. Open tasks/EVENTS-13.md
+(main: its Current state; the branch `wmt/EVENTS-13`: the builder's report and the task's "how to verify") and verify it.
+Step budget: about 65 steps.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it.
+
+Backend wmt/EVENTS-13 b22e1b6 on wmt/MERGE-7 ca9ec13 (no migration; CI green except the known forks :67 gate; protected routes green). Mobile c458abe (record). From EVENTS-10's check (verify/EVENTS-10.md findings 1 to 5). Built: (1) admin setting events.open_orders_per_buyer (default 10, min 1, provisional EVENT-ORDER-CAP); order N+1 is 409 event_order_limit 'You have reached the order limit for this event.'; checked early on POST /events/:id/orders/wallet and, decisively, in a new optional PayableKindHandler.beforeClaim hook (src/money/payments) inside the claim's transaction under an advisory lock per buyer and event; paid orders plus claimed-not-delivered payments count; failed and refunded free a place; free orders and the Flutterwave routes untouched. (2) cancel() updates only where cancelledAt is null; the loser gets the later-cancel 409. (3) free orders take the FOR SHARE event read and refuse a called-off event. (4) the call-off answer carries ordersLeftToSweep (left out when 0). (5) the twenty-buyers test fixed; the flake was another process's hold sweep on the shared stack database. Lead rulings: ordersLeftToSweep left out when 0 is right (the cancel route is protected; web-only events always have 0, so the web's answers stay identical); 409 for event_order_limit; lowering N undoes nothing.
+Attack these first:
+1. The cap: 20 and 50 parallel payments by one buyer at N 10 (and N 1); quote-then-pay races; a refund landing during the race frees exactly one place; two buyers on one event and one buyer on two events do not share a count; an admin edit of N mid-race. No payment row, debit or hold for a refused order.
+2. beforeClaim in the money core: every other payable kind behaves exactly as before (bills, DMs, tickets on other routes, plans): run their contract specs and look at the hook's default; the transaction makes no network call.
+3. One cancel: 6 and 20 parallel cancels give one 201, one cancelReason, one refund pass; the web's Flutterwave cancel answers byte-identical to the base for web-only events (probe before and after, as EVENTS-10's verifier did).
+4. Free orders racing the cancel: 60 rounds, 0 valid tickets; a free order before the cancel keeps working as the base did (voided by the cancel as before).
+5. ordersLeftToSweep: refunded + needing attention + left equals paid orders with a hanging provider; the key absent when 0.
+6. The twenty-buyers test: it really overlaps now (timings) and asserts as strongly as before.
+Never call a real provider. No em-dashes in anything a person reads.
+
+## How
+- The builder's report is a list of claims to test, not to trust. Compare with the base wmt/MERGE-7 ca9ec13: a failure also on the base is
+  pre-existing; report it apart.
+- Spend your steps on attacks, not on re-running the builder's suite: for money and limited counters, real parallel
+  requests, double submit, replayed webhooks, wrong role, old-shape input, erase and delete paths, a lost provider
+  answer. For screens, the real flow at 390 px light and dark beside the rendered artboard, every state the task
+  draws, and nothing drawn that is not built (R-47).
+- Run only the specs you need; the full backend suite is GitHub's job (read the branch's CI run if one exists:
+  `gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`).
+- Start servers only with the backend's `scripts/dev/stack.sh` (name `events_13`, ports 7560-7567,
+  `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`), `down` at the end.
+  Detached worktrees under /home/user/wt/ named v-events-13-*, removed at the end. Push nothing.
+- Write your report into the task file's verifier section on a local copy only if the task asks; otherwise put it in
+  /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-13.md.
+
+Hand back: verdict `merge` (nothing medium or worse) or `fix`; numbered findings with severity (blocker, high,
+medium, low), file and line, how to reproduce; the checks with counts; the report's path. At most 30 lines.
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never call a real provider or a wawuafrica.com host; never address the owner.

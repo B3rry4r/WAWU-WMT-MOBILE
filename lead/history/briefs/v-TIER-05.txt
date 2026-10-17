@@ -1,0 +1,36 @@
+You are the VERIFIER for task TIER-05 (Pay by bank transfer at checkout). You built none of it and change no product code. Open tasks/TIER-05.md
+(main: its Current state; the branch `wmt/TIER-05`: the builder's report and the task's "how to verify") and verify it.
+Step budget: about 70 steps.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it.
+
+Backend wmt/TIER-05 (head 2a233c0 or the next one: the builder is changing ONE test line the lead approved, plan-purchase.contract.spec.ts:926 'transfer' to 'card' with the same 400; read the latest head's CI at the end) on wmt/MERGE-6 fbf391f; migration 20261024210000_plan_transfer_orders (one new table PlanTransferOrder). Mobile wmt/TIER-05 177692a (record and API types). POST /plans/purchases method "transfer" for tier, renew and upgrade: PIN, Idempotency-Key and quote checked, nothing taken; the answer gives the person's own wallet account, the Bank charge, the total and the amount still needed (total less the provider's available balance, never below 0). A sweep (8 s, 4-minute recheck) pays the order from the wallet through the same wallet payment as method wallet, exactly once, only when the provider's balance covers the total; quote binding closes it with nothing taken if price, goods or charge changed; a wallet payment of the same item or a new ask closes it; admin setting plan.transfer_window_hours (default 24) expires it. Lead rulings: paying a younger covered order while an older one is short is right; the 24 h default stays (owner asked).
+Attack these first, on the Fintava double (and the Nuvion one if the stack has it):
+1. Exactly once: money lands twice, two transfers land, the sweep runs on two servers at once, the process dies between the payment and marking the order paid (the builder claims a test: break it yourself), the person also pays by wallet meanwhile, the same Idempotency-Key replayed with a different body.
+2. The provider's balance is the truth: the sweep never pays from our own sum of records; a balance that covers this order but is also needed by a payment in flight (a bank send started at the same moment) must not overdraw.
+3. Quote binding under an admin price change between ask and landing; the window ending in the same second the money lands.
+4. Nothing held across a provider call (bystander reads with a 3 s provider); wrong role 403, no token 401; erase-account and data-export paths for the new table.
+5. The builder ran eslint --fix on all of src and restored 164 files from HEAD: confirm the branch diff against fbf391f has only this task's files and no unrelated reformatting.
+6. The web's routes unchanged (protected routes CI), the contract additive.
+Never call a real provider. No em-dashes in anything a person reads.
+
+## How
+- The builder's report is a list of claims to test, not to trust. Compare with the base wmt/MERGE-6 fbf391f: a failure also on the base is
+  pre-existing; report it apart.
+- Spend your steps on attacks, not on re-running the builder's suite: for money and limited counters, real parallel
+  requests, double submit, replayed webhooks, wrong role, old-shape input, erase and delete paths, a lost provider
+  answer. For screens, the real flow at 390 px light and dark beside the rendered artboard, every state the task
+  draws, and nothing drawn that is not built (R-47).
+- Run only the specs you need; the full backend suite is GitHub's job (read the branch's CI run if one exists:
+  `gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`).
+- Start servers only with the backend's `scripts/dev/stack.sh` (name `tier_05`, ports 7610-7617,
+  `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`), `down` at the end.
+  Detached worktrees under /home/user/wt/ named v-tier-05-*, removed at the end. Push nothing.
+- Write your report into the task file's verifier section on a local copy only if the task asks; otherwise put it in
+  /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-05.md.
+
+Hand back: verdict `merge` (nothing medium or worse) or `fix`; numbered findings with severity (blocker, high,
+medium, low), file and line, how to reproduce; the checks with counts; the report's path. At most 30 lines.
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never call a real provider or a wawuafrica.com host; never address the owner.

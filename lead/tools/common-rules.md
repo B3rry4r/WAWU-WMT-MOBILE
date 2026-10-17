@@ -124,3 +124,14 @@ person's GET /users/me must stay under 1 s.
 Never disable or bypass git hooks (no core.hooksPath override, no --no-verify), even when the repo has none today.
 
 Hand-back: if the SubagentHandback tool is refused (the session may not be in auto mode), do not retry it; make your report your final message instead.
+
+## No empty commits, ever (lead, 17 Oct 2026)
+Never push an empty commit (or any commit made only to re-run CI). If a CI check fails in a file your task does not
+touch and passes locally, do not re-run it yourself: say so in your hand-back (check name, run id, spec and line) and
+the lead decides. A flaky test is a finding for a FIX task, never a reason to re-push.
+
+## Ports for agents the brief gives none (lead, 17 Oct 2026)
+A merge preparer or any agent whose brief names no ports uses 7900-7907 only, and checks nothing listens there
+before starting a stack. Never take another range: builders and verifiers own the ranges their briefs name.
+If your own range is busy when you start, do not shift into the next numbers (another agent owns them): use
+7920-7927, check nothing listens there, and say so in your hand-back.

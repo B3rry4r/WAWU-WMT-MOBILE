@@ -43,3 +43,35 @@ Sweep row only: `pin-request-key.contract.spec.ts:202` flake (random PIN inside 
 ## Cleanup
 
 Stack `tier_06` down, second Hub (pid 31951) killed, ports 7430-7437 closed, databases tier_06_* dropped, worktree removed, admin tokens deleted. Nothing pushed.
+
+---
+
+# Round 2 (lean check), 17 Oct 2026
+
+Backend `wmt/TIER-06` 361df74 (on 317f464, main a5e48fc); mobile 3aa7a52 (docs). Verifier: Sonnet. Verdict: **merge** (nothing medium or worse; 2 low, 1 note).
+
+## Checks (counts)
+
+| Ruling | Result | Evidence |
+|---|---|---|
+| Migrations | pass | Fresh DB, all 147 migrations. Rolled back `20261024060100` (DROP COLUMN terms), seeded 3 old-shape WalletPayment rows, `migrate deploy` re-applied: 3 rows kept, terms NULL. Rolled back both (DROP COLUMN, DROP TABLE PlanSetting, migration rows deleted), `migrate deploy` re-applied clean (EXIT 0, enum values present, ADD VALUE IF NOT EXISTS). |
+| 1 HIGH cash-out vs quote | closed | Real Nest app over HTTP with the Fintava stand-in (money needs a wallet; the stack Hub's Fintava is a closed port). Round 1 reproduction at rate up (70,000) and down (12,500): 409 quote_changed, wallet unchanged, 0 conversions, 0 PIN tries (wrong PIN sent on purpose: the 409 comes first); a fresh quote then pays exactly its amount. Changed minimum: 409 / 422, nothing paid. Foreign token, other points (both directions), flipped signature, edited payload with old signature, own-key signature, no-context signature, unsigned, garbage, expired (clock +320 s): all 409, 0 conversions. Missing, empty, number, object, array, null, 1,100 chars: all 400 before the PIN. Untouched token still pays exactly the quote after all refusals. |
+| 1 parallel | pass | 10 parallel, one key, one token: one 201 + nine 409 (in progress), 1 conversion row. 10 parallel, different keys, balance exactly 4,000: one 201, nine 402. Rate flipped every 15 ms for 4 s while 4 converts at a time ran on one token (30 paid, 516 x 402, 66 x 409): every payment was the quoted cash, wallet = paid x quote. |
+| 2 MEDIUM goods | closed | Quote with bump, then change products / bonus points / days / bump points / points expiry months: each 409 quote_changed, no debit, no tier, no lots, no payment row. Unrelated change (extra-products price, another tier's products, daily cap): quote still pays (201), not over-eager. Client-sent `terms` in the buy body: 400 "property terms should not exist". Payment left pending (timeout), plan changed at the same moment as 3 parallel sweeps: one tier, products/bonus/days as quoted, exactly one bump lot (quoted points) and one bonus lot, bump lot > 300 days. |
+| 2 legacy edge | judged OK | Payment with terms set to NULL (as claimed before the column), plan then changed, sweep: granted from the live plan (1 product, quoted 3). Money and price are in the payment row and unchanged; only goods float, and only for a payment in flight at the deploy AND a plan change in that same window. Before TIER-06 the plan could not change at all. Not worth a backfill. Corrupt terms (bad JSON shape): delivery refuses, no tier granted. |
+| 3 referral step | closed | Live Hub: default `referral.milestones` = 5 -> 500, 10 -> 1,500 (2 steps, source default). Adding the 25 step in admin still works; null reset returns to 2 steps on the other Hub within 16 s. |
+| 4 cash rate vs sale price | closed | Live Hub x2 (ports 7430 and 7431, one database). Either order: rate to 80,001 (cheapest sale 80,000) 400; exactly 80,000 200; then bump price 79,999 / bump points 1,001 / pack M points 3,500 / shortfall price 79,999 / pack S price 79,999: all 400 naming both settings; both in one request consistent 200, inconsistent 400; raising the price (fixing) and resetting to default 200; 2,147,483,647 rate and bump points: 400 (no overflow). Race: 24 rounds of three jointly-invalid single-valid PATCHes across both Hubs: 0 final states in violation. 40 mixed parallel PATCHes: 0 violations. Single writer of PlanSetting (grep). |
+| 5 audit chain, lock | closed | 12 parallel PATCHes of one key across both Hubs: 5000 -> 6001 -> 6003 -> 6004 -> 6002 -> 6006 -> 6008 -> 6010 -> 6007 -> 6009 -> 6012 -> 6005 -> 6011, unbroken, last row = final value. All 178 audit rows (all keys, all races): 0 breaks (`from` = previous `to`). 30 parallel PATCHes all 200 in 624 ms. Lock section (`service.ts` set) is DB-only: advisory lock, findMany, upsert/delete, audit create, no network call. |
+| 6 harness helper | follows from the ruling | `git diff` of `test/points/cash-out-harness.ts` only (60 lines, the one existing test file touched): `convert` fetches the quote and sends its token (one token per Idempotency-Key, shared by parallel taps); `quoteToken: null` and a given token stay possible; where the quote cannot be had a made-up token goes so the route's own refusal shows (no wallet, dollars, malformed). No assertion edited; `src/points/convert/tests` 6 suites, 74 tests pass. Refusals that precede the token check (currency, minimum, amount) still answer first. |
+| Roles | pass | superadmin/finance read+write, support GET 200 / PATCH 403, reviewer 403, on both Hubs. |
+| CI on 361df74 | green except as main | netns, suite shards 1-3, contract, deploy-test-in-sync, baseline, protected route suite: success. Gates: failure, local run 5 fail / 119 warn / 83 accepted = main's counts, the 5 FAIL files are not this task's. check_baseline ok. tsc 0, eslint --no-fix on the 26 changed files EXIT 0. |
+
+## Findings
+
+1. LOW, quote token is reusable until it expires. `points-convert-quote-token.ts` is stateless. With 40,000 points and one token for 4,000, 6 parallel converts under different Idempotency-Keys all paid (201), each exactly the quoted cash with its own points deducted: no overpayment, so not a defect; it only means "pay once" holds per key and per balance. Note for POINTS-05: send a fresh quote per attempt.
+2. LOW, latent: the cash rule ignores the pack bonus percent (`plan.tier.founding.pack_bonus_pct` 10). Nothing applies it today (`plans.service.ts:117` only displays it), so no arbitrage exists now. When POINTS-02 applies it, a rate set at the exact maximum would pay about 10 percent more than a Founding buyer paid. The builder flagged this. POINTS-02 must make `pointsSales` (`src/plan-settings/plan-setting-rules.ts:34`) use bonus points; put it on POINTS-02's list.
+3. NOTE: cap and fee cannot be changed at run time here (the cap is the env `MERCHANT_MAX_PER_TXN_KOBO`, the fee is a constant 0), so they were checked in code only: both are in the token (`m`, `x`, `f`) and compared in `assertQuoteHolds`.
+
+## Cleanup
+
+Stack `tier_06` down (mock-id and Hub stopped), second Hub (pid 19350) killed, ports 7430-7437 closed, databases tier_06_* dropped, admin tokens deleted, worktree v-tier-06-be removed, nothing pushed. Scratch specs kept in scratchpad/tier-06-v/specs2 (not in the branch).

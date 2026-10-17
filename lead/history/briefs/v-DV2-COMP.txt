@@ -1,0 +1,35 @@
+You are the VERIFIER for task DV2-COMP (Shared pieces for tiers, points and the Voice Intro). You built none of it and change no product code. Open tasks/DV2-COMP.md
+(main: its Current state; the branch `wmt/DV2-COMP`: the builder's report and the task's "how to verify") and verify it.
+Step budget: about 55 steps.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it.
+
+Mobile wmt/DV2-COMP 51235be on wmt/SHARED-06 d563eb3 (app only). The shared-change pass for four pieces many wave-3 screens draw: TierBadge (name, number: a number makes the dark pill, VF7a), ProductsMeter ('2 of 3 products' with the bar, loading block, nothing when allowed is 0; productsMeterCaption 'Verify · ends 26 Nov' in Lagos time), PointsFigure (hero, row, line, chip, tile: star, count, 'points', never naira), VoicePlayer + VoiceLabel (idle, loading, playing, error; 'Bio' label and a small 'AI voice' tag, R-66; fewer bars on a narrow phone, never thinner; plays no audio). Dev-only previews under src/app/preview/ with ?state=. Props and theme tokens only, no API call. Lead ruling: VF7a's #2A0C3E pill becomes its own token (the board wins), added by ME-12 with the confetti tokens (SHARED-CHANGES DV2-COMP #2); its use of surfaceCardInk now is not a finding.
+Attack these first:
+1. Pictures: your own at 390 px light and dark from the previews (a `expo export --platform web --dev` build: production redirects dev routes) beside the renders of M1, VF11, VF14, M19, PT5, VF7a; every state of each piece. The recorded differences (M1 chip tracking, the 'AI voice' tag not on any board) are not defects unless they break the board.
+2. Values only by props (no literal figure, no fetch), points never naira, Lagos dates correct across midnight and month ends (ProductsMeter caption), allowed 0, used > allowed, huge counts (PointsFigure 1,234,567 wraps or scales, never clips).
+3. Accessibility: labels on the player controls and the meter (value read out), the tag readable by a screen reader.
+4. Gates: the builder renamed gap literals into metrics after the gate flagged them: confirm each follows the named-metrics pattern (Button, FilterChips) and no other gate was dodged; no outside brand names (R-68); no em-dashes; nothing outside src/components, src/app/preview and the tests touched.
+5. The dev-only previews never ship: a production export does not serve them.
+Never call a real provider.
+
+## How
+- The builder's report is a list of claims to test, not to trust. Compare with the base wmt/SHARED-06 d563eb3: a failure also on the base is
+  pre-existing; report it apart.
+- Spend your steps on attacks, not on re-running the builder's suite: for money and limited counters, real parallel
+  requests, double submit, replayed webhooks, wrong role, old-shape input, erase and delete paths, a lost provider
+  answer. For screens, the real flow at 390 px light and dark beside the rendered artboard, every state the task
+  draws, and nothing drawn that is not built (R-47).
+- Run only the specs you need; the full backend suite is GitHub's job (read the branch's CI run if one exists:
+  `gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`).
+- Start servers only with the backend's `scripts/dev/stack.sh` (name `dv2_comp`, ports 7620-7627,
+  `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`), `down` at the end.
+  Detached worktrees under /home/user/wt/ named v-dv2-comp-*, removed at the end. Push nothing.
+- Write your report into the task file's verifier section on a local copy only if the task asks; otherwise put it in
+  /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-COMP.md.
+
+Hand back: verdict `merge` (nothing medium or worse) or `fix`; numbered findings with severity (blocker, high,
+medium, low), file and line, how to reproduce; the checks with counts; the report's path. At most 30 lines.
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never call a real provider or a wawuafrica.com host; never address the owner.

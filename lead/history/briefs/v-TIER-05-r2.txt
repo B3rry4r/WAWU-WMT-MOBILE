@@ -1,0 +1,35 @@
+You are the VERIFIER for task TIER-05 (Pay by bank transfer at checkout). You built none of it and change no product code. Open tasks/TIER-05.md
+(main: its Current state; the branch `wmt/TIER-05`: the builder's report and the task's "how to verify") and verify it.
+Step budget: about 45 steps.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it.
+
+ROUND 2 CHECK (lean). Backend wmt/TIER-05 f992f4a on 2f88409 (no migration; contract unchanged; CI 9/9 green: Gates 39009379051, Protected routes 39009379056, Branch checks 39009379050). Mobile e8036f8 (docs). Your round 1 report: /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-05.md and your specs in .../scratchpad/tier-05-v/. The builder says: (1) sweep() pages every waiting order lightly, asks the ledger once per page of people for their newest credit, settles only due people (new credit first, then rechecks, oldest first, 18 s budget; pure duePeople in plan-transfer-order.ts); (2) expireLapsed links a made payment, never expires a paid order; (3) settlement key transfer:<orderId> (a colon, outside the client key format: refused 400 idempotency_key_required); (4) a failed payment is not linked, its key freed, the order back to awaiting with backoff or expired, one live payment at a time. Residuals the builder lists (judge their severity): a payment pending when linked that fails later still leaves the order settled on a failed payment; a provider error before any payment retries at every sweep while a credit is newer than the order's last look (does that hammer the provider? measure calls per minute with 50 such orders).
+Attack these first:
+1. Your D1, F1, A4, B2 and all 17 of your specs on f992f4a.
+2. Starvation at scale: 2,000 waiting (most unfunded, many due by recheck) and 10 funded: all 10 pay in one sweep; the budget holds; two servers sweeping at once pay each once; a bystander's reads stay fast.
+3. The paging: an order created or funded while a sweep is paging is not skipped forever (next sweep at the latest); a person with many orders and one credit pays the right one (younger covered, the lead's ruling) once.
+4. Key format: confirm the client guard really refuses 'transfer:...' and nothing else that worked before is now refused (old valid keys still accepted).
+5. The two residuals: reproduce, grade.
+Never call a real provider. No em-dashes in anything a person reads.
+
+## How
+- The builder's report is a list of claims to test, not to trust. Compare with round 1's head 2f88409 and the base wmt/MERGE-6 fbf391f: a failure also on the base is
+  pre-existing; report it apart.
+- Spend your steps on attacks, not on re-running the builder's suite: for money and limited counters, real parallel
+  requests, double submit, replayed webhooks, wrong role, old-shape input, erase and delete paths, a lost provider
+  answer. For screens, the real flow at 390 px light and dark beside the rendered artboard, every state the task
+  draws, and nothing drawn that is not built (R-47).
+- Run only the specs you need; the full backend suite is GitHub's job (read the branch's CI run if one exists:
+  `gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`).
+- Start servers only with the backend's `scripts/dev/stack.sh` (name `tier_05`, ports 7610-7617,
+  `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`), `down` at the end.
+  Detached worktrees under /home/user/wt/ named v-tier-05-*, removed at the end. Push nothing.
+- Write your report into the task file's verifier section on a local copy only if the task asks; otherwise put it in
+  /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-05-r2.md.
+
+Hand back: verdict `merge` (nothing medium or worse) or `fix`; numbered findings with severity (blocker, high,
+medium, low), file and line, how to reproduce; the checks with counts; the report's path. At most 30 lines.
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never call a real provider or a wawuafrica.com host; never address the owner.

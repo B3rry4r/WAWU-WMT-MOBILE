@@ -12,7 +12,7 @@
  "needs": [
   {
    "title": "Approve merges when I ask",
-   "sub": "Each merge now comes to you as one Approve tap. Next: batch 5"
+   "sub": "Batch 6 (PR #142): one tap. Batch 7: one gate line moved (same approved finding, line 62 to 67); the agent was not allowed to re-key it in auto mode, so it needs your OK, then one tap."
   },
   {
    "title": "Keys and accounts only you can give",
@@ -20,7 +20,8 @@
     "Fintava sandbox key",
     "Nuvion sandbox key",
     "Expo token (for the APK)",
-    "Fix GitHub billing (app checks)"
+    "Fix GitHub billing (app checks)",
+    "Nuvion server: NUVION_WALLET_BANK_NAME=Nuvion"
    ]
   },
   {
@@ -31,6 +32,14 @@
     "AI voice provider key (Voice Intro, Studio)",
     "One live count: unpaid sales (WALLET-16)",
     "Voices: brand pick + section 22 by 24 Oct"
+   ]
+  },
+  {
+   "title": "Morning questions",
+   "pills": [
+    {
+     "q": "Q-36"
+    }
    ]
   }
  ],
@@ -217,31 +226,21 @@
  "columns": {
   "building": [
    {
-    "id": "TIER-06",
-    "title": "Tier, points, referral figures as settings",
-    "note": "round 2: a cash-out pays only what was quoted"
-   },
-   {
-    "id": "LEAD-HANDOFF",
-    "title": "Hand-over folder for other accounts",
-    "note": "lead branch in the app repo"
-   },
-   {
-    "id": "KYC-06",
-    "title": "ID document and proof of address screens",
-    "note": "round 2: your answers + 3 fixes"
+    "id": "DV2-COMP",
+    "title": "Shared pieces: tier badge, products meter, points, voice player",
+    "note": "round 2: two fixes"
    }
   ],
   "checking": [
    {
-    "id": "SETTINGS-06",
-    "title": "Delete account",
-    "note": "round 8 check"
+    "id": "EVENTS-13",
+    "title": "Call-off: order cap, cancel once, free tickets",
+    "note": "built; checking"
    },
    {
-    "id": "TIER-07",
-    "title": "Tier badge on profiles",
-    "note": "built; checking"
+    "id": "TIER-05",
+    "title": "Pay by bank transfer at checkout",
+    "note": "round 2 built; checking"
    }
   ],
   "check_queued": [
@@ -251,43 +250,140 @@
     "note": "waits for the new designs"
    }
   ],
-  "merging": [],
-  "ready": [
+  "merging": [
    {
     "id": "EVENTS-07",
     "title": "Buy event tickets from the wallet",
-    "note": "batch 6, check passed",
-    "branch": [
-     "B3rry4r/WAWU-Backend wmt/EVENTS-07",
-     "MOXN-AFRICA/wawu-wmt-mobile wmt/EVENTS-07"
-    ]
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
    },
    {
     "id": "WALLET-39",
     "title": "Money-in notices, add money received",
-    "note": "batch 6, check passed",
-    "branch": [
-     "B3rry4r/WAWU-Backend wmt/WALLET-39",
-     "MOXN-AFRICA/wawu-wmt-mobile wmt/WALLET-39"
-    ]
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
    },
    {
     "id": "GATES-02",
     "title": "Record the 5 gate lines",
-    "note": "batch 6, check passed",
-    "branch": [
-     "B3rry4r/WAWU-Backend wmt/GATES-02",
-     "MOXN-AFRICA/wawu-wmt-mobile wmt/GATES-02"
-    ]
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
    },
    {
     "id": "HOME-16",
     "title": "Daily TGIF notification",
-    "note": "batch 6, check passed",
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
+   },
+   {
+    "id": "TIER-07",
+    "title": "Tier badge on profiles",
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
+   },
+   {
+    "id": "TIER-06",
+    "title": "Tier, points, referral figures as settings",
+    "note": "batch 6 PR #142: one tap for you",
+    "pr": "B3rry4r/WAWU-Backend#142"
+   }
+  ],
+  "ready": [
+   {
+    "id": "KYC-06",
+    "title": "ID document and proof of address screens",
+    "note": "batch 7: stacked (needs your re-key OK)",
     "branch": [
-     "B3rry4r/WAWU-Backend wmt/HOME-16",
-     "MOXN-AFRICA/wawu-wmt-mobile wmt/HOME-16"
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/KYC-06"
     ]
+   },
+   {
+    "id": "SETTINGS-06",
+    "title": "Delete account",
+    "note": "batch 7: stacked (needs your re-key OK)",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/SETTINGS-06",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/SETTINGS-06"
+    ]
+   },
+   {
+    "id": "ADS-07",
+    "title": "Advert artwork required, Explore slider takes turns",
+    "note": "batch 7: stacked (needs your re-key OK)",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/ADS-07",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/ADS-07"
+    ]
+   },
+   {
+    "id": "EXPLORE-06",
+    "title": "Popular communities only at 10+ members",
+    "note": "batch 7: stacked (needs your re-key OK)",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/EXPLORE-06",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/EXPLORE-06"
+    ]
+   },
+   {
+    "id": "KYC-07",
+    "title": "Complete your account: Home flag, BVN and NIN step",
+    "note": "batch 7: stacked (needs your re-key OK)",
+    "branch": [
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/KYC-07"
+    ]
+   },
+   {
+    "id": "WALLET-37",
+    "title": "Withdraw only to your own name, 30 name checks an hour",
+    "note": "batch 7: stacked (needs your re-key OK)"
+   },
+   {
+    "id": "WALLET-38",
+    "title": "Your pass",
+    "note": "batch 7: stacked (needs your re-key OK)"
+   },
+   {
+    "id": "REF-02",
+    "title": "Referral points: invite, claim and earn",
+    "note": "batch 7: stacked (needs your re-key OK)"
+   },
+   {
+    "id": "EVENTS-10",
+    "title": "Refund ticket buyers when an event is called off",
+    "note": "in batch 7",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/EVENTS-10",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/EVENTS-10"
+    ]
+   },
+   {
+    "id": "FIX-45",
+    "title": "Two flaky tests made steady",
+    "note": "in batch 7",
+    "branch": [
+     "B3rry4r/WAWU-Backend wmt/FIX-45",
+     "MOXN-AFRICA/wawu-wmt-mobile wmt/FIX-45"
+    ]
+   },
+   {
+    "id": "SHARED-06",
+    "title": "Shared components take the open requests",
+    "note": "in batch 7"
+   },
+   {
+    "id": "WALLET-40",
+    "title": "Alert when your account number is ready",
+    "note": "in batch 7"
+   },
+   {
+    "id": "HOME-17",
+    "title": "TGIF time in admin, clear after 30 days",
+    "note": "in batch 7"
+   },
+   {
+    "id": "DV2-06",
+    "title": "Settings: TGIF each morning, banking wording",
+    "note": "checked; joins batch 7 next"
    }
   ],
   "waiting": [
@@ -307,10 +403,6 @@
   ],
   "queued": [
    {
-    "id": "TIER-05",
-    "title": "Pay by bank transfer at checkout"
-   },
-   {
     "id": "TIER-04",
     "title": "Add 5 more products"
    },
@@ -327,9 +419,14 @@
     "pr": "B3rry4r/WAWU-Backend#26"
    },
    {
-    "id": "HOME-17",
-    "title": "TGIF time in admin, clear after 30 days",
-    "note": "your answer; after TIER-06"
+    "id": "SHARED-08",
+    "title": "Tab bar over the feed (media tone)",
+    "note": "after SHARED-06"
+   },
+   {
+    "id": "SHARED-09",
+    "title": "API client returns data (codemod)",
+    "note": "after SHARED-06"
    }
   ],
   "stopped": [
@@ -346,6 +443,81 @@
   ]
  },
  "news": [
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Settings now say TGIF each morning and Banking by (the bank): passed its check"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "TGIF time and two limits are now admin settings; old TGIF notices clear after 30 days: passed its check"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Account-number-ready alert passed its check: one alert per wallet, tap opens Wallet"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Shared app components passed their check: 17 requests in, about 40 screens tidied"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Refunds when an event is called off passed its check and joined batch 7"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Shared app components took 17 open requests (about 40 screens tidied): now being checked"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Own-name withdrawals, Your pass and referral points passed their checks: joining batch 7"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Complete your account (Home flag, BVN and NIN step) passed its check: wallet opening works end to end"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Popular communities only at 10+ members passed its check; website search unchanged"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Advert artwork required and the Explore slider passed their check"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Delete account passed its check: buyers keep what they paid for, takedowns stay down, contact details scrubbed"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "ID document and proof of address screens passed their check, with your 4 answers built in"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Batch 6 ready as PR #142: all checks green, gates now 0 fails; waiting for your one tap"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Tier, points and referral figures as admin settings passed its check: a cash-out pays exactly what was quoted"
+  },
+  {
+   "date": "2026-10-17",
+   "tone": "accent-fg",
+   "text": "Tier badge on profiles passed its check (Founding Maker numbers given once, never twice)"
+  },
   {
    "date": "2026-10-17",
    "tone": "accent-fg",
@@ -625,6 +797,10 @@
   }
  ],
  "merged": [
+  {
+   "id": "LEAD-HANDOFF",
+   "text": "Hand-over folder for other accounts: lead branch in the app repo (HANDOFF.md first)"
+  },
   {
    "id": "BATCH 5",
    "text": "Bank sends, bills, credits, school fees, sends to WAWU users, upload preview, video and PDFs (live)"
@@ -942,6 +1118,27 @@
    "text": "Daily TGIF time and keeping",
    "status": "answered",
    "answer": "7am Lagos, clear after 30 days",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-36",
+   "text": "BVN step says 'Checked with NIBSS': right under Nuvion?",
+   "status": "open",
+   "answer": "",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-37",
+   "text": "Social links: our icon set lost LinkedIn's logo. Draw LinkedIn's own logo, or a plain link icon with the word 'LinkedIn'?",
+   "status": "open",
+   "answer": "",
+   "date": "2026-10-17"
+  },
+  {
+   "id": "Q-38",
+   "text": "Paying by bank transfer at checkout waits 24 hours for the money, then lapses with nothing taken (changeable in admin). Is 24 hours right?",
+   "status": "open",
+   "answer": "",
    "date": "2026-10-17"
   }
  ],

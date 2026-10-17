@@ -1,0 +1,74 @@
+You are the BUILDER for task EVENTS-13 (Call-off: order cap, cancel once, free tickets). Step budget: about 110 steps; at the budget, finish what is open, push, and hand back what remains.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it,
+especially "Spend less, check the same" and "The local test stack". The mobile repo's DECISIONS.md outranks everything;
+read only the rulings this brief names. There is no task file yet: CREATE tasks/EVENTS-13.md in the mobile repo in the shape
+of tasks/HOME-16.md (id EVENTS-13, area EVENTS, priority launch, status verifying, repo, depends_on, decisions, the spec
+below as its body, the builder report, Current state) and run check_tasks --write.
+
+## What to build (backend; the app gets one error line)
+EVENTS-10's check (verify report: /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-10.md,
+findings 1, 3, 4, 5; read them first) found that WAWU pays about 46.50 naira for every refunded ticket order when an event
+is called off (R-31: the buyer did nothing wrong, so WAWU carries the charge), and nothing bounds how many orders one
+buyer places on one event. Lead rulings (17 Oct 2026):
+1. Order cap. A buyer may hold at most N open PAID wallet orders on one event (open = not failed, not refunded). N is a
+   TIER-06 admin registry setting, "Most open ticket orders per buyer per event", default 10, at least 1 (read how
+   TIER-06 validates, audits and reloads). Order N+1 is refused before any money moves, in the money error shape, code
+   event_order_limit, message "You have reached the order limit for this event." Parallel orders by one buyer never
+   exceed N (serialise per buyer and event; never hold a transaction across a network call). Refunded and failed
+   orders do not count. Free orders are not capped (they cost nothing to refund). The web's Flutterwave ticket routes
+   are protected and keep their behaviour: the cap is on the wallet route only.
+2. One cancel. event-ticketing.service.ts cancel() checks cancelledAt and then updates unconditionally, so two
+   simultaneous cancels both answer 201 (finding 3). Guard the update on cancelledAt being null; the loser gets the
+   same answer a second cancel gets today when it comes later. Check the protected route registry's entry for this
+   route: its documented answers do not change.
+3. Free orders on a called-off event. make() for free orders takes no lock, so a free order made in the same instant as
+   the cancel keeps a valid ticket (finding 4, 13 of 60 rounds). Take the same FOR SHARE read of the event row EVENTS-10
+   added to issue(), and refuse a free order on a called-off event inside it.
+4. The twenty-buyers test (finding 1): the cancel request is a lazy supertest object, only sent at `await`, after the
+   bystander reads, so its "under 1 s" and "under 25 s" assertions never ran against the cancel. Send it first
+   (`.then()` or `.end()`), keep every assertion as strong, and show it now overlaps (log the timings). It is ALSO
+   flaky: at event-call-off-refund.contract.spec.ts:546 it failed 2 of 5 local runs under load (one buyer's balance
+   9248425 kobo, not 10000000: one refund missing when the assertion ran), most likely the 15 s request budget leaving
+   orders to the sweep (finding 2). Find the cause with numbers, then make the test deterministic without weakening it:
+   the answer must account for every order, and after the sweep every buyer is whole. Show 30 of 30 passes under load.
+4b. Finding 2 (now yours; close its row "EVENTS-10 F2" in tasks/SWEEP-EVENTS.md): the call-off answer says how many
+   orders were left to the sweep (an additive field, e.g. ordersLeftToSweep), so ordersRefunded + refundsNeedingAttention
+   + ordersLeftToSweep equals the paid orders. The budget stays.
+5. App: where the app shows event checkout errors, the event_order_limit message shows (server message or a mapped
+   line, whichever the app does today). No em-dashes.
+Specs: 20 parallel orders by one buyer with N 10 leave exactly 10 open and 10 refused with no money moved; a refunded
+order frees a place; an admin edit of N works without a restart; 6 and 20 parallel cancels give exactly one 201;
+60 rounds of free order racing cancel give 0 valid tickets on the called-off event; the fixed twenty-buyers test.
+
+## Where to work
+- Branch `wmt/EVENTS-13` in each repo you change (mobile always, for the record; backend, wawu-id only if the task needs
+  them). Worktrees under /home/user/wt/ named b-events-13-m, bb-events-13, bid-events-13, from each origin/main (EXCEPTION, the lead's rule: build on batch 7, which is stacked to merge next: backend from origin/wmt/MERGE-7 ca9ec13; mobile from origin/wmt/MERGE-7 3817f5b. Those branches may move while you work; do not merge their later heads in).
+- Ports 7560-7567. Stack name and database prefix `events_13` (names containing test). Start servers only with
+  `scripts/dev/stack.sh` from the backend repo and `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`.
+- A backend migration, if any, is stamped `20261025000000` (the lead renames at merge if needed).
+- Website (wawuafrica) work is paused (R-49) unless the task file says otherwise.
+
+## Checks before you push (quiet output, gate on each log's EXIT line)
+- Backend: `npx tsc --noEmit`, lint on the files you changed, and only the specs you added or touched. Then push:
+  GitHub runs the full suite, gates, protected routes and contract on every `wmt/**` push. Wait for that run within
+  4-minute looks (`gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`), fix anything red that your change
+  caused (gates: the same 5 FAIL lines as main are not yours), push again.
+- Mobile: GitHub cannot run mobile CI right now (billing), so run the full mobile check locally, once, at the end:
+  `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks; echo "EXIT $?") > <log> 2>&1`.
+  While you work, run only the test files you touched.
+- Fill the task file's builder report and its Current state (at most 60 lines), keep history out of it.
+
+Push each repo to refs/heads/wmt/EVENTS-13 with retries; confirm with ls-remote. No PR. `stack.sh down` and stop
+anything else you started before you hand back.
+
+Hand back in at most 15 lines: hashes per repo, the migration stamp, what was built, the checks and their results
+(CI run ids), anything not done, and any question for the owner (the lead asks; you never address the owner).
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never edit a test you did not write, a gate or a baseline to make a check pass; never call
+a real provider or a wawuafrica.com host; no em-dashes in anything a person reads.
+
+Commit trailers:
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YVWyVbutb6jEWsPXBkYeY9

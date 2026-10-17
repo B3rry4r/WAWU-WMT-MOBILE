@@ -1,0 +1,42 @@
+You are the BUILDER for task DV2-COMP (Shared pieces for tiers, points and the Voice Intro). Open tasks/DV2-COMP.md in the mobile repo (on the base branch named below) and follow it, with the
+rules below. Step budget: about 110 steps; at the budget, finish what is open, push, and hand back what remains.
+
+FIRST read /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/prompts/common-rules.md, all of it,
+especially "Spend less, check the same" and "The local test stack". Then the task file's Current state and the
+sections it points to (by line range). The mobile repo's DECISIONS.md outranks everything; read only the rulings the
+task names.
+
+Lead notes that bind this task: it is the serial shared-change pass for these four pieces (law 9): no screen task touches src/components while it runs. Owner answers: 'Bio' label plus a small 'AI voice' tag on the Voice Intro (R-66); no outside brand names (R-68); tier and points figures are admin settings, so every figure comes by props from the Hub, never a literal (R-65, R-47); Naira only (R-16); points are a count, never naira. Base it on SHARED-06 (checked by the lead's verifier, merge verdict): its Banner, Switch, Button pill, PinDots and tokens are yours to use; never fork one.
+
+## Where to work
+- Branch `wmt/DV2-COMP` in each repo you change (mobile always, for the record; backend, wawu-id only if the task needs
+  them). Worktrees under /home/user/wt/ named b-dv2-comp-m, bb-dv2-comp, bid-dv2-comp, from each origin/main (EXCEPTION, the lead's rule: mobile from origin/wmt/SHARED-06 d563eb3, which sits on batch 7's f45ffbd and joins batch 7 next; read your task file there. App only: no backend or wawu-id change is expected; if one is, stop and say so).
+- Ports 7620-7627. Stack name and database prefix `dv2_comp` (names containing test). Start servers only with
+  `scripts/dev/stack.sh` from the backend repo and `--scratch /tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/stacks`.
+- Website (wawuafrica) work is paused (R-49) unless the task file says otherwise.
+
+## Checks before you push (quiet output, gate on each log's EXIT line)
+- Backend: `npx tsc --noEmit`, lint on the files you changed, and only the specs you added or touched. Then push:
+  GitHub runs the full suite, gates, protected routes and contract on every `wmt/**` push. Wait for that run within
+  4-minute looks (`gh api repos/B3rry4r/WAWU-Backend/commits/<sha>/check-runs`), fix anything red that your change
+  caused (gates: the same 5 FAIL lines as main are not yours), push again.
+- Mobile: GitHub cannot run mobile CI right now (billing), so run the full mobile check locally, once, at the end:
+  `(npm run typecheck && npm run lint && npm test -- --maxWorkers=2 && npm run gates && npm run tasks; echo "EXIT $?") > <log> 2>&1`.
+  While you work, run only the test files you touched.
+- The task file's own "how to verify" items that are yours to run (pictures at 390 px, light and dark, beside the
+  rendered artboard, from a web export through the stack with `--with mobile`).
+- Fill the task file's builder report and its Current state (at most 60 lines), keep history out of it.
+
+Push each repo to refs/heads/wmt/DV2-COMP with retries; confirm with ls-remote. No PR. `stack.sh down` and stop
+anything else you started before you hand back.
+
+Hand back in at most 15 lines: hashes per repo, the migration stamp, what was built, the checks and their results
+(CI run ids), anything not done, and any question for the owner (the lead asks; you never address the owner).
+
+Rules: never `pkill` or `pgrep -f`; kill only by PID; never git stash, reset --hard, rebase, amend, force-push or
+`git checkout -- <file>`; never edit a test you did not write, a gate or a baseline to make a check pass; never call
+a real provider or a wawuafrica.com host; no em-dashes in anything a person reads.
+
+Commit trailers:
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YVWyVbutb6jEWsPXBkYeY9
