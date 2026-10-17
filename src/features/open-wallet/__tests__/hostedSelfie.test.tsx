@@ -194,8 +194,9 @@ describe('A6 · Selfie hand-off and A7 · Back from the secure page', () => {
       rtl.fireEvent.press(app.screen.getByTestId('open-wallet-selfie-continue'));
     });
     await rtl.waitFor(() => expect(opened).toEqual([SECURE_PAGE]));
-    // No return address is sent: the app has no https one (G-827); the body is empty.
-    expect(JSON.parse(calls('POST', '/money/identity/liveness')[0].body)).toEqual({});
+    // LINKS-01 (G-827): the return address is the website's own /selfie, an app link the Hub lists in
+    // NUVION_LIVENESS_REDIRECT_ORIGINS; it carries nothing else.
+    expect(JSON.parse(calls('POST', '/money/identity/liveness')[0].body)).toEqual({ redirectUrl: 'https://wawuafrica.com/selfie' });
     // The person finishes there and switches back to the app: the result is read.
     fallback['GET /money/identity/liveness'] = liveness({ state: 'passed' });
     await rtl.act(async () => {

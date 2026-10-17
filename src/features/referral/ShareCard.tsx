@@ -8,6 +8,7 @@ import { VerifiedTick } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { font, stopOf, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
+import { readableLink } from '@/lib/appLinks';
 
 import { CARD_LINE } from './model';
 
@@ -86,7 +87,7 @@ export function ShareCard({ name, hue, avatarUrl, ticks, link, viewRef }: ShareC
             {CARD_LINE}
           </Text>
           <Text variant="body" style={[font(700), styles.link]} testID="invite-card-link">
-            {link}
+            {readableLink(link)}
           </Text>
         </View>
       </View>

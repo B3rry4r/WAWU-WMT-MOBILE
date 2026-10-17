@@ -101,7 +101,7 @@ describe('Invite and earn (RF1)', () => {
     answers[HUB] = ok(referrals({ link: 'wawu/r/amaka', code: 'AMAKA', brought: 11, verified: 4, pending: 5, pointsEarned: 12_350, multiplier: 1.25, ladder: ladder(2) }));
     await open();
     expect(await screen.findByTestId('invite-link-card')).toBeTruthy();
-    expect(text('invite-link')).toBe('wawu/r/amaka');
+    expect(text('invite-link')).toBe('wawuafrica.com/r/amaka');
     expect(text('invite-code')).toBe('AMAKA');
     expect(screen.getByTestId('invite-brought')).toHaveTextContent('11Brought');
     expect(screen.getByTestId('invite-verified')).toHaveTextContent('4Verified');
@@ -118,10 +118,10 @@ describe('Invite and earn (RF1)', () => {
     answers[HUB] = ok(referrals());
     await open();
     await fireEvent.press(await screen.findByTestId('invite-copy-link'));
-    await waitFor(() => expect(mockCopied).toEqual(['wawu/r/lennox']));
+    await waitFor(() => expect(mockCopied).toEqual(['https://wawuafrica.com/r/lennox']));
     expect(await screen.findByLabelText('Copied')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('invite-copy-code'));
-    await waitFor(() => expect(mockCopied).toEqual(['wawu/r/lennox', 'LENNOX']));
+    await waitFor(() => expect(mockCopied).toEqual(['https://wawuafrica.com/r/lennox', 'LENNOX']));
   });
 
   it('does not say Copied when the phone refuses', async () => {

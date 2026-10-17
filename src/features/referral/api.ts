@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { inviteLink } from '@/lib/appLinks';
 
 /**
  * The Invite and earn calls (REF-03, RF1 to RF4), as the Hub's contract types them (REF-02, G-802):
@@ -8,7 +9,7 @@ import type { components } from '@/api/schema.generated';
  *   the level and its ladder, the milestones, the hold days and the newest rewards. Every figure on RF1 to RF4 is read
  *   from this one answer; nothing on those screens is typed here.
  * - `POST /me/referrals/claim`: uses someone's code, once, in the first days. Nothing on screen draws it (G-812): a
- *   `wawu/r/<code>` link opened in the app sends the code here after sign-in (`pendingCode.ts`).
+ *   `https://wawuafrica.com/r/<code>` link opened in the app sends the code here after sign-in (`pendingCode.ts`).
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11),
  * so each call reads `data` itself.
@@ -54,7 +55,9 @@ export async function fetchReferrals(): Promise<Referrals> {
   ) {
     throw unreadable();
   }
-  return view;
+  // LINKS-01: the link a person shares is the website's app link, `https://wawuafrica.com/r/<code>`; the Hub's own
+  // `link` (`wawu/r/<code>`, no scheme) is a string no chat app makes tappable.
+  return { ...view, link: inviteLink(view.code) };
 }
 
 /** Uses a code (or the link it came in). The Hub answers the code in capitals and when it was claimed. */

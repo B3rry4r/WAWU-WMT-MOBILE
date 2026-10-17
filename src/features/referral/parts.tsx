@@ -9,6 +9,7 @@ import { IconTile } from '@/components/IconTile';
 import { PointsFigure } from '@/components/PointsFigure';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
+import { readableLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { formatCount, formatMultiplier, levelPills, NOBODY_YET, nextCard, type LevelPill } from './model';
@@ -131,7 +132,7 @@ export function LinkCard({ link, code, onShare }: { link: string; code: string; 
         <Text variant="label">Your link</Text>
         <View style={styles.linkRow}>
           <Text variant="body" numberOfLines={1} style={[font(700), styles.link]} testID="invite-link">
-            {link}
+            {readableLink(link)}
           </Text>
           <CopyPill value={link} label="Link" testID="invite-copy-link" />
         </View>

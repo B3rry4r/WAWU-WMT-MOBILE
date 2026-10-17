@@ -271,8 +271,9 @@ Builder and verifier are always different sessions.
 253. [WALLET-40](WALLET-40.md) Alert when your account number is ready
 254. [FIX-45](FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together
 255. [EVENTS-13](EVENTS-13.md) Call-off: order cap, cancel once, free tickets
-256. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-257. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+256. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
+257. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+258. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

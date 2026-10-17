@@ -161,3 +161,21 @@ describe('REF-03: opening a wawu/r/<code> link in the app', () => {
     expect(claims).toEqual([]);
   });
 });
+
+describe('LINKS-01: the shared invite, https://wawuafrica.com/r/<code>, opened in the app', () => {
+  it('a signed-out visitor goes to the welcome screen and the code waits on the phone', async () => {
+    await renderRouter(routes, { initialUrl: 'https://wawuafrica.com/r/lennox' });
+    expect(await screen.findByTestId('welcome')).toBeTruthy();
+    expect(claims).toEqual([]);
+    expect(mockVault.get(PENDING_KEY)).toBe('lennox');
+  });
+
+  it('a signed-in person has it claimed at once and is sent Home', async () => {
+    signIn();
+    claimAnswers = [claimed('AMAKA')];
+    await renderRouter(routes, { initialUrl: 'https://wawuafrica.com/r/amaka' });
+    await waitFor(() => expect(claims).toEqual([{ code: 'amaka' }]));
+    await waitFor(() => expect(pathname()).toBe('/'));
+    expect(mockVault.get(PENDING_KEY)).toBe('');
+  });
+});
