@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 296.**
+**Launch tasks done: 176 of 297.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 72 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 96 | 0 | 0 | 0 |
+| verifying | 97 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-61](../tasks/FIX-61.md) A paid-question spec that failed for ten minutes of every day no longer meets Lagos midnight (You)
 - [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
 - [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
@@ -310,6 +311,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · FIX-61 · Built (Sonnet builder, T1; backend `wmt/FIX-61` `cc0da36` on `origin/wmt/MERGE-13` `6bc7b20`, test files only; status verifying): `paid-dm-wallet` "two answers in a day" failed on CI for about ten minutes of every day (starts 22:11 to 22:21 UTC) because the pay harness sweeps at a clock that runs ahead of the wall clock and the third answer's sweep fell after Lagos midnight (23:00 UTC), where a new move is right (R-55): a test cause, not the product. The harness gets `keepInLagosDay`, called by the two one-move-a-day specs; the rule is pinned on both sides of midnight with no database; reproduced by starting the spec at 22:12 to 22:20 UTC (fails) and passing after.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.
 - 17 Oct 2026 · ME-07 · Built (Sonnet builder, T1; mobile `wmt/ME-07` on `origin/wmt/WALLET-13` `f1f57e10` with `origin/wmt/P1` `9285017` merged; no backend change, no migration; status verifying): the Creator dashboard (M18, `/creator`: the month's earnings and change from `GET /me/earnings`, the uploads meter, Set up with the wallet row "Open your wallet: Not opened / Open", Earnings "Lands in your wallet automatically", My content), My content (M28, `/library`), Rejected (M26, `/library/<id>`: the reviewer's reason, Replace the file, Edit details, Delete, Send again to M25), M27 as M20 with every upload used and Open library, View in library on M25, and Creator dashboard and My content in the Me menu for a creator. Walked on stack `me07` against the real Hub. Gaps G-ME-07-1 to -8 (the delete row says "Delete": the Hub already returns the place at a rejection), SHARED-CHANGES ME-07 #1, F1, F2; Get verified waits for ME-12, Host a community for INBOX-14.
@@ -324,4 +326,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · FIX-55 · Built (Sonnet builder, T0; mobile `wmt/FIX-55` on `origin/wmt/WA` `2c5e1bc2` with `origin/wmt/S2` `6957df6b` merged; no backend change, no migration; status verifying): PT4 offers Bank transfer only when the wallet is short of the pack (lead ruling); no pay sheet offers Add money until WALLET-05 (R-47): the ticket sheet, the credits sheet (`credits-add`), the request pay sheet and the send sheet lose the button and keep their short notice; the S2 and WA gap ids G-880 to G-882 collided, WA's are now G-WALLET-03-1, G-POINTS-06-1 and G-POINTS-06-2.
 - 17 Oct 2026 · DV2-02, WALLET-03, POINTS-06 · Built (Sonnet builder, one branch `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): the Wallet tab is the 16 Oct board (Points and Passes cards, five-column actions with Send, Buy points and To cash, no bills, History without Bills and with W28's No content sales, the card's bank line "Who Made This? · <bank>"); Send to a bank account (W7's Bank account tab, W8, W13's shortfall line on W9, W10 with the Bank charge, W12 for a bank, W14 for a transfer the bank did not take); Buy points (PT4, PT4b, PT4c, by wallet or bank transfer, Buy on Wallet, Your points and Convert).
 - 17 Oct 2026 · INBOX-13, INBOX-19, INBOX-20 · Built (Sonnet builder, bundle S2; mobile `wmt/S2` on `origin/wmt/MERGE-8` `cc436a53` with `origin/wmt/INBOX-15` `d72a9724` merged; no backend change, no migration; status verifying): Buy WAWU Credits (I27 out of credits, I28 packs with the Bank charge and Total, I29 added; I24's Buy button), the chat between two people (I12, Add to chat I13, send money I14 with the fee line and the PIN, I15's bubble kept by the send's id), money requests (I16, I17, I18 with a review before the PIN, I19 live) and the Money chip (I20); the shared pay and PIN sheets, one Idempotency-Key per attempt, a fresh quote per tap, an attempt kept across a lost answer; every attack run in tests and once each on a stack (one debit each time). Contract copy gains the money request routes (SHARED-CHANGES INBOX-13 #1). G-880 to G-883 filed (G-883: on the stack a send quoted with WAWU's fee took only the amount).
-- 17 Oct 2026 · FIX-57 · Built (Sonnet builder, tier T0; backend `wmt/FIX-57` `447887f` on `origin/wmt/MERGE-9` `4e444ca`, mobile record only; status verifying): the local test stack reports a service UP only when its own process holds the port; `up` refuses when any port of the range is listening, `status` says NOT OURS, and `scripts/dev/stack-selftest.sh` (18 checks, EXIT 0) proves it.
