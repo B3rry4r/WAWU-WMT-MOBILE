@@ -56,6 +56,30 @@ export function localDay(now: Date = new Date()): string {
   return `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}`;
 }
 
+const DAY_MS = 86_400_000;
+
+/** A `YYYY-MM-DD` that is a real calendar day, as written; anything else is null. */
+function realDay(raw: unknown): number | null {
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [y, m, d] = raw.split('-').map(Number);
+  const at = new Date(Date.UTC(y, m - 1, d));
+  return at.getUTCFullYear() === y && at.getUTCMonth() === m - 1 && at.getUTCDate() === d ? at.getTime() : null;
+}
+
+/**
+ * The day the reader opens on (HOME-16). A person who taps the morning TGIF notice arrives with the
+ * day it was made for: that day when it is yesterday, today or tomorrow on the phone (the days the Hub
+ * takes a read, an Amen or a share for, G-163), otherwise today. Anything that is not a real day
+ * (a link someone typed, a notice with no day) is today as well.
+ */
+export function readerDay(requested: unknown, now: Date = new Date()): string {
+  const today = localDay(now);
+  const asked = realDay(requested);
+  const here = realDay(today);
+  if (asked === null || here === null) return today;
+  return Math.abs(asked - here) <= DAY_MS ? (requested as string) : today;
+}
+
 /** "Friday 26 September" for a `YYYY-MM-DD` day. Written out here, not by the phone's locale, so every phone reads the same. */
 export function dateText(date: string): string {
   const [y, m, d] = date.split('-').map(Number);
