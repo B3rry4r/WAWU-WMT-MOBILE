@@ -17,8 +17,8 @@ artboards: [H19, H20, H21, H22, H23]
 
 ## Current state
 
-As of 17 Oct 2026, built (bundle S1b, Sonnet builder, T1), waiting for a verifier.
-- **Status:** verifying. Mobile `wmt/S1b` (from `origin/wmt/MERGE-11` `47555987`, `origin/wmt/S1` `9d221172` and `origin/wmt/EXPLORE-02-R2` `fb2eb0ba` merged, never rebased). Backend `wmt/S1b` (from `origin/wmt/B3a` `d89e47c`), one additive change.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: MERGE after one medium fix round (the locked course's foot covered the comments; closed in S1b round 2, mobile e2748258, on the lead's diff read); backend b5f5538 MERGE; the comment double post and the preview pill lows were closed in the same round, one low left (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S1b.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main. Built: Mobile `wmt/S1b` (from `origin/wmt/MERGE-11` `47555987`, `origin/wmt/S1` `9d221172` and `origin/wmt/EXPLORE-02-R2` `fb2eb0ba` merged, never rebased). Backend `wmt/S1b` (from `origin/wmt/B3a` `d89e47c`), one additive change.
 - **Built:** `/content/<id>` (`src/app/content/[id].tsx`, `src/features/content-detail/`): H19 locked, H20 unlocked, H21 comments (sheet), H22 share (sheet), H23 rate (sheet); HOME-08's H24 free video and H25 course are the same screen (see HOME-08).
 - **Backend:** `GET /content/{id}/detail` now carries `creator` (name, ticks, headline, followers): the Hub served no name for a piece's maker. Contract regenerated (SHARED-CHANGES HOME-03 #1, #2). Spec case added to `content-detail.contract.spec.ts`.
 - **Entries added:** a feed caption (H2) and a Search content result (X6) open the page (SHARED-CHANGES HOME-03 #4). **Not added:** ME-07's library rows: `origin/wmt/ME-07` is not in this base (no library screen exists here), so that entry waits for the merge or a small follow-up.
@@ -26,14 +26,7 @@ As of 17 Oct 2026, built (bundle S1b, Sonnet builder, T1), waiting for a verifie
 - **Not drawn (R-47):** "Yours forever" (G-HOME-03-3), "96% liked" as a percentage (G-HOME-03-1). Share link is `wawuafrica.com/content/<id>` (G-HOME-03-2). Download opens the file's address (G-HOME-03-4). Star words other than "Really good" are a default (G-HOME-03-5).
 - **Merge fallout fixed:** the Explore pill and Search field said "Search Who Made This??" after R-69 (SHARED-CHANGES HOME-03 #3).
 - **Round 2 (17 Oct 2026, findings 2 and 3):** Send posts once: a ref is set before the request and cleared on its answer (two presses in one frame, one POST; a failed post lets go too). The preview pill sits 12 from the picture's foot as drawn (`Pill` `flush`, SHARED-CHANGES HOME-03 #5) and the book's last line has the board's 24 under it: 6 px between the line and the pill, no shared area (H19, H20). H25's foot is HOME-08's.
-- **Next:** a verifier; passes V1, V4, V5, V6, V7, V9. Records: this file, `docs/LOG.md`, `BACKEND_GAPS.md` G-HOME-03-1 to 5.
-
-## Current state
-
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): HOME-12, HOME-13, EXPLORE-02.
-- **History:** none yet. Reports go to tasks/history/HOME-03.md.
+- **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (S1b F4).
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
 
 ## Read first

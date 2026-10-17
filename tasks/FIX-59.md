@@ -18,8 +18,8 @@ tier: T1
 
 ## Current state
 
-As of 17 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder (tier T1). Backend `wmt/FIX-59` `47b0718` (from `wmt/MERGE-12` `98efeef`); this record and the gap rows on mobile `wmt/FIX-59` (from `wmt/MERGE-12` `c840ed6d`). No schema, no migration, no Fintava file touched, no app code.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: MERGE (18 rows, each kind once, ties paged clean, another person's rows never, the old answer unchanged; branch CI red only on the Fintava earnings spec); 1 low (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-59.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main. Built: Built by a Sonnet builder (tier T1). Backend `wmt/FIX-59` `47b0718` (from `wmt/MERGE-12` `98efeef`); this record and the gap rows on mobile `wmt/FIX-59` (from `wmt/MERGE-12` `c840ed6d`). No schema, no migration, no Fintava file touched, no app code.
 - **Found by:** G-ME-14-1 (ME-14 builder): `GET /me/purchases` lists unlocks only, so M29 missed tickets, credit packs, school fees and passes.
 - **Built:** a new route `GET /me/purchases/all` (same `q`, `cursor`, `limit` as `/me/purchases`). A new route, not a query value on the old one, because each row has a different shape (kind, amount, status, an id to open) and a typed client wants one shape per route; `/me/purchases` is not in the protected registry and the web does not call it, but its answer is left byte-identical anyway.
 - **Row:** `kind` (`content_unlock`, `event_ticket`, `credit_pack`, `school_fee`, `community_pass`), `title`, `amountKobo` (the wallet payment's own price; a card charge keeps its stored amount; nothing recomputed), `totalKobo` (what left the wallet, null for a card charge), `purchasedAt`, `status` (`paid` or `refunded`), `openId` (piece, ticket order, enrolment or community; null for a pack), `content` and `lessons` (unlocks, as M29 draws them), `credits` (a count, never naira).
@@ -27,7 +27,7 @@ As of 17 Oct 2026.
 - **Not purchases of an item:** tips, paid questions, bills, plans, verification, legal fees. They stay in the wallet history.
 - **Specs:** `src/me/tests/me-paid-purchases.contract.spec.ts` 8 of 8 (each kind once, another person's never, refunded marked, paging at five page sizes with a three-way tie and no repeat or gap, title and creator search, the old answer byte-identical while other kinds are bought) plus `me.contract.spec.ts` 37 of 37. Protected suite `run.sh --fresh` all 244 required tests passed. tsc 0, eslint 0 on the changed files, gates passed, baseline ok, `contract:build` 0 (151 lines added, none removed).
 - **Open:** M7's "My purchases N" still counts unlocks only (`GET /me/counts`, G-FIX-59-2). The app adopts the new read in ME-14's follow-up.
-- **Next:** an independent verifier.
+- **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (FIX-59 F1).
 
 ## Read first
 

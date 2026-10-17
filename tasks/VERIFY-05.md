@@ -17,12 +17,12 @@ artboards: [VF13, VF14, VF14a, VF14b]
 
 ## Current state
 
-As of 17 Oct 2026 (builder, bundle S7).
-- **Status:** verifying. Same branch as ME-12 (`wmt/S7`); no backend change.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: MERGE (lows are ME-12's) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S7.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main. Built: Same branch as ME-12 (`wmt/S7`); no backend change.
 - **Built:** `/your-tier` (VF14, VF14a, VF14b) from `GET /me/tier`: dates, products used and allowed (added places included), points included, the event pass; ending shows the days left, ended says published products stay up and publishing is paused; Renew opens the checkout for the tier held, Upgrade opens VF5 (drawn only when a higher tier is sold). The VF13 sheet ("You have used N of N") adds five products once with the PIN (`kind extra_products`, the same one-attempt payment as the tier; a short wallet turns the button into "Add ₦X" to W15) or opens VF5.
 - **Entries:** Me's tier badge, Settings' Your tier row, the Create hub's Content at the limit of a running tier, the upload step and the publish step on a 402.
 - **Not drawn:** dollar offer (VF13a, R-16).
-- **Next:** a fresh verifier. NOT RUN by this builder: the stack run and the pictures.
+- **Next:** the batch 14 pull request (the lead). No low is left open.
 
 ## Read first
 
@@ -53,16 +53,9 @@ A person sees their tier (name, badge, active until, products used, points inclu
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-- Files: `src/features/verify/` `YourTierScreen.tsx`, `ProductsFullSheet.tsx`, `ProductsFullHost.tsx`; `me/ProfileHeader.tsx`, `MeScreen.tsx`, `settings/SettingsScreen.tsx`; routes `your-tier`, `(tabs)/me`, `settings/index`, `create`.
-- Checks: tsc EXIT 0; eslint on the changed files EXIT 0; jest `src/features/verify` 8 suites, 67 tests (12 checkout, 11 publish and tier, 44 earlier) EXIT 0, and `src/features/create`, `me`, `settings`, `home` with the send model test, 17 suites, 314 tests, passed. Tests: `publishAndTier.test.tsx` (VF13 adds five once after a double tap, the number now; VF14 active, ending (3 days), ended with Renew to the checkout, none)."
-- Gaps: none new. Shared: SHARED-CHANGES ME-12 #2.
-- NOT RUN: stack run and pictures.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/VERIFY-05.md](history/VERIFY-05.md).
 
 ## Owner sign-off
 

@@ -17,13 +17,14 @@ artboards: [PT1, PT1a, PT3, PT3a, PT3b, PT7]
 
 ## Current state
 
-As of 17 Oct 2026, built (Sonnet builder, T2). Status: verifying. Not yet checked by a verifier.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: PASS (the shortfall bought once on a double tap, a wrong PIN, a lost answer; the PIN only in the header; no provider name); 3 lows and a note (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-07.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main.
 - **Branch:** mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4` (contract synced from backend `wmt/AITOOLS-01` `90ab9aa`). No backend change, no PR.
 - **Built:** `/studio` (PT1, PT1a, loading, error with Try again, empty), the Studio tile on Home (first, every account), the Studio card on the Create hub with the points count (M19), PT4c "Back to AI tools" when Studio opened Buy points. `useJobCheck` (`src/features/points/JobCheck.tsx`): quotes a job, then PT7, or PT3, PT3a, PT3b; Confirm buys exactly the missing points with the PIN (one key kept on the phone, same key on retry, pending read by id).
 - **For POINTS-08:** mount `useJobCheck({ onReady, onBuyPoints, onForgotPin, onSetPin, onLeave })` on the VoiceOver Run button and pass `onOpenTool` to `StudioScreen` in `src/app/studio.tsx` (the tile is a plain card until then, R-47). `onReady` gets the quote whose `quoteToken` the job carries. Until POINTS-08 the sheets are reached only through the dev harness `/preview/studio-job`.
 - **Gaps:** G-POINTS-07-1 (no board draws where "Use wallet" is switched on), -2 (PT3b Add money, WALLET-05), -3 (the other seven tiles, one task each), -4 (the Hub's cap sentence).
 - **NOT RUN:** a real provider (never called); V10 on a device.
-- **Next:** a lean verifier (V1, V5, V6, V9 on the stack); the lead merges with the next batch.
+- **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (L3) and SWEEP-MONEY (L2, N1); L1 is G-POINTS-07-1.
 - **History:** none yet. Reports go to tasks/history/POINTS-07.md.
 
 ## Read first
@@ -56,19 +57,9 @@ A person opens Studio from Home or from Create, sees the AI tools the Hub lists 
 - [ ] Every value on screen comes from the Hub or the user, never a literal; anything the Hub does not serve yet is in `BACKEND_GAPS.md` and its part of the screen is not drawn (R-47).
 - [ ] Loading, empty and error states exist and are entered by their real cause (V6), as are the drawn states of these boards.
 
-## Builder report
+## History
 
-Mobile `wmt/POINTS-07` (T2). No backend change. Contract copied from backend `90ab9aa` (SHARED-CHANGES POINTS-07 #1).
-- **Files:** new `src/features/points/` `StudioScreen`, `StudioRow`, `JobCheck` (hook, `ShortfallSheet`, `CapReachedScreen`), `studioApi`, `studioModel`, `shortfallIntent`, `__tests__/studioFlow.test.tsx`; `src/app/studio.tsx`, dev harness `src/app/preview/studio-job.tsx`. Changed: Home `Services`/`TodayScreen`, `CreateScreen` and `create.tsx`, `BuyScreen` (`doneLabel`) and `points-buy.tsx`, `HomeScreen.test.tsx` (five assertions moved by the Studio tile, SHARED-CHANGES #2), `create.test.tsx` (three tests added).
-- **Checks (user can ...):** see the Hub's tools and costs from Home and from Create; too few points with Use wallet on shows the wallet money and takes nothing until the PIN (jest: 0 purchases before the PIN, 1 after, PIN only in its header); Use wallet off offers Buy points; a wallet too low says so; past the cap the Hub's sentence names it. Wrong PIN then right sends the same key (1 debit); double tap Confirm asks once; a lost answer retried sends the same request (1 debit); pending is read by id, never sent again.
-- **Stack (V9, `pts07`, ports 7880-7887, Nuvion and voice stand-ins):** real purchase through the web export: 1,000 points + the missing 250 = 1,250, a `shortfall` lot, wallet debited 1,250 naira, after a wrong PIN first. Daily limit reached by 3 real jobs (4,500 points), then the Hub's cap sentence on PT7. Pictures (light and dark, 390 px, beside each board): `scratchpad/points-07-b/pics/beside-*.png` for PT1, PT1a, PT3, PT3a, PT3b, PT7, H1, M19; alone: PT1-error, PT1-loading, PT3-pin, PT3-wrongpin, PT3-after. The error picture is a refused connection to `GET /ai-tools`.
-- **Differences from the boards (recorded):** the PT1 caption line "Every AI voice tool, paid in points" is drawn under the bar because the task and R-68 ask for it (the board has it as a caption outside the phone); PT1 draws only VoiceOver (the Hub lists one tool; its tile is half width, not a button); PT3 has no "Use wallet is on in Settings." line (G-POINTS-07-1) and its second line is the Bank charge or "Nothing is taken until you enter your PIN."; PT3b has "Not now" in place of Add money; PT7's words are the Hub's.
-- **Checks run:** tsc EXIT 0; eslint on 17 changed files EXIT 0; jest `src/features/points`, `create`, `home` 8 suites 170 pass (studioFlow 24, create +3, HomeScreen +1); gates 0 fail, 9 warn, 0 accepted, none in these files (`files scanned: 890`); `npm run tasks -- --write` EXIT 0 (348 tasks).
-- **Not done:** Add money (WALLET-05); the seven other tools; a Settings row for Use wallet; the VoiceOver screens (POINTS-08).
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-07.md](history/POINTS-07.md).
 
 ## Owner sign-off
 
