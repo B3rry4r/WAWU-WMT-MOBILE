@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
-    "gates": "python3 scripts/gates/run.py && python3 scripts/gates/check_baseline.py",
+    "gates": "python3 scripts/gates/run.py && python3 scripts/gates/check_baseline.py && python3 -m unittest discover -s scripts/gates/tests",
     "tokens": "python3 scripts/design/gen_tokens.py",
     "icons": "node scripts/design/gen_icons.js",
     "api": "python3 scripts/api/sync_contract.py",
