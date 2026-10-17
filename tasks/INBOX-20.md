@@ -7,7 +7,7 @@ order: 145
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-04, INBOX-15, INBOX-19, UI-02]
 decisions: [R-13, R-10, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,16 @@ artboards: [I16, I17, I18, I19, I20]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-15, INBOX-19.
-- **History:** none yet. Reports go to tasks/history/INBOX-20.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by a Sonnet builder in the S2 bundle: mobile `wmt/S2` from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/INBOX-15` merged in (backend `wmt/INBOX-15` `c803256`). No backend change, no migration.
+- **Built:** I16 (amount, what it is for, "Nothing moves until they tap Pay", "Request ₦12,000"), I17 ("You requested", "Waiting for Femi"), I18 (Decline and "Pay ₦12,000" in the bubble; the review before the PIN: Amount, Bank charge, WAWU's fee, Fees, Total, "Femi gets ₦12,000", "Pay ₦12,025.75"; then the PIN), I19 (Paid, flipped live by `money_request.updated`), I20 (the Money chip: requests only, G-827, each opening its chat). In All a request is the chat's last words, not a second row.
+- **States drawn that no board draws (the Hub has them):** Declined, Cancelled and "Payment on its way" pills on the bubble. No Cancel button (the board draws none; the asker's cancel is the Hub's only).
+- **Attacks in tests:** a double tap on Pay (one quote, one sheet, one payment), a wrong PIN, a short wallet (the shared pay sheet), a lost answer then the same request (same key and body, one debit), a request paid by someone else at the same moment (says so, nothing charged), a request cancelled while being paid (Cancelled, nothing moved), a payment the provider has not confirmed (read, never paid again), a failed payment (the request stays open), the request flipping live.
+- **Attacks on the stack, once each:** a request asked twice with one `clientRequestId` made one; a pay for more than B holds 402; a wrong PIN 403; a request paid twice in parallel with two keys 201 and 409 `money_request_being_paid`, B debited once and A credited once; the same pay key twice 201 and 201, one debit; a request cancelled while being paid: pay 409 `money_request_not_pending`, cancel 200, final cancelled, nothing debited. In the browser: B saw I18, the review, paid with the PIN and the bubble read Paid; a request beyond B's wallet showed Not enough; a declined and a cancelled request showed their pills.
+- **Stack (backend `wmt/INBOX-15` `c803256` on the Nuvion stand-in, name `s2_test`, ports 7760 to 7767, taken down after):** the web export of `wmt/S2` ran against the real Hub with two funded wallets; pictures in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-b/pics/` (`beside-<board>-<light|dark>.png`, board left, built right); the attacks below were run once each, results in `.../s2-b/logs/live-attacks.txt`.
+- **Open:** G-827 (the Money chip holds requests only), G-883 (WAWU's fee not collected on the stack, same for a paid request). Build order was INBOX-13, INBOX-19, INBOX-20; the pay review is a bottom sheet, as the brief allows ("in the bubble, or a short review sheet").
+- **Round 2 (17 Oct, builder, F2 and F3 lows):** the pay-a-request short sheet is headed "Pay Femi", as its review is (was "Request from Femi"); a test pins it. I16 puts the cursor in the amount field a moment after the sheet opens (`autoFocus` alone did not on the web). The empty tile before that title is the shared pay sheet's header: SHARED-CHANGES INBOX-13 #3 (open). The board's larger amount type (22) is not done: `TextField` has no size.
+- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9). NOT RUN: V10.
 
 ## Read first
 
@@ -91,13 +96,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-20.md](history/INBOX-20.md).
 
 ## Owner sign-off
 

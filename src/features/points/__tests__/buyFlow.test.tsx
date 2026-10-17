@@ -259,7 +259,9 @@ describe('PT4 · the packs and the way to pay', () => {
     expect(screen.getByTestId('buy-blurb')).toHaveTextContent("For AI tools. Points don't expire for 12 months.");
     expect(screen.getByText('Who Made This? wallet')).toBeTruthy();
     expect(screen.getByText('₦485,250.75')).toBeTruthy();
-    expect(screen.getByText('Bank transfer')).toBeTruthy();
+    // POINTS-06 ruling: a wallet that covers the pack is paid from by the Hub, so Bank transfer is not offered.
+    expect(screen.queryByText('Bank transfer')).toBeNull();
+    expect(screen.queryByTestId('buy-method-transfer')).toBeNull();
     expect(screen.queryByText(/Example values|Fintava|Nuvion/)).toBeNull();
     // Choosing another pack asks the Hub for that pack's quote.
     await fireEvent.press(screen.getByTestId('pack-pack_l'));
@@ -383,6 +385,8 @@ describe('PT4b and PT4c · paying with the PIN', () => {
   });
 
   it('by bank transfer the PIN confirms it, the wallet’s own account is shown, and the points are added when the money lands', async () => {
+    hub.shortfall = true;
+    hub.needed = 152_325;
     await toBuy();
     await fireEvent.press(screen.getByTestId('buy-method-transfer'));
     await pay();
@@ -399,7 +403,24 @@ describe('PT4b and PT4c · paying with the PIN', () => {
     expect(hub.payments).toBe(1);
   });
 
-  it('by bank transfer with a wallet that already covers the pack, the card shows the pack’s full price, never "Send ₦0.00"', async () => {
+  it('a wallet that covers the pack is not offered Bank transfer (the Hub pays from the wallet)', async () => {
+    await toBuy();
+    expect(screen.getByTestId('buy-method-wallet')).toBeTruthy();
+    expect(screen.queryByTestId('buy-method-transfer')).toBeNull();
+    expect(screen.queryByText('Bank transfer')).toBeNull();
+    expect(screen.queryByTestId('buy-short')).toBeNull();
+  });
+
+  it('a short wallet is offered Bank transfer next to the wallet', async () => {
+    hub.shortfall = true;
+    await toBuy();
+    expect(await screen.findByTestId('buy-short')).toBeTruthy();
+    expect(screen.getByTestId('buy-method-wallet')).toBeTruthy();
+    expect(screen.getByText('Bank transfer')).toBeTruthy();
+  });
+
+  it('by bank transfer when the money lands between the quote and the purchase (the Hub needs 0), the card shows the pack’s full price, never "Send ₦0.00"', async () => {
+    hub.shortfall = true;
     hub.needed = 0;
     await toBuy();
     await fireEvent.press(screen.getByTestId('buy-method-transfer'));

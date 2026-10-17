@@ -62,8 +62,8 @@ export type BuyHandlers = {
   onSetPin: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
-  /** Add money for the shortfall (kobo). */
-  onAddMoney: (shortfallKobo: number) => void;
+  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): the short notice shows without the button. */
+  onAddMoney?: (shortfallKobo: number) => void;
 };
 
 export type EventDetailScreenProps = {
@@ -78,7 +78,6 @@ const noBuy: BuyHandlers = {
   onOpenWallet: () => undefined,
   onSetPin: () => undefined,
   onForgotPin: () => undefined,
-  onAddMoney: () => undefined,
 };
 
 /**

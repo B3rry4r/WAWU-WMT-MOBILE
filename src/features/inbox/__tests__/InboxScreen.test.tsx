@@ -53,10 +53,11 @@ function row(id: string, over: Partial<InboxItem> = {}): InboxItem {
     kind: 'chat',
     lastActivityAt: '2026-10-07T10:00:00Z',
     unreadCount: 0,
-    preview: { text: `Words of ${id}`, attachment: null, mine: false, senderName: null, sentAt: '2026-10-07T10:00:00Z' },
+    preview: { text: `Words of ${id}`, attachment: null, mine: false, senderName: null, sentAt: '2026-10-07T10:00:00Z', moneyRequest: null },
     chat: { chatId: id, other: person, canMessage: true },
     paidDm: null,
     community: null,
+    moneyRequest: null,
     ...over,
   };
 }
@@ -114,11 +115,11 @@ describe('the inbox screen', () => {
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
 
-  it('shows only the chips whose screens exist: All and Communities', async () => {
+  it('shows only the chips whose screens exist: All, Communities and Money (INBOX-20 built it)', async () => {
     answers[FIRST] = [pageOf([row('chat:1')])];
     await renderScreen(testRows);
     await rtl.screen.findByTestId('row-chat:1');
-    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities']);
+    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities', 'Money']);
   });
 
   it('a user with no messages sees "No messages yet" and the guidance', async () => {
@@ -285,7 +286,7 @@ describe('the inbox screen', () => {
         kind: 'community',
         chat: null,
         unreadCount: 2,
-        preview: { text: 'who’s at the meetup Sat?', attachment: null, mine: false, senderName: 'Tolu Balogun', sentAt: '2026-10-07T10:00:00Z' },
+        preview: { text: 'who’s at the meetup Sat?', attachment: null, mine: false, senderName: 'Tolu Balogun', sentAt: '2026-10-07T10:00:00Z', moneyRequest: null },
         community: { communityId: id, name: 'Lagos Freelancers', imageUrl: null, kind: 'open', role: 'member' },
         ...over,
       });
@@ -302,7 +303,7 @@ describe('the inbox screen', () => {
     });
 
     it('says "You:" when the last message in a room is the person\'s own, whether or not the Hub names them, and the speaker\'s first name when it is somebody else\'s (defect 31)', async () => {
-      const said = (mine: boolean, senderName: string | null) => ({ text: 'Thanks for the pattern', attachment: null, mine, senderName, sentAt: '2026-10-07T10:00:00Z' });
+      const said = (mine: boolean, senderName: string | null) => ({ text: 'Thanks for the pattern', attachment: null, mine, senderName, sentAt: '2026-10-07T10:00:00Z', moneyRequest: null });
       answers[FIRST] = [
         pageOf([
           community('own', { preview: said(true, 'Ada Obi'), community: { communityId: 'own', name: 'Own words, named', imageUrl: null, kind: 'open', role: 'member' } }),
@@ -328,20 +329,23 @@ describe('the inbox screen', () => {
       expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/[id]', params: { id: 'r1' } });
     });
 
-    it('a user with chats and no community sees no chat row (another task draws them) and the same empty state as an empty inbox, never a blank page (FIX-30)', async () => {
-      answers[FIRST] = [pageOf([row('chat:1'), row('chat:2')])];
+    // Chat rows are drawn since INBOX-19; a paid question is the kind nobody draws yet (INBOX-10), so it stands for "a row nobody draws".
+    const paidDm = (id: string) => row(id, { kind: 'paid_dm', chat: null });
+
+    it('a user with paid questions and no community sees no row (another task draws them) and the same empty state as an empty inbox, never a blank page (FIX-30)', async () => {
+      answers[FIRST] = [pageOf([paidDm('paid_dm:1'), paidDm('paid_dm:2')])];
       await renderScreen();
       await rtl.screen.findByRole('header', { name: 'Inbox' });
       expect(await rtl.screen.findByText('No messages yet')).toBeTruthy();
       expect(rtl.screen.queryAllByTestId(/^row-/)).toEqual([]);
       expect(rtl.screen.queryByTestId('inbox-error')).toBeNull();
-      expect(rtl.screen.getAllByRole('radio')).toHaveLength(2);
+      expect(rtl.screen.getAllByRole('radio')).toHaveLength(3);
       expect(rtl.screen.getByRole('button', { name: 'Browse communities' })).toBeTruthy();
     });
 
     it('keeps reading pages until a row it can draw appears, when the first pages hold only rows nobody draws yet', async () => {
-      answers[FIRST] = [pageOf([row('chat:1')], 'cur2')];
-      answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([row('chat:2')], 'cur3')];
+      answers[FIRST] = [pageOf([paidDm('paid_dm:1')], 'cur2')];
+      answers['GET /inbox?limit=20&cursor=cur2'] = [pageOf([paidDm('paid_dm:2')], 'cur3')];
       answers['GET /inbox?limit=20&cursor=cur3'] = [pageOf([community('r9')])];
       await renderScreen();
       expect(await rtl.screen.findByTestId('row-community:r9')).toBeTruthy();

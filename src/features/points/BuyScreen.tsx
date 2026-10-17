@@ -71,7 +71,7 @@ export function BuyScreen(props: BuyScreenProps) {
 
   const [looked, setLooked] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [method, setMethod] = useState<'wallet' | 'transfer'>('wallet');
+  const [picked, setPicked] = useState<'wallet' | 'transfer'>('wallet');
   const [round, setRound] = useState(0);
   const [fresh, setFresh] = useState<PackQuote | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,13 +99,13 @@ export function BuyScreen(props: BuyScreenProps) {
     void findIntent(owner).then((intent) => {
       if (!current) return;
       if (intent?.phase === 'pending' && intent.purchaseId) {
-        setMethod(intent.method);
+        setPicked(intent.method);
         setChosen(intent.packId);
         setWatching(intent.purchaseId);
       } else if (intent) {
         attempt.current = { key: intent.key, packId: intent.packId, method: intent.method, expectedTotalKobo: intent.expectedTotalKobo, quoteToken: intent.quoteToken, sent: true };
         setChosen(intent.packId);
-        setMethod(intent.method);
+        setPicked(intent.method);
         setResend(true);
       }
       setLooked(true);
@@ -187,8 +187,14 @@ export function BuyScreen(props: BuyScreenProps) {
   // Once it is paid, the balance after it comes from the points the Hub holds now.
   const points = useQuery({ ...myPointsQuery(owner), enabled: Boolean(owner) && done !== null }, queryClient);
 
-  const short = method === 'wallet' && quote !== null && quote.payment.shortfallKobo !== null && quote.payment.shortfallKobo > 0;
+  const walletShort = quote !== null && quote.payment.shortfallKobo !== null && quote.payment.shortfallKobo > 0;
   const paying = busy || watching !== null;
+  // POINTS-06 (lead ruling, 17 Oct 2026): Bank transfer is offered only when the wallet is short of the pack. A wallet that covers it
+  // is paid from by the Hub, so a transfer card for the full price would ask for money that is not needed. A transfer already under
+  // way (kept on the phone, awaiting the money, or with its PIN open) stays on screen even if the money has since covered the pack.
+  const transferOffered = walletShort || paying || resend || pinOpen;
+  const method: 'wallet' | 'transfer' = picked === 'transfer' && transferOffered ? 'transfer' : 'wallet';
+  const short = method === 'wallet' && walletShort;
 
   const pay = async () => {
     if (asking.current || pinOpen || paying || !owner || !selected || !quote) return;
@@ -363,18 +369,20 @@ export function BuyScreen(props: BuyScreenProps) {
               subtitle={quote && quote.payment.balanceKobo !== null ? naira(quote.payment.balanceKobo) : undefined}
               on={method === 'wallet'}
               disabled={paying || resend}
-              onPress={() => setMethod('wallet')}
+              onPress={() => setPicked('wallet')}
             />
-            <MethodRow
-              testID="buy-method-transfer"
-              icon="Landmark"
-              tone="neutral"
-              title={BUY_WORDS.transfer}
-              subtitle={BUY_WORDS.transferSub}
-              on={method === 'transfer'}
-              disabled={paying || resend}
-              onPress={() => setMethod('transfer')}
-            />
+            {transferOffered ? (
+              <MethodRow
+                testID="buy-method-transfer"
+                icon="Landmark"
+                tone="neutral"
+                title={BUY_WORDS.transfer}
+                subtitle={BUY_WORDS.transferSub}
+                on={method === 'transfer'}
+                disabled={paying || resend}
+                onPress={() => setPicked('transfer')}
+              />
+            ) : null}
           </GroupedList>
         </View>
         {quote ? (
@@ -531,8 +539,8 @@ function Radio({ on }: { on: boolean }) {
 function TransferCard({ purchase }: { purchase: PackPurchase }) {
   const t = purchase.transfer;
   if (!t) return null;
-  // A wallet that already covers the pack leaves the Hub needing 0 from the transfer (it pays from the wallet itself); "Send ₦0.00"
-  // reads as a fault, so that case shows the pack's full price.
+  // Bank transfer is offered only to a wallet that is short, but money can land between the quote and the purchase; the Hub then needs
+  // 0 from the transfer, and "Send ₦0.00" reads as a fault, so that case shows the pack's full price.
   const send = t.amountNeededKobo !== null && t.amountNeededKobo !== undefined && t.amountNeededKobo > 0 ? t.amountNeededKobo : t.totalKobo;
   return (
     <View style={styles.transfer}>
