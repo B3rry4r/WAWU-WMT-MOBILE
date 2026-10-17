@@ -4,7 +4,7 @@ import type { components } from '@/api/schema.generated';
 /**
  * The sponsored card's two calls (ADS-04 and ADS-05), as the Hub's contract types them:
  * - `GET /ads?placement=`: the one live card for a place, or `data: null` when nothing is on
- *   (the app then draws nothing, not an empty frame);
+ *   (the app then draws nothing, not an empty frame); the Explore slider's place answers a list (`fetchAdList`);
  * - `POST /ads/{id}/events`: this person viewed, tapped or skipped the card. The Hub counts each
  *   kind once per person, campaign and UTC day, so a repeat is safe and changes nothing.
  *
@@ -12,6 +12,8 @@ import type { components } from '@/api/schema.generated';
  * (SHARED-CHANGES.md row 11), so each call reads `data` itself.
  */
 export type AdPlacement = 'tgif_card' | 'today_slot';
+/** The place that serves a list of cards, not one (ADS-07). */
+export type AdListPlacement = 'explore_slider';
 export type AdEventKind = 'view' | 'tap' | 'skip';
 
 /** What `GET /ads` serves for a card, once it has been checked to be drawable. */
@@ -51,6 +53,18 @@ export function drawable(value: unknown): AdCard | null {
 export async function fetchAd(placement: AdPlacement): Promise<AdCard | null> {
   const body = (await unwrap(api.GET('/api/hub/ads', { params: { query: { placement } } }))) as unknown as Envelope<AdCard>;
   return drawable(body?.data);
+}
+
+/**
+ * The Explore slider's adverts (ADS-07): `GET /ads?placement=explore_slider` answers a list, heaviest first, `[]` when none
+ * is on. Every entry is checked the same way a single card is; one that cannot be drawn is dropped, never half drawn.
+ */
+export const adListKey = (placement: AdListPlacement) => ['ads', placement, 'list'] as const;
+
+export async function fetchAdList(placement: AdListPlacement): Promise<AdCard[]> {
+  const body = (await unwrap(api.GET('/api/hub/ads', { params: { query: { placement } } }))) as unknown as Envelope<unknown>;
+  if (!Array.isArray(body?.data)) return [];
+  return body.data.map(drawable).filter((card): card is AdCard => card !== null);
 }
 
 /** Tells the Hub this person viewed, tapped or skipped the card. */

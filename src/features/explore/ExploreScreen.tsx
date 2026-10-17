@@ -6,15 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
+import { Skeleton } from '@/components/Skeleton';
 import { Toast } from '@/components/Toast';
 import { CreateEntry } from '@/features/create/CreateEntry';
-import {
-  ExploreEventsRail,
-  ExploreFeaturedEvent,
-  useExploreEvents,
-} from '@/features/events/ExploreEvents';
+import { useAdList } from '@/features/ads/useAd';
+import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
-import { layout, space, useWawu } from '@/theme';
+import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
+import { todayMetrics } from '@/features/home/look';
+import { dayKey, fetchDay, fetchStats, statsKey } from '@/features/tgif/api/tgif';
+import { localDay } from '@/features/tgif/model';
+import { layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, featuredKey, fetchCategories, fetchFeaturedCreators } from './api';
 import { categoryTiles, type CategoryChoice } from './categories';
@@ -23,15 +25,11 @@ import { CreatorCard, creatorCardMetrics } from './CreatorCard';
 import { DoorsCard, type Door } from './DoorsCard';
 import { ExploreBar } from './ExploreBar';
 import { ExploreSkeleton } from './ExploreSkeleton';
+import { ExploreSlider } from './ExploreSlider';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 import { LoadFailedBanner } from './LoadFailedBanner';
-import {
-  CreatorsRailEmpty,
-  ExploreEventsEmpty,
-  ExploreFeaturedEventEmpty,
-  HeroDots,
-  SectionHeading,
-} from './parts';
+import { CreatorsRailEmpty, ExploreEventsEmpty, SectionHeading } from './parts';
+import { sliderSlides } from './slider';
 
 /**
  * design/_gen/explore.js `body`: the body pads 8 above and 120 below (over a tab bar that here is its own box), 20
@@ -60,22 +58,27 @@ export type ExploreScreenProps = {
   onListServices: () => void;
   /** The Create button, for creator accounts only (X1, X14): opens M19 (ME-04). */
   onCreate?: () => void;
+  /** The TGIF card was tapped (X1): opens today's reader (H29, `/tgif`). */
+  onOpenTgif: () => void;
 };
 
 /**
- * X1 and X14: Explore, showing what is built (R-47). It reads the creator categories, the featured creators, the featured
- * event and the upcoming events. When the categories or the featured creators cannot be read, every section stays drawn as
- * it is when nothing is served (the bar, the neutral frames, the doors) under one banner with a Try again that reads
- * everything again.
+ * X1, X16, X17 and X14: Explore, showing what is built (R-47). It reads the creator categories, the featured creators, the
+ * featured and upcoming events, the slider's adverts and today's TGIF. The slider at the top takes turns between an advert and
+ * a featured event, an advert first (R-59); with no event it is adverts only (X17) and with neither it is not drawn. Under it
+ * is the TGIF card (X1), which opens the reader. When the categories or the featured creators cannot be read, every section
+ * stays drawn as it is when nothing is served (the bar, the neutral frames, the doors) under one banner with a Try again that
+ * reads everything again.
  *
- * Every entry drawn here opens something: a category tile (X2, X3), the featured event and an event card (E2), Upcoming
- * events' See all (E1), "Find a professional" (PROS-01), "Find a school" (SCHOOLS-03) and "List your services" (PROS-03). A featured creator's card shows
- * the creator and its Follow follows, but the card itself opens nothing, because the profile it leads to is not built. What
- * X1 draws for screens that are not built is not drawn: the search pill and Featured creators' See all (EXPLORE-02), the
- * bell (ME-14) and Create (ME-04). The task that builds each one adds it, as drawn. A section
- * with nothing to show keeps its heading and draws neutral frames (`parts.tsx`).
+ * Every entry drawn here opens something: a slide (E2), a category tile (X2, X3), an event card (E2), Upcoming events' See
+ * all (E1), the TGIF card (H29), "Find a professional" (PROS-01), "Find a school" (SCHOOLS-03) and "List your services"
+ * (PROS-03). A featured creator's card shows the creator and its Follow follows, but the card itself opens nothing, because
+ * the profile it leads to is not built. What X1 draws for screens that are not built is not drawn: the search pill and
+ * Featured creators' See all (EXPLORE-02), the bell (ME-14). The task that builds each one adds it, as drawn. A section with
+ * nothing to show keeps its heading and draws neutral frames (`parts.tsx`). X17's Sponsored block, which the board draws in
+ * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -85,18 +88,28 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   const follow = useFollow();
   const events = useExploreEvents();
   const refetchEvents = events.refetch;
+  // The slider's adverts (R-59, ADS-07). A read that fails is no adverts: a sponsored card is never an error on the screen.
+  const ads = useAdList('explore_slider', true, queryClient);
+  const refetchAds = ads.refetch;
+  // Today's TGIF (X1): the day, then its readers once the day is read. Not retried, so a failure settles at once and says so.
+  const date = localDay();
+  const tgifDay = useQuery({ queryKey: dayKey(date), queryFn: () => fetchDay(date), staleTime: Infinity, retry: false }, queryClient);
+  const tgifStats = useQuery({ queryKey: statsKey(date), queryFn: () => fetchStats(date), enabled: tgifDay.isSuccess }, queryClient);
+  const refetchTgifDay = tgifDay.refetch;
+  const refetchTgifStats = tgifStats.refetch;
+  const tgifRead = tgifDay.isSuccess;
   const [pulled, setPulled] = useState(false);
 
   const refetchCategories = categories.refetch;
   const refetchFeatured = featured.refetch;
   // One list of reads for coming back to the tab, a pull and Try again.
   const refetchAll = useCallback(
-    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents()]),
-    [refetchCategories, refetchFeatured, refetchEvents],
+    () => Promise.all([refetchCategories(), refetchFeatured(), refetchEvents(), refetchAds(), tgifRead ? refetchTgifStats() : refetchTgifDay()]),
+    [refetchCategories, refetchFeatured, refetchEvents, refetchAds, tgifRead, refetchTgifStats, refetchTgifDay],
   );
 
   // Coming back to the tab reads again when what is held has gone stale (a read that failed holds nothing, so it is stale).
-  const stale = categories.isStale || featured.isStale;
+  const stale = categories.isStale || featured.isStale || ads.isStale;
   const wasFocused = useRef(focused);
   useEffect(() => {
     if (focused && !wasFocused.current && stale) void refetchAll();
@@ -122,12 +135,13 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
     { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
   ];
 
+  const slides = sliderSlides(ads.data ?? [], events.featured);
+
   let body;
-  if (categories.isPending || featured.isPending || !events.settled) {
+  if (categories.isPending || featured.isPending || !events.settled || ads.isPending) {
     body = <ExploreSkeleton />;
   } else {
     const creators = featured.data ?? [];
-    const featuredEvent = events.featured;
     // A failed read draws every section as a read that served nothing does (neutral frames), under one banner.
     body = (
       <>
@@ -140,20 +154,22 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
             onRetry={() => void refetchAll()}
           />
         ) : null}
-        {featuredEvent ? (
-          <View testID="explore-hero">
-            <ExploreFeaturedEvent event={featuredEvent} onOpen={() => onOpenEvent(featuredEvent.id)} />
-            <HeroDots color={colors.textOnAccent} />
-          </View>
-        ) : (
-          <ExploreFeaturedEventEmpty />
-        )}
+        {slides.length > 0 ? <ExploreSlider slides={slides} showing={focused} onOpenEvent={onOpenEvent} /> : null}
+        <View testID="explore-tgif">
+          {tgifDay.data ? (
+            <TgifCard day={tgifDay.data} readers={typeof tgifStats.data?.readers === 'number' ? tgifStats.data.readers : null} onOpen={onOpenTgif} />
+          ) : tgifDay.isError ? (
+            <TgifProblem date={date} onRetry={() => void refetchTgifDay()} retrying={tgifDay.isFetching} />
+          ) : (
+            <Skeleton testID="explore-tgif-loading" height={todayMetrics.tgifHeight} radius={radius.card} />
+          )}
+        </View>
         <CategoryTiles
           items={categoryTiles(categories.data ?? [])}
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
         />
         <View testID="explore-featured" style={styles.section}>
-          <SectionHeading title="Featured creators" />
+          <SectionHeading title="Who Made This?" />
           {creators.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
               {creators.map((creator) => (

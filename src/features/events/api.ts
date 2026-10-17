@@ -50,6 +50,7 @@ export type EventsPage = { events: EventView[]; nextPage: number | null; total: 
 export const eventsKey = ['events'] as const;
 export const listKey = (filters: EventFilters) => ['events', 'list', filters] as const;
 export const featuredKey = (filters: EventFilters) => ['events', 'featured', filters] as const;
+export const featuredListKey = (filters: EventFilters) => ['events', 'featured-list', filters] as const;
 export const countKey = (filters: EventFilters) => ['events', 'count', filters] as const;
 export const optionsKey = ['events', 'options'] as const;
 export const fromPricesKey = (ids: readonly string[]) => ['events', 'from-prices', ids] as const;
@@ -93,6 +94,14 @@ export const fetchEventsPage = (filters: EventFilters, page: number) => fetchPag
 export async function fetchFeatured(filters: EventFilters): Promise<EventView | null> {
   const { events } = await fetchPage(filters, 1, 1, true);
   return events[0] ?? null;
+}
+
+/**
+ * Every featured event, one page, nearest first: the events the Explore slider takes its turns from (R-59). The Hub's
+ * pin is an admin's decision and has no count of its own, so the page is the calendar's page size.
+ */
+export async function fetchFeaturedEvents(filters: EventFilters): Promise<EventView[]> {
+  return (await fetchPage(filters, 1, EVENTS_PAGE_SIZE, true)).events;
 }
 
 /** How many events these filters show: the number on E8's button. One row is fetched, the Hub's total is read. */
