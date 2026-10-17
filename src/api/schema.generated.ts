@@ -209,6 +209,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/paid-dm/waiting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many questions wait on the creator and what they were paid (I9), over every one of them. */
+        get: operations["PaidDmController_waiting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/paid-dm/standing": {
         parameters: {
             query?: never;
@@ -11083,6 +11100,10 @@ export interface components {
             nextCursor: string | null;
             waitingTotal: number;
         };
+        PaidDmWaiting: {
+            count: number;
+            amountKobo: number;
+        };
         PaidDmStanding: {
             /** @enum {string} */
             state: "ok" | "warning" | "paused";
@@ -11145,6 +11166,12 @@ export interface components {
             text: string;
             createdAt: string;
         };
+        PaidDmCreatorEarning: {
+            amountKobo: number;
+            sharePct: number;
+            /** @enum {string} */
+            state: "pending" | "on_its_way" | "waiting_for_wallet" | "in_wallet";
+        };
         PaidDmQuestion: {
             id: string;
             text: string;
@@ -11156,6 +11183,7 @@ export interface components {
             deadlineAt: string;
             respondedAt: string | null;
             replies: components["schemas"]["PaidDmReply"][];
+            creatorEarning: components["schemas"]["PaidDmCreatorEarning"] | null;
         };
         PaidDmThreadDetail: {
             thread: components["schemas"]["PaidDmThread"];
@@ -14933,6 +14961,25 @@ export interface operations {
             };
         };
     };
+    PaidDmController_waiting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidDmWaiting"];
+                };
+            };
+        };
+    };
     PaidDmController_standing: {
         parameters: {
             query?: never;
@@ -15148,7 +15195,10 @@ export interface operations {
     PaidDmController_reply: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. One value per reply, made by the app when the creator first taps Reply and sent again unchanged on every retry of that same reply (never reused for another). Per creator and key the reply is stored once; a repeat, or a second request with the same key at the same moment, answers with the question as it stands, the first reply in it once, and the header `Idempotent-Replayed: true`, and stores and releases nothing again. The same key for another question or other words is `409` with `reason: idempotency_key_reused`. A value that is not 8 to 128 of [A-Za-z0-9_-] is `400`. Without it the reply behaves as it always has. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 messageId: string;
             };
