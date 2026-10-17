@@ -6011,6 +6011,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/{id}/orders/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Makes an order from the tickets picked in E2 (one line per ticket type,
+         *     so a Regular and a VIP ticket are one payment) and answers E3: the order
+         *     priced by the server and the wallet payment's quote (the tickets, the
+         *     provider's charge, the total, the balance and any shortfall). Nothing is
+         *     reserved and nothing is debited. A basket that costs nothing (R-8) is
+         *     issued here: it answers `paid` with the tickets and `payment: null`, and
+         *     needs no wallet and no PIN. A basket that costs money needs an open
+         *     wallet: the answer is `409` with `reason.code` `wallet_not_open` or
+         *     `wallet_opening`, and the app leads to Open your wallet.
+         *
+         *     With an `Idempotency-Key`, the same key and the same tickets answer the
+         *     same order, so a repeated tap never issues or quotes a second one; the
+         *     same key with other tickets is `409 idempotency_key_reused`, and a key
+         *     that is not 8 to 128 letters, digits, dashes or underscores is `400
+         *     idempotency_key_required`. A priced basket is quoted, so while the
+         *     running provider's fees are not set it answers `503 fees_not_set`; a free
+         *     one never asks for them.
+         * @description A priced basket needs an open wallet: 409 with reason.code wallet_not_open or wallet_opening, and the app leads to Open your wallet; with no fees set it is 503 fees_not_set. A basket that costs nothing needs no wallet and no fees. With an Idempotency-Key, the same key and tickets answer the same order; the same key with other tickets is 409 idempotency_key_reused, and a malformed key is 400 idempotency_key_required.
+         */
+        post: operations["createEventWalletOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/orders/wallet/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pays the order from the wallet, once: the tickets' price moves into
+         *     WAWU's own account and waits there until the event (R-19), with the
+         *     provider's charge on top (R-10). Answers 201 with the order. `processing`
+         *     while the payment is not confirmed or the tickets are being issued (E10:
+         *     poll `GET /events/orders/wallet/{id}`; never pay again), `paid` with the
+         *     tickets, or `failed` with the money on its way back. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN.
+         */
+        post: operations["EventWalletOrdersController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/orders/wallet/{orderId}/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The order's quote again: E3 reopened, or a quote past its `expiresAt`. */
+        get: operations["EventWalletOrdersController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/orders/wallet/{orderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One order as it stands now: what the app polls after `processing` (E10's
+         *     Refresh) and E5's tickets. Only the buyer reads it; another person's
+         *     order and an id nobody holds are the same `404 target_not_found`. It
+         *     reads our own records only and never asks the wallet provider.
+         */
+        get: operations["EventWalletOrdersController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/points/convert/quote": {
         parameters: {
             query?: never;
@@ -6058,10 +6159,16 @@ export interface paths {
          *     it is never sent again), or `failed` when the cash did not move and the
          *     points are back. The same Idempotency-Key and body answer the first
          *     result again (`Idempotent-Replayed: true`) without checking the PIN.
+         *     The body carries the `quoteToken` of the quote the person was shown: the
+         *     conversion is paid at that quote or not at all. If the rate, the
+         *     minimum, the cap or the cash changed since (or the token is not this
+         *     person's, not for these points, or past its end), it is `409
+         *     quote_changed` with the new quote in `reason.pointsQuote`, and nothing
+         *     is paid. A body with no token is a plain 400.
          *     Before the PIN, and changing nothing: `422 below_minimum`, `402
          *     insufficient_points`, `400 amount_out_of_range` (more than one move
-         *     carries), `409 currency_not_supported`, `409 wallet_not_open`, `503
-         *     fees_not_set`.
+         *     carries), `409 quote_changed`, `409 currency_not_supported`, `409
+         *     wallet_not_open`, `503 fees_not_set`.
          */
         post: operations["PointsConvertController_convertPoints"];
         delete?: never;
@@ -7011,6 +7118,8 @@ export interface components {
             feeQuote?: components["schemas"]["FeeQuoteView"];
             /** @description quote_changed on a payment: the quote as it stands now. */
             paymentQuote?: components["schemas"]["PaymentQuoteView"];
+            /** @description quote_changed on a points conversion: the quote as it stands now, with a new token. */
+            pointsQuote?: components["schemas"]["PointsConvertQuoteView"];
             /**
              * @description bank_transfers_blocked: why (W18).
              * @enum {string}
@@ -7520,7 +7629,7 @@ export interface components {
             showInMemberLists?: boolean;
         };
         UpdateTgifPreferenceDto: {
-            /** @description false hides TGIF on Today for this account; true shows it again. */
+            /** @description false stops the daily TGIF notification for this account; true sends one each morning (HOME-16, R-59). */
             show: boolean;
         };
         UpdateUserProfileDto: {
@@ -7987,6 +8096,17 @@ export interface components {
             capacity?: number;
             hidden?: boolean;
         };
+        UpdatePlanSettingsDto: {
+            /**
+             * @description Setting key to its new value; null puts the setting back to its default.
+             * @example {
+             *       "plan.extra_products.price_kobo": 150000
+             *     }
+             */
+            settings: {
+                [key: string]: unknown;
+            };
+        };
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
             position?: number;
@@ -8085,8 +8205,28 @@ export interface components {
             /** @description `payment.quoteToken` from that quote: the server checks it is its own, for this person and this pack, and not past its end. */
             quoteToken: string;
         };
+        EventOrderLineDto: {
+            /** Format: uuid */
+            ticketTypeId: string;
+            quantity: number;
+        };
+        CreateEventWalletOrderDto: {
+            lines: components["schemas"]["EventOrderLineDto"][];
+            /** @description The referral link this buyer arrived through, when there was one. */
+            referralCode?: string;
+        };
+        PayEventWalletOrderDto: {
+            /** Format: uuid */
+            orderId: string;
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
         PointsConvertDto: {
             points: number;
+            /** @description `quoteToken` from the points quote the person saw. A conversion is paid at that quote or not at all (`409 quote_changed`). */
+            quoteToken: string;
         };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
@@ -8742,6 +8882,8 @@ export interface components {
         PlanEventPassView: {
             id: string;
             name: string;
+            benefits?: string[] | null;
+            eventDate?: string | null;
         };
         MyTierView: {
             /** @enum {string} */
@@ -9382,6 +9524,12 @@ export interface components {
             creator: components["schemas"]["FeedCreator"];
             media: components["schemas"]["MediaDetails"];
         };
+        PersonBadgeView: {
+            name: string;
+            number: number | null;
+            id: string;
+            numbered: boolean;
+        };
         KnownFollower: {
             wawuId: string;
             displayName: string | null;
@@ -9408,6 +9556,7 @@ export interface components {
             avatarUrl: string | null;
             coverUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+            badge: components["schemas"]["PersonBadgeView"] | null;
             followers: number;
             posts: number;
             rating: number | null;
@@ -9427,6 +9576,7 @@ export interface components {
             avatarUrl: string | null;
             coverUrl: string | null;
             verification: components["schemas"]["VerificationState"];
+            badge: components["schemas"]["PersonBadgeView"] | null;
             category: string;
             services: string[];
             ratingAvg: number | null;
@@ -10741,6 +10891,7 @@ export interface components {
             field: string | null;
             pieceCount: number;
             verification: components["schemas"]["VerificationState"];
+            badge: components["schemas"]["PersonBadgeView"] | null;
             following: boolean;
         };
         AboutView: {
@@ -10819,6 +10970,34 @@ export interface components {
             courses: components["schemas"]["AdminCourseView"][];
             createdAt: string;
             updatedAt: string;
+        };
+        MultiplierLevel: {
+            min: number;
+            x: number;
+        };
+        MilestoneStep: {
+            count: number;
+            points: number;
+        };
+        PlanSettingView: {
+            key: string;
+            group: string;
+            label: string;
+            /** @enum {string} */
+            unit: "lines" | "date" | "kobo" | "count" | "points" | "percent" | "days" | "months" | "hours" | "time" | "levels" | "milestones";
+            usedBy: string[];
+            value: (string | number | string[] | components["schemas"]["MultiplierLevel"][] | components["schemas"]["MilestoneStep"][]) | null;
+            default: (string | number | string[] | components["schemas"]["MultiplierLevel"][] | components["schemas"]["MilestoneStep"][]) | null;
+            /** @enum {string} */
+            source: "default" | "set";
+            provisional: {
+                id: string;
+                why: string;
+            } | null;
+            updatedAt: string | null;
+        };
+        PlanSettingsView: {
+            settings: components["schemas"]["PlanSettingView"][];
         };
         AdCardView: {
             id: string;
@@ -11032,6 +11211,7 @@ export interface components {
             pieceCount: number;
             ratingAvg: number | null;
             reviewCount: number;
+            badge: components["schemas"]["PersonBadgeView"] | null;
             field: components["schemas"]["ProfessionalFieldRef"];
             city: string | null;
             usualReplyMinutes: number | null;
@@ -11062,6 +11242,7 @@ export interface components {
             pieceCount: number;
             ratingAvg: number | null;
             reviewCount: number;
+            badge: components["schemas"]["PersonBadgeView"] | null;
             field: components["schemas"]["ProfessionalFieldRef"];
             city: string | null;
             usualReplyMinutes: number | null;
@@ -11192,6 +11373,7 @@ export interface components {
             threadsHandle: string | null;
             socialOrder: string[];
             memberSince: string | null;
+            badge: components["schemas"]["PersonBadgeView"] | null;
         };
         CreatorProfile: {
             wawuUserId: string;
@@ -11878,7 +12060,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "paid_question" | "profile";
+            kind: "community" | "content" | "paid_question" | "profile" | "transaction";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -12058,6 +12240,64 @@ export interface components {
             /** @enum {string|null} */
             badge: "popular" | "best_value" | null;
         };
+        EventOrderEventView: {
+            id: string;
+            name: string;
+            startsAt: string;
+            endsAt: string | null;
+            timezone: string | null;
+            timeLabel: string | null;
+            location: string;
+            venueName: string | null;
+            bannerUrl: string | null;
+        };
+        EventOrderLineView: {
+            ticketTypeId: string;
+            tierName: string;
+            unitPriceKobo: number;
+            quantity: number;
+            lineKobo: number;
+        };
+        EventOrderTicketView: {
+            id: string;
+            code: string;
+            tierName: string;
+            /** @enum {string} */
+            status: "valid" | "checked_in" | "void";
+        };
+        EventOrderReturnView: {
+            /** @enum {string} */
+            holdStatus: "held" | "released" | "refunded";
+            returned: boolean;
+            returnedKobo: number | null;
+        };
+        EventWalletOrderView: {
+            id: string;
+            reference: string;
+            event: components["schemas"]["EventOrderEventView"];
+            free: boolean;
+            lines: components["schemas"]["EventOrderLineView"][];
+            ticketCount: number;
+            ticketsKobo: number;
+            /** @enum {string} */
+            status: "failed" | "paid" | "processing" | "awaiting_payment";
+            paymentId: string | null;
+            /** @enum {string|null} */
+            paymentStatus: "pending" | "completed" | "failed" | "reversed" | null;
+            statusMessage: string | null;
+            transferFeeKobo: number | null;
+            totalKobo: number | null;
+            holderName: string | null;
+            tickets: components["schemas"]["EventOrderTicketView"][];
+            failureReason: string | null;
+            returned: components["schemas"]["EventOrderReturnView"];
+            createdAt: string;
+            paidAt: string | null;
+        };
+        EventWalletOrderQuoteView: {
+            order: components["schemas"]["EventWalletOrderView"];
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
         PointsConvertQuoteView: {
             /** @enum {string} */
             currency: "NGN";
@@ -12075,6 +12315,8 @@ export interface components {
             canConvert: boolean;
             /** @enum {string|null} */
             blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | null;
+            quoteToken: string;
+            expiresAt: string;
         };
         PointsConversionView: {
             id: string;
@@ -23267,7 +23509,7 @@ export interface operations {
             header?: never;
             path: {
                 date: string;
-                card: "verse" | "reality" | "remember" | "prayer" | "takeaway";
+                card: "reality" | "remember" | "prayer" | "takeaway" | "verse";
             };
             cookie?: never;
         };
@@ -24282,6 +24524,232 @@ export interface operations {
                 };
             };
             /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    createEventWalletOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. One value per tap on Get tickets (a UUID); sent again unchanged on a retry, it answers the same order. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventWalletOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventWalletOrderQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    EventWalletOrdersController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayEventWalletOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventWalletOrderView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    EventWalletOrdersController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventWalletOrderQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    EventWalletOrdersController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventWalletOrderView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
             404: {
                 headers: {
                     [name: string]: unknown;

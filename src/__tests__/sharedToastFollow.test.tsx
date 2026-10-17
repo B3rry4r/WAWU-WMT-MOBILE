@@ -156,6 +156,7 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
       pieceCount: 2,
       verification: { creator: tick(true), professional: tick(false) },
       following: false,
+      badge: null,
     };
     const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
     expect(screen.getByTestId('today-creator-c1-placeholder', hiddenOk)).toBeTruthy();
@@ -176,6 +177,7 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
       pieceCount: 2,
       verification: { creator: tick(true), professional: tick(false) },
       following: false,
+      badge: null,
     };
     const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
     expect(screen.queryByTestId('today-creator-c1-placeholder', hiddenOk)).toBeNull();
@@ -232,6 +234,7 @@ describe("THE creator-card Follow: Home and Explore draw it identically, through
     pieceCount: 2,
     verification: { creator: tick(true), professional: tick(false) },
     following,
+    badge: null,
   });
   const look = (testID: string, label: string) => ({
     button: styleOf(screen.getByTestId(testID)),

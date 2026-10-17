@@ -39,6 +39,7 @@ const fields: ProfileFields = {
   threadsHandle: null,
   socialOrder: ['tiktok', 'instagram'],
   memberSince: '2026-10-04T00:00:00.000Z',
+  badge: null,
 };
 
 describe('M8 form from the profile', () => {
