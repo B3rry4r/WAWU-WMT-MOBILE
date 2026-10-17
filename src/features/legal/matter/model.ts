@@ -54,7 +54,8 @@ export function stepsOf(request: LegalRequest): Step[] {
     if (key === 'consultation') sub = consultationLine(request);
     // A consultant has read it once the consultation is paid for: the Hub holds nothing earlier that says so.
     if (key === 'sent' && request.path !== 'simple' && request.consultationPaidAt !== null) sub = 'Answers read by your consultant';
-    return { key, title: TITLES[key], sub, state: i < at ? 'done' : i === at ? 'now' : 'todo' };
+    // A closed matter marks no step as the current one: it is not going anywhere (S22 under the closed banner).
+    return { key, title: TITLES[key], sub, state: i < at ? 'done' : i === at && request.status !== 'cancelled' ? 'now' : 'todo' };
   });
 }
 

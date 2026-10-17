@@ -67,6 +67,12 @@ describe('matter: the steps are read from what the Hub records', () => {
     expect(states(req({ status: 'delivered', consultationPaidAt: 'x', quoteAmount: 45000, contractSigned: true, servicePaidAt: 'x', deliveredAt: 'x' })).every((s) => s.endsWith('done'))).toBe(true);
   });
 
+  it('a closed matter marks no step as the current one, and keeps the steps it had finished (S22 under the closed banner)', () => {
+    const closed = states(req({ status: 'cancelled', consultationPaidAt: 'x', quoteAmount: 45000, contractSigned: true }));
+    expect(closed).toEqual(['sent:done', 'consultation:done', 'quote:done', 'pay:todo', 'delivered:todo']);
+    expect(states(req({ status: 'cancelled' })).some((s) => s.endsWith(':now'))).toBe(false);
+  });
+
   it('draws the hour and the kind only once something is booked, and a consultant has read it only once it is paid', () => {
     expect(consultationLine({ consultationMedium: null, scheduledFor: null })).toBeNull();
     expect(consultationLine({ consultationMedium: 'zoom', scheduledFor: '2099-10-02T11:00:00.000Z' })).toBe('Fri 2 Oct, 12:00 · video');

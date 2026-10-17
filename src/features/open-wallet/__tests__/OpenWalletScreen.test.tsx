@@ -862,6 +862,27 @@ describe('the kept BVN details end with the session, on every way it ends (FIX-0
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
     await settle(app);
   });
+
+  it('the numbers one account typed are never shown to the next: B’s BVN and NIN boxes are empty after a switch (KYC-07 L5)', async () => {
+    const app = await boot();
+    await typeNumbers(app);
+    // Control: A's own numbers are on screen before the switch (the box groups the digits).
+    expect(app.screen.getAllByDisplayValue(/^2219/)).not.toHaveLength(0);
+    expect(app.screen.getAllByDisplayValue(/^7019/)).not.toHaveLength(0);
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = [ok({ ...me, wawuUserId: B, phone: '+2348039990077' })];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
+    expect(app.screen.queryAllByDisplayValue(/2219/)).toHaveLength(0);
+    expect(app.screen.queryAllByDisplayValue(/7019/)).toHaveLength(0);
+    expect(app.screen.getByTestId('open-wallet-bvn').props.value ?? '').toBe('');
+    expect(app.screen.getByTestId('open-wallet-nin').props.value ?? '').toBe('');
+    await settle(app);
+  });
 });
 
 describe('an answer from an ended session writes nothing, and a gone A26 hears no session end', () => {
