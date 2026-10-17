@@ -33,6 +33,21 @@ export function defaultPack(packs: readonly CreditPack[]): PackId | null {
   return (packs.find((pack) => pack.badge === 'popular') ?? packs[0])?.pack ?? null;
 }
 
+/**
+ * The pack to open on when the wallet cannot pay for the default one: the largest pack whose price plus the bank's charge the wallet covers
+ * (the charge is the default pack's quote's own, the nearest figure there is before a pack is quoted). Null when the wallet covers none.
+ * The chosen pack's own quote is the one that decides in the end.
+ */
+export function affordablePack(packs: readonly CreditPack[], balanceKobo: number | null, bankChargeKobo: number): PackId | null {
+  if (balanceKobo === null) return null;
+  let best: CreditPack | null = null;
+  for (const pack of packs) {
+    if (pack.priceKobo + bankChargeKobo > balanceKobo) continue;
+    if (best === null || pack.credits > best.credits) best = pack;
+  }
+  return best?.pack ?? null;
+}
+
 /** I28's breakdown from the quote: the bank's charge, WAWU's fee only when there is one, then the total. Every figure is the Hub's. */
 export function breakdownOf(quote: Pick<PackQuote['payment'], 'fee'>): PayFeeLine[] {
   const lines: PayFeeLine[] = [{ label: BANK_CHARGE, amountKobo: quote.fee.providerFeeKobo }];

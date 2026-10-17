@@ -20,7 +20,7 @@ import {
   type PackPurchase,
   type PackQuote,
 } from './api';
-import { defaultPack, PRICE_CHANGED_LINE, quoteAddsUp, quoteSpent } from './model';
+import { affordablePack, defaultPack, PRICE_CHANGED_LINE, quoteAddsUp, quoteSpent } from './model';
 
 /** How often a purchase the Hub has not finished is read again (`GET /credits/purchase/wallet/{id}`, our own records). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -58,6 +58,7 @@ export function useBuyCredits(args: BuyCreditsArgs) {
   const { visible } = args;
   const client = useQueryClient();
   const [chosen, setChosen] = useState<PackId | null>(null);
+  const [opening, setOpening] = useState<{ decided: boolean; pack: PackId | null }>({ decided: false, pack: null });
   const [fresh, setFresh] = useState<{ pack: PackId; quote: PackQuote } | null>(null);
   const [tapping, setTapping] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
@@ -75,7 +76,7 @@ export function useBuyCredits(args: BuyCreditsArgs) {
   const list = useMemo(() => packs.data ?? [], [packs.data]);
   // The sheet opens on the pack the Hub marks popular; a held attempt for another pack shows that pack, whose purchase is still open.
   const heldPack = list.find((candidate) => attemptFor(subjectOf(candidate.pack)) !== null)?.pack ?? null;
-  const pack: PackId | null = chosen ?? heldPack ?? defaultPack(list);
+  const pack: PackId | null = chosen ?? heldPack ?? opening.pack ?? defaultPack(list);
 
   const held = pack ? attemptFor<PackQuote>(subjectOf(pack)) : null;
   // A purchase kept as pending is read again by its id. It is not bought again.
@@ -95,6 +96,18 @@ export function useBuyCredits(args: BuyCreditsArgs) {
       retry: false,
     },
   );
+
+  // The sheet opens on the popular pack. When the wallet cannot pay for it and can pay for a smaller one, that one is drawn chosen
+  // instead (the largest the wallet covers). Decided once per opening, and never over a pack the person picked or one with a purchase open.
+  // Adjusted while rendering, not in an effect: the pack it moves to is drawn on the very next render, with no frame of the wrong one.
+  if (!visible && opening.decided) setOpening({ decided: false, pack: null });
+  const first = quoted.data;
+  if (visible && !opening.decided && first && first.pack === pack && chosen === null && heldPack === null && pack === defaultPack(list)) {
+    const short = first.payment.shortfallKobo;
+    const smaller =
+      short !== null && short > 0 ? affordablePack(list, first.payment.balanceKobo, first.payment.fee.providerFeeKobo + first.payment.fee.wawuFeeKobo) : null;
+    setOpening({ decided: true, pack: smaller !== pack ? smaller : null });
+  }
 
   const noWallet = isApiError(quoted.error) && !!quoted.error.code && WALLET_NOT_READY.includes(quoted.error.code);
   useEffect(() => {
@@ -303,6 +316,9 @@ export function useBuyCredits(args: BuyCreditsArgs) {
 
   const reset = useCallback(() => {
     setAdded(null);
+    // The next opening starts on the default pack again, after the wallet is read again.
+    setChosen(null);
+    setOpening({ decided: false, pack: null });
     setPinOpen(false);
     setNotice(null);
     setShortOf(null);

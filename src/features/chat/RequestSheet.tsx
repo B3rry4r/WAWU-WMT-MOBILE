@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { formatMoney } from '@/components/Money';
@@ -15,6 +15,8 @@ const SHEET_GAP = 16;
 /** `CreateMoneyRequestDto.memo` takes 100 characters (the contract). */
 const MEMO_MAX = 100;
 const MAX_WHOLE_DIGITS = 9;
+/** The sheet slides in first (BottomSheet, 360); the amount field takes the cursor just after, so a browser does not lose it to the animation. */
+const FOCUS_AFTER_MS = 400;
 
 /** The digits and at most one point with two kobo digits: what the field keeps of what was typed. */
 export function cleanAmount(raw: string): string {
@@ -58,6 +60,13 @@ export function RequestSheet({ chatId, name, visible, onClose, onSent, onOpenWal
   const [error, setError] = useState<string | null>(null);
   // One id per request: a retry of the same amount and words sends the same one, a change makes a new one.
   const id = useRef<{ sig: string; value: string } | null>(null);
+  const amountField = useRef<TextInput>(null);
+  // I16 draws the amount field focused: the cursor is in it as the sheet opens, as `autoFocus` alone does not manage on the web.
+  useEffect(() => {
+    if (!visible) return undefined;
+    const timer = setTimeout(() => amountField.current?.focus(), FOCUS_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [visible]);
   const kobo = koboOfText(amount);
 
   const reset = () => {
@@ -105,6 +114,7 @@ export function RequestSheet({ chatId, name, visible, onClose, onSent, onOpenWal
         <Text variant="sheetTitleSm">{`Request from ${name}`}</Text>
         <TextField
           testID="request-amount"
+          inputRef={amountField}
           label="Amount"
           value={shownAmount(amount)}
           onChangeText={(text) => setAmount(cleanAmount(text))}

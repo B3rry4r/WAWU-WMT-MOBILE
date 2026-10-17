@@ -264,6 +264,9 @@ describe('I18 and I19: a request someone made of the person', () => {
     const h = await bootIncoming();
     await tapPay();
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
+    // The short sheet is headed as the review is: "Pay Femi", not "Request from Femi".
+    expect(rtl.screen.getByText('Pay Femi')).toBeTruthy();
+    expect(rtl.screen.queryByText('Request from Femi')).toBeNull();
     expect(hub.pays).toHaveLength(0);
     await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
     expect(h.onAddMoney).toHaveBeenCalledWith(1_202_575 - 50_000);

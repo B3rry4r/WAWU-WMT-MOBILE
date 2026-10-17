@@ -260,6 +260,55 @@ describe('I28: the packs sheet', () => {
   });
 });
 
+describe('I28: a short wallet keeps the packs', () => {
+  const packButtons = () => ['starter', 'popular', 'pro'].map((id) => rtl.screen.queryByTestId(`credits-pack-${id}`));
+
+  it('a ₦600 wallet still shows the packs, opens on the largest one it can pay for, and buys that one once', async () => {
+    hub.balanceKobo = 60_000;
+    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
+    // The popular pack costs ₦1,023.25 and is out of reach; the 50 pack (₦523.25) is not.
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('credits-pack-starter').props.accessibilityState.selected).toBe(true));
+    await rtl.screen.findByTestId('credits-total');
+    expect(packButtons().every((button) => button !== null)).toBe(true);
+    expect(rtl.screen.queryByText(/Not enough in your Naira wallet/)).toBeNull();
+    expect((await buyButton()).props.accessibilityLabel).toContain('Buy 50 credits · ₦523.25');
+    await rtl.fireEvent.press(await buyButton());
+    await rtl.screen.findByText(/ for 50 credits$/);
+    await enterPin('4829');
+    await rtl.screen.findByTestId('credits-added');
+    expect(hub.payments).toBe(1);
+    expect(hub.buys).toHaveLength(1);
+    expect(hub.buys[0].body).toMatchObject({ pack: 'starter', expectedTotalKobo: 52_325 });
+  });
+
+  it('the Not enough note and Add money are for the chosen pack only: another pack brings the Buy button back', async () => {
+    hub.balanceKobo = 60_000;
+    const h = handlers();
+    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('credits-pack-starter').props.accessibilityState.selected).toBe(true));
+    await rtl.screen.findByTestId('credits-total');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-pro'));
+    await rtl.screen.findByText(/Not enough in your Naira wallet/);
+    expect(rtl.screen.getByText(/This costs ₦2,023\.25\. You have ₦600\.00\./)).toBeTruthy();
+    expect(packButtons().every((button) => button !== null)).toBe(true);
+    expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(202_325 - 60_000);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-starter'));
+    await rtl.waitFor(async () => expect((await buyButton()).props.accessibilityLabel).toContain('Buy 50 credits · ₦523.25'));
+    expect(rtl.screen.queryByText(/Not enough in your Naira wallet/)).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('a wallet that covers no pack stays on the popular pack with the note, Add money and every pack drawn', async () => {
+    hub.balanceKobo = 10_000;
+    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
+    await rtl.screen.findByText(/Not enough in your Naira wallet/);
+    expect(rtl.screen.getByTestId('credits-pack-popular').props.accessibilityState.selected).toBe(true);
+    expect(packButtons().every((button) => button !== null)).toBe(true);
+  });
+});
+
 describe('the attacks I28 survives', () => {
   it('a double tap on Buy asks for one quote and opens one PIN sheet, and one purchase follows', async () => {
     await boot();

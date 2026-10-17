@@ -1,12 +1,13 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Banner } from '@/components/Banner';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet } from '@/components/pay-sheet';
+import { formatNaira, PaySheet } from '@/components/pay-sheet';
 import { PinSheet } from '@/components/pin-sheet';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
@@ -41,7 +42,8 @@ export type BuyCreditsSheetProps = Omit<BuyCreditsArgs, 'onOpenWallet'> & {
 /**
  * I28 · Buy WAWU Credits and I29 · Credits added (INBOX-13), over whatever opened them (a room, the communities list). The sheet
  * is the packs, the bank's charge and the total from the Hub's quote, "Pay from wallet" and "Buy N credits · total"; the PIN is the
- * shared PIN sheet. A short wallet, a purchase the Hub has not finished and a refusal are the shared pay sheet's own states.
+ * shared PIN sheet. A purchase the Hub has not finished and a refusal are the shared pay sheet's own states. A short wallet is not: the packs
+ * stay drawn, so a person can pick a smaller one, and the "Not enough" note and Add money speak for the chosen pack only.
  */
 export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   const entry = useOpenWalletEntry();
@@ -50,6 +52,8 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   const quote = buy.quote;
   const chosen = buy.list.find((candidate) => candidate.pack === buy.pack) ?? null;
   const credits = chosen?.credits ?? quote?.credits ?? 0;
+  // The wallet cannot pay for the chosen pack: its quote says so (or the Hub did after the PIN). Another pack may still be affordable.
+  const short = quote !== null && buy.balanceKobo !== null && buy.shortfallKobo > 0;
 
   const close = () => {
     onClose();
@@ -86,8 +90,8 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
     );
   }
 
-  // The shared pay sheet draws the states the packs sheet does not: still confirming, a refusal, and a wallet too short.
-  if (quote && (buy.confirming || buy.status.kind === 'failed' || buy.shortfallKobo > 0)) {
+  // The shared pay sheet draws the states the packs sheet does not: still confirming and a refusal.
+  if (quote && (buy.confirming || buy.status.kind === 'failed')) {
     const status = buy.confirming ? ({ kind: 'confirming', line: STILL_CONFIRMING_LINE } as const) : buy.status.kind === 'failed' ? buy.status : ({ kind: 'review' } as const);
     return (
       <>
@@ -130,7 +134,17 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
         ) : buy.quoteLoading ? (
           <Skeleton width="100%" height={space.xl * 4} testID="credits-quote-loading" />
         ) : null}
-        <WalletRow balanceKobo={buy.balanceKobo} />
+        {short && quote && buy.balanceKobo !== null ? (
+          <Banner
+            tone="warning"
+            icon="Wallet"
+            title={`Not enough in your ${WALLET_LABEL}`}
+            body={`This costs ${formatNaira(quote.payment.totalKobo)}. You have ${formatNaira(buy.balanceKobo, 'always')}.`}
+            testID="credits-short"
+          />
+        ) : (
+          <WalletRow balanceKobo={buy.balanceKobo} />
+        )}
         {buy.notice ? (
           <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="credits-notice">
             {buy.notice}
@@ -144,14 +158,18 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
             <Button label="Try again" variant="secondary" size="sm" onPress={buy.retryQuote} />
           </View>
         ) : null}
-        <Button
-          testID="credits-buy"
-          label={quote ? buyLabel(quote.credits, quote.payment.totalKobo) : credits > 0 ? `Buy ${creditCount(credits)} credits` : 'Buy credits'}
-          full
-          loading={buy.tapping}
-          disabled={!quote || buy.tapping}
-          onPress={() => void buy.buy()}
-        />
+        {short ? (
+          <Button testID="credits-add" label={`Add ${formatNaira(buy.shortfallKobo)}`} icon="Plus" full onPress={buy.addMoney} />
+        ) : (
+          <Button
+            testID="credits-buy"
+            label={quote ? buyLabel(quote.credits, quote.payment.totalKobo) : credits > 0 ? `Buy ${creditCount(credits)} credits` : 'Buy credits'}
+            full
+            loading={buy.tapping}
+            disabled={!quote || buy.tapping}
+            onPress={() => void buy.buy()}
+          />
+        )}
       </BottomSheet>
       {pin}
     </>

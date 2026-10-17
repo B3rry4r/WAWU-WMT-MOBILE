@@ -53,7 +53,7 @@ export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
       <>
         <PaySheet
           visible
-          item={{ title: `Request from ${name}`, displayName: name }}
+          item={{ title: `Pay ${name}`, displayName: name }}
           amountKobo={request.amountKobo}
           amountLabel="Amount"
           fees={fees}
