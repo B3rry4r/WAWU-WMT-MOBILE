@@ -140,8 +140,10 @@ async function bootList() {
   return props;
 }
 
-async function bootDetail(id = 'e-1') {
-  const props = { id, onBack: jest.fn() };
+const buyHandlers = () => ({ onOpenOrder: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
+
+async function bootDetail(id = 'e-1', buy?: ReturnType<typeof buyHandlers>) {
+  const props = { id, onBack: jest.fn(), buy };
   await render(<EventDetailScreen {...props} />);
   return props;
 }
@@ -462,9 +464,9 @@ describe('E2 · Event, E9 · Sold out', () => {
     expect(rtl.screen.getByTestId('tick-creator')).toBeTruthy();
   });
 
-  it('shows each open tier with its price, and no stepper or running total while EVENTS-06 is not built (R-47)', async () => {
+  it('shows each open tier with its price and a stepper, and the running total beside Get tickets', async () => {
     serve();
-    await bootDetail();
+    await bootDetail('e-1', buyHandlers());
     const regRow = rtl.within(await rtl.screen.findByTestId('tier-t-reg'));
     expect(regRow.getByText('Regular')).toBeTruthy();
     expect(regRow.getByText('90 left')).toBeTruthy();
@@ -472,14 +474,14 @@ describe('E2 · Event, E9 · Sold out', () => {
     const vipRow = rtl.within(rtl.screen.getByTestId('tier-t-vip'));
     expect(vipRow.getByText('5 left')).toBeTruthy();
     expect(vipRow.getByLabelText('12,000 naira')).toBeTruthy();
-    // A picker with no Get tickets button leads nowhere: no control, no count, no total, in any tier.
-    expect(rtl.screen.queryByTestId('step-plus')).toBeNull();
-    expect(rtl.screen.queryByTestId('step-minus')).toBeNull();
-    expect(rtl.screen.queryByLabelText(/^(More|Fewer) .* tickets$/)).toBeNull();
-    expect(rtl.screen.queryByTestId('tier-t-reg-count')).toBeNull();
-    expect(rtl.screen.queryByTestId('event-total')).toBeNull();
-    expect(rtl.screen.queryByTestId('event-total-amount')).toBeNull();
-    expect(rtl.screen.queryByText(/^(No tickets|1 ticket|\d+ tickets)$/)).toBeNull();
+    // The first tier on sale starts at one ticket, as the artboard draws it; the total is the Hub's price times the count.
+    expect(rtl.screen.getByTestId('tier-t-reg-count').props.children).toBe(1);
+    expect(rtl.screen.getByTestId('tier-t-vip-count').props.children).toBe(0);
+    expect(rtl.screen.getByText('1 ticket')).toBeTruthy();
+    expect(rtl.screen.getByTestId('event-total-amount')).toBeTruthy();
+    expect(rtl.screen.getByTestId('event-get-tickets')).toBeTruthy();
+    // A tier that has sold or ended has no stepper.
+    expect(rtl.within(rtl.screen.getByTestId('tier-t-early')).queryByLabelText(/^(More|Fewer) /)).toBeNull();
   });
 
   it('lists the tiers a person can buy first and the ended or sold-out ones after, whatever order the Hub sends', async () => {
@@ -522,12 +524,13 @@ describe('E2 · Event, E9 · Sold out', () => {
     expect(rtl.screen.getByTestId('event-sold-button').props.accessibilityState).toMatchObject({ disabled: true });
   });
 
-  it('a free tier shows Free, with no running total', async () => {
+  it('a free tier shows Free, and a free pick totals Free', async () => {
     serve({}, [tier({ priceNaira: 0, name: 'Free entry' })]);
-    await bootDetail();
+    await bootDetail('e-1', buyHandlers());
     await rtl.screen.findByTestId('tier-t-reg');
     expect(rtl.within(rtl.screen.getByTestId('tier-t-reg')).getByText('Free')).toBeTruthy();
-    expect(rtl.screen.queryByTestId('event-total')).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('event-total')).getByText('Free')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('event-total-amount')).toBeNull();
   });
 
   it('an event called off sells nothing and says so', async () => {
