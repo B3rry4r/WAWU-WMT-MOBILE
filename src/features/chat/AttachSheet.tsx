@@ -4,6 +4,8 @@ import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
+const SHEET_GAP = 16;
+
 export type AttachSheetProps = {
   visible: boolean;
   onClose: () => void;
@@ -20,7 +22,7 @@ export type AttachSheetProps = {
  */
 export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMoney }: AttachSheetProps) {
   return (
-    <BottomSheet visible={visible} onClose={onClose} label="Add to chat" gap={16} testID="attach-sheet">
+    <BottomSheet visible={visible} onClose={onClose} label="Add to chat" gap={SHEET_GAP} testID="attach-sheet">
       <Text variant="sheetTitleSm">Add to chat</Text>
       <GroupedList>
         <ListRow

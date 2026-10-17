@@ -10,7 +10,7 @@ import { radius, space, useWawu } from '@/theme';
 import { WALLET_LABEL } from './refusal';
 
 /** design/_gen/kit.js line 69, `fromWallet`: a 36 coin, 12 apart, 14 by 16 inside; the title 15 / 600, the line 13; a 20 check. */
-const walletMetrics = { flag: 36, gap: 12, padV: 14, line: 13, check: 20, corner: radius.card } as const;
+const walletMetrics = { flag: 36, between: 12, padV: 14, line: 13, check: 20, lineTop: 2, corner: radius.card } as const;
 
 /** kit.js line 69, `fromWallet`: the naira coin, "Pay from wallet", the wallet's balance (the bank's figure) and a ring check. */
 export function WalletRow({ balanceKobo }: { balanceKobo: number | null }) {
@@ -43,7 +43,7 @@ export function WalletRow({ balanceKobo }: { balanceKobo: number | null }) {
 }
 
 const styles = StyleSheet.create({
-  wallet: { flexDirection: 'row', alignItems: 'center', gap: walletMetrics.gap, paddingVertical: walletMetrics.padV, paddingHorizontal: space.lg, borderRadius: walletMetrics.corner },
+  wallet: { flexDirection: 'row', alignItems: 'center', gap: walletMetrics.between, paddingVertical: walletMetrics.padV, paddingHorizontal: space.lg, borderRadius: walletMetrics.corner },
   words: { flex: 1, minWidth: 0 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap', marginTop: 2 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap', marginTop: walletMetrics.lineTop },
 });

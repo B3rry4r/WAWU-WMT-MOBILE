@@ -101,7 +101,7 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
           walletName={WALLET_LABEL}
           actionLabel="Buy"
           status={status}
-          onPay={() => undefined}
+          onPay={() => void buy.buy()}
           onAddMoney={buy.addMoney}
           onCancel={close}
           onRetry={buy.dismissFailed}

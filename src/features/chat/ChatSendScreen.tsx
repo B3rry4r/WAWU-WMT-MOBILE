@@ -40,7 +40,7 @@ import { addChatSend, chatSends } from './sends';
 /** `WawuTransferDto.note` takes 100 characters (the contract). */
 const NOTE_MAX = 100;
 /** I14's amount is the figure of the screen: 52 as the canvas draws it. Balance line 14. */
-const AMOUNT = { size: 52, balanceSize: 14, noteIcon: 17, noteText: 14.5, noteGap: 12, settleMs: 350 } as const;
+const AMOUNT = { size: 52, balanceSize: 14, noteIcon: 17, noteText: 14.5, noteGap: 12, settleMs: 350, feeLines: 2 } as const;
 const PRICE_CHANGED_LINE = 'The fees changed. Check the new total before you send.';
 
 const naira = (kobo: number) => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
@@ -407,7 +407,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
           actionLabel="Send"
           recipientGetsKobo={quote.amountKobo}
           status={status.kind === 'failed' ? status : { kind: 'review' }}
-          onPay={() => undefined}
+          onPay={() => void press()}
           onAddMoney={(short) => onAddMoney(short)}
           onCancel={() => {
             setShowShort(false);
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   figure: { alignItems: 'center', gap: space.sm },
   centre: { textAlign: 'center' },
   foot: { gap: space.sm },
-  fees: { gap: 2 },
+  fees: { gap: AMOUNT.feeLines },
   note: {
     height: fieldMetrics.height,
     borderRadius: fieldMetrics.radius,

@@ -18,8 +18,8 @@ import type { MoneyRequest } from './api';
  * The request bubble is 240 wide, a 22 corner, 14 by 16 inside, 8 between its rows, a 1.5 ring (positive once paid).
  */
 const bubbleMetrics = { maxWidth: '78%', padV: 10, padH: 14, corner: 20, tail: 6, body: 15, line: 1.4, timeGap: 4, time: 11.5 } as const;
-const moneyMetrics = { width: 230, corner: 22, padV: 14, padH: 16, label: 12.5, amount: 26, amountTop: 8, note: 13.5, noteTop: 6, status: 12, statusTop: 10, glyph: 14, statusGlyph: 13, ring: 1 } as const;
-const requestMetrics = { width: 240, corner: 22, padV: 14, padH: 16, gap: 8, label: 12.5, glyph: 15, amount: 26, note: 13.5, ring: 1.5, buttonsTop: 4, payGrow: 1.4 } as const;
+const moneyMetrics = { width: 230, corner: 22, padV: 14, padH: 16, label: 12.5, amount: 26, amountTop: 8, note: 13.5, noteTop: 6, status: 12, statusTop: 10, glyph: 14, statusGlyph: 13, ring: 1, labelGap: 6, statusGap: 5 } as const;
+const requestMetrics = { width: 240, corner: 22, padV: 14, padH: 16, rows: 8, label: 12.5, glyph: 15, amount: 26, note: 13.5, ring: 1.5, buttonsTop: 4, payGrow: 1.4 } as const;
 
 const wholeNaira = (kobo: number) => kobo % 100 !== 0;
 
@@ -213,13 +213,13 @@ const styles = StyleSheet.create({
   pending: { gap: space.xs, alignItems: 'flex-end' },
   pendingButtons: { flexDirection: 'row', gap: space.sm },
   money: { width: '100%', borderRadius: moneyMetrics.corner, paddingVertical: moneyMetrics.padV, paddingHorizontal: moneyMetrics.padH },
-  label: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  label: { flexDirection: 'row', alignItems: 'center', gap: moneyMetrics.labelGap },
   amount: { marginTop: moneyMetrics.amountTop },
   note: { marginTop: moneyMetrics.noteTop },
-  status: { marginTop: moneyMetrics.statusTop, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  request: { width: '100%', borderRadius: requestMetrics.corner, paddingVertical: requestMetrics.padV, paddingHorizontal: requestMetrics.padH, gap: requestMetrics.gap },
+  status: { marginTop: moneyMetrics.statusTop, flexDirection: 'row', alignItems: 'center', gap: moneyMetrics.statusGap },
+  request: { width: '100%', borderRadius: requestMetrics.corner, paddingVertical: requestMetrics.padV, paddingHorizontal: requestMetrics.padH, gap: requestMetrics.rows },
   state: { alignItems: 'flex-start' },
-  buttons: { flexDirection: 'row', gap: requestMetrics.gap, marginTop: requestMetrics.buttonsTop, alignSelf: 'stretch' },
+  buttons: { flexDirection: 'row', gap: requestMetrics.rows, marginTop: requestMetrics.buttonsTop, alignSelf: 'stretch' },
   declineButton: { flex: 1 },
   payButton: { flex: requestMetrics.payGrow },
 });

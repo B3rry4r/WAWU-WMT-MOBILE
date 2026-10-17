@@ -62,7 +62,7 @@ export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
           actionLabel="Pay"
           recipientGetsKobo={request.amountKobo}
           status={sheet.confirming ? { kind: 'confirming', line: REQUEST_CONFIRMING_LINE } : status.kind === 'failed' ? status : { kind: 'review' }}
-          onPay={() => undefined}
+          onPay={() => void sheet.pay()}
           onAddMoney={sheet.addMoney}
           onCancel={sheet.cancel}
           onRetry={sheet.retry}

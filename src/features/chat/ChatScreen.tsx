@@ -30,7 +30,7 @@ import { useChatThread } from './useChatThread';
 import { useRequestPay } from './useRequestPay';
 
 /** design/_gen/inbox.js lines 17 and 48: a 64 bar, 12 on the left and 16 on the right, 10 between its parts, a hairline under it; 14 above the messages, 16 at the sides, 10 apart. */
-const headMetrics = { height: 64, padLeft: 12, padRight: 16, between: 10, back: 40, avatar: 40, name: 16, sub: 12.5, subGap: 1, tick: 14 } as const;
+const headMetrics = { height: 64, padLeft: 12, padRight: 16, between: 10, back: 40, avatar: 40, name: 16, sub: 12.5, subGap: 1, tick: 14, tickGap: 4 } as const;
 /** The line under a name (I12): where the person is. The app names itself "Who Made This?" with the question mark (R-69). */
 const ON_APP = 'on Who Made This?';
 const threadMetrics = { padTop: 14, padH: 16, between: 10, loadingRows: 5 } as const;
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   words: { flex: 1, minWidth: 0 },
-  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: headMetrics.tickGap },
   name: { flexShrink: 1 },
   sub: { marginTop: headMetrics.subGap },
   body: { flex: 1 },
