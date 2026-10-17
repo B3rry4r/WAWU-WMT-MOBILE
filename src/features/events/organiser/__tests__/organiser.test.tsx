@@ -317,6 +317,9 @@ describe('E18 and E25 · the dashboard and calling it off', () => {
     expect(await rtl.screen.findByTestId('dashboard-called-off')).toHaveTextContent(/The venue withdrew\./);
     expect(rtl.screen.queryByTestId('dash-call-off')).toBeNull();
     expect(rtl.screen.queryByTestId('dash-door')).toBeNull();
+    // EVENTS-08 L1: "Left" means nothing for a called-off event, so only Sold and Checked in are drawn.
+    expect(rtl.screen.getByTestId('dash-sold')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('dash-left')).toBeNull();
     client.clear();
   });
 

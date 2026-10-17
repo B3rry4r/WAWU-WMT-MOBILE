@@ -139,6 +139,8 @@ const hub = {
   mode: 'paid' as PayMode,
   balanceKobo: 48_525_075,
   tiers: [REGULAR, VIP] as unknown[],
+  /** How many times the page asked for the tier list. */
+  tierReads: 0,
   createFails: null as null | { status: number; reason: Record<string, unknown> },
   creates: [] as { key: string | null; body: { lines: { ticketTypeId: string; quantity: number }[] } }[],
   pays: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
@@ -158,7 +160,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
   if (path === '/events/e-1' && method === 'GET') return ok(eventRow);
-  if (path === '/events/e-1/tickets') return ok(hub.tiers);
+  if (path === '/events/e-1/tickets') {
+    hub.tierReads += 1;
+    return ok(hub.tiers);
+  }
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-16T09:00:00.000Z' });
   if (path === '/events/e-1/orders/wallet' && method === 'POST') {
     const body = (await request.json()) as { lines: { ticketTypeId: string; quantity: number }[] };
@@ -231,6 +236,7 @@ beforeEach(() => {
     mode: 'paid',
     balanceKobo: 48_525_075,
     tiers: [REGULAR, VIP],
+    tierReads: 0,
     createFails: null,
     creates: [],
     pays: [],
@@ -400,6 +406,16 @@ describe('E3 and E4: pay and PIN', () => {
     await enterPin('1234');
     expect(await rtl.screen.findByText('You have reached the order limit for this event.')).toBeTruthy();
     expect(hub.payments).toBe(0);
+  });
+
+  it('EVENTS-06 L1: when the Hub refuses the payment, the page behind reads its tiers again', async () => {
+    hub.mode = 'limit';
+    await bootDetail();
+    await reachPin();
+    const before = hub.tierReads;
+    await enterPin('1234');
+    expect(await rtl.screen.findByText('You have reached the order limit for this event.')).toBeTruthy();
+    await rtl.waitFor(() => expect(hub.tierReads).toBeGreaterThan(before));
   });
 
   it('shows the Hub\'s own message when the order limit stops the order itself', async () => {
