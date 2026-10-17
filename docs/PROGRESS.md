@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 292.**
+**Launch tasks done: 149 of 293.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 127 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 48 | 0 | 0 | 0 |
+| verifying | 49 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -54,6 +54,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
+- [HOME-17](../tasks/HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up) (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)

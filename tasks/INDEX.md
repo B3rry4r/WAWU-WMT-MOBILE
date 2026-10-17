@@ -263,8 +263,9 @@ Builder and verifier are always different sessions.
 245. [DV2-06](DV2-06.md) Settings: TGIF each morning, and the provider wording · needs SETTINGS-02 from Developer first
 246. [DV2-COPY](DV2-COPY.md) Brand copy sweep: "Who Made This?", "Bank charge", "Banking by Nuvion
 247. [DV2-RM](DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card
-248. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-249. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+248. [HOME-17](HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up)
+249. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+250. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
