@@ -19,6 +19,12 @@ export type PostProps = {
   myId: string | null;
   /** Where the status bar ends on this phone (the canvas's is 50 tall). */
   chromeTop: number;
+  /** The rail's ₦ Tip was pressed (H26, HOME-13). Left out, the rail draws no Tip. */
+  onTip?: (item: FeedItem) => void;
+  /** The offer bar was pressed (H14, HOME-12). Left out, the bar only shows the offer. */
+  onUnlock?: (item: FeedItem) => void;
+  /** The unlock sheet is being opened for this post (its price is being asked for). */
+  unlocking?: boolean;
 };
 
 /** A distance the canvas measures from the phone's top, on this phone. */
@@ -44,7 +50,7 @@ type FrameProps = PostProps & {
 };
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
-export function PostFrame({ item, kind, active, width, height, myId, chromeTop, backdrop, middle, above, corner }: FrameProps) {
+export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, backdrop, middle, above, corner }: FrameProps) {
   const [footHeight, setFootHeight] = useState(0);
   const [railTop, setRailTop] = useState(0);
   const onRailLayout = (e: LayoutChangeEvent) => {
@@ -77,6 +83,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
         onLike={marks.toggleLike}
         onSave={marks.toggleSave}
         onFollow={marks.followCreator}
+        onTip={onTip && myId !== null && myId !== item.creatorWawuId ? () => onTip(item) : undefined}
         onLayout={onRailLayout}
       />
       <View pointerEvents="box-none" onLayout={onFootLayout} style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
@@ -85,7 +92,16 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
           <Pill icon={pill.icon} text={pill.text} testID={`pill-${item.id}`} />
           <Byline item={item} follows={marks.follows} />
         </View>
-        {offer ? <OfferBar offer={offer} priceKobo={nairaToKobo(item.price)} compact={width < metrics.compactBelow} testID={`offer-${item.id}`} /> : null}
+        {offer ? (
+          <OfferBar
+            offer={offer}
+            priceKobo={nairaToKobo(item.price)}
+            compact={width < metrics.compactBelow}
+            onPress={onUnlock ? () => onUnlock(item) : undefined}
+            busy={unlocking}
+            testID={`offer-${item.id}`}
+          />
+        ) : null}
       </View>
     </View>
   );

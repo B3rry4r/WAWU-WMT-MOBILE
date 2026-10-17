@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
+import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
+import { useFeedPay } from '@/features/feedpay/useFeedPay';
 import { HomeTabs } from '@/features/home/HomeTabs';
 import { homeViews, type HomeView } from '@/features/home/model';
 import { radius, space, useWawu } from '@/theme';
@@ -86,9 +88,18 @@ function FeedLoading({ height }: { height: number }) {
  * On Home (HOME-01) the tab row also holds Today: `onToday` is called when it is pressed, and
  * the feed opens on `initialScope`, the tab pressed on Today.
  */
-export type FeedScreenProps = { initialScope?: FeedScope; onToday?: () => void };
+export type FeedScreenProps = {
+  initialScope?: FeedScope;
+  onToday?: () => void;
+  /**
+   * Where the feed's wallet payments lead when they need somewhere else (Open your wallet, a PIN to set, Forgot PIN, add money).
+   * With it, the rail draws ₦ Tip (H26, HOME-13); left out, no payment can start from the feed.
+   */
+  pay?: FlowHandlers;
+};
 
-export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, pay: payHandlers }: FeedScreenProps = {}) {
+  const pay = useFeedPay(payHandlers);
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
@@ -217,6 +228,9 @@ export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProp
             height={size.height}
             myId={me.data ?? null}
             chromeTop={chromeTop}
+            onTip={pay.onTip}
+            onUnlock={pay.onUnlock}
+            unlocking={pay.unlockingId === item.id}
           />
         )}
       />
@@ -227,6 +241,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday }: FeedScreenProp
     <View testID="feed" style={[styles.root, { backgroundColor: showsMedia ? media.black : colors.surfacePage }]} onLayout={onLayout}>
       {focused ? <StatusBar style={showsMedia || dark ? 'light' : 'dark'} /> : null}
       {size.height > 0 ? body : null}
+      {pay.sheets}
       <HomeTabs
         views={onToday ? homeViews : scopes}
         selected={scope}
