@@ -7290,6 +7290,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/{id}/pass": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the caller stands with this room's pass: the host's price, when
+         *     their pass ends, and whether they can buy or renew. Needs no wallet, so
+         *     the landing (I30) can open before one exists.
+         */
+        get: operations["CommunityPassController_pass"];
+        put?: never;
+        /**
+         * Pays for 30 days from the wallet, once: the person is in when the payment
+         *     is confirmed. Paying before the end extends from the current end date.
+         *     Answers 201 with the purchase: `paid`, `pending` while the provider has
+         *     not confirmed the debit yet (poll `GET /communities/{id}/pass/{paymentId}`;
+         *     it is never sent again), `failed` when the provider refused it and nothing
+         *     moved, or `refunded` when the pass could not be given and everything paid
+         *     is going back. The same Idempotency-Key and body answer the first result
+         *     again (`Idempotent-Replayed: true`) without checking the PIN. Not enough
+         *     money is `402 insufficient_funds` with the shortfall; no wallet is `409
+         *     wallet_not_open`. Nothing is ever debited without this request.
+         */
+        post: operations["CommunityPassController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/pass/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The pay sheet before the PIN: the host's price, the wallet provider's
+         *     charge and WAWU's fee on top, the total, the wallet's balance and the
+         *     shortfall, when the pass would end, and the signed quote
+         *     `POST /communities/{id}/pass` sends back. Nothing is reserved.
+         */
+        get: operations["CommunityPassController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/pass/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One purchase as it stands now: what the app polls after `pending`. Only
+         *     the payer reads it, for the room in the path; another person's purchase
+         *     and an id nobody holds are the same `404 not_found`.
+         */
+        get: operations["CommunityPassController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7937,7 +8013,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "points_cap_reached" | "points_not_short" | "tier_required";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -8193,7 +8269,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -9395,7 +9471,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
         };
@@ -9675,7 +9751,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -9729,7 +9805,7 @@ export interface components {
         };
         EarningStreamView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out" | "community_pass";
             earnedKobo: number;
             sales: number;
         };
@@ -9752,7 +9828,7 @@ export interface components {
         };
         EarningContentView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             earnedKobo: number;
@@ -9766,7 +9842,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -9784,7 +9860,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -14202,6 +14278,92 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        CreateRoomDto: {
+            /**
+             * @description What a member pays for 30 days, in kobo, set by the host (I32). Private
+             *     rooms only. The bounds are checked by the service (a figure of the
+             *     launch settings, COMMUNITY_PASS_MIN_KOBO and COMMUNITY_PASS_MAX_KOBO).
+             *     Omitted, a private room has no pass and keeps the older join request flow.
+             */
+            passPriceKobo?: number;
+            /**
+             * @description Bound: 3-80 characters. A community name is a list-row heading on both
+             *     the mobile and desktop community surfaces, so it is deliberately far
+             *     shorter than ContentPiece.title (200) — anything longer is a
+             *     description, not a name. `\S` rejects an all-whitespace name, which
+             *     @IsNotEmpty alone lets through and which renders as a blank, unclickable
+             *     row.
+             */
+            name: string;
+            /**
+             * @description Bound: 1-500 characters. This is the "what this community is for" blurb
+             *     shown on the community card / join screen, not long-form content — an
+             *     order of magnitude shorter than ContentPiece.description (5000), which
+             *     backs a full detail page. Required, because `Community.description` is
+             *     a non-nullable column and a community with no stated purpose is the
+             *     thing nobody joins.
+             */
+            description: string;
+            /** @enum {string} */
+            kind: "open" | "private";
+            /**
+             * Format: uri
+             * @description The room's cover image, as the `fileUrl` handed back by
+             *     `POST /uploads/presign` for the `community/image` folder. Optional — a
+             *     community without one is normal and the client falls back to its
+             *     placeholder tile, so hosting is never blocked on finding a picture.
+             *
+             *     No `@MaxLength` here, matching every other asset-URL field in this
+             *     backend (CreateContentDto's previewAssetUrl/fullAssetUrl, CreateEventDto's
+             *     bannerUrl — neither caps length). A presigned S3 GET URL carries the
+             *     bucket, region, path and a full signed query string, routinely well past
+             *     500 characters; a cap this field alone had meant every community created
+             *     with a picture 400'd against this backend's own presign output.
+             */
+            imageUrl?: string;
+        };
+        CommunityPassDto: {
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
+        CommunityPassView: {
+            communityId: string;
+            sellsPass: boolean;
+            priceKobo: number | null;
+            periodDays: number;
+            passUntil: string | null;
+            active: boolean;
+            canRenew: boolean;
+            canBuy: boolean;
+            isHost: boolean;
+        };
+        CommunityPassQuoteView: {
+            communityId: string;
+            title: string;
+            host: components["schemas"]["MoneyPartyView"];
+            priceKobo: number;
+            periodDays: number;
+            passUntil: string | null;
+            newPassUntil: string;
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        CommunityPassPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            communityId: string;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "paid";
+            statusMessage: string | null;
+            priceKobo: number;
+            passUntil: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            paidAt: string | null;
         };
     };
     responses: never;
@@ -19819,7 +19981,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -24310,7 +24472,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCommunityDto"];
+                "application/json": components["schemas"]["CreateRoomDto"];
             };
         };
         responses: {
@@ -24504,6 +24666,8 @@ export interface operations {
                         communityId: string;
                         /** Format: date-time */
                         joinedAt: string | null;
+                        passUntil?: string | null;
+                        canRenew?: boolean | null;
                     } | null;
                 };
             };
@@ -28571,6 +28735,210 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    CommunityPassController_pass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassView"];
+                };
+            };
+        };
+    };
+    CommunityPassController_buy: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityPassDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassPurchaseView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CommunityPassController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CommunityPassController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassPurchaseView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
         };
