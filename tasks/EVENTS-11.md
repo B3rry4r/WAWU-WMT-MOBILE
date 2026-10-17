@@ -19,14 +19,14 @@ artboards: []
 
 As of 17 Oct 2026, from the lead's log (10 Oct) and the branch.
 - **Status:** review on its branch (round 5: no open defect), refreshed onto batch 7. This file on main still says todo.
-- **Branches:** mobile `wmt/EVENTS-11` (this record). Backend `wmt/EVENTS-11` 3555583 (was a4b61fa), PR #83.
+- **Branches:** mobile `wmt/EVENTS-11` (this record). Backend `wmt/EVENTS-11` 71117e4 (was 3555583, a4b61fa), PR #83.
 - **Refreshed onto batch 7, 17 Oct:** `origin/wmt/MERGE-7` 0be61a4 (PR #143: batch 6 and EVENTS-07, EVENTS-10, EVENTS-13) merged in as a merge commit, 06b7763; 3555583 on top changes only the lock header. One conflict, `src/event-ticketing/event-ticketing.service.ts`, both sides kept (SHARED-CHANGES EVENTS-11 #3): imports and constructor take `EventService` and `EventCancelHooks`; `setTicketTypes` is EVENTS-11's single locked transaction with EVENTS-07's wallet-order rules inside it, for the tiers the PUT drops only (an unpaid quote goes with its tier; a payment still being confirmed, or a failed or refunded order whose price is still on its way back, is the same 409 as before; any other order on a dropped tier, a basket line included, retires the tier). A retired tier cannot be bought from the wallet (409 `target_not_payable`, "This ticket has changed. Please choose again."), and a priced quote locks its tier rows before it is written. EVENTS-10's call-off refunds and EVENTS-13's order cap and single cancel are untouched.
 - **Migration:** `20261021350000_event_ticket_type_retired` is now `20261025090000_event_ticket_type_retired` (applied nowhere; batch 7's newest is `20261025020000_points_spend`); a fresh database applies every folder in order.
 - **Lock against batch 7's lock:** the same three parts as before and nothing else. `PUT /events/:id/tickets` gains an `after` step (an admin approve of the probe's event); `GET /admin/events/queue` and `GET /admin/events/:id` gain `ticketTypes` in their recorded shapes; the header (sha256 `755ce4fa...` to `dd8809e5...`). The suite file `src/protected-routes/protected-routes.regression.spec.ts` and `test/protected-routes/registry.ts` carry the `after` support. Re-recorded with `npm run protected:lock` on a fresh database against 06b7763; the two finance entries that drift on every relock stayed at batch 7's values. Against its own lock the merged code passes 253 of 253 (244 required); against batch 7's lock 243 of 253 (the same 10 as before). Held by the owner's `relock-approved` label on PR #83.
 - **Checks on the merged tree (Nuvion stand-in only):** tsc 0; `contract:build` twice, equal; gates 0 fail; baseline ok. Event, admin events, account-data and export-map specs 232 of 232 in 15 suites (this includes the new `event-tickets-wallet-orders`, 8 tests). Nuvion money specs (`wallet-payment-nuvion`, `payment-poll-nuvion`, `payment-follow-ups-nuvion`, `money-contract`, `nuvion-book-money`) 110 of 110.
-- **Not run here, and open in CI:** six event specs run on the Fintava double (`event-wallet-order`, `event-wallet-order-round2`, `event-wallet-order-limit`, `event-order-cap`, `event-cancel-race`, `event-call-off-refund`): Fintava is out (owner, 17 Oct), so they were not run or touched. In CI the suite is red on `event-wallet-order-round2` ("a tier edit over a failed wallet order"), 403 where the spec expects 409: its host is a random id with no verification, and R-40 now refuses such a host on `PUT /events/:id/tickets`. The lead rules on the spec's setup (see the report); nothing was edited.
+- **The two red EVENTS-07 specs, 17 Oct:** `origin/wmt/HARNESS-NUV` 0151464 (the event wallet harness on the Nuvion stand-in, and a current tick for those two tests' hosts, setup only) merged in as a merge commit, 71117e4, with no conflicts. `event-wallet-order` 21 of 21 and `-round2` 7 of 7 pass on it; tsc 0. Nothing in a test, the lock or Fintava was touched. The other four Fintava-double event specs (`event-wallet-order-limit`, `event-order-cap`, `event-cancel-race`, `event-call-off-refund`) are not part of this refresh.
 - **Open findings:** blocker 0, high 0, medium 0. Lows O7 and O8 are in tasks/SWEEP-EVENTS.md. NOT RUN by the verifier: the full backend suite (it needs a network namespace).
-- **Next:** the lead rules on the EVENTS-07 spec setup; the owner applies the label; the lead merges #83 and signs off mobile.
+- **Next:** the owner applies the `relock-approved` label (the Protected routes check stays red until then); the lead merges #83 and signs off mobile.
 - **Records:** on the branch, `wmt/EVENTS-11`, in tasks/EVENTS-11.md there (60 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py EVENTS-11`; the history goes to tasks/history/EVENTS-11.md.
 
 ## Read first
@@ -321,6 +321,14 @@ No open defect.
   - Real Flutterwave: the Hub's mock payment adapter was used.
 
 **Verdict: review.** D3 and O5 are fixed, and D1 and D2 stay fixed. The lock is unchanged since round 2.
+
+## Builder report, round 6 (T0 merge, 17 Oct)
+
+Backend `wmt/EVENTS-11` `71117e4`: a merge commit of `origin/wmt/HARNESS-NUV` `0151464` onto `3555583`. No rebase, no conflicts, no generated file touched.
+- **Merged in:** the Nuvion stand-in scripts, `stack.sh`, the shared wallet harnesses under `test/`, and the two EVENTS-07 specs' setup (`h.tick(hostId)` for a verified host, R-40). 12 files, all from HARNESS-NUV.
+- **Specs** (test database `b11h_test_hub`, mock WAWU ID on :7920, `--runInBand`, EXIT 0): `event-wallet-order.contract.spec.ts` 21 of 21, `event-wallet-order-round2.contract.spec.ts` 7 of 7.
+- **tsc:** EXIT 0.
+- **Not done:** the lock, the Protected routes check (red until the owner's `relock-approved` label), the full suite (CI runs it).
 
 ## Owner sign-off
 
