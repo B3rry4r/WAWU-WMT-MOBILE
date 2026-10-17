@@ -33,6 +33,8 @@ import { PointsFrame } from './PointsFrame';
 const POLL_MS = 4000;
 const BODY_GAP = 12;
 const RESULT = { mark: 72, between: 10, title: 28 } as const;
+/** PT4's heading is the board's 28 bold, tracked -0.035em (PT6b's headline is the same family). */
+const HEAD = { title: 28, tracking: -0.035 } as const;
 const PACK = { radio: 22, dot: 10, padV: 16, chipTop: 8 } as const;
 
 export type BuyScreenProps = {
@@ -336,7 +338,7 @@ export function BuyScreen(props: BuyScreenProps) {
     body = (
       <>
         <View>
-          <Text variant="display" accessibilityRole="header" testID="buy-title">
+          <Text variant="display" accessibilityRole="header" testID="buy-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {BUY_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="buy-blurb" style={styles.blurb}>

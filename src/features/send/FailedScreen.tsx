@@ -24,7 +24,7 @@ import { failedRows, failedView } from './model';
 import { Reference } from './parts';
 
 /** W14's mark is the receipt's 88, and the headline is the board's 28 bold. */
-const FAILED = { mark: 88, head: 12, headTop: 20, title: 28, partMoney: 14.5, poll: 4000 } as const;
+const FAILED = { mark: 88, head: 12, headTop: 20, title: 28, titleTracking: -0.035, partMoney: 14.5, poll: 4000 } as const;
 
 export type FailedScreenProps = {
   id: string;
@@ -113,7 +113,7 @@ function Failed({ transfer }: { transfer: Transfer }) {
     <>
       <View testID="failed-head" style={styles.head}>
         <IconTile icon="X" tone="danger" size={FAILED.mark} strokeWidth={2.4} />
-        <Text variant="display" accessibilityRole="header" testID="failed-title" style={styles.centre}>
+        <Text variant="display" accessibilityRole="header" testID="failed-title" style={[styles.centre, { fontSize: FAILED.title, letterSpacing: FAILED.titleTracking * FAILED.title }]}>
           {view.title}
         </Text>
         <Text variant="secondary" tone="textSecondary" testID="failed-reason" style={styles.centre}>
