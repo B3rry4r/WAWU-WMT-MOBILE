@@ -21,7 +21,7 @@ import { fetchMinePage, fetchSold, mineKey, soldKey } from './organiserApi';
 import { opensOf, pillOf, rowLine } from './organiserFormat';
 
 /** design/_gen/events.js `myEvents` (E17): a card per event, 10 between, a 56 picture with a 16 corner, the pill at the right end. */
-const rowMetrics = { gap: 10, pad: 12, thumb: 56, thumbCorner: radius.input, between: 12, title: 16, line: 13.5, top: 14, bottom: 40 } as const;
+const rowMetrics = { apart: 10, pad: 12, thumb: 56, thumbCorner: radius.input, between: 12, title: 16, line: 13.5, top: 14, bottom: 40 } as const;
 const SKELETONS = 3;
 
 export type MyEventsScreenProps = {
@@ -151,7 +151,7 @@ function EventCard({ event, sold, now, onOpen }: { event: EventView; sold: numbe
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  body: { paddingHorizontal: layout.gutter, paddingTop: rowMetrics.top, gap: rowMetrics.gap },
+  body: { paddingHorizontal: layout.gutter, paddingTop: rowMetrics.top, gap: rowMetrics.apart },
   card: { gap: space.sm },
   top: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   thumb: { width: rowMetrics.thumb, height: rowMetrics.thumb, borderRadius: rowMetrics.thumbCorner, overflow: 'hidden' },

@@ -10,7 +10,7 @@ import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
-import { layout, radius, useWawu } from '@/theme';
+import { layout, radius, space, useWawu } from '@/theme';
 
 import { detailKey, eventsKey, fetchEvent, fetchOptions, fetchTickets, optionsKey, ticketsKey } from '../api';
 import { NavBar } from '../chrome';
@@ -149,6 +149,6 @@ export function DashboardScreen({ id, onBack, onDoor, onTickets, onLinks, onEdit
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignSelf: 'center', width: '100%', maxWidth: layout.screenW },
-  body: { paddingHorizontal: layout.gutter, paddingTop: 8, gap: dashMetrics.stack },
+  body: { paddingHorizontal: layout.gutter, paddingTop: space.sm, gap: dashMetrics.stack },
   tiles: { flexDirection: 'row', gap: dashMetrics.tileGap },
 });

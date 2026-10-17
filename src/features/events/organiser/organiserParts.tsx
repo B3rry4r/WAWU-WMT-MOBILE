@@ -98,6 +98,6 @@ const styles = StyleSheet.create({
   bar: { height: dashMetrics.figure, width: '60%', borderRadius: radius.chip },
   netRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   netWords: { flexShrink: 1, gap: space.xs },
-  danger: { height: 54, borderRadius: radius.button, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  danger: { height: 54, borderRadius: radius.button, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.s2xl },
   call: { alignSelf: 'center', paddingVertical: space.md },
 });
