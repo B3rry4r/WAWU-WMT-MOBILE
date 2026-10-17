@@ -7,7 +7,7 @@ order: 262
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [TIER-03, NUV-07, POINTS-04]
 decisions: [R-65, R-43, R-23]
 passes: [V1, V2, V3, V4, V6, V9]
@@ -17,11 +17,21 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 1 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below. Nothing blocks it; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/TIER-06.md.
+As of 17 Oct 2026, builder round 1 done (Sonnet builder). Status: verifying.
+- **Branches:** backend `wmt/TIER-06` `317f464` (code `c827262` plus a README note) on `origin/main` `a5e48fc`; mobile `wmt/TIER-06` on `origin/wmt/MERGE-5` `7de785d` (docs only: this file, history, SHARED-CHANGES rows, LOG, PROGRESS). wawu-id and web untouched.
+- **Checks:** backend CI on `317f464`: Branch checks run 38987466960 green (contract, suite shards 1 to 3, netns, deploy-test-in-sync); Protected routes (V3) run 38987466864 green; Gates run 38987466793 red with the same 5 FAIL lines as main (admin-notifications x2, notification-event, flutterwave-wallet.gateway, content-piece.service). On the first push `c827262` (run 38986682069) shard 3 failed once on `pin-request-key.contract.spec.ts:202`, a random 4-digit PIN found inside a random hex digest (not touched by this task; passes on the next run and alone). Mobile full check (typecheck, lint, tests 184 suites and 3243 tests, gates, tasks) EXIT 0 on this branch.
+- **Migration:** `20261024060000_plan_settings` (one table `PlanSetting`, two audit enum values). Additive; rollback `DROP TABLE "PlanSetting"`.
+- **Built:** `GET` and `PATCH /api/hub/admin/plan-settings` (superadmin and finance change, support reads, reviewer refused, users 401). A null value puts a setting back to its default. One audit row per setting that changed (`AdminOpsAudit`, resource `plan_setting`, old and new value, who). 0, negative, decimals and wrong kinds are refused (400, naming the key); one bad value refuses the whole request.
+- **How it follows a change:** `PLANS_CONFIG` is now the live plan (`src/plan-settings/`): `plans.config.json` plus `plan-settings.defaults.json` as the defaults, the saved rows laid over them, kept in memory. The saving process reloads at once; other processes within 15 seconds. `GET /plans`, `GET /plans/purchases/quote`, `GET /points/convert/quote`, the tier grant and the waitlist all read it with no reader changed. Other tasks read a setting with `PlanSettingsService.number(key)` / `.text(key)` / `.value(key)` (REF-02, POINTS-03, WALLET-37, EXPLORE-06, INBOX-22, HOME-16, WALLET-16).
+- **G-804:** pass views (`GET /me/tier`, `GET /plans`) carry optional `benefits` and `eventDate`; left out until set (W44 then reads "Date to be announced").
+- **Launch values in force:** tiers ₦1,000 / ₦3,000 / ₦5,000; add 5 products ₦1,500; 1,000 points = ₦500; every lot lasts 12 months; 5,000 points a day; referral ×1 to ×3, +500 at 5 verified, 7-day hold; name checks 30 an hour; popular communities 10 members; community credits 1 / 3 / 3; daily move floor ₦200; refused review 72 hours.
+- **Changed from the file:** daily cap 10,000 to 5,000, and bonus lots (Verify 90 days, Verify Plus 180) now last 12 months like bought lots (R-65 "every lot"). 12 months = 365 days (lots are day-based).
+- **Not built (not in this task):** the dashboard screens for these settings (follow-up row in the dashboard repo: list, edit, reset, show the provisional note and the audit); the `extra_products` and pack purchase routes (TIER-04, POINTS-02 read `plan.extra_products.*` and `plan.pack.*` from here).
+- **Still only in the file (not admin settings):** dollar prices and USD pack points (wait for dollar accounts, R-16), `max_chars_per_job`, `max_audio_min_per_job`, `event_offers`, `preselected_tier`, `referral.one_level_only`, `referrer_must_be_verified`. The file goes 2 weeks after launch in a removal task.
+- **Open findings:** none (not yet verified).
+- **Next:** a verifier checks it; the lead merges backend and this branch together, and renames the migration stamp if it clashes.
+- **For the lead (decision):** the board's three W44 lines ("Entry to the event and the maker area", "A table to show your work", "Priority when places are given out") are NOT loaded by default. `src/plans/tests/plans.contract.spec.ts:570` (TIER-01) pins `eventPass` to `{ id, name }` and I may not edit it. To load them: add the lines to `plan-settings.defaults.json` and widen that one expectation, or set them once in admin after launch (one PATCH).
+- **History:** tasks/history/TIER-06.md.
 
 ## Read first
 
@@ -63,13 +73,9 @@ Keys are proposals; the builder may rename them and records why. 85/15 is not a 
 - [ ] The convert quote, a pack quote and a tier quote all read the stored values; a stored value of 0 or negative is refused.
 - [ ] The report names, for each launch figure, the screens that print it.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/TIER-06.md](history/TIER-06.md).
 
 ## Owner sign-off
 
