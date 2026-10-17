@@ -17,11 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, built (bundle INBOX-24, Sonnet builder), waiting for a verifier.
-- **Status:** verifying. Backend `wmt/INBOX-24` `28cea21` (from `wmt/B3a` `242ce9d`, WALLET-17's earnings); mobile `wmt/INBOX-24` (records only). Migration `20261025180000_community_pass`. Nothing merged.
+As of 17 Oct 2026, round 2 built (Sonnet builder), waiting for the verifier's re-check of the two fixes.
+- **Status:** verifying. Backend `wmt/INBOX-24` `0116060` (round 1 `28cea21`, from `wmt/B3a` `242ce9d`, WALLET-17's earnings); mobile `wmt/INBOX-24` (records only). Migration `20261025180000_community_pass`. Nothing merged.
 - **Size:** L. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a verifier; passes V1, V2, V3, V4, V6, V7, V8, V9. Then INBOX-14 builds I30 to I34 on these routes.
-- **Records:** SHARED-CHANGES INBOX-24 #1 to #4; BACKEND_GAPS G-INBOX-24-1 to -5.
+- **Next:** a verifier re-checks round 2 (V1, V3, V4); passes V1, V2, V3, V4, V6, V7, V8, V9 stand. Then INBOX-14 builds I30 to I34 on these routes.
+- **Records:** SHARED-CHANGES INBOX-24 #1 to #4; BACKEND_GAPS G-INBOX-24-1 to -6.
 
 ## Read first
 
@@ -63,6 +63,9 @@ A person can join a private community by paying for 30 days from the wallet and 
 - **Run (stack `inbox24`, ports 7890 to 7892, down at the end):** the new contract spec 11 passed, EXIT 0; rules spec 6 passed; `tsc --noEmit` EXIT 0; eslint on the 32 changed files EXIT 0; gates 0 fail, 124 warn, 88 accepted, PASSED; `check_baseline` passes; `contract:build` done. Neighbouring specs (money-moving and wallet-gate coverage, account-data-map, data-export-map, push-policy, live, notification-emitter, community, inbox) pass except 19 tests in 4 suites (community, community-rooms, inbox, notification-wiring) that fail the same 19 on `wmt/B3a` unchanged (an unseeded stand-in database and identity names).
 - **Spec lists extended, nothing loosened:** the two money-route coverage specs and `push-policy.spec.ts` list what is mounted or pushed and must grow with each such task (SHARED-CHANGES INBOX-24 #4).
 - **NOT RUN:** the full backend suite and the protected-route suite V3 (GitHub runs both on the push); the app (no screen here); a call to any real provider (none made).
+- **Round 2 (backend `0116060`, product diff +59 -9 over 3 files):** (1) the price refusals say ₦100 and ₦500,000 (naira sign) in `community-pass-rules.ts`. (2) A member the host removes from a PASS room is no longer deleted: their row goes to `pending`, so `POST /join` returns it unchanged (200, `pending`) instead of joining them again, a new payment is refused before anything is taken (`GET /pass/quote` and `POST /pass` answer 409 `target_not_payable`, `GET /pass` shows `canBuy` and `canRenew` false), declining keeps them out, and the host lets them back with the existing approve. Open rooms and older private rooms run the same code as before. No money path changed (Q-43 stays the owner's).
+- **Round 2 checks:** 2 new specs in `community-pass-nuvion.contract.spec.ts` (removed member stays out by join, by paying and by declining, back after approve, no debit and no pass row added; open and older private rooms unchanged) and the rules spec, all failing before and passing after; `src/community`, `community-message`, `live`, `inbox` specs 255 passed, 1 skipped, EXIT 0; protected suite (`src/protected-routes`) 253 passed, EXIT 0; `tsc --noEmit` EXIT 0; eslint on the 5 changed files EXIT 0; gates 0 fail, 124 warn, 88 accepted, PASSED; `check_baseline` EXIT 0. No Fintava spec run. Test database `i24r2_test` on a mock identity service at port 7881, both dropped and stopped.
+- **Round 2 limit:** if a host removes someone in the seconds between their payment and the pass being given, the late delivery still turns their `pending` row back to `joined` (round 1's code, left as is so no money path moves). Low.
 - **Not done:** refunds on leaving or removal and a route to change the price later (not ruled, G-INBOX-24-3, -2); a host notice when someone buys a pass.
 
 ## Verifier report
