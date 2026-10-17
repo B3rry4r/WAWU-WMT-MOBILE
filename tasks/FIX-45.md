@@ -19,9 +19,9 @@ artboards: []
 
 As of 17 Oct 2026.
 - **Status:** verifying. Backend specs only; no product file, no app change.
-- **Backend:** `wmt/FIX-45` `153a36e` on backend main `a5e48fc`. Mobile: this record.
-- **Next:** an independent verifier; CI on the backend head decides the rest.
-- **Open findings:** none yet.
+- **Backend:** `wmt/FIX-45` `a842113` (round 2, on `153a36e`) on backend main `a5e48fc`. Mobile: this record.
+- **Next:** an independent verifier re-checks round 2; CI on the backend head decides the rest.
+- **Open findings:** round 1 (verify/FIX-45.md): 1 medium, 3 low, all answered in round 2 below.
 
 ## Read first
 
@@ -37,8 +37,8 @@ Two specs failed on CI with nothing wrong in the code, in files the failing bran
 
 ## Scope (the two specs only; no product file, harness, gate or baseline)
 
-- `pin-request-key.contract.spec.ts`: `pinOutsideFingerprint(who, key)` draws the next PIN after the person and the key are known and works out the fingerprint that PUT will be stored under (it is a pure function of person, route, key and body), and takes a PIN that is not inside it. The assertion is unchanged. Twelve candidates in a row inside their own fingerprint (a Hub that put the PIN into it) throws. The two sibling scans of a stored key row (the PIN regex scan, and the reset code `not.toContain`) read the row through `scannable(row)`: its UUIDs and its keyed digest set aside, the rest (answer, route, state) still scanned. About 1 scan in 1,000 failed for the PIN scan, from UUID groups and the digest.
-- `publishing-gate.contract.spec.ts`: the burst sends `STORAGE_LOCK_WAITERS_PER_PERSON + 1` publishes (what the queue admits) and expects exactly `[201, 402, ...]`. A new case, "a crowd of publishes at once for the last place", sends three times that and expects exactly one 201, every other answer a 402 `product_limit_reached` or a 429 `storage_busy`, and the count unchanged, so the crowd past the queue is still covered.
+- `pin-request-key.contract.spec.ts`: `pinOutsideFingerprint(who, key)` draws the next PIN after the person and the key are known and works out the fingerprint that PUT will be stored under (it is a pure function of person, route, key and body), and takes a PIN that is not inside it. The assertion is unchanged. Twelve candidates in a row inside their own fingerprint (a Hub that put the PIN into it) throws. The sibling PIN regex scan of a stored key row reads the row through `scannable(row)`: its UUIDs and its keyed digest set aside, the rest (answer, route, state) still scanned. About 1 scan in 1,000 failed for the PIN scan, from UUID groups and the digest. The reset-code scan (reset-confirm case) reads the whole row as stored, `JSON.stringify(row)`, as it did on main, and also asserts `row.fingerprint` does not contain the code (round 2): a six-digit code by chance in the row's random hex is about 0.00033%.
+- `publishing-gate.contract.spec.ts`: the burst sends `STORAGE_LOCK_WAITERS_PER_PERSON + 1` publishes (what the queue admits) and expects exactly `[201, 402, ...]`. The case first asserts it sends more than one at once (round 2), so it still races if the waiters setting were 0. A new case, "a crowd of publishes at once for the last place", sends three times that (9) and expects exactly one 201, every other answer a 402 `product_limit_reached` or a 429 `storage_busy`, and the count unchanged, so the crowd past the queue is still covered.
 
 ## Capability checks
 
@@ -56,9 +56,16 @@ Sonnet builder. Backend `wmt/FIX-45` `153a36e` on main `a5e48fc`; two spec files
 - **Spec 1, plants on the changed spec:** the PIN in clear in a shape-valid fingerprint fails `not "<PIN>"`; the PIN in the stored answer fails the scan; the PIN as the row's `resourceId` fails the scan; the PIN as one UUID group passes (a collision, the intended exception).
 - **Spec 2, the cause:** the 429 is `storage_busy` from `inPersonsTurn` (one request runs, `STORAGE_LOCK_WAITERS_PER_PERSON` = 2 wait, the next is refused). It is not a rate limit, a per-address limit or a leftover row: the spec mounts no throttler and each person is new. Four of one person sent together get `[201, 402, 402, 429]` on every burst once the Hub is warm: 147 of 150 bursts in one process, the first burst of a process passing (cold), and after a warm-up of twelve parallel requests the first burst fails too (3 runs of 4 bursts, all 429). A CI machine that was warm at that point failed it.
 - **Spec 2, reproduced:** main's burst with that warm-up added: 0 of 30 pass, every run `[201, 402, 402, 429]`. The changed spec's two burst cases with the same warm-up: 30 of 30 pass.
-- **Spec 2, the change:** the burst sends waiters plus one (3) and expects exactly `[201, 402, 402]`; a new case sends 12 and expects one 201, the rest 402 `product_limit_reached` or 429 `storage_busy`, count unchanged. No limit raised, no assertion dropped or loosened.
+- **Spec 2, the change:** the burst sends waiters plus one (3) and expects exactly `[201, 402, 402]`; a new case sends 9 (3 times 2 waiters + 1) and expects one 201, the rest 402 `product_limit_reached` or 429 `storage_busy`, count unchanged. No limit raised, no assertion dropped or loosened.
 - **Runs:** `pin-request-key.contract.spec.ts` 30 runs, 43 of 43 each, 30 of 30 green; `publishing-gate.contract.spec.ts` 30 runs, 62 of 62 each, 30 of 30 green. `tsc --noEmit` EXIT 0, eslint (no fix) EXIT 0 and prettier clean on both files.
 - **Record:** area `FIX` (the area every FIX task uses), priority `launch` at free order 294 (before CHECK-3).
+
+### Round 2 (17 Oct 2026, Sonnet builder; answers verify/FIX-45.md)
+Backend `wmt/FIX-45` `a842113` on `153a36e`; two spec files, +8 -1, no product file. Stack `fix_45` (7520 to 7527), taken down.
+- **Finding 1 (medium), the reset-code scan:** the reset-confirm case reads the whole row again, `expect(JSON.stringify(row)).not.toContain(reset.code)`, and adds `expect(row.fingerprint).not.toContain(reset.code)`. Planted on a scratch copy: the row's fingerprint set to `hmac-sha256:v1:` + the code + 58 zeros (shape-valid); the case fails on `Expected substring: not "<code>"`. The chance collision of a six-digit code in the row's random hex stays 0.00033%.
+- **Finding 2 (low), the report:** the crowd case sends 9 (3 times (2 waiters + 1)), not 12. Corrected above.
+- **Finding 3 (low), the burst still races:** `expect(together).toBeGreaterThan(1)` before the burst in "cannot be sent past the limit by two publishes at once".
+- **Runs:** `pin-request-key.contract.spec.ts` 30 of 30 (43 of 43 each); `publishing-gate.contract.spec.ts` 30 of 30 (62 of 62 each), against stack `fix_45`. `tsc --noEmit` EXIT 0, eslint (no fix) EXIT 0 and prettier clean on both files. Stack down, nothing on 7520 to 7527.
 
 ## Verifier report
 
