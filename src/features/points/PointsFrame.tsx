@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconButton } from '@/components/Button';
 import type { IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { font, layout, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
 
 /** design/_gen/kit.js line 34, `nav`: a 56 px bar, 20 px sides, 12 gap, a 42 px round button, a 17 px bold title, a 42 px slot on the right. */
-const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } as const;
+const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02, sub: 12.5, subTop: 2 } as const;
 /** kit.js line 35, `body`: 8 above. Line 38, `foot`: 12 above its button, 34 below (the home indicator). */
 const frameMetrics = { top: space.sm, bottom: 40, footTop: 12, footBottom: 34 } as const;
 
@@ -16,6 +16,8 @@ export type PointsFrameAction = { icon: IconName; label: string; onPress: () => 
 
 export type PointsFrameProps = {
   title: string;
+  /** The line under the title on the bar (PT2's "Points: 1,250"), 12.5 in the muted tone, 2 below it. */
+  subtitle?: string;
   onBack?: () => void;
   /** The round button on the bar's right (PT5's "Convert to cash"). */
   action?: PointsFrameAction;
@@ -35,16 +37,23 @@ export type PointsFrameProps = {
  * `ScreenFrame` has no round button on the right and no foot (SHARED-CHANGES.md, POINTS-05 #1), so this one draws them, as
  * `ProFrame` does; it goes when `ScreenFrame` takes both.
  */
-export function PointsFrame({ title, onBack, action, gap, foot, centered, children, testID }: PointsFrameProps) {
+export function PointsFrame({ title, subtitle, onBack, action, gap, foot, centered, children, testID }: PointsFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
         <View style={styles.side}>{onBack ? <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="points-back" /> : null}</View>
-        <Text variant="body" numberOfLines={2} accessibilityRole="header" style={[styles.title, { fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title }]}>
-          {title}
-        </Text>
+        <View style={styles.titleBox}>
+          <Text variant="body" numberOfLines={2} accessibilityRole="header" style={[styles.title, { fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title }]}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text variant="body" tone="textMuted" numberOfLines={1} testID="points-subtitle" style={[styles.sub, { fontSize: navMetrics.sub, lineHeight: canvasNormalLineHeight(navMetrics.sub) }]}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
         <View style={styles.side}>{action ? <IconButton icon={action.icon} label={action.label} onPress={action.onPress} testID={action.testID} /> : null}</View>
       </View>
       <ScrollView
@@ -70,7 +79,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   nav: { minHeight: navMetrics.height, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: layout.gutter },
   side: { width: navMetrics.button },
-  title: { ...font(700), flex: 1, textAlign: 'center' },
+  titleBox: { flex: 1, minWidth: 0 },
+  title: { ...font(700), textAlign: 'center' },
+  sub: { textAlign: 'center', marginTop: navMetrics.subTop },
   scroll: { flex: 1 },
   content: { flexGrow: 1 },
   centered: { justifyContent: 'center' },

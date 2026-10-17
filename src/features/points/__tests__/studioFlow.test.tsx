@@ -281,10 +281,10 @@ describe('PT1 and PT1a · Studio', () => {
     expect(screen.queryByRole('button', { name: /VoiceOver/ })).toBeNull();
   });
 
-  it('a tool whose screen is not built is a card and not a button (R-47)', async () => {
+  it('a tool whose screen is built is a button that opens it (POINTS-08)', async () => {
     hub.points = 1250;
     await toStudio();
-    expect(screen.queryByRole('button', { name: /VoiceOver/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'VoiceOver, 250 a minute' })).toBeTruthy();
   });
 
   it('a person with no points sees the note, the accent Buy points and the tools dimmed', async () => {

@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 93 | 0 | 0 | 0 |
+| todo | 92 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 74 | 0 | 0 | 0 |
+| verifying | 75 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -62,6 +62,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
 - [POINTS-06](../tasks/POINTS-06.md) Buy points (You)
 - [POINTS-07](../tasks/POINTS-07.md) Studio: the AI tools, not enough points, the daily limit (You)
+- [POINTS-08](../tasks/POINTS-08.md) One AI tool: VoiceOver, working, done, failed (You)
 - [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
@@ -288,6 +289,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · POINTS-08 · Built (Sonnet builder, T2; mobile `wmt/POINTS-08` on `origin/wmt/POINTS-07` `1cd84d3b`; no backend change; status verifying): the tool screen (`/studio-tool?tool=voiceover`, PT2, PT2a, PT2b, PT2c) drawn from `GET /ai-tools`, Studio's VoiceOver tile opens it; one job per Run (one key kept on the phone, a lost answer retried is one job), working, done with a player, failed in the Hub's words; stack V9 on `pts08`; gaps G-POINTS-08-1 to -3, shared changes POINTS-08 #1 and #2.
 - 17 Oct 2026 · POINTS-07 · Built (Sonnet builder, T2; mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4`, contract from backend `90ab9aa`; no backend change; status verifying): Studio (`/studio`, PT1 and PT1a) lists the tools `GET /ai-tools` gives with the Hub's costs, from the Home Studio tile and the Create hub's Studio card (M19, with the points count); `useJobCheck` shows PT3, PT3a, PT3b or PT7 from `POST /points/quote` and buys exactly the missing points with the PIN, once (stack: 1,000 + 250 = 1,250 points, 1 debit after a wrong PIN; limit reached by 3 real jobs); gaps G-POINTS-07-1 to -4.
 - 17 Oct 2026 · AITOOLS-01 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`, mobile `wmt/AITOOLS-01` on `47555987`; migration `20261025182000_ai_tool_jobs`; status verifying): `GET /ai-tools` lists VoiceOver with its cost, `POST /ai-tools/voiceover/jobs` holds the points, makes the audio through one provider seam and keeps them only on success, `GET /ai-tools/jobs/{id}` says working, done or "No points were taken"; two jobs at once never go below zero, each cap is named with nothing held, a lost answer and a retry run one job. NOT RUN against the real voice provider (no key on any build machine); run against a local stand-in. G-AITOOLS-01-1 to -5 filed.
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
@@ -302,4 +304,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · SCHOOLS-11 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025131000_school_settlement`; status verifying): a school's 85% is sent from WAWU's account to its bank account at the class's start through the provider seam (`bankTransfer` from the merchant account), a class called off sends the fees back to the students' wallets, one decision per enrolment; a failed payout is retried once under a new reference and never doubles; the school's bank account is saved only after the bank confirms it; dashboard routes for finance and the superadmin.
 - 17 Oct 2026 · SCHOOLS-09 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025130000_school_enrolment_report`; status verifying): the school gets one mail with the student's name, email, phone, course, intake and consent time when an enrolment is paid (or free); `GET /schools/enrolments` is My courses with current and finished tabs.
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
-- 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-DV2-01-1 filed.
