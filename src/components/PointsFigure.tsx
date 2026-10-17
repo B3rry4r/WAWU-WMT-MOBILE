@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet, View, type LayoutChangeEvent, type TextStyle } from 'react-native';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent, type TextStyle } from 'react-native';
 
 import { font, useWawu } from '@/theme';
 
@@ -44,10 +44,26 @@ export type PointsFigureSize = keyof typeof pointsFigureMetrics;
 const boardLeading = 1.2;
 
 /**
- * How far the count and the word may shrink to fit a narrow place, as a share of their size (the native `minimumFontScale`).
- * At the hero size that is 11 for the count: a seven or nine digit balance still fits a 150 px column at about 0.6.
+ * How far the count and the word may shrink to fit a narrow place, as a share of their size. At the hero size that is 11 for the count.
+ * Below it the word moves under the count (see `pointsFitLayout`), so a balance is never cut to fit.
  */
 export const pointsFitMinScale = 0.5;
+
+/**
+ * The smallest the count goes once the word is out of its line (or when there is no word to move): it keeps every digit, so this is only a
+ * guard against a place with no room at all, never a size a real column reaches (12 digits at hero fit 120 px at about 0.4).
+ */
+export const pointsStackMinScale = 0.25;
+
+/** A row this much wider than its room (the engine's own rounding, 1/64 px) still counts as fitting. */
+const fitSlack = 0.1;
+/** A measured width that moves by less than this is the same width read again: it never re-scales the figure. */
+const remeasureTolerance = 0.5;
+/**
+ * The most times one count in one room may take a new width before the figure stops listening and keeps what it has. A measured width
+ * settles on its own (see `WidthEvent`); this cap is what makes it settle by construction, whatever the platform's rounding does.
+ */
+export const pointsRemeasureCap = 8;
 
 /** The width the star and the gaps take: they keep their size when the figure shrinks, only the count and the word scale. */
 export function pointsFixedWidth(size: PointsFigureSize, showWord: boolean, showIcon: boolean): number {
@@ -72,6 +88,43 @@ export function pointsFitScale(available: number | undefined, full: number | und
   return Math.max(pointsFitMinScale, Math.floor((Math.max(0, available - fixed) / text) * 100) / 100);
 }
 
+/** How the figure is drawn in a room: the scale of the count and the word, and whether the word has moved under the count. */
+export type PointsFit = { scale: number; stacked: boolean };
+
+export type PointsFitInput = {
+  size: PointsFigureSize;
+  showWord: boolean;
+  showIcon: boolean;
+  /** The room the figure is given, in px. */
+  available?: number;
+  /** The width of the count, and of the word, at full size. */
+  countFull?: number;
+  wordFull?: number;
+};
+
+const share = (room: number, text: number): number => Math.floor((Math.max(0, room) / text) * 100) / 100;
+
+/**
+ * One line, the star then the count then the word, at the largest scale that fits (1 where it all fits, never below
+ * `pointsFitMinScale`). Where it cannot fit on one line even at the minimum, the word moves under the count in the same style and the
+ * count takes the room beside the star: it keeps every digit and is never cut with an ellipsis. With no word to move (the Studio chip,
+ * the Points tile) the count alone goes below the floor, down to `pointsStackMinScale`. Nothing measured yet draws full size.
+ */
+export function pointsFitLayout({ size, showWord, showIcon, available, countFull, wordFull }: PointsFitInput): PointsFit {
+  const full: PointsFit = { scale: 1, stacked: false };
+  if (available === undefined || countFull === undefined || !(available >= 0)) return full;
+  if (showWord && wordFull === undefined) return full;
+  const word = showWord ? (wordFull ?? 0) : 0;
+  const text = countFull + word;
+  const fixed = pointsFixedWidth(size, showWord, showIcon);
+  if (!(text > 0) || fixed + text <= available + fitSlack) return full;
+  if ((available - fixed) / text >= pointsFitMinScale) return { scale: pointsFitScale(available, fixed + text, fixed), stacked: false };
+  if (!showWord) return { scale: Math.max(pointsStackMinScale, share(available - fixed, text)), stacked: false };
+  const m = pointsFigureMetrics[size];
+  const beside = showIcon ? m.icon + m.iconToNumber : 0;
+  return { scale: Math.min(1, Math.max(pointsStackMinScale, share(available - beside, Math.max(countFull, word)))), stacked: true };
+}
+
 /** The text styles of a size at a scale: the board's size, line and tracking times the scale (1 where nothing shrinks). */
 function figureStyles(size: PointsFigureSize, scale: number) {
   const m = pointsFigureMetrics[size];
@@ -84,6 +137,23 @@ function figureStyles(size: PointsFigureSize, scale: number) {
   };
 }
 
+/**
+ * A width from a layout event, to a fraction of a pixel. React Native Web reports whole pixels (`offsetWidth`), and a whole-pixel
+ * width divided by a scale is out by up to a pixel, enough to flip the scale back and forth. The event's element has the exact width.
+ */
+function eventWidth(e: LayoutChangeEvent): number {
+  const target = (e.nativeEvent as { target?: unknown }).target as { nodeType?: number } | undefined;
+  const read = (globalThis as { getComputedStyle?: (el: unknown) => { width: string } }).getComputedStyle;
+  if (target?.nodeType === 1 && typeof read === 'function') {
+    const exact = parseFloat(read(target).width);
+    if (Number.isFinite(exact)) return exact;
+  }
+  return e.nativeEvent.layout.width;
+}
+
+/** What the figure has measured so far, and how many times it has taken a new width for this count in this room. */
+type Gauge = { key: string; spent: number; given?: number; count?: number; word?: number };
+
 export type PointsFigureProps = {
   /** How many points, as the Hub serves them (`points`, a lot's `remaining`). A whole number, never a naira amount. */
   count: number;
@@ -95,88 +165,108 @@ export type PointsFigureProps = {
   testID?: string;
 };
 
-type Parts = { count: number; size: PointsFigureSize; showWord: boolean; showIcon: boolean };
-
 /**
- * The star, the count and the word, at a scale. On a phone the system fits the two texts to the room the row is given
- * (`adjustsFontSizeToFit`, one line); on the web, which has no such prop, the caller passes the scale it measured.
+ * A number of points as the app writes it: the star, the count and the word "points". Read as "1,240 points" by a screen reader.
+ *
+ * The figure measures itself the same way on a phone and on the web. The count and the word are drawn at their natural width (they
+ * never shrink on their own), their width at full size is read back from the width they were drawn at, and the room is the width the
+ * parent gives the box. From those three numbers the scale and the layout follow (`pointsFitLayout`): there is no loop, because the
+ * box is as wide as the figure at full size, whatever scale the texts are drawn at. A re-measure that moves a width by less than
+ * `remeasureTolerance`, or comes after `pointsRemeasureCap` of them, is ignored.
  */
-function FigureParts({ count, size, showWord, showIcon, scale, native }: Parts & { scale: number; native: boolean }) {
-  const { colors } = useWawu();
-  const m = pointsFigureMetrics[size];
-  const look = useMemo(() => figureStyles(size, scale), [size, scale]);
-  const fit = native ? ({ numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: pointsFitMinScale } as const) : ({ numberOfLines: 1 } as const);
-  return (
-    <>
-      {showIcon ? (
-        <View style={styles.fixed} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Icon name="Sparkles" size={m.icon} color={colors.accentFg} strokeWidth={iconStroke} />
-        </View>
-      ) : null}
-      <Text variant="body" {...fit} style={[font(700), m.tabular ? figures : undefined, look.number, native ? styles.shrinks : undefined]}>
-        {formatPointsCount(count)}
-      </Text>
-      {showWord ? (
-        <Text variant="body" tone="textMuted" {...fit} style={[font(500), look.word, native ? styles.shrinks : undefined]}>
-          {wordFor(count)}
-        </Text>
-      ) : null}
-    </>
-  );
-}
-
-/**
- * On the web the row measures itself: the box takes the width the layout gives it (never more than the parent, never more than the
- * row's full-size width) and the count and the word are scaled to fit it, so a long balance gets smaller instead of running past the edge.
- */
-function WebFigure({ count, size, showWord, showIcon, testID }: Parts & { testID?: string }) {
-  const fixed = pointsFixedWidth(size, showWord, showIcon);
-  const [given, setGiven] = useState<number>();
-  const [full, setFull] = useState<number>();
-  const scale = pointsFitScale(given, full, fixed);
-  /** The scale the row was last drawn at: a layout event is read against it, not against a scale that came after. */
-  const drawn = useRef(1);
-  useEffect(() => {
-    drawn.current = scale;
-  }, [scale]);
-  const boxWidth = useMemo(() => (full === undefined ? undefined : { width: full }), [full]);
-  const look = useMemo(() => figureStyles(size, 1), [size]);
-
-  const onBox = (e: LayoutChangeEvent) => setGiven(e.nativeEvent.layout.width);
-  const onRow = (e: LayoutChangeEvent) => {
-    const next = pointsFullWidth(e.nativeEvent.layout.width, drawn.current, fixed);
-    setFull((was) => (was !== undefined && Math.abs(was - next) < 0.5 ? was : next));
-  };
-
-  return (
-    <View testID={testID} accessible accessibilityLabel={formatPoints(count)} onLayout={onBox} style={[styles.box, boxWidth]}>
-      <View testID={testID ? `${testID}-row` : undefined} onLayout={onRow} style={[styles.row, look.gap]}>
-        <FigureParts count={count} size={size} showWord={showWord} showIcon={showIcon} scale={scale} native={false} />
-      </View>
-    </View>
-  );
-}
-
-/** A number of points as the app writes it: the star, the count and the word "points". Read as "1,240 points" by a screen reader. */
 export function PointsFigure({ count, size = 'row', word, icon, testID }: PointsFigureProps) {
+  const { colors } = useWawu();
   const m = pointsFigureMetrics[size];
   const showWord = word ?? m.showWord;
   const showIcon = icon ?? m.showIcon;
-  const look = useMemo(() => figureStyles(size, 1), [size]);
-  if (Platform.OS === 'web') return <WebFigure count={count} size={size} showWord={showWord} showIcon={showIcon} testID={testID} />;
+  const key = `${size}|${showWord}|${showIcon}|${count}`;
+  const [given, setGiven] = useState<number>();
+  const [countFull, setCountFull] = useState<number>();
+  const [wordFull, setWordFull] = useState<number>();
+  const fit = pointsFitLayout({ size, showWord, showIcon, available: given, countFull, wordFull });
+
+  /**
+   * The scale the texts were last drawn at, set in the commit that draws them (a layout effect runs before the browser reports the
+   * new layout; a passive effect runs after, so a layout event was read against the scale before it).
+   */
+  const drawn = useRef(1);
+  useLayoutEffect(() => {
+    drawn.current = fit.scale;
+  }, [fit.scale]);
+  const gauge = useRef<Gauge>({ key, spent: 0 });
+  useLayoutEffect(() => {
+    if (gauge.current.key !== key) gauge.current = { ...gauge.current, key, spent: 0 };
+  }, [key]);
+
+  const take = (part: 'given' | 'count' | 'word', next: number) => {
+    const g = gauge.current;
+    const was = g[part];
+    if (was !== undefined && Math.abs(was - next) < remeasureTolerance) return;
+    if (part === 'given') g.spent = 0;
+    else if (g.spent >= pointsRemeasureCap) return;
+    else g.spent += 1;
+    g[part] = next;
+    if (part === 'given') setGiven(next);
+    else if (part === 'count') setCountFull(next);
+    else setWordFull(next);
+  };
+  const onBox = (e: LayoutChangeEvent) => take('given', eventWidth(e));
+  const onCount = (e: LayoutChangeEvent) => take('count', pointsFullWidth(eventWidth(e), drawn.current, 0));
+  const onWord = (e: LayoutChangeEvent) => take('word', pointsFullWidth(eventWidth(e), drawn.current, 0));
+
+  const natural = countFull === undefined || (showWord && wordFull === undefined) ? undefined : pointsFixedWidth(size, showWord, showIcon) + countFull + (showWord ? (wordFull ?? 0) : 0);
+  const boxWidth = useMemo(() => (natural === undefined ? undefined : { width: natural }), [natural]);
+  const look = useMemo(() => figureStyles(size, fit.scale), [size, fit.scale]);
+
+  const star = showIcon ? (
+    <View
+      style={[styles.fixed, fit.stacked ? { height: look.number.lineHeight, justifyContent: 'center' } : undefined]}
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Icon name="Sparkles" size={m.icon} color={colors.accentFg} strokeWidth={iconStroke} />
+    </View>
+  ) : null;
+  const number = (
+    <Text variant="body" numberOfLines={1} onLayout={onCount} style={[font(700), m.tabular ? figures : undefined, look.number, styles.natural]}>
+      {formatPointsCount(count)}
+    </Text>
+  );
+  const unit = showWord ? (
+    <Text variant="body" tone="textMuted" numberOfLines={1} onLayout={onWord} style={[font(500), look.word, styles.natural]}>
+      {wordFor(count)}
+    </Text>
+  ) : null;
+
   return (
-    <View testID={testID} accessible accessibilityLabel={formatPoints(count)} style={[styles.row, styles.shrinks, styles.capped, look.gap]}>
-      <FigureParts count={count} size={size} showWord={showWord} showIcon={showIcon} scale={1} native />
+    <View testID={testID} accessible accessibilityLabel={formatPoints(count)} onLayout={onBox} style={[styles.box, boxWidth]}>
+      <View testID={testID ? `${testID}-row` : undefined} style={[styles.row, look.gap, fit.stacked ? styles.top : undefined]}>
+        {star}
+        {fit.stacked ? (
+          <View testID={testID ? `${testID}-stack` : undefined} style={styles.stack}>
+            {number}
+            {unit}
+          </View>
+        ) : (
+          <>
+            {number}
+            {unit}
+          </>
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
-  /** The row, and on a phone its texts, give way when the parent is narrower than the figure. */
-  shrinks: { flexShrink: 1 },
-  capped: { maxWidth: '100%' },
+  /** The word under the count: the star sits beside the count's line, not the middle of both. */
+  top: { alignItems: 'flex-start' },
+  stack: { alignItems: 'flex-start' },
   fixed: { flexShrink: 0 },
-  /** The web's measuring box: as wide as the layout allows, down to nothing, and no wider than the parent. */
+  /** The count and the word keep their own width, so what is measured is what the text needs, never what it was squeezed to. */
+  natural: { flexShrink: 0 },
+  /** As wide as the figure is at full size, down to nothing, and no wider than the parent: its width is the room the figure has. */
   box: { alignSelf: 'flex-start', flexShrink: 1, minWidth: 0, maxWidth: '100%' },
 });

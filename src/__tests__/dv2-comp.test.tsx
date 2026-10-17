@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
+import { Profiler } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text as NativeText, View } from 'react-native';
 
 import PointsFigurePreview from '@/app/preview/points-figure';
@@ -12,14 +13,19 @@ import {
   formatPoints,
   formatPointsCount,
   PointsFigure,
+  pointsFigureMetrics,
+  pointsFitLayout,
   pointsFitMinScale,
   pointsFitScale,
   pointsFixedWidth,
   pointsFullWidth,
+  pointsRemeasureCap,
+  pointsStackMinScale,
+  type PointsFigureSize,
 } from '@/components/PointsFigure';
 import { ProductsMeter, productsMeterCaption, productsMeterFill, productsMeterLine } from '@/components/ProductsMeter';
 import { TierBadge, tierBadgeLabel } from '@/components/TierBadge';
-import { barCountFor, playedBars, VoiceLabel, VoicePlayer, voiceClock, voicePlayerMetrics } from '@/components/VoicePlayer';
+import { barCountFor, playedBars, VoiceLabel, VoicePlayer, voiceClock, voiceErrorLabel, voicePlayerMetrics } from '@/components/VoicePlayer';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
 
 /*
@@ -213,16 +219,16 @@ describe('PointsFigure', () => {
     expect(screen.queryByText('points')).toBeNull();
     expect(screen.queryByTestId('icon-Sparkles', hidden)).toBeNull();
   });
-  it('on a phone: one line, the row gives way, and the system fits the count and the word to the room (never wraps, never clips)', async () => {
+  it('draws one line at the board\'s size: the count and the word keep their own width (never wrap), the box gives way to the parent', async () => {
     await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-    const row = styleOf(screen.getByTestId('pts'));
-    expect(row.flexShrink).toBe(1);
-    expect(row.maxWidth).toBe('100%');
+    const box = styleOf(screen.getByTestId('pts'));
+    expect(box.flexShrink).toBe(1);
+    expect(box.maxWidth).toBe('100%');
     for (const node of [screen.getByText('1,250,000'), screen.getByText('points')]) {
       expect(node.props.numberOfLines).toBe(1);
-      expect(node.props.adjustsFontSizeToFit).toBe(true);
-      expect(node.props.minimumFontScale).toBe(pointsFitMinScale);
-      expect(styleOf(node).flexShrink).toBe(1);
+      // no system shrink: the figure fits itself from what it measured, the same on a phone and on the web
+      expect(node.props.adjustsFontSizeToFit).toBeUndefined();
+      expect(styleOf(node).flexShrink).toBe(0);
     }
     expect(styleOf(screen.getByText('1,250,000')).fontSize).toBe(22);
     expect(styleOf(screen.getByText('points')).lineHeight).toBe(Math.round(18 * 1.2));
@@ -265,64 +271,243 @@ describe('PointsFigure', () => {
     expect(pointsFullWidth(80, 0, 30)).toBe(80);
   });
 
-  describe('on the web, where there is no adjustsFontSizeToFit', () => {
+  describe.each(['ios', 'web'] as const)('on %s: the figure measures itself and fits the room', (os) => {
     beforeEach(() => {
-      jest.replaceProperty(Platform, 'OS', 'web');
+      jest.replaceProperty(Platform, 'OS', os);
     });
-    const layout = (id: string, width: number) => fireEvent(screen.getByTestId(id), 'layout', { nativeEvent: { layout: { width, height: 26 } } });
-    const numberSize = (text: string) => styleOf(screen.getByText(text)).fontSize as number;
+    const layout = (node: unknown, width: number) => fireEvent(node as never, 'layout', { nativeEvent: { layout: { width, height: 26 } } });
+    const sizeOf = (text: string) => styleOf(screen.getByText(text)).fontSize as number;
+    const box = () => screen.getByTestId('pts');
+    /** Hero at full size: the count is 120 wide and the word 45, with 30 for the star and the gaps, so 195 in all. */
+    const measureHero = async (count: string, widths = { count: 120, word: 45 }, scale = 1) => {
+      await layout(screen.getByText(count), widths.count * scale);
+      await layout(screen.getByText(/^points?$/), widths.word * scale);
+    };
 
     it('draws full size until it is measured, then shrinks the count and the word to the room it is given', async () => {
       await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-      expect(numberSize('1,250,000')).toBe(22);
+      expect(sizeOf('1,250,000')).toBe(22);
       expect(screen.getByText('1,250,000').props.numberOfLines).toBe(1);
-      expect(screen.getByText('1,250,000').props.adjustsFontSizeToFit).toBeUndefined();
-      await layout('pts-row', 195);
-      expect(styleOf(screen.getByTestId('pts')).width).toBe(195);
-      await layout('pts', 150);
-      expect(numberSize('1,250,000')).toBeCloseTo(22 * 0.72, 6);
+      await measureHero('1,250,000');
+      expect(styleOf(box()).width).toBe(195);
+      await layout(box(), 195);
+      expect(sizeOf('1,250,000')).toBe(22);
+      await layout(box(), 150);
+      expect(sizeOf('1,250,000')).toBeCloseTo(22 * 0.72, 6);
       expect(styleOf(screen.getByText('points')).fontSize).toBeCloseTo(18 * 0.72, 6);
       expect(styleOf(screen.getByText('1,250,000')).lineHeight).toBe(Math.round(22 * 0.72 * 1.2));
       expect(screen.getByLabelText('1,250,000 points')).toBeTruthy();
       expect(screen.getByTestId('icon-Sparkles', hidden)).toBeTruthy();
+      expect(screen.queryByTestId('pts-stack')).toBeNull();
     });
 
-    it('stays put when the shrunken row is measured, and grows back when the room does', async () => {
+    it('stays put when it is measured again at the scale it was drawn at, and grows back when the room does', async () => {
       await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-      await layout('pts-row', 195);
-      await layout('pts', 150);
-      await layout('pts-row', 30 + 165 * 0.72);
-      expect(styleOf(screen.getByTestId('pts')).width).toBe(195);
-      expect(numberSize('1,250,000')).toBeCloseTo(22 * 0.72, 6);
-      await layout('pts', 182);
-      expect(numberSize('1,250,000')).toBeCloseTo(22 * 0.92, 6);
-      await layout('pts', 200);
-      expect(numberSize('1,250,000')).toBe(22);
+      await measureHero('1,250,000');
+      await layout(box(), 150);
+      await measureHero('1,250,000', undefined, 0.72);
+      expect(styleOf(box()).width).toBe(195);
+      expect(sizeOf('1,250,000')).toBeCloseTo(22 * 0.72, 6);
+      await layout(box(), 182);
+      expect(sizeOf('1,250,000')).toBeCloseTo(22 * 0.92, 6);
+      await layout(box(), 200);
+      expect(sizeOf('1,250,000')).toBe(22);
     });
 
-    it('fits a nine digit count into 150 px too, without going under the floor', async () => {
+    it('fits a nine digit count into 150 px on one line, above the floor', async () => {
       await render(<PointsFigure count={123456789} size="hero" testID="pts" />);
-      await layout('pts-row', 232);
-      await layout('pts', 150);
-      const scale = numberSize('123,456,789') / 22;
+      await measureHero('123,456,789', { count: 142, word: 45 });
+      await layout(box(), 150);
+      const scale = sizeOf('123,456,789') / 22;
       expect(scale).toBeGreaterThanOrEqual(pointsFitMinScale);
       expect(scale).toBeLessThan(1);
-      expect(30 + (232 - 30) * scale).toBeLessThanOrEqual(150);
+      expect(30 + (142 + 45) * scale).toBeLessThanOrEqual(150);
+      expect(screen.queryByTestId('pts-stack')).toBeNull();
+    });
+
+    it('moves the word under the count where one line would go under the floor, and the count keeps every digit', async () => {
+      await render(<PointsFigure count={123456789012} size="hero" testID="pts" />);
+      await measureHero('123,456,789,012', { count: 200, word: 45 });
+      await layout(box(), 150);
+      // 30 + 245 * 0.5 is 152.5: it does not fit one line at the floor, so the word goes under the count
+      const stack = screen.getByTestId('pts-stack');
+      expect(within(stack).getByText('123,456,789,012')).toBeTruthy();
+      expect(within(stack).getByText('points')).toBeTruthy();
+      expect(within(screen.getByTestId('pts-row')).getByTestId('icon-Sparkles', hidden)).toBeTruthy();
+      expect(within(stack).queryByTestId('icon-Sparkles', hidden)).toBeNull();
+      const scale = sizeOf('123,456,789,012') / 22;
+      expect(scale).toBe(0.62);
+      // the count fits beside the star (20 + 5), whole, with no ellipsis to read it by
+      expect(25 + 200 * scale).toBeLessThanOrEqual(150);
+      for (const node of [screen.getByText('123,456,789,012'), screen.getByText('points')]) {
+        expect(node.props.ellipsizeMode).toBeUndefined();
+        expect(node.props.adjustsFontSizeToFit).toBeUndefined();
+      }
+      // the word is set as it is beside the count, only smaller with it
+      expect(styleOf(screen.getByText('points')).fontSize).toBeCloseTo(18 * 0.62, 6);
+      expect(screen.getByLabelText('123,456,789,012 points')).toBeTruthy();
+      // and back to one line when the room is there again
+      await layout(box(), 280);
+      expect(screen.queryByTestId('pts-stack')).toBeNull();
+      expect(sizeOf('123,456,789,012')).toBe(22);
+    });
+
+    it('stacks 9 digits in 120 px and 12 digits in 150 px, the two the lead named, never below the room', async () => {
+      await render(<PointsFigure count={123456789} size="hero" testID="pts" />);
+      await measureHero('123,456,789', { count: 142, word: 45 });
+      await layout(box(), 120);
+      expect(screen.getByTestId('pts-stack')).toBeTruthy();
+      expect(25 + 142 * (sizeOf('123,456,789') / 22)).toBeLessThanOrEqual(120);
+    });
+
+    it('lets a figure with no word to move go under the floor instead of cutting the count', async () => {
+      await render(<PointsFigure count={123456789012} size="chip" testID="pts" />);
+      await layout(screen.getByText('123,456,789,012'), 120);
+      // the chip is the star and the count: 14 + 4 of star and gap, 120 of count
+      expect(styleOf(box()).width).toBe(14 + 4 + 120);
+      await layout(box(), 60);
+      expect(sizeOf('123,456,789,012')).toBeCloseTo(13.5 * 0.35, 6);
+      expect(screen.queryByTestId('pts-stack')).toBeNull();
+      await layout(box(), 10);
+      expect(sizeOf('123,456,789,012')).toBeCloseTo(13.5 * pointsStackMinScale, 6);
     });
 
     it('takes a new count at once: a shorter one goes back to full size', async () => {
       const { rerender } = await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-      await layout('pts-row', 195);
-      await layout('pts', 150);
+      await measureHero('1,250,000');
+      await layout(box(), 150);
       await rerender(<PointsFigure count={1240} size="hero" testID="pts" />);
-      // "1,240 points" is 120 wide at full size (30 fixed, 90 of text); drawn at 0.72 it is 94.8
-      await layout('pts-row', 30 + 90 * 0.72);
-      expect(styleOf(screen.getByTestId('pts')).width).toBeCloseTo(120, 6);
-      expect(numberSize('1,240')).toBe(22);
+      // "1,240" is 45 wide at full size; drawn at 0.72 it is 32.4, and "points" is 45 wide, 32.4 at 0.72
+      await layout(screen.getByText('1,240'), 45 * 0.72);
+      expect(styleOf(box()).width).toBeCloseTo(30 + 45 + 45, 6);
+      expect(sizeOf('1,240')).toBe(22);
+    });
+
+    it('stops listening to a width that will not settle, after a fixed number of changes', async () => {
+      let commits = 0;
+      await render(
+        <Profiler id="fig" onRender={() => (commits += 1)}>
+          <PointsFigure count={1250000} size="hero" testID="pts" />
+        </Profiler>,
+      );
+      await measureHero('1,250,000');
+      await layout(box(), 150);
+      for (let i = 0; i < 40; i++) await layout(screen.getByText('1,250,000'), i % 2 ? 90 : 130);
+      const settled = commits;
+      const size = sizeOf('1,250,000');
+      for (let i = 0; i < 20; i++) await layout(screen.getByText('1,250,000'), i % 2 ? 80 : 140);
+      expect(commits).toBe(settled);
+      expect(sizeOf('1,250,000')).toBe(size);
+      // a new room is a fresh start
+      await layout(box(), 182);
+      expect(commits).toBeGreaterThan(settled);
     });
   });
-});
 
+  describe('pointsFitLayout', () => {
+    const hero = { size: 'hero', showWord: true, showIcon: true, countFull: 120, wordFull: 45 } as const;
+    it('draws full size where nothing is measured or it fits', () => {
+      expect(pointsFitLayout({ ...hero })).toEqual({ scale: 1, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 150, countFull: undefined })).toEqual({ scale: 1, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 150, wordFull: undefined })).toEqual({ scale: 1, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 195 })).toEqual({ scale: 1, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 194.95 })).toEqual({ scale: 1, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 400 })).toEqual({ scale: 1, stacked: false });
+    });
+    it('shrinks the one line down to the floor, then stacks, and the count always fits beside the star', () => {
+      expect(pointsFitLayout({ ...hero, available: 150 })).toEqual({ scale: 0.72, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 112.5 })).toEqual({ scale: 0.5, stacked: false });
+      expect(pointsFitLayout({ ...hero, available: 112 })).toMatchObject({ stacked: true });
+      for (let available = 40; available < 195; available += 1) {
+        const fit = pointsFitLayout({ ...hero, available });
+        if (fit.stacked) expect(25 + 120 * fit.scale).toBeLessThanOrEqual(Math.max(available, 25 + 120 * pointsStackMinScale));
+        else expect(30 + 165 * fit.scale).toBeLessThanOrEqual(available + 0.1);
+        expect(fit.scale).toBeGreaterThanOrEqual(fit.stacked ? pointsStackMinScale : pointsFitMinScale);
+      }
+    });
+    it('has no stack where there is no word, and no star beside the stack where there is no star', () => {
+      expect(pointsFitLayout({ size: 'chip', showWord: false, showIcon: true, available: 60, countFull: 120 })).toEqual({ scale: 0.35, stacked: false });
+      expect(pointsFitLayout({ size: 'tile', showWord: false, showIcon: false, available: 60, countFull: 120 })).toEqual({ scale: 0.5, stacked: false });
+      expect(pointsFitLayout({ size: 'hero', showWord: true, showIcon: false, available: 70, countFull: 100, wordFull: 45 })).toEqual({ scale: 0.7, stacked: true });
+    });
+  });
+
+  describe('settles', () => {
+    /** A stand-in layout engine. Digits are 0.6 em, commas 0.3, the word 3 em; the hero star is 20 and each gap 5. */
+    const em = (text: string) => [...text].reduce((sum, ch) => sum + (ch === ',' ? 0.3 : 0.6), 0);
+    const widths: number[] = [];
+    for (let w = 100; w <= 260; w += 2) widths.push(w);
+    // the widths that looped on the web: 150 for a line, 108 and 128 for the others
+    for (const w of [101, 107, 109, 123, 127, 129, 149, 151]) widths.push(w);
+
+    const sweep = async (size: PointsFigureSize, count: number, whole: boolean) => {
+      jest.replaceProperty(Platform, 'OS', 'web');
+      let commits = 0;
+      await render(
+        <Profiler id="fig" onRender={() => (commits += 1)}>
+          <PointsFigure count={count} size={size} testID="pts" />
+        </Profiler>,
+      );
+      const shown = formatPointsCount(count);
+      const read = whole ? Math.round : (x: number) => x;
+      const m = pointsFigureMetrics[size];
+      const worst = { renders: 0, overflow: 0 };
+      /** What the engine would report now: every event is read from the screen as it is when the event is delivered, as the web does. */
+      const now = (room: number) => {
+        const countNode = screen.getByText(shown);
+        const wordNode = screen.getByText(/^points?$/);
+        const countW = em(shown) * (styleOf(countNode).fontSize as number);
+        const wordW = 3 * (styleOf(wordNode).fontSize as number);
+        const rowW = screen.queryByTestId('pts-stack') !== null ? m.icon + m.iconToNumber + Math.max(countW, wordW) : m.icon + 2 * m.iconToNumber + countW + wordW;
+        const boxW = Math.min((styleOf(screen.getByTestId('pts')).width as number | undefined) ?? rowW, room);
+        return { countNode, wordNode, countW, wordW, rowW, boxW };
+      };
+      const send = (node: unknown, width: number) => fireEvent(node as never, 'layout', { nativeEvent: { layout: { width: read(width), height: 26 } } });
+      for (const room of widths) {
+        const before = commits;
+        let quiet = false;
+        for (let pass = 0; pass < 30 && !quiet; pass++) {
+          const passStart = commits;
+          await send(screen.getByTestId('pts'), now(room).boxW);
+          await send(now(room).countNode, now(room).countW);
+          await send(now(room).wordNode, now(room).wordW);
+          quiet = commits === passStart;
+          if (quiet) worst.overflow = Math.max(worst.overflow, now(room).rowW - room);
+        }
+        expect({ room, quiet }).toEqual({ room, quiet: true });
+        worst.renders = Math.max(worst.renders, commits - before);
+      }
+      return worst;
+    };
+
+    it.each([
+      ['line', 123456789],
+      ['line', 123456789012],
+      ['hero', 12500],
+      ['hero', 1250000],
+      ['hero', 123456789],
+      ['hero', 123456789012],
+      ['row', 1250000],
+      ['row', 123456789],
+    ] as const)('%s %i: every width from 100 to 260 settles in a few renders and fits, exact widths', async (size, count) => {
+      const worst = await sweep(size, count, false);
+      expect(worst.renders).toBeLessThanOrEqual(4);
+      expect(worst.overflow).toBeLessThanOrEqual(0.1);
+    }, 60000);
+
+    it.each([
+      ['line', 123456789],
+      ['hero', 12500],
+      ['hero', 1250000],
+      ['hero', 123456789012],
+      ['row', 1250000],
+    ] as const)('%s %i: and whole-pixel widths, as React Native Web reports them, settle within the cap', async (size, count) => {
+      const worst = await sweep(size, count, true);
+      expect(worst.renders).toBeLessThanOrEqual(pointsRemeasureCap + 4);
+      expect(worst.overflow).toBeLessThanOrEqual(2);
+    }, 60000);
+  });
+});
 
 describe('VoicePlayer', () => {
   const barsOf = () => screen.getByTestId('vp-wave').children.map((c) => styleOf(c).backgroundColor);
@@ -386,7 +571,7 @@ describe('VoicePlayer', () => {
     const { rerender } = await render(<VoicePlayer status="error" durationSeconds={22} onToggle={onToggle} testID="vp" />);
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByText("Couldn't play this. Tap to try again.")).toBeTruthy();
-    expect(screen.getByLabelText('Try again')).toBeTruthy();
+    expect(screen.getByLabelText("Couldn't play this. Try again")).toBeTruthy();
     expect(screen.getByTestId('icon-RotateCcw', hidden)).toBeTruthy();
     expect(screen.queryByTestId('vp-wave')).toBeNull();
     expect(screen.queryByText('0:22')).toBeNull();
@@ -394,6 +579,7 @@ describe('VoicePlayer', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
     await rerender(<VoicePlayer status="error" durationSeconds={22} onToggle={onToggle} errorMessage="Try later." testID="vp" />);
     expect(screen.getByText('Try later.')).toBeTruthy();
+    expect(screen.getByLabelText('Try later. Try again')).toBeTruthy();
   });
 
   it('error: the whole row is the one button, so a tap on the words tries again too', async () => {
@@ -401,7 +587,8 @@ describe('VoicePlayer', () => {
     await render(<VoicePlayer status="error" durationSeconds={22} onToggle={onToggle} testID="vp" />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     const row = screen.getByRole('button');
-    expect(row.props.accessibilityLabel).toBe('Try again');
+    // the label carries the message as well as the action: a button's label hides the text inside it from a screen reader
+    expect(row.props.accessibilityLabel).toBe("Couldn't play this. Try again");
     expect(row.props.testID).toBe('vp-button');
     // the words and the circle are inside that one button
     expect(within(row).getByTestId('icon-RotateCcw', hidden)).toBeTruthy();
@@ -410,6 +597,14 @@ describe('VoicePlayer', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
     // the touch area runs out over the pill's own padding (8 above and below, 8 and 12 at the sides)
     expect(row.props.hitSlop).toEqual({ top: 8, bottom: 8, left: 8, right: 12 });
+  });
+
+  it('labels the error row with the message and the action, whatever the message says', () => {
+    expect(voiceErrorLabel("Couldn't play this. Tap to try again.")).toBe("Couldn't play this. Try again");
+    expect(voiceErrorLabel('No connection')).toBe('No connection. Try again');
+    expect(voiceErrorLabel('Try later.')).toBe('Try later. Try again');
+    expect(voiceErrorLabel('Tap to try again.')).toBe('Try again');
+    expect(voiceErrorLabel('')).toBe('Try again');
   });
 
   it('drops the AI voice tag only when the Hub says the audio is not AI voice, and the label when a screen draws its own', async () => {
@@ -533,7 +728,10 @@ describe('the preview routes show every state without the API', () => {
     expect(routed.getByLabelText('1 point')).toBeTruthy();
     expect(routed.getByLabelText('0 points')).toBeTruthy();
     expect(routed.getAllByLabelText('1,250,000 points').length).toBeGreaterThan(0);
-    expect(routed.getAllByLabelText('123,456,789 points')).toHaveLength(3);
+    // 9 digits in 120, 150, 182 and 200 px; 12 digits in the same four
+    expect(routed.getAllByLabelText('123,456,789 points')).toHaveLength(4);
+    expect(routed.getAllByLabelText('123,456,789,012 points')).toHaveLength(4);
+    expect(routed.getByText('12 digits in 120 px')).toBeTruthy();
     expect(routed.getByText('9 digits in 150 px')).toBeTruthy();
     expect(styleOf(routed.getByTestId('points-fit-7-182').parent as never).width).toBe(182);
   });

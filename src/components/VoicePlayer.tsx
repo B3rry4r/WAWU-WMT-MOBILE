@@ -126,6 +126,17 @@ export type VoicePlayerProps = {
 
 const defaultError = "Couldn't play this. Tap to try again.";
 
+/**
+ * What a screen reader hears on the error row: the message, then the action. The whole row is the button, and a button's label hides the
+ * text inside it, so the label has to carry the message too: "Couldn't play this. Try again". A message that already ends in
+ * "Tap to try again." gives that sentence up to the action; any other message keeps all its words.
+ */
+export function voiceErrorLabel(message: string): string {
+  const said = message.replace(/\s*Tap to try again\.?\s*$/i, '').trim();
+  if (!said) return 'Try again';
+  return `${/[.!?]$/.test(said) ? said : `${said}.`} Try again`;
+}
+
 /** The error row is the button, so its touch area runs out over the pill's own padding: the whole pill answers a tap. */
 const errorRowSlop = { top: voicePlayerMetrics.padV, bottom: voicePlayerMetrics.padV, left: voicePlayerMetrics.padLeft, right: voicePlayerMetrics.padRight };
 
@@ -145,7 +156,7 @@ export function VoicePlayer({ status, progress, durationSeconds, onToggle, label
   const loading = status === 'loading';
   const failed = status === 'error';
   const clock = voiceClock(durationSeconds);
-  const buttonLabel = failed ? 'Try again' : loading ? 'Loading Bio' : status === 'playing' ? 'Pause Bio' : `Play Bio, ${clock}`;
+  const buttonLabel = failed ? voiceErrorLabel(errorMessage) : loading ? 'Loading Bio' : status === 'playing' ? 'Pause Bio' : `Play Bio, ${clock}`;
 
   const pillLook = [
     styles.pill,

@@ -24,13 +24,14 @@ const cases: Record<string, { props: PointsFigureProps; note: string; width?: nu
 };
 
 /**
- * A long balance in a narrow place: the 7 digit and 9 digit counts in a parent 150, 182 (PT5's column beside "Buy points" on a 360 px
- * phone) and 200 wide. The outline is the parent; the figure shrinks to sit inside it and never wraps or clips.
+ * A long balance in a narrow place: the 7, 9 and 12 digit counts in a parent 120, 150, 182 (PT5's column beside "Buy points" on a 360 px
+ * phone) and 200 wide. The outline is the parent; the figure shrinks to sit inside it and never wraps or clips. Where one line would go
+ * under half size (9 digits in 120 px, 12 in 150), the word "points" moves under the count and every digit stays.
  */
 function fitCases() {
   const out: Record<string, { props: PointsFigureProps; note: string; width: number }> = {};
-  for (const [digits, count] of [[7, 1250000], [9, 123456789]] as const) {
-    for (const width of [150, 182, 200]) {
+  for (const [digits, count] of [[7, 1250000], [9, 123456789], [12, 123456789012]] as const) {
+    for (const width of [120, 150, 182, 200]) {
       out[`fit-${digits}-${width}`] = { props: { count, size: 'hero' }, width, note: `${digits} digits in ${width} px` };
     }
   }
