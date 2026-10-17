@@ -12,14 +12,15 @@ import { layout, space, useWawu } from '@/theme';
 
 import { allowanceKey, fetchAllowance, type Allowance } from './api';
 import { footMetrics } from './CreateFrame';
+import { onFreeAllowance } from './UploadsMeter';
 
 /** me.js `inReview`: the two buttons share the width, 10 apart. */
 const buttonsBetween = 10;
 /** kit.js `result`: a mark 88 across at stroke 2.2, the title at 30 with its tracking, the line at 14.5, 10 between; me.js `inReview` starts the page 80 down, 20 between its parts. */
 const resultMetrics = { top: 80, mark: 88, stroke: 2.2, between: 10, title: 30, titleTracking: -0.035, titleTop: space.sm, line: 14.5, parts: 20 } as const;
 
-/** "5 of 5 free used": the Hub's own count and limit, and the word "free" only while the account has no tick (the way M19 and M27 read). */
-export const usedLine = (a: Allowance): string => `${a.uploads.used} of ${a.uploads.allowed} ${a.tickHeld ? '' : 'free '}used`;
+/** "5 of 5 free used": the Hub's own count and limit, and the word "free" only while the account is on the free allowance (the way M19 and M27 read). */
+export const usedLine = (a: Allowance): string => `${a.uploads.used} of ${a.uploads.allowed} ${onFreeAllowance(a) ? 'free ' : ''}used`;
 
 export type ReviewScreenProps = {
   /** The title the Hub filed the piece under. */

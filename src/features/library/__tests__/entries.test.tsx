@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 
-import { allowance, hub, installFetch, ok, renderFrame } from '../__helpers__/hub';
+import { allowance, calls, hub, installFetch, ok, renderFrame } from '../__helpers__/hub';
 import { FORMATS } from '@/features/create/__helpers__/harness';
 
 jest.mock('expo-secure-store', () => ({
@@ -55,6 +55,40 @@ describe('M27 · every upload used (M20 when the Hub says so)', () => {
     expect(screen.getByTestId('format-faded').props.pointerEvents).toBe('auto');
     await fireEvent.press(screen.getByTestId('format-video'));
     expect(screen.getByTestId('create-continue').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('does not call a tier holder\u2019s uploads free: the word is said only on the free allowance', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(7, 7));
+    await open();
+    expect(await screen.findByText('Your 7 uploads are used')).toBeTruthy();
+    expect(screen.queryByText(/free/)).toBeNull();
+  });
+
+  it('for an account the Hub allows nothing, draws no "Your 0 free uploads are used", no fade and no meter, and invents no sentence', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(0, 0));
+    await open();
+    expect(await screen.findByTestId('format-video')).toBeTruthy();
+    expect(calls('GET', ALLOWANCE).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('create-slots-full')).toBeNull();
+    expect(screen.queryByText(/Your 0/)).toBeNull();
+    expect(screen.queryByText(/free uploads/)).toBeNull();
+    expect(screen.getByTestId('format-faded').props.pointerEvents).toBe('auto');
+    // The Hub's own refusal (402) says why, when the send is turned down; nothing is blocked here before it can.
+    await fireEvent.press(screen.getByTestId('format-video'));
+    expect(screen.getByTestId('create-continue').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('and M19 draws no "0 of 0" meter and no used note for it, with Content still open', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(0, 0));
+    const content = jest.fn();
+    await renderFrame(<CreateScreen onClose={jest.fn()} onContent={content} onEvent={jest.fn()} onService={jest.fn()} />);
+    await screen.findByTestId('create-tile-content');
+    await waitFor(() => expect(calls('GET', ALLOWANCE).length).toBeGreaterThan(0));
+    expect(screen.queryByTestId('create-meter')).toBeNull();
+    expect(screen.queryByTestId('create-slots-full')).toBeNull();
+    expect(screen.queryByText(/0 of 0/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('create-tile-content'));
+    expect(content).toHaveBeenCalledTimes(1);
   });
 
   it('draws no Open library button without a place to open it (the notice on M19 as before)', async () => {

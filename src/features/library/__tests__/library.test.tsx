@@ -85,6 +85,15 @@ describe('M28 · My content', () => {
     expect(within(screen.getByTestId('library-list')).getAllByRole('button').map((b) => b.props.testID)).toEqual(['library-row-r1']);
   });
 
+  it('draws no "0 of 0" meter for an account the Hub allows nothing, and still lists its pieces', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(0, 0));
+    await open();
+    expect(await screen.findByText('How I light a night shoot')).toBeTruthy();
+    await waitFor(() => expect(calls('GET', ALLOWANCE).length).toBeGreaterThan(0));
+    expect(screen.queryByTestId('create-meter')).toBeNull();
+    expect(screen.queryByText(/0 of 0/)).toBeNull();
+  });
+
   it('a user can filter by Live, In review and Rejected, each asking the Hub for that state', async () => {
     await open();
     await screen.findByText('How I light a night shoot');
@@ -92,7 +101,7 @@ describe('M28 · My content', () => {
     await fireEvent.press(screen.getByTestId('library-chip-live'));
     await waitFor(() => expect(hub.sent.some((s) => s.path === LIST && s.search.includes('status=live'))).toBe(true));
     await waitFor(() => expect(screen.queryByText('PDF · see why')).toBeNull());
-    expect(screen.getByText('Video · ₦2,500 · 18 sales')).toBeTruthy();
+    expect(await screen.findByText('Video · ₦2,500 · 18 sales')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('library-chip-pending'));
     await waitFor(() => expect(hub.sent.some((s) => s.path === LIST && s.search.includes('status=pending'))).toBe(true));

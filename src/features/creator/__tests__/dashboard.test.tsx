@@ -19,44 +19,22 @@ installFetch();
 const { DashboardScreen, paidLine } = require('../DashboardScreen') as typeof import('../DashboardScreen');
 const model = require('../model') as typeof import('../model');
 
-const EARNINGS = '/api/hub/me/earnings';
 const PAID = '/api/hub/paid-dm/settings';
 const COUNTS = '/api/hub/content/mine/library/counts';
 const ALLOWANCE = '/api/hub/uploads/allowance';
+// The one read behind the month's figure and the wallet row, the read W39 makes; `/me/earnings` is never asked.
 const MONEY = '/api/hub/money/earnings';
+const OLD_EARNINGS = '/api/hub/me/earnings';
 
-const months = (kobo: number[]) => kobo.map((earnedKobo, i) => ({ month: `2025-${String(i + 10).padStart(2, '0')}`, earnedKobo }));
-const earned = (over: Record<string, unknown> = {}) => ({
-  month: '2026-09',
-  earnedKobo: 12_840_000,
-  salesCount: 31,
-  previousMonth: '2026-08',
-  previousEarnedKobo: 10_881_000,
-  changePct: 18,
-  months: [
-    { month: '2025-10', earnedKobo: 3_000_000 },
-    { month: '2025-11', earnedKobo: 4_400_000 },
-    { month: '2025-12', earnedKobo: 2_600_000 },
-    { month: '2026-01', earnedKobo: 5_200_000 },
-    { month: '2026-02', earnedKobo: 3_800_000 },
-    { month: '2026-03', earnedKobo: 6_000_000 },
-    { month: '2026-04', earnedKobo: 4_800_000 },
-    { month: '2026-05', earnedKobo: 7_000_000 },
-    { month: '2026-06', earnedKobo: 5_600_000 },
-    { month: '2026-07', earnedKobo: 8_200_000 },
-    { month: '2026-08', earnedKobo: 10_881_000 },
-    { month: '2026-09', earnedKobo: 12_840_000 },
-  ],
-  ...over,
-});
 const settings = (over: Record<string, unknown> = {}) => ({ enabled: true, priceKobo: 30_000, responseHours: 24, creatorSharePct: 85, earnPerMessageKobo: 25_500, raiseToKobo: null, options: {}, standing: { state: 'ok' }, ...over });
-const wallet = (open: boolean) => ({
+const money = (open: boolean, monthKobo = 12_840_000, over: Record<string, unknown> = {}) => ({
   month: '2026-09',
   walletOpen: open,
-  allTime: { earnedKobo: 0, sales: 0, streams: [] },
-  thisMonth: { earnedKobo: 0, sales: 0, streams: [] },
+  allTime: { earnedKobo: monthKobo + 5_000_000, sales: 40, streams: [] },
+  thisMonth: { earnedKobo: monthKobo, sales: 31, streams: [] },
   waiting: { count: 0, amountKobo: 0 },
   held: { count: 0, amountKobo: 0 },
+  ...over,
 });
 
 const open = async () => {
@@ -69,19 +47,17 @@ const open = async () => {
 
 beforeEach(() => {
   installFetch();
-  hub.answers[`GET ${EARNINGS}`] = ok(earned());
   hub.answers[`GET ${PAID}`] = ok(settings());
   hub.answers[`GET ${COUNTS}`] = ok({ all: 6, live: 4, pending: 1, rejected: 1 });
   hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
-  hub.answers[`GET ${MONEY}`] = ok(wallet(true));
+  hub.answers[`GET ${MONEY}`] = ok(money(true));
 });
 
 describe('M18 · Creator dashboard', () => {
-  it('shows the month, its figure with the change, the uploads used and every row of the list, from the Hub', async () => {
+  it('shows the month, its figure, the uploads used and every row of the list, from the Hub', async () => {
     await open();
     expect(await screen.findByText('Earned in September')).toBeTruthy();
     expect(screen.getByTestId('creator-earned-amount')).toHaveTextContent('₦128,400.00');
-    expect(screen.getByText('+18%')).toBeTruthy();
     expect(await screen.findByText('4 of 5 used')).toBeTruthy();
     expect(screen.getByText('Creator account')).toBeTruthy();
     expect(await screen.findByText('On · ₦300 a message')).toBeTruthy();
@@ -100,18 +76,32 @@ describe('M18 · Creator dashboard', () => {
     expect(screen.queryByText(/KYC/)).toBeNull();
   });
 
-  it('with a wallet open, the wallet row is done and there is nothing to open', async () => {
+  it('with a wallet open there is no wallet row at all (the board draws only "Not opened / Open")', async () => {
     const handlers = await open();
-    expect(await screen.findByText('Your wallet')).toBeTruthy();
-    expect(screen.getByText('Opened')).toBeTruthy();
+    await screen.findByText('Earned in September');
+    await screen.findByText('On · ₦300 a message');
+    expect(screen.queryByTestId('creator-wallet')).toBeNull();
+    expect(screen.queryByTestId('creator-wallet-loading')).toBeNull();
+    expect(screen.queryByText('Your wallet')).toBeNull();
+    expect(screen.queryByText('Opened')).toBeNull();
+    expect(screen.queryByText('Open your wallet')).toBeNull();
     expect(screen.queryByText('Open')).toBeNull();
-    expect(within(screen.getByTestId('creator-setup')).queryByTestId('creator-wallet')?.props.accessibilityRole).not.toBe('button');
-    await fireEvent.press(screen.getByTestId('creator-wallet'));
     expect(handlers.wallet).not.toHaveBeenCalled();
   });
 
+  it('the month\u2019s figure is the one the Earnings screen reads (GET /money/earnings), whatever the older read says', async () => {
+    // The older read would say 4,250 for the month; the Earnings screen says nothing earned. The card follows the Earnings screen.
+    hub.answers[`GET ${OLD_EARNINGS}`] = ok({ month: '2026-09', earnedKobo: 425_000, salesCount: 2, previousMonth: '2026-08', previousEarnedKobo: 212_500, changePct: 100, months: [{ month: '2026-09', earnedKobo: 425_000 }] });
+    hub.answers[`GET ${MONEY}`] = ok(money(false, 0, { allTime: { earnedKobo: 0, sales: 0, streams: [] } }));
+    await open();
+    expect(await screen.findByText('Earned in September')).toBeTruthy();
+    expect(screen.getByTestId('creator-earned-amount')).toHaveTextContent('₦0.00');
+    expect(calls('GET', OLD_EARNINGS)).toHaveLength(0);
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
   it('without a wallet, the row reads "Open your wallet: Not opened" with Open, and opens Open your wallet', async () => {
-    hub.answers[`GET ${MONEY}`] = ok(wallet(false));
+    hub.answers[`GET ${MONEY}`] = ok(money(false));
     const handlers = await open();
     expect(await screen.findByText('Open your wallet')).toBeTruthy();
     expect(screen.getByText('Not opened')).toBeTruthy();
@@ -139,25 +129,6 @@ describe('M18 · Creator dashboard', () => {
     expect(within(screen.getByTestId('creator-account')).getByText('Done')).toBeTruthy();
   });
 
-  it('draws no change pill when the Hub has no earlier month to compare', async () => {
-    hub.answers[`GET ${EARNINGS}`] = ok(earned({ changePct: null }));
-    await open();
-    await screen.findByText('Earned in September');
-    expect(screen.queryByTestId('creator-earned-change')).toBeNull();
-  });
-
-  it('draws a minus for a fall in the danger tone', async () => {
-    hub.answers[`GET ${EARNINGS}`] = ok(earned({ changePct: -12 }));
-    await open();
-    expect(await screen.findByText('\u221212%')).toBeTruthy();
-  });
-
-  it('draws a plain 0% when nothing changed', async () => {
-    hub.answers[`GET ${EARNINGS}`] = ok(earned({ changePct: 0 }));
-    await open();
-    expect(await screen.findByText('0%')).toBeTruthy();
-  });
-
   it('says Off for paid messages that are off, and never writes a price the Hub did not set', async () => {
     hub.answers[`GET ${PAID}`] = ok(settings({ enabled: false, priceKobo: null }));
     await open();
@@ -166,8 +137,8 @@ describe('M18 · Creator dashboard', () => {
     expect(paidLine({ enabled: true, priceKobo: 150_000 })).toBe('On · ₦1,500 a message');
   });
 
-  it('a month with nothing earned is a zero figure with short bars, and a person with no content sees "Nothing yet"', async () => {
-    hub.answers[`GET ${EARNINGS}`] = ok(earned({ earnedKobo: 0, salesCount: 0, previousEarnedKobo: 0, changePct: null, months: months(Array(12).fill(0)) }));
+  it('a month with nothing earned is a zero figure, and a person with no content sees "Nothing yet"', async () => {
+    hub.answers[`GET ${MONEY}`] = ok(money(true, 0));
     hub.answers[`GET ${COUNTS}`] = ok({ all: 0, live: 0, pending: 0, rejected: 0 });
     await open();
     expect(await screen.findByTestId('creator-earned-amount')).toHaveTextContent('₦0.00');
@@ -175,48 +146,56 @@ describe('M18 · Creator dashboard', () => {
   });
 
   it('keeps every other row when the earnings cannot be read, says so, and asks again on Try again', async () => {
-    hub.answers[`GET ${EARNINGS}`] = 'offline';
+    hub.answers[`GET ${MONEY}`] = 'offline';
     await open();
     expect(await screen.findByTestId('creator-earnings-error')).toBeTruthy();
     expect(await screen.findByText('On · ₦300 a message')).toBeTruthy();
-    hub.answers[`GET ${EARNINGS}`] = ok(earned());
+    hub.answers[`GET ${MONEY}`] = ok(money(true));
     await fireEvent.press(screen.getByTestId('creator-earnings-retry'));
     expect(await screen.findByText('Earned in September')).toBeTruthy();
   });
 
-  it('shows quiet blocks while the Hub has not answered, and asks the wallet again when the check failed', async () => {
-    hub.answers[`GET ${EARNINGS}`] = 'hang';
-    hub.answers[`GET ${MONEY}`] = 'offline';
+  it('shows quiet blocks while the Hub has not answered', async () => {
+    hub.answers[`GET ${MONEY}`] = 'hang';
     await open();
     expect(await screen.findByTestId('creator-earnings-loading')).toBeTruthy();
+    expect(await screen.findByTestId('creator-wallet-loading')).toBeTruthy();
+  });
+
+  it('asks the wallet again when the check failed, from the row', async () => {
+    hub.answers[`GET ${MONEY}`] = 'offline';
+    await open();
     const row = await screen.findByTestId('creator-wallet-error');
-    hub.answers[`GET ${MONEY}`] = ok(wallet(false));
+    hub.answers[`GET ${MONEY}`] = ok(money(false));
     await fireEvent.press(row);
     expect(await screen.findByText('Not opened')).toBeTruthy();
+    expect(await screen.findByText('Earned in September')).toBeTruthy();
     expect(calls('GET', MONEY).length).toBeGreaterThan(1);
   });
 
-  it('asks the Hub again when the person comes back to it', async () => {
+  it('asks the Hub for the month once when it opens', async () => {
     await open();
     await screen.findByText('Earned in September');
-    await waitFor(() => expect(calls('GET', EARNINGS)).toHaveLength(1));
+    await waitFor(() => expect(calls('GET', MONEY)).toHaveLength(1));
+  });
+
+  it('draws no "0 of 0" meter for an account the Hub allows nothing (no tier, no tick)', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(0, 0));
+    await open();
+    await screen.findByText('Earned in September');
+    await waitFor(() => expect(calls('GET', ALLOWANCE).length).toBeGreaterThan(0));
+    expect(await screen.findByText('On · ₦300 a message')).toBeTruthy();
+    expect(screen.queryByTestId('create-meter')).toBeNull();
+    expect(screen.queryByText(/0 of 0/)).toBeNull();
+    expect(screen.queryByTestId('meter-loading')).toBeNull();
   });
 });
 
 describe('M18 · what the figures are made of', () => {
-  const base = earned() as never;
   it('names the month the Hub names, in words', () => {
-    expect(model.monthWord('2026-09')).toBe('September');
-    expect(model.monthWord('2026-01')).toBe('January');
-    expect(model.monthWord('2026-12')).toBe('December');
-  });
-
-  it('scales each bar to the tallest month, with the least as a short mark and the last in the accent', () => {
-    const bars = model.barsOf(base);
-    expect(bars).toHaveLength(12);
-    expect(bars[11]).toMatchObject({ share: 1, last: true });
-    expect(bars.filter((b) => b.last)).toHaveLength(1);
-    expect(Math.min(...bars.map((b) => b.share))).toBeGreaterThanOrEqual(model.MIN_BAR);
-    expect(model.barsOf(earned({ months: months(Array(12).fill(0)) }) as never).every((b) => b.share === model.MIN_BAR)).toBe(true);
+    expect(model.earnedTitle('2026-09')).toBe('Earned in September');
+    expect(model.earnedTitle('2026-01')).toBe('Earned in January');
+    expect(model.earnedTitle('2026-12')).toBe('Earned in December');
+    expect(model.earnedTitle('September')).toBe('Earned this month');
   });
 });

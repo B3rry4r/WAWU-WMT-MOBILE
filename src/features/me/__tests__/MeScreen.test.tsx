@@ -31,6 +31,8 @@ function installFetch() {
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const refusal = (statusCode: number, message: string) => ({ status: statusCode, body: { statusCode, message, data: null } });
 
+jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'u1' }));
+
 installFetch();
 const { MeScreen } = require('../MeScreen') as typeof import('../MeScreen');
 const { postProfileSaved, clearProfileSaved, PROFILE_SAVED_MS } = require('../savedNotice') as typeof import('../savedNotice');
@@ -507,9 +509,16 @@ describe('M10 · Profile saved', () => {
 });
 
 describe('Z1 · Creator dashboard and My content (ME-07)', () => {
-  const EARNINGS = '/api/hub/me/earnings';
+  const EARNINGS = '/api/hub/money/earnings';
   const ALLOWANCE = '/api/hub/uploads/allowance';
-  const earned = { month: '2026-09', earnedKobo: 12_840_000, salesCount: 31, previousMonth: '2026-08', previousEarnedKobo: 10_881_000, changePct: 18, months: [{ month: '2026-09', earnedKobo: 12_840_000 }] };
+  const earned = {
+    month: '2026-09',
+    walletOpen: true,
+    allTime: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    thisMonth: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    waiting: { count: 0, amountKobo: 0 },
+    held: { count: 0, amountKobo: 0 },
+  };
   const room = { tickHeld: false, uploads: { used: 4, allowed: 5, remaining: 1 }, storage: { usedBytes: 0, limitBytes: 1, remainingBytes: 1 }, free: { uploads: 5, storageBytes: 1 }, withTick: { uploads: 25, storageBytes: 1 } };
 
   it('a creator sees both rows first, each with the Hub\u2019s own line, and each opens its screen and closes the menu', async () => {

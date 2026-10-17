@@ -6,7 +6,9 @@ import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { formatMoney } from '@/components/Money';
 import { allowanceKey, fetchAllowance } from '@/features/create/api';
-import { earningsKey, fetchMyEarnings } from '@/features/creator/api';
+import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { earningsQuery } from '@/features/wallet/earnings/api';
+import { showsKobo } from '@/features/wallet/earnings/model';
 
 /** design/_gen/me.js line 31 (`menu`, Z1 and M7): the sheet's rows sit 12 under its grabber. */
 const SHEET_GAP = 12;
@@ -33,10 +35,12 @@ export type MeMenuSheetProps = {
  * under its title (a figure the Hub serves to that screen).
  */
 export function MeMenuSheet({ visible, onClose, onOpenSettings, onOpenVerification, onOpenDashboard, onOpenLibrary }: MeMenuSheetProps) {
-  // The two lines are the Hub's figures, read when the sheet is raised and shared with the screens they open (the same keys).
-  const earnings = useQuery({ queryKey: earningsKey, queryFn: fetchMyEarnings, enabled: visible && Boolean(onOpenDashboard) });
+  // The two lines are the Hub's figures, read when the sheet is raised and shared with the screens they open (the same keys). The
+  // month's earnings are `GET /money/earnings`, the read M18 and W39 make, so the three never say different things.
+  const owner = useSessionAccount(undefined);
+  const earnings = useQuery({ ...earningsQuery(owner), enabled: Boolean(owner) && visible && Boolean(onOpenDashboard) });
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, enabled: visible && Boolean(onOpenLibrary) });
-  const earned = earnings.data ? `${formatMoney(earnings.data.earnedKobo, { decimals: false })} this month` : undefined;
+  const earned = earnings.data ? `${formatMoney(earnings.data.thisMonth.earnedKobo, { decimals: showsKobo(earnings.data.thisMonth.earnedKobo) })} this month` : undefined;
   const uploads = allowance.data && allowance.data.uploads.allowed > 0 ? `${allowance.data.uploads.used} of ${allowance.data.uploads.allowed} uploads` : undefined;
   return (
     <BottomSheet visible={visible} onClose={onClose} label="Menu" gap={SHEET_GAP} testID="me-menu">

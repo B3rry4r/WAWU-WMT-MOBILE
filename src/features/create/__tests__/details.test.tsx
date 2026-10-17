@@ -275,6 +275,8 @@ describe('M25 · Sent for review', () => {
     await open();
     expect(await screen.findByText('6 of 25 used')).toBeTruthy();
     expect(usedLine(allowance(6, 25, true))).toBe('6 of 25 used');
+    // A tier holder is not on the free allowance: the word is not said to them.
+    expect(usedLine(allowance(7, 7))).toBe('7 of 7 used');
   });
 
   it('leaves the uploads line out while the Hub has not said, and does not draw a review time or a library link', async () => {

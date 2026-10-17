@@ -10,25 +10,23 @@ import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { formatMoney, Money } from '@/components/Money';
 import { Skeleton } from '@/components/Skeleton';
-import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { AllowanceMeter } from '@/features/create/UploadsMeter';
 import { countsKey, fetchCounts } from '@/features/library/api';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { fetchSettings, settingsKey, type PaidMessageSettings } from '@/features/paid-messages/api';
-import { earningsQuery } from '@/features/wallet/earnings/api';
-import { font, radius, space, useWawu } from '@/theme';
+import { earningsQuery, type Earnings } from '@/features/wallet/earnings/api';
+import { font, radius } from '@/theme';
 
-import { earningsKey, fetchMyEarnings, type MyEarnings } from './api';
-import { barsOf, changeOf, contentLine, earnedTitle } from './model';
+import { contentLine, earnedTitle } from './model';
 
 /**
  * design/_gen/me.js line 81 (`dash`): the body's parts are 16 apart; the earnings card is a 22 corner, 18 in, its parts 14 apart, the
- * label 13 / 600 in the secondary colour, the figure at 32, the twelve bars 40 high, 4 apart, 4 corners; the set-up section is the small
- * capital label 10 over its card.
+ * label 13 / 600 in the secondary colour, the figure at 32; the set-up section is the small capital label 10 over its card. The board's
+ * change pill and twelve bars are not drawn: the Hub's earnings read serves neither (G-ME-07-9).
  */
-const DASH = { between: 16, cardPad: 18, cardBetween: 14, label: 13, figure: 32, barsHeight: 40, barBetween: 4, barCorner: 4, sectionBetween: 10, rowIcon: 44, skeletonCard: 150 } as const;
+const DASH = { between: 16, cardPad: 18, cardBetween: 14, label: 13, figure: 32, sectionBetween: 10, rowIcon: 44, skeletonCard: 108 } as const;
 
 export type DashboardScreenProps = {
   onBack: () => void;
@@ -49,25 +47,24 @@ export function paidLine(s: Pick<PaidMessageSettings, 'enabled' | 'priceKobo'>):
 }
 
 /**
- * M18 · Creator dashboard. The month's earnings with the change on the month before and a bar for each of the last twelve months
- * (`GET /me/earnings`, the Hub's own figures), the uploads meter from the Hub's count, and the set-up list: the account (done, or
- * the screen is not one), Paid messages with its price, and the wallet, which asks for no identity check here (R-6): "Not opened" and
- * Open until the person has opened one, then done. Earnings lands in the wallet by itself (R-11), so its row says so and opens W39;
- * My content opens M28 with the Hub's counts. "Get verified" under the meter is added by ME-12 and "Host a community" by INBOX-14 (R-47).
+ * M18 · Creator dashboard. The month's earnings from `GET /money/earnings`, the one read W39 (Earnings) makes too, so the two screens
+ * can never disagree (the change on the month before and the twelve bars are not served there: G-ME-07-9). The uploads meter from the
+ * Hub's count, and the set-up list: the account (done, or the screen is not one), Paid messages with its price, and the wallet, which
+ * asks for no identity check here (R-6): "Open your wallet, Not opened" and Open until the person has opened one, and then no row,
+ * since there is nothing left to do. Earnings lands in the wallet by itself (R-11), so its row says so and opens W39; My content opens
+ * M28 with the Hub's counts. "Get verified" under the meter is added by ME-12 and "Host a community" by INBOX-14 (R-47).
  */
 export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnings, onOpenLibrary }: DashboardScreenProps) {
   const owner = useSessionAccount(undefined);
-  const earnings = useQuery({ queryKey: earningsKey, queryFn: fetchMyEarnings, staleTime: 0 });
+  // The month's figure and whether a wallet is open are both what `GET /money/earnings` says: the same read (and cache entry) as W39.
+  const earnings = useQuery(earningsQuery(owner));
   const paid = useQuery({ queryKey: settingsKey, queryFn: fetchSettings, staleTime: 0 });
   const counts = useQuery({ queryKey: countsKey, queryFn: fetchCounts, staleTime: 0 });
-  // Whether a wallet is open is what `GET /money/earnings` says (the same read W39 makes, so the two share it).
-  const wallet = useQuery(earningsQuery(owner));
   // Back from a row (the price changed, a wallet opened, a piece deleted) shows what the Hub now says; the first focus is the opening.
   const opened = useRef(false);
   const { refetch: refetchEarnings } = earnings;
   const { refetch: refetchPaid } = paid;
   const { refetch: refetchCounts } = counts;
-  const { refetch: refetchWallet } = wallet;
   useFocusEffect(
     useCallback(() => {
       if (!opened.current) {
@@ -77,8 +74,7 @@ export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnin
       void refetchEarnings();
       void refetchPaid();
       void refetchCounts();
-      void refetchWallet();
-    }, [refetchEarnings, refetchPaid, refetchCounts, refetchWallet]),
+    }, [refetchEarnings, refetchPaid, refetchCounts]),
   );
 
   return (
@@ -104,7 +100,10 @@ export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnin
             subtitle={paid.data ? paidLine(paid.data) : undefined}
             onPress={onOpenPaid}
           />
-          <WalletRow open={wallet.data?.walletOpen} failed={wallet.isError} onOpen={onOpenWallet} onRetry={() => void wallet.refetch()} />
+          {/* Once a wallet exists there is no row (a null child is dropped by the list, so no stray hairline is left). */}
+          {earnings.data?.walletOpen === true ? null : (
+            <WalletRow notOpened={earnings.data?.walletOpen === false} failed={earnings.isError} onOpen={onOpenWallet} onRetry={() => void earnings.refetch()} />
+          )}
         </GroupedList>
       </View>
       <GroupedList testID="creator-more">
@@ -115,12 +114,9 @@ export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnin
   );
 }
 
-/** The wallet's line of the list: "Open your wallet" with "Not opened" and Open until it is, then the done mark. Not drawn as a button once there is nothing to open. */
-function WalletRow({ open, failed, onOpen, onRetry }: { open: boolean | undefined; failed: boolean; onOpen: () => void; onRetry: () => void }) {
-  if (open === true) {
-    return <ListRow testID="creator-wallet" lead={<IconTile icon="CircleCheck" tone="in" size={DASH.rowIcon} />} title="Your wallet" subtitle="Opened" />;
-  }
-  if (open === false) {
+/** The wallet's line of the list while there is a wallet to open: "Open your wallet" with "Not opened" and Open; a quiet block while the Hub has not said; a way to ask again when it could not. */
+function WalletRow({ notOpened, failed, onOpen, onRetry }: { notOpened: boolean; failed: boolean; onOpen: () => void; onRetry: () => void }) {
+  if (notOpened) {
     return (
       <ListRow
         testID="creator-wallet"
@@ -151,26 +147,13 @@ function WalletRow({ open, failed, onOpen, onRetry }: { open: boolean | undefine
   );
 }
 
-function EarningsCard({ earnings }: { earnings: MyEarnings }) {
-  const { colors } = useWawu();
-  const change = changeOf(earnings);
+function EarningsCard({ earnings }: { earnings: Earnings }) {
   return (
     <Card padded testID="creator-earned" style={styles.card}>
-      <View style={styles.cardHead}>
-        <Text variant="body" tone="textSecondary" testID="creator-earned-title" style={[font(600), styles.cardLabel]}>
-          {earnedTitle(earnings)}
-        </Text>
-        {change ? <StatusPill testID="creator-earned-change" label={change.label} tone={change.tone} /> : null}
-      </View>
-      <Money testID="creator-earned-amount" minorUnits={earnings.earnedKobo} size={DASH.figure} />
-      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.bars}>
-        {barsOf(earnings).map((bar) => (
-          <View
-            key={bar.month}
-            style={[styles.bar, { height: `${Math.round(bar.share * 100)}%`, backgroundColor: bar.last ? colors.accent : colors.surfaceSunken }]}
-          />
-        ))}
-      </View>
+      <Text variant="body" tone="textSecondary" testID="creator-earned-title" style={[font(600), styles.cardLabel]}>
+        {earnedTitle(earnings.month)}
+      </Text>
+      <Money testID="creator-earned-amount" minorUnits={earnings.thisMonth.earnedKobo} size={DASH.figure} />
     </Card>
   );
 }
@@ -195,10 +178,7 @@ function EarningsFailed({ message, onRetry }: { message: string; onRetry: () => 
 
 const styles = StyleSheet.create({
   card: { padding: DASH.cardPad, gap: DASH.cardBetween },
-  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
-  cardLabel: { fontSize: DASH.label, flexShrink: 1 },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: DASH.barBetween, height: DASH.barsHeight },
-  bar: { flex: 1, borderRadius: DASH.barCorner },
+  cardLabel: { fontSize: DASH.label },
   section: { gap: DASH.sectionBetween },
   walletLoading: { minHeight: 64, justifyContent: 'center' },
 });

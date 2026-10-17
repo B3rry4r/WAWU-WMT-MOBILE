@@ -20,8 +20,17 @@ export function meterLine(a: Allowance): string {
   return a.tickHeld ? `Verified · up to ${a.uploads.allowed} uploads.` : `Get verified for up to ${a.withTick.uploads} uploads and more reach.`;
 }
 
-/** Whether the Hub's own count leaves no upload to start: at "5 of 5 used" a new piece would be refused when it is created. */
-export const slotsFull = (a: Allowance): boolean => a.uploads.remaining <= 0;
+/** Whether the Hub allows this account no upload at all (no tier and no tick, R-43). There is nothing to count, so no meter and no "used" note is drawn for it. */
+export const noAllowance = (a: Allowance): boolean => a.uploads.allowed <= 0;
+
+/**
+ * Whether the Hub's own count leaves no upload to start: at "5 of 5 used" a new piece would be refused when it is created. An account
+ * with no allowance at all is not "full": it has no places to be full of, and the Hub's own refusal says why when it turns a send down.
+ */
+export const slotsFull = (a: Allowance): boolean => !noAllowance(a) && a.uploads.remaining <= 0;
+
+/** Whether the account is on the Hub's free allowance (the word "free" is said only to it): no tick, and its limit is the free level's. A tier holder is not. */
+export const onFreeAllowance = (a: Allowance): boolean => !a.tickHeld && a.free.uploads > 0 && a.uploads.allowed === a.free.uploads;
 
 /**
  * design/_gen/kit.js line 58 (`banner`, warning) with the buttons in me.js line 95 (`slotsFull`): an 18 radius tint box, 14 by 16 inside, a
@@ -37,13 +46,14 @@ const noticeMetrics = { padV: 14, icon: 19, iconToText: 12, inner: 3, iconNudge:
 export function SlotsFullNotice({ allowance, onOpenLibrary }: { allowance: Allowance; onOpenLibrary?: () => void }) {
   const { colors } = useWawu();
   const { tickHeld, uploads, withTick } = allowance;
+  if (noAllowance(allowance)) return null;
   return (
     <View testID="create-slots-full" accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.notice, { backgroundColor: colors.warningTint }]}>
       <View style={styles.noticeIcon}>
         <Icon name="Library" size={noticeMetrics.icon} color={colors.warning} strokeWidth={2.2} />
       </View>
       <View style={styles.noticeText}>
-        <Text variant="kvValue">{`Your ${uploads.allowed} ${tickHeld ? '' : 'free '}uploads are used`}</Text>
+        <Text variant="kvValue">{`Your ${uploads.allowed} ${onFreeAllowance(allowance) ? 'free ' : ''}uploads are used`}</Text>
         <Text variant="bannerBody">{tickHeld ? 'Take something down to make room for a new one.' : `Get verified for up to ${withTick.uploads} uploads, or take something down.`}</Text>
         {onOpenLibrary ? (
           <View style={styles.noticeButtons}>
@@ -85,11 +95,12 @@ export function AllowanceMeter() {
 /**
  * "Uploads 4 of 5 used" with a bar for each upload (M19; ME-07's dashboard draws the same card). The used count, the limit and the
  * level above it are read from `GET /uploads/allowance`, never typed here. The "Get verified" link under it opens M11 and is
- * added by ME-12 (R-47).
+ * added by ME-12 (R-47). An account the Hub allows nothing (no tier, no tick) gets no card: "0 of 0 used" counts nothing.
  */
 export function UploadsMeter({ allowance }: { allowance: Allowance }) {
   const { colors } = useWawu();
   const { used, allowed } = allowance.uploads;
+  if (noAllowance(allowance)) return null;
   return (
     <Card padded testID="create-meter" style={styles.card}>
       <View style={styles.head}>
