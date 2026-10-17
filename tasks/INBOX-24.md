@@ -17,10 +17,10 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, round 2 built (Sonnet builder), waiting for the verifier's re-check of the two fixes.
-- **Status:** verifying. Backend `wmt/INBOX-24` `0116060` (round 1 `28cea21`, from `wmt/B3a` `242ce9d`, WALLET-17's earnings); mobile `wmt/INBOX-24` (records only). Migration `20261025180000_community_pass`. Nothing merged.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
+- **Status:** merging (lead). Verdict: PASS (no blocker, high or medium; 3 lows); round 2 (backend 0116060) closed the naira sign and a removed member's re-join of a pass room on the lead's diff read; branch CI red only on the Fintava-double earning-settlement spec (red the same way on the base, owner question Q-42) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-24.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main. Built: Backend `wmt/INBOX-24` `0116060` (round 1 `28cea21`, from `wmt/B3a` `242ce9d`, WALLET-17's earnings); mobile `wmt/INBOX-24` (records only). Migration `20261025180000_community_pass`. Nothing merged.
 - **Size:** L. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a verifier re-checks round 2 (V1, V3, V4); passes V1, V2, V3, V4, V6, V7, V8, V9 stand. Then INBOX-14 builds I30 to I34 on these routes.
+- **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-MONEY (L1) and SWEEP-INBOX (L3, G-INBOX-24-1, G-INBOX-24-6).
 - **Records:** SHARED-CHANGES INBOX-24 #1 to #4; BACKEND_GAPS G-INBOX-24-1 to -6.
 
 ## Read first
@@ -52,25 +52,9 @@ A person can join a private community by paying for 30 days from the wallet and 
 - [ ] After the end date the member can no longer read or send until they renew.
 - [ ] No pass is ever renewed without a PIN-confirmed request.
 
-## Builder report
+## History
 
-- **Built** (backend `src/community/pass/`): kind `community_pass` on MONEY-17's pay from wallet (target: the community id, price: the host's, payee: the host, not held). Routes `GET /communities/{id}/pass` (no wallet needed), `GET .../pass/quote`, `POST .../pass` (Idempotency-Key, PIN), `GET .../pass/{paymentId}` (poll). The host types the price on `POST /communities/rooms` (`passPriceKobo`, private only, N100 to N500,000, G-INBOX-24-2); a private room without one keeps the older requests.
-- **Pass:** 30 days from the later of today and the current end; one row per payment (unique), granted under a per-person-per-room lock so two payments chain. A person who pays is `joined`. A room that sells a pass is not joined by a request (`POST /join` is 409 without a running pass; someone who left with time on theirs rejoins free).
-- **After the end:** the membership row stays; messages (read and post), the read mark, live push, live catch-up and the inbox leave the room; `room` shows `none`; `mine` lists it with no message and no unread count; `membership` carries `passUntil` and `canRenew` for a pass room only (every other room answers the same keys as before, so V3's lock holds).
-- **Reminder:** `community_pass_ending`, once per pass, 3 days before the end, not for a renewed pass; in-app and pushed (G-INBOX-24-1); `actionHref` `/communities/{id}/renew`. Nothing is debited by time or by the reminder.
-- **Money:** fee on top from config (R-10); the host's 85% is an ordinary sale earning in their one move a day (R-55), owed if they have no wallet (R-11). A pass that cannot be given (room stopped selling, host and person blocked) is paid back in full, the charge included; the payment keeps no earning.
-- **Checks (capability list):** all five covered in `src/community/pass/tests/community-pass-nuvion.contract.spec.ts` against the Nuvion stand-in: pays N2,000 (wallet drops once by price plus charge, 30 days, host earns 170,000 kobo and it lands in the one move); same key twice and at once, and a lost answer then a retry, debit once and give one pass; wrong PIN (5 lock), short balance (402), no wallet; extend from the end, from today after it; the end removes read, post, read mark, room role; reminder once; refund after the room stopped selling returns every naira. After the flows each account's ledger equals the stand-in's balance, WAWU's operational account included. Fintava address counter: 0 hits.
-- **Run (stack `inbox24`, ports 7890 to 7892, down at the end):** the new contract spec 11 passed, EXIT 0; rules spec 6 passed; `tsc --noEmit` EXIT 0; eslint on the 32 changed files EXIT 0; gates 0 fail, 124 warn, 88 accepted, PASSED; `check_baseline` passes; `contract:build` done. Neighbouring specs (money-moving and wallet-gate coverage, account-data-map, data-export-map, push-policy, live, notification-emitter, community, inbox) pass except 19 tests in 4 suites (community, community-rooms, inbox, notification-wiring) that fail the same 19 on `wmt/B3a` unchanged (an unseeded stand-in database and identity names).
-- **Spec lists extended, nothing loosened:** the two money-route coverage specs and `push-policy.spec.ts` list what is mounted or pushed and must grow with each such task (SHARED-CHANGES INBOX-24 #4).
-- **NOT RUN:** the full backend suite and the protected-route suite V3 (GitHub runs both on the push); the app (no screen here); a call to any real provider (none made).
-- **Round 2 (backend `0116060`, product diff +59 -9 over 3 files):** (1) the price refusals say ₦100 and ₦500,000 (naira sign) in `community-pass-rules.ts`. (2) A member the host removes from a PASS room is no longer deleted: their row goes to `pending`, so `POST /join` returns it unchanged (200, `pending`) instead of joining them again, a new payment is refused before anything is taken (`GET /pass/quote` and `POST /pass` answer 409 `target_not_payable`, `GET /pass` shows `canBuy` and `canRenew` false), declining keeps them out, and the host lets them back with the existing approve. Open rooms and older private rooms run the same code as before. No money path changed (Q-43 stays the owner's).
-- **Round 2 checks:** 2 new specs in `community-pass-nuvion.contract.spec.ts` (removed member stays out by join, by paying and by declining, back after approve, no debit and no pass row added; open and older private rooms unchanged) and the rules spec, all failing before and passing after; `src/community`, `community-message`, `live`, `inbox` specs 255 passed, 1 skipped, EXIT 0; protected suite (`src/protected-routes`) 253 passed, EXIT 0; `tsc --noEmit` EXIT 0; eslint on the 5 changed files EXIT 0; gates 0 fail, 124 warn, 88 accepted, PASSED; `check_baseline` EXIT 0. No Fintava spec run. Test database `i24r2_test` on a mock identity service at port 7881, both dropped and stopped.
-- **Round 2 limit:** if a host removes someone in the seconds between their payment and the pass being given, the late delivery still turns their `pending` row back to `joined` (round 1's code, left as is so no money path moves). Low.
-- **Not done:** refunds on leaving or removal and a route to change the price later (not ruled, G-INBOX-24-3, -2); a host notice when someone buys a pass.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-24.md](history/INBOX-24.md).
 
 ## Owner sign-off
 
