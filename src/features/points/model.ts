@@ -13,7 +13,8 @@ export const WORDS = {
   spentFirst: 'The soonest-ending points are spent first.',
   lastMovements: 'Last 20',
   emptyTitle: 'No points yet',
-  emptyBody: 'Buy a pack, or get them with a tier or by inviting people.',
+  // PT5a also says "Buy a pack, or" first; that clause waits for POINTS-06, which builds buying (R-47).
+  emptyBody: 'Get them with a tier or by inviting people.',
   pointsToConvert: 'Points to convert',
   rate: 'Rate',
   youGet: 'You get',

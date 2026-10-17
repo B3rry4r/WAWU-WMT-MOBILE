@@ -285,6 +285,11 @@ describe('PT5 · your points', () => {
     await renderRouter(routes, { initialUrl: '/points' });
     await screen.findByTestId('points-empty');
     expect(screen.getByText('No points yet')).toBeTruthy();
+    // Buying is POINTS-06's (R-47): the "Buy a pack" clause of PT5a is not drawn, and nothing here points at buying.
+    expect(screen.getByText('Get them with a tier or by inviting people.')).toBeTruthy();
+    expect(screen.queryByText(/buy/i)).toBeNull();
+    expect(screen.queryByText(/pack/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /buy/i })).toBeNull();
     expect(screen.getByTestId('points-balance')).toHaveTextContent('0', { exact: false });
     expect(screen.queryByTestId('points-lots')).toBeNull();
     expect(screen.queryByTestId('points-movements')).toBeNull();

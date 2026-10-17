@@ -12,6 +12,12 @@ Round 1, 17 Oct 2026, Sonnet builder. Mobile `wmt/POINTS-05` (head: the last com
 - **Gates:** `python3 scripts/gates/run.py`: 0 fail, 5 warn, 0 accepted, 738 files (the 5 warns are other tasks' PROVISIONALs; my first run had 2 fails, both literal `gap:` keys, fixed). Full mobile check on the final tree: `npm run typecheck`, `lint`, `npm test -- --maxWorkers=2` (199 suites, 3,552 tests, 25 of them new), `npm run gates`, `npm run tasks` (334 tasks): exit 0. An earlier run with Wallet's "To cash" button failed 6 cases of `WalletScreen.test.tsx` (not mine); the button was taken out (SHARED-CHANGES POINTS-05 #2).
 - **Not done:** Wallet's "To cash" button and the Points card on W1: a "To cash" button fails six cases of `WalletScreen.test.tsx` (the test lists W1's exact buttons; I did not edit it), so it waits on the lead (SHARED-CHANGES POINTS-05 #2); the card is DV2-02's. PT5 and PT6 have no way in from Wallet yet; Buy points and Buy (POINTS-06); the AI line (G-836).
 
+Round 2, 17 Oct 2026, Sonnet builder, from `ee0de30c` on mobile `wmt/POINTS-05` (head: the last commit on the branch). One change, the verifier's one required change (lead ruling, R-47: show only what is built): PT5a's "Buy a pack" clause is hidden until POINTS-06 builds buying.
+- **Change:** `WORDS.emptyBody` in `src/features/points/model.ts` was "Buy a pack, or get them with a tier or by inviting people." and is now "Get them with a tier or by inviting people." Nothing else on PT5a changes, and no other text or button on the Points screens points at buying (checked: no other "Buy" or "pack" copy in `src/features/points/`). POINTS-06 puts the clause back with the Buy points button.
+- **Test:** the existing PT5a case in `src/features/points/__tests__/pointsFlow.test.tsx` now asserts the clause is absent (no text matching /buy/i or /pack/i, no Buy button) and the new line is shown.
+- **Not in this round:** the verifier's lows L1 (no line saying why Convert is off for 0, empty or a huge figure) and L2 (no notice when the balance moved) go to the sweep.
+- **Checks:** typecheck, eslint on the two changed files, the points tests, `npm run gates` and `npm run tasks` (EXIT lines in the hand-back). No stack, no server, no Fintava.
+
 ## Verifier report
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
