@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
 /*
- * Your points and Convert to cash (POINTS-05) on the real Expo Router stack: PT5 and PT6 as their real route files, with the Wallet
- * tab's own "To cash" button, and the Hub as a stand-in `fetch` installed before the app's modules load. The stand-in answers in the
+ * Your points and Convert to cash (POINTS-05) on the real Expo Router stack: PT5 and PT6 as their real route files, and the Hub as a stand-in `fetch` installed before the app's modules load. The stand-in answers in the
  * Hub's shapes with figures that are not the board's (a rate of 1,000 points for ₦400, a minimum of 500), so a screen that drew the
  * board's words or numbers fails. It signs each quote with a new token, records every conversion's headers and body, answers a key
  * it knows with the first conversion, and can answer as the Hub does when the PIN is wrong, the answer is lost, the cash moved, the
@@ -174,17 +173,6 @@ const stub = (name: string) => {
 };
 const page = (module: string): ComponentType => (require(module) as { default: ComponentType }).default;
 
-function WalletStandIn() {
-  const router = useRouter();
-  const { WalletActions } = require('@/features/wallet/home/WalletActions') as typeof import('@/features/wallet/home/WalletActions');
-  return (
-    <View>
-      <Text accessibilityRole="header">Wallet tab</Text>
-      <WalletActions onSend={() => router.push('/send')} onToCash={() => router.push('/points-convert')} />
-    </View>
-  );
-}
-
 let routes: Record<string, ComponentType>;
 
 beforeAll(async () => {
@@ -192,7 +180,7 @@ beforeAll(async () => {
   queryClient = (require('@/api/query') as typeof import('@/api/query')).queryClient;
   routes = {
     _layout: () => <Stack screenOptions={{ headerShown: false }} />,
-    wallet: WalletStandIn,
+    wallet: stub('Wallet tab'),
     welcome: stub('Welcome'),
     send: stub('Send'),
     'reset-pin': stub('Reset PIN'),
@@ -257,10 +245,9 @@ const typePoints = async (text: string, says: string) => {
   await screen.findByText(says);
 };
 
-/** The Wallet tab's "To cash" button, then PT6 with the whole balance quoted. */
+/** PT6 with the whole balance quoted. */
 async function toConvert() {
-  await renderRouter(routes, { initialUrl: '/wallet' });
-  await fireEvent.press(await screen.findByRole('button', { name: 'To cash' }));
+  await renderRouter(routes, { initialUrl: '/points-convert' });
   await screen.findByTestId('convert-screen');
   await screen.findByText(/^You get ₦/);
 }
@@ -324,7 +311,7 @@ describe('PT5 · your points', () => {
 });
 
 describe('PT6 · convert to cash', () => {
-  it('a user taps To cash on Wallet and sees the whole balance quoted at the Hub\'s rate, with no line the Hub gives no figure for', async () => {
+  it('a user opens Convert to cash and sees the whole balance quoted at the Hub\'s rate, with no line the Hub gives no figure for', async () => {
     await toConvert();
     expect(pathname()).toBe('/points-convert');
     expect(screen.getByTestId('convert-points').props.value).toBe('2,350');

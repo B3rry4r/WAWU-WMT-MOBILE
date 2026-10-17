@@ -8,7 +8,7 @@ import { Card } from '@/components/Card';
 import { PointsFigure } from '@/components/PointsFigure';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { font, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
 import type { MyPoints, PointMovement } from './api';
 import { endsFirst, endsLine, movementLine, movementLook, pointsInput, signedPoints, WORDS } from './model';
@@ -76,16 +76,16 @@ export function MovementRow({ row, now }: { row: PointMovement; now: Date }) {
     <View testID="points-movement" accessible accessibilityLabel={[row.label, line, `${amount} points`].filter(Boolean).join(', ')} style={styles.movement}>
       <IconTile icon={look.icon} tone={look.tone} size={movementMetrics.tile} />
       <View style={styles.movementWords}>
-        <Text variant="body" numberOfLines={2} style={[font(600), { fontSize: movementMetrics.title }]}>
+        <Text variant="body" numberOfLines={2} style={[font(600), { fontSize: movementMetrics.title, lineHeight: canvasNormalLineHeight(movementMetrics.title) }]}>
           {row.label}
         </Text>
         {line ? (
-          <Text variant="body" tone="textMuted" style={[styles.movementLine, { fontSize: movementMetrics.line }]}>
+          <Text variant="body" tone="textMuted" style={[styles.movementLine, { fontSize: movementMetrics.line, lineHeight: canvasNormalLineHeight(movementMetrics.line) }]}>
             {line}
           </Text>
         ) : null}
       </View>
-      <Text variant="body" style={[font(700), { fontSize: movementMetrics.amount, color: row.points > 0 ? colors.positive : colors.textPrimary }]}>
+      <Text variant="body" style={[font(700), { fontSize: movementMetrics.amount, lineHeight: canvasNormalLineHeight(movementMetrics.amount), color: row.points > 0 ? colors.positive : colors.textPrimary }]}>
         {amount}
       </Text>
     </View>

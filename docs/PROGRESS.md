@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 117 | 0 | 0 | 0 |
+| todo | 116 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 62 | 0 | 0 | 0 |
+| verifying | 63 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -57,6 +57,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-07](../tasks/TIER-07.md) A person's tier badge on their public profile (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
+- [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [EXPLORE-07](../tasks/EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore (You)
@@ -250,6 +251,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).
 - 17 Oct 2026 · DV2-01 · Built (Sonnet builder; mobile `wmt/DV2-01` on `origin/wmt/MERGE-7` `0aca612c` with `origin/wmt/DV2-COMP` `acf1865` merged; no backend change, no migration; status verifying): Today's ad card is the 16 Oct card and is always in TGIF's old place (R-59); the services row is Learn, Monetize (creators), Legal (then the two tiles DV2-RM removes); the rail is "Who Made This?"; the reader's middle pill reads "N read today" and Share opens the phone's share sheet (R-58 a); G-828 filed.
 - 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
@@ -264,4 +266,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · TIER-05 · Builder report (Sonnet builder; backend `wmt/TIER-05` `2f88409` on batch 6 `fbf391f`, mobile `wmt/TIER-05` on `70a7895`; migration `20261024210000_plan_transfer_orders`; status verifying): a tier purchase can be paid by bank transfer at checkout. `POST /plans/purchases` with `method: transfer` takes the PIN and the quote and moves nothing; the answer carries the person's own wallet account number, bank, name, the Bank charge and the amount still needed. When the provider's balance covers the total the order is paid from the wallet through the same wallet payment as a wallet purchase, once (several transfers, a repeat, two servers: one payment and one grant), oldest first. A window (admin setting, 24 hours) expires it with nothing taken; a changed price or goods closes it. One TIER-03 test pinned `method: transfer` as a 400; it now sends `card` (lead's approval) and every check is green.
 - 17 Oct 2026 · WALLET-39 · Builder report (Sonnet builder; backend `wmt/WALLET-39` `2194ffb` on backend main `a5e48fc`, mobile `wmt/WALLET-39` on `origin/wmt/MERGE-5` `7de785d`; migration `20261024070000_money_in_all_credits`; status verifying): every credit to a wallet (a received send, earnings landing, a refund, a bank transfer in) is now told once as `money_in`, with the ledger row as a `transaction` target; a told credit the ledger reverses is followed by one `money_in_reversed` notice. G-730, G-731, G-732 closed; SHARED-CHANGES WALLET-39 #1 and #2.
 - 17 Oct 2026 · TIER-06 · Builder report, round 2 (Sonnet builder; backend `wmt/TIER-06` `361df74` on `317f464`, main `a5e48fc`; migration `20261024060100_wallet_payment_terms` plus a re-runnable `20261024060000_plan_settings`; status verifying): the verifier's findings fixed, each with a failing test first. A points cash-out is bound to its quote (`quoteToken`; a changed rate, minimum, cap or cash is `409 quote_changed`, nothing paid); a tier purchase grants the goods its quote showed (stored with the payment); the 25-verified referral step is off by default; the cash rate can never exceed what points are sold for (400 naming both settings); audit "from" is true under parallel saves; a failed reload after a save is logged as an error. Mobile: docs only (SHARED-CHANGES TIER-06 #4 and #5).
-- 17 Oct 2026 · TIER-06 · Builder report (Sonnet builder; backend `wmt/TIER-06` `c827262` on `origin/main` `a5e48fc`, mobile `wmt/TIER-06` on `origin/wmt/MERGE-5` `7de785d` (docs only); migration `20261024060000_plan_settings`; status verifying): 62 launch figures are admin settings behind `GET` and `PATCH /admin/plan-settings` with an audit row per change; `PLANS_CONFIG` is the live plan so `GET /plans`, the tier quote and the convert quote follow a change with no restart; passes carry optional `benefits` and `eventDate` (G-804). The W44 lines are not loaded by default (TIER-01 spec pins the pass shape), for the lead.

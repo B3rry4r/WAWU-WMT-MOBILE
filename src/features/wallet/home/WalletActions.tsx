@@ -8,7 +8,7 @@ import { useRowRoom } from './useRowRoom';
 /**
  * design/_gen/wallet.js line 43, `actions`: a row 8 apart holding two `secondary` buttons that share what is left, and a 54 round
  * switch-currency button (`IB('ArrowLeftRight', { size: 54 })`). Only the buttons whose screens are built are drawn (R-47): Send
- * (WALLET-02) and To cash (POINTS-05, W1's "To cash", which opens PT6). Add money (WALLET-05) and the currency switch (WALLET-21) add theirs, as drawn, packed from the left.
+ * (WALLET-02). Add money (WALLET-05) and the currency switch (WALLET-21) add theirs, as drawn, packed from the left.
  *
  * Send keeps the width it has in the canvas, one of two equal buttons beside the 54 round one, so adding the other two moves nothing.
  */
@@ -19,18 +19,13 @@ export function actionWidth(room: number): number {
   return Math.max(0, Math.floor((room - ACTIONS.round - ACTIONS.gap * ACTIONS.buttons) / ACTIONS.buttons));
 }
 
-export function WalletActions({ onSend, onToCash }: { onSend: () => void; onToCash?: () => void }) {
+export function WalletActions({ onSend }: { onSend: () => void }) {
   const width = actionWidth(useRowRoom());
   return (
     <View testID="wallet-actions" style={styles.row}>
       <View style={{ width }}>
         <Button testID="wallet-action-send" label="Send" icon="ArrowUpRight" variant="secondary" full onPress={onSend} />
       </View>
-      {onToCash ? (
-        <View style={{ width }}>
-          <Button testID="wallet-action-to-cash" label="To cash" icon="Banknote" variant="secondary" full onPress={onToCash} />
-        </View>
-      ) : null}
     </View>
   );
 }

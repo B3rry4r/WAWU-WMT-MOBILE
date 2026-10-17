@@ -60,7 +60,7 @@ type Attempt = { key: string; points: number; quoteToken: string; sent: boolean 
  * PT6 · Convert to cash, with PT6a (below the minimum) and PT6b (converted). The points to convert start as the whole balance
  * (the Hub quotes the whole balance when none is asked); typing asks the Hub again once the person pauses. The rate, the cash,
  * the minimum and why a figure cannot be converted are the Hub's, never the design's (R-65). The line "Spent on AI tools, points
- * go further than cash." is not drawn: the Hub serves no figure behind it (BACKEND_GAPS G-831). The Buy button is POINTS-06's.
+ * go further than cash." is not drawn: the Hub serves no figure behind it (BACKEND_GAPS G-836). The Buy button is POINTS-06's.
  *
  * Once, with a fresh quote for each attempt (V8). Tapping Convert asks the Hub for a new quote of those points: a closed quote, or
  * figures that moved since the person looked, put the new figures on screen and stop; the same figures open the PIN sheet and the

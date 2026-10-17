@@ -73,7 +73,7 @@ export function signedPoints(points: number): string {
 
 /**
  * The mark and the tint of a movement row. The Hub names the reason a row moved points and nothing about what the points
- * paid for (BACKEND_GAPS G-830), so the mark follows the reason: points added are a gift on the "in" tint, points taken
+ * paid for (BACKEND_GAPS G-835), so the mark follows the reason: points added are a gift on the "in" tint, points taken
  * (held for a job or a conversion) the sparkle on the neutral one, and points that ended a clock.
  */
 export function movementLook(row: Pick<PointMovement, 'reason' | 'points'>): { icon: IconName; tone: IconTileTone } {
