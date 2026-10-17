@@ -3,7 +3,7 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 297.**
+**Launch tasks done: 149 of 298.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
@@ -29,6 +29,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EVENTS-07](../tasks/EVENTS-07.md) Buy event tickets from the wallet (backend) (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
+- [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
@@ -83,7 +84,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
-- [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 
 ## Done
 

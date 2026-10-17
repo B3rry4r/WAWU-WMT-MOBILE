@@ -3,8 +3,8 @@ id: HARNESS-NUV
 title: The shared backend test helpers run on Nuvion, not the Fintava double
 owner: YOU
 area: FIX
-order: 339
-priority: after-launch
+order: 131
+priority: launch
 repo: wawu-backend
 type: setup
 status: verifying
@@ -19,7 +19,7 @@ artboards: []
 
 As of 17 Oct 2026.
 - **Status:** verifying. Built once; not yet checked by an independent verifier.
-- **Id and order:** filed with priority after-launch at order 339, the next free number. A launch task cannot come after CHECK-3 (order 298) and every number from 1 to 338 is used, so it cannot be filed at launch priority; the work is test setup only and changes nothing a person sees.
+- **Id and order:** filed at launch priority, order 131, a free number below CHECK-3 (order 298; 131, 135 and 311 were the only unused numbers up to 339). The work is test setup only and changes nothing a person sees.
 - **History:** the builder report is in [history/HARNESS-NUV.md](history/HARNESS-NUV.md).
 - **Open findings:** none yet.
 - **Next:** an independent verifier repeats the before and after runs. Backend branch `wmt/HARNESS-NUV` from `432f017` (batch 7).
