@@ -199,7 +199,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.getByText('Needed for your account number. Your phone number must match your BVN record.')).toBeTruthy();
     expect(app.screen.getByText('Dial *565*0# to get it')).toBeTruthy();
     expect(app.screen.getByText('Dial *346# to get it')).toBeTruthy();
-    expect(app.screen.getByText('Checked with NIBSS. Never shown on your profile.')).toBeTruthy();
+    expect(app.screen.getByText('Never shown on your profile.')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-phone')).toBeNull();
     expect(app.screen.queryByTestId('open-wallet-no-bvn')).toBeNull();
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('');

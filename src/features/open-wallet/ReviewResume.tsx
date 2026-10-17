@@ -70,6 +70,10 @@ export function ReviewResume({ onDocuments, onChecking, onRejected, onSelfie, ch
     else if (target === 'rejected') onRejected();
   }, [goes, target, documentsNext, onDocuments, onChecking, onRejected, onSelfie]);
   const asking = !skip && status === 'signedIn' && (!owner || progress.isPending);
+  // The step stays mounted while another screen is on top of it (FIX-47): what it holds in memory (the BVN and NIN, the
+  // queries of the opening) goes when it unmounts, and A5, A26 and A27 above it still need them. A27's own send puts the
+  // opening on the Hub, which is a "belongs further on" answer for this step, but not one to act on from underneath.
+  if (!active) return <>{children}</>;
   if (asking || target !== null) return <>{fallback}</>;
   return <>{children}</>;
 }

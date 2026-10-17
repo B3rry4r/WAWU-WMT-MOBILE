@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 298.**
+**Launch tasks done: 149 of 300.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 111 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 70 | 0 | 0 | 0 |
+| verifying | 72 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -31,6 +31,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [BILLS-04](../tasks/BILLS-04.md) Pay bills from the wallet (backend) (You)
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
+- [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
+- [FIX-47](../tasks/FIX-47.md) No blank page while Open your wallet sends the ID and address details (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
