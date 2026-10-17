@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Avatar, type AvatarHue } from '@/components/Avatar';
+import { Banner } from '@/components/Banner';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
@@ -12,7 +13,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
-import { canvasNormalLineHeight, layout, motion, radius, space, text, type, useWawu } from '@/theme';
+import { canvasNormalLineHeight, layout, motion, space, text, type, useWawu } from '@/theme';
 import type { ColorToken } from '@/theme';
 
 import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
@@ -48,8 +49,8 @@ export type PayDetailRow = { label: string; value: string };
 export type PayWallet =
   | { kind: 'loading' }
   /**
-   * No wallet opened yet (R-6): the sheet shows no balance and no Pay. KYC-05 builds
-   * Open your wallet and adds its entry here (DECISIONS R-27).
+   * No wallet opened yet (R-6): the sheet shows no balance and no Pay. With `onOpenWallet`
+   * the footer offers "Open your wallet" in Pay's place (DECISIONS R-27).
    */
   | { kind: 'none' }
   | { kind: 'open'; balanceKobo: number };
@@ -112,6 +113,11 @@ export type PaySheetProps = {
   /** Top up by at least the shortfall (kobo), then come back. */
   onAddMoney: (shortfallKobo: number) => void;
   onCancel: () => void;
+  /**
+   * With no wallet yet (`wallet.kind === 'none'`) the footer offers "Open your wallet" in Pay's place and calls this
+   * (KYC-05: the payer passes `useOpenWalletEntry().open`). Left out, the footer draws nothing there.
+   */
+  onOpenWallet?: () => void;
   /** Failed: try the same payment again. */
   onRetry?: () => void;
   /** Still confirming: ask the server again. */
@@ -222,7 +228,9 @@ function Review(p: Inner) {
     </GroupedList>
   );
   const action =
-    p.wallet.kind === 'none' ? null : (
+    p.wallet.kind === 'none' ? (
+      p.onOpenWallet ? <Button label="Open your wallet" onPress={p.onOpenWallet} full /> : null
+    ) : (
       <Button
         label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
@@ -264,24 +272,16 @@ function Review(p: Inner) {
 }
 
 function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
-  const { colors } = useWawu();
   const send = p.variant === 'send';
   const content = (
     <>
       {send ? <SendHeader item={p.item} amountKobo={p.amountKobo} /> : <Header item={p.item} />}
-      <View style={[styles.banner, { backgroundColor: colors.warningTint }]}>
-        <View style={styles.bannerIcon}>
-          <Icon name="Wallet" size={ICON_BANNER} color={colors.warning} strokeWidth={ICON_STROKE.button} />
-        </View>
-        <View style={styles.flex}>
-          <Text variant="kvValue" accessibilityRole="alert" style={styles.bannerTitle}>
-            Not enough in your {p.walletName}
-          </Text>
-          <Text variant="bannerBody">
-            This costs {formatNaira(p.total)}. You have {formatNaira(p.balanceKobo, 'always')}.
-          </Text>
-        </View>
-      </View>
+      <Banner
+        tone="warning"
+        icon="Wallet"
+        title={`Not enough in your ${p.walletName}`}
+        body={`This costs ${formatNaira(p.total)}. You have ${formatNaira(p.balanceKobo, 'always')}.`}
+      />
       <GroupedList>
         <KeyValueRow key="price" label={p.amountLabel ?? (send ? 'Amount' : 'Price')} value={money(p, p.amountKobo)} />
         {feeRows(p)}
@@ -477,8 +477,7 @@ function Blocked(p: Inner & { title: string; message: string; tryAgain: boolean 
 /** The canvas nudges a few things by 2 px off the 4-point scale. */
 const NUDGE = space.xs / 2;
 const AVATAR = space.s3xl * 2; // 64, wallet.js W10 `Av(..., 64)`
-/** Icon sizes the artboards pass to I(): banner 19 (kit `banner`), check 20 (kit `fromWallet`); the tick 13 (unlockSheet). */
-const ICON_BANNER = space.xl - 1;
+/** Icon sizes the artboards pass to I(): check 20 (kit `fromWallet`); the tick 13 (unlockSheet). */
 const ICON_CHECK = space.xl;
 /** H18's status mark: a 72 tinted disc (its 32 glyph is `IconTile`'s 45%). */
 const STATUS_MARK = layout.tapMin + space.s3xl - space.xs;
@@ -515,16 +514,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.cardPad,
   },
   walletLine: { marginTop: NUDGE },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: space.md,
-    borderRadius: radius.tile,
-    paddingVertical: space.md + NUDGE,
-    paddingHorizontal: space.lg,
-  },
-  bannerIcon: { paddingTop: NUDGE / 2 },
-  bannerTitle: { marginBottom: NUDGE + 1 },
   buttons: { gap: space.sm + NUDGE },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
 });

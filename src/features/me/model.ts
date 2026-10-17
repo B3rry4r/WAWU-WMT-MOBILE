@@ -1,6 +1,6 @@
 import { formatMoney } from '@/components/Money';
 import { APP_NAME } from '@/components/BrandMark';
-import { nairaToKobo } from '@/features/feed/api';
+import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
 import { PROFILE_LINK_PREFIX } from '@/features/profile-edit/limits';
 import { PLATFORMS, SOCIAL, bareHandle, handleOf, orderOf, type SocialHandles, type SocialPlatform } from '@/features/profile-edit/social';

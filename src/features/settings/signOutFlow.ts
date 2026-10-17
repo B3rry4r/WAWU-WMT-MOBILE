@@ -1,8 +1,7 @@
+import { logoutRequest } from '@/api/identity';
 import { signOut } from '@/api/session';
 import { loadTokens } from '@/api/tokenStore';
 import { forgetPush } from '@/features/push/registration';
-
-import { logoutRequest } from './api/identity';
 
 /**
  * How long Sign out waits for WAWU ID before it signs the phone out anyway. WAWU ID answers a sign-out only after

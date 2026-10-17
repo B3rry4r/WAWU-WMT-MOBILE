@@ -10,7 +10,8 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { space, useWawu } from '@/theme';
 
 import { changePin, fetchPinState, newRequestKey, verifyPin } from '../api/settings';
-import { PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
+import { PinFrame, PinHead, StatusLine } from './PinFrame';
+import { PinDots } from '@/components/pin-sheet';
 import { CONFIRM_TITLE, CURRENT_LINE, CURRENT_TITLE, lockLeftMs, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, type Refusal, stepLabel, UNKNOWN_CHANGE } from './pinFlow';
 import { useMonotonicCountdown } from './useMonotonicCountdown';
 
@@ -321,7 +322,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
       head={head}
       middle={
         <>
-          <PinDots filled={filled} missed={missed} testID="change-pin-dots" />
+          <PinDots filled={filled} length={PIN_LENGTH} missed={missed} testID="change-pin-dots" />
           {status}
         </>
       }

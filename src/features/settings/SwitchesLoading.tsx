@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius, space } from '@/theme';
 
-import { switchRowMetrics } from './SwitchRow';
+import { switchRowMetrics } from '@/components/SwitchRow';
 
 /** One card's worth of switches, as high as that many `SwitchRow`s, plus the label above it. */
 const LABEL_H = 14;

@@ -95,6 +95,7 @@ export default function PaySheetPreview() {
       item={{ ...shown.item, verified: shown.item.by !== undefined ? tickKind : undefined }}
       onPay={() => go('paying')}
       onAddMoney={() => go('enough')}
+      onOpenWallet={() => router.push('/open-wallet')}
       onCancel={() => go('enough')}
       onRetry={() => go('paying')}
       onRefresh={() => go('enough')}

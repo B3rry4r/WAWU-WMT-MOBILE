@@ -8,6 +8,8 @@
   --glow-money: rgba(148, 17, 201, 0.55);  /* the balance card's corner glow (kit.js `Acct`: a 220 circle), both themes */
   --shadow-debit-card: 0 24px 40px -18px rgba(41, 13, 67, 0.7);
   --shadow-cover: 0 30px 50px -10px rgba(0, 0, 0, 0.7);  /* book / audio art in the feed */
+  --shadow-lift: 0 1px 3px rgba(0, 0, 0, 0.08);  /* the chosen segment of a segmented control (kit.js `Seg`), both themes */
+  --shadow-knob: 0 2px 4px rgba(0, 0, 0, 0.2);  /* the knob of a switch (kit.js `toggle`), both themes */
   --blur-veil: blur(22px) /* @kind other */;     /* locked content */
   --blur-chrome: blur(20px) /* @kind other */;   /* tab bar, sticky headers, glass */
   --scrim-feed: linear-gradient(180deg, rgba(0,0,0,.5), transparent 22%, transparent 50%, rgba(0,0,0,.86) 88%) /* @kind other */;
@@ -15,4 +17,20 @@
 }
 [data-theme="light"] {
   --shadow-money: 0 24px 40px -22px rgba(22, 21, 27, 0.6);
+}
+
+/* Over a post's media (Home flow H2 to H6) and over a picture generally: the same in both themes. */
+:root {
+  --media-white-25: rgba(255, 255, 255, 0.25);  /* an unplayed track (H2, H4) */
+  --media-white-35: rgba(255, 255, 255, 0.35);  /* a waveform bar not yet played (H6) */
+  --media-white-45: rgba(255, 255, 255, 0.45);  /* a photo-set dot that is not the current frame (H3) */
+  --media-white-60: rgba(255, 255, 255, 0.6);   /* the feed's tabs that are not selected */
+  --media-ink-38: rgba(11, 10, 13, 0.38);       /* the page ink: the veil over a blurred backdrop (H4, H5, H6) */
+  --media-ink-55: rgba(11, 10, 13, 0.55);       /* the page ink: the pill and the frame counter */
+  --media-black-0: rgba(0, 0, 0, 0);            /* the clear end of a black scrim */
+  --media-black-25: rgba(0, 0, 0, 0.25);        /* the spine on H4's book cover */
+  --media-black-30: rgba(0, 0, 0, 0.3);         /* a locked tile's veil; the profile header's scrim */
+  --media-black-35: rgba(0, 0, 0, 0.35);        /* a work's hero scrim */
+  --media-black-100: rgba(0, 0, 0, 1);          /* under a picture */
+  --media-cover: #3B0B54;                       /* H4's book cover (home.js `bookCover`) */
 }

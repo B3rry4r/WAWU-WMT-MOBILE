@@ -62,6 +62,6 @@ type Result<T, E> = { data?: T; error?: E; response: Response };
  */
 export async function unwrap<T, E>(request: Promise<Result<T, E>>): Promise<T> {
   const { data, error, response } = await request;
-  if (!response.ok) throw toApiError(response.status, error);
+  if (!response.ok) throw toApiError(response.status, error, response.headers);
   return data as T;
 }

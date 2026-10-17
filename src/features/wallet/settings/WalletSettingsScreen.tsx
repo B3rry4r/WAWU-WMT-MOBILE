@@ -15,7 +15,7 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { groupedAccountNumber } from '@/features/open-wallet/pin';
 import { canvasNormalLineHeight, radius, space } from '@/theme';
 
-import { SettingsFrame } from '@/features/settings/SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { ROW_TILE } from '@/features/settings/metrics';
 
 import { walletSettingsQuery, type WalletSettings } from '../api/settings';
@@ -109,11 +109,11 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
   }
 
   return (
-    <SettingsFrame title="Wallet settings" onBack={onBack} gap={BODY_GAP} testID="wallet-settings-screen">
+    <ScreenFrame idPrefix="settings" title="Wallet settings" onBack={onBack} gap={BODY_GAP} testID="wallet-settings-screen">
       {body}
       <Toast message={sent} testID="statement-sent" />
       {data?.account ? <AccountDetailsSheet visible={showAccount} onClose={() => setShowAccount(false)} account={data.account} /> : null}
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }
 

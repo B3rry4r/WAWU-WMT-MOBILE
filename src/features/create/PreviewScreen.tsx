@@ -6,7 +6,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
-import { blackAt } from '@/components/shadow';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -26,7 +25,7 @@ import { canPickFile, pickFile } from './pickFile';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
 
 /** me.js `previewStep`: the title at 20, 6 above its line; three 3:4 tiles 8 apart with 10 corners; the third frosted (8 blur, black at 0.3) with an 18 lock. */
-const lookMetrics = { title: 20, titleGap: 6, tileGap: 8, tileCorner: 10, ratio: 3 / 4, frost: 8, veil: 0.3, lock: 18, kindIcon: 28, labelGap: 10 } as const;
+const lookMetrics = { title: 20, titleGap: 6, tileGap: 8, tileCorner: 10, ratio: 3 / 4, frost: 8, lock: 18, kindIcon: 28, labelGap: 10 } as const;
 const dropMetrics = { height: 120, corner: 24, ring: 1.5, icon: 44, between: space.sm } as const;
 
 type Stage = { state: 'idle' } | { state: 'uploading'; file: ChosenFile; share: number } | { state: 'failed'; file: ChosenFile | null; share: number; message: string; retry: boolean };
@@ -211,7 +210,7 @@ function LookTile({ format, file, locked }: { format: FormatId; file: UploadedFi
         </View>
       )}
       {locked ? (
-        <View style={[StyleSheet.absoluteFill, styles.centre, { backgroundColor: blackAt(lookMetrics.veil) }]}>
+        <View style={[StyleSheet.absoluteFill, styles.centre, { backgroundColor: colors.mediaBlack30 }]}>
           <Icon name="Lock" size={lookMetrics.lock} color={colors.textOnAccent} strokeWidth={2.2} />
         </View>
       ) : null}

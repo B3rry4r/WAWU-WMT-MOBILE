@@ -9,7 +9,8 @@ import { Text } from '@/components/Text';
 import { layout, useWawu } from '@/theme';
 
 import { confirmPinReset, newRequestKey, startPinReset, type PinResetStarted } from '../api/settings';
-import { BELOW, CodeBoxes, CodeMiddle, PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
+import { BELOW, CodeBoxes, CodeMiddle, PinFrame, PinHead, StatusLine } from './PinFrame';
+import { PinDots } from '@/components/pin-sheet';
 import { CODE_LENGTH, CONFIRM_TITLE, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, RESET_NAV, RESET_TITLE, sentToLine, stepLabel, UNKNOWN_RESET, type Refusal } from './pinFlow';
 import { useMonotonicCountdown } from './useMonotonicCountdown';
 
@@ -377,7 +378,7 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
       head={<PinHead title={stage === 'new' ? NEW_PIN_TITLE : CONFIRM_TITLE} line={NEW_PIN_LINE} testID="reset-pin-title" />}
       middle={
         <>
-          <PinDots filled={filled} missed={missed} testID="reset-pin-dots" />
+          <PinDots filled={filled} length={PIN_LENGTH} missed={missed} testID="reset-pin-dots" />
           {status}
         </>
       }

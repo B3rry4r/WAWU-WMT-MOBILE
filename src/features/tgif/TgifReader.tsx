@@ -292,14 +292,15 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
           <View style={styles.pills}>
             <Button
               testID="tgif-amen"
-              label={count ? `Amen ${count}` : 'Amen'}
+              label="Amen"
+              count={count || undefined}
+              selected={said}
               icon="HandHeart"
-              size="sm"
+              size="pill"
               variant={said ? 'white' : 'glass'}
-              style={styles.pill}
               onPress={toggleAmen}
             />
-            <Button testID="tgif-share" label="Share" icon="Share2" size="sm" variant="glass" style={styles.pill} onPress={() => setSharing(true)} />
+            <Button testID="tgif-share" label="Share" icon="Share2" size="pill" variant="glass" onPress={() => setSharing(true)} />
           </View>
           <View style={styles.continueRow}>
             <Pressable testID="tgif-hint" accessible={false} onPress={advance} style={styles.hintArea}>
@@ -310,7 +311,7 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
             {last ? (
               <Button testID="tgif-done" label="Done" size="md" variant="white" onPress={onClose} />
             ) : (
-              <IconButton testID="tgif-next" icon="ArrowRight" label="Next card" tone="glass" size={partMetrics.next} onPress={advance} />
+              <IconButton testID="tgif-next" icon="ArrowRight" label="Next card" tone="lift" size={partMetrics.next} onPress={advance} />
             )}
           </View>
         </View>
@@ -348,7 +349,6 @@ const styles = StyleSheet.create({
   inline: { marginTop: readerMetrics.inlineTop, alignSelf: 'flex-start' },
   controls: { paddingHorizontal: readerMetrics.controlsX, gap: readerMetrics.controlsGap },
   pills: { flexDirection: 'row', gap: readerMetrics.pillsGap },
-  pill: { height: partMetrics.pillHeight },
   continueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   hintArea: { flex: 1, justifyContent: 'center', minHeight: layout.tapMin },
   hint: { fontSize: readerMetrics.hint, color: ink, opacity: readerMetrics.hintFaint },

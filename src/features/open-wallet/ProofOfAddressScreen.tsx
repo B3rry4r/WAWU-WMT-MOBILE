@@ -13,7 +13,7 @@ import { radius } from '@/theme';
 
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 
 import { OPEN_WALLET_KEY } from './api/account';
 import { DOCUMENTS_KEY, documentProblem, fetchDocuments, fileProblem, rowOf } from './api/documents';

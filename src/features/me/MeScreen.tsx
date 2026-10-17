@@ -7,7 +7,7 @@ import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { CreateEntry } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { readFailure } from '@/features/profile-edit/failure';

@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { useFocusRing } from '@/components/focusRing';
-import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
+import { useFocusRing } from './focusRing';
 import { Switch } from './Switch';
+import { Text } from './Text';
 
 /** design/_gen/settings.js line 6, `tRow`: 60 high, 10 above and below, 12 between the words and the toggle, a 15 title at 600, a 12.5 line under it, 2 apart. */
 export const switchRowMetrics = { minHeight: 60, padV: 10, between: 12, title: 15, subtitle: 12.5, subtitleGap: 2 } as const;

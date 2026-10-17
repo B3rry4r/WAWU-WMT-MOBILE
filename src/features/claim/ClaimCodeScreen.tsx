@@ -8,7 +8,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { font, space } from '@/theme';
 
 import { claimCode, type ClaimResult } from './api';

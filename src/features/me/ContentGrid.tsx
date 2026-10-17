@@ -6,7 +6,6 @@ import { Icon } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
-import { blackAt } from '@/components/shadow';
 
 import { kindIcon, type GridTile } from './model';
 
@@ -15,7 +14,7 @@ import { kindIcon, type GridTile } from './model';
  * 20 is taken back). A paid tile is frosted (10 blur, black at 0.3) with a 15 lock (2.4) 8 in from the top
  * right; every tile has a 12 play mark (1.8, filled) and 12 at 600 white, 8 from the left and 7 from the bottom.
  */
-export const gridMetrics = { columns: 3, between: space.xs, height: 128, frost: 10, veil: 0.3, lock: 15, lockStroke: 2.4, mark: 12, markStroke: 1.8, inset: 8, bottom: 7, captionGap: 4, caption: 12, kindIcon: 28 } as const;
+export const gridMetrics = { columns: 3, between: space.xs, height: 128, frost: 10, lock: 15, lockStroke: 2.4, mark: 12, markStroke: 1.8, inset: 8, bottom: 7, captionGap: 4, caption: 12, kindIcon: 28 } as const;
 
 /** The grid, as rows of three: a flex row keeps every tile the same width at any screen width. */
 export function ContentGrid({ tiles }: { tiles: readonly GridTile[] }) {
@@ -63,7 +62,7 @@ function Tile({ tile }: { tile: GridTile }) {
         </View>
       )}
       {/* The white caption needs the veil on a paid tile and on any tile with no picture behind it (light mode's sunken block is near white). */}
-      {tile.locked || !still ? <View testID={`me-tile-${tile.id}-veil`} style={[StyleSheet.absoluteFill, { backgroundColor: blackAt(gridMetrics.veil) }]} /> : null}
+      {tile.locked || !still ? <View testID={`me-tile-${tile.id}-veil`} style={[StyleSheet.absoluteFill, { backgroundColor: colors.mediaBlack30 }]} /> : null}
       {tile.locked ? (
         <View style={styles.lock}>
           <Icon name="Lock" size={gridMetrics.lock} color={colors.textOnAccent} strokeWidth={gridMetrics.lockStroke} />

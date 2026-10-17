@@ -1,5 +1,5 @@
 import type { FeedEntry, FeedItem } from '../api';
-import { nairaToKobo } from '../api';
+import { nairaToKobo } from '@/api/kobo';
 import { metrics } from '../look';
 import {
   bookPlacement,

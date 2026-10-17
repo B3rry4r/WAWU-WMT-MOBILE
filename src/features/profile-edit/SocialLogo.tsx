@@ -4,10 +4,9 @@ import { useWawu } from '@/theme';
 import { SOCIAL, type SocialPlatform } from './social';
 
 /**
- * A platform's logo. The icon set carries the Instagram and Facebook marks
- * only; the others (TikTok, YouTube, X, Threads, LinkedIn) draw the plain link
- * glyph until `@/components/icon` has their marks (SHARED-CHANGES.md, ME-06),
- * and `hasMark` tells a row to name the platform in words beside it.
+ * A platform's logo, from `@/components/icon`. LinkedIn has none (Simple Icons removed
+ * that mark; the owner decides what it shows), so it draws the plain link glyph, and
+ * `hasMark` tells a row to name the platform in words beside it.
  */
 export function hasMark(platform: SocialPlatform): boolean {
   return SOCIAL[platform].mark !== null;

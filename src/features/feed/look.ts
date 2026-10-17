@@ -1,24 +1,14 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { blackAt } from '@/components/shadow';
 import { font } from '@/theme';
-import { darkColors, darkGradients } from '@/theme/tokens.generated';
+import { darkColors, darkGradients, darkShadows } from '@/theme/tokens.generated';
 
 /**
  * The feed's look. A post is drawn over its own picture, so H2 to H6 draw it the same in
  * the light and the dark theme (each artboard's two phones are identical): white words,
- * glass and ink over the media. The colours are the theme's own tokens; where the canvas
- * uses one of them at another strength, the strength is the canvas's (the theme has no
- * token for those overlays, SHARED-CHANGES HOME-02 #1).
+ * glass and ink over the media. Every colour is one of the theme's own tokens (`media-*`
+ * for the overlays only a post draws).
  */
-
-/** A token colour written with an alpha channel, given another strength. */
-const atStrength = (rgba: string, alpha: number) => rgba.replace(/[\d.]+\)$/, `${alpha})`);
-
-/** The page ink (11, 10, 13), as the canvas's pills and veils use it. */
-const inkAt = (alpha: number) => atStrength(darkColors.lockedVeil, alpha);
-/** White at a strength, as the canvas's tracks, dots and the Tip circle use it. */
-const whiteAt = (alpha: number) => atStrength(darkColors.surfaceGlass, alpha);
 
 export const media = {
   /** White on every artboard: the words and icons over a post. */
@@ -26,29 +16,29 @@ export const media = {
   /** The ink on the white price button. */
   inkOnLight: darkColors.textOnLight,
   /** Black, under the picture. */
-  black: blackAt(1),
+  black: darkColors.mediaBlack100,
   /** The page ink at 55%: the pill and the frame counter. */
-  pill: inkAt(0.55),
+  pill: darkColors.mediaInk55,
   /** The page ink at 38%: the veil over a blurred backdrop (H4, H5, H6). */
-  veil: inkAt(0.38),
+  veil: darkColors.mediaInk38,
   /** White at 14% with a 1 px edge at 16%: the offer bar and H5's lock circle. */
   glass: darkColors.surfaceGlass,
   glassEdge: darkColors.borderGlass,
   /** White at 25%: an unplayed track (H2, H4). */
-  track: whiteAt(0.25),
+  track: darkColors.mediaWhite25,
   /** White at 45%: a photo-set dot that is not the current frame (H3). */
-  dot: whiteAt(0.45),
+  dot: darkColors.mediaWhite45,
   /** White at 35%: a waveform bar not yet played (H6). */
-  waveRest: whiteAt(0.35),
+  waveRest: darkColors.mediaWhite35,
   /** White at 60%: the tabs that are not selected. */
-  tabIdle: whiteAt(0.6),
+  tabIdle: darkColors.mediaWhite60,
   /** H4's book: the cover (the canvas's deep purple) and the pale page behind it. */
-  cover: darkColors.accentDeep,
+  cover: darkColors.mediaCover,
   page: darkColors.textPrimary,
   /** Black at 25%: the spine on the cover. */
-  spine: blackAt(0.25),
+  spine: darkColors.mediaBlack25,
   /** `--shadow-cover`, black at 70%: under H4's book and H6's square. */
-  coverShadow: blackAt(0.7),
+  coverShadow: darkShadows.cover[0].color,
   accent: darkColors.accent,
   /** Under a post that has no picture of its own (a PDF, an audio file): the sunken ink. */
   backdrop: darkColors.surfaceSunken,

@@ -30,7 +30,7 @@ import {
   type CredentialForm,
   type ServicesForm,
 } from './model';
-import { AddChip, ChipGroup, LongField, Note, PickedChip } from './parts';
+import { AddChip, ChipGroup, Note, PickedChip } from './parts';
 import { ProFrame } from './ProFrame';
 import { canPickDocument, pickDocument } from './pickDocument';
 import { uploadDocument } from './upload';
@@ -367,7 +367,8 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings, r
         maxLength={limits.headlineMax + 20}
         testID="pro-headline"
       />
-      <LongField
+      <TextField
+        multiline
         label="About your work"
         value={form.about}
         onChangeText={(about) => setForm((f) => ({ ...f, about }))}

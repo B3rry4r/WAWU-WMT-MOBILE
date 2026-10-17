@@ -26,10 +26,10 @@ type Meta = {
 
 export const SOCIAL: Record<SocialPlatform, Meta> = {
   instagram: { label: 'Instagram', mark: 'Instagram', field: 'instagramHandle', kind: 'handle', max: limits.socialHandle },
-  tiktok: { label: 'TikTok', mark: null, field: 'tiktokHandle', kind: 'handle', max: limits.socialHandle },
-  youtube: { label: 'YouTube', mark: null, field: 'youtubeUrl', kind: 'link', base: 'https://youtube.com/@', max: limits.socialUrl },
-  x: { label: 'X', mark: null, field: 'xHandle', kind: 'handle', max: limits.socialHandle },
-  threads: { label: 'Threads', mark: null, field: 'threadsHandle', kind: 'handle', max: limits.socialHandle },
+  tiktok: { label: 'TikTok', mark: 'TikTok', field: 'tiktokHandle', kind: 'handle', max: limits.socialHandle },
+  youtube: { label: 'YouTube', mark: 'YouTube', field: 'youtubeUrl', kind: 'link', base: 'https://youtube.com/@', max: limits.socialUrl },
+  x: { label: 'X', mark: 'XTwitter', field: 'xHandle', kind: 'handle', max: limits.socialHandle },
+  threads: { label: 'Threads', mark: 'Threads', field: 'threadsHandle', kind: 'handle', max: limits.socialHandle },
   linkedin: { label: 'LinkedIn', mark: null, field: 'linkedinUrl', kind: 'link', base: 'https://linkedin.com/in/', max: limits.socialUrl },
   facebook: { label: 'Facebook', mark: 'Facebook', field: 'facebookUrl', kind: 'link', base: 'https://facebook.com/', max: limits.socialUrl },
 };
