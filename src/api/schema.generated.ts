@@ -5767,6 +5767,10 @@ export interface paths {
          *     `kind=points_pack&packId=` is a points pack (POINTS-02, PT4): answers a
          *     `PointsPackQuoteView` with the pack's price and points, the Founding
          *     Maker's bonus points (0 for anyone else) and how long the points last.
+         *     `kind=extra_products` is the add-on that gives more product places
+         *     (TIER-04, VF13): answers an `ExtraProductsQuoteView` with the price, how
+         *     many products it adds and the places the person has now and would have;
+         *     without a tier that is running it is `402 tier_required`.
          *     Nothing is reserved. A purchase that does not fit what the caller holds
          *     is `target_not_payable` with the reason in words; a plan payment still
          *     going through is `payment_in_progress`.
@@ -5817,6 +5821,13 @@ export interface paths {
          *     pack's points (plus the Founding Maker's bonus) is added once, ending
          *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
          *     (`kind: "points_pack"`).
+         *
+         *     `kind: extra_products` (TIER-04, VF13) adds the settings' number of
+         *     products to the tier the person holds, the same way: from the wallet or
+         *     by transfer, added once, kept by the account whatever happens to the tier
+         *     after, and answered as an `ExtraProductsPurchaseView`
+         *     (`kind: "extra_products"`). Without a tier that is running it is `402
+         *     tier_required` and nothing is taken.
          */
         post: operations["PlanPurchasesController_buy"];
         delete?: never;
@@ -7219,7 +7230,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "points_cap_reached" | "points_not_short";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "points_cap_reached" | "points_not_short" | "tier_required";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -7468,7 +7479,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -8301,7 +8312,7 @@ export interface components {
         };
         PlanPurchaseDto: {
             /** @enum {string} */
-            kind: "tier" | "renew" | "upgrade" | "points_pack";
+            kind: "tier" | "renew" | "upgrade" | "points_pack" | "extra_products";
             /** @description Required for a tier purchase; not sent for a points pack. */
             tierId?: string;
             /** @description Required for `points_pack`; not sent for a tier purchase. */
@@ -8559,7 +8570,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             targetId: string;
             title: string;
         };
@@ -8839,7 +8850,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -8857,7 +8868,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -8875,7 +8886,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -12323,6 +12334,19 @@ export interface components {
             paymentKind: "points_pack";
             payment: components["schemas"]["PaymentQuoteView"];
         };
+        ExtraProductsQuoteView: {
+            /** @enum {string} */
+            kind: "extra_products";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            extraMinor: number;
+            products: number;
+            productsAllowed: number;
+            productsAllowedAfter: number;
+            /** @enum {string} */
+            paymentKind: "extra_products";
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
         PlanPurchaseGrantView: {
             tier: components["schemas"]["MyTierSummaryView"];
             activeFrom: string;
@@ -12412,6 +12436,30 @@ export interface components {
             payment: components["schemas"]["PaymentView"] | null;
             transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
             grant: components["schemas"]["PointsPackGrantView"] | null;
+            createdAt: string;
+            paidAt: string | null;
+        };
+        ExtraProductsGrantView: {
+            productsAdded: number;
+            extraProducts: number;
+            productsAllowed: number;
+        };
+        ExtraProductsPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            kind: "extra_products";
+            /** @enum {string} */
+            method: "transfer" | "wallet";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            amountMinor: number;
+            products: number;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "expired" | "paid" | "awaiting_transfer";
+            statusMessage: string | null;
+            payment: components["schemas"]["PaymentView"] | null;
+            transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
+            grant: components["schemas"]["ExtraProductsGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
         };
@@ -18547,7 +18595,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -24186,10 +24234,11 @@ export interface operations {
             query: {
                 /**
                  * @description `tier` (a first purchase, or after the last ended), `renew` (the tier
-                 *     held), `upgrade` (to a bigger tier) or `points_pack` (a points pack,
-                 *     POINTS-02).
+                 *     held), `upgrade` (to a bigger tier), `points_pack` (a points pack,
+                 *     POINTS-02) or `extra_products` (more product places on the tier held,
+                 *     TIER-04, with no `tierId`, `packId` or `bump`).
                  */
-                kind: "tier" | "renew" | "upgrade" | "points_pack";
+                kind: "tier" | "renew" | "upgrade" | "points_pack" | "extra_products";
                 /** @description A tier in the plans file (`GET /plans`). Required for a tier purchase; not sent for a points pack. */
                 tierId?: string;
                 /** @description A pack in the plans file (`GET /plans` `packs`). Required for `points_pack`; not sent for a tier purchase. */
@@ -24208,11 +24257,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseQuoteView"] | components["schemas"]["PointsPackQuoteView"];
+                    "application/json": components["schemas"]["PlanPurchaseQuoteView"] | components["schemas"]["PointsPackQuoteView"] | components["schemas"]["ExtraProductsQuoteView"];
                 };
             };
             /** @description reason.code: amount_out_of_range */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: tier_required */
+            402: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24283,7 +24341,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"] | components["schemas"]["ExtraProductsPurchaseView"];
                 };
             };
             /** @description reason.code: idempotency_key_required, amount_out_of_range */
@@ -24295,7 +24353,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: insufficient_funds */
+            /** @description reason.code: insufficient_funds, tier_required */
             402: {
                 headers: {
                     [name: string]: unknown;
@@ -24367,7 +24425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"] | components["schemas"]["ExtraProductsPurchaseView"];
                 };
             };
             /** @description reason.code: not_found */
