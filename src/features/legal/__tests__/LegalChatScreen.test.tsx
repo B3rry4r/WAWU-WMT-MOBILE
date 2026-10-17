@@ -41,11 +41,22 @@ type Answer = { status: number; body: unknown } | 'offline' | 'hold';
 const appHandlers = new Set<(state: string) => void>();
 let answers: Record<string, Answer[]> = {};
 let sent: { key: string; body: unknown }[] = [];
+/** Requests asked and not yet answered (a held one never is, so it is not counted): a test that ends before they land leaks them into the next. */
+let unanswered = 0;
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const refuse = (status: number, code: string, message: string): Answer => ({ status, body: { statusCode: status, message, reason: { code, message } } });
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  unanswered += 1;
+  try {
+    return await answerFor(input, init);
+  } finally {
+    unanswered -= 1;
+  }
+}) as typeof fetch;
+
+async function answerFor(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   const key = `${request.method} ${url.pathname.replace(/^\/api\/hub/, '')}`;
@@ -55,10 +66,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const answer = queue?.[0];
   if (queue && queue.length > 1) queue.shift();
   if (!answer) throw new Error(`no answer for ${key}`);
-  if (answer === 'hold') return new Promise<Response>(() => undefined);
+  if (answer === 'hold') {
+    unanswered -= 1;
+    return new Promise<Response>(() => undefined);
+  }
   if (answer === 'offline') throw new TypeError('Network request failed');
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
-}) as typeof fetch;
+}
 
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { LegalChatScreen } = require('../LegalChatScreen') as typeof import('../LegalChatScreen');
@@ -180,6 +194,8 @@ beforeEach(() => {
 
 afterEach(async () => {
   await queryClient.cancelQueries();
+  // every request the test asked has been answered, so no later step of its chain (a thread is found with up to three asks) lands in the next test
+  await rtl.waitFor(() => expect(unanswered).toBe(0));
   await rtl.act(async () => {
     await settle();
   });
@@ -402,6 +418,8 @@ describe('S17 · a consultant joins', () => {
     await renderScreen();
     await rtl.screen.findByText("I've sent your brief to a consultant.");
     expect(rtl.screen.queryByText('Adaora joined. The assistant has stopped replying.')).toBeNull();
+    // the screen is listening for the live connection before the event is sent, and has no other read of the conversation on its way
+    await rtl.waitFor(() => expect(mockLive.size).toBeGreaterThan(0));
     await rtl.act(async () => {
       mockLive.forEach((listener) => listener({ type: 'legal.thread' }));
       await settle();
@@ -601,7 +619,8 @@ describe('the matter before payment', () => {
     answers[OPEN] = [ok(thread({ id: 'i2' }))];
     await renderScreen();
     expect(await rtl.screen.findByText(OPENER)).toBeTruthy();
-    expect(calls(OPEN)).toHaveLength(1);
+    await rtl.waitFor(() => expect(calls(OPEN)).toHaveLength(1));
+    expect(rtl.screen.queryByText("I've sent your brief to a consultant.")).toBeNull();
   });
 
   it('an unfinished conversation is picked up, an older form intake that answers 404 is passed over', async () => {
@@ -610,6 +629,7 @@ describe('the matter before payment', () => {
     answers[GET] = [ok(asking())];
     await renderScreen();
     expect(await rtl.screen.findByText('Does the lease say anything about rent reviews?')).toBeTruthy();
+    await rtl.waitFor(() => expect(calls(GET)).toHaveLength(1));
     expect(calls(OPEN)).toHaveLength(0);
   });
 

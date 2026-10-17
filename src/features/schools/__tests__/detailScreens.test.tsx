@@ -72,10 +72,10 @@ function phoneDay(local: { year: number; month: number; day: number }, utcIso: s
     globalThis.Date = RealDate;
   };
 }
-/** Lagos just after midnight (the phone says 10 October, UTC still says 9 October), and Kiritimati late in its day (31 December here, 1 January in UTC). */
+/** Lagos just after midnight (the phone says 10 October, UTC still says 9 October), and Honolulu (UTC-10) late in its day (31 December here, 1 January in UTC). */
 const PHONE_DAYS = [
   { name: 'Lagos just after midnight', local: { year: 2026, month: 10, day: 10 }, utcIso: '2026-10-09T23:30:00.000Z', started: '2026-10-09', today: '2026-10-10' },
-  { name: 'Kiritimati late in its day', local: { year: 2026, month: 12, day: 31 }, utcIso: '2027-01-01T09:30:00.000Z', started: '2026-12-30', today: '2026-12-31' },
+  { name: 'Honolulu late in its day', local: { year: 2026, month: 12, day: 31 }, utcIso: '2027-01-01T09:30:00.000Z', started: '2026-12-30', today: '2026-12-31' },
 ] as const;
 
 const intake = (startDate: string, over: Record<string, unknown> = {}) => ({
@@ -302,6 +302,14 @@ describe('SC2 · School', () => {
     // A whole-naira fee that is not a round number of kobo still has no .00.
     expect(rtl.screen.getByTestId('school-course-price-c3').props.accessibilityLabel).toBe('12,346 naira');
     expect(rtl.within(rtl.screen.getByTestId('school-course-price-c3')).queryByText('.00')).toBeNull();
+  });
+
+  it('a course with a fee of 99 kobo is a price on its row, not "Free" (SCHOOLS-03 V2-1)', async () => {
+    answers['GET /schools/s1'] = [ok(school({ courses: [course('c1', 'Open Evening Workshop', { priceKobo: 99 })] }))];
+    await openSchool();
+    await rtl.screen.findByText('Open Evening Workshop');
+    expect(rtl.within(rtl.screen.getByTestId('school-course-c1')).queryByText('Free')).toBeNull();
+    expect(rtl.screen.getByTestId('school-course-price-c1').props.accessibilityLabel).toBe('0 naira 99 kobo');
   });
 
   it('a course with a fee of 0 reads "Free" on its row, with no naira sign', async () => {

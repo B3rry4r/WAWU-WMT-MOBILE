@@ -232,6 +232,15 @@ describe('PointsFigure', () => {
     expect(styleOf(screen.getByText('points')).lineHeight).toBe(Math.round(18 * 1.2));
   });
 
+  it('never cuts the count of a hugging figure: it spills past a narrow parent like the star and the word (DV2-COMP L1)', async () => {
+    await render(<PointsFigure count={123456789} size="hero" testID="pts" />);
+    // the web caps a one-line Text at its box and ends it in an ellipsis; the overflow stays visible so the whole count is drawn
+    for (const node of [screen.getByText('123,456,789'), screen.getByText('points')]) {
+      expect(styleOf(node).overflow).toBe('visible');
+      expect(node.props.ellipsizeMode).toBeUndefined();
+    }
+  });
+
   it('keeps the board\'s sizes and lines at full size', async () => {
     await render(<PointsFigure count={1240} size="hero" />);
     expect(styleOf(screen.getByText('1,240'))).toMatchObject({ fontSize: 22, lineHeight: 26, letterSpacing: 0 });

@@ -1,10 +1,11 @@
-import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Appearance, Text, View, useColorScheme } from 'react-native';
 
-import RootLayout from '@/app/_layout';
+import RootLayout, { THEME_READ_LIMIT_MS } from '@/app/_layout';
 import AccountTypeRoute from '@/app/account-type';
 import ForgotPasswordRoute from '@/app/forgot-password';
 import SignInRoute from '@/app/sign-in';
+import NotFoundRoute from '@/app/+not-found';
 import WelcomeRoute from '@/app/welcome';
 import TabsLayout from '@/app/(tabs)/_layout';
 import Home from '@/app/(tabs)/index';
@@ -15,6 +16,8 @@ import Me from '@/app/(tabs)/me';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { THEME_KEY } from '@/features/settings/devicePrefs';
+
+import appConfig from '../../app.json';
 
 /**
  * SHARED-05: every signed-in screen that is not a tab sits under the route graph's signed-in guard, and
@@ -100,6 +103,7 @@ const routes = {
   about: plain('About'),
   terms: plain('Terms'),
   'privacy-policy': plain('Privacy policy'),
+  '+not-found': NotFoundRoute,
 };
 
 const signedIn = () => {
@@ -159,6 +163,25 @@ describe('About, Terms and Privacy policy are public (SHARED-CHANGES SETTINGS-02
   });
 });
 
+describe('an address the app has no screen for (CHECK-1 F-1)', () => {
+  it('a signed-out visitor lands on the welcome screen, not on Expo\'s "Unmatched Route" page', async () => {
+    await renderRouter(routes, { initialUrl: '/no-such-place' });
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    expect(screen.queryByText('Unmatched Route')).toBeNull();
+  });
+
+  it('a signed-in visitor lands on Home', async () => {
+    signedIn();
+    await renderRouter(routes, { initialUrl: '/no-such-place/at-all' });
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(screen.queryByText('Unmatched Route')).toBeNull();
+  });
+
+  it('the site map of every route file is not part of the app (extra.router.sitemap is off)', () => {
+    expect(appConfig.expo.extra.router).toEqual({ sitemap: false });
+  });
+});
+
 describe('the chosen theme applies before the first screen (SHARED-CHANGES SETTINGS-01 #3 (a))', () => {
   /** What the first screen sees, and what had been applied to the phone by the time it was drawn. */
   let applied: string[] = [];
@@ -195,6 +218,22 @@ describe('the chosen theme applies before the first screen (SHARED-CHANGES SETTI
     await waitFor(() => expect(screen.getByRole('header', { name: 'Probe' })).toBeTruthy());
     expect(applied).toEqual(['dark']);
     expect(seenAtFirstDraw!.appliedBefore).toEqual(['dark']);
+  });
+
+  it('a phone store that never answers does not hold the app forever: after the limit it opens following the phone (SHARED-05 L1)', async () => {
+    mockVault.set(THEME_KEY, 'dark');
+    mockThemeGate = new Promise<void>(() => undefined);
+    await renderRouter({ ...routes, welcome: Probe });
+    expect(screen.queryByRole('header', { name: 'Probe' })).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(THEME_READ_LIMIT_MS - 1);
+    });
+    expect(screen.queryByRole('header', { name: 'Probe' })).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Probe' })).toBeTruthy());
+    expect(applied).toEqual([]);
   });
 
   it.each([

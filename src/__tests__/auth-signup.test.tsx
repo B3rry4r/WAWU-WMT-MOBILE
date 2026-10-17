@@ -139,6 +139,8 @@ function holdNextChannelAnswer() {
 /** Waits until every request the app has sent so far has been answered or has failed (an answer lands a turn after its call is made). */
 async function requestsAnswered() {
   const sent = (globalThis.fetch as jest.Mock).mock.results.map((result) => result.value as Promise<unknown>);
+  // nothing sent yet would pass at once, before the ask this waits for: fail loudly instead (FIX-31 3)
+  expect(sent.length).toBeGreaterThan(0);
   let open = sent.length;
   for (const request of sent) {
     request.then(

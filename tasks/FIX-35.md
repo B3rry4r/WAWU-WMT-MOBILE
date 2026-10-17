@@ -35,7 +35,7 @@ As of 16 Oct 2026.
 
 ## Scope (the spec only; no product file, gate or baseline)
 
-The listing compare is replaced by `tmpEntriesHolding(before, needles)`: an entry that was not there at the start of the file and whose name or bytes (a regular file, or inside a folder, up to four levels) hold one of the file's markers, or the base64 or hex of one, is a hit. The case expects no hits. The needles are the ones the case already builds. A socket, a pipe, an entry that cannot be read or that vanishes while it is read is somebody else's and is skipped. Nothing else in the file changes.
+The listing compare is replaced by `tmpEntriesHolding(before, needles)`: an entry that was not there at the start of the file and whose name or bytes (a regular file, or inside a folder, any depth, within a budget of 5000 entries for each top-level entry) hold one of the file's markers, or the base64 or hex of one, is a hit. The case expects no hits. The needles are the ones the case already builds. A socket, a pipe, an entry that cannot be read or that vanishes while it is read is somebody else's and is skipped. Nothing else in the file changes.
 
 ## Capability checks
 
