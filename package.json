@@ -79,6 +79,9 @@
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.network-guard.js"
+    ],
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/design/",

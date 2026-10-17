@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 296.**
+**Launch tasks done: 149 of 297.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 117 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 62 | 0 | 0 | 0 |
+| verifying | 63 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -33,6 +33,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
+- [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
 - [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
 - [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
