@@ -136,7 +136,9 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   // A room that sells a pass and a person who cannot buy it: the host removed them (a pending row in a pass room, G-INBOX-24-6; R-63 has no
   // join request, and the host lets them back in with the existing approve). The Hub says why in its own words on the pass quote, so they
   // are read from there and shown under "Removed by the host", with no Pay and no way to buy back in.
-  const blocked = pass.sellsPass && !pass.isHost && !pass.active && !pass.canBuy;
+  // A removed member can still hold a pass that has days left (the Hub keeps `active` true and turns `canBuy` and `canRenew` off), so the pass
+  // being active does not make them a member: what decides is that the room sells a pass and this person, who is not the host, cannot buy it.
+  const blocked = pass.sellsPass && !pass.isHost && !pass.canBuy;
   const why = useQuery({ queryKey: [...passQuoteKey(id), 'blocked'], queryFn: () => fetchPassQuote(id), enabled: blocked, retry: false, staleTime: 0, gcTime: 0 });
   const verb = pass.canRenew || pass.passUntil ? 'Renew' : 'Join';
   const enter = () => openRoom(router, id);
@@ -192,6 +194,18 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   } else if (pass.isHost) {
     body = <Joined headline="You host this room" line="You are always inside, and members pay you for each pass." pill={false} />;
     footer = <Button label="Open the room" full onPress={enter} testID="pass-open" />;
+  } else if (blocked) {
+    body = why.isPending ? (
+      <Skeleton width="100%" height={space.xl * 3} testID="pass-blocked-loading" />
+    ) : (
+      <EmptyState
+        testID="pass-blocked"
+        icon="Lock"
+        title="Removed by the host"
+        message={isApiError(why.error) && why.error.message ? why.error.message : 'A pass can’t be bought here right now.'}
+      />
+    );
+    footer = null;
   } else if (pass.active) {
     // I31 reopened: a running pass, with one tap to renew.
     body = <Joined headline="You’re in" line={runningLine(pass.passUntil)} />;
@@ -217,18 +231,6 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
         <Details room={room} pass={pass} handle={handle} buy={buy} withCard={false} />
       </>
     );
-  } else if (blocked) {
-    body = why.isPending ? (
-      <Skeleton width="100%" height={space.xl * 3} testID="pass-blocked-loading" />
-    ) : (
-      <EmptyState
-        testID="pass-blocked"
-        icon="Lock"
-        title="Removed by the host"
-        message={isApiError(why.error) && why.error.message ? why.error.message : 'A pass can’t be bought here right now.'}
-      />
-    );
-    footer = null;
   } else if (pass.sellsPass && pass.canBuy) {
     // I30: no pass running (new, or ended): the host's price and the wallet it is paid from.
     const ended = pass.canRenew && pass.passUntil !== null;

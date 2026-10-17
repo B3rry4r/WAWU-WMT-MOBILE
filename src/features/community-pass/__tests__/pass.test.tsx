@@ -358,6 +358,21 @@ describe('a member the host removed (R-63: there is no join request)', () => {
   });
 });
 
+describe('a member the host removed while their pass still has days left', () => {
+  it('is not shown "You\'re in": the Hub keeps the pass active but turns buying and renewing off, and the screen says "Removed by the host" with no Pay', async () => {
+    hub.pass = { ...newMember(), passUntil: ENDS, active: true, canRenew: false, canBuy: false };
+    hub.quote = 'removed';
+    await boot();
+    await until(() => rtl.screen.getByTestId('pass-blocked'));
+    expect(rtl.screen.getByText('Removed by the host')).toBeTruthy();
+    expect(rtl.screen.getByText(REMOVED)).toBeTruthy();
+    expect(rtl.screen.queryByText('You’re in')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-open')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+});
+
 describe('the host', () => {
   it('is inside already: the room opens and nothing is asked for', async () => {
     hub.pass = { ...newMember(), canBuy: false, isHost: true };

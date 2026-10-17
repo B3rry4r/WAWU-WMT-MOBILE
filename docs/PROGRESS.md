@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 71 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 96 | 0 | 0 | 0 |
+| building | 0 | 0 | 0 | 0 |
+| verifying | 97 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -88,6 +88,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [EXPLORE-07](../tasks/EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore (You)
+- [INBOX-14](../tasks/INBOX-14.md) Private communities, hosting, join requests (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [DV2-01](../tasks/DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count (You)
 - [DV2-02](../tasks/DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills (You)
@@ -115,10 +116,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
-
-## Being built (or fixing verifier findings)
-
-- [INBOX-14](../tasks/INBOX-14.md) Private communities, hosting, join requests (You)
 
 ## Done
 
