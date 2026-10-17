@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 134 | 0 | 0 | 0 |
+| todo | 133 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 41 | 0 | 0 | 0 |
+| verifying | 42 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -35,6 +35,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
 - [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
+- [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [FIX-18](../tasks/FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone (You)
 - [FIX-19](../tasks/FIX-19.md) School and course names refuse control characters (You)
 - [SHARED-07](../tasks/SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture (You)

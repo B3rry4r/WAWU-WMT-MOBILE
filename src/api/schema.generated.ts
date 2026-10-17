@@ -5764,6 +5764,9 @@ export interface paths {
          *     billing currency (an upgrade is the difference of the two prices), the
          *     wallet provider's charge on top, the total, the wallet's balance and the
          *     shortfall, and the signed quote `POST /plans/purchases` sends back.
+         *     `kind=points_pack&packId=` is a points pack (POINTS-02, PT4): answers a
+         *     `PointsPackQuoteView` with the pack's price and points, the Founding
+         *     Maker's bonus points (0 for anyone else) and how long the points last.
          *     Nothing is reserved. A purchase that does not fit what the caller holds
          *     is `target_not_payable` with the reason in words; a plan payment still
          *     going through is `payment_in_progress`.
@@ -5808,6 +5811,12 @@ export interface paths {
          *     the same id. A quote that changed is `409 quote_changed`; the time to send
          *     the money (an admin setting) runs out as `expired`, with nothing taken.
          *     Two requests for one item leave one waiting purchase.
+         *
+         *     `kind: points_pack` with a `packId` buys a points pack the same way
+         *     (POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the
+         *     pack's points (plus the Founding Maker's bonus) is added once, ending
+         *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
+         *     (`kind: "points_pack"`).
          */
         post: operations["PlanPurchasesController_buy"];
         delete?: never;
@@ -7343,7 +7352,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -8176,9 +8185,12 @@ export interface components {
         };
         PlanPurchaseDto: {
             /** @enum {string} */
-            kind: "tier" | "renew" | "upgrade";
-            tierId: string;
-            /** @description Buy the checkout bump's extra points with it. Default: no. */
+            kind: "tier" | "renew" | "upgrade" | "points_pack";
+            /** @description Required for a tier purchase; not sent for a points pack. */
+            tierId?: string;
+            /** @description Required for `points_pack`; not sent for a tier purchase. */
+            packId?: string;
+            /** @description Buy the checkout bump's extra points with it. Default: no. Not for a points pack. */
             bump?: boolean;
             /**
              * @description How it is paid: `wallet` from the balance now, or `transfer`: the answer
@@ -8397,7 +8409,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
             targetId: string;
             title: string;
         };
@@ -8677,7 +8689,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -8695,7 +8707,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -8713,7 +8725,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -12145,6 +12157,22 @@ export interface components {
             paymentKind: "tier" | "tier_bump";
             payment: components["schemas"]["PaymentQuoteView"];
         };
+        PointsPackQuoteView: {
+            /** @enum {string} */
+            kind: "points_pack";
+            packId: string;
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            packMinor: number;
+            points: number;
+            bonusPercent: number;
+            bonusPoints: number;
+            totalPoints: number;
+            expiryDays: number;
+            /** @enum {string} */
+            paymentKind: "points_pack";
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
         PlanPurchaseGrantView: {
             tier: components["schemas"]["MyTierSummaryView"];
             activeFrom: string;
@@ -12207,6 +12235,33 @@ export interface components {
             payment: components["schemas"]["PaymentView"] | null;
             transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;
+            createdAt: string;
+            paidAt: string | null;
+        };
+        PointsPackGrantView: {
+            points: number;
+            bonusPoints: number;
+            totalPoints: number;
+            expiresAt: string;
+        };
+        PointsPackPurchaseView: {
+            id: string;
+            /** @enum {string} */
+            kind: "points_pack";
+            packId: string;
+            /** @enum {string} */
+            method: "transfer" | "wallet";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            amountMinor: number;
+            points: number;
+            bonusPoints: number;
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "expired" | "paid" | "awaiting_transfer";
+            statusMessage: string | null;
+            payment: components["schemas"]["PaymentView"] | null;
+            transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
+            grant: components["schemas"]["PointsPackGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
         };
@@ -18286,7 +18341,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "points_cash_out";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -23923,11 +23978,17 @@ export interface operations {
     PlanPurchasesController_quote: {
         parameters: {
             query: {
-                /** @description `tier` (a first purchase, or after the last ended), `renew` (the tier held) or `upgrade` (to a bigger tier). */
-                kind: "tier" | "renew" | "upgrade";
-                /** @description A tier in the plans file (`GET /plans`). */
-                tierId: string;
-                /** @description Buy the checkout bump's extra points with it (VF6). */
+                /**
+                 * @description `tier` (a first purchase, or after the last ended), `renew` (the tier
+                 *     held), `upgrade` (to a bigger tier) or `points_pack` (a points pack,
+                 *     POINTS-02).
+                 */
+                kind: "tier" | "renew" | "upgrade" | "points_pack";
+                /** @description A tier in the plans file (`GET /plans`). Required for a tier purchase; not sent for a points pack. */
+                tierId?: string;
+                /** @description A pack in the plans file (`GET /plans` `packs`). Required for `points_pack`; not sent for a tier purchase. */
+                packId?: string;
+                /** @description Buy the checkout bump's extra points with it (VF6). Not for a points pack. */
                 bump?: boolean;
             };
             header?: never;
@@ -23941,7 +24002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseQuoteView"];
+                    "application/json": components["schemas"]["PlanPurchaseQuoteView"] | components["schemas"]["PointsPackQuoteView"];
                 };
             };
             /** @description reason.code: amount_out_of_range */
@@ -24016,7 +24077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"];
                 };
             };
             /** @description reason.code: idempotency_key_required, amount_out_of_range */
@@ -24100,7 +24161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"];
                 };
             };
             /** @description reason.code: not_found */
