@@ -5,6 +5,7 @@ import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import ActivateRoute from '@/app/activate';
 import RootLayout from '@/app/_layout';
 import RoomLinkRoute from '@/app/c/[slug]';
+import ContentLinkRoute from '@/app/content/[id]';
 import ReceiptLinkRoute from '@/app/receipt/[code]';
 import ProfileLinkRoute from '@/app/u/[handle]';
 import WelcomeRoute from '@/app/welcome';
@@ -67,6 +68,7 @@ const routes = {
   'receipt/[code]': ReceiptLinkRoute,
   'u/[handle]': ProfileLinkRoute,
   'c/[slug]': RoomLinkRoute,
+  'content/[id]': ContentLinkRoute,
   'community/[id]': CommunityStandIn,
   'transactions/index': TransactionsStandIn,
   'works/[wawuId]/index': WorksStandIn,
@@ -197,11 +199,20 @@ describe('LINKS-01 round 2: https://wawuafrica.com/c/<slug> (a community room)',
   });
 });
 
+describe('FIX-60: https://wawuafrica.com/content/<id> (a piece of content)', () => {
+  it('signed out opens the welcome screen, like a profile or a receipt, and asks the Hub nothing', async () => {
+    await open('https://wawuafrica.com/content/3f2b8c1e-9d4a-4e7b-8a61-5c0d2f7e9b14');
+    expect(await screen.findByTestId('welcome')).toBeTruthy();
+    await waitFor(() => expect(pathname()).toBe('/welcome'));
+    expect(mockFetch.mock.calls.some(([input]) => String((input as Request).url ?? input).includes('/content/'))).toBe(false);
+  });
+});
+
 describe('LINKS-01 round 2: the ways in name the same routes', () => {
   it('https and wawu:// both give the route the router matches', () => {
     // What expo-router makes of an incoming address before it matches a route (the real function, not a stand-in).
     const pathOf = (url: string) => extractExpoPathFromURL([], url);
-    for (const path of ['activate', 'receipt/7K3M9QX2B4TV', 'u/ada.obi', 'c/aba-tailors', 'r/lennox', 'selfie']) {
+    for (const path of ['activate', 'receipt/7K3M9QX2B4TV', 'u/ada.obi', 'c/aba-tailors', 'r/lennox', 'selfie', 'content/pdf-1']) {
       expect(pathOf(`https://wawuafrica.com/${path}`)).toBe(path);
       expect(pathOf(`wawu://${path}`)).toBe(path);
     }
