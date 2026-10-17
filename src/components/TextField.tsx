@@ -30,7 +30,7 @@ const multilineMetrics = { minHeight: 76, padV: 14, fontSize: 15, leading: 1.4, 
 const pickMetrics = { lead: 19, trail: 18, between: 10 } as const;
 
 /** The hint under a field when it reports a result (A21's name line): 12.5, 600, a 15 mark at stroke 2.2, 6 between. */
-const toneMetrics = { icon: 15, stroke: 2.2, gap: 6, weight: 600 } as const;
+const toneMetrics = { icon: 15, stroke: 2.2, iconGap: 6, weight: 600 } as const;
 
 export type TextFieldProps = Omit<TextInputProps, 'style' | 'editable' | 'secureTextEntry'> & {
   label: string;
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   message: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.sm },
   messageText: { flexShrink: 1 },
   messageGrow: { flex: 1 },
-  toneMessage: { gap: toneMetrics.gap },
+  toneMessage: { gap: toneMetrics.iconGap },
   toneText: { ...font(toneMetrics.weight), lineHeight: canvasNormalLineHeight(type.size.caption) },
   pickBox: { gap: pickMetrics.between },
   pickValue: { flex: 1, fontSize: fieldMetrics.value },

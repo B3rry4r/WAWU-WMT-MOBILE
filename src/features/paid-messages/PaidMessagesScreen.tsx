@@ -135,7 +135,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
         locked={locked}
         onToggle={() => change({ enabled: !form.enabled })}
       />
-      <Banner data={data} mode={mode} onRaise={(kobo) => change({ digits: digitsFromKobo(kobo) })} />
+      <StandingNote data={data} mode={mode} onRaise={(kobo) => change({ digits: digitsFromKobo(kobo) })} />
       <View style={styles.section}>
         <Text variant="label" tone="textMuted">
           Price per message
@@ -202,7 +202,7 @@ function Earn({ data, priceKobo, valid }: { data: PaidMessageSettings; priceKobo
 }
 
 /** I22's warning with Raise, or I23's lock. Nothing in the standing that is fine. */
-function Banner({ data, mode, onRaise }: { data: PaidMessageSettings; mode: ReturnType<typeof modeOf>; onRaise: (kobo: number) => void }) {
+function StandingNote({ data, mode, onRaise }: { data: PaidMessageSettings; mode: ReturnType<typeof modeOf>; onRaise: (kobo: number) => void }) {
   if (mode === 'locked') {
     return <Note testID="paid-locked" tone="danger" icon="MessageCircleOff" title={lockedTitle(data.standing)} body={lockedBody(data.standing)} />;
   }
