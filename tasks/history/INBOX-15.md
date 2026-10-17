@@ -1,0 +1,21 @@
+# INBOX-15 · round history
+
+Moved out of [tasks/INBOX-15.md](../INBOX-15.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Builder, 17 Oct 2026, Sonnet. Backend `wmt/INBOX-15` `f304f26` (from `origin/wmt/MERGE-7` `9c40478`). CI run ids in the history file.
+- **Files (backend):** new `src/money-request/` (service, controller, pay guard, view type, DTOs, constants, module, `tests/money-request.contract.spec.ts`, 15 tests); migration `20261025040000_money_requests` and `prisma/schema.prisma`; `src/app.module.ts` (mount); chat (`chat.service.ts` writes and views a `money_request` message, `chat-view.type.ts`); inbox (`inbox-feed.sql.ts` fourth source, `inbox.service.ts`, view type, DTO filter, cursor key); live (`money_request.updated` in the signal, event, dispatcher, catch-up, cursor kind `q`); money (`wallet-transfer.service.ts`: `send` takes an optional hook that runs inside the claim transaction, and `answerStaleKeysFromSend(route)`; `money.module.ts` exports `WalletTransferService` and `TransferRecipients`); `account-data-map.ts` (MoneyRequest COUNTERPARTY); `contract/openapi.json` regenerated; the two route inventories in `money-moving-coverage.spec.ts` and `wallet-gate-coverage.spec.ts` gain the new routes (lists of routes, no rule changed).
+- **Check "a request paid once cannot be paid again":** passed over HTTP with the Fintava double. Same key replays the first answer (no PIN look, one send); a new key is `409 money_request_not_pending` before the PIN (no PIN try used), one send, one debit. Six taps with six keys while the provider is held: one 201, five 409, one send; another person's `GET /inbox/unread` stays under 1 s meanwhile. A lost provider answer leaves the request `paying` (no second payment, decline or cancel; sweep makes it paid once). A refused send frees it to be paid again. Decline racing a payment: one winner. Quote changed, block, stranger, asker paying: refused before the PIN.
+- **Also tested:** create (clientRequestId replay, also at once; no wallet 409; outsider 404; block 403; 400 for amount 0, 10.5, reason over 100, NUL, extra field); decline and cancel (final, same answer again is 200, wrong person 403); inbox rows, Money filter, paging, someone else's inbox empty, badge equals the sum of rows; live catch-up with the paid and declined bubbles.
+- **Fee:** paying quotes `kind=wawu_transfer` (R-10): ₦12,000 costs ₦12,025.75, the asker gets ₦12,000.
+- **Checks:** `tsc --noEmit` 0; eslint on changed files 0; this spec 15/15; inbox, chat, live, account-purge, coverage specs re-run: the only failures are the name lookups (WAWU ID answers 401 on this machine, so names fall back to handles) and a 100 ms timing test, none in code this task changed. `gates/run.py`: 1 FAIL (`content-piece.service.ts:67` PROVISIONAL, not this task's). Full suite, gates, protected routes and contract: CI.
+- **Filed:** SHARED-CHANGES `INBOX-15 #1` to `#3`; BACKEND_GAPS G-827 (the Money chip serves requests only; sends, tips and refunds need a source), G-184 and G-186 marked done.
+- **Not done:** the Money filter's other moments (G-827); push for a request or its payment (INBOX-03 sends chat pushes; a request is a chat message but no push text was written); no mobile screen (INBOX-19, INBOX-20).
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+
+**CI and the mobile check (builder, 17 Oct 2026).** Backend `f304f26`, check runs: suites (shards 1 to 3) 117376639456, 117376639428, 117376639421 all success; contract 117376600960 success; protected routes 117376600671 success; baseline 117376600903 success; netns 117376639392 success; deploy-test-in-sync 117376601101 success; Executable gates 117376601011 failure with the one finding main also has (`src/content-piece/content-piece.service.ts:67`, PROVISIONAL LEGAL-OPENER-FAILURES-PER-HOUR), none from this task. Mobile (docs only): typecheck, lint, gates and tasks exit 0; jest 3,349 of 3,352 passed at two workers, the three that failed (`sendFlow`, `CommunitiesView`, `historyFlow`, timeouts of 100 s under load) pass alone (107 of 107).
