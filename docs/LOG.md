@@ -1,4 +1,5 @@
 # Work log
+- 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.

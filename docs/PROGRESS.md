@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 76 | 0 | 0 | 0 |
+| todo | 75 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 92 | 0 | 0 | 0 |
+| verifying | 93 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -59,6 +59,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
+- [INBOX-18](../tasks/INBOX-18.md) Answer paid questions (creator) (You)
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
@@ -306,6 +307,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 - 17 Oct 2026 · ME-14 · Built (Sonnet builder, T1; mobile `wmt/ME-14` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/ME-07` `5f002bde` merged, no backend change, no migration; status verifying): M29 My purchases (`/purchases`, search on the Hub, paging, course progress), M30 Saved (`/saved`, tabs, take a save back), M31 and M32 Notifications (`/notifications`, chips, mark read on open, See why, Top up, caught up), the bell on X1 and the three Me menu rows with the Hub's counts; gaps G-ME-14-1 to 4, SHARED-CHANGES ME-14 #1 to #5.
 - 17 Oct 2026 · ME-07 · Built (Sonnet builder, T1; mobile `wmt/ME-07` on `origin/wmt/WALLET-13` `f1f57e10` with `origin/wmt/P1` `9285017` merged; no backend change, no migration; status verifying): the Creator dashboard (M18, `/creator`: the month's earnings and change from `GET /me/earnings`, the uploads meter, Set up with the wallet row "Open your wallet: Not opened / Open", Earnings "Lands in your wallet automatically", My content), My content (M28, `/library`), Rejected (M26, `/library/<id>`: the reviewer's reason, Replace the file, Edit details, Delete, Send again to M25), M27 as M20 with every upload used and Open library, View in library on M25, and Creator dashboard and My content in the Me menu for a creator. Walked on stack `me07` against the real Hub. Gaps G-ME-07-1 to -8 (the delete row says "Delete": the Hub already returns the place at a rejection), SHARED-CHANGES ME-07 #1, F1, F2; Get verified waits for ME-12, Host a community for INBOX-14.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
@@ -320,4 +322,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · FIX-54 · Built (Sonnet builder; backend `wmt/FIX-54` `c78b796` on `origin/wmt/FIX-52` `773a9ee`, mobile `wmt/FIX-54` on `origin/wmt/MERGE-9` `72bc8d6c` holds the task file only; no migration, no contract change; status verifying): a bank send on Nuvion stays pending until Nuvion says completed; `outflows.failed` settles it failed with the money and WAWU's fee back; `outflows.refunded` after completion settles it reversed and `GET /money/transfers/{id}` shows the reversal; the stand-in sends a bank reversal as a credit record; 6 new cases fail before and pass after.
 - 17 Oct 2026 · HOME-12 · Built (bundle S1, Sonnet builder; mobile `wmt/S1` on `origin/wmt/MERGE-8` `cc436a53` with `origin/wmt/B1` merged; no backend change; status verifying): the offer bar under a locked post opens the unlock sheet (H14) on a fresh quote, Pay opens the shared PIN sheet (H15), a paid unlock ends on Unlocked (H16, Watch now plays the whole piece in place), a short wallet shows Not enough (H17) and a payment the Hub has not finished shows H18 or Still confirming; one key per attempt; every attack run once on a local stack.
 - 17 Oct 2026 · HOME-13 · Built (bundle S1, Sonnet builder; mobile `wmt/S1`, no backend change; status verifying): the rail's ₦ Tip opens the tip sheet (H26: quick amounts, other amount, note, the Hub's breakdown with the Bank charge, Pay from wallet), Tip opens the shared PIN sheet (H27) and a paid tip ends on Tip sent (H28, Total paid); no wallet leads to Open your wallet; one key per attempt; every attack run once on a local stack.
-- 17 Oct 2026 · LEGAL-04, LEGAL-06 · Built (bundle S4, Sonnet builder; mobile `wmt/S4` on `origin/wmt/MERGE-8` `cc436a53` with `origin/wmt/B1` merged, no backend change, no migration; status verifying): book and pay a consultation (S17's card, S18, S19, S20, S25) and the quote, the letter, pay to start, the documents and the fixed-price request (S21 to S24, S26) against LEGAL-05's wallet routes. One shared pay hook: a fresh quote per tap, one Idempotency-Key per attempt, a payment the Hub took is only read. Attacks (stack, once each): double tap, wrong PIN, short balance, lost answer then retry, a changed quote, a request cancelled before paying: nothing moved but the one debit. S24 and S26 are built but not reachable until the Hub lets a priced fixed-price request start without documents (G-LEGAL-06-2). Gaps G-LEGAL-04-1 and G-LEGAL-04-2, G-LEGAL-06-1 to G-LEGAL-06-4, shared changes LEGAL-04 #1 and LEGAL-06 #1.

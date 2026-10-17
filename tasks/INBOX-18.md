@@ -7,7 +7,7 @@ order: 171
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [INBOX-04, INBOX-08, INBOX-12, INBOX-17, WALLET-16, UI-02, ME-14, INBOX-19]
 decisions: [R-11, R-13]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,10 +17,16 @@ artboards: [I9, I10, I11]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-12, INBOX-17, WALLET-16, ME-14, INBOX-19.
-- **History:** none yet. Reports go to tasks/history/INBOX-18.md.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by a Sonnet builder (T2). Mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged (conflicts kept both sides: BACKEND_GAPS, SHARED-CHANGES, `me.tsx`, `MeScreen`, `MeMenuSheet`; PROGRESS regenerated). Backend `wmt/INBOX-18` `5dc9fa3` on `origin/wmt/MERGE-12` `98efeef`. No migration. Not merged.
+- **Backend (additive):** `PaidDmQuestion.creatorEarning` (creator reads only: the hold's payee share, its percent, `pending | on_its_way | waiting_for_wallet | in_wallet`; null for the asker, a refunded or an older Flutterwave question) and `GET /paid-dm/waiting` (count and kobo over every waiting question). The wallet side registers its answer through `DmCreatorEarningHooks`, so the direct-message module imports nothing new. Spec on the Nuvion stand-in, 4 tests; INBOX-08, INBOX-17 and settings specs still pass (64).
+- **App:** `src/features/paid-answers/` and `src/app/paid-questions/[wawuId].tsx`. I9 is the creator's Paid DMs chip view (the Hub's totals, rows soonest first, pill red under 2 hours); I10 and I11 are one thread screen (the card under each question is the Hub's words: the share and its percent while open, then where the share is). Message on an answered thread opens the free chat (I12). Entries (SHARED-CHANGES INBOX-18 #1 to #4): the Paid DMs chip (creators only), the paid row in All, "Reply" on M31.
+- **Truth over the brief's words (R-55):** I11 says "in your wallet" only when the Hub says the share landed; before, "on its way to your wallet / Earnings reach your wallet once a day" (W39's words); with no wallet, "waiting for you / It lands when you open your wallet". The refund line reads "gets their" (G-INBOX-18-4).
+- **Stack inbox18_test (backend `5dc9fa3` on the Nuvion stand-in, ports 7850 to 7857, taken down):** a fan paid, the creator answered with a DOUBLE TAP on Reply: one DmReply row, one earning; the share landed in the creator's move 15 s later and the Hub balance equalled the stand-in (5,000,000 to 5,127,500). A reply sent after the window: the Hub refused it in its own words, the field kept the text, no reply row, the thread said the time ran out, and the fan was repaid every naira (4,850,000 to 5,000,000, Hub = stand-in). Empty inbox and a failed read with Try again were entered on the real web export. Pictures at 390 px, light and dark, board beside build, every state: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/inbox-18-b/pics/` (`beside-<board>-<theme>.png` for I9, I10, I11, I1; the others stand alone).
+- **Checks:** mobile tsc 0, eslint 0 on changed files, 16 new tests + 11 model + 3 Reply (30 new), inbox, chat inbox, notifications and paid-messages suites 196 passed, gates 0 fail (15 warn, none new). Backend tsc 0, gates 0 fail, 4 new + 64 existing specs. NOT RUN: full suites (CI), Fintava (never), a verifier.
+- **Differs, for a reason:** no status bar or home indicator (web build); "+" and "..." in the header and composer not drawn (G-INBOX-18-2, -3); the compose button on I9's header is not built; seeded people all read "Ada Seeded", so the pictures' names differ from the board's; the board draws the typed reply in the composer (the picture `I10-typed` shows it).
+- **Open:** G-INBOX-18-1 to -7 (badge counts both sides, pronoun, push target, no Idempotency-Key on replies, older questions have no share). Contract carries `GET /search/people` from ME-14's side (backend `wmt/EXPLORE-02`, not in `98efeef`).
+- **Next:** a verifier; passes V1, V4, V5, V6, V7, V9.
 
 ## Read first
 
@@ -86,13 +92,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-18.md](history/INBOX-18.md).
 
 ## Owner sign-off
 
