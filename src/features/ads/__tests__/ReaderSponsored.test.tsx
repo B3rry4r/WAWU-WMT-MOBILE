@@ -161,16 +161,16 @@ describe('H33 · the sponsored card in the reader', () => {
     expect(rtl.screen.getByTestId('sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
   });
 
-  it('draws a card with no line under the headline and no picture without either, never an empty line or frame', async () => {
-    answers['GET /ads'] = [ok({ ...AD, subline: null, artworkUrl: null })];
+  it('draws a card with no line under the headline without that line, never an empty line or frame, and always with its picture', async () => {
+    answers['GET /ads'] = [ok({ ...AD, subline: null })];
     await boot();
     await rtl.waitFor(() => expect(segments().max).toBe(6));
     await toSponsored();
     expect(rtl.screen.getByTestId('sponsored-headline')).toBeTruthy();
     expect(rtl.screen.queryByTestId('sponsored-subline')).toBeNull();
-    expect(rtl.screen.queryByTestId('sponsored-artwork', hiddenOk)).toBeNull();
-    expect(rtl.screen.queryByTestId('sponsored-backdrop')).toBeNull();
-    expect(rtl.screen.getByTestId('tgif-backdrop')).toBeTruthy();
+    expect(rtl.screen.getByTestId('sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
+    expect(rtl.screen.getByTestId('sponsored-backdrop')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('tgif-backdrop')).toBeNull();
   });
 
   it('counts a view when the card is on screen, once, and not before the person gets there', async () => {
@@ -267,6 +267,8 @@ describe('the reader with no sponsored card', () => {
     ['the Hub answers with an error', refused(500, 'Server error')],
     ['there is no connection', 'offline' as const],
     ['the card is for a destination this build cannot open', ok({ ...AD, ctaDestination: 'link' })],
+    ['the card has no picture (R-59)', ok({ ...AD, artworkUrl: null })],
+    ['the picture is not a web address', ok({ ...AD, artworkUrl: 'javascript:alert(1)' })],
   ])('when %s, the five cards run as before and no frame or message about it is drawn', async (_why, answer) => {
     answers['GET /ads'] = [answer];
     await boot();

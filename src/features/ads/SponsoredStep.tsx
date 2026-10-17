@@ -11,11 +11,10 @@ import { adMetrics, adWords, chipFill, shadeAt } from './look';
 export type SponsoredBackdropProps = { ad: AdCard };
 
 /**
- * H33's picture: the advertiser's artwork over the whole card, under the shade that keeps the words readable. A card with
- * no artwork has no picture to draw, so the reader paints its own ground there instead (it draws nothing here).
+ * H33's picture: the advertiser's artwork over the whole card, under the shade that keeps the words readable. Every
+ * card has artwork (R-59), so there is no picture-less layout.
  */
 export function SponsoredBackdrop({ ad }: SponsoredBackdropProps) {
-  if (!ad.artworkUrl) return null;
   const { colors, locations } = adMetrics.shade;
   return (
     <View testID="sponsored-backdrop" pointerEvents="none" style={StyleSheet.absoluteFill}>

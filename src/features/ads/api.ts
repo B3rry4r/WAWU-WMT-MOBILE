@@ -24,14 +24,17 @@ export const adKey = (placement: AdPlacement) => ['ads', placement] as const;
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 
 /**
- * A card the app can draw: the words it must show and an event to open. Anything else (a destination this
- * build does not know, a card with no words) is treated as no card, never drawn half-built.
+ * A card the app can draw: the words it must show, a picture (an http or https address) and an event to open.
+ * Anything else (a destination this build does not know, a card with no words, a card with no picture) is treated
+ * as no card, never drawn half-built. A campaign needs artwork before it is saved (R-59), so a card without a
+ * picture is not one the Hub serves; if one ever arrives it is dropped here as well.
  */
 export function drawable(value: unknown): AdCard | null {
   if (!value || typeof value !== 'object') return null;
   const card = value as Partial<AdCard>;
   if (!text(card.id) || !text(card.headline) || !text(card.ctaLabel) || !text(card.ctaDestinationId)) return null;
   if (card.ctaDestination !== 'event') return null;
+  if (typeof card.artworkUrl !== 'string' || !/^https?:\/\//i.test(card.artworkUrl)) return null;
   return {
     id: card.id,
     advertiser: typeof card.advertiser === 'string' ? card.advertiser : '',
@@ -40,7 +43,7 @@ export function drawable(value: unknown): AdCard | null {
     ctaLabel: card.ctaLabel,
     ctaDestination: 'event',
     ctaDestinationId: card.ctaDestinationId,
-    artworkUrl: typeof card.artworkUrl === 'string' && /^https?:\/\//i.test(card.artworkUrl) ? card.artworkUrl : null,
+    artworkUrl: card.artworkUrl,
   };
 }
 

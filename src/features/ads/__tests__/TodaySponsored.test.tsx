@@ -214,12 +214,12 @@ describe('H36 · the sponsored card on Today with TGIF off', () => {
     expect(reported().filter((t) => t === 'view')).toHaveLength(1);
   });
 
-  it('draws a card with no line under the headline and no picture without either', async () => {
-    answers[T.ads] = [ok({ ...AD, subline: null, artworkUrl: null })];
+  it('draws a card with no line under the headline without that line, and always with its picture', async () => {
+    answers[T.ads] = [ok({ ...AD, subline: null })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
     expect(screen.queryByTestId('today-sponsored-subline')).toBeNull();
-    expect(screen.queryByTestId('today-sponsored-artwork', hiddenOk)).toBeNull();
+    expect(screen.getByTestId('today-sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
     expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Harvest Praise Night');
   });
 });
@@ -259,6 +259,8 @@ describe('Today with nothing sponsored to show', () => {
     ['the Hub answers with an error', refused(500, 'Server error')],
     ['there is no connection', 'offline' as const],
     ['the card is for a destination this build cannot open', ok({ ...AD, ctaDestination: 'link' })],
+    ['the card has no picture (R-59)', ok({ ...AD, artworkUrl: null })],
+    ['the picture is not a web address', ok({ ...AD, artworkUrl: 'javascript:alert(1)' })],
   ])('when %s, Today shows as it would with none: no frame, no message, no report', async (_why, answer) => {
     answers[T.ads] = [answer];
     const screen = await boot();

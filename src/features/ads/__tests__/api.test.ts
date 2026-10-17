@@ -63,9 +63,16 @@ describe('what can be drawn', () => {
     expect(drawable(card)).toEqual(card);
   });
 
-  it('draws a card with no line under the headline and no picture, and leaves both out', () => {
-    expect(drawable({ ...card, subline: null, artworkUrl: null })).toMatchObject({ subline: null, artworkUrl: null });
+  it('draws a card with no line under the headline, and leaves that line out', () => {
+    expect(drawable({ ...card, subline: null })).toMatchObject({ subline: null });
     expect(drawable({ ...card, subline: '  ' })).toMatchObject({ subline: null });
+  });
+
+  it('draws nothing for a card with no picture (R-59): none, null or blank', () => {
+    expect(drawable({ ...card, artworkUrl: null })).toBeNull();
+    expect(drawable({ ...card, artworkUrl: '' })).toBeNull();
+    expect(drawable({ ...card, artworkUrl: undefined })).toBeNull();
+    expect(drawable({ ...card, artworkUrl: 5 })).toBeNull();
   });
 
   it('draws nothing for a card it cannot finish: no headline, no button word, no event, or a destination this build does not know', () => {
@@ -78,9 +85,9 @@ describe('what can be drawn', () => {
     expect(drawable('card')).toBeNull();
   });
 
-  it('never draws a picture from an address that is not http or https', () => {
-    expect(drawable({ ...card, artworkUrl: 'javascript:alert(1)' })).toMatchObject({ artworkUrl: null });
-    expect(drawable({ ...card, artworkUrl: 'file:///etc/passwd' })).toMatchObject({ artworkUrl: null });
+  it('never draws a picture from an address that is not http or https, and so draws no card for one', () => {
+    expect(drawable({ ...card, artworkUrl: 'javascript:alert(1)' })).toBeNull();
+    expect(drawable({ ...card, artworkUrl: 'file:///etc/passwd' })).toBeNull();
     expect(drawable({ ...card, artworkUrl: 'http://cdn.example.test/a.jpg' })).toMatchObject({ artworkUrl: 'http://cdn.example.test/a.jpg' });
   });
 });

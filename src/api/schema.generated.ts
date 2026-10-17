@@ -5317,9 +5317,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The one live sponsored card for a placement, or `data: null` when nothing
-         *     is eligible (the app draws no card and no empty frame). Never cached: a
-         *     card must stop the moment its window ends or an admin pauses it.
+         * `tgif_card` and `today_slot`: the one live sponsored card for the
+         *     placement, or `data: null` when nothing is eligible (the app draws no
+         *     card and no empty frame). `explore_slider`: a list of every live card for
+         *     the Explore slider, in order, or `data: []`. Never cached: a card must
+         *     stop the moment its window ends or an admin pauses it.
          */
         get: operations["AdsController_serve"];
         put?: never;
@@ -8320,13 +8322,18 @@ export interface components {
             ctaDestination: "event";
             /** @description For `event`, an Event id. The event must be published and not over. */
             ctaDestinationId: string;
-            /** @description An https link to the picture. Leave it out for a card without one. */
+            /**
+             * @description An https link to the picture. REQUIRED (R-59): a campaign without artwork
+             *     is refused with 422 "Add artwork before you save this campaign". It is
+             *     checked in the service, after the rest of the body has passed, so the
+             *     refusal is a 422 and not the validation pipe's 400.
+             */
             artworkUrl?: string | null;
         };
         CreateAdCampaignDto: {
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
             startsAt: string;
             /** @description UTC. Must come after startsAt, and must not have passed yet. */
@@ -8342,12 +8349,13 @@ export interface components {
             /** @enum {string} */
             ctaDestination?: "event";
             ctaDestinationId?: string;
+            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). */
             artworkUrl?: string | null;
         };
         UpdateAdCampaignDto: {
             advertiser?: string;
             /** @enum {string} */
-            placement?: "tgif_card" | "today_slot";
+            placement?: "tgif_card" | "today_slot" | "explore_slider";
             startsAt?: string;
             endsAt?: string;
             weight?: number;
@@ -11008,7 +11016,7 @@ export interface components {
             /** @enum {string} */
             ctaDestination: "event";
             ctaDestinationId: string;
-            artworkUrl: string | null;
+            artworkUrl: string;
         };
         AccountDeletionResponse: {
             deletionScheduledAt: string;
@@ -12494,7 +12502,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -12506,6 +12514,7 @@ export interface components {
             weight: number;
             creative: components["schemas"]["AdCreativeView"];
             event: components["schemas"]["AdEventView"];
+            needsArtwork: boolean;
             servingNow: boolean;
             delivery: components["schemas"]["AdCounts"];
             /** Format: date-time */
@@ -12518,11 +12527,13 @@ export interface components {
             generatedAt: string;
             filters: {
                 /** @enum {string|null} */
-                placement: "tgif_card" | "today_slot" | null;
+                placement: "tgif_card" | "today_slot" | "explore_slider" | null;
                 /** @enum {string|null} */
                 status: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
+                /** @enum {string|null} */
+                artwork: "missing" | null;
                 /** Format: date-time */
                 from: string | null;
                 /** Format: date-time */
@@ -12540,6 +12551,7 @@ export interface components {
             deliveryByPlacement: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
             byStatus: {
                 ended: unknown;
@@ -12551,6 +12563,7 @@ export interface components {
             byPlacement: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
             byPhase: {
                 upcoming: unknown;
@@ -12560,7 +12573,9 @@ export interface components {
             servingNow: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
+            needingArtwork: number;
         };
         AdOverlapView: {
             id: string;
@@ -12600,7 +12615,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -12612,6 +12627,7 @@ export interface components {
             weight: number;
             creative: components["schemas"]["AdCreativeView"];
             event: components["schemas"]["AdEventView"];
+            needsArtwork: boolean;
             servingNow: boolean;
             delivery: components["schemas"]["AdCounts"];
             /** Format: date-time */
@@ -23186,8 +23202,11 @@ export interface operations {
     AdsController_serve: {
         parameters: {
             query: {
-                /** @description `tgif_card` (the TGIF reader) or `today_slot` (Today, TGIF off). */
-                placement: "tgif_card" | "today_slot";
+                /**
+                 * @description `tgif_card` (the TGIF reader), `today_slot` (Today, TGIF off) or
+                 *     `explore_slider` (the Explore slider, ADS-07: a list of cards, not one).
+                 */
+                placement: "tgif_card" | "today_slot" | "explore_slider";
             };
             header?: never;
             path?: never;
@@ -23200,7 +23219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdCardView"];
+                    "application/json": (components["schemas"]["AdCardView"] | components["schemas"]["AdCardView"][]) | null;
                 };
             };
         };
