@@ -53,10 +53,11 @@ function row(id: string, over: Partial<InboxItem> = {}): InboxItem {
     kind: 'chat',
     lastActivityAt: '2026-10-07T10:00:00Z',
     unreadCount: 0,
-    preview: { text: `Words of ${id}`, attachment: null, mine: false, senderName: null, sentAt: '2026-10-07T10:00:00Z' },
+    preview: { text: `Words of ${id}`, attachment: null, mine: false, senderName: null, sentAt: '2026-10-07T10:00:00Z', moneyRequest: null },
     chat: { chatId: id, other: person, canMessage: true },
     paidDm: null,
     community: null,
+    moneyRequest: null,
     ...over,
   };
 }
@@ -285,7 +286,7 @@ describe('the inbox screen', () => {
         kind: 'community',
         chat: null,
         unreadCount: 2,
-        preview: { text: 'who’s at the meetup Sat?', attachment: null, mine: false, senderName: 'Tolu Balogun', sentAt: '2026-10-07T10:00:00Z' },
+        preview: { text: 'who’s at the meetup Sat?', attachment: null, mine: false, senderName: 'Tolu Balogun', sentAt: '2026-10-07T10:00:00Z', moneyRequest: null },
         community: { communityId: id, name: 'Lagos Freelancers', imageUrl: null, kind: 'open', role: 'member' },
         ...over,
       });
@@ -302,7 +303,7 @@ describe('the inbox screen', () => {
     });
 
     it('says "You:" when the last message in a room is the person\'s own, whether or not the Hub names them, and the speaker\'s first name when it is somebody else\'s (defect 31)', async () => {
-      const said = (mine: boolean, senderName: string | null) => ({ text: 'Thanks for the pattern', attachment: null, mine, senderName, sentAt: '2026-10-07T10:00:00Z' });
+      const said = (mine: boolean, senderName: string | null) => ({ text: 'Thanks for the pattern', attachment: null, mine, senderName, sentAt: '2026-10-07T10:00:00Z', moneyRequest: null });
       answers[FIRST] = [
         pageOf([
           community('own', { preview: said(true, 'Ada Obi'), community: { communityId: 'own', name: 'Own words, named', imageUrl: null, kind: 'open', role: 'member' } }),

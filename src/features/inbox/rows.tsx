@@ -25,15 +25,15 @@ export function drawableRows(items: readonly InboxItem[], renderers: InboxRowRen
   return items.filter((item) => renderers[item.kind] !== undefined);
 }
 
-/** Which of the Hub's unread counts belongs to which kind of row. */
-const unreadField = { chat: 'chats', paid_dm: 'paidDms', community: 'communities' } as const satisfies Record<InboxKind, keyof InboxUnread>;
+/** Which of the Hub's unread counts belongs to which kind of row. A money request has none: the Hub answers 0 for it, the chat already counts the message (INBOX-15). */
+const unreadField = { chat: 'chats', paid_dm: 'paidDms', community: 'communities' } as const satisfies Partial<Record<InboxKind, keyof InboxUnread>>;
 
 /**
  * The Inbox tab's badge: the unread count of the kinds of row that are drawn, never the Hub's `total`
  * (which also counts rows nobody can see yet). It grows by itself when a task adds a renderer.
  */
 export function drawnUnread(unread: InboxUnread, renderers: InboxRowRenderers = inboxRowRenderers): number {
-  return (Object.keys(unreadField) as InboxKind[]).reduce(
+  return (Object.keys(unreadField) as (keyof typeof unreadField)[]).reduce(
     (sum, kind) => (renderers[kind] === undefined ? sum : sum + (Number(unread[unreadField[kind]]) || 0)),
     0,
   );
