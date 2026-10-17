@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 98 | 0 | 0 | 0 |
+| todo | 96 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 65 | 0 | 0 | 0 |
+| verifying | 67 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -24,6 +24,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
+- [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
+- [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
 - [INBOX-13](../tasks/INBOX-13.md) Out of credits, buy credits, credits added (You)
 - [EVENTS-06](../tasks/EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
@@ -279,6 +281,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).
 - 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
 - 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
 - 17 Oct 2026 · LINKS-01 · Built (Sonnet builder; web `wmt/LINKS-01` on `origin/main` `5b45d65`, mobile `wmt/LINKS-01` on `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): 22 links WAWU sends or receives audited, 9 landed nowhere that works, 4 fixed (reset and sign-in-alert emails reopened in join-only mode; the invite shared as `https://wawuafrica.com/r/<code>`; the hosted selfie returns to `https://wawuafrica.com/selfie`), 5 left for a ruling. The website serves `/r/<code>` and `/selfie` as app links (small dark "Open in the WAWU app" page) and the two `.well-known` files; `app.json` registers them. Owner values missing: Apple team id and Android signing fingerprint. Order 298 taken by moving CHECK-3 and the 12 tasks after it up one.
@@ -293,4 +296,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · DV2-05 · Built (Sonnet builder; mobile `wmt/DV2-05` on `origin/wmt/MERGE-7` `0aca612c`, no backend, wawu-id or migration change; status verifying): A3 asks email, phone, password and the required terms line (R-67); A4 and A15 end their line with a period as drawn; A6 and A7 are the hand-off to Nuvion's hosted selfie (`GET` and `POST /money/identity/liveness`), after A27's Submit because the Hub starts a selfie only for an opening that exists, and drawn only while `enabled` is true (it is false on the stack Hub, so the selfie step is dropped there, R-39); the camera selfie stays for the older opening; A8 loses its button arrow; A14's BVN hint is its error line. Gap G-827 (no https return address for the app).
 - 17 Oct 2026 · REF-03 · Builder report (Sonnet builder; mobile `wmt/REF-03` on `origin/wmt/DV2-03` `d4a0e95` plus `origin/wmt/DV2-COMP` `c6da2af`, no backend, wawu-id or migration change; status verifying): Invite and earn is built, RF1 to RF4. RF1, RF1a and RF1b read `GET /me/referrals`; RF3 and RF3a tell a reward or milestone the Hub made available, once per phone; RF4 prints the Hub's hold days; RF2 draws the card on the phone and hands its picture to the phone's share sheet (`react-native-view-shot`, SHARED-CHANGES REF-03 #1 applied), with no outside brand (R-68). The gift button on Me opens it; a `wawu/r/<code>` link keeps the code and claims it after sign-in, drawing nothing (G-812). Gaps G-812 (updated), G-830, G-831.
 - 17 Oct 2026 · EVENTS-06 · Built (Sonnet builder; mobile `wmt/EVENTS-06` on `wmt/MERGE-7` `0aca612c`; no backend, migration or contract change; status verifying): E2 draws the steppers, the running total and Get tickets; Get tickets makes the wallet order, E3 is the shared pay sheet with the Hub's bank charge, E4 the PIN sheet, E10 the Hub's still-confirming (polled, kept on the phone, never paid twice), E5 `/events/orders/<id>` the ticket with Add to calendar and My tickets; a ₦0 basket is issued with no wallet, sheet or PIN (R-8); the Hub's message shows for `event_order_limit`. Pictures beside the boards at 390 px light and dark. Filed G-827, G-828, SHARED-CHANGES EVENTS-06 #1 (the pay button's dot).
-- 17 Oct 2026 · EVENTS-08 · Built (Sonnet builder; backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478`, mobile `wmt/EVENTS-08` on `0aca612c`; no migration): My events (E17) with its tab and E16's button, the organiser dashboard (E18), call it off (E25) and Shared links, and the called-off ticket (E11); `GET /events/{id}/call-off` added (the buyers a call-off refunds). Edit event and Ticket types are not built (G-833, the owner).
