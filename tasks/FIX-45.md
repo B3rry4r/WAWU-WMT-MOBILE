@@ -3,7 +3,7 @@ id: FIX-45
 title: Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together
 owner: YOU
 area: FIX
-order: 294
+order: 296
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
