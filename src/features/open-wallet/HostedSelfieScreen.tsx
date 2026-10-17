@@ -15,6 +15,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 
 import { isSecurePage, livenessProblem, LIVENESS_KEY, fetchLiveness, startLiveness, type Liveness } from './api/liveness';
 import { OpenWalletEnd } from './OpenWalletEnd';
+import { forgetSelfieDrop, noteSelfieDropped } from './selfieDrop';
 import { useSessionAccount } from './sessionAccount';
 
 /**
@@ -30,11 +31,17 @@ const NAV_TITLE = 'Selfie';
 const WATCH_MS = 5000;
 
 const HAND_OFF_TITLE = "You'll finish this on a secure page";
-const HAND_OFF_LINE = 'Our banking partner, Nuvion, takes your selfie. It must match your BVN photo. You come straight back here.';
-const RETRY_TITLE = "We couldn't match your face";
-const RETRY_LINE = 'It must match your BVN photo. Good light, no glasses or cap';
+/**
+ * The words claim only what Nuvion's hosted check does (DV2-05 round 2): it takes a selfie and says approved or not
+ * approved, with no match against the BVN photo (docs/PAYMENTS-PLAN.md, "No selfie match under Nuvion"; the Hub reads
+ * only the two status words, wawu-backend src/nuvion/areas/liveness.ts). The board's "It must match your BVN photo"
+ * and "Your face matched your BVN" are left out.
+ */
+const HAND_OFF_LINE = 'Our banking partner, Nuvion, takes your selfie. You come straight back here.';
+const RETRY_TITLE = "Your selfie wasn't approved";
+const RETRY_LINE = 'Good light, no glasses or cap. Try again on a new page.';
 const DONE_TITLE = 'Selfie done';
-const DONE_LINE = 'Back from the secure page. Your face matched your BVN.';
+const DONE_LINE = 'Back from the secure page. Your selfie is approved.';
 
 type Failure = { title: string; body: string };
 
@@ -78,7 +85,8 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const queryClient = useQueryClient();
-  const [watching, setWatching] = useState(false);
+  // A page this screen opened: its result is asked for again by itself while the Hub says the page is pending.
+  const [pageOpened, setPageOpened] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const inFlight = useRef(false);
@@ -99,7 +107,9 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
     // Never answered from an earlier visit: a stale "pending" would hide a result.
     gcTime: 0,
     retry: false,
-    refetchInterval: watching ? WATCH_MS : false,
+    // Only while the page is pending: a final result (passed, not passed, expired, dropped) ends the asking, and so does
+    // the screen going (its query stops with it).
+    refetchInterval: (query) => (pageOpened && query.state.data?.state === 'pending' ? WATCH_MS : false),
   });
   const { refetch } = liveness;
   const view: Liveness | undefined = liveness.data;
@@ -117,13 +127,39 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
   const noOpening = problem === 'not_open';
   const closed = problem === 'closed';
   useEffect(() => {
-    if (dropped || closed) onDropped();
-    else if (noOpening) onDetails();
-  }, [dropped, closed, noOpening, onDropped, onDetails]);
+    if (dropped || closed) {
+      // A28 may hand the person straight back when the documents still say the selfie is left: it is told once, so
+      // the two screens never send a person to each other without end (a Hub fault, a deploy half-way through).
+      noteSelfieDropped(owner);
+      onDropped();
+    } else if (noOpening) {
+      onDetails();
+    }
+  }, [dropped, closed, noOpening, owner, onDropped, onDetails]);
+
+  // The Hub and its own switch agree again (the step is part of the opening), so a drop is forgotten.
+  const state = view?.state;
+  const enabled = view?.enabled;
+  useEffect(() => {
+    if (enabled && state !== undefined && state !== 'not_in_use') forgetSelfieDrop();
+  }, [state, enabled]);
 
   const start = async () => {
     if (inFlight.current) return;
     inFlight.current = true;
+    // The page is open already: a tap opens the same page again, and no new one is asked for.
+    if (pageOpened && view?.state === 'pending' && isSecurePage(view.url)) {
+      try {
+        await Linking.openURL(view.url);
+        // The page may have run out since: the Hub is asked, so the next tap starts a new one.
+        void refetch();
+      } catch {
+        // A page that will not open again leaves the first one as it was.
+      } finally {
+        inFlight.current = false;
+      }
+      return;
+    }
     setBusy(true);
     setFailure(null);
     try {
@@ -135,12 +171,13 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
         setFailure({ title: "We couldn't open the secure page", body: 'Try again in a moment.' });
         return;
       }
-      setWatching(true);
+      setPageOpened(true);
       await Linking.openURL(started.url);
     } catch (error) {
       if (!live.current) return;
       const why = livenessProblem(error);
       if (why === 'not_available' || why === 'closed') {
+        noteSelfieDropped(owner);
         onDropped();
       } else if (why === 'not_open') {
         onDetails();

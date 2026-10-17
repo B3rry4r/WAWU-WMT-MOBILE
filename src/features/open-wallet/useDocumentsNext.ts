@@ -21,6 +21,7 @@ export function useDocumentsNext(active: boolean, owner: string | undefined, sel
   });
   if (!active) return null;
   if (!selfieStep) return 'documents';
-  if (documents.isPending) return null;
+  // Never an answer from an earlier read while a new one is on its way (a read held back by `active`, then asked again).
+  if (documents.isPending || documents.isFetching) return null;
   return selfieOnlyLeft(documents.data) ? 'selfie' : 'documents';
 }

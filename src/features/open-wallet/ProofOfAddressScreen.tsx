@@ -26,6 +26,8 @@ import { FileRow, UploadTile } from './DocumentParts';
 import { pickProofFile } from './documents/pick';
 import { clearFiles, setAddress, setPostalCode, setProof, setProofType, useDraft, useDraftLifetime } from './draft';
 import { readAddress } from './keptCheck';
+import { forgetSelfieDrop } from './selfieDrop';
+import { beginOpeningSend } from './sending';
 import { useSessionAccount } from './sessionAccount';
 import { detailsFromKept, NeedsDetails, needsOpening, sendOpening, useKeptDetailsHeld } from './submit';
 
@@ -203,6 +205,10 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     setBusy(true);
     setFailure(null);
     setNeedsDetails(false);
+    // Until the send is over and this screen has routed by the Hub's last answer, no screen under it reads the
+    // half-way answers as "back to the documents" (DV2-05 round 2). A new send is a new chance for the selfie step.
+    const endSend = beginOpeningSend();
+    forgetSelfieDrop();
     const address = tidy(draft.address);
     let step: 'details' | 'documents' = needsOpening(current) ? 'details' : 'documents';
     try {
@@ -236,6 +242,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
         setFailure(sendFailure(error, step === 'details' ? "We couldn't send your details" : "We couldn't send your documents"));
       }
     } finally {
+      endSend();
       inFlight.current = false;
       if (live.current) setBusy(false);
     }

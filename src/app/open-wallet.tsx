@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { OPEN_WALLET_DETAILS_PATH } from '@/features/open-wallet/entry';
 import { useOpenWalletWay } from '@/features/open-wallet/leave';
@@ -21,9 +21,12 @@ export default function OpenWalletRoute() {
   const way = useOpenWalletWay();
   // `again`: the person was sent here to add their details again (A27, A29), so the review is not resumed.
   const { again } = useLocalSearchParams<{ again?: string }>();
+  // A31 stays mounted under A5, A26 and A27: only while it is in front may it send a person to where the review stands.
+  const focused = useIsFocused();
   return (
     <ReviewResume
       skip={again === '1'}
+      active={focused}
       onDocuments={way.needsDocuments}
       onSelfie={way.selfie}
       onChecking={way.checking}
