@@ -434,7 +434,7 @@ describe('P5 to P7 · Offer your services', () => {
     await screen.findByTestId('pro-gate');
     expect(screen.getByText('This needs a creator account')).toBeTruthy();
     expect(screen.getByText('Setting one up is free.')).toBeTruthy();
-    expect(screen.queryByText('Become a creator')).toBeNull();
+    expect(screen.getByText('Become a creator')).toBeTruthy();
     expect(sent.map((s) => s.path)).toEqual(['/api/hub/users/me']);
     await act(async () => fireEvent.press(screen.getByLabelText('Back')));
     expect(onBack).toHaveBeenCalledTimes(1);

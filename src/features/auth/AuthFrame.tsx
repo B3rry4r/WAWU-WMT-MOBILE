@@ -20,6 +20,8 @@ export type AuthFrameProps = {
   onBack?: () => void;
   /** The step in the bar's right corner, "1 of 4" (kit.js `stepL`: 12.5 px, 600, muted). Left out, the corner is empty. */
   navStep?: string;
+  /** A button in the bar's right corner instead of the step (A11's Later). Wins over `navStep`. */
+  navAction?: ReactNode;
   /** No bar at all (A24 has none). */
   bare?: boolean;
   /** Pinned under the content, above the keyboard: the screen's buttons. A screen with none (A2 until the sign-up screens exist) leaves it out. */
@@ -43,7 +45,7 @@ export type AuthFrameProps = {
  * case). Where the window is resized anyway nothing overlaps and it adds
  * nothing; the web has no keyboard events, the browser shrinks the viewport.
  */
-export function AuthFrame({ navTitle, navStep, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
+export function AuthFrame({ navTitle, navStep, navAction, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -59,11 +61,11 @@ export function AuthFrame({ navTitle, navStep, onBack, bare, footer, children, c
             {navTitle ?? ''}
           </Text>
           <View style={styles.side}>
-            {navStep ? (
+            {navAction ?? (navStep ? (
               <Text variant="meta" tone="textMuted" accessibilityLabel={`Step ${navStep}`} testID="auth-step" style={[font(600), styles.step]}>
                 {navStep}
               </Text>
-            ) : null}
+            ) : null)}
           </View>
         </View>
       )}
