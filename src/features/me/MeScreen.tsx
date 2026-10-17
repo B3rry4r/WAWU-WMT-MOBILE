@@ -87,6 +87,8 @@ export type MeScreenProps = {
   onOpenSettings: () => void;
   /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
   onOpenInvite?: () => void;
+  /** Verification (ME-13): the menu's row, drawn only when given. */
+  onOpenVerification?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
 };
@@ -107,7 +109,7 @@ export type MeScreenProps = {
  * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile is not
  * pressed yet: the screen that finishes a draft is VERIFY-01's (VF2).
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -239,6 +241,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        onOpenVerification={
+          onOpenVerification
+            ? () => {
+                setMenuOpen(false);
+                onOpenVerification();
+              }
+            : undefined
+        }
       />
     </View>
   );

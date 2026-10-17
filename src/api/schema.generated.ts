@@ -2215,23 +2215,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/events/{id}/call-off": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** How many people calling the event off would refund (E25). */
-        get: operations["EventRunningController_callOffPreview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/hub/events/{id}/door-staff": {
         parameters: {
             query?: never;
@@ -2693,7 +2676,10 @@ export interface paths {
         /**
          * Save or replace the payout account. The server name-checks it with the
          *     bank and compares the bank's name with the BVN name: an account in
-         *     another name is saved and flagged (`matchesBvnName: false`).
+         *     another name is refused, `409 account_not_in_your_name`, with the bank's
+         *     name beside the name on the wallet, and nothing is saved (WALLET-37,
+         *     R-51). The check spends the hourly name check budget (`429
+         *     name_check_rate_limited`).
          */
         put: operations["MoneySavedAccountsController_setPayoutAccount"];
         post?: never;
@@ -2995,7 +2981,13 @@ export interface paths {
          *     name the bank gives: the app never sends a name. A saved account whose
          *     holder or bank is no longer the one kept is `409 account_name_changed`,
          *     carrying both names as they stand now; nothing is sent until the person
-         *     confirms them by saving the account again. The same Idempotency-Key and
+         *     confirms them by saving the account again. A withdrawal to the payout
+         *     account while its holder is not the person's verified name is `409
+         *     account_not_in_your_name`, also before the PIN (WALLET-37, R-51); a send
+         *     to anyone else's account is unchanged. Asking the bank about an account
+         *     that is not saved, with a name token the person did not get for it, is a
+         *     name check: it spends one of the 30 an hour (`429 name_check_rate_limited`
+         *     past them, before the PIN, the bank not asked). The same Idempotency-Key and
          *     body answer the first result again (`Idempotent-Replayed: true`) without
          *     checking the PIN. fees_not_set comes before the wallet gate, the key and
          *     the PIN; limit_reached (WAWU's limit or the provider's, WALLET-23) before
@@ -3089,7 +3081,9 @@ export interface paths {
          *     after this answers. The name is the bank's, never one the app sent. It
          *     comes with a `nameToken` for this person (WALLET-09 round 2): the send to
          *     an account that is not saved carries it, so the money goes to the name
-         *     they were shown or nowhere.
+         *     they were shown or nowhere. At most `name_check_per_hour` (30) checks an
+         *     hour per signed-in person, never per address (WALLET-37, R-51): past it
+         *     is `429 name_check_rate_limited` with the minutes left, no check made.
          */
         post: operations["MoneyBanksController_nameCheck"];
         delete?: never;
@@ -3320,7 +3314,38 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Asks to delete the account (R-17: it waits 30 days). Refused with
+         *     `409 account_deletion_blocked` while the wallet holds money, a hold is
+         *     open or earnings are waiting (SETTINGS-06). `503 provider_unreachable`
+         *     when the wallet provider does not answer, so "empty" is never guessed.
+         */
         delete: operations["AccountController_deleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/account/cancel-deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels a deletion that is waiting (SETTINGS-06): the wallet is
+         *     unfrozen, the content comes back and phone push resumes. WAWU ID calls
+         *     it with the person's new token when they sign in during the 30 days
+         *     (SETTINGS-08). Answers 200 `cancelled: false` when nothing was waiting,
+         *     and 200 `cancelled: false, deletionInProgress: true` with a `message`
+         *     once the purge has started (data may already be gone, so it is never
+         *     answered as restored).
+         */
+        post: operations["AccountController_cancelDeletion"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5334,9 +5359,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The one live sponsored card for a placement, or `data: null` when nothing
-         *     is eligible (the app draws no card and no empty frame). Never cached: a
-         *     card must stop the moment its window ends or an admin pauses it.
+         * `tgif_card` and `today_slot`: the one live sponsored card for the
+         *     placement, or `data: null` when nothing is eligible (the app draws no
+         *     card and no empty frame). `explore_slider`: a list of every live card for
+         *     the Explore slider, in order, or `data: []`. Never cached: a card must
+         *     stop the moment its window ends or an admin pauses it.
          */
         get: operations["AdsController_serve"];
         put?: never;
@@ -5769,6 +5796,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The link and code, brought, verified, points earned and pending, the level and the next milestone. */
+        get: operations["ReferralsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/referrals/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uses someone's code: once, in your first days, never your own. */
+        post: operations["ReferralsController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/plans/purchases/quote": {
         parameters: {
             query?: never;
@@ -5781,13 +5842,6 @@ export interface paths {
          *     billing currency (an upgrade is the difference of the two prices), the
          *     wallet provider's charge on top, the total, the wallet's balance and the
          *     shortfall, and the signed quote `POST /plans/purchases` sends back.
-         *     `kind=points_pack&packId=` is a points pack (POINTS-02, PT4): answers a
-         *     `PointsPackQuoteView` with the pack's price and points, the Founding
-         *     Maker's bonus points (0 for anyone else) and how long the points last.
-         *     `kind=extra_products` is the add-on that gives more product places
-         *     (TIER-04, VF13): answers an `ExtraProductsQuoteView` with the price, how
-         *     many products it adds and the places the person has now and would have;
-         *     without a tier that is running it is `402 tier_required`.
          *     Nothing is reserved. A purchase that does not fit what the caller holds
          *     is `target_not_payable` with the reason in words; a plan payment still
          *     going through is `payment_in_progress`.
@@ -5832,21 +5886,31 @@ export interface paths {
          *     the same id. A quote that changed is `409 quote_changed`; the time to send
          *     the money (an admin setting) runs out as `expired`, with nothing taken.
          *     Two requests for one item leave one waiting purchase.
-         *
-         *     `kind: points_pack` with a `packId` buys a points pack the same way
-         *     (POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the
-         *     pack's points (plus the Founding Maker's bonus) is added once, ending
-         *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
-         *     (`kind: "points_pack"`).
-         *
-         *     `kind: extra_products` (TIER-04, VF13) adds the settings' number of
-         *     products to the tier the person holds, the same way: from the wallet or
-         *     by transfer, added once, kept by the account whatever happens to the tier
-         *     after, and answered as an `ExtraProductsPurchaseView`
-         *     (`kind: "extra_products"`). Without a tier that is running it is `402
-         *     tier_required` and nothing is taken.
          */
         post: operations["PlanPurchasesController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/plans/purchases/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The purchase still going through for the caller, or `purchase: null`
+         *     (ME-13, M15): a payment still confirming, or confirmed and not yet
+         *     opened, the same ones that make a second purchase `payment_in_progress`.
+         *     Declared before the id, so the word `pending` is not taken for an id. It
+         *     needs no wallet: a person with none has nothing going through.
+         */
+        get: operations["PlanPurchasesController_pending"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6242,104 +6306,6 @@ export interface paths {
          */
         get: operations["PointsConvertController_read"];
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/points/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * What an AI job costs before it runs (PT1, PT2): the points from the
-         *     settings, the balance, the shortfall, the cap that stops it (PT7: `cap`
-         *     names itself and, for the day's, when it resets) and, with a shortfall and
-         *     "Use wallet" on, the wallet money for exactly the shortfall (PT3) with
-         *     the signed quote `POST /points/shortfall` sends back. Holds nothing and
-         *     takes nothing: a 200, whatever it says. A tool that is not in the plan,
-         *     or a count that is not a whole number above zero, is a 400.
-         */
-        post: operations["PointsSpendController_quote"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/points/shortfall": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Buys exactly the shortfall of one job from the wallet, once (PT3). The
-         *     body is the job as it was quoted plus `wallet.payment.totalKobo` and
-         *     `wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One
-         *     lot of the shortfall's points is added when the provider confirms the
-         *     debit, ending after the bought-points expiry. Answers 201 with the
-         *     purchase: `paid`, `pending` while the provider has not confirmed (poll
-         *     `GET /points/shortfall/{id}`; it is never sent again) or `failed` when
-         *     nothing moved. The same Idempotency-Key and body answer the first result
-         *     again (`Idempotent-Replayed: true`) without checking the PIN. Refused with
-         *     nothing taken and the key given back: `422 points_cap_reached` (buying points would not
-         *     let the job run), `409 points_not_short` (the person has enough now),
-         *     `409 quote_changed` with the new quote (the balance, the rate or the
-         *     expiry moved), `409 wallet_not_open`.
-         */
-        post: operations["PointsSpendController_buyShortfall"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/points/shortfall/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One shortfall purchase as it stands now: what the app polls after
-         *     `pending`. Only the buyer reads it; another person's and an id nobody
-         *     holds are the same `404 not_found`.
-         */
-        get: operations["PointsSpendController_readShortfall"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/me/points/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** "Use wallet", off until the person turns it on. */
-        get: operations["PointsSettingsController_read"];
-        /**
-         * Turns "Use wallet" on or off. Moves nothing: it only decides whether a
-         *     points quote shows the wallet money for a shortfall.
-         */
-        put: operations["PointsSettingsController_set"];
         post?: never;
         delete?: never;
         options?: never;
@@ -7247,7 +7213,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "points_cap_reached" | "points_not_short" | "tier_required";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -7286,24 +7252,6 @@ export interface components {
             neededPoints?: number;
             /** @description insufficient_points: neededPoints minus balancePoints. */
             shortfallPoints?: number;
-            /**
-             * @description points_cap_reached (POINTS-03): which cap stopped the job.
-             * @enum {string}
-             */
-            cap?: "daily" | "characters_per_job" | "minutes_per_job";
-            /** @description points_cap_reached: the cap's size, in `capUnit`. */
-            capLimit?: number;
-            /**
-             * @description points_cap_reached: what the cap counts.
-             * @enum {string}
-             */
-            capUnit?: "points" | "characters" | "minutes";
-            /** @description points_cap_reached, daily cap: points of AI jobs held or spent today. */
-            usedPoints?: number;
-            /** @description points_cap_reached, daily cap: points still free today. */
-            remainingPoints?: number;
-            /** @description points_cap_reached, daily cap: when the day's count starts again (ISO 8601). */
-            resetsAt?: string | null;
             /** @description A sentence the app may show as it is. Never an em-dash, never a provider's raw text. */
             message: string;
             /** @description pin_incorrect: wrong tries left before the PIN locks. reset_code_invalid: tries left on this code. */
@@ -7318,7 +7266,14 @@ export interface components {
              */
             accountName?: string;
             bankName?: string;
-            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited: seconds to wait before trying again. */
+            /**
+             * @description account_not_in_your_name: the name on the person's wallet, set beside
+             *     `accountName` (the bank's name for the account) and `bankName`. Left out
+             *     when the wallet holds no name to show. The comparison itself is made on
+             *     the verified name's keyed hashes, never on this text (WALLET-37).
+             */
+            verifiedName?: string;
+            /** @description provider_unreachable, idempotency_in_progress, identity_checks_exhausted, open_address_limited, selfie_checks_exhausted, reset_codes_exhausted, recipient_search_rate_limited, name_check_rate_limited: seconds to wait before trying again. */
             retryAfterSeconds?: number;
             /** @description bvn_not_confirmed, bvn_phone_mismatch: BVN checks left in the current 24 hours. selfie_not_matched: selfie matches left in the current 24 hours. */
             checksLeft?: number;
@@ -7496,7 +7451,7 @@ export interface components {
         };
         PaymentDto: {
             /** @enum {string} */
-            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             /** @description Only for a tip. Every other price is the server's own record of the item. */
             amountKobo?: number;
@@ -7648,6 +7603,33 @@ export interface components {
             limit?: number;
         };
         DeleteAccountDto: Record<string, never>;
+        AccountDeletionBlockedReason: {
+            /** @enum {string} */
+            code: "account_deletion_blocked";
+            /** @description What to settle first. The app leads with `wallet_balance` (Withdraw). */
+            blockers: ("wallet_balance" | "open_hold" | "waiting_earnings" | "payment_in_progress" | "cash_out_in_flight" | "wallet_opening")[];
+            /** @description The wallet provider's balance in kobo, when the person has a wallet. */
+            balanceKobo?: number;
+            /** @description Holds open for or against the person (paid DMs, tickets, bills). */
+            openHolds: number;
+            /** @description Sales whose share has not reached the person's wallet yet. */
+            waitingEarnings: number;
+            /** @description A sentence the app may show as it is. */
+            message: string;
+        };
+        AccountDeletionBlockedBody: {
+            data: null | null;
+            statusCode: number;
+            message: string;
+            reason: components["schemas"]["AccountDeletionBlockedReason"];
+        };
+        CancelDeletionResponseDto: {
+            cancelled: boolean;
+            walletUnfrozen: boolean;
+            contentRestored: number;
+            deletionInProgress?: boolean | null;
+            message?: string | null;
+        };
         RegisterPushTokenDto: {
             /** @description The phone's Expo push token, `ExponentPushToken[...]` or `ExpoPushToken[...]`, exactly as the app got it. */
             expoPushToken: string;
@@ -8327,14 +8309,15 @@ export interface components {
              */
             kind?: "amen";
         };
+        ClaimReferralDto: {
+            /** @description The code to use, or the link it came in (`wawu/r/lennox`). Any case. */
+            code: string;
+        };
         PlanPurchaseDto: {
             /** @enum {string} */
-            kind: "tier" | "renew" | "upgrade" | "points_pack" | "extra_products";
-            /** @description Required for a tier purchase; not sent for a points pack. */
-            tierId?: string;
-            /** @description Required for `points_pack`; not sent for a tier purchase. */
-            packId?: string;
-            /** @description Buy the checkout bump's extra points with it. Default: no. Not for a points pack. */
+            kind: "tier" | "renew" | "upgrade";
+            tierId: string;
+            /** @description Buy the checkout bump's extra points with it. Default: no. */
             bump?: boolean;
             /**
              * @description How it is paid: `wallet` from the balance now, or `transfer`: the answer
@@ -8398,40 +8381,6 @@ export interface components {
             points: number;
             /** @description `quoteToken` from the points quote the person saw. A conversion is paid at that quote or not at all (`409 quote_changed`). */
             quoteToken: string;
-        };
-        PointsQuoteDto: {
-            /**
-             * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
-             * @enum {string}
-             */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min";
-            /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
-            units: number;
-            /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
-            languages?: number;
-            /** @description The text's length in characters, for a job that takes text; checked against the per-job cap. */
-            characters?: number;
-        };
-        PointsShortfallDto: {
-            /**
-             * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
-             * @enum {string}
-             */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min";
-            /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
-            units: number;
-            /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
-            languages?: number;
-            /** @description The text's length in characters, for a job that takes text; checked against the per-job cap. */
-            characters?: number;
-            /** @description `wallet.payment.totalKobo` from the points quote the person saw. A different server total is `quote_changed`. */
-            expectedTotalKobo: number;
-            /** @description `wallet.payment.quoteToken` from that quote: the server checks it is its own, for this person and this shortfall, and not past its end. */
-            quoteToken: string;
-        };
-        PointsSettingsDto: {
-            /** @description "Use wallet": when points run short, the quote shows the wallet money for the shortfall. Off by default. */
-            useWallet: boolean;
         };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
@@ -8525,13 +8474,18 @@ export interface components {
             ctaDestination: "event";
             /** @description For `event`, an Event id. The event must be published and not over. */
             ctaDestinationId: string;
-            /** @description An https link to the picture. Leave it out for a card without one. */
+            /**
+             * @description An https link to the picture. REQUIRED (R-59): a campaign without artwork
+             *     is refused with 422 "Add artwork before you save this campaign". It is
+             *     checked in the service, after the rest of the body has passed, so the
+             *     refusal is a 422 and not the validation pipe's 400.
+             */
             artworkUrl?: string | null;
         };
         CreateAdCampaignDto: {
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
             startsAt: string;
             /** @description UTC. Must come after startsAt, and must not have passed yet. */
@@ -8547,12 +8501,13 @@ export interface components {
             /** @enum {string} */
             ctaDestination?: "event";
             ctaDestinationId?: string;
+            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). */
             artworkUrl?: string | null;
         };
         UpdateAdCampaignDto: {
             advertiser?: string;
             /** @enum {string} */
-            placement?: "tgif_card" | "today_slot";
+            placement?: "tgif_card" | "today_slot" | "explore_slider";
             startsAt?: string;
             endsAt?: string;
             weight?: number;
@@ -8587,7 +8542,7 @@ export interface components {
         };
         TransactionLinkView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
         };
@@ -8867,7 +8822,7 @@ export interface components {
             id: string;
             paymentId: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             /** @enum {string} */
             status: "held" | "released" | "refunded";
             amountKobo: number;
@@ -8885,7 +8840,7 @@ export interface components {
         };
         PaymentQuoteView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             payee: components["schemas"]["MoneyPartyView"] | null;
@@ -8903,7 +8858,7 @@ export interface components {
         PaymentView: {
             id: string;
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_cash_out";
             targetId: string;
             title: string;
             /** @enum {string} */
@@ -10197,6 +10152,17 @@ export interface components {
                 remaining: number;
             } | null;
         };
+        CancelEventAnswer: {
+            cancelled: boolean;
+            ordersRefunded: number;
+            refundsNeedingAttention: number;
+        };
+        CancelEventAnswerWithSweep: {
+            ordersLeftToSweep: number;
+            cancelled: boolean;
+            ordersRefunded: number;
+            refundsNeedingAttention: number;
+        };
         HostSoldCount: {
             eventId: string;
             ticketsSold: number;
@@ -10227,9 +10193,6 @@ export interface components {
             revenueNaira: number;
             /** Format: date-time */
             createdAt: string;
-        };
-        CallOffPreview: {
-            buyersToRefund: number;
         };
         DoorStaffView: {
             id: string;
@@ -11216,7 +11179,7 @@ export interface components {
             /** @enum {string} */
             ctaDestination: "event";
             ctaDestinationId: string;
-            artworkUrl: string | null;
+            artworkUrl: string;
         };
         AccountDeletionResponse: {
             deletionScheduledAt: string;
@@ -12194,6 +12157,56 @@ export interface components {
             paidDms: number;
             communities: number;
         };
+        ReferralLadderStepView: {
+            verified: number;
+            multiplier: number;
+            reached: boolean;
+        };
+        ReferralNextMilestoneView: {
+            verified: number;
+            points: number;
+            remaining: number;
+        };
+        ReferralMilestoneView: {
+            verified: number;
+            points: number;
+            reached: boolean;
+            grantedAt: string | null;
+        };
+        ReferralRewardView: {
+            id: string;
+            name: string;
+            tierId: string;
+            tierName: string;
+            basePoints: number;
+            multiplier: number;
+            points: number;
+            /** @enum {string} */
+            state: "pending" | "cancelled" | "available";
+            availableAt: string;
+            settledAt: string | null;
+        };
+        MyReferralsView: {
+            link: string;
+            code: string;
+            brought: number;
+            verified: number;
+            pending: number;
+            pointsEarned: number;
+            pendingPoints: number;
+            multiplier: number;
+            level: number;
+            ladder: components["schemas"]["ReferralLadderStepView"][];
+            nextMilestone: components["schemas"]["ReferralNextMilestoneView"];
+            milestones: components["schemas"]["ReferralMilestoneView"][];
+            holdDays: number;
+            claimDays: number;
+            rewards: components["schemas"]["ReferralRewardView"][];
+        };
+        ClaimReferralView: {
+            code: string;
+            claimedAt: string;
+        };
         MeCountsView: {
             purchases: number;
             saved: number;
@@ -12338,35 +12351,6 @@ export interface components {
             paymentKind: "tier" | "tier_bump";
             payment: components["schemas"]["PaymentQuoteView"];
         };
-        PointsPackQuoteView: {
-            /** @enum {string} */
-            kind: "points_pack";
-            packId: string;
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            packMinor: number;
-            points: number;
-            bonusPercent: number;
-            bonusPoints: number;
-            totalPoints: number;
-            expiryDays: number;
-            /** @enum {string} */
-            paymentKind: "points_pack";
-            payment: components["schemas"]["PaymentQuoteView"];
-        };
-        ExtraProductsQuoteView: {
-            /** @enum {string} */
-            kind: "extra_products";
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            extraMinor: number;
-            products: number;
-            productsAllowed: number;
-            productsAllowedAfter: number;
-            /** @enum {string} */
-            paymentKind: "extra_products";
-            payment: components["schemas"]["PaymentQuoteView"];
-        };
         PlanPurchaseGrantView: {
             tier: components["schemas"]["MyTierSummaryView"];
             activeFrom: string;
@@ -12432,56 +12416,8 @@ export interface components {
             createdAt: string;
             paidAt: string | null;
         };
-        PointsPackGrantView: {
-            points: number;
-            bonusPoints: number;
-            totalPoints: number;
-            expiresAt: string;
-        };
-        PointsPackPurchaseView: {
-            id: string;
-            /** @enum {string} */
-            kind: "points_pack";
-            packId: string;
-            /** @enum {string} */
-            method: "transfer" | "wallet";
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            amountMinor: number;
-            points: number;
-            bonusPoints: number;
-            /** @enum {string} */
-            status: "pending" | "failed" | "reversed" | "expired" | "paid" | "awaiting_transfer";
-            statusMessage: string | null;
-            payment: components["schemas"]["PaymentView"] | null;
-            transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
-            grant: components["schemas"]["PointsPackGrantView"] | null;
-            createdAt: string;
-            paidAt: string | null;
-        };
-        ExtraProductsGrantView: {
-            productsAdded: number;
-            extraProducts: number;
-            productsAllowed: number;
-        };
-        ExtraProductsPurchaseView: {
-            id: string;
-            /** @enum {string} */
-            kind: "extra_products";
-            /** @enum {string} */
-            method: "transfer" | "wallet";
-            /** @enum {string} */
-            currency: "NGN" | "USD";
-            amountMinor: number;
-            products: number;
-            /** @enum {string} */
-            status: "pending" | "failed" | "reversed" | "expired" | "paid" | "awaiting_transfer";
-            statusMessage: string | null;
-            payment: components["schemas"]["PaymentView"] | null;
-            transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
-            grant: components["schemas"]["ExtraProductsGrantView"] | null;
-            createdAt: string;
-            paidAt: string | null;
+        PendingPlanPurchaseView: {
+            purchase: components["schemas"]["PlanPurchaseView"] | null;
         };
         BillReturnView: {
             /** @enum {string} */
@@ -12653,62 +12589,6 @@ export interface components {
             createdAt: string;
             completedAt: string | null;
         };
-        PointsCapView: {
-            /** @enum {string} */
-            cap: "daily" | "characters_per_job" | "minutes_per_job";
-            limit: number;
-            /** @enum {string} */
-            unit: "points" | "characters" | "minutes";
-            usedPoints: number | null;
-            remainingPoints: number | null;
-            resetsAt: string | null;
-            message: string;
-        };
-        PointsShortfallOfferView: {
-            /** @enum {string} */
-            currency: "NGN";
-            points: number;
-            priceKobo: number;
-            per1000PointsKobo: number;
-            payment: components["schemas"]["PaymentQuoteView"];
-        };
-        PointsQuoteView: {
-            action: string;
-            title: string;
-            /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
-            units: number;
-            languages: number;
-            perUnitPoints: number;
-            costPoints: number;
-            balancePoints: number;
-            shortfallPoints: number;
-            useWallet: boolean;
-            canRun: boolean;
-            cap: components["schemas"]["PointsCapView"] | null;
-            wallet: components["schemas"]["PointsShortfallOfferView"] | null;
-            walletNote: string | null;
-        };
-        PointsShortfallView: {
-            id: string;
-            /** @enum {string} */
-            currency: "NGN";
-            /** @enum {string} */
-            status: "pending" | "failed" | "reversed" | "paid";
-            statusMessage: string | null;
-            points: number;
-            amountKobo: number;
-            payment: components["schemas"]["PaymentView"];
-            grant: {
-                points: number;
-                expiresAt: string;
-            } | null;
-            createdAt: string;
-            paidAt: string | null;
-        };
-        PointsSettingsView: {
-            useWallet: boolean;
-        };
         AdminWaitlistRegistrationView: {
             id: string;
             offerId: string;
@@ -12871,7 +12751,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -12883,6 +12763,7 @@ export interface components {
             weight: number;
             creative: components["schemas"]["AdCreativeView"];
             event: components["schemas"]["AdEventView"];
+            needsArtwork: boolean;
             servingNow: boolean;
             delivery: components["schemas"]["AdCounts"];
             /** Format: date-time */
@@ -12895,11 +12776,13 @@ export interface components {
             generatedAt: string;
             filters: {
                 /** @enum {string|null} */
-                placement: "tgif_card" | "today_slot" | null;
+                placement: "tgif_card" | "today_slot" | "explore_slider" | null;
                 /** @enum {string|null} */
                 status: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
                 /** @enum {string|null} */
                 phase: "upcoming" | "running" | "over" | null;
+                /** @enum {string|null} */
+                artwork: "missing" | null;
                 /** Format: date-time */
                 from: string | null;
                 /** Format: date-time */
@@ -12917,6 +12800,7 @@ export interface components {
             deliveryByPlacement: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
             byStatus: {
                 ended: unknown;
@@ -12928,6 +12812,7 @@ export interface components {
             byPlacement: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
             byPhase: {
                 upcoming: unknown;
@@ -12937,7 +12822,9 @@ export interface components {
             servingNow: {
                 tgif_card: unknown;
                 today_slot: unknown;
+                explore_slider: unknown;
             };
+            needingArtwork: number;
         };
         AdOverlapView: {
             id: string;
@@ -12977,7 +12864,7 @@ export interface components {
             id: string;
             advertiser: string;
             /** @enum {string} */
-            placement: "tgif_card" | "today_slot";
+            placement: "tgif_card" | "today_slot" | "explore_slider";
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -12989,6 +12876,7 @@ export interface components {
             weight: number;
             creative: components["schemas"]["AdCreativeView"];
             event: components["schemas"]["AdEventView"];
+            needsArtwork: boolean;
             servingNow: boolean;
             delivery: components["schemas"]["AdCounts"];
             /** Format: date-time */
@@ -16917,11 +16805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        cancelled: boolean;
-                        ordersRefunded: number;
-                        refundsNeedingAttention: number;
-                    };
+                    "application/json": components["schemas"]["CancelEventAnswer"] | components["schemas"]["CancelEventAnswerWithSweep"];
                 };
             };
         };
@@ -16960,27 +16844,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoorEventList"];
-                };
-            };
-        };
-    };
-    EventRunningController_callOffPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CallOffPreview"];
                 };
             };
         };
@@ -18093,6 +17956,15 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
             /** @description reason.code: provider_unreachable */
             503: {
                 headers: {
@@ -18199,7 +18071,7 @@ export interface operations {
                     "application/json": components["schemas"]["PayoutAccountView"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening */
+            /** @description reason.code: wallet_not_open, wallet_opening, account_not_in_your_name */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18219,6 +18091,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18636,7 +18517,7 @@ export interface operations {
     MoneyPaymentsController_quote: {
         parameters: {
             query: {
-                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
+                kind: "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "bill" | "tier" | "tier_bump" | "points_cash_out";
                 /** @description The id the owning feature returns for the thing being paid for (docs/contract/WALLET.md). */
                 targetId: string;
                 /**
@@ -18996,7 +18877,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, account_name_changed */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, account_name_changed, account_not_in_your_name */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -19016,6 +18897,15 @@ export interface operations {
             };
             /** @description reason.code: wallet_frozen, pin_locked */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19170,6 +19060,15 @@ export interface operations {
             };
             /** @description reason.code: name_check_failed */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: name_check_rate_limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19828,6 +19727,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountDeletionResponse"];
+                };
+            };
+            /** @description account_deletion_blocked: money to settle first (reason.blockers, reason.balanceKobo). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletionBlockedBody"];
+                };
+            };
+        };
+    };
+    AccountController_cancelDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelDeletionResponseDto"];
                 };
             };
         };
@@ -23584,8 +23511,11 @@ export interface operations {
     AdsController_serve: {
         parameters: {
             query: {
-                /** @description `tgif_card` (the TGIF reader) or `today_slot` (Today, TGIF off). */
-                placement: "tgif_card" | "today_slot";
+                /**
+                 * @description `tgif_card` (the TGIF reader), `today_slot` (Today, TGIF off) or
+                 *     `explore_slider` (the Explore slider, ADS-07: a list of cards, not one).
+                 */
+                placement: "tgif_card" | "today_slot" | "explore_slider";
             };
             header?: never;
             path?: never;
@@ -23598,7 +23528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdCardView"];
+                    "application/json": (components["schemas"]["AdCardView"] | components["schemas"]["AdCardView"][]) | null;
                 };
             };
         };
@@ -24270,21 +24200,56 @@ export interface operations {
             };
         };
     };
+    ReferralsController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyReferralsView"];
+                };
+            };
+        };
+    };
+    ReferralsController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimReferralDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimReferralView"];
+                };
+            };
+        };
+    };
     PlanPurchasesController_quote: {
         parameters: {
             query: {
-                /**
-                 * @description `tier` (a first purchase, or after the last ended), `renew` (the tier
-                 *     held), `upgrade` (to a bigger tier), `points_pack` (a points pack,
-                 *     POINTS-02) or `extra_products` (more product places on the tier held,
-                 *     TIER-04, with no `tierId`, `packId` or `bump`).
-                 */
-                kind: "tier" | "renew" | "upgrade" | "points_pack" | "extra_products";
-                /** @description A tier in the plans file (`GET /plans`). Required for a tier purchase; not sent for a points pack. */
-                tierId?: string;
-                /** @description A pack in the plans file (`GET /plans` `packs`). Required for `points_pack`; not sent for a tier purchase. */
-                packId?: string;
-                /** @description Buy the checkout bump's extra points with it (VF6). Not for a points pack. */
+                /** @description `tier` (a first purchase, or after the last ended), `renew` (the tier held) or `upgrade` (to a bigger tier). */
+                kind: "tier" | "renew" | "upgrade";
+                /** @description A tier in the plans file (`GET /plans`). */
+                tierId: string;
+                /** @description Buy the checkout bump's extra points with it (VF6). */
                 bump?: boolean;
             };
             header?: never;
@@ -24298,20 +24263,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseQuoteView"] | components["schemas"]["PointsPackQuoteView"] | components["schemas"]["ExtraProductsQuoteView"];
+                    "application/json": components["schemas"]["PlanPurchaseQuoteView"];
                 };
             };
             /** @description reason.code: amount_out_of_range */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: tier_required */
-            402: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24382,7 +24338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"] | components["schemas"]["ExtraProductsPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
                 };
             };
             /** @description reason.code: idempotency_key_required, amount_out_of_range */
@@ -24394,7 +24350,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: insufficient_funds, tier_required */
+            /** @description reason.code: insufficient_funds */
             402: {
                 headers: {
                     [name: string]: unknown;
@@ -24450,6 +24406,25 @@ export interface operations {
             };
         };
     };
+    PlanPurchasesController_pending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingPlanPurchaseView"];
+                };
+            };
+        };
+    };
     PlanPurchasesController_read: {
         parameters: {
             query?: never;
@@ -24466,7 +24441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"] | components["schemas"]["PointsPackPurchaseView"] | components["schemas"]["ExtraProductsPurchaseView"];
+                    "application/json": components["schemas"]["PlanPurchaseView"] | components["schemas"]["PlanTransferOrderView"];
                 };
             };
             /** @description reason.code: not_found */
@@ -24983,7 +24958,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: target_not_payable */
+            /** @description reason.code: target_not_payable, event_order_limit */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -25058,7 +25033,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, event_order_limit */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -25345,194 +25320,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    PointsSpendController_quote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PointsQuoteDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PointsQuoteView"];
-                };
-            };
-        };
-    };
-    PointsSpendController_buyShortfall: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
-                "X-Transaction-Pin"?: string;
-                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
-                "X-Device-Approval"?: string;
-                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PointsShortfallDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PointsShortfallView"];
-                };
-            };
-            /** @description reason.code: idempotency_key_required, amount_out_of_range */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, points_not_short */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: points_cap_reached */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: wallet_frozen, pin_locked */
-            423: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-            /** @description reason.code: provider_unreachable, fees_not_set */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    PointsSpendController_readShortfall: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PointsShortfallView"];
-                };
-            };
-            /** @description reason.code: not_found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
-        };
-    };
-    PointsSettingsController_read: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PointsSettingsView"];
-                };
-            };
-        };
-    };
-    PointsSettingsController_set: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PointsSettingsDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PointsSettingsView"];
                 };
             };
         };

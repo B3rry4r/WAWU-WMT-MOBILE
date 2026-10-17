@@ -13578,37 +13578,6 @@
         ]
       }
     },
-    "/api/hub/events/{id}/call-off": {
-      "get": {
-        "operationId": "EventRunningController_callOffPreview",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CallOffPreview"
-                }
-              }
-            }
-          }
-        },
-        "summary": "How many people calling the event off would refund (E25).",
-        "tags": [
-          "EventRunning"
-        ]
-      }
-    },
     "/api/hub/events/{id}/door-staff": {
       "get": {
         "operationId": "EventRunningController_listDoorStaff",
@@ -16601,9 +16570,6 @@
                 "bill",
                 "tier",
                 "tier_bump",
-                "points_pack",
-                "extra_products",
-                "points_shortfall",
                 "points_cash_out"
               ]
             }
@@ -29829,33 +29795,21 @@
             "name": "kind",
             "required": true,
             "in": "query",
-            "description": "`tier` (a first purchase, or after the last ended), `renew` (the tier\nheld), `upgrade` (to a bigger tier), `points_pack` (a points pack,\nPOINTS-02) or `extra_products` (more product places on the tier held,\nTIER-04, with no `tierId`, `packId` or `bump`).",
+            "description": "`tier` (a first purchase, or after the last ended), `renew` (the tier held) or `upgrade` (to a bigger tier).",
             "schema": {
               "type": "string",
               "enum": [
                 "tier",
                 "renew",
-                "upgrade",
-                "points_pack",
-                "extra_products"
+                "upgrade"
               ]
             }
           },
           {
             "name": "tierId",
-            "required": false,
+            "required": true,
             "in": "query",
-            "description": "A tier in the plans file (`GET /plans`). Required for a tier purchase; not sent for a points pack.",
-            "schema": {
-              "pattern": "^[a-z][a-z0-9_]{0,63}$",
-              "type": "string"
-            }
-          },
-          {
-            "name": "packId",
-            "required": false,
-            "in": "query",
-            "description": "A pack in the plans file (`GET /plans` `packs`). Required for `points_pack`; not sent for a tier purchase.",
+            "description": "A tier in the plans file (`GET /plans`).",
             "schema": {
               "pattern": "^[a-z][a-z0-9_]{0,63}$",
               "type": "string"
@@ -29865,7 +29819,7 @@
             "name": "bump",
             "required": false,
             "in": "query",
-            "description": "Buy the checkout bump's extra points with it (VF6). Not for a points pack.",
+            "description": "Buy the checkout bump's extra points with it (VF6).",
             "schema": {
               "type": "boolean"
             }
@@ -29877,33 +29831,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/PlanPurchaseQuoteView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PointsPackQuoteView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExtraProductsQuoteView"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/PlanPurchaseQuoteView"
                 }
               }
             }
           },
           "400": {
             "description": "reason.code: amount_out_of_range",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "402": {
-            "description": "reason.code: tier_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -29958,7 +29892,7 @@
             "wawu-id": []
           }
         ],
-        "summary": "The pay sheet (VF6) before the PIN: the purchase priced in the caller's\nbilling currency (an upgrade is the difference of the two prices), the\nwallet provider's charge on top, the total, the wallet's balance and the\nshortfall, and the signed quote `POST /plans/purchases` sends back.\n`kind=points_pack&packId=` is a points pack (POINTS-02, PT4): answers a\n`PointsPackQuoteView` with the pack's price and points, the Founding\nMaker's bonus points (0 for anyone else) and how long the points last.\n`kind=extra_products` is the add-on that gives more product places\n(TIER-04, VF13): answers an `ExtraProductsQuoteView` with the price, how\nmany products it adds and the places the person has now and would have;\nwithout a tier that is running it is `402 tier_required`.\nNothing is reserved. A purchase that does not fit what the caller holds\nis `target_not_payable` with the reason in words; a plan payment still\ngoing through is `payment_in_progress`.",
+        "summary": "The pay sheet (VF6) before the PIN: the purchase priced in the caller's\nbilling currency (an upgrade is the difference of the two prices), the\nwallet provider's charge on top, the total, the wallet's balance and the\nshortfall, and the signed quote `POST /plans/purchases` sends back.\nNothing is reserved. A purchase that does not fit what the caller holds\nis `target_not_payable` with the reason in words; a plan payment still\ngoing through is `payment_in_progress`.",
         "tags": [
           "PlanPurchases"
         ]
@@ -30021,12 +29955,6 @@
                     },
                     {
                       "$ref": "#/components/schemas/PlanTransferOrderView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PointsPackPurchaseView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExtraProductsPurchaseView"
                     }
                   ]
                 }
@@ -30044,7 +29972,7 @@
             }
           },
           "402": {
-            "description": "reason.code: insufficient_funds, tier_required",
+            "description": "reason.code: insufficient_funds",
             "content": {
               "application/json": {
                 "schema": {
@@ -30109,7 +30037,34 @@
             "wawu-id": []
           }
         ],
-        "summary": "Pays for a tier from the wallet, once: the tier and its dates, the bonus\npoints as one lot with its expiry, the event pass and the first Voice\nIntro are granted when the payment is confirmed, and the checkout bump's\npoints with them when it was bought. Answers 201 with the purchase:\n`paid`, `pending` while the provider has not confirmed the debit yet\n(poll `GET /plans/purchases/{id}`; it is never sent again), or `failed`\nwhen the provider refused it and nothing moved. The same Idempotency-Key\nand body answer the first result again (`Idempotent-Replayed: true`)\nwithout checking the PIN. Not enough money is `402 insufficient_funds`\nwith the shortfall; no wallet is `409 wallet_not_open`.\n\n`method: transfer` (TIER-05, VF6 \"transfer details shown\") confirms the\npurchase with the PIN at the quote the person saw and takes nothing. It\nanswers 201 with a `PlanTransferOrderView`, `awaiting_transfer`: the\nwallet's own account number, bank and account name, the Bank charge and\nthe amount still needed (the total less the available balance, never\nbelow 0). The purchase is paid from the wallet, once, the moment the\nbalance covers the total, and then reads like any other purchase under\nthe same id. A quote that changed is `409 quote_changed`; the time to send\nthe money (an admin setting) runs out as `expired`, with nothing taken.\nTwo requests for one item leave one waiting purchase.\n\n`kind: points_pack` with a `packId` buys a points pack the same way\n(POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the\npack's points (plus the Founding Maker's bonus) is added once, ending\nafter the bought-points expiry, and the answer is a `PointsPackPurchaseView`\n(`kind: \"points_pack\"`).\n\n`kind: extra_products` (TIER-04, VF13) adds the settings' number of\nproducts to the tier the person holds, the same way: from the wallet or\nby transfer, added once, kept by the account whatever happens to the tier\nafter, and answered as an `ExtraProductsPurchaseView`\n(`kind: \"extra_products\"`). Without a tier that is running it is `402\ntier_required` and nothing is taken.",
+        "summary": "Pays for a tier from the wallet, once: the tier and its dates, the bonus\npoints as one lot with its expiry, the event pass and the first Voice\nIntro are granted when the payment is confirmed, and the checkout bump's\npoints with them when it was bought. Answers 201 with the purchase:\n`paid`, `pending` while the provider has not confirmed the debit yet\n(poll `GET /plans/purchases/{id}`; it is never sent again), or `failed`\nwhen the provider refused it and nothing moved. The same Idempotency-Key\nand body answer the first result again (`Idempotent-Replayed: true`)\nwithout checking the PIN. Not enough money is `402 insufficient_funds`\nwith the shortfall; no wallet is `409 wallet_not_open`.\n\n`method: transfer` (TIER-05, VF6 \"transfer details shown\") confirms the\npurchase with the PIN at the quote the person saw and takes nothing. It\nanswers 201 with a `PlanTransferOrderView`, `awaiting_transfer`: the\nwallet's own account number, bank and account name, the Bank charge and\nthe amount still needed (the total less the available balance, never\nbelow 0). The purchase is paid from the wallet, once, the moment the\nbalance covers the total, and then reads like any other purchase under\nthe same id. A quote that changed is `409 quote_changed`; the time to send\nthe money (an admin setting) runs out as `expired`, with nothing taken.\nTwo requests for one item leave one waiting purchase.",
+        "tags": [
+          "PlanPurchases"
+        ]
+      }
+    },
+    "/api/hub/plans/purchases/pending": {
+      "get": {
+        "operationId": "PlanPurchasesController_pending",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingPlanPurchaseView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The purchase still going through for the caller, or `purchase: null`\n(ME-13, M15): a payment still confirming, or confirmed and not yet\nopened, the same ones that make a second purchase `payment_in_progress`.\nDeclared before the id, so the word `pending` is not taken for an id. It\nneeds no wallet: a person with none has nothing going through.",
         "tags": [
           "PlanPurchases"
         ]
@@ -30140,12 +30095,6 @@
                     },
                     {
                       "$ref": "#/components/schemas/PlanTransferOrderView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/PointsPackPurchaseView"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ExtraProductsPurchaseView"
                     }
                   ]
                 }
@@ -31418,294 +31367,6 @@
           "PointsConvert"
         ],
         "x-wawu-built-by": "POINTS-04"
-      }
-    },
-    "/api/hub/points/quote": {
-      "post": {
-        "operationId": "PointsSpendController_quote",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PointsQuoteDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PointsQuoteView"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "What an AI job costs before it runs (PT1, PT2): the points from the\nsettings, the balance, the shortfall, the cap that stops it (PT7: `cap`\nnames itself and, for the day's, when it resets) and, with a shortfall and\n\"Use wallet\" on, the wallet money for exactly the shortfall (PT3) with\nthe signed quote `POST /points/shortfall` sends back. Holds nothing and\ntakes nothing: a 200, whatever it says. A tool that is not in the plan,\nor a count that is not a whole number above zero, is a 400.",
-        "tags": [
-          "PointsSpend"
-        ],
-        "x-wawu-built-by": "POINTS-03"
-      }
-    },
-    "/api/hub/points/shortfall": {
-      "post": {
-        "operationId": "PointsSpendController_buyShortfall",
-        "parameters": [
-          {
-            "name": "X-Transaction-Pin",
-            "in": "header",
-            "description": "The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "pattern": "^[0-9]{4}$"
-            }
-          },
-          {
-            "name": "X-Device-Approval",
-            "in": "header",
-            "description": "Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "pattern": "^v1\\.[0-9a-f-]{36}\\.[A-Za-z0-9_-]{8,200}$"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_-]{8,128}$"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PointsShortfallDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PointsShortfallView"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "reason.code: idempotency_key_required, amount_out_of_range",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "402": {
-            "description": "reason.code: insufficient_funds",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, points_not_short",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "reason.code: points_cap_reached",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "423": {
-            "description": "reason.code: wallet_frozen, pin_locked",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "reason.code: provider_unreachable, fees_not_set",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "Buys exactly the shortfall of one job from the wallet, once (PT3). The\nbody is the job as it was quoted plus `wallet.payment.totalKobo` and\n`wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One\nlot of the shortfall's points is added when the provider confirms the\ndebit, ending after the bought-points expiry. Answers 201 with the\npurchase: `paid`, `pending` while the provider has not confirmed (poll\n`GET /points/shortfall/{id}`; it is never sent again) or `failed` when\nnothing moved. The same Idempotency-Key and body answer the first result\nagain (`Idempotent-Replayed: true`) without checking the PIN. Refused with\nnothing taken and the key given back: `422 points_cap_reached` (buying points would not\nlet the job run), `409 points_not_short` (the person has enough now),\n`409 quote_changed` with the new quote (the balance, the rate or the\nexpiry moved), `409 wallet_not_open`.",
-        "tags": [
-          "PointsSpend"
-        ],
-        "x-wawu-built-by": "POINTS-03"
-      }
-    },
-    "/api/hub/points/shortfall/{id}": {
-      "get": {
-        "operationId": "PointsSpendController_readShortfall",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PointsShortfallView"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "reason.code: not_found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "One shortfall purchase as it stands now: what the app polls after\n`pending`. Only the buyer reads it; another person's and an id nobody\nholds are the same `404 not_found`.",
-        "tags": [
-          "PointsSpend"
-        ],
-        "x-wawu-built-by": "POINTS-03"
-      }
-    },
-    "/api/hub/me/points/settings": {
-      "get": {
-        "operationId": "PointsSettingsController_read",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PointsSettingsView"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "\"Use wallet\", off until the person turns it on.",
-        "tags": [
-          "PointsSettings"
-        ],
-        "x-wawu-built-by": "POINTS-03"
-      },
-      "put": {
-        "operationId": "PointsSettingsController_set",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PointsSettingsDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PointsSettingsView"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "wawu-id": []
-          }
-        ],
-        "summary": "Turns \"Use wallet\" on or off. Moves nothing: it only decides whether a\npoints quote shows the wallet money for a shortfall.",
-        "tags": [
-          "PointsSettings"
-        ],
-        "x-wawu-built-by": "POINTS-03"
       }
     },
     "/api/hub/waitlist/offers/current": {
@@ -34876,10 +34537,7 @@
               "below_minimum",
               "insufficient_points",
               "currency_not_supported",
-              "event_order_limit",
-              "points_cap_reached",
-              "points_not_short",
-              "tier_required"
+              "event_order_limit"
             ],
             "type": "string"
           },
@@ -34968,41 +34626,6 @@
           "shortfallPoints": {
             "type": "integer",
             "description": "insufficient_points: neededPoints minus balancePoints."
-          },
-          "cap": {
-            "description": "points_cap_reached (POINTS-03): which cap stopped the job.",
-            "enum": [
-              "daily",
-              "characters_per_job",
-              "minutes_per_job"
-            ],
-            "type": "string"
-          },
-          "capLimit": {
-            "type": "integer",
-            "description": "points_cap_reached: the cap's size, in `capUnit`."
-          },
-          "capUnit": {
-            "description": "points_cap_reached: what the cap counts.",
-            "enum": [
-              "points",
-              "characters",
-              "minutes"
-            ],
-            "type": "string"
-          },
-          "usedPoints": {
-            "type": "integer",
-            "description": "points_cap_reached, daily cap: points of AI jobs held or spent today."
-          },
-          "remainingPoints": {
-            "type": "integer",
-            "description": "points_cap_reached, daily cap: points still free today."
-          },
-          "resetsAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "points_cap_reached, daily cap: when the day's count starts again (ISO 8601)."
           },
           "message": {
             "type": "string",
@@ -35419,9 +35042,6 @@
               "bill",
               "tier",
               "tier_bump",
-              "points_pack",
-              "extra_products",
-              "points_shortfall",
               "points_cash_out"
             ],
             "type": "string"
@@ -37860,25 +37480,17 @@
             "enum": [
               "tier",
               "renew",
-              "upgrade",
-              "points_pack",
-              "extra_products"
+              "upgrade"
             ],
             "type": "string"
           },
           "tierId": {
             "type": "string",
-            "description": "Required for a tier purchase; not sent for a points pack.",
-            "pattern": "^[a-z][a-z0-9_]{0,63}$"
-          },
-          "packId": {
-            "type": "string",
-            "description": "Required for `points_pack`; not sent for a tier purchase.",
             "pattern": "^[a-z][a-z0-9_]{0,63}$"
           },
           "bump": {
             "type": "boolean",
-            "description": "Buy the checkout bump's extra points with it. Default: no. Not for a points pack."
+            "description": "Buy the checkout bump's extra points with it. Default: no."
           },
           "method": {
             "description": "How it is paid: `wallet` from the balance now, or `transfer`: the answer\ncarries the wallet's own account number and the amount still needed, and\nthe purchase is paid from the wallet when the money lands.",
@@ -37903,6 +37515,7 @@
         },
         "required": [
           "kind",
+          "tierId",
           "method",
           "expectedTotalKobo",
           "quoteToken"
@@ -38086,122 +37699,6 @@
         "required": [
           "points",
           "quoteToken"
-        ]
-      },
-      "PointsQuoteDto": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "description": "The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).",
-            "enum": [
-              "say_my_name",
-              "voice_intro",
-              "voiceover_per_min",
-              "quick_voice_per_min",
-              "captions_per_min",
-              "clean_audio_per_min",
-              "music_per_track",
-              "sfx",
-              "dub_standard_per_min_lang",
-              "dub_premium_per_min_lang",
-              "receptionist_message",
-              "receptionist_voice_per_min"
-            ]
-          },
-          "units": {
-            "type": "integer",
-            "description": "How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which).",
-            "minimum": 1,
-            "maximum": 2147483647
-          },
-          "languages": {
-            "type": "integer",
-            "description": "Dubbing only: how many languages (1 when left out). Any other action refuses more than 1.",
-            "minimum": 1,
-            "maximum": 100
-          },
-          "characters": {
-            "type": "integer",
-            "description": "The text's length in characters, for a job that takes text; checked against the per-job cap.",
-            "minimum": 0,
-            "maximum": 100000000
-          }
-        },
-        "required": [
-          "action",
-          "units"
-        ]
-      },
-      "PointsShortfallDto": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "description": "The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).",
-            "enum": [
-              "say_my_name",
-              "voice_intro",
-              "voiceover_per_min",
-              "quick_voice_per_min",
-              "captions_per_min",
-              "clean_audio_per_min",
-              "music_per_track",
-              "sfx",
-              "dub_standard_per_min_lang",
-              "dub_premium_per_min_lang",
-              "receptionist_message",
-              "receptionist_voice_per_min"
-            ]
-          },
-          "units": {
-            "type": "integer",
-            "description": "How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which).",
-            "minimum": 1,
-            "maximum": 2147483647
-          },
-          "languages": {
-            "type": "integer",
-            "description": "Dubbing only: how many languages (1 when left out). Any other action refuses more than 1.",
-            "minimum": 1,
-            "maximum": 100
-          },
-          "characters": {
-            "type": "integer",
-            "description": "The text's length in characters, for a job that takes text; checked against the per-job cap.",
-            "minimum": 0,
-            "maximum": 100000000
-          },
-          "expectedTotalKobo": {
-            "type": "integer",
-            "description": "`wallet.payment.totalKobo` from the points quote the person saw. A different server total is `quote_changed`.",
-            "minimum": 1,
-            "maximum": 9007199254740991
-          },
-          "quoteToken": {
-            "type": "string",
-            "description": "`wallet.payment.quoteToken` from that quote: the server checks it is its own, for this person and this shortfall, and not past its end.",
-            "minLength": 1,
-            "maxLength": 1024
-          }
-        },
-        "required": [
-          "action",
-          "units",
-          "expectedTotalKobo",
-          "quoteToken"
-        ]
-      },
-      "PointsSettingsDto": {
-        "type": "object",
-        "properties": {
-          "useWallet": {
-            "type": "boolean",
-            "description": "\"Use wallet\": when points run short, the quote shows the wallet money for the shortfall. Off by default."
-          }
-        },
-        "required": [
-          "useWallet"
         ]
       },
       "CreateWaitlistRegistrationDto": {
@@ -38653,9 +38150,6 @@
               "event_ticket",
               "tier",
               "tier_bump",
-              "points_pack",
-              "extra_products",
-              "points_shortfall",
               "points_cash_out"
             ]
           },
@@ -39871,9 +39365,6 @@
               "event_ticket",
               "tier",
               "tier_bump",
-              "points_pack",
-              "extra_products",
-              "points_shortfall",
               "points_cash_out"
             ]
           },
@@ -39971,9 +39462,6 @@
               "event_ticket",
               "tier",
               "tier_bump",
-              "points_pack",
-              "extra_products",
-              "points_shortfall",
               "points_cash_out"
             ]
           },
@@ -40062,9 +39550,6 @@
               "event_ticket",
               "tier",
               "tier_bump",
-              "points_pack",
-              "extra_products",
-              "points_shortfall",
               "points_cash_out"
             ]
           },
@@ -45832,17 +45317,6 @@
           "ticketsSold",
           "revenueNaira",
           "createdAt"
-        ]
-      },
-      "CallOffPreview": {
-        "type": "object",
-        "properties": {
-          "buyersToRefund": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "buyersToRefund"
         ]
       },
       "DoorStaffView": {
@@ -55206,116 +54680,6 @@
           "payment"
         ]
       },
-      "PointsPackQuoteView": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "points_pack"
-            ]
-          },
-          "packId": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN",
-              "USD"
-            ]
-          },
-          "packMinor": {
-            "type": "integer"
-          },
-          "points": {
-            "type": "integer"
-          },
-          "bonusPercent": {
-            "type": "integer"
-          },
-          "bonusPoints": {
-            "type": "integer"
-          },
-          "totalPoints": {
-            "type": "integer"
-          },
-          "expiryDays": {
-            "type": "integer"
-          },
-          "paymentKind": {
-            "type": "string",
-            "enum": [
-              "points_pack"
-            ]
-          },
-          "payment": {
-            "$ref": "#/components/schemas/PaymentQuoteView"
-          }
-        },
-        "required": [
-          "kind",
-          "packId",
-          "currency",
-          "packMinor",
-          "points",
-          "bonusPercent",
-          "bonusPoints",
-          "totalPoints",
-          "expiryDays",
-          "paymentKind",
-          "payment"
-        ]
-      },
-      "ExtraProductsQuoteView": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "extra_products"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN",
-              "USD"
-            ]
-          },
-          "extraMinor": {
-            "type": "integer"
-          },
-          "products": {
-            "type": "integer"
-          },
-          "productsAllowed": {
-            "type": "integer"
-          },
-          "productsAllowedAfter": {
-            "type": "integer"
-          },
-          "paymentKind": {
-            "type": "string",
-            "enum": [
-              "extra_products"
-            ]
-          },
-          "payment": {
-            "$ref": "#/components/schemas/PaymentQuoteView"
-          }
-        },
-        "required": [
-          "kind",
-          "currency",
-          "extraMinor",
-          "products",
-          "productsAllowed",
-          "productsAllowedAfter",
-          "paymentKind",
-          "payment"
-        ]
-      },
       "PlanPurchaseGrantView": {
         "type": "object",
         "properties": {
@@ -55613,244 +54977,20 @@
           "paidAt"
         ]
       },
-      "PointsPackGrantView": {
+      "PendingPlanPurchaseView": {
         "type": "object",
         "properties": {
-          "points": {
-            "type": "integer"
-          },
-          "bonusPoints": {
-            "type": "integer"
-          },
-          "totalPoints": {
-            "type": "integer"
-          },
-          "expiresAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "points",
-          "bonusPoints",
-          "totalPoints",
-          "expiresAt"
-        ]
-      },
-      "PointsPackPurchaseView": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "points_pack"
-            ]
-          },
-          "packId": {
-            "type": "string"
-          },
-          "method": {
-            "type": "string",
-            "enum": [
-              "transfer",
-              "wallet"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN",
-              "USD"
-            ]
-          },
-          "amountMinor": {
-            "type": "integer"
-          },
-          "points": {
-            "type": "integer"
-          },
-          "bonusPoints": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "failed",
-              "reversed",
-              "expired",
-              "paid",
-              "awaiting_transfer"
-            ]
-          },
-          "statusMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "payment": {
+          "purchase": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PaymentView"
+                "$ref": "#/components/schemas/PlanPurchaseView"
               }
             ],
-            "nullable": true
-          },
-          "transfer": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PlanPurchaseTransferView"
-              }
-            ],
-            "nullable": true
-          },
-          "grant": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PointsPackGrantView"
-              }
-            ],
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "paidAt": {
-            "type": "string",
             "nullable": true
           }
         },
         "required": [
-          "id",
-          "kind",
-          "packId",
-          "method",
-          "currency",
-          "amountMinor",
-          "points",
-          "bonusPoints",
-          "status",
-          "statusMessage",
-          "payment",
-          "transfer",
-          "grant",
-          "createdAt",
-          "paidAt"
-        ]
-      },
-      "ExtraProductsGrantView": {
-        "type": "object",
-        "properties": {
-          "productsAdded": {
-            "type": "integer"
-          },
-          "extraProducts": {
-            "type": "integer"
-          },
-          "productsAllowed": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "productsAdded",
-          "extraProducts",
-          "productsAllowed"
-        ]
-      },
-      "ExtraProductsPurchaseView": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "extra_products"
-            ]
-          },
-          "method": {
-            "type": "string",
-            "enum": [
-              "transfer",
-              "wallet"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN",
-              "USD"
-            ]
-          },
-          "amountMinor": {
-            "type": "integer"
-          },
-          "products": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "failed",
-              "reversed",
-              "expired",
-              "paid",
-              "awaiting_transfer"
-            ]
-          },
-          "statusMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "payment": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentView"
-              }
-            ],
-            "nullable": true
-          },
-          "transfer": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PlanPurchaseTransferView"
-              }
-            ],
-            "nullable": true
-          },
-          "grant": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ExtraProductsGrantView"
-              }
-            ],
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "paidAt": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "method",
-          "currency",
-          "amountMinor",
-          "products",
-          "status",
-          "statusMessage",
-          "payment",
-          "transfer",
-          "grant",
-          "createdAt",
-          "paidAt"
+          "purchase"
         ]
       },
       "BillReturnView": {
@@ -56585,247 +55725,6 @@
           "failureReason",
           "createdAt",
           "completedAt"
-        ]
-      },
-      "PointsCapView": {
-        "type": "object",
-        "properties": {
-          "cap": {
-            "type": "string",
-            "enum": [
-              "daily",
-              "characters_per_job",
-              "minutes_per_job"
-            ]
-          },
-          "limit": {
-            "type": "number"
-          },
-          "unit": {
-            "type": "string",
-            "enum": [
-              "points",
-              "characters",
-              "minutes"
-            ]
-          },
-          "usedPoints": {
-            "type": "number",
-            "nullable": true
-          },
-          "remainingPoints": {
-            "type": "number",
-            "nullable": true
-          },
-          "resetsAt": {
-            "type": "string",
-            "nullable": true
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "cap",
-          "limit",
-          "unit",
-          "usedPoints",
-          "remainingPoints",
-          "resetsAt",
-          "message"
-        ]
-      },
-      "PointsShortfallOfferView": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN"
-            ]
-          },
-          "points": {
-            "type": "number"
-          },
-          "priceKobo": {
-            "type": "integer"
-          },
-          "per1000PointsKobo": {
-            "type": "integer"
-          },
-          "payment": {
-            "$ref": "#/components/schemas/PaymentQuoteView"
-          }
-        },
-        "required": [
-          "currency",
-          "points",
-          "priceKobo",
-          "per1000PointsKobo",
-          "payment"
-        ]
-      },
-      "PointsQuoteView": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "per": {
-            "type": "string",
-            "enum": [
-              "use",
-              "minute",
-              "track",
-              "message",
-              "minute_per_language"
-            ]
-          },
-          "units": {
-            "type": "number"
-          },
-          "languages": {
-            "type": "number"
-          },
-          "perUnitPoints": {
-            "type": "number"
-          },
-          "costPoints": {
-            "type": "number"
-          },
-          "balancePoints": {
-            "type": "number"
-          },
-          "shortfallPoints": {
-            "type": "number"
-          },
-          "useWallet": {
-            "type": "boolean"
-          },
-          "canRun": {
-            "type": "boolean"
-          },
-          "cap": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PointsCapView"
-              }
-            ],
-            "nullable": true
-          },
-          "wallet": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PointsShortfallOfferView"
-              }
-            ],
-            "nullable": true
-          },
-          "walletNote": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "action",
-          "title",
-          "per",
-          "units",
-          "languages",
-          "perUnitPoints",
-          "costPoints",
-          "balancePoints",
-          "shortfallPoints",
-          "useWallet",
-          "canRun",
-          "cap",
-          "wallet",
-          "walletNote"
-        ]
-      },
-      "PointsShortfallView": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "NGN"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "failed",
-              "reversed",
-              "paid"
-            ]
-          },
-          "statusMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "points": {
-            "type": "number"
-          },
-          "amountKobo": {
-            "type": "integer"
-          },
-          "payment": {
-            "$ref": "#/components/schemas/PaymentView"
-          },
-          "grant": {
-            "type": "object",
-            "properties": {
-              "points": {
-                "type": "number"
-              },
-              "expiresAt": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "points",
-              "expiresAt"
-            ],
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "paidAt": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "currency",
-          "status",
-          "statusMessage",
-          "points",
-          "amountKobo",
-          "payment",
-          "grant",
-          "createdAt",
-          "paidAt"
-        ]
-      },
-      "PointsSettingsView": {
-        "type": "object",
-        "properties": {
-          "useWallet": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "useWallet"
         ]
       },
       "AdminWaitlistRegistrationView": {
