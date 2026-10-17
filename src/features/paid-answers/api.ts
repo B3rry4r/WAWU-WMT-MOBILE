@@ -8,7 +8,7 @@ import type { components } from '@/api/schema.generated';
  * - `GET /paid-dm/queue`: the waiting list, soonest deadline first, a page at a time (the I9 rows);
  * - `GET /paid-dm/threads/{wawuId}?as=creator`: one fan's questions with their replies, each with what the creator earns by it
  *   (`creatorEarning`: the Hub's share, its percent and where the share is), newest first (I10, I11);
- * - `POST /paid-dm/questions/{messageId}/replies`: the answer, a write.
+ * - `POST /paid-dm/questions/{messageId}/replies`: the answer, a write, sent with an `Idempotency-Key` (one per reply attempt).
  * Every figure on these screens is read from these answers; the app adds up and divides nothing (R-5, R-21).
  */
 export type PaidWaiting = components['schemas']['PaidDmWaiting'];
@@ -69,10 +69,19 @@ export async function fetchThreadPage(wawuId: string, cursor?: string): Promise<
   return page;
 }
 
-/** The answer: one request per tap. The Hub's refusal (window closed, already settled) keeps its own words in the ApiError. */
-export async function postReply(messageId: string, text: string): Promise<PaidQuestion> {
+/**
+ * The answer. The `Idempotency-Key` is one per reply attempt and travels again, unchanged, on every retry of that attempt: the
+ * Hub stores the reply once per key and answers a repeat with the first (INBOX-18 round 2), so a lost answer is safe to send
+ * again. The Hub's refusal (window closed, already settled) keeps its own words in the ApiError.
+ */
+export async function postReply(messageId: string, text: string, key: string): Promise<PaidQuestion> {
   return dataOf<PaidQuestion>(
-    await unwrap(api.POST('/api/hub/paid-dm/questions/{messageId}/replies', { params: { path: { messageId } }, body: { text } })),
+    await unwrap(
+      api.POST('/api/hub/paid-dm/questions/{messageId}/replies', {
+        params: { path: { messageId }, header: { 'Idempotency-Key': key } },
+        body: { text },
+      }),
+    ),
     'answer',
   );
 }

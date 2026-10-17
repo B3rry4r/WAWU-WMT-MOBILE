@@ -19,6 +19,7 @@ import { DayLabel, TextBubble } from '@/features/chat/Bubbles';
 import { dayKey, dayLabel, firstName } from '@/features/communities/format';
 import { hueFor } from '@/features/feed/model';
 import { inboxKey } from '@/features/inbox/api';
+import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, radius, space, text as textStyles, useWawu } from '@/theme';
 
 import { fetchThreadPage, openFreeChat, paidKeys, postReply, type PaidQuestion, type PaidThreadDetail } from './api';
@@ -34,8 +35,6 @@ const lineHeight = composerMetrics.fieldFont * composerMetrics.fieldLine;
 const maxField = composerMetrics.fieldPadV * 2 + lineHeight * composerMetrics.maxLines;
 /** How often the conversation is read again while a question is open or its share has not landed: a share moves in the creator's one move a day (R-55). */
 const REFRESH_MS = 30_000;
-/** A reply read back after a lost answer counts as the one just sent only if the Hub made it within this long of the tap. */
-const SAME_TAP_MS = 120_000;
 const naira = (kobo: number) => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
 
 export type PaidThreadScreenProps = {
@@ -104,7 +103,14 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: 
     [key],
   );
 
-  /** Takes the words; true means the Hub took them (the field clears). One request per tap: a second tap while one is out does nothing. */
+  /** The key of the reply attempt in hand: the same question and words keep it across a retry, other words or another question make a new one. */
+  const attempt = useRef<{ questionId: string; text: string; key: string } | null>(null);
+
+  /**
+   * Takes the words; true means the Hub took them (the field clears). One request at a time: a second tap while one is out does
+   * nothing. The request carries the attempt's `Idempotency-Key`, so a retry after a lost answer, or a second tap that slips
+   * through, is the same reply to the Hub: it stores one and answers a repeat with the first.
+   */
   const send = useCallback(
     async (words: string): Promise<boolean> => {
       if (sending.current || !open) return false;
@@ -113,18 +119,24 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: 
       sending.current = true;
       setBusy(true);
       setNotice(null);
-      const tappedAt = Date.now();
+      if (attempt.current?.questionId !== open.id || attempt.current.text !== text) attempt.current = { questionId: open.id, text, key: newRequestKey() };
+      const { key } = attempt.current;
+      // The replies the Hub already holds on this question: one that appears after the tap, with these words, is the one just sent.
+      const held = new Set(open.replies.map((r) => r.id));
       try {
-        patch(await postReply(open.id, text));
+        patch(await postReply(open.id, text, key));
+        attempt.current = null;
         return true;
       } catch (error) {
         const lost = !isApiError(error) || error.kind === 'network' || error.kind === 'server' || error.kind === 'unknown';
         if (lost) {
-          // The answer may have reached the Hub before the line dropped: read the conversation before saying it failed, and never send twice.
+          // The answer may have reached the Hub before the line dropped: read the conversation before saying it failed. If it is
+          // not there, the next tap sends the same key, so the Hub cannot make a second reply of it.
           const fresh = await refetch().catch(() => null);
           const there = fresh?.data?.pages.flatMap((p) => p.questions).find((q) => q.id === open.id);
-          if (there?.replies.some((r) => r.text === text && Math.abs(new Date(r.createdAt).getTime() - tappedAt) < SAME_TAP_MS)) {
+          if (there?.replies.some((r) => r.text === text && !held.has(r.id))) {
             patch(there);
+            attempt.current = null;
             return true;
           }
           setNotice(isApiError(error) && error.kind !== 'unknown' ? error.message : 'Your answer could not be sent. Try again.');

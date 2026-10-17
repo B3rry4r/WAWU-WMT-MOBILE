@@ -1,1 +1,1 @@
-98efeef (wmt/MERGE-12), plus 5dc9fa3 (wmt/INBOX-18 backend): the paid-question share and GET /paid-dm/waiting
+98efeef (wmt/MERGE-12), plus 3381b7c (wmt/INBOX-18 backend): the paid-question share, GET /paid-dm/waiting and the reply's optional Idempotency-Key

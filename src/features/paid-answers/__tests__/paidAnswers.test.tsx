@@ -49,6 +49,10 @@ const hub = {
   replyMode: 'ok' as 'ok' | 'late' | 'lost_before' | 'lost_after' | 'slow',
   afterState: 'on_its_way' as EarningState,
   replies: [] as { id: string; text: string }[],
+  /** The `Idempotency-Key` each reply request carried, in order (null when the request carried none). */
+  keys: [] as (string | null)[],
+  /** How far the Hub's clock is from the device's: a reply's `createdAt` is made this many ms away from now. */
+  skewMs: 0,
   chats: 0,
 };
 
@@ -74,7 +78,7 @@ function question(over: Partial<Q> = {}): Q {
 function applyReply(q: Q, text: string) {
   q.status = 'responded';
   q.respondedAt = new Date().toISOString();
-  q.replies.push({ id: `r${q.replies.length + 1}`, text, createdAt: new Date().toISOString() });
+  q.replies.push({ id: `r${q.replies.length + 1}`, text, createdAt: new Date(Date.now() + hub.skewMs).toISOString() });
   if (q.creatorEarning) q.creatorEarning = { ...q.creatorEarning, state: hub.afterState };
 }
 
@@ -102,6 +106,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (reply) {
     const body = (await request.json()) as { text: string };
     hub.replies.push({ id: reply[1], text: body.text });
+    hub.keys.push(request.headers.get('idempotency-key'));
     const q = hub.thread.questions.find((x) => x.id === reply[1])!;
     if (hub.replyMode === 'lost_before') throw new TypeError('Network request failed');
     if (hub.replyMode === 'late') {
@@ -150,6 +155,8 @@ beforeEach(() => {
     replyMode: 'ok',
     afterState: 'on_its_way',
     replies: [],
+    keys: [],
+    skewMs: 0,
     chats: 0,
   });
 });
@@ -319,6 +326,55 @@ describe('I10 · Reply and I11 · Answered', () => {
     await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
     await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-message-bar')).toBeTruthy());
     expect(hub.replies).toHaveLength(2);
+  });
+
+  it('every reply carries an Idempotency-Key the Hub can hold (8 to 128 of letters, digits, - and _)', async () => {
+    hub.thread.questions = [question()];
+    await draw(open().ui);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-composer-input')).toBeTruthy());
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('paid-composer-input'), 'Price the use.');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-message-bar')).toBeTruthy());
+    expect(hub.keys).toHaveLength(1);
+    expect(hub.keys[0]).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+  });
+
+  it('a retry of the same reply reuses its key, and other words make a new reply with a new key', async () => {
+    hub.replyMode = 'lost_before';
+    hub.thread.questions = [question()];
+    await draw(open().ui);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-composer-input')).toBeTruthy());
+    const input = () => rtl.screen.getByTestId('paid-composer-input');
+    await rtl.fireEvent.changeText(input(), 'Price the use.');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-thread-notice')).toBeTruthy());
+    // The same words again: the same reply attempt.
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
+    await rtl.waitFor(() => expect(hub.keys).toHaveLength(2));
+    expect(hub.keys[1]).toBe(hub.keys[0]);
+    // Other words: a new reply.
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-thread-notice')).toBeTruthy());
+    await rtl.fireEvent.changeText(input(), 'Price the use, and the term.');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
+    await rtl.waitFor(() => expect(hub.keys).toHaveLength(3));
+    expect(hub.keys[2]).not.toBe(hub.keys[0]);
+    expect(hub.keys[2]).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
+  });
+
+  it('a retry after a lost answer that did reach the Hub carries the same key, whatever the device clock says', async () => {
+    // The Hub made the reply and the line dropped; the Hub's clock is ten minutes ahead of the device's.
+    hub.skewMs = 10 * MIN;
+    hub.replyMode = 'lost_after';
+    hub.thread.questions = [question()];
+    await draw(open().ui);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-composer-input')).toBeTruthy());
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('paid-composer-input'), 'Price the use.');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-composer-send'));
+    // Read back by the Hub's own reply id, not by comparing its time with the device's: the field clears, nothing is sent again.
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-message-bar')).toBeTruthy());
+    expect(rtl.screen.queryByTestId('paid-thread-notice')).toBeNull();
+    expect(hub.replies).toHaveLength(1);
+    expect(hub.keys).toHaveLength(1);
   });
 
   it('Message on an answered question opens the free chat with that person (I12)', async () => {
