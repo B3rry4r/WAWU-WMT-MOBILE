@@ -17,8 +17,8 @@ artboards: [W39]
 
 ## Current state
 
-As of 17 Oct 2026, built by a Sonnet builder (T1), waiting for a verifier.
-- **Status:** verifying.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: PASS (one low) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-13.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
 - **Branch:** mobile `wmt/WALLET-13` on origin/wmt/MERGE-10 `4b854ee4` with origin/wmt/WALLET-16-R55 `e0f033e` merged (merge `70fc120e`); code head `7e4098e7`. No backend change: it reads WALLET-16's `GET /money/earnings` and `/content` (backend wmt/WALLET-16-R55 `9580bb0`). No migration, no fenced-file change, no SHARED-CHANGES row.
 - **Built:** W39 at `/earnings` (`src/features/wallet/earnings/`, `src/app/earnings.tsx`). This month's earnings big with all time under it (the Hub's figures, nothing added up here); the month by Unlocks, Tips and Paid DMs and any other stream the Hub lists; the month piece by piece with Show more (the Hub's cursor); no Move to wallet, no Ready to move (R-11). Money still waiting (the Hub's `waiting`): no wallet leads to "Open your wallet" and says it lands the moment one is opened; with a wallet it says once a day (R-55). States: loading, error with Try again, offline, nothing earned yet, a month with nothing, pieces failing alone.
 - **Not drawn (R-47):** the calendar button (no board draws the month chooser, G-WALLET-13-1); pieces' pictures and format line (not served, G-WALLET-13-2); the next move's time and the floor (G-WALLET-13-3); `held` money and sales from before the sweep start (G-WALLET-13-4).
@@ -27,7 +27,7 @@ As of 17 Oct 2026, built by a Sonnet builder (T1), waiting for a verifier.
 - **Stack `w13` (ports 7880-7887, Nuvion stand-in), walked:** a creator with a wallet whose move landed (nothing waiting); the same with a small tip after the day's move (waiting, once a day); a creator with no wallet (waiting, Open your wallet opens A31, back returns); a creator with nothing earned; sales completed before the sweep start (two unlocks) are in no figure and unpaid, as the Hub says; loading and error through held and failed requests. Month with nothing: no real cause on the stack (an earning's date is guarded), picture fed by the Hub's own answer with the month emptied; covered by a jest test.
 - **Pictures:** `scratchpad/wallet-13-b/pics/` (every state, 390 px, light and dark, beside `W39-board-*.png`).
 - **Open findings:** none graded yet.
-- **Next:** a lean verifier (V1, V5, V6, V9 on the stack); ME-07 adds the entry.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (L1).
 - **History:** tasks/history/WALLET-13.md.
 
 ## Read first

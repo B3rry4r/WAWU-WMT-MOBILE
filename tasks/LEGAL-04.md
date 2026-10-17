@@ -17,8 +17,8 @@ artboards: [S18, S19, S20, S25]
 
 ## Current state
 
-As of 17 Oct 2026, built (bundle S4, Sonnet builder), waiting for a verifier.
-- **Status:** verifying. Mobile `wmt/S4` on `origin/wmt/MERGE-8` `cc436a53`, with `origin/wmt/B1` merged (LEGAL-05's contract copy, backend `wmt/B1` `e41210e`). No backend change, no migration, no PR. LEGAL-06 is built in the same branch.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge (lows only) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S4.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main. Built: Mobile `wmt/S4` on `origin/wmt/MERGE-8` `cc436a53`, with `origin/wmt/B1` merged (LEGAL-05's contract copy, backend `wmt/B1` `e41210e`). No backend change, no migration, no PR. LEGAL-06 is built in the same branch.
 - **Built** (`src/features/legal/book`, `pay`, `matter`, routes `src/app/legal-book.tsx` and `legal-matter.tsx`): **S17's card** in the chat ("Book a consultation", then the way back to the matter once booked); **S18** (cards from `GET /legal/consultation/options`, days and hours from the Hub's calendar per kind, a taken hour greyed, "Pay ₦X" with the price of the kind picked); **S19** (the shared pay sheet and PIN sheet over S18: price, "Bank charge", total, "Pay from wallet"); **S20** (the matter's steps, "Consultation booked.", Add to calendar through the phone's own new-event screen); **S25** ("No slots in the next three weeks" from the Hub's horizon, Request in person).
 - **Rules held:** a fresh quote per tap on Pay; one `Idempotency-Key` per attempt, sent again unchanged after a wrong PIN and after an answer that never came; a payment the Hub took and has not finished is only read, never sent again; no wallet goes to Open your wallet (R-6); every figure is the Hub's.
 - **Attacks on the stack** (Hub 7740, Nuvion stand-in, ledger read after each; the app's behaviour is in `LegalPayments.test.tsx`): double tap one debit; wrong PIN nothing moved, then the right PIN with the same key one debit; short balance 402 nothing moved; a lost answer then a retry one debit; a quote that changed (price changed and re-booked after the quote) 409 `quote_changed` nothing moved; a request cancelled before paying 409 `target_not_payable` nothing moved. Record: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/../logs/live-attacks.txt`.
@@ -29,6 +29,7 @@ As of 17 Oct 2026, built (bundle S4, Sonnet builder), waiting for a verifier.
 - **Pictures** (390 px, light and dark, boards beside them as `*-board-*`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/`.
 - **Round 2 (17 Oct 2026, Sonnet builder; verify/S4.md F3, F4):** S18's card and button follow a changed price (the options are read again when the quote names another price, once per price); a request the Hub says cannot be paid (cancelled) draws no Pay under its sentence, and a different hour or kind draws it again. Tests: 3 new in `LegalPayments.test.tsx`; S17's Book and Open taps are tested in `LegalChatScreen.test.tsx` (5 new with S24's). The wrong file name in the LEGAL-02 comment is fixed. Not here (shared rows): F2 the blank tile in the pay sheet, F5 the PIN sheet's lost-answer line.
 - **History:** `tasks/history/LEGAL-04.md`.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S4 F2, F5).
 
 ## Read first
 

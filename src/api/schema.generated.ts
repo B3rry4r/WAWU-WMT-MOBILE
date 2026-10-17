@@ -2882,7 +2882,10 @@ export interface paths {
          *     wallet yet, or an item not priced in naira, is target_not_payable.
          *     While the running provider's fees are not set, fees_not_set before
          *     anything else (NUV-07); `withinDailyLimit` and `remainingTodayKobo` say
-         *     where today's purchase limit stands.
+         *     where today's purchase limit stands. For a school fee (FIX-58), when the
+         *     payer already has an open payment for the item (a second phone),
+         *     `payment_in_progress` with `reason.paymentId`, as the payment itself
+         *     answers it: no live Pay is drawn. Every other kind is quoted as before.
          */
         get: operations["MoneyPaymentsController_quote"];
         put?: never;
@@ -6738,6 +6741,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/dm/{creatorWawuId}/send/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Drafts the question and answers I3: the question priced by the server
+         *     (the creator's own price and reply window) and the wallet payment's quote
+         *     (the price, the provider's charge on top, the total, the balance and any
+         *     shortfall). Nothing is reserved and nothing is debited. A creator who has
+         *     not switched paid messages on, one who is paused, a block between the two
+         *     and the fan's own account are `409 target_not_payable`; a question to this
+         *     creator still waiting is `409 question_already_waiting`. With an
+         *     `Idempotency-Key`, the same key and question answer the same draft.
+         */
+        post: operations["askPaidQuestionFromWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/dm/send/wallet/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pays the question from the wallet, once: the price moves into WAWU's own
+         *     account and waits there until the creator answers (R-19), with the
+         *     provider's charge on top (R-10). Answers 201 with the question: `pending`
+         *     while the payment is not confirmed or the question is being sent (poll
+         *     `GET /dm/send/wallet/{id}`; never pay again), `asked` once it is with the
+         *     creator, `failed` when the provider refused it and nothing moved. The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN.
+         */
+        post: operations["PaidDmWalletController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/dm/send/wallet/{questionId}/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The pay sheet again: I3 reopened, or a quote past its `expiresAt`. */
+        get: operations["PaidDmWalletController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/dm/send/wallet/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One question as it stands now: what the app polls after `pending` (I4).
+         *     Only the asker reads it; another person's question and an id nobody holds
+         *     are the same `404 target_not_found`. It reads our own records only and
+         *     never asks the wallet provider.
+         */
+        get: operations["PaidDmWalletController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/points/convert/quote": {
         parameters: {
             query?: never;
@@ -7823,7 +7917,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "points_cap_reached" | "points_not_short" | "tier_required";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -9067,6 +9161,21 @@ export interface components {
             /** @description `payment.quoteToken` from that quote. */
             quoteToken: string;
         };
+        AskPaidQuestionDto: {
+            /** @description The question, 2,000 characters at most. */
+            text: string;
+        };
+        PayPaidQuestionDto: {
+            /**
+             * Format: uuid
+             * @description `question.id` from the quote: the question being paid for.
+             */
+            questionId: string;
+            /** @description `payment.totalKobo` from the quote the person saw. A different server total is `quote_changed`. */
+            expectedTotalKobo: number;
+            /** @description `payment.quoteToken` from that quote. */
+            quoteToken: string;
+        };
         PointsConvertDto: {
             points: number;
             /** @description `quoteToken` from the points quote the person saw. A conversion is paid at that quote or not at all (`409 quote_changed`). */
@@ -9600,7 +9709,7 @@ export interface components {
         };
         EarningStreamView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             earnedKobo: number;
             sales: number;
         };
@@ -9623,7 +9732,7 @@ export interface components {
         };
         EarningContentView: {
             /** @enum {string} */
-            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "points_shortfall" | "points_cash_out";
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out";
             targetId: string;
             title: string;
             earnedKobo: number;
@@ -13611,6 +13720,33 @@ export interface components {
         EventWalletOrderQuoteView: {
             order: components["schemas"]["EventWalletOrderView"];
             payment: components["schemas"]["PaymentQuoteView"];
+        };
+        PaidQuestionDraftView: {
+            id: string;
+            creator: components["schemas"]["MoneyPartyView"];
+            text: string;
+            priceKobo: number;
+            replyWindowHours: number;
+        };
+        PaidQuestionQuoteView: {
+            question: components["schemas"]["PaidQuestionDraftView"];
+            payment: components["schemas"]["PaymentQuoteView"];
+        };
+        PaidQuestionWalletView: {
+            id: string;
+            /** @enum {string} */
+            method: "wallet";
+            /** @enum {string} */
+            status: "pending" | "failed" | "reversed" | "refunded" | "unpaid" | "asked" | "answered" | "refunding";
+            statusMessage: string | null;
+            creator: components["schemas"]["MoneyPartyView"];
+            text: string;
+            priceKobo: number;
+            replyWindowHours: number;
+            deadlineAt: string | null;
+            payment: components["schemas"]["PaymentView"];
+            createdAt: string;
+            sentAt: string | null;
         };
         PointsConvertQuoteView: {
             /** @enum {string} */
@@ -19693,7 +19829,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -27362,6 +27498,250 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventWalletOrderView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    askPaidQuestionFromWallet: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. One value per tap on Send (a UUID); sent again unchanged on a retry, it answers the same draft. The same key with another question is 409 idempotency_key_reused, and a malformed key is 400 idempotency_key_required. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                creatorWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskPaidQuestionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidQuestionQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, question_already_waiting */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PaidDmWalletController_pay: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayPaidQuestionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidQuestionWalletView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused, daily_limit_exceeded */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, question_already_waiting */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PaidDmWalletController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidQuestionQuoteView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, question_already_waiting, payment_in_progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PaidDmWalletController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaidQuestionWalletView"];
                 };
             };
             /** @description reason.code: target_not_found */

@@ -17,10 +17,10 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, round 2 built (bundle B3a, Sonnet builder), waiting for a verifier.
-- **Status:** verifying.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge after rounds 2 and 3 (the data-export medium and the charge refunds closed in round 2; round 3 on the lead's diff read) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/B3a.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
 - **Branches:** backend `wmt/B3a` `242ce9d` (round 1 `ed45009`, on `origin/wmt/WALLET-16-R55` `9580bb0`, batch 7 with B1 and R-55), mobile `wmt/B3a` (records and the contract copy; docs only). Migrations `20261025150000_paid_dm_drafts` (one new table) and `20261025170000_hold_release_earnings` (a trigger function only).
-- **Merged and live:** nothing of this task.
+- **Merged and live:** nothing of this task (it is in `wmt/MERGE-12`, not on main).
 - **What is built:** `src/direct-message/wallet/`: the kind `paid_dm` registered with MONEY-17 and four routes: `POST /dm/{creatorWawuId}/send/wallet` (drafts the question, answers I3: price, window, the wallet quote), `GET /dm/send/wallet/{id}/quote`, `POST /dm/send/wallet/pay` (PIN, `Idempotency-Key`) and `GET /dm/send/wallet/{id}` (I4, I5). The words wait in `PaidDmDraft`, so the creator's inbox never shows an unpaid question; paying holds the price in WAWU's account (R-19) and sends the question once. A creator who is off, paused (INBOX-09), blocked or yourself is `target_not_payable`; a second question to one creator while one waits is `409 question_already_waiting` (G-75). A question that cannot be sent after the debit is paid back whole.
 - **Round 2, the lead's rulings of 17 Oct (verifier findings 1 to 3 closed):**
   1. The creator's answer releases the hold AS AN EARNING (R-55): one short database write makes the hold `released` and makes the creator's `EarningSettlement` (kind `paid_dm`, the 85%); it goes to their wallet in their ONE move a day with their other earnings (a day under N200 waits; WAWU pays the charge once). No provider call in the reply request any more (also closes finding 4). Held money still sits in WAWU's account until the move lands (R-19). The earnings read counts it once; a creator with such an earning still owed cannot delete the account.
@@ -30,7 +30,7 @@ As of 17 Oct 2026, round 2 built (bundle B3a, Sonnet builder), waiting for a ver
 - **Fences touched:** SHARED-CHANGES INBOX-17 #1 to #4 and WALLET-17 #4 (the migration).
 - **NOT RUN:** any call to Fintava or its sandbox (never used; the Fintava hold and earning specs were not run, CI runs them); the app screens (INBOX-10, INBOX-18); a load measurement.
 - **Open for the lead:** the plain `holds.release` without `asEarning` stays for the hold service's own callers and the Fintava hold specs; nothing in production asks it for a payee any more. Low: G-WALLET-17-1.
-- **Next:** a verifier; passes V1, V2, V3, V4, V6, V7, V8, V9.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B3a L1).
 - **Records:** tasks/history/INBOX-17.md.
 
 ## Read first
