@@ -67,6 +67,8 @@ export const metrics = {
    * the button there (H26); until then the place is kept, so the rail sits where H2 to H6 draw it.
    */
   tipSlot: 80,
+  /** The ₦ Tip button's round plate (H2's rail). */
+  tipCircle: 42,
   avatar: 46,
   avatarRing: 2,
   followBadge: 20,
@@ -205,6 +207,7 @@ export const words = StyleSheet.create({
   offerSub: type(12, 400, { opacity: 0.7 }),
   price: type(14, 700),
   counter: type(13, 700),
+  tipGlyph: type(18, 700),
   bookBy: type(10, 700, { letterSpacing: 10 * 0.14, opacity: 0.7, textTransform: 'uppercase' }),
   bookTitle: type(26, 700, { lineHeight: 26 * 1.05, letterSpacing: 26 * -0.03 }),
   bookPages: type(11, 400, { opacity: 0.7 }),
