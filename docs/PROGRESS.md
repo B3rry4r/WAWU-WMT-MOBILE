@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 135 | 0 | 0 | 0 |
+| todo | 134 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 40 | 0 | 0 | 0 |
+| verifying | 41 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -31,6 +31,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SCHOOLS-07](../tasks/SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend) (You)
 - [WALLET-02](../tasks/WALLET-02.md) Send to a WAWU user (You)
 - [WALLET-09](../tasks/WALLET-09.md) Send money to a bank (You)
+- [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [ADS-01](../tasks/ADS-01.md) TGIF sponsored card (You)
 - [FIX-09](../tasks/FIX-09.md) No em-dashes in any message a person can read from the backend or the web (You)
 - [FIX-14](../tasks/FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate (You)
