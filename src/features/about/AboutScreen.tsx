@@ -39,7 +39,7 @@ export function AboutScreen({ onBack, onOpenTerms, onOpenPrivacy }: AboutScreenP
   const about = useQuery({ queryKey: aboutKey, queryFn: fetchAbout });
   const offline = isApiError(about.error) && about.error.kind === 'network';
   return (
-    <ScreenFrame idPrefix="about" title="About Who Made This" onBack={onBack} gap={aboutMetrics.between} testID="about-screen">
+    <ScreenFrame idPrefix="about" title="About Who Made This?" onBack={onBack} gap={aboutMetrics.between} testID="about-screen">
       <Header />
       {about.data ? (
         <Rows about={about.data} onOpenTerms={onOpenTerms} onOpenPrivacy={onOpenPrivacy} />
@@ -75,10 +75,16 @@ function Header() {
   );
 }
 
+/** R-67: the licence line is the owner's setting; empty or blank means it is not drawn. */
+function licenceOf(about: About): string | undefined {
+  return about.licenceLine?.trim() || undefined;
+}
+
 type RowsProps = { about: About; onOpenTerms: () => void; onOpenPrivacy: () => void };
 
 function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
   const [problem, setProblem] = useState<string | null>(null);
+  const bank = about.bankName.trim();
   const mail = mailtoUrl(about.supportEmail);
   const rate = rateUrl();
 
@@ -89,19 +95,21 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
   return (
     <>
       <Text variant="muted" style={styles.description}>
-        Who Made This helps African creators and professionals get paid for what they know.
+        Who Made This? helps African creators and professionals get paid for what they know.
       </Text>
       <GroupedList testID="about-rows">
-        <ListRow
-          testID="about-bank"
-          lead={<IconTile icon="Landmark" size={aboutMetrics.tile} />}
-          title={`Banking by ${about.bankName}`}
-          titleLines={0}
-          subtitle={about.licenceLine ?? undefined}
-          subtitleLines={0}
-          subtitleSelectable
-          subtitleTestID="about-licence"
-        />
+        {bank ? (
+          <ListRow
+            testID="about-bank"
+            lead={<IconTile icon="Landmark" size={aboutMetrics.tile} />}
+            title={`Banking by ${bank}`}
+            titleLines={0}
+            subtitle={licenceOf(about)}
+            subtitleLines={0}
+            subtitleSelectable
+            subtitleTestID="about-licence"
+          />
+        ) : null}
         <ListRow
           testID="about-support"
           lead={<IconTile icon="Mail" size={aboutMetrics.tile} />}

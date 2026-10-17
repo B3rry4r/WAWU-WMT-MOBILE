@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 92, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 93, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged. The rows of SHARED-06 wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -139,6 +139,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SHARED-06 | L3 | Mobile: `src/api/walletIdentity.ts` `checkBvn` (replaces `runBvnCheck`): an empty-string `checkHandle` is no longer refused (the old check refused length 0). The backend never sends one. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-06.md`, finding L3 |
 | SHARED-06 | L4 | Mobile: `src/api/errors.ts` `toApiError`: a body `retryAfterSeconds: 0` is kept and blocks the header fallback, so `retryAfterOf` then reports null. The same precedence as before for the body figure. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-06.md`, finding L4 |
 | SHARED-06 | L5 | Mobile: `ScreenFrame` adds `insets.left/right` to the side padding on M8, M9 and the add-work screen (the old `EditFrame` had none): no change in portrait, a change in landscape or with a side notch. Harmless, undeclared. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-06.md`, finding L5 |
+| DV2-06 | L2 | `docs/release/DATA-INVENTORY.md` I-113 (`TgifPreference`, line 160) and I-200 (line 271) still say "TGIF on Home switch". Older docs, not user-facing. Reword to the name DV2-06 gave the Settings switch ("TGIF each morning") when the inventory is next touched. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-06.md`, finding 2 |
 
 ## Builder report
 
