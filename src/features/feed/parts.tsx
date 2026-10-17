@@ -80,21 +80,22 @@ export type RailProps = {
   onLike: () => void;
   onSave: () => void;
   onFollow: () => void;
+  /** Opens the tip sheet (H26). Left out, the rail has no ₦ Tip (its entry is not drawn until the flow is wired, R-47), and never on the viewer's own post. */
+  onTip?: () => void;
   /** The post measures where the rail starts, to keep other things clear of it on a short phone. */
   onLayout?: (e: LayoutChangeEvent) => void;
 };
 
 /**
- * The right rail (H2 to H6): the creator, likes, comments and saves. The avatar's profile
- * (M5) is ME-02's to open, the comments (H21) HOME-03's, and the ₦ Tip button (H26)
- * HOME-13's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
+ * The right rail (H2 to H6): the creator, likes, comments, saves and ₦ Tip (H26, HOME-13). The avatar's profile
+ * (M5) is ME-02's to open and the comments (H21) HOME-03's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
  * G-215), so the bookmark has no figure under it.
  */
-export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow, onLayout }: RailProps) {
+export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow, onTip, onLayout }: RailProps) {
   const name = creatorName(item.creator) ?? undefined;
   const ring = useFocusRing();
   return (
-    <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + metrics.tipSlot }]} testID={`rail-${item.id}`}>
+    <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + (onTip ? 0 : metrics.tipSlot) }]} testID={`rail-${item.id}`}>
       <View style={styles.avatarRing}>
         <Avatar name={name} hue={hueFor(item.creatorWawuId)} source={item.creator?.avatarUrl ?? undefined} size={metrics.avatar} />
         {canFollow ? (
@@ -120,6 +121,14 @@ export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onF
       <RailButton testID={`save-${item.id}`} label={saved ? 'Saved' : 'Save'} selected={saved} onPress={onSave}>
         <RailCount icon="Bookmark" count={null} filled={saved} />
       </RailButton>
+      {onTip ? (
+        <RailButton testID={`tip-${item.id}`} label={name ? `Tip ${name}` : 'Tip'} onPress={onTip}>
+          <View style={[styles.tipPlate, { backgroundColor: media.glass }]}>
+            <Text style={[words.tipGlyph, { color: media.ink }]}>₦</Text>
+          </View>
+          <Text style={[words.count, { color: media.ink }]}>Tip</Text>
+        </RailButton>
+      ) : null}
     </View>
   );
 }
@@ -166,14 +175,44 @@ export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) 
  * lines), so nothing is cut at a small width or a long price; pressing it opens the unlock sheet (H14), which HOME-12 adds as drawn. Until then
  * it starts nothing: no payment can begin from the feed.
  */
-export function OfferBar({ offer, priceKobo, compact = false, testID }: { offer: Offer; priceKobo: number; compact?: boolean; testID?: string }) {
+export function OfferBar({
+  offer,
+  priceKobo,
+  compact = false,
+  onPress,
+  busy = false,
+  testID,
+}: {
+  offer: Offer;
+  priceKobo: number;
+  compact?: boolean;
+  /** Opens the unlock sheet (H14). Left out, the bar only shows the offer (its press is not drawn until the flow is wired, R-47). */
+  onPress?: () => void;
+  /** The price is being asked for: a second press does nothing until it is answered. */
+  busy?: boolean;
+  testID?: string;
+}) {
+  const ring = useFocusRing();
+  const press = onPress
+    ? ({
+        accessibilityRole: 'button' as const,
+        accessibilityLabel: `${offer.title}. ${offer.subtitle}`,
+        accessibilityState: { busy },
+        onPress: busy ? undefined : onPress,
+        ...ring.handlers,
+      } as const)
+    : null;
+  const Wrap = onPress ? Pressable : View;
   return (
-    <View
+    <Wrap
       testID={testID}
+      {...(press ?? {})}
       style={[
         styles.offer,
         compact && { gap: metrics.offerGapCompact, paddingLeft: metrics.offerLeftCompact, paddingRight: metrics.offerRightCompact },
         { backgroundColor: media.glass, borderColor: media.glassEdge },
+        busy && styles.busy,
+        onPress ? ring.style : null,
       ]}
     >
       <Icon name={offer.icon} size={compact ? metrics.offerIconCompact : metrics.offerIcon} color={media.ink} />
@@ -184,7 +223,7 @@ export function OfferBar({ offer, priceKobo, compact = false, testID }: { offer:
       <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>
         <Money minorUnits={priceKobo} decimals={false} size={compact ? metrics.priceTextCompact : metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
       </View>
-    </View>
+    </Wrap>
   );
 }
 
@@ -256,6 +295,8 @@ const styles = StyleSheet.create({
     zIndex: 6,
   },
   railItem: { alignItems: 'center', gap: metrics.railCountGap },
+  tipPlate: { width: metrics.tipCircle, height: metrics.tipCircle, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
+  busy: { opacity: 0.6 },
   avatarRing: {
     borderRadius: radius.chip,
     borderWidth: metrics.avatarRing,

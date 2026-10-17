@@ -99,6 +99,26 @@ describe('I1: the chats in the Inbox', () => {
     expect(rtl.screen.getAllByText('Kemi Okafor')).toHaveLength(1);
   });
 
+  it('the support thread (SUPPORT-01) is the app\'s own row: "Who Made This?" with its mark, the staff words as the preview, unread counted, and it opens like any chat', async () => {
+    const support = { wawuId: 'support-account', name: 'Who Made This?', handle: null, avatarUrl: null, verification, support: true };
+    const row = chatRow({
+      id: 'chat:c-support',
+      unreadCount: 1,
+      preview: { text: 'We can see it. Looking now.', attachment: null, mine: false, senderName: null, sentAt: new Date().toISOString(), moneyRequest: null },
+      chat: { chatId: 'c-support', other: support, canMessage: true },
+    });
+    answers['GET /inbox?limit=20'] = [page([row, textRow()])];
+    await renderInbox();
+    await rtl.screen.findByTestId('row-chat:c-support');
+    expect(rtl.screen.getByText('Who Made This?')).toBeTruthy();
+    expect(rtl.screen.getByText('We can see it. Looking now.')).toBeTruthy();
+    // The avatar is decorative (the row says the name), so it is read with the hidden elements.
+    expect(rtl.screen.getByTestId('row-chat:c-support-avatar-brand', { includeHiddenElements: true })).toBeTruthy();
+    expect(rtl.screen.queryByTestId('row-chat:c-femi-avatar-brand', { includeHiddenElements: true })).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('row-chat:c-support'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/chat/[id]', params: { id: 'c-support' } });
+  });
+
   it('tapping a chat opens it', async () => {
     await renderInbox();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('row-chat:c-femi'));

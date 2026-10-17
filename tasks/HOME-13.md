@@ -7,7 +7,7 @@ order: 118
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-14, UI-02, HOME-02]
 decisions: [R-6, R-10, R-64, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,12 @@ artboards: [H26, H27, H28]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): HOME-14.
-- **History:** none yet. Reports go to tasks/history/HOME-13.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** H26 is Naira only at launch (R-64): the Dollar and USDT picker is not shown.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge (every attack pays once; the 85% once) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S1.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main. Built: Mobile `wmt/S1` (from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/B1` merged, never rebased). Backend: none changed; used `wmt/B1` `e41210e` (HOME-14).
+- **Built:** H2's rail `₦ Tip` (not on your own post), H26 (Tip sheet), H27 (shared PIN sheet), H28 (Tip sent, "Total paid"), and the pay sheet's states between them (Not enough, Still confirming, Didn't go through). Files: `src/features/tips/`, `src/features/feedpay/` (shared with HOME-12), the rail in `src/features/feed/`.
+- **Not drawn (R-47, R-64):** the Naira/Dollar/USDT picker. The Add button leads to the Wallet tab, as the ticket checkout's does.
+- **Open for the lead:** SHARED-CHANGES HOME-13 #1 (export the pay sheet's wallet card; `WalletLine` copies it meanwhile); BACKEND_GAPS G-1721 (the quick amounts are the board's, PROVISIONAL TIP-QUICK-AMOUNTS).
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S1 L1 to L3).
 
 ## Design v2 update (16 Oct 2026)
 
@@ -87,13 +88,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-13.md](history/HOME-13.md).
 
 ## Owner sign-off
 

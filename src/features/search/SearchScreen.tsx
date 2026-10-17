@@ -24,7 +24,7 @@ import { ContentRow, PersonRow, QueryChip, ResultTabs, RoomRow, SearchField, Sec
 
 /** Words the screen says, written once. */
 const words = {
-  placeholder: `Search ${APP_NAME}?`,
+  placeholder: `Search ${APP_NAME}`,
   noRecent: 'No recent searches yet.',
   failedTitle: 'Search isn’t working right now',
   failedNetwork: 'Check your connection and try again.',

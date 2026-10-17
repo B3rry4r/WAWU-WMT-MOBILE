@@ -48,7 +48,7 @@ export type ChatScreenProps = {
   onSetPin: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
-  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): the short notice shows without the button. */
+  /** Add money for the shortfall (kobo). Opens Add money (W15) with the shortfall. A caller that leaves it out shows the short notice without the button. */
   onAddMoney?: (shortfallKobo: number) => void;
 };
 
@@ -86,6 +86,8 @@ export function ChatScreen(props: ChatScreenProps) {
   }, [focused, refetchSends]);
 
   const person = chat.data?.other ?? null;
+  // The support side of a support thread (SUPPORT-01): the app's own mark, no "on Who Made This?" line, and no money in the chat.
+  const support = person?.support === true;
   const name = person ? firstName(person.name) : '';
   const hidden = isApiError(chat.error) && (chat.error.status === 404 || chat.error.status === 403);
   const items = useMemo(() => threadItems(thread.items, thread.outgoing, sends.data ?? []), [thread.items, thread.outgoing, sends.data]);
@@ -152,7 +154,12 @@ export function ChatScreen(props: ChatScreenProps) {
   } else if (items.length === 0) {
     body = (
       <View style={styles.center}>
-        <EmptyState testID="chat-empty" icon="MessageCircle" title="No messages yet" message={`Say hello${name ? ` to ${name}` : ''}.`} />
+        <EmptyState
+          testID="chat-empty"
+          icon="MessageCircle"
+          title="No messages yet"
+          message={support ? 'Tell us what you need help with.' : `Say hello${name ? ` to ${name}` : ''}.`}
+        />
       </View>
     );
   } else {
@@ -197,7 +204,7 @@ export function ChatScreen(props: ChatScreenProps) {
         <IconButton icon="ChevronLeft" label="Back" onPress={props.onBack} size={headMetrics.back} testID="chat-back" />
         {person ? (
           <>
-            <Avatar name={person.name} hue={hueFor(person.wawuId)} size={headMetrics.avatar} source={person.avatarUrl ?? undefined} decorative />
+            <Avatar name={person.name} hue={hueFor(person.wawuId)} size={headMetrics.avatar} source={person.avatarUrl ?? undefined} brand={support} decorative />
             <View style={styles.words}>
               <View style={styles.nameLine}>
                 <Text variant="body" numberOfLines={1} accessibilityRole="header" style={[font(700), { fontSize: headMetrics.name }, styles.name]} testID="chat-name">
@@ -205,9 +212,11 @@ export function ChatScreen(props: ChatScreenProps) {
                 </Text>
                 {tickOf(person) ? <VerifiedTick kind={tickOf(person)} size={headMetrics.tick} /> : null}
               </View>
-              <Text variant="caption" tone="textMuted" numberOfLines={1} style={[{ fontSize: headMetrics.sub }, styles.sub]} testID="chat-sub">
-                {person.handle ? `@${person.handle.replace(/^@/, '')} · ${ON_APP}` : ON_APP}
-              </Text>
+              {support ? null : (
+                <Text variant="caption" tone="textMuted" numberOfLines={1} style={[{ fontSize: headMetrics.sub }, styles.sub]} testID="chat-sub">
+                  {person.handle ? `@${person.handle.replace(/^@/, '')} · ${ON_APP}` : ON_APP}
+                </Text>
+              )}
             </View>
           </>
         ) : null}
@@ -220,8 +229,8 @@ export function ChatScreen(props: ChatScreenProps) {
           </Text>
         </Pressable>
       ) : null}
-      {ready ? closed ? <ChatClosedBar /> : <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={() => setAttachOpen(true)} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
-      {person ? (
+      {ready ? closed ? <ChatClosedBar /> : <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {person && !support ? (
         <>
           <AttachSheet visible={attachOpen} onClose={() => setAttachOpen(false)} name={name} onSendMoney={() => props.onSendMoney(person)} onRequestMoney={() => setRequestOpen(true)} />
           <RequestSheet

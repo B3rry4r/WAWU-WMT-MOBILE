@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -12,7 +13,10 @@ import { Text } from '@/components/Text';
 import { NavBar } from '@/features/events/chrome';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
+import { ApplySheet } from './ApplySheet';
 import { fetchCourse, schoolsKeys } from './api';
+import { joinable, upcoming } from './enrolModel';
+import { ClassFullFoot } from './enrolParts';
 import { classesLine, dayLabel, nonEmpty, upcomingIntake, weeksLabel, youGetLine } from './model';
 import { Cover, Fee } from './parts';
 import { useToday } from './useToday';
@@ -45,6 +49,7 @@ export const courseMetrics = {
   line: 14,
   footTop: 12,
   footBottom: 34,
+  enrollPad: 32,
   fee: 20,
   skeletonRows: 4,
 } as const;
@@ -52,18 +57,24 @@ export const courseMetrics = {
 export type CourseScreenProps = {
   id: string;
   onBack: () => void;
+  /** Enroll (SC4) in the class given. Not drawn without it: nothing here leads anywhere until the route is given. */
+  onEnroll?: (intakeId: string) => void;
 };
 
 /**
  * SC3 · Course: the school, the course, its length, how it is taught, when the next class starts, what it gives and what
- * it covers, and the fee in a bar at the foot. Enroll (SCHOOLS-06) and "Or apply on the school's website" (SCHOOLS-08) are
- * added by the tasks that build where they lead (R-47), so the bar holds the fee alone.
+ * it covers, and the fee in a bar at the foot with Enroll (SC4, SCHOOLS-06). When the class it tells about is full the bar says
+ * so, with the next class that has a seat and "Enroll for <month>" (SC11). "Or apply on the school's website" (SC9, SCHOOLS-08)
+ * opens the sheet that sends the student to the school's own site, for a school that gave one. The sheet is the choice between
+ * the two ways in (its second button is "Enroll on Who Made This? instead"), so it is drawn together with Enroll, by the route.
  */
-export function CourseScreen({ id, onBack }: CourseScreenProps) {
+export function CourseScreen({ id, onBack, onEnroll }: CourseScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const course = useQuery({ queryKey: schoolsKeys.course(id), queryFn: () => fetchCourse(id) }, queryClient);
   const today = useToday();
+  const [applying, setApplying] = useState(false);
+  const [foot, setFoot] = useState(0);
 
   if (course.isPending) {
     return (
@@ -105,7 +116,13 @@ export function CourseScreen({ id, onBack }: CourseScreenProps) {
   ];
   const syllabus = nonEmpty(data.syllabus);
   const footBottom = Math.max(insets.bottom, courseMetrics.footBottom);
-  const footHeight = courseMetrics.footTop + courseMetrics.fee + footBottom;
+  // The bar's own height (the fee alone, with Enroll, or the full-class note): the body leaves room for whichever it is.
+  const footHeight = foot > 0 ? foot : courseMetrics.footTop + courseMetrics.fee + footBottom;
+  // The class this page tells about, and what Enroll can do with it: join it, or (when it is full) the next one with a seat.
+  const classes = upcoming(data.intakes, today);
+  const toJoin = intake && joinable(intake, today) ? intake : null;
+  const nextSeat = intake && !toJoin ? (classes.find((c) => c.id !== intake.id && joinable(c, today)) ?? null) : null;
+  const applyUrl = data.school.applyUrl?.trim() ?? '';
 
   return (
     <View testID="course-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
@@ -156,10 +173,49 @@ export function CourseScreen({ id, onBack }: CourseScreenProps) {
             ))}
           </View>
         ) : null}
+        {onEnroll && applyUrl !== '' ? (
+          <Pressable testID="course-apply" accessibilityRole="link" accessibilityLabel={`Or apply on ${data.school.name}'s website`} onPress={() => setApplying(true)} style={styles.apply}>
+            <Text variant="body" tone="accentFg" style={styles.applyText}>
+              Or apply on {data.school.name}&apos;s website
+            </Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
-      <View testID="course-foot" style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
-        <Fee kobo={data.priceKobo} size={courseMetrics.fee} testID="course-price" />
+      <View
+        testID="course-foot"
+        onLayout={(e) => setFoot(Math.ceil(e.nativeEvent.layout.height))}
+        style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}
+      >
+        {intake && !toJoin && onEnroll ? (
+          <ClassFullFoot testID="course-full" fullStart={intake.startDate} next={nextSeat} onEnrollNext={() => nextSeat && onEnroll(nextSeat.id)} />
+        ) : (
+          <View style={styles.footRow}>
+            <View style={styles.footFee}>
+              <Fee kobo={data.priceKobo} size={courseMetrics.fee} testID="course-price" />
+              {data.priceKobo > 0 && toJoin && onEnroll ? (
+                <Text variant="meta" tone="textMuted" testID="course-one-payment" style={styles.onePayment}>
+                  One payment
+                </Text>
+              ) : null}
+            </View>
+            {toJoin && onEnroll ? <Button testID="course-enroll" label="Enroll" onPress={() => onEnroll(toJoin.id)} style={styles.enroll} /> : null}
+          </View>
+        )}
       </View>
+      <ApplySheet
+        visible={applying}
+        courseId={data.id}
+        school={data.school.name}
+        onClose={() => setApplying(false)}
+        onEnroll={
+          toJoin && onEnroll
+            ? () => {
+                setApplying(false);
+                onEnroll(toJoin.id);
+              }
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -206,6 +262,12 @@ const styles = StyleSheet.create({
   numberText: { ...font(700), fontSize: courseMetrics.stepFont, lineHeight: canvasNormalLineHeight(courseMetrics.stepFont) },
   stepText: { flex: 1, fontSize: courseMetrics.line, lineHeight: canvasNormalLineHeight(courseMetrics.line) },
   foot: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: courseMetrics.footTop, paddingHorizontal: layout.gutter },
+  footRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  footFee: { flex: 1, minWidth: 0 },
+  onePayment: { fontSize: 12 },
+  enroll: { paddingHorizontal: courseMetrics.enrollPad },
+  apply: { alignItems: 'center', minHeight: layout.tapMin, justifyContent: 'center' },
+  applyText: { ...font(600), fontSize: 14, lineHeight: canvasNormalLineHeight(14), textAlign: 'center' },
   frameBody: { flex: 1 },
   skeleton: { paddingHorizontal: layout.gutter, paddingTop: courseMetrics.bodyTop, gap: courseMetrics.partGap },
 });

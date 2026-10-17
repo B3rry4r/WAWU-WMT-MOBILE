@@ -53,7 +53,7 @@ beforeEach(() => {
 afterEach(() => clearClients());
 
 function handlers() {
-  return { onBack: jest.fn(), onSendMoney: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn() };
+  return { onBack: jest.fn(), onSendMoney: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() };
 }
 
 async function boot(h = handlers()) {
@@ -73,6 +73,29 @@ describe('I12: the chat', () => {
     expect(rtl.screen.getByText('Sent the invoice for the shoot. 3 edits included.')).toBeTruthy();
     expect(rtl.screen.getByText('Thanks, got it')).toBeTruthy();
     expect(rtl.screen.getByTestId('chat-composer-input')).toBeTruthy();
+  });
+
+  it('the support thread (SUPPORT-01) is "Who Made This?" with the app\'s own mark, no "on Who Made This?" line and no + for money', async () => {
+    hub.supportThread = true;
+    hub.messages = [textMessage('We can see it. Looking now.', false, '2026-10-16T17:52:00.000Z'), textMessage('Help with a payment: Tip · ₦2,000.00 · Reference WAW-T1P9-7ZQA', true, '2026-10-16T17:40:00.000Z')];
+    await boot();
+    expect(rtl.screen.getByTestId('chat-name').props.children).toBe('Who Made This?');
+    expect(rtl.screen.queryByTestId('chat-sub')).toBeNull();
+    expect(rtl.screen.queryByTestId('chat-plus')).toBeNull();
+    expect(rtl.screen.getByText('Help with a payment: Tip · ₦2,000.00 · Reference WAW-T1P9-7ZQA')).toBeTruthy();
+    expect(rtl.screen.getByText('We can see it. Looking now.')).toBeTruthy();
+    // Words can still be sent, in the same thread.
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('chat-composer-input'), 'Thank you');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('chat-composer-send'));
+    await rtl.screen.findByText('Thank you');
+    expect(hub.sentTexts).toHaveLength(1);
+  });
+
+  it('a support thread with nothing in it yet says so, in its own words (SUPPORT-01)', async () => {
+    hub.supportThread = true;
+    await renderWith(<ChatScreen chatId={CHAT} {...handlers()} />);
+    expect(await rtl.screen.findByText('Tell us what you need help with.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Say hello/)).toBeNull();
   });
 
   it('a user types and sends: one message, with the app\'s own id for it', async () => {
@@ -259,17 +282,17 @@ describe('I18 and I19: a request someone made of the person', () => {
     expect(hub.payments).toBe(1);
   });
 
-  it('a wallet too short is told so with no Add button (Add money is WALLET-05’s, R-47), and nothing is paid', async () => {
+  it('a wallet too short is told so with Add money, and nothing is paid', async () => {
     hub.balanceKobo = 50_000;
-    await bootIncoming();
+    const h = await bootIncoming();
     await tapPay();
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
     // The short sheet is headed as the review is: "Pay Femi", not "Request from Femi".
     expect(rtl.screen.getByText('Pay Femi')).toBeTruthy();
     expect(rtl.screen.queryByText('Request from Femi')).toBeNull();
     expect(hub.pays).toHaveLength(0);
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
-    expect(rtl.screen.getByText('Cancel')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(1_202_575 - 50_000);
   });
 
   it('an answer that never comes is followed by the SAME request: one debit', async () => {

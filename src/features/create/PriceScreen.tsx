@@ -141,7 +141,7 @@ function NoteLine() {
   const { colors } = useWawu();
   return (
     <Text variant="caption" testID="price-note" style={[styles.note, { color: colors.textMuted }]}>
-      {`${APP_NAME}? checks every piece before it goes live`}
+      {`${APP_NAME} checks every piece before it goes live`}
     </Text>
   );
 }

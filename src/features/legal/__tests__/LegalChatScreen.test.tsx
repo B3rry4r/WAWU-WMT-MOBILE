@@ -7,11 +7,12 @@ import type { LegalThread } from '../api';
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 let mockCanGoBack = true;
 let mockFocused = true;
 jest.mock('expo-router', () => ({
   useIsFocused: () => mockFocused,
-  useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
+  useRouter: () => ({ back: mockBack, replace: mockReplace, push: mockPush, canGoBack: () => mockCanGoBack }),
 }));
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
@@ -162,6 +163,7 @@ beforeEach(() => {
   sent = [];
   mockBack.mockClear();
   mockReplace.mockClear();
+  mockPush.mockClear();
   mockCanGoBack = true;
   mockFocused = true;
   mockLive.clear();
@@ -377,7 +379,8 @@ describe('S17 · a consultant joins', () => {
     expect(rtl.screen.getByText('Adaora Nnaji · Consultant')).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Message Adaora')).toBeTruthy();
     expect(rtl.screen.queryByTestId('legal-taps')).toBeNull();
-    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    // S17's card: LEGAL-04 builds it (it was absent until then); its taps are tested in "S17 · the card under the consultant's lines" below.
+    expect(rtl.screen.getByText('Book a consultation')).toBeTruthy();
   });
 
   it('a user can Message Adaora: the words go to the messages route and no assistant is waited on', async () => {
@@ -497,6 +500,73 @@ describe('S17 · a consultant joins', () => {
     expect(rtl.screen.getAllByText('Consultant')).toHaveLength(2);
     expect(rtl.screen.getByText('A consultant joined. The assistant has stopped replying.')).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Message your consultant')).toBeTruthy();
+  });
+});
+
+describe("S17 · the card under the consultant's lines", () => {
+  it('Book on the card opens the booking screen for the request (S18)', async () => {
+    answers[OPEN] = [ok(withConsultant())];
+    await renderScreen();
+    await rtl.screen.findByText('Book a consultation');
+    expect(rtl.screen.getByText('Video, phone or in person')).toBeTruthy();
+    expect(rtl.screen.getByText('Book')).toBeTruthy();
+    await press('legal-matter-card-button');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-book', params: { requestId: 'r1' } });
+  });
+
+  it('once the consultation is booked the card is the way back to the matter, and Open opens it (S20)', async () => {
+    answers[OPEN] = [ok(withConsultant({ requestStatus: 'consultation_scheduled' }))];
+    await renderScreen();
+    await rtl.screen.findByText('See where your request stands');
+    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    await press('legal-matter-card-button');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-matter', params: { id: 'r1' } });
+  });
+
+  it('a request WAWU has closed draws no card, so there is nothing to tap', async () => {
+    answers[OPEN] = [ok(withConsultant({ requestStatus: 'cancelled' }))];
+    await renderScreen();
+    await rtl.screen.findByText("Hi Chidi, I've read your brief.");
+    expect(rtl.screen.queryByTestId('legal-matter-card')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+describe("S24 · the fixed-price card under the assistant's line", () => {
+  const CATALOGUE = 'GET /legal/catalogue';
+  const cac = { code: 'cac-registration', name: 'CAC business name registration', blurb: 'We register your business name with the CAC.', category: 'Business', path: 'simple', priceNaira: 35000, requiresDocuments: false };
+  const registering = () =>
+    asking({
+      matter: 'business_registration',
+      matterLabel: 'Register a business',
+      messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business'), line('a3', 'assistant', 'Is it a sole trader or a company?')],
+    });
+
+  it('shows the service and the price WAWU set, and Start this request opens the fixed-price screen for that service (S26)', async () => {
+    answers[OPEN] = [ok(registering())];
+    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [cac] })];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
+    expect(rtl.screen.getByText('CAC business name registration')).toBeTruthy();
+    expect(rtl.screen.getByText('₦35,000')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+    await press('legal-fixed-start');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-fixed', params: { code: 'cac-registration' } });
+  });
+
+  it('draws no card for a service WAWU has not priced, so there is no Start to tap', async () => {
+    answers[OPEN] = [ok(registering())];
+    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [{ ...cac, priceNaira: null }] })];
+    await renderScreen();
+    await rtl.screen.findByText('Is it a sole trader or a company?');
+    await rtl.act(async () => {
+      await settle();
+    });
+    expect(rtl.screen.queryByTestId('legal-fixed-card-chat')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-fixed-start')).toBeNull();
   });
 });
 

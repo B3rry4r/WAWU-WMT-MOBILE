@@ -7,7 +7,7 @@ order: 153
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-09, WALLET-10, WALLET-14, MONEY-12, UI-02, HOME-12, WALLET-03]
 decisions: [R-10, R-1, R-16, R-28, R-33, R-6, R-42, R-53, R-67, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,16 +17,23 @@ artboards: [W15, W17, W19, W45, W46]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-09, WALLET-10, HOME-12, WALLET-03.
-- **History:** none yet. Reports go to tasks/history/WALLET-05.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** W15 is transfer-only; W45 and W46 added here; BILLS-02 dropped as a dependency (bills are off, R-52).
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: money core holds on every attack; the medium M1 and L1, L2 closed in round 2 on the lead's diff read (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-05.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
+- **Built:** W15 Add money (`src/features/addmoney/`, `/add-money`): the wallet's own account name, number and bank from `GET /money/wallet`, each with Copy, Share details (the phone's share sheet), and a note when a pay sheet sent the person (`?short=<kobo>`). W45 (waiting) starts when the person copies or shares; W46 (received) shows the credit's amount, sender, the bank's new balance and the reference once the balance changes with a transfer-in row on the ledger; when more than one landed since the wait began it says how many and lists each (amount, sender, reference), with no total of ours (the Hub serves none). W17 Withdraw (`src/features/withdraw/`, `/withdraw`): balance, amount with Max, the payout account with Change, Bank charge + WAWU's fee + Fees, "Withdraw ₦total" with "Your bank gets ₦amount", then the PIN sheet. W19 (`/withdraw/receipt`): on its way, timeline from the Hub's stamps, reference, fee parts, Total paid, Share receipt, Done; a withdrawal the bank fails goes to W14 (`/withdraw/failed`, the send's own screen).
+- **States:** loading, error, no wallet (leads to Open your wallet), opening, no payout account (leads to A21), account not in the person's name (blocked, R-51), over balance, fees over balance, over today's limit, wrong PIN, short refusal, unanswered, fee moved.
+- **Once (V8):** a fresh quote on every tap; one Idempotency-Key per attempt, kept on the phone (`send/intent`) so a wrong PIN, a lost answer and a closed app send the same request; a tap while a request is out does nothing.
+- **Entries (R-41):** W1 Add money and Withdraw (five actions), H1 Add, W13 "Add money", and every pay sheet's "Add ₦X" restored (send review, events ticket buy, credits buy, chat send and request pay, feed tip and unlock), each opening W15 with the shortfall. FIX-55's test edits reversed (SHARED-CHANGES WALLET-05 #1, #2).
+- **Checks:** tsc EXIT 0; eslint on 34 changed files EXIT 0; jest on wallet, send, pay-sheet, events, credits, chat, home, tips, unlock, communities, points, addmoney, withdraw: 68 suites, 1182 tests pass; `npm run gates` EXIT 0 (0 fail, 11 warn, 875 files). New: `addMoney.test.tsx` (17), `withdrawFlow.test.tsx` (18), `withdrawModel.test.ts` (17).
+- **On the stack w05_test** (backend `c78b796`, Nuvion stand-in, ports 7840-7847, down and dropped; each attack once, light and dark): withdraw double tap + wrong PIN then right: one row, one debit of the quoted total; short balance: the field blocks it and the Hub's 402 carries the bank's figures; lost answer then retry: same key, one debit; a withdrawal the stand-in fails: W14, and the balance before and after the withdrawal are equal (amount and fees back); add money: the person's own account number shown, one 5,000,000 inflow raised the balance once and the ledger has one row for it, W46 shown.
+- **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wallet-05-b/pics/` every state, 390 wide, light and dark, with `board-*` and `side-*` (board left, built right) for W1, W15, W17, W19, W45, W46, W14.
+- **Round 2 (verifier M1, L1, L2):** "Free" is no longer drawn (no inflow fee is served); "Money you send arrives in a few minutes." and "Usually a few minutes" are removed (nothing serves an arrival time); W15 under the card is empty until the wait starts. The landing reads every unseen top-up, not the newest only, and the balance again after the rows so it holds every row named. Tests: `addMoney.test.tsx` 20 (3 new: two close together, one landing unchanged, a second between the reads), the old words now asserted absent.
+- **Gaps:** G-WALLET-05-1 (contract omits `at` on the timeline), -2 (no arrival time: W17 Arrives and W19's last line not drawn), -3 (W15/W45 arrival lines, no longer drawn), -4 (a stack inflow names no sender), -5 (the Hub serves no inflow fee: W15 "Free" not drawn). **Not run:** V10 (phone). **Next:** the verifier.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (L3, L4).
 
 ## Design v2 update (16 Oct 2026)
 
-- W15 is bank transfer only (R-42): the card draws the wallet's own account number, bank name and account name (all from `GET /money/wallet` `account`, bank "Nuvion" as the Hub says) each with Copy, and Share details. "Free" replaces "Free · instant"; the "1.5%" card line, the "instant" line and the FX line are gone. W16 (card) is removed from the canvas and WALLET-36 is cancelled.
-- W45 "Add money · waiting" and W46 "Add money · received" are states of this screen and belong to this task (decided in DESIGN-V2-CUT): after the person copies or shares the details the screen shows "Waiting for your transfer, usually a few minutes" and polls `GET /money/wallet/balance`; when the balance rises it shows W46 with the amount, the new balance, the sender line and the reference from the credit (`GET /money/transactions`). WALLET-39 sends the matching notice.
+- W15 is bank transfer only (R-42): the card draws the wallet's own account number, bank name and account name (all from `GET /money/wallet` `account`, bank "Nuvion" as the Hub says) each with Copy, and Share details. "Free" replaces "Free · instant" on the board, but it is not drawn: no inflow fee is served (G-WALLET-05-5); the "1.5%" card line, the "instant" line and the FX line are gone. W16 (card) is removed from the canvas and WALLET-36 is cancelled.
+- W45 "Add money · waiting" and W46 "Add money · received" are states of this screen and belong to this task (decided in DESIGN-V2-CUT): after the person copies or shares the details the screen shows "Waiting for your transfer" ("usually a few minutes" is not drawn: nothing serves it, G-WALLET-05-3) and polls `GET /money/wallet/balance`; when the balance rises it shows W46 with the amount, the new balance, the sender line and the reference from the credit (`GET /money/transactions`). WALLET-39 sends the matching notice.
 - W17 and W19 fee lines: the provider's part is labelled "Bank charge" (R-53); WAWU's part keeps its own label. The licence line stays hidden (R-67). Bills are off (R-52): the "Add from a bill" entry from S11 is not built.
 
 ## Read first
@@ -116,17 +123,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - W15: “⚠ From your Dollar account $1 = ₦1,580.00”
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-05.md](history/WALLET-05.md).
 
 ## Owner sign-off
 

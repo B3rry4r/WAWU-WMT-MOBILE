@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 4, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 9, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** nothing (every source task is merged).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -51,6 +51,11 @@ Sign-up, sign-in and account recovery screens: AUTH tasks, and the findings of t
 | AUTH-07 | N-3 | Nit: `sign-up.tsx`'s header comment says the line is asked on arrival; it is asked on each focus. | `tasks/AUTH-07.md`, Verifier report, round 4, line 518 |
 | CHECK-1 | F-6 | A3's heading sits 9 px lower than the render, the phone number is not grouped as drawn, A8's button carries an arrow the render does not. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 54 |
 | CHECK-1 | F-8 | An account whose email was never confirmed signs in to a message with no screen to finish confirming. Dated 7 Oct: re-check first. | `tasks/history/CHECK-1.md`, section 4 Findings, line 56 |
+| SETTINGS-08 | L1 | A sign-in that waits behind another can be handed an access token that is already dead (`deletion-window.service.ts:171-174` returns the restored account at once on `not_pending`, while only the claimer waits for `sessionsRevokedAt`, `:221-224`). 5 of 18 tokens were 401 SESSION_INVALID in 3 parallel sign-ins within one second; the refresh token works and the new access token opens (self-heals). Make the `not_pending` branch wait for `sessionsRevokedAt` too. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 1 |
+| SETTINGS-08 | L2 | G-SETTINGS-08-2 stays low: the Hub accepts a pre-delete token for its 15 minutes, and a direct `POST /account/cancel-deletion` with it leaves WAWU ID `pending_deletion`; if the person never signs in, the right password after WAWU ID's day 30 gives 403 PERIOD_ENDED for an account the Hub holds as live. Needs a hand-made call plus 30 days away. Add the lock-out sentence to the gap row. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-08.md`, low 2 |
+| SETTINGS-05 | L1 | G-SETTINGS-05-2 is filed wrongly. `BACKEND_GAPS.md` says Android's back signs out on Z8 and that a phone closed without Done keeps its session. The route swallows back (`src/app/settings/delete-account/scheduled.tsx:18`, `useSystemBack(() => undefined)`), and wawu-id revokes refresh tokens when the deletion is scheduled (a refresh after scheduling answers 401, a control account 200), so such a phone is signed out when its access token ends. Fix the gap text. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 1 |
+| SETTINGS-05 | L2 | A creator with an owed earning and no wallet gets Continue open on Z6 and learns of the refusal only at Z7, after typing DELETE. Correct by R-6 and the Hub being the authority; a Hub read for it would let Z6 say so earlier. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 2 |
+| SETTINGS-05 | L3 | The backend reason spec (`account-deletion-reason.contract.spec.ts`) drives the service and the DTO pipe, not the HTTP route (the verifier checked the route on the stack). The owed earning in the builder's and the verifier's checks is a `WalletPayment` row of the shape B3a counts, not one made through a money route. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 3 |
 
 ## Builder report
 

@@ -17,10 +17,10 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, round 3 built on the cutoff round (R-55, Sonnet builder), waiting for a verifier.
-- **Status:** verifying (the cutoff round of 17 Oct and this R-55 round, one verifier for both).
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge (the B1 medium F1 and F3 closed by the R-55 round; 3 lows); branch CI red only on the Fintava-double earning-settlement spec (R-55, owner question Q-42) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-16-R55.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
 - **Branches:** backend `wmt/WALLET-16-R55` `9580bb0` (from `wmt/B1` `e41210e`; B1 not pushed to), mobile `wmt/WALLET-16-R55` (records and the contract copy). Migration `20261025140000_earning_daily_moves`, additive: table `EarningMove`, nullable `EarningSettlement.moveId`, CHECKs, two guard triggers. The stamps `20261025120000` and `20261025130000` are unchanged. SHARED-CHANGES WALLET-16 #8.
-- **Merged and live:** nothing of this task.
+- **Merged and live:** nothing of this task (it is in `wmt/MERGE-12`, not on main).
 - **Sweep start cutoff (lead ruling 17 Oct):** untouched; its spec passes.
 - **One move a day (R-55, built):** the sweep makes one `EarningMove` per creator per Lagos day, carrying every earning not yet in a move, as ONE wallet-to-wallet transfer; the provider's charge is paid once. Made when the creator has a wallet, a total of at least `EARNINGS_MOVE_MIN_KOBO` (20000; exactly N200 moves, N199.99 waits and joins the next day's), no open move, and no move made or landed today. The reference is `wawu-earn-d-<YYYYMMDD>-<24 hex of the creator>`; (creator, day) is unique and one open move per creator is a partial unique index, so two servers on one day make one. All earnings land with the move in one write; the ledger has one pair for the transfer. No wallet: the creator keeps earning (`waiting` `payee_wallet`) and the first sweep after the wallet opens moves it all.
 - **Review 72 h after the first refusal (R-55, built):** `firstRefusedAt` is written once (the provider refused, or its record says the move failed); at `EARNINGS_REFUSED_REVIEW_AFTER_HOURS` (72) after it the move goes to review, once (`reviewSince`), and the look after a refusal is never later than that hour. Later refusals do not restart it. A frozen wallet, a missing wallet, funds and an unreachable provider are not refusals and keep waiting, as before.
@@ -29,7 +29,7 @@ As of 17 Oct 2026, round 3 built on the cutoff round (R-55, Sonnet builder), wai
 - **Changed by the ruling, not to pass a check:** the three Nuvion earnings specs asserted one transfer per sale (`wawu-earn-<payment id>`) and now assert the creator's one move; the shared `wallet-pay-harness.ts` cleanup also removes moves.
 - **NOT RUN, for the lead:** `earning-settlement.contract.spec.ts` is the Fintava spec (per-sale transfers, the old bound); it was not touched or run and will fail in CI by design under R-55: it needs the owner's or the lead's decision on a Fintava task.
 - **Decisions to confirm (agent defaults):** the move is made at the first sweep of the day at which the total reaches the floor, not at a fixed hour, so a creator's later sales that day wait for the next day; a held kind's release (DM, ticket, bill) is still its own transfer; no admin view of moves in review yet.
-- **Next:** a verifier.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B1 F2, F4 to F6; R55-1 to R55-3).
 - **Records:** tasks/history/WALLET-16.md.
 
 ## Owner rulings of 16 Oct 2026 (R-55)

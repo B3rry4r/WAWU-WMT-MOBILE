@@ -6,7 +6,7 @@ import { MeScreen } from '@/features/me/MeScreen';
  * The Me tab (M1, M2, M4, M10), inside the tabs so the bottom bar stays. Edit profile opens M8 (marked
  * `from=me`, so its save shows "Profile saved" here, M10, and not on M8 as well), a featured
  * work opens M35, "Add" opens M36, a listing on Services opens P8 (Your listings) and the paid messages row opens I21; each returns here with Back.
- * The Menu button raises Z1, whose Settings row opens Z2 (`/settings`); Back returns here. The gift button opens Invite and
+ * The Menu button raises Z1, whose Settings row opens Z2 (`/settings`) and whose My courses row opens SC8 (`/schools/mine`); Back returns here. The gift button opens Invite and
  * earn (RF1, `/invite`, REF-03); Back returns here. For a creator account the menu's first two rows open the Creator dashboard (M18, `/creator`) and My content (M28, `/library`); Back returns here. A draft tile in the Content grid opens Your shop (VF2, `/shop`, VERIFY-01); Back returns here.
  */
 export default function MeTab() {
@@ -18,6 +18,7 @@ export default function MeTab() {
       onOpenPaid={() => router.push('/paid-message-settings')}
       onOpenSettings={() => router.push('/settings')}
       onOpenInvite={() => router.push('/invite')}
+      onOpenCourses={() => router.push('/schools/mine')}
       onOpenVerification={() => router.push('/verification')}
       onOpenShop={() => router.push('/shop')}
       onCreate={() => router.push('/create')}
