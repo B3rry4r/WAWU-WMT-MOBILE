@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 106 | 0 | 0 | 0 |
+| todo | 105 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -33,6 +33,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
+- [SETTINGS-08](../tasks/SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in (You)
 - [NUV-08](../tasks/NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures (You)
 - [TIER-04](../tasks/TIER-04.md) Add 5 more products (You)
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
