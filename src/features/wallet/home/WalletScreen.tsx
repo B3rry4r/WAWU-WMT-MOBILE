@@ -43,8 +43,8 @@ const INFO_SKELETON = 86;
  * bills anywhere on this tab (R-52).
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
- * drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap (WALLET-21); Add money (WALLET-05); Withdraw (WALLET-17);
- * the WAWU card row (WALLET-22). Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
+ * drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap (WALLET-21);
+ * the WAWU card row (WALLET-22). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
  * is drawn when `GET /me/tier` has an event pass, beside the Points card (wallet.js line 47, 10 apart). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
  * money beyond the reads above.
@@ -256,12 +256,14 @@ function StateCard({ children }: { children: ReactNode }) {
 }
 
 /**
- * The actions that are built, in the board's order (Add money, Send, Withdraw, Buy points, To cash): Send opens W7, Buy points opens PT4
- * and To cash opens PT6. The others are added by the tasks that build where they lead (R-47).
+ * The actions that are built, in the board's order (Add money, Send, Withdraw, Buy points, To cash): Add money opens W15, Send opens W7,
+ * Withdraw opens W17, Buy points opens PT4 and To cash opens PT6 (WALLET-05 added Add money and Withdraw with their screens, R-47).
  */
 function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
   return [
+    { key: 'add-money', icon: 'Plus', label: 'Add money', onPress: () => router.push('/add-money'), accent: true },
     { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
+    { key: 'withdraw', icon: 'Landmark', label: 'Withdraw', onPress: () => router.push('/withdraw') },
     { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
     { key: 'to-cash', icon: 'Banknote', label: 'To cash', onPress: () => router.push('/points-convert') },
   ];

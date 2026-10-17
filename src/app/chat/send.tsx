@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { ChatSendScreen } from '@/features/chat/ChatSendScreen';
 import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
 import { useSystemBack } from '@/features/professionals/parts';
@@ -26,6 +27,7 @@ export default function ChatSendRoute() {
       onDone={leave}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
       onForgotPin={() => router.push('/reset-pin')}
+      onAddMoney={(short) => router.push(addMoneyHref(short))}
     />
   );
 }

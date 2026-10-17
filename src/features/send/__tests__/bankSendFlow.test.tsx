@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Text, View } from 'react-native';
 
@@ -183,6 +183,16 @@ const stub = (name: string) => {
   }
   return Stub;
 };
+/** W15 as a stand-in that says what shortfall it was opened with (WALLET-05 builds the real one). */
+function AddMoneyStandIn() {
+  const { short } = useLocalSearchParams<{ short?: string }>();
+  return (
+    <View>
+      <Text accessibilityRole="header">Add money</Text>
+      <Text testID="add-money-short">{`short ${short ?? ''}`}</Text>
+    </View>
+  );
+}
 function WalletStandIn() {
   const router = useRouter();
   const { WalletActions } = require('@/features/wallet/home/WalletActions') as typeof import('@/features/wallet/home/WalletActions');
@@ -209,6 +219,7 @@ beforeAll(async () => {
     'reset-pin': stub('Reset PIN'),
     'open-wallet': stub('Open your wallet'),
     'open-wallet-pin': stub('Create your PIN'),
+    'add-money': AddMoneyStandIn,
     'send/index': page('@/app/send/index'),
     'send/bank': page('@/app/send/bank'),
     'send/amount': page('@/app/send/amount'),
@@ -366,14 +377,31 @@ describe('W8 · send to a bank account', () => {
 });
 
 describe('W9 and W13 · the amount', () => {
+  it('a user over the balance can tap Add money (W13) and reach Add money (W15) with what the amount is over by', async () => {
+    await toAmount();
+    for (const k of '500000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('send-over-balance');
+    await fireEvent.press(screen.getByRole('button', { name: 'Add money' }));
+    await waitFor(() => expect(pathname()).toBe('/add-money'));
+    // ₦500,000 less ₦485,250.75, in kobo.
+    expect(screen.getByTestId('add-money-short').props.children).toBe('short 1474925');
+  });
+
+  it('with an amount the balance covers there is no Add money on W9', async () => {
+    await toAmount();
+    for (const k of '25000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('send-balance');
+    expect(screen.queryByRole('button', { name: 'Add money' })).toBeNull();
+  });
+
   it('an amount over the balance shows the shortfall line in place of the balance, and Continue stays off; a smaller amount turns it on', async () => {
     await toAmount();
     for (const k of '500000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
     expect(await screen.findByTestId('send-over-balance')).toBeTruthy();
     expect(screen.getByText(/^Over your balance of/)).toBeTruthy();
     expect(screen.getByTestId('send-continue').props.accessibilityState?.disabled).toBe(true);
-    // The board's Add money is WALLET-05's: not drawn here.
-    expect(screen.queryByRole('button', { name: 'Add money' })).toBeNull();
+    // W13's "Add money" (WALLET-05) opens W15 with what the amount is over the balance by: ₦500,000 less ₦485,250.75.
+    expect(screen.getByRole('button', { name: 'Add money' })).toBeTruthy();
     await fireEvent.press(screen.getByTestId('amount-key-delete'));
     expect(screen.queryByTestId('send-over-balance')).toBeNull();
     expect(screen.getByTestId('send-balance')).toBeTruthy();
@@ -468,15 +496,17 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     expect(hub.sends).toHaveLength(0);
   });
 
-  it('a short notice on W10 draws no Add button, because Add money is WALLET-05’s (R-47); the notice and Cancel stand', async () => {
+  it('a user short on W10 can tap Add and reach Add money (W15) with the shortfall: the total less the bank’s balance (WALLET-05)', async () => {
     hub.balanceKobo = 2_503_000;
     await toAmount();
     for (const k of '25000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
     await fireEvent.press(screen.getByTestId('send-continue'));
     await screen.findByTestId('send-review-screen');
     expect(await screen.findByText('Not enough in your Naira wallet')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /^Add / })).toBeNull();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: /^Add ₦/ }));
+    await waitFor(() => expect(pathname()).toBe('/add-money'));
+    expect(screen.getByTestId('add-money-short').props.children).toBe('short 3500');
   });
 
   it('a quote that changed since the review puts the new total on screen and sends nothing until it is read again', async () => {

@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
 import { ReviewScreen } from '@/features/send/ReviewScreen';
 import { payeeFromParams } from '@/features/send/model';
@@ -33,6 +34,7 @@ export default function SendReviewRoute() {
       onLeave={() => router.dismissTo('/wallet')}
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
+      onAddMoney={(short) => router.push(addMoneyHref(short))}
     />
   );
 }

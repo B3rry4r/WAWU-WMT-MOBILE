@@ -7,7 +7,7 @@ order: 98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-12]
 decisions: [R-11, R-55, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,15 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (11 Oct 16:45) and the branch.
-- **Status:** building on its branches (round 1 verified: the code held on every money attack). This file on main still says todo.
-- **Branches:** mobile `wmt/WALLET-16` 66c375c. Backend `wmt/WALLET-16` 18ea4fb (migration `20261021180000_earning_settlements`).
+As of 17 Oct 2026, merged onto batch 7 and the cutoff added (bundle B1, Sonnet builder), waiting for a verifier.
+- **Status:** verifying. Round 2 (verified earlier) is merged onto batch 7; the lead's start-time ruling of 17 Oct is built.
+- **Branches:** backend `wmt/B1` `e41210e` (on `origin/wmt/MERGE-7` `432f017`, with backend `wmt/WALLET-16` `315b69b` merged), mobile `wmt/B1` (records and the contract copy; docs only). Migrations `20261025120000_earning_settlements` (renamed from `20261021180000`, contents unchanged) and `20261025130000_earning_sweep_start` (new).
 - **Merged and live:** nothing of this task.
-- **Open findings:** medium: F1 (test gap on three money rules; the code is right), F2 (lease and bounds test gap) and F3 (a `refused` earning never goes to review, against CONVENTIONS section 19). The lead counts F2 and F3 as medium (16 Oct 2026), so all three get a fix round.
-  - Lows F6 and F7 are in tasks/SWEEP-MONEY.md. F5 (G-704): /me/earnings answers 0 where /money/earnings answers 433,499.
-- **Next:** fix round 2: tests for F1 and F2, the review path for F3 (MONEY-18's WalletHoldService has the same dead branch). Before the merge, count the unsettled completed sales with a payee on production (F8: the first sweep pays them all). G-703 is the owner's: earnings under about N155 cost more to move than WAWU's 15%.
-- **Records:** on the branch, `wmt/WALLET-16`, in tasks/WALLET-16.md there (40 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WALLET-16`; the history goes to tasks/history/WALLET-16.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** two owner rulings apply on top of round 2: R-55 (72 h review after the first refusal; one daily move per creator with a ₦200 floor). See the section below. The branch builder takes them in fix round 2.
+- **Merge onto batch 7:** two textual conflicts and one number clash: `money.module.ts` (both providers kept), `schema.prisma` (both models kept), and the earnings section of `CONVENTIONS.md` is now **section 26** (WALLET-07 holds 19); the comments, `WALLET.md` and the contract pointers say 26. `contract/openapi.json` was regenerated (additive over batch 7 only).
+- **The cutoff (lead ruling 17 Oct, default, the owner may override):** the sweep makes an earning only for a sale completed on or after the start. The start is `EARNINGS_SWEEP_START` when set (ISO with a zone, a bad value stops the app), else the moment the code first reached the environment, stored once in `EarningSweepStart` (one row, written by its migration). A sale before it is never paid by the sweep. `GET /admin/money/earnings/before-start` (superadmin and finance, `limit`, `after`) lists those sales oldest first; it moves nothing. A sale at exactly the start is paid, the millisecond before is not.
+- **Specs:** `earning-sweep-start.contract.spec.ts` (5 tests, Nuvion stand-in): both sides of the cutoff with the later sale landing once and the earlier getting no earning, the exact instant, the setting winning and bad values refused, the first-run row stored once, paging and the closed admin route. The existing Nuvion earning specs (38 tests) still pass; the Fintava spec was not run (never touched).
+- **NOT built:** R-55 (the daily move per creator with the 200 naira floor, and review 72 h after the FIRST refusal). The branch predates it, so the sweep still moves one earning per sale and the review bound is as round 2 left it. It needs a builder of its own.
+- **For the lead:** F8 (count the unsettled completed sales with a payee on production) matters less now: the first sweep pays none of them, they are listed. Decide whether the start should be a date the owner names. Set `EARNINGS_SWEEP_START` on the Hub before deploy if the owner wants older sales paid.
+- **Next:** a verifier on the cutoff; a builder for R-55.
+- **Records:** tasks/history/WALLET-16.md.
 
 ## Owner rulings of 16 Oct 2026 (R-55)
 
@@ -54,16 +56,12 @@ Per-content earnings breakdown; automatic settlement into the wallet. A creator 
 
 ## Capability checks
 
-- [ ] Earnings shown equal the sum of that creator's sales after the split.
-- [ ] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
+- [x] Earnings shown equal the sum of that creator's sales after the split.
+- [x] A creator with no wallet who earns, then opens a wallet, sees the waiting earnings land once.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-16.md](history/WALLET-16.md).
 
 ## Owner sign-off
 

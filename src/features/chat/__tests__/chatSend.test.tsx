@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => clearClients());
 
 const payee = { wawuUserId: OTHER, name: 'Femi Bankole', handle: 'femib', avatarUrl: null, tick: null } as const;
-const handlers = () => ({ onBack: jest.fn(), onDone: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn() });
+const handlers = () => ({ onBack: jest.fn(), onDone: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
 
 async function boot(h = handlers()) {
   await renderWith(<ChatSendScreen chatId={CHAT} payee={payee} {...h} />);
@@ -127,15 +127,16 @@ describe('I14: the amount', () => {
     expect(hub.payments).toBe(1);
   });
 
-  it('a wallet too short is told so before the PIN, with no Add button (Add money is WALLET-05’s, R-47), and nothing is sent', async () => {
+  it('a wallet too short is told so before the PIN, with Add money, and nothing is sent', async () => {
     hub.balanceKobo = 50_000;
-    await boot();
+    const h = await boot();
     await type('25000');
     await rtl.screen.findByTestId('chat-send-total');
     await rtl.fireEvent.press(sendButton());
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
     expect(hub.pays).toHaveLength(0);
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(2_502_575 - 50_000);
   });
 
   it('a refusal for a short wallet after the PIN shows the bank balance and keeps the key free', async () => {
@@ -224,7 +225,7 @@ describe('I15: the bubble in the chat', () => {
     hub.messages = [textMessage('Thanks, got it', true)];
     await addChatSend('owner-1', CHAT, 'tr-1', Date.parse('2026-10-17T10:42:00.000Z'));
     await renderWith(
-      <ChatScreen chatId={CHAT} onBack={jest.fn()} onSendMoney={jest.fn()} onOpenWallet={jest.fn()} onSetPin={jest.fn()} onForgotPin={jest.fn()} />,
+      <ChatScreen chatId={CHAT} onBack={jest.fn()} onSendMoney={jest.fn()} onOpenWallet={jest.fn()} onSetPin={jest.fn()} onForgotPin={jest.fn()} onAddMoney={jest.fn()} />,
     );
     await rtl.screen.findByTestId('sent-tr-1');
     expect(rtl.screen.getByText('You sent')).toBeTruthy();
@@ -238,7 +239,7 @@ describe('I15: the bubble in the chat', () => {
     hub.messages = [textMessage('Thanks, got it', true)];
     await addChatSend('owner-1', CHAT, 'tr-1');
     await renderWith(
-      <ChatScreen chatId={CHAT} onBack={jest.fn()} onSendMoney={jest.fn()} onOpenWallet={jest.fn()} onSetPin={jest.fn()} onForgotPin={jest.fn()} />,
+      <ChatScreen chatId={CHAT} onBack={jest.fn()} onSendMoney={jest.fn()} onOpenWallet={jest.fn()} onSetPin={jest.fn()} onForgotPin={jest.fn()} onAddMoney={jest.fn()} />,
     );
     expect(await rtl.screen.findByText('Sending to Femi')).toBeTruthy();
     await rtl.waitFor(() => expect(rtl.screen.getByText('Delivered to Femi')).toBeTruthy(), { timeout: 8000 });
