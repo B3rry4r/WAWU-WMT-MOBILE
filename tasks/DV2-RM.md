@@ -41,6 +41,7 @@ The boards the 16 Oct export dropped stop being drawn by built screens (law 6: t
 
 - Home Events tile (R-61): `src/features/home/Services.tsx`. Events stay reachable from Explore.
 - Home TGIF card and its "TGIF on Home" toggle (R-59): `src/features/home/TgifCard.tsx`, `TodayScreen.tsx`, the ADS-01 slot rule if any "TGIF off" branch remains, and `src/features/settings/SettingsScreen.tsx` (the row is replaced by DV2-06's). Remove only after the ad card, the notification (HOME-16) and the Explore card (EXPLORE-07) are in. The reader screen and its route stay.
+  - Keep: Explore imports TgifCard and TgifProblem (EXPLORE-07).
 - Bills (R-52, R-42): the Bills button on the balance card (`src/features/home/MoneyCard.tsx`), the Pay bills tile, the bill tiles on Wallet (`src/features/wallet/home/BillTiles.tsx`, `WalletScreen.tsx`, `WalletSkeleton.tsx`), the Bills history filter (`src/features/wallet/history/model.ts`) and every other entry into `src/app/bills/`. The bills screens and routes stay in the repo, unreachable (switched off, not deleted).
 - The "Get your professional tick" card on Me (R-43): `src/features/me/MeScreen.tsx`, `ProfileHeader.tsx`, `model.ts`; the tick stays as a mark beside a name only where the Hub still serves one.
 - Shop SH1 to SH15 are not built: nothing to remove. W16 and M11 to M14 are not built (not-built list). Search for every reference before deleting and move anything the removed code did that must survive (SHARED-CHANGES queue 3).

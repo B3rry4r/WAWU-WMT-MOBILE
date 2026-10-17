@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 93, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 97, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** the rows of FIX-09, FIX-10, FIX-15, FIX-18, FIX-19, FIX-22 and FIX-28 wait for batch 3 to merge (the code they name is on those branches until then); the rows of FIX-33, FIX-35, FIX-37, FIX-38, GATES-01, SCHOOLS-10, SHARED-05, FIX-14, ADS-01 and EXPLORE-05 wait for batch 4 to merge; the other rows' source tasks are merged. The rows of SHARED-06 wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -47,6 +47,7 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 
 | Source task | Id | Finding | Verifier report |
 |---|---|---|---|
+| EXPLORE-07 | L1 | PAID-AD ATTRIBUTION, DO FIRST. `src/features/explore/ExploreSlider.tsx`: `onOpen` calls `reports.tap()`, which is bound to the ACTIVE slide's advert, not the pressed one. Probe: 3 adverts, press a2's slide while a1 is current: the screen opens a2's event and the Hub is told a1 was tapped. Reachable only while the strip is between slides (a web click during a scroll), not at rest. Fix: report by the pressed slide's own id. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-07.md, finding 1` |
 | FIX-31 | 1 | LegalChatScreen has racy tests that read before an answer lands (three races; LEGAL-02's tests). | `tasks/FIX-31.md`, Verifier report, round 2, line 261 |
 | FIX-31 | 2 | Explore "the refusal line stays up for 4 seconds" fails under delay seeds 0 and 21. | `tasks/FIX-31.md`, Verifier report, round 2, line 262 |
 | FIX-31 | 3 | `requestsAnswered()` does not itself check that a request was sent. Note, low. | `tasks/FIX-31.md`, Verifier report, round 2, line 263 |
@@ -140,6 +141,9 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SHARED-06 | L4 | Mobile: `src/api/errors.ts` `toApiError`: a body `retryAfterSeconds: 0` is kept and blocks the header fallback, so `retryAfterOf` then reports null. The same precedence as before for the body figure. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-06.md`, finding L4 |
 | SHARED-06 | L5 | Mobile: `ScreenFrame` adds `insets.left/right` to the side padding on M8, M9 and the add-work screen (the old `EditFrame` had none): no change in portrait, a change in landscape or with a side notch. Harmless, undeclared. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SHARED-06.md`, finding L5 |
 | DV2-06 | L2 | `docs/release/DATA-INVENTORY.md` I-113 (`TgifPreference`, line 160) and I-200 (line 271) still say "TGIF on Home switch". Older docs, not user-facing. Reword to the name DV2-06 gave the Settings switch ("TGIF each morning") when the inventory is next touched. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/DV2-06.md`, finding 2 |
+| EXPLORE-07 | L2 | `useAdReports` remembers what it sent per mount of Explore, so a remount sends the view again (seen on the web export after two push-and-back trips to an event, then Home and Explore: slider reset to slide 1, one more view for the first advert). The Hub keeps one view and one tap per person per day (ADS-05), so the count is right; the brief asked for 'once each'. Keep what was sent across mounts, or rule it 'no' (the Hub dedupes). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-07.md, finding 2` |
+| EXPLORE-07 | L3 | The slider keeps its place by position, not by slide key. A refetch that inserts or reorders slides (return to the tab after 30 s, pull to refresh, window focus on web) changes the slide under the person without a scroll. No crash. Keep the place by the current slide's key. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-07.md, finding 3` |
+| EXPLORE-07 | L4 | Stale comment: `src/features/events/ExploreEvents.tsx` line 29 still points at `HeroDots` in `parts.tsx`, which was removed. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EXPLORE-07.md, finding 4` |
 
 ## Builder report
 

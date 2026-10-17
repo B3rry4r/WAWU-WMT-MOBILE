@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
 import { SeeAll } from '@/features/events/EventsScreen';
-import { canvasNormalLineHeight, font, layout, radius, useWawu } from '@/theme';
+import { canvasNormalLineHeight, layout, radius, useWawu } from '@/theme';
 
 import { creatorCardMetrics } from './CreatorCard';
 
@@ -17,13 +17,6 @@ import { creatorCardMetrics } from './CreatorCard';
 export const placeholderMetrics = {
   glyph: 36,
   cards: 3,
-  /** design/_gen/explore.js `hero`: three pager dots 16 in from the right and 18 up, 5 apart; the first is 22 wide, the others 6. */
-  dotsRight: 16,
-  dotsBottom: 18,
-  dotsGap: 5,
-  dot: 6,
-  dotActive: 22,
-  dotDim: 0.4,
 } as const;
 
 const count = (n: number) => Array.from({ length: n }, (_, i) => i);
@@ -46,49 +39,6 @@ export function SectionHeading({ title, action }: { title: string; action?: Reac
         {title}
       </Text>
       {action}
-    </View>
-  );
-}
-
-/** The hero's pager: the canvas's three dots, the first long. Decorative: the Hub serves one featured event, so nothing pages. */
-export function HeroDots({ color }: { color: string }) {
-  return (
-    <View
-      testID="explore-hero-dots"
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={styles.dots}
-    >
-      {[placeholderMetrics.dotActive, placeholderMetrics.dot, placeholderMetrics.dot].map((width, i) => (
-        <View key={i} testID={`explore-hero-dot-${i}`} style={[styles.dot, { width, backgroundColor: color, opacity: i === 0 ? 1 : placeholderMetrics.dotDim }]} />
-      ))}
-    </View>
-  );
-}
-
-/** X1's FEATURED EVENT block while there is no featured event: the hero's frame and kicker, a neutral picture, the dots. */
-export function ExploreFeaturedEventEmpty() {
-  const { colors } = useWawu();
-  return (
-    <View
-      testID="explore-featured-event-empty"
-      accessible
-      accessibilityLabel="Featured event, none to show"
-      style={[styles.hero, { backgroundColor: colors.surfaceSunken }]}
-    >
-      <View style={styles.heroGlyph}>
-        <Icon name="CalendarDays" size={placeholderMetrics.glyph} color={colors.textMuted} strokeWidth={1.5} />
-      </View>
-      <View style={styles.heroWords}>
-        <Text
-          variant="body"
-          style={[font(700), { fontSize: ev.kicker, lineHeight: canvasNormalLineHeight(ev.kicker), letterSpacing: ev.kickerTracking * ev.kicker, color: colors.accentFg }]}
-        >
-          FEATURED EVENT
-        </Text>
-      </View>
-      <HeroDots color={colors.textMuted} />
     </View>
   );
 }
@@ -144,17 +94,6 @@ const styles = StyleSheet.create({
   eventPicture: { alignSelf: 'stretch', height: ev.picture },
   creatorsRail: { flexDirection: 'row', gap: creatorCardMetrics.between, paddingHorizontal: layout.gutter },
   eventsRail: { flexDirection: 'row', gap: ev.cardsApart, paddingHorizontal: layout.gutter },
-  hero: { height: ev.heroHeight, borderRadius: ev.heroCorner, overflow: 'hidden' },
-  heroGlyph: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
-  heroWords: { position: 'absolute', left: ev.heroInsetX, right: ev.heroInsetX, bottom: ev.heroInsetBottom },
-  dots: {
-    position: 'absolute',
-    right: placeholderMetrics.dotsRight,
-    bottom: placeholderMetrics.dotsBottom,
-    flexDirection: 'row',
-    gap: placeholderMetrics.dotsGap,
-  },
-  dot: { height: placeholderMetrics.dot, borderRadius: placeholderMetrics.dot / 2 },
   eventCard: { width: ev.cardWidth, borderRadius: ev.cardCorner, overflow: 'hidden' },
   eventWords: {
     paddingTop: ev.wordsTop,

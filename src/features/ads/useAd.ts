@@ -1,7 +1,7 @@
 import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { adKey, fetchAd, reportAd, type AdCard, type AdEventKind, type AdPlacement } from './api';
+import { adKey, adListKey, fetchAd, fetchAdList, reportAd, type AdCard, type AdEventKind, type AdListPlacement, type AdPlacement } from './api';
 
 /**
  * The live card for a place. A sponsored card is never a reason to draw a frame or an error: while it is on its
@@ -14,6 +14,25 @@ export function useAd(placement: AdPlacement, enabled = true, client?: QueryClie
     {
       queryKey: adKey(placement),
       queryFn: () => fetchAd(placement),
+      enabled,
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+    client,
+  );
+}
+
+/**
+ * The live cards for a place that serves a list (the Explore slider). The same rule as one card: a read that is on its
+ * way, that found none or that failed is an empty list, never a frame or an error. Not retried and not read again when
+ * the app returns to the front.
+ */
+export function useAdList(placement: AdListPlacement, enabled = true, client?: QueryClient) {
+  return useQuery(
+    {
+      queryKey: adListKey(placement),
+      queryFn: () => fetchAdList(placement),
       enabled,
       retry: false,
       refetchOnWindowFocus: false,
