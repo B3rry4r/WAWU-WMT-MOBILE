@@ -1,6 +1,6 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { onSessionEnd, useSession } from '@/api/session';
@@ -11,17 +11,19 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { font, layout, radius, space, type } from '@/theme';
+import { Icon } from '@/components/icon';
+import { canvasNormalLineHeight, radius, space, type, useWawu } from '@/theme';
 
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { Banner } from '@/features/auth/Banner';
 
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
+import { openingProgressQuery } from './api/review';
 import { runBvnCheck } from './api/check';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, isKeptFor, keepCheck, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
-import { groupIdNumber, idDigits, isWholeIdNumber, localPhone, maskedIdNumber } from './numbers';
+import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
+import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
 
@@ -32,7 +34,15 @@ const BODY_GAP = 14;
 /** The loading view's title and line blocks, the height of the 24 px title and the 13.5 px line they stand in for. */
 const SKELETON = { title: 28, line: 19, titleWidth: '70%', lineWidth: '50%', label: 15, labelWidth: '30%' } as const;
 
-const NAV_TITLE = 'Open your wallet';
+/** A30's flag opens this step under the header "Complete your account", the first of four (A31). */
+const NAV_TITLE = 'Complete your account';
+const NAV_STEP = '1 of 4';
+/** auth.js line 84 (A31): the lock row, a Lock 15 at 2 and a 13 px line, 8 apart. */
+const LOCK = { icon: 15, stroke: 2, size: 13, gap: 8 } as const;
+/** auth.js line 84: the BVN and NIN hints, and the lock line. */
+const BVN_HINT = 'Dial *565*0# to get it';
+const NIN_HINT = 'Dial *346# to get it';
+const LOCK_LINE = 'Checked with NIBSS. Never shown on your profile.';
 
 let visits = 0;
 const nextVisit = () => {
@@ -51,7 +61,7 @@ export type OpenWalletScreenProps = {
   onContinue: () => void;
 };
 
-type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' } | { end: 'no_bvn' };
+type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' };
 
 /**
  * A26, the first step of Open your wallet (R-6), with A14 as its state: the
@@ -81,7 +91,8 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   const { status } = useSession();
   const [me] = useQueries({ queries: [ownAccountQuery(visit, status === 'signedIn')] });
   const owner = me.data?.wawuUserId;
-  const [wallet, identity] = useQueries({ queries: [walletStateQuery(owner), identityQuery(owner)] });
+  // The opening's flow decides what Continue does (KYC-07): the review opening has no BVN check to run.
+  const [wallet, identity, progress] = useQueries({ queries: [walletStateQuery(owner), identityQuery(owner), openingProgressQuery(owner)] });
   const account = me;
   const [ended, setEnded] = useState<Ended | null>(null);
   const kept = useKeptCheck(owner);
@@ -118,7 +129,7 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
       void identity.refetch();
     };
     return (
-      <AuthFrame testID="open-wallet-error" navTitle={NAV_TITLE} onBack={onClose}>
+      <AuthFrame testID="open-wallet-error" navTitle={NAV_TITLE} navStep={NAV_STEP} onBack={onClose}>
         <ErrorState
           title="We couldn't open this step"
           message={isApiError(failed.error) ? failed.error.message : 'Something went wrong. Try again.'}
@@ -129,7 +140,9 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   }
 
   // Nothing is shown until the account read is known to be the signed-in one.
-  if (!account.data || !wallet.data || !identity.data || signedInAs !== account.data.wawuUserId) return <Loading onClose={onClose} />;
+  // A progress read that failed leaves the older opening (the BVN check), which asks the Hub itself.
+  const flowKnown = progress.data !== undefined || progress.isError;
+  if (!account.data || !wallet.data || !identity.data || !flowKnown || signedInAs !== account.data.wawuUserId) return <Loading onClose={onClose} />;
 
   if (wallet.data === 'open' || wallet.data === 'frozen') {
     return <Ending ended={{ end: 'wallet_open' }} onClose={onClose} />;
@@ -154,6 +167,7 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   return (
     <BvnNinForm
       account={account.data}
+      review={progress.data?.flow === 'review'}
       onClose={onClose}
       onEnded={setEnded}
       onPassed={onContinue}
@@ -163,7 +177,7 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
 
 function Loading({ onClose }: { onClose: () => void }) {
   return (
-    <AuthFrame testID="open-wallet-loading" navTitle={NAV_TITLE} onBack={onClose}>
+    <AuthFrame testID="open-wallet-loading" navTitle={NAV_TITLE} navStep={NAV_STEP} onBack={onClose}>
       <LoadingView label="Loading your details">
         <View style={styles.body}>
           <View style={styles.titleBlock}>
@@ -202,11 +216,7 @@ function Ending({ ended, onClose }: { ended: Ended; onClose: () => void }) {
       tone="neutral"
       icon="Globe"
       title="Not available yet"
-      message={
-        ended.end === 'not_available'
-          ? `${ended.message} Wallets for people without a Nigerian BVN are not available yet.`
-          : 'A Naira wallet needs a Nigerian BVN. Wallets for people without one are not available yet.'
-      }
+      message={`${ended.message} Wallets for people without a Nigerian BVN are not available yet.`}
       actionLabel="Done"
       onAction={onClose}
     />
@@ -243,6 +253,8 @@ type Missing = { bvn?: string; nin?: string };
 
 type FormProps = {
   account: OwnAccount;
+  /** The Hub reviews the person itself (Nuvion): no BVN check runs, the numbers are held for the open call (KYC-07). */
+  review: boolean;
   onClose: () => void;
   onEnded: (ended: Ended) => void;
   /** A check passed and was kept: on to A5. */
@@ -250,8 +262,9 @@ type FormProps = {
 };
 
 /** A26's form. The BVN and NIN live only in its two fields, and are cleared as soon as a check passes. */
-function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
+function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) {
   const queryClient = useQueryClient();
+  const { colors } = useWawu();
   const [bvn, setBvn] = useState('');
   const [nin, setNin] = useState('');
   const [busy, setBusy] = useState(false);
@@ -296,10 +309,16 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
       setMissing(gaps);
       return;
     }
+    const ticket = ticketFor(account.wawuUserId);
+    if (review) {
+      // The review opening has no BVN check (the Hub answers `step_not_used`): the numbers stay in memory for the
+      // open call and the Hub's review checks them. They stay in these fields too, so back from the next step they are still here.
+      if (keepNumbers(ticket, { bvn: idDigits(bvn), nin: idDigits(nin) })) onPassed();
+      return;
+    }
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
-    const ticket = ticketFor(account.wawuUserId);
     try {
       const check = await runBvnCheck({ bvn: idDigits(bvn), nin: idDigits(nin) });
       // An answer whose session has ended (its ticket void) writes nothing at
@@ -326,41 +345,27 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
     }
   };
 
-  const fieldError = (field: 'phone' | 'bvn') => (failure?.kind === 'field' && failure.field === field ? failure.message : undefined);
+  const bvnError = failure?.kind === 'field' && failure.field === 'bvn' ? failure.message : undefined;
+  // A14: the BVN is registered to another phone. The board draws it as a banner over the form, in its own words.
+  const phoneMismatch = failure?.kind === 'field' && failure.field === 'phone';
 
   return (
     <AuthFrame
       testID="open-wallet"
       scrollRef={scrollRef}
       navTitle={NAV_TITLE}
+      navStep={NAV_STEP}
       onBack={onClose}
-      footer={
-        <>
-          <Button label="Continue" full loading={busy} onPress={() => void submit()} testID="open-wallet-continue" />
-          <Pressable
-            testID="open-wallet-no-bvn"
-            accessibilityRole="link"
-            accessibilityLabel="I don't have a Nigerian BVN"
-            hitSlop={layout.tapMin / 4}
-            disabled={busy}
-            onPress={() => onEnded({ end: 'no_bvn' })}
-            style={styles.link}
-          >
-            <Text variant="kvLabel" tone="accentFg" style={font(700)}>
-              {"I don't have a Nigerian BVN"}
-            </Text>
-          </Pressable>
-        </>
-      }
+      footer={<Button label="Continue" full loading={busy} onPress={() => void submit()} testID="open-wallet-continue" />}
     >
       <View style={styles.body}>
         <View style={styles.titleBlock}>
           <Text variant="h1" style={styles.title}>
-            {"Let's open your wallet"}
+            Verify your identity
           </Text>
-          <Text variant="muted">Your BVN fills in the rest.</Text>
+          <Text variant="muted">Needed for your account number. Your phone number must match your BVN record.</Text>
         </View>
-        {failure?.kind !== 'banner' && notice ? (
+        {failure?.kind !== 'banner' && !phoneMismatch && notice ? (
           <Banner
             tone="warning"
             title="We need a new BVN check"
@@ -371,22 +376,23 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
         {failure?.kind === 'banner' ? (
           <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="open-wallet-banner" />
         ) : null}
-        <AuthField
-          scrollRef={scrollRef}
-          label="Phone number"
-          testID="open-wallet-phone"
-          value={localPhone(account.phone)}
-          readOnly
-          hint="Must be the number on your BVN"
-          error={fieldError('phone')}
-        />
+        {phoneMismatch ? (
+          <Banner
+            tone="danger"
+            title="Your phone doesn't match your BVN record"
+            body="Use the number on your BVN, or update it with your bank."
+            testID="open-wallet-phone-mismatch"
+          />
+        ) : null}
         <AuthField
           scrollRef={scrollRef}
           label="BVN"
           testID="open-wallet-bvn"
           value={bvn}
           onChangeText={edit(setBvn, 'bvn')}
-          error={missing.bvn ?? fieldError('bvn')}
+          hint={BVN_HINT}
+          error={missing.bvn ?? bvnError}
+          invalid={phoneMismatch}
           keyboardType="number-pad"
           inputMode="numeric"
           autoComplete="off"
@@ -405,6 +411,7 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
           inputRef={ninInput}
           value={nin}
           onChangeText={edit(setNin, 'nin')}
+          hint={NIN_HINT}
           error={missing.nin}
           keyboardType="number-pad"
           inputMode="numeric"
@@ -416,6 +423,12 @@ function BvnNinForm({ account, onClose, onEnded, onPassed }: FormProps) {
           returnKeyType="go"
           onSubmitEditing={() => void submit()}
         />
+        <View style={styles.lock} testID="open-wallet-lock-line">
+          <Icon name="Lock" size={LOCK.icon} color={colors.textMuted} strokeWidth={LOCK.stroke} />
+          <Text variant="secondary" style={styles.lockText}>
+            {LOCK_LINE}
+          </Text>
+        </View>
       </View>
     </AuthFrame>
   );
@@ -426,5 +439,6 @@ const styles = StyleSheet.create({
   titleBlock: { gap: TITLE_GAP },
   title: { lineHeight: type.size.h1 * TITLE_LEADING },
   skeletonField: { gap: space.sm },
-  link: { alignSelf: 'center', paddingVertical: space.xs },
+  lock: { flexDirection: 'row', alignItems: 'center', gap: LOCK.gap },
+  lockText: { flex: 1, fontSize: LOCK.size, lineHeight: canvasNormalLineHeight(LOCK.size) },
 });

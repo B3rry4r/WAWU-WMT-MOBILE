@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
 import { fetchWalletIdentity, identityProblem, saveOccupation, type BvnPrefill, type WalletIdentity } from '@/api/walletIdentity';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
@@ -21,7 +20,9 @@ import { Banner } from '@/features/auth/Banner';
 
 import { OPEN_WALLET_KEY } from './api/account';
 import { birthDate, CITY_MAX, detailsProblems, fullName, genderWord, OCCUPATION_MAX, openingName, STREET_MAX, tidyDetails, type DetailsProblems } from './details';
-import { keepAddress, ticketFor, ticketIsLive, useKeptOpening, type HomeAddress } from './keptCheck';
+import { ConsentBox } from './ConsentBox';
+import { keepAddress, ticketFor, ticketIsLive, useHeldReview, useKeptOpening, type HomeAddress } from './keptCheck';
+import { ReviewDetailsForm } from './ReviewDetailsForm';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
 import { StateField, StateSheet } from './StatePicker';
@@ -37,8 +38,6 @@ const ROW_GAP = 10;
 const BVN_CARD = { padV: space.md, stack: 6, badge: 16, badgeStroke: 2.2, titleGap: 6, titleSize: 12.5 } as const;
 /** auth.js line 56, `ro`: rows at least 48 high, 12 between key and value, key 13.5 text-secondary, a hairline under each. */
 const BVN_ROW = { minHeight: 48, between: space.md, key: 13.5, edge: 1 } as const;
-/** auth.js line 57, the consent box: 22 square, 7 radius, a Check 14 at 3; 10 to its line of 13.5 text-secondary. */
-const CONSENT = { box: 22, corner: 7, tick: 14, tickStroke: 3, ring: 1.5, between: 10, size: 13.5 } as const;
 /** The loading view's blocks: the card, then three field labels and boxes. */
 const SKELETON = { card: 176, label: 15, labelWidth: '30%' } as const;
 
@@ -51,6 +50,8 @@ export type ConfirmDetailsScreenProps = {
   onBack: () => void;
   /** On to A6 once the details are saved and kept. */
   onContinue: () => void;
+  /** Under the review opening (KYC-07) there is no selfie before the documents: on to A26 once the typed details are kept. */
+  onReviewContinue?: () => void;
   /** Back to A26 for a new BVN check: nothing kept for this account, or the server holds another check. */
   onRestart: (notice?: string) => void;
   /** Leaves Open your wallet (an end with nowhere further to go). */
@@ -66,11 +67,13 @@ export type ConfirmDetailsScreenProps = {
  * occupation (`PUT /money/identity/occupation`), keeps the address in memory
  * beside the check for A7, and goes on to the selfie (A6).
  */
-export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }: ConfirmDetailsScreenProps) {
+export function ConfirmDetailsScreen({ onBack, onContinue, onReviewContinue, onRestart, onLeave }: ConfirmDetailsScreenProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const kept = useKeptOpening(owner);
+  // The review opening (KYC-07) keeps the typed numbers instead of a passed check: the form asks for the name too.
+  const held = useHeldReview(owner);
   // Its own read of the step, never A26's cached answer: A5 shows nothing until the server confirms the check it holds is the one kept here.
   const identity = useQuery({
     queryKey: [OPEN_WALLET_KEY, 'details', owner ?? ''] as const,
@@ -80,7 +83,7 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }:
     enabled: Boolean(owner) && kept !== null,
   });
 
-  const lost = status === 'signedIn' && owner !== undefined && kept === null;
+  const lost = status === 'signedIn' && owner !== undefined && kept === null && held === null;
   // The server holds another check than the one kept here (a newer one, or none): the details are not this check's.
   const stale = Boolean(kept && identity.data && identity.data.bvn?.last4 !== kept.check.identity.bvn?.last4);
   useEffect(() => {
@@ -88,6 +91,10 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onRestart, onLeave }:
     // A newer check passed elsewhere: this one's details no longer open the account.
     else if (stale) onRestart(CHECK_AGAIN);
   }, [lost, stale, onRestart]);
+
+  if (owner && !kept && held) {
+    return <ReviewDetailsForm owner={owner} held={held} onBack={onBack} onContinue={onReviewContinue ?? onContinue} />;
+  }
 
   if (identity.isError && identity.data === undefined) {
     return (
@@ -194,8 +201,6 @@ type FormProps = {
 type Failure = { title: string; body: string };
 
 function DetailsForm({ owner, prefill, identity, address, occupation: keptOccupation, onBack, onContinue, onRestart }: FormProps) {
-  const { colors } = useWawu();
-  const consentRing = useFocusRing();
   const scrollRef = useRef<ScrollView>(null);
   const [street, setStreet] = useState(address?.street ?? '');
   const [city, setCity] = useState(address?.city ?? '');
@@ -307,49 +312,15 @@ function DetailsForm({ owner, prefill, identity, address, occupation: keptOccupa
           autoCapitalize="sentences"
           returnKeyType="done"
         />
-        <View style={styles.consentBlock}>
-          <Pressable
-            testID="open-wallet-consent"
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: agreed, disabled: busy }}
-            aria-checked={agreed}
-            accessibilityLabel="I agree to the terms and privacy policy"
-            accessibilityHint={problems.agreed}
-            disabled={busy}
-            onPress={() => {
-              setAgreed((now) => !now);
-              setProblems((now) => ({ ...now, agreed: undefined }));
-            }}
-            {...consentRing.handlers}
-            style={[styles.consent, consentRing.style]}
-          >
-            <View
-              style={[
-                styles.box,
-                agreed
-                  ? { backgroundColor: colors.accent }
-                  : { borderWidth: CONSENT.ring, borderColor: problems.agreed ? colors.danger : colors.borderStrong },
-              ]}
-            >
-              {agreed ? <Icon name="Check" size={CONSENT.tick} color={colors.textOnAccent} strokeWidth={CONSENT.tickStroke} /> : null}
-            </View>
-            <Text variant="secondary" style={styles.consentText}>
-              {'I agree to the '}
-              <Text variant="secondary" tone="accentFg" style={font(700)}>
-                terms
-              </Text>
-              {' and '}
-              <Text variant="secondary" tone="accentFg" style={font(700)}>
-                privacy policy
-              </Text>
-            </Text>
-          </Pressable>
-          {problems.agreed ? (
-            <Text variant="caption" tone="danger" accessibilityRole="alert" testID="open-wallet-consent-error">
-              {problems.agreed}
-            </Text>
-          ) : null}
-        </View>
+        <ConsentBox
+          agreed={agreed}
+          busy={busy}
+          problem={problems.agreed}
+          onToggle={() => {
+            setAgreed((now) => !now);
+            setProblems((now) => ({ ...now, agreed: undefined }));
+          }}
+        />
       </View>
       <StateSheet
         visible={picking}
@@ -377,8 +348,4 @@ const styles = StyleSheet.create({
   bvnValue: { flexShrink: 1, textAlign: 'right' },
   row: { flexDirection: 'row', gap: ROW_GAP },
   half: { flex: 1 },
-  consentBlock: { gap: space.sm },
-  consent: { flexDirection: 'row', alignItems: 'center', gap: CONSENT.between, alignSelf: 'flex-start' },
-  box: { width: CONSENT.box, height: CONSENT.box, borderRadius: CONSENT.corner, alignItems: 'center', justifyContent: 'center' },
-  consentText: { flexShrink: 1, fontSize: CONSENT.size, lineHeight: canvasNormalLineHeight(CONSENT.size) },
 });

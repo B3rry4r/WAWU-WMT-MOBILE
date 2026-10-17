@@ -196,7 +196,7 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
       <View style={styles.body}>
         {failure ? <Banner tone="danger" title={failure.title} body={failure.body} testID="open-wallet-id-banner" /> : null}
         <Text variant="muted">
-          NIN slip, passport, driver&apos;s licence or voter&apos;s card. Both sides if it has two.
+          NIN slip, passport or driver&apos;s licence. Both sides if it has two.
         </Text>
         <ChoiceField
           label="ID type"

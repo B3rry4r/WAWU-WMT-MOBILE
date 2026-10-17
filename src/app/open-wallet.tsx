@@ -8,10 +8,10 @@ import { LoadingView } from '@/components/Skeleton';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 
 /**
- * The first step of Open your wallet (R-6, with A14 as its state). Reached from
- * anything that moves money when there is no wallet yet (`useOpenWalletEntry`).
- * A passed check goes on to A5, pushed on top so this step and the details it
- * keeps stay put. A person whose details the Hub already has (the bank is
+ * A31 · BVN and NIN, the first of four steps of Complete your account (R-6, with A14 as its state). Reached from
+ * Home's flag (A30) and from anything that moves money when there is no wallet yet (`useOpenWalletEntry`).
+ * A passed check (or, under the review opening, the numbers held) goes on to A5, pushed on top so this step and
+ * the details it keeps stay put. A person whose details the Hub already has (the bank is
  * reviewing them) is taken to where the review stands instead (KYC-06:
  * A26, A28 or A29). Signed in only, by the route graph (SHARED-05): signed
  * out, there is no wallet to open.

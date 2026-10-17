@@ -343,6 +343,27 @@ describe('the balance card without a balance', () => {
     expect(mockPush).toHaveBeenCalledWith('/open-wallet');
   });
 
+  it('A30: a user with no wallet sees the "Complete your account" flag above the card, and tapping it opens A31', async () => {
+    answers[T.wallet] = [ok({ state: 'not_open', account: null })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-complete-account')).toBeTruthy());
+    expect(screen.getByText('Complete your account')).toBeTruthy();
+    expect(screen.getByText('Verify your identity to get your account number')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByTestId('today-complete-account'));
+    expect(mockPush).toHaveBeenCalledWith('/open-wallet');
+  });
+
+  it('A30: the flag stays while the account is still opening, and is gone once it is open', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null }), walletOpen];
+    answers[T.balance] = [ok({ availableKobo: 0, asOf: '2026-10-07T10:00:00Z' })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    expect(screen.getByTestId('today-complete-account')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Check again' }));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦0.00'));
+    expect(screen.queryByTestId('today-complete-account')).toBeNull();
+  });
+
   it('a wallet still opening says so, and Check again asks about the wallet again', async () => {
     answers[T.wallet] = [ok({ state: 'opening', account: null }), walletOpen];
     answers[T.balance] = [ok({ availableKobo: 0, asOf: '2026-10-07T10:00:00Z' })];
