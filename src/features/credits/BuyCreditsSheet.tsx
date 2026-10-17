@@ -3,8 +3,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
-import { CurrencyFlag } from '@/components/CurrencyFlag';
-import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
@@ -13,6 +11,7 @@ import { PinSheet } from '@/components/pin-sheet';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
+import { WalletRow } from '@/features/money-attempt/WalletRow';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { TOTAL_LABEL, WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { font, radius, space, useWawu } from '@/theme';
@@ -27,7 +26,6 @@ import { useBuyCredits, type BuyCreditsArgs } from './useBuyCredits';
  * pack has the accent tint and a 1.5 accent ring, the others a 1 hairline. The packs are 8 apart. The wallet row is kit.js line 69.
  */
 const packMetrics = { corner: radius.media, padV: 14, padH: 12, between: 6, badge: 26, count: 26, countTracking: -0.03, unit: 12, price: 15, ringOn: 1.5, ringOff: 1, row: 8 } as const;
-const walletMetrics = { flag: 36, gap: 12, padV: 14, title: 15, line: 13, check: 20, corner: radius.card } as const;
 const addedMetrics = { tile: 72, tileGlyph: 32 } as const;
 const SHEET_GAP = 16;
 
@@ -130,7 +128,7 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
             <KeyValueRow key="total" label={TOTAL_LABEL} value={<Money minorUnits={quote.payment.totalKobo} size={14.5} decimals />} testID="credits-total" />
           </GroupedList>
         ) : buy.quoteLoading ? (
-          <Skeleton width="100%" height={walletMetrics.flag * 2} testID="credits-quote-loading" />
+          <Skeleton width="100%" height={space.xl * 4} testID="credits-quote-loading" />
         ) : null}
         <WalletRow balanceKobo={buy.balanceKobo} />
         {buy.notice ? (
@@ -221,33 +219,6 @@ function Pack({ pack, on, onPress }: { pack: CreditPack; on: boolean; onPress: (
   );
 }
 
-/** kit.js line 69, `fromWallet`: the naira coin, "Pay from wallet", the wallet's balance (the bank's figure) and a ring check. */
-function WalletRow({ balanceKobo }: { balanceKobo: number | null }) {
-  const { colors } = useWawu();
-  return (
-    <View style={[styles.wallet, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] }]}>
-      <CurrencyFlag currency="NGN" size={walletMetrics.flag} />
-      <View style={styles.walletWords}>
-        <Text variant="cardTitle">Pay from wallet</Text>
-        <View style={styles.walletLine}>
-          <Text variant="meta" tone="textMuted">
-            {WALLET_LABEL} ·
-          </Text>
-          {balanceKobo === null ? (
-            <Skeleton width={space.xl * 3} height={walletMetrics.line} testID="credits-balance-loading" />
-          ) : (
-            <Money minorUnits={balanceKobo} size={walletMetrics.line} weight={500} tone="textMuted" testID="credits-balance" />
-          )}
-          <Text variant="meta" tone="textMuted">
-            available
-          </Text>
-        </View>
-      </View>
-      <Icon name="CircleCheck" size={walletMetrics.check} color={colors.accentFg} strokeWidth={2.2} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   head: { gap: packMetrics.between },
   packs: { flexDirection: 'row', gap: packMetrics.row },
@@ -261,9 +232,6 @@ const styles = StyleSheet.create({
     gap: packMetrics.between,
   },
   noBadge: { height: packMetrics.badge },
-  wallet: { flexDirection: 'row', alignItems: 'center', gap: walletMetrics.gap, paddingVertical: walletMetrics.padV, paddingHorizontal: space.lg, borderRadius: walletMetrics.corner },
-  walletWords: { flex: 1, minWidth: 0 },
-  walletLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap', marginTop: 2 },
   retry: { gap: space.sm, alignItems: 'flex-start' },
   added: { alignItems: 'center', gap: space.md, paddingTop: space.sm },
   centre: { textAlign: 'center' },

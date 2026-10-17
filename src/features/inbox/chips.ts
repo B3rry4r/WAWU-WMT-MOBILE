@@ -12,6 +12,7 @@ export type InboxChip = ChipItem<string> & { kind: InboxKind | 'all' };
 export const inboxChips: readonly InboxChip[] = [
   { value: 'all', label: 'All', kind: 'all' },
   { value: 'communities', label: 'Communities', kind: 'community' },
+  { value: 'money', label: 'Money', kind: 'money_request' },
 ];
 
 /** The chip that opens I24, the communities view (INBOX-05). */

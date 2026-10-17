@@ -115,11 +115,11 @@ describe('the inbox screen', () => {
     expect(rtl.screen.queryByText('No messages yet')).toBeNull();
   });
 
-  it('shows only the chips whose screens exist: All and Communities', async () => {
+  it('shows only the chips whose screens exist: All, Communities and Money (INBOX-20 built it)', async () => {
     answers[FIRST] = [pageOf([row('chat:1')])];
     await renderScreen(testRows);
     await rtl.screen.findByTestId('row-chat:1');
-    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities']);
+    expect(rtl.screen.getAllByRole('radio').map((chip) => chip.props.accessibilityLabel)).toEqual(['All', 'Communities', 'Money']);
   });
 
   it('a user with no messages sees "No messages yet" and the guidance', async () => {
