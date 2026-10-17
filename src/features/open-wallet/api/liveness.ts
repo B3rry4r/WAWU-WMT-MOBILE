@@ -61,10 +61,17 @@ export async function fetchLiveness(): Promise<Liveness> {
  * the website's own `/selfie` (an app link, LINKS-01): the Hub takes an https address only when its
  * `NUVION_LIVENESS_REDIRECT_ORIGINS` lists it, so that list is set whenever `NUVION_HOSTED_LIVENESS` is on (the Hub
  * logs an error at boot when it is not, G-827). The selfie page then sends the person back to the app, or to the
- * website's "Open in the WAWU app" page, when they finish.
+ * website's "Open in the WAWU app" page, when they finish. A Hub that does not list it yet answers
+ * `document_request_invalid` for the address; the selfie is then started once more with no address (the old
+ * behaviour), so this step never breaks on a Hub without the setting.
  */
 export async function startLiveness(): Promise<Liveness> {
-  return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: { redirectUrl: selfieReturnUrl() } })));
+  try {
+    return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: { redirectUrl: selfieReturnUrl() } })));
+  } catch (error) {
+    if (livenessProblem(error) !== 'invalid') throw error;
+    return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: {} })));
+  }
 }
 
 export const LIVENESS_KEY = [OPEN_WALLET_KEY, 'liveness'] as const;
