@@ -27,6 +27,7 @@ As of 17 Oct 2026, built (bundle S4, Sonnet builder), waiting for a verifier.
 - **Filed:** BACKEND_GAPS G-880, G-881, G-882, G-884. SHARED-CHANGES LEGAL-06 #1.
 - **NOT RUN:** a live S24 and S26 (no service qualifies, so they were drawn from a stubbed catalogue in the browser); V10 is not in this task's passes.
 - **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/`.
+- **Round 2 (17 Oct 2026, Sonnet builder; verify/S4.md F1, F4):** when the Hub's request changes under an open S22 (a new quote, status or "no fee due"), the stale price card and "Pay ₦X to start" are dropped, the matter is read again, and the page shows the Hub's sentence ("Nothing to pay right now"); a Pay that cannot work is never drawn, not even greyed (`useLegalFeePay`: `unpayable`, `reload`; `MatterScreen`). A new quote the Hub still takes is shown with "The price changed." Tests: 3 new in `LegalPayments.test.tsx`; the cancelled-S22 test now expects no `legal-pay-start` (its title already said no Pay). Backend half (guard the ops quote on a signed matter) is a separate round. S24's Start is tapped in `LegalChatScreen.test.tsx`.
 - **History:** `tasks/history/LEGAL-06.md`.
 
 ## Read first

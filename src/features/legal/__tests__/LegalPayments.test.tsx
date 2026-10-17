@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 import { Linking, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { hub, installHub, R1, request, resetHub } from '../testing/legalHub';
+import { hub, installHub, OPTIONS, R1, request, resetHub } from '../testing/legalHub';
 
 /*
  * Booking and paying a consultation (LEGAL-04: S18, S19, S20, S25) and the quote, the letter, the fee to start, the documents and the fixed-price request
@@ -222,6 +222,56 @@ describe('S18 · Book', () => {
   });
 });
 
+describe('S18 · a price or a request that changes under the page', () => {
+  async function boot() {
+    await render(<BookScreen requestId={R1} onBack={jest.fn()} onBooked={jest.fn()} wallet={wallet()} />);
+    await rtl.screen.findByTestId('legal-medium-zoom');
+    await rtl.screen.findByTestId('legal-slot-12:00');
+  }
+
+  it('the card and the button follow a price WAWU changed while the sheet was open', async () => {
+    hub.prices = [1_500_000, 1_600_000];
+    await boot();
+    await press('legal-slot-12:00');
+    await press('legal-book-pay');
+    const sheetPay = await rtl.screen.findByRole('button', { name: 'Pay · ₦15,015.75' });
+    // Admin sets the new price while the sheet is open: the next quote carries it, and the Hub's options say it too.
+    hub.options = OPTIONS.map((o) => (o.medium === 'zoom' ? { ...o, priceKobo: 1_600_000 } : o));
+    await rtl.fireEvent.press(sheetPay);
+    await rtl.screen.findByText('The price changed. Check the new total before you pay.');
+    expect(await rtl.screen.findByRole('button', { name: 'Pay · ₦16,015.75' })).toBeTruthy();
+    // The page under the sheet follows: the card and the button say the new price, and the old one is nowhere.
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦16,000', hidden: true })).toBeTruthy();
+    expect(rtl.screen.getByTestId('legal-medium-zoom', { hidden: true }).props.accessibilityLabel).toContain('₦16,000');
+    expect(rtl.screen.queryByRole('button', { name: 'Pay ₦15,000', hidden: true })).toBeNull();
+  });
+
+  it('a request the Hub says is cancelled draws no Pay under its sentence, and picking another hour asks again', async () => {
+    hub.quoteRefusal = { status: 409, reason: { code: 'target_not_payable', message: 'This request was cancelled.' } };
+    await boot();
+    await press('legal-slot-12:00');
+    await press('legal-book-pay');
+    expect(await rtl.screen.findByText('This request was cancelled.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-book-pay')).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: /^Pay/ })).toBeNull();
+    expect(hub.pays).toHaveLength(0);
+    // A different pick is a new question: Pay is drawn again and the old sentence goes.
+    hub.quoteRefusal = null;
+    await press('legal-slot-14:00');
+    expect(rtl.screen.queryByText('This request was cancelled.')).toBeNull();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦15,000' })).toBeTruthy();
+  });
+
+  it('a price that could not be asked for for another reason keeps Pay, so the person can try again', async () => {
+    hub.quoteRefusal = { status: 503, reason: { code: 'provider_unreachable', message: 'The bank is not answering. Try again.' } };
+    await boot();
+    await press('legal-slot-12:00');
+    await press('legal-book-pay');
+    expect(await rtl.screen.findByText('The bank is not answering. Try again.')).toBeTruthy();
+    expect(rtl.screen.getByRole('button', { name: 'Pay ₦15,000' })).toBeTruthy();
+  });
+});
+
 describe('S25 · No slots, and in person', () => {
   it('with no hour free the screen says so, and Request in person records the request and opens the matter', async () => {
     hub.days = [{ date: '2099-10-02', slots: [{ startsAt: '2099-10-02T08:00:00.000Z', available: false }] }];
@@ -337,8 +387,59 @@ describe('S21 · Quote and sign, S22 · Pay to start', () => {
     await render(<MatterScreen requestId={R1} onBack={jest.fn()} wallet={wallet()} />);
     expect(await rtl.screen.findByTestId('legal-fee-problem')).toBeTruthy();
     expect(rtl.screen.getByText('This request was cancelled.')).toBeTruthy();
-    expect(rtl.screen.getByTestId('legal-pay-start').props.accessibilityState.disabled).toBe(true);
+    // A Pay that cannot work is not drawn, not even greyed (S4 round 2, F1).
+    expect(rtl.screen.queryByTestId('legal-pay-start')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-fee-card')).toBeNull();
     expect(hub.pays).toHaveLength(0);
+  });
+
+  const requoted = (amountNaira: number) => {
+    hub.req = { ...hub.req, status: 'quoted', quoteAmount: amountNaira };
+  };
+  const reread = () => rtl.act(async () => void (await clients[0].invalidateQueries({ queryKey: ['legal', 'request', R1] })));
+
+  it('a quote changed after signing: a tap on Pay drops the old price and the Pay, reads the matter again and says what the Hub now says', async () => {
+    await toPay();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦45,015.75 to start' })).toBeTruthy();
+    // Ops quotes again: the Hub's request moves back to quoted and it will take no fee for the signed letter.
+    requoted(52000);
+    hub.quoteRefusal = { status: 409, reason: { code: 'target_not_payable', message: 'There is no fee to pay on this request now.' } };
+    await press('legal-pay-start');
+    expect(await rtl.screen.findByText('There is no fee to pay on this request now.')).toBeTruthy();
+    expect(rtl.screen.getByText('Nothing to pay right now')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-fee-card')).toBeNull();
+    expect(rtl.screen.queryByText('Price')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-pay-start')).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: /to start/ })).toBeNull();
+    expect(hub.pays).toHaveLength(0);
+    expect(hub.payments).toBe(0);
+  });
+
+  it('a quote changed while the page is open: the old price and the Pay go without a tap, and the matter is read again', async () => {
+    await toPay();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦45,015.75 to start' })).toBeTruthy();
+    const reads = (globalThis.fetch as jest.Mock).mock.calls.filter(([u]) => String(u instanceof Request ? u.url : u).endsWith(`/legal/requests/${R1}`)).length;
+    requoted(52000);
+    hub.quoteRefusal = { status: 409, reason: { code: 'target_not_payable', message: 'There is no fee to pay on this request now.' } };
+    await reread();
+    expect(await rtl.screen.findByText('There is no fee to pay on this request now.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-fee-card')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-pay-start')).toBeNull();
+    const after = (globalThis.fetch as jest.Mock).mock.calls.filter(([u]) => String(u instanceof Request ? u.url : u).endsWith(`/legal/requests/${R1}`)).length;
+    expect(after).toBeGreaterThan(reads);
+    expect(hub.pays).toHaveLength(0);
+  });
+
+  it('a quote changed while the page is open and the Hub still takes a fee: the page shows the new price and says it changed', async () => {
+    await toPay();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦45,015.75 to start' })).toBeTruthy();
+    hub.req = { ...hub.req, quoteAmount: 52000 };
+    hub.prices = [5_200_000];
+    hub.quoteCalls = 0;
+    await reread();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦52,015.75 to start' })).toBeTruthy();
+    expect(rtl.screen.queryByRole('button', { name: 'Pay ₦45,015.75 to start' })).toBeNull();
+    expect(rtl.screen.getByText('The price changed. Check the new total before you pay.')).toBeTruthy();
   });
 
   it('a user with no wallet is offered Open your wallet in Pay\'s place (R-6)', async () => {

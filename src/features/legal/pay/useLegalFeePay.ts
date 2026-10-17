@@ -31,6 +31,8 @@ export type FeePayArgs = {
 };
 
 const WALLET_NOT_READY = ['wallet_not_open', 'wallet_opening'];
+/** The Hub's answer when no fee can be paid on the request now (cancelled, already paid, re-quoted since the letter was signed). */
+const NOT_PAYABLE = 'target_not_payable';
 
 /**
  * Paying a legal fee from the wallet (LEGAL-04 S19, LEGAL-06 S22): the fee quote, the PIN, the payment, and "still confirming".
@@ -42,6 +44,9 @@ const WALLET_NOT_READY = ['wallet_not_open', 'wallet_opening'];
  *   reuses that attempt (same quote, same key) instead of asking again: the Hub answers a key it knows with the first payment.
  * - **Nobody pays twice.** A payment the Hub took and has not finished (`pending`, or `payment_in_progress`) is only ever read
  *   (the matter every four seconds), never sent again.
+ * - **A Pay that cannot work is never drawn.** When the Hub says no fee can be paid now (`target_not_payable`), the quote the page was
+ *   showing is dropped at once (`unpayable` is true, `problem` is the Hub's sentence) and the matter is read again. `reload` does the same
+ *   for a matter that changed under the page: the old fee is dropped, the Hub is asked again, and the page draws what it answers.
  */
 export function useLegalFeePay(args: FeePayArgs) {
   const { requestId } = args;
@@ -58,6 +63,7 @@ export function useLegalFeePay(args: FeePayArgs) {
   const [shortOf, setShortOf] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [noWallet, setNoWallet] = useState(false);
+  const [unpayable, setUnpayable] = useState(false);
   const [confirming, setConfirming] = useState<{ stage: FeeQuote['stage']; paymentId: string | null } | null>(null);
 
   // The attempt that has been sent and not settled: the quote it carried and its key.
@@ -67,8 +73,10 @@ export function useLegalFeePay(args: FeePayArgs) {
   const settled = useRef(false);
   const live = useRef(true);
   const paid = useRef(args.onPaid);
+  const shown = useRef<FeeQuote | null>(null);
   useEffect(() => {
     paid.current = args.onPaid;
+    shown.current = quote;
   });
   useEffect(() => {
     live.current = true;
@@ -149,12 +157,20 @@ export function useLegalFeePay(args: FeePayArgs) {
         setQuote(got);
         setProblem(null);
         setNoWallet(false);
+        setUnpayable(false);
         return got;
       } catch (error) {
         if (!live.current) return null;
         if (isApiError(error) && error.code && WALLET_NOT_READY.includes(error.code)) {
           if (lead) args.onOpenWallet();
           else setNoWallet(true);
+        } else if (isApiError(error) && error.code === NOT_PAYABLE) {
+          // What was drawn is out of date: no price, no Pay, only the Hub's sentence, and the matter is read again for the rest.
+          setQuote(null);
+          setNoWallet(false);
+          setUnpayable(true);
+          setProblem(sentence(error));
+          void client.invalidateQueries({ queryKey: matterKeys.request(requestId) });
         } else setProblem(sentence(error));
         return null;
       }
@@ -168,6 +184,21 @@ export function useLegalFeePay(args: FeePayArgs) {
     setLoading(true);
     await ask(false);
     if (live.current) setLoading(false);
+  }, [ask]);
+
+  /** The matter changed under the page: the fee drawn is dropped, the Hub is asked again, and a total that moved says so. */
+  const reload = useCallback(async () => {
+    const before = shown.current?.payment.totalKobo ?? null;
+    setQuote(null);
+    setProblem(null);
+    setNotice(null);
+    setUnpayable(false);
+    setPinOpen(false);
+    setLoading(true);
+    const got = await ask(false);
+    if (!live.current) return;
+    setLoading(false);
+    if (got && before !== null && got.payment.totalKobo !== before) setNotice(PRICE_CHANGED_LINE);
   }, [ask]);
 
   const open = (next: FeeQuote) => {
@@ -319,11 +350,18 @@ export function useLegalFeePay(args: FeePayArgs) {
     lockedUntil,
     loading,
     noWallet,
+    unpayable,
     problem,
     notice,
     clearNotice: () => setNotice(null),
     confirming: confirming !== null,
     load,
+    reload,
+    /** The person changed what they are paying for: a refusal about the old pick no longer holds. */
+    clearRefusal: () => {
+      setUnpayable(false);
+      setProblem(null);
+    },
     start,
     pay,
     submitPin,

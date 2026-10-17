@@ -55,12 +55,14 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
     ...wallet,
   });
 
-  // S22 draws the fee before anything is tapped, so the quote is asked for as soon as the letter is signed.
-  const { load } = pay;
+  // S22 draws the fee before anything is tapped, so the quote is asked for as soon as the letter is signed. It is asked for again whenever the
+  // matter moves under the page (a new quote, a new status): the fee drawn is dropped and the page shows what the Hub answers now.
+  const { reload } = pay;
   const wantsFee = ask === 'pay';
+  const shape = data ? `${data.status}|${data.quoteAmount}|${data.contractSignedAt ?? ''}` : '';
   useEffect(() => {
-    if (wantsFee) void load();
-  }, [wantsFee, load]);
+    if (wantsFee) void reload();
+  }, [wantsFee, shape, reload]);
 
   const booking = useQuery({
     queryKey: ['legal', 'booking', requestId],
@@ -165,7 +167,9 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
               <Skeleton height={m.stepPadY * 2 + 124} radius={m.mediumCorner} testID="legal-fee-loading" />
             ) : null}
             {quotePayment || pay.noWallet ? <WalletCard wallet={pay.noWallet ? { kind: 'none' } : pay.wallet} /> : null}
-            {pay.problem ? <Banner tone="danger" title="We couldn't ask for the price" body={pay.problem} testID="legal-fee-problem" /> : null}
+            {pay.problem ? (
+              <Banner tone="danger" title={pay.unpayable ? 'Nothing to pay right now' : "We couldn't ask for the price"} body={pay.problem} testID="legal-fee-problem" />
+            ) : null}
             {pay.notice ? <Banner tone="warning" title="Check the total" body={pay.notice} testID="legal-fee-notice" /> : null}
             {short > 0 && pay.status.kind === 'review' && pay.wallet.kind === 'open' && quotePayment ? (
               <Banner
@@ -202,7 +206,9 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
     if (ask === 'sign') {
       foot = <Button label="Sign this agreement" onPress={() => void sign()} disabled={signed === null} loading={signing} full testID="legal-sign" />;
     } else if (ask === 'pay') {
-      if (pay.noWallet) foot = <Button label="Open your wallet" onPress={wallet.onOpenWallet} full testID="legal-open-wallet" />;
+      // The Hub says nothing can be paid now: no Pay is drawn, not even a greyed one.
+      if (pay.unpayable) foot = undefined;
+      else if (pay.noWallet) foot = <Button label="Open your wallet" onPress={wallet.onOpenWallet} full testID="legal-open-wallet" />;
       else if (pay.confirming) foot = <Button label="Refresh" onPress={pay.refresh} icon="RotateCcw" variant="secondary" full testID="legal-fee-refresh" />;
       else if (short > 0 && quotePayment && pay.status.kind === 'review') foot = <Button label={`Add ${formatNaira(short)}`} onPress={() => pay.addMoney(short)} icon="Plus" full testID="legal-add-money" />;
       else if (pay.status.kind === 'failed' || pay.status.kind === 'blocked') {

@@ -27,6 +27,7 @@ As of 17 Oct 2026, built (bundle S4, Sonnet builder), waiting for a verifier.
 - **Known, not mine:** a consultation grant waits for delivery review after a refusal (backend verify/B1.md F5).
 - **NOT RUN:** V10 on a real Android phone (the calendar screen); a payment through Fintava (never used); the Nuvion stand-in's bank charge is 0 on this stack, so the live pictures show "Bank charge ₦0" (the tests use the board's ₦15.75).
 - **Pictures** (390 px, light and dark, boards beside them as `*-board-*`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/`.
+- **Round 2 (17 Oct 2026, Sonnet builder; verify/S4.md F3, F4):** S18's card and button follow a changed price (the options are read again when the quote names another price, once per price); a request the Hub says cannot be paid (cancelled) draws no Pay under its sentence, and a different hour or kind draws it again. Tests: 3 new in `LegalPayments.test.tsx`; S17's Book and Open taps are tested in `LegalChatScreen.test.tsx` (5 new with S24's). The wrong file name in the LEGAL-02 comment is fixed. Not here (shared rows): F2 the blank tile in the pay sheet, F5 the PIN sheet's lost-answer line.
 - **History:** `tasks/history/LEGAL-04.md`.
 
 ## Read first

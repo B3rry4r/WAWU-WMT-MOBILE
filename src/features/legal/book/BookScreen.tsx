@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
@@ -72,10 +72,24 @@ export function BookScreen({ requestId, onBack, onBooked, wallet }: BookArgs) {
     ...wallet,
   });
 
+  // The card and the button say the price WAWU set. When the Hub's quote carries another one, the options are read again (once for each price
+  // the quote names), so the page follows the price instead of leaving the old one under a sheet that shows the new total.
+  const quotedKobo = pay.quote?.payment.priceKobo ?? null;
+  const shownKobo = medium?.priceKobo ?? null;
+  const rereadFor = useRef<number | null>(null);
+  const { refetch: rereadOptions } = options;
+  useEffect(() => {
+    if (quotedKobo === null || shownKobo === null || quotedKobo === shownKobo || rereadFor.current === quotedKobo) return;
+    rereadFor.current = quotedKobo;
+    void rereadOptions();
+  }, [quotedKobo, shownKobo, rereadOptions]);
+
+  const { clearRefusal } = pay;
   const choose = (next: MediumRow['medium']) => {
     setPicked(next);
     setSlotAt(null);
     setDayDate(null);
+    clearRefusal();
   };
 
   const noSlots = call !== null && slots.isSuccess && days.length === 0;
@@ -145,8 +159,9 @@ export function BookScreen({ requestId, onBack, onBooked, wallet }: BookArgs) {
     }
   };
 
+  // The Hub said nothing can be paid on this request now (cancelled, paid, closed): no Pay is drawn until the person picks something else.
   const foot =
-    medium !== null ? (
+    medium !== null && !pay.unpayable ? (
       <Button
         label={label}
         onPress={() => void (asksInPerson ? submitInPerson() : submit())}
@@ -205,8 +220,12 @@ export function BookScreen({ requestId, onBack, onBooked, wallet }: BookArgs) {
                 onDay={(d) => {
                   setDayDate(d);
                   setSlotAt(null);
+                  clearRefusal();
                 }}
-                onSlot={setSlotAt}
+                onSlot={(startsAt) => {
+                  setSlotAt(startsAt);
+                  clearRefusal();
+                }}
                 timeZone={slots.data?.timeZone ?? 'Africa/Lagos'}
               />
             ) : null}
