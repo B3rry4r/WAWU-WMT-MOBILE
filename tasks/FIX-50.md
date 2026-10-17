@@ -18,7 +18,7 @@ artboards: [A31]
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying (builder round 1, Sonnet). Branch `wmt/FIX-50` in the mobile repo only, from `origin/wmt/FIX-47` `0626e38` (DV2-05 and FIX-47, the newest open-wallet code; both join batch 7).
+- **Status:** merging (lead). Accepted on the lead's review of the 2-line copy diff (no verifier). Stacked in batch 8 by MERGE-8. Branch `wmt/FIX-50` in the mobile repo only, from `origin/wmt/FIX-47` `0626e38` (DV2-05 and FIX-47, the newest open-wallet code; both join batch 7).
 - **Id and order:** order 131 is the lowest free launch slot on this base (135 is the other). FIX-48 also claims 176, FIX-47's: the lead renumbers at merge.
 - **Built:** the owner's ruling on Q-36 (17 Oct 2026): "BVN steps should not say check with nothing." The lock line under the BVN and NIN fields no longer says who checks the number.
 - **Open findings:** none. **Not run:** GitHub CI, a real device.

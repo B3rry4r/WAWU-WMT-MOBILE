@@ -18,7 +18,7 @@ artboards: [E17, E18, E25, E11]
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying (partly built, see Not built). Built by a Sonnet builder. Backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478` (no migration; one new route, `GET /events/{id}/call-off`). Mobile `wmt/EVENTS-08` on `wmt/MERGE-7` `0aca612c`.
+- **Status:** merging (lead) (partly built, see Not built). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-08.md`, verdict merge, two lows). Stacked in batch 8 by MERGE-8. Built by a Sonnet builder. Backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478` (no migration; one new route, `GET /events/{id}/call-off`). Mobile `wmt/EVENTS-08` on `wmt/MERGE-7` `0aca612c`.
 - **Built (mobile, `src/features/events/organiser/`, routes `src/app/events/mine.tsx`, `dashboard/[id].tsx`, `links/[id].tsx`):**
   - E17 My events: the Hub's events at every status with its pill (Live, In review, Sent back with the reviewer's note, Removed, and Called off). A live event opens E18, a sent-back one opens E22; In review, Removed and Called off have no screen so the row is not pressable. Sales are `GET /events/mine/sold`; a count the Hub did not send leaves the date alone. The My events tab is on E1 and the wizard (`chrome.tsx`), and E16 has its My events button beside Done.
   - E18 dashboard: Sold, Checked in, Left, "Yours after our cut" and the share, all from `GET /events/{id}/dashboard` and `/events/options` (no figure typed). Rows drawn: At the door (opens E19), Shared links (`3 links · 22 sales` from `/referrals`).

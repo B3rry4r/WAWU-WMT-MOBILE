@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder; not yet checked by an independent verifier.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-48.md`, verdict merge, four lows). Stacked in batch 8 by MERGE-8. Built by a Sonnet builder; not yet checked by an independent verifier.
 - **Branch:** `wmt/FIX-48` on batch 7 (`wmt/MERGE-7` `04e49020`). Test setup only: no product file, no gate, no baseline, no backend change.
 - **Id and order:** order 0 (renumbered at the batch 8 merge: 176 was also STACK-NUV's and FIX-47's, and the only free orders below CHECK-3 (298) were 131 (FIX-50's), 135 and 176; FIX-48 is a setup task, so it sits at the top beside OPS-01 and SETUP-01; the checker takes any whole number). It depends on nothing.
 - **Built:** `jest/network-guard.js` and `jest.network-guard.js` (jest `setupFilesAfterEnv` in package.json); `src/__tests__/networkGuard.test.ts` (24 cases).

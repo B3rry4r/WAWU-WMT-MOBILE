@@ -18,7 +18,7 @@ artboards: [E3, E4, E5, E10]
 ## Current state
 
 As of 17 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder on mobile `wmt/EVENTS-06`, stacked on `wmt/MERGE-7` (`0aca612c`, backend `9c40478`). No backend, wawu-id or web change: EVENTS-07 and EVENTS-13 (merged in batch 7) already serve everything these screens read. No migration. No PR.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-06.md`, verdict merge, four lows). Stacked in batch 8 by MERGE-8. Built by a Sonnet builder on mobile `wmt/EVENTS-06`, stacked on `wmt/MERGE-7` (`0aca612c`, backend `9c40478`). No backend, wawu-id or web change: EVENTS-07 and EVENTS-13 (merged in batch 7) already serve everything these screens read. No migration. No PR.
 - **Next:** an independent verifier (V1, V4 to V10). V10 is the real Android phone only (R-24).
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; DV2-COPY re-checks this task last.
 - **What is built** (all under `src/features/events/`, routes `src/app/events/[id].tsx` and `src/app/events/orders/[orderId].tsx`):

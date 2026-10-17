@@ -17,7 +17,7 @@ artboards: [PT5, PT5a, PT6, PT6a, PT6b]
 
 ## Current state
 
-As of 17 Oct 2026, builder rounds 1 and 2 done (Sonnet builder; mobile `wmt/POINTS-05` from `origin/wmt/MERGE-7` `04e49020`; no backend or wawu-id change, no migration). Round 1 passed the verifier (verdict merge) with one required change, which round 2 made: PT5a no longer draws its "Buy a pack" clause. Status: verifying.
+As of 17 Oct 2026, builder rounds 1 and 2 done (Sonnet builder; mobile `wmt/POINTS-05` from `origin/wmt/MERGE-7` `04e49020`; no backend or wawu-id change, no migration). Round 1 passed the verifier (verdict merge) with one required change, which round 2 made: PT5a no longer draws its "Buy a pack" clause. Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-05.md`, verdict merge with one required change, which round 2 made and the lead accepted on review of the diff). Stacked in batch 8 by MERGE-8.
 - **Branch:** mobile `wmt/POINTS-05`. Hashes are in the Builder report (`tasks/history/POINTS-05.md`).
 - **Built (`src/features/points/`, routes `src/app/points.tsx` and `src/app/points-convert.tsx`):**
   - PT5 and PT5a (`PointsScreen`): `GET /me/points`. The balance (`PointsFigure` with `fit`, the one place it is passed), a row for each live lot with the day it ends (the lots that end at the Hub's `nextExpiry` in the warning tone; the year only when it is not this one, Lagos time), "The soonest-ending points are spent first.", and the last movements in the Hub's own labels with the day and a signed count. Nothing yet is the designed empty view; a failed read is the error view with Try again.
