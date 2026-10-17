@@ -207,7 +207,7 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
   return (
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
       <StatusBar style="light" />
-      {sponsored && offer?.artworkUrl ? <SponsoredBackdrop ad={offer} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
+      {sponsored && offer ? <SponsoredBackdrop ad={offer} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + space.sm, paddingHorizontal: layout.gutter + insets.left }]}>
         <Progress steps={steps.length} at={at} />
         <View style={styles.header}>

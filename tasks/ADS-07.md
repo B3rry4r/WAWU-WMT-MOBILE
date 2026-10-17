@@ -7,7 +7,7 @@ order: 257
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [ADS-01, ADS-04, ADS-06]
 decisions: [R-59, R-68, R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -17,11 +17,22 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): ADS-01.
-- **History:** none yet. Reports go to tasks/history/ADS-07.md.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by a Sonnet builder; nothing independent has checked it yet.
+- **Branches:** backend `wmt/ADS-07` `4ec121e` (on main `a5e48fc`); mobile `wmt/ADS-07` (on app main `7de785d`). No wawu-id change. No PR opened (the lead does that).
+- **Migration:** `20261024110000_ads_explore_slider`: one `ALTER TYPE "AdPlacement" ADD VALUE 'explore_slider'`. Nothing else in the database changed; `AdCreative.artworkUrl` stays nullable so the campaigns saved before have rows.
+- **What is built (backend):**
+  - `POST /admin/ads` and `PATCH /admin/ads/:id` refuse a campaign with no artwork: 422, "Add artwork before you save this campaign", `reason.code` `artwork_required`. On PATCH the result must have a picture: clearing it, or editing a campaign saved before this task without giving it one, is the same 422 (a live or scheduled campaign is still the 409 "pause it first" before that). Nothing is written on a refusal.
+  - A campaign with no artwork is not served by `GET /ads` and a view, tap or skip for it is refused (404) like any card not being served: one rule in `src/ads/ads-serving.ts` for both.
+  - The admin sees them: every campaign view has `needsArtwork` (no picture, not ended), `GET /admin/ads?artwork=missing` lists them, `GET /admin/ads/report` has `needingArtwork` and echoes the filter, and `servingNow` is false for them.
+  - `GET /ads?placement=explore_slider`: `data` is a list of every live card with a picture, heaviest weight first (ties: earliest start, earliest booking, id), `[]` when none, never cached. `tgif_card` and `today_slot` still answer one card or null. `AdCardView.artworkUrl` is now always a string. Admin create and edit take the new placement (it is in the enum).
+- **What is built (app):** the card that draws without a picture is gone: `SponsoredSlot` always draws its picture column, `SponsoredBackdrop` has no empty case, `drawable()` in `src/features/ads/api.ts` treats a card with no http(s) picture as no card (so Today and the reader draw nothing for one), and `TgifReader.tsx` line 210 drops its takeaway-ground fallback (SHARED-CHANGES ADS-07 F1). The app's contract copy is refreshed from the backend branch (SHARED-CHANGES ADS-07 #2). The slider itself is EXPLORE-07's.
+- **Names:** the seeded and example adverts in tests are neutral (Gospel Night Live, Harvest Praise Night); no sample advertiser from the boards is in any ad code or test (R-68).
+- **Checks (builder):** backend tsc clean; eslint clean on the files changed; the 5 ads specs 492 tests pass against the local stack (admin 204, serve 64, events and data model the rest); `npm run contract:build` regenerated the contract (additions only). Mobile: typecheck, lint, the full jest run, gates and tasks check: see the log named in the report.
+- **GitHub (backend push):** see the hand-back for the run ids; gates show the same 5 FAIL lines as main (4 deferrals, 1 fork), 119 warn, 83 accepted before and after.
+- **Existing tests changed because the ruling changed their subject** (fixtures and expectations only): the events and serve specs' campaign fixtures now carry artwork; "serves a null artwork as null" became "always with a picture"; the admin spec's "no artwork accepted" and "PATCH clears artwork" cases now use artwork; its key lists gained `needsArtwork`, `needingArtwork`, `artwork` and `explore_slider`; the app's three "no picture" tests became "no card is drawn".
+- **Not done on purpose:** `POST /admin/ads/:id/schedule` and `/resume` do not refuse a campaign saved before this task without artwork (the owner's change names POST and PATCH only; such a campaign simply is not served and shows `needsArtwork`). The slider list has no cap on slides (the admin books them; a cap would be a made-up figure). No pictures taken: the task draws no artboard (`artboards: []`) and a card with a picture looks as ADS-01 left it.
+- **Next:** the verifier. Then EXPLORE-07 builds the slider on `GET /ads?placement=explore_slider`; ADS-02 (the dashboard form) marks the artwork field required.
 
 ## Read first
 
@@ -49,13 +60,9 @@ A campaign cannot be saved without artwork (R-59; G-761), and the Hub can serve 
 - [ ] `GET /ads?placement=explore_slider` returns the live campaigns in order and counts a view once.
 - [ ] The Today card and the slider never draw a campaign without a picture.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/ADS-07.md](history/ADS-07.md).
 
 ## Owner sign-off
 

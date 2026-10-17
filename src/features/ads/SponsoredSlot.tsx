@@ -17,7 +17,7 @@ export type SponsoredSlotProps = {
 /**
  * H36 · The sponsored card on Today, in TGIF's place when TGIF is off: the artwork, SPONSORED, the headline, the line
  * under it, and the card's button word at the right. Every word but SPONSORED is the advertiser's, from `GET /ads`.
- * A card with no artwork has no picture column and its words start at the edge.
+ * Every card has a picture (R-59): a campaign without artwork is never served, so there is no picture-less layout.
  */
 export function SponsoredSlot({ ad, onOpen }: SponsoredSlotProps) {
   const { colors } = useWawu();
@@ -37,7 +37,7 @@ export function SponsoredSlot({ ad, onOpen }: SponsoredSlotProps) {
     >
       {/* The canvas's inset hairline sits under the picture and the words, so it is drawn first and they cover it. */}
       <View pointerEvents="none" style={[styles.hairline, { borderColor: colors.borderHairline }]} />
-      {ad.artworkUrl ? <Image testID="today-sponsored-artwork" source={ad.artworkUrl} style={styles.art} contentFit="cover" accessibilityElementsHidden /> : null}
+      <Image testID="today-sponsored-artwork" source={ad.artworkUrl} style={styles.art} contentFit="cover" accessibilityElementsHidden />
       <View style={styles.words}>
         <Text style={[adWords.slotLabel, { color: colors.textMuted }]}>SPONSORED</Text>
         <Text testID="today-sponsored-headline" numberOfLines={1} style={[adWords.slotHeadline, { color: colors.textPrimary }]}>
