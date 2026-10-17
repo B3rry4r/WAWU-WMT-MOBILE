@@ -77,12 +77,20 @@ export function resetBonusStep(): void {
 
 onSessionEnd(resetBonusStep);
 
-/** For the root layout: whether the step is to be shown now. Reads the mark back on a cold start while signed in. */
-export function useBonusStep(signedIn: boolean): { visible: boolean } {
+/**
+ * For the root layout: whether the step is to be shown now. Reads the mark back on a cold start while signed in. `accountType` is what
+ * WAWU ID's sign-up progress says: a discoverer ("user") has no shop to build, so VF1 is never mounted for them, not even its loading
+ * state between A13 and Home (VERIFY-01 round 4), and their mark is settled so it cannot come back if they become a creator later.
+ */
+export function useBonusStep(signedIn: boolean, accountType?: string | null): { visible: boolean } {
   const current = useSyncExternalStore(subscribe, () => state, () => state);
+  const discoverer = accountType === 'user';
   useEffect(() => {
     if (signedIn) void loadBonusStep();
     else resetBonusStep();
   }, [signedIn]);
-  return { visible: signedIn && current.visible };
+  useEffect(() => {
+    if (signedIn && discoverer && current.visible) finishBonusStep();
+  }, [signedIn, discoverer, current.visible]);
+  return { visible: signedIn && current.visible && !discoverer };
 }

@@ -18,9 +18,14 @@ import { authed } from './signupApi';
  * is idempotent and never opens a wallet. A Hub that does not answer within `HUB_COPY_WAIT_MS`, or refuses, lets the gate open
  * anyway and the next read tries again.
  */
-type Gate = { phase: 'idle' | 'loading' | 'ready'; progress: SignupProgress | null };
+type Gate = {
+  phase: 'idle' | 'loading' | 'ready';
+  progress: SignupProgress | null;
+  /** A13's Back reopened A12 for new picks: A12 shows again while WAWU ID still says `follows`. Local only; any new answer clears it. */
+  reopened: boolean;
+};
 
-let gate: Gate = { phase: 'idle', progress: null };
+let gate: Gate = { phase: 'idle', progress: null, reopened: false };
 const listeners = new Set<() => void>();
 let generation = 0;
 /** The account type last copied to the Hub for this session; null until it has been. */
@@ -43,7 +48,7 @@ const subscribe = (listener: () => void) => {
 /** Reads the progress. Ignored if the session changed meanwhile. */
 export async function refreshSignupGate(): Promise<void> {
   const started = generation;
-  change({ phase: gate.phase === 'ready' ? 'ready' : 'loading', progress: gate.progress });
+  change({ phase: gate.phase === 'ready' ? 'ready' : 'loading', progress: gate.progress, reopened: false });
   let progress: SignupProgress | null = null;
   try {
     progress = await authed(signupProgressRequest);
@@ -53,7 +58,7 @@ export async function refreshSignupGate(): Promise<void> {
   if (started !== generation) return;
   await copyAccountType(progress);
   if (started !== generation) return;
-  change({ phase: 'ready', progress });
+  change({ phase: 'ready', progress, reopened: false });
 }
 
 /** Copies the sign-up's account type to the Hub's profile once per session. Never throws: the next read tries again. */
@@ -79,14 +84,27 @@ async function copyAccountType(progress: SignupProgress | null): Promise<void> {
 
 /** Takes the progress a step's own answer carries. */
 export function setSignupProgress(progress: SignupProgress) {
-  change({ phase: 'ready', progress });
+  change({ phase: 'ready', progress, reopened: false });
+}
+
+/**
+ * A13's Back: A12 again, to change the picks. WAWU ID only moves forward, so this is the app's own: A12's Continue saves the picks and
+ * calls `closeInterests`, and A13 is back with the new people. Only from A13 (the first step has nothing before it to go back to).
+ */
+export function reopenInterests() {
+  if (gate.progress?.inSequence && gate.progress.step === 'follows') change({ ...gate, reopened: true });
+}
+
+/** A12, reopened, is done (Back, or Continue after saving): A13 again. */
+export function closeInterests() {
+  if (gate.reopened) change({ ...gate, reopened: false });
 }
 
 /** Signed out: forget everything, so the next sign-in reads its own account's progress. */
 export function resetSignupGate() {
   generation += 1;
   copiedToHub = null;
-  if (gate.phase !== 'idle') change({ phase: 'idle', progress: null });
+  if (gate.phase !== 'idle' || gate.reopened) change({ phase: 'idle', progress: null, reopened: false });
 }
 
 export function signupGateState(): Gate {
@@ -103,15 +121,25 @@ export function stepLabel(progress: SignupProgress | null, step: SetupStep): str
   return shown.length > 1 && at >= 0 ? `${at + 1} of ${shown.length}` : undefined;
 }
 
-export function useSignupGate(): { phase: Gate['phase']; needsEmail: boolean; setupStep: SetupStep | null; progress: SignupProgress | null } {
+export function useSignupGate(): {
+  phase: Gate['phase'];
+  needsEmail: boolean;
+  setupStep: SetupStep | null;
+  progress: SignupProgress | null;
+  /** A12 is open again from A13's Back. */
+  reopened: boolean;
+} {
   const current = useSyncExternalStore(subscribe, () => gate, () => gate);
   return {
     phase: current.phase,
     needsEmail: Boolean(current.progress?.inSequence && current.progress.step === 'email'),
     setupStep:
       current.progress?.inSequence && (current.progress.step === 'creator_setup' || current.progress.step === 'interests' || current.progress.step === 'follows')
-        ? current.progress.step
+        ? current.reopened && current.progress.step === 'follows'
+          ? 'interests'
+          : current.progress.step
         : null,
     progress: current.progress,
+    reopened: current.reopened && current.progress?.step === 'follows',
   };
 }

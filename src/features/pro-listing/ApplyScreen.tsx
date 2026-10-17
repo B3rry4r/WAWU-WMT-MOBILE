@@ -80,7 +80,7 @@ export function CreatorGate({ title, onBack }: { title: string; onBack: () => vo
   return (
     <ProFrame title={title} onBack={onBack} gap={space.lg} centered testID="pro-gate">
       <EmptyState icon="UserCog" title="This needs a creator account" message="Setting one up is free." />
-      <Button label="Become a creator" onPress={() => void become()} loading={busy} testID="pro-become-creator" />
+      <Button label="Become a creator" size="md" onPress={() => void become()} loading={busy} style={styles.gateButton} testID="pro-become-creator" />
       {failed ? (
         <Text variant="secondary" tone="danger" accessibilityRole="alert" testID="pro-become-failed">
           Couldn’t set up your account. Try again.
@@ -522,6 +522,8 @@ function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; lef
 }
 
 const styles = StyleSheet.create({
+  // P10's button is the board's compact pill (Btn size md, full false): the frame's column would stretch it, so it centres itself.
+  gateButton: { alignSelf: 'center' },
   kinds: { gap: fileMetrics.ten },
   kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   file: { flexDirection: 'row', alignItems: 'center', gap: fileMetrics.lead2words, paddingVertical: fileMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.tile },

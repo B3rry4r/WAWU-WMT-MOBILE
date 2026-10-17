@@ -73,7 +73,7 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
-  const bonus = useBonusStep(signedIn);
+  const bonus = useBonusStep(signedIn, gate.progress?.accountType);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
   const inApp = signedIn && !gate.needsEmail && !offer.visible && !bonus.visible;

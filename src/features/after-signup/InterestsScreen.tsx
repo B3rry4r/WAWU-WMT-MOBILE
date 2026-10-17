@@ -21,6 +21,8 @@ const CHIP = { height: 40, padH: 16, inner: 6, between: 8, check: 14 } as const;
 export type InterestsScreenProps = {
   /** "n of m" for the bar's corner, from the steps WAWU ID lists; left out when there is only this one. */
   step?: string;
+  /** The round back button: given only when there is a screen to go back to (A13, when A12 was reopened from it). */
+  onBack?: () => void;
   /** Saves the picks (ids, chip order) and moves on. Throws when it could not. */
   onContinue: (picks: string[]) => Promise<void>;
 };
@@ -54,7 +56,7 @@ function Chip({ label, on, onPress, testID }: { label: string; on: boolean; onPr
  * A12 · What are you into? The twelve chips and the minimum come from the Hub (`GET /users/me/interests`), as does what was saved before, so
  * a person who comes back sees their picks. Continue is "Continue · n picked" and stays off until the minimum is picked.
  */
-export function InterestsScreen({ step, onContinue }: InterestsScreenProps) {
+export function InterestsScreen({ step, onBack, onContinue }: InterestsScreenProps) {
   const view = useQuery({ queryKey: interestsKey, queryFn: fetchInterests, staleTime: 0 });
   const [picked, setPicked] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,6 +88,7 @@ export function InterestsScreen({ step, onContinue }: InterestsScreenProps) {
       testID="interests"
       navTitle={INTERESTS_TITLE}
       navStep={step}
+      onBack={onBack}
       footer={
         data ? (
           <>

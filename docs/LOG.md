@@ -2,6 +2,7 @@
 
 Newest first. One line per thing that happened, written when it happens.
 `docs/PROGRESS.md` shows this beside the task counts.
+- 17 Oct 2026 · VERIFY-01, AUTH-06 · Patch round 4 (Sonnet builder; mobile `wmt/VERIFY-01` now holds AUTH-06's mobile side, `fe5b218c` merged): the merged route order fixed as verified, a discoverer never mounts VF1, P10's Become a creator is the compact pill, A13 has a Back to A12, a route test walks both sign-ups on the merged layout; status verifying.
 - 17 Oct 2026 · VERIFY-01 · Built (Sonnet builder; mobile `wmt/VERIFY-01` on `origin/wmt/MERGE-7` `04e49020` with REF-03 and DV2-05 merged, no backend change, no migration; status verifying): VF1 "Your bonus is waiting" from `GET /plans`, VF2 Your shop with the ring, the Draft tag and the draft form (`/product-drafts`), the draft tile on Me and a "Your shop" row on Create; the A4 hand-on is SHARED-CHANGES VERIFY-01 #1 and #2 (fenced, open); G-840 to G-842.
 
 - 17 Oct 2026 · AUTH-06 · Built, awaiting verification (DEV, YOU): A11, A12 and A13 open after sign-up from WAWU ID's progress, Become a creator (P10) opens A11, and the account type reaches the Hub's profile right after sign-up on a route of its own (`PUT /users/me/account-type`, no wallet); backend `GET/PUT /users/me/interests`, `GET /explore/suggested-creators`; gaps G-17, G-1711.

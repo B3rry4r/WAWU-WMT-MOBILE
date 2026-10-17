@@ -2,6 +2,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockPush = jest.fn();
@@ -247,6 +248,13 @@ describe('P10 Become a creator', () => {
     await fireEvent.press(screen.getByTestId('pro-become-creator'));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/creator-setup'));
     expect(calls('PUT', '/api/hub/users/me/account-type')[0].body).toEqual({ accountType: 'creator' });
+  });
+
+  it('draws Become a creator as the board\'s compact pill: 44 high, centred, not the full-width 54 px button', async () => {
+    await render(frame(<CreatorGate title="Offer your services" onBack={jest.fn()} />));
+    const button = StyleSheet.flatten(screen.getByTestId('pro-become-creator').props.style);
+    expect(button.height).toBe(44);
+    expect(button.alignSelf).toBe('center');
   });
 
   it('stays on the gate with a line when the Hub refuses', async () => {
