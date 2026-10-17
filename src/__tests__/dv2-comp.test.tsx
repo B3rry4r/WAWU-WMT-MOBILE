@@ -218,11 +218,8 @@ describe('PointsFigure', () => {
     expect(screen.queryByText('points')).toBeNull();
     expect(screen.queryByTestId('icon-Sparkles', hidden)).toBeNull();
   });
-  it('draws one line at the board\'s size: the count and the word keep their own width (never wrap), the room gives way to the parent', async () => {
+  it('draws one line at the board\'s size: the count and the word keep their own width (never wrap)', async () => {
     await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-    const room = styleOf(screen.getByTestId('pts'));
-    // the room is as wide as the parent gives, whatever is drawn inside it, and a row may shrink it
-    expect(room).toMatchObject({ width: '100%', flexShrink: 1, minWidth: 0, flexDirection: 'row' });
     for (const node of [screen.getByText('1,250,000'), screen.getByText('points')]) {
       expect(node.props.numberOfLines).toBe(1);
       // no system shrink: the figure fits itself from what it measured, the same on a phone and on the web
@@ -347,6 +344,201 @@ describe('PointsFigure', () => {
     });
   });
 
+  describe('hugging (the default)', () => {
+    const rootOf = () => styleOf(screen.getByTestId('pts'));
+
+    it('is as wide as its content like a Text: no width, no growing or shrinking, no room, no copies, nothing measured or hidden', async () => {
+      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      const root = rootOf();
+      for (const key of ['width', 'minWidth', 'maxWidth', 'flex', 'flexGrow', 'flexShrink', 'flexBasis', 'alignSelf', 'opacity']) {
+        expect(root[key]).toBeUndefined();
+      }
+      expect(root).toMatchObject({ flexDirection: 'row', alignItems: 'center' });
+      expect(screen.getByTestId('pts').props.onLayout).toBeUndefined();
+      expect(screen.queryByTestId('pts-measure-count', hidden)).toBeNull();
+      expect(screen.queryByTestId('pts-measure-word', hidden)).toBeNull();
+      expect(screen.queryByTestId('pts-row', hidden)).toBeNull();
+      expect(screen.getByLabelText('1,250,000 points')).toBeTruthy();
+    });
+
+    it('is drawn at the board\'s size from the first frame and on every change, with nothing to wait for', async () => {
+      const { rerender } = await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      expect(styleOf(screen.getByText('1,250,000')).fontSize).toBe(22);
+      expect(styleOf(screen.getByText('points')).fontSize).toBe(18);
+      await rerender(<PointsFigure count={1} size="hero" testID="pts" />);
+      expect(styleOf(screen.getByText('1')).fontSize).toBe(22);
+      expect(screen.getByText('point')).toBeTruthy();
+      expect(screen.queryByTestId('pts-stack')).toBeNull();
+      expect(screen.queryByTestId('pts-groups')).toBeNull();
+    });
+
+    it('draws the Studio count, the PT3 value and the Points tile at their boards\' sizes', async () => {
+      const { rerender } = await render(<PointsFigure count={1250} size="chip" testID="pts" />);
+      expect(styleOf(screen.getByText('1,250')).fontSize).toBe(13.5);
+      await rerender(<PointsFigure count={250} size="row" testID="pts" />);
+      expect(styleOf(screen.getByText('250')).fontSize).toBe(17);
+      await rerender(<PointsFigure count={1240} size="tile" testID="pts" />);
+      expect(styleOf(screen.getByText('1,240')).fontSize).toBe(18);
+    });
+  });
+
+  /*
+   * Where the figure sits is the parent's layout. Jest has no layout engine, so these read the styles the rendered tree really carries
+   * and solve the little of flexbox they use (a row with fixed, flexible and content-wide items; a column that stretches, centres or
+   * end-aligns), the way the 'settles' tests stand in for the engine. Measured widths in the app are the same numbers: the hero set at
+   * the board's size is a 30 px star and gaps, a 120 px count and a 45 px word.
+   */
+  describe('in a parent', () => {
+    const pct = (value: unknown, of: number) => (typeof value === 'string' && value.endsWith('%') ? (parseFloat(value) / 100) * of : undefined);
+    const widthOf = (style: Record<string, unknown>, of: number) => (typeof style.width === 'number' ? style.width : pct(style.width, of));
+    /** The widths of a row's items: basis from `width`, `flex` or the content, then growing into free space or shrinking out of a lack. */
+    const rowWidths = (rowWidth: number, gap: number, items: { style: Record<string, unknown>; content: number }[]) => {
+      const flexes = items.map(({ style }) => (typeof style.flex === 'number' ? style.flex : 0));
+      const basis = items.map(({ style, content }, at) => (flexes[at] ? 0 : (widthOf(style, rowWidth) ?? content)));
+      const grow = items.map(({ style }, at) => flexes[at] || (typeof style.flexGrow === 'number' ? style.flexGrow : 0));
+      const shrink = items.map(({ style }, at) => (flexes[at] ? 1 : typeof style.flexShrink === 'number' ? style.flexShrink : 0));
+      const free = rowWidth - gap * (items.length - 1) - basis.reduce((a, b) => a + b, 0);
+      const growTotal = grow.reduce((a, b) => a + b, 0);
+      const shrinkTotal = shrink.reduce((sum, k, at) => sum + k * basis[at], 0);
+      return basis.map((b, at) => Math.max(0, free >= 0 ? b + (growTotal ? (free * grow[at]) / growTotal : 0) : b + (shrinkTotal ? (free * shrink[at] * b) / shrinkTotal : 0)));
+    };
+    /** A column's child: where its box starts and how wide it is, for the column's `alignItems`. */
+    const inColumn = (columnWidth: number, alignItems: 'stretch' | 'center' | 'flex-end' | 'flex-start', style: Record<string, unknown>, content: number) => {
+      const width = widthOf(style, columnWidth) ?? (alignItems === 'stretch' ? columnWidth : content);
+      const left = alignItems === 'center' ? (columnWidth - width) / 2 : alignItems === 'flex-end' ? columnWidth - width : 0;
+      return { left, width };
+    };
+    /** The drawn content's span inside its box: a hugging figure starts at the box's start, a fitted one by its `justifyContent`. */
+    const contentSpan = (box: { left: number; width: number }, style: Record<string, unknown>, content: number) => {
+      const slack = Math.max(0, box.width - content);
+      const left = box.left + (style.justifyContent === 'center' ? slack / 2 : style.justifyContent === 'flex-end' ? slack : 0);
+      return { left, right: left + content };
+    };
+
+    const W = 358;
+    /** The hero at the board's size, one line: 20 star + 5 + 120 count + 5 + 45 word. The chip: 14 + 4 + 40. */
+    const natural = { hero: 195, chip: 58 } as const;
+    const rootStyle = () => styleOf(screen.getByTestId('pts'));
+
+    it.each([
+      ['centres', 'center', (box: { left: number; width: number }) => [box.left, W - (box.left + box.width)]],
+      ['end-aligns', 'flex-end', (box: { left: number; width: number }) => [W - (box.left + box.width), 0]],
+      ['start-aligns', 'flex-start', (box: { left: number; width: number }) => [box.left, 0]],
+    ] as const)('a parent that %s it puts it there, hugging', async (_name, alignItems, edges) => {
+      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      const box = inColumn(W, alignItems, rootStyle(), natural.hero);
+      // the box is the content's width, so the parent's alignment is the figure's place
+      expect(box.width).toBe(natural.hero);
+      if (alignItems === 'center') expect(edges(box)[0]).toBeCloseTo(edges(box)[1], 9);
+      else expect(edges(box)[0]).toBe(0);
+    });
+
+    it('in a parent that stretches, a hugging figure draws from the start edge', async () => {
+      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      const box = inColumn(W, 'stretch', rootStyle(), natural.hero);
+      expect(contentSpan(box, rootStyle(), natural.hero)).toEqual({ left: 0, right: natural.hero });
+    });
+
+    it('in a pill that hugs it, the pill is as wide as the figure', async () => {
+      await render(<PointsFigure count={1250} size="chip" testID="pts" />);
+      // a pill row: padding 12 each side, a figure with no width of its own
+      const [figure] = rowWidths(natural.chip, 0, [{ style: rootStyle(), content: natural.chip }]);
+      expect(figure).toBe(natural.chip);
+      expect(rootStyle().width).toBeUndefined();
+    });
+
+    it('at the end of M19\'s Studio card, the title block keeps the width the card leaves it, and the count is as wide as it is', async () => {
+      await render(
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View testID="mark" style={{ width: 40 }} />
+          <View testID="title" style={{ flex: 1 }} />
+          <PointsFigure count={1250} size="chip" testID="pts" />
+        </View>,
+      );
+      const [mark, title, figure] = rowWidths(W - 32, 12, [
+        { style: styleOf(screen.getByTestId('mark')), content: 0 },
+        { style: styleOf(screen.getByTestId('title')), content: 0 },
+        { style: rootStyle(), content: natural.chip },
+      ]);
+      expect(mark).toBe(40);
+      expect(figure).toBe(natural.chip);
+      expect(title).toBe(W - 32 - 40 - natural.chip - 24);
+      expect(title).toBeGreaterThan(150);
+    });
+
+    it('in a card row with a title beside it, the title is not squeezed whatever the title\'s width', async () => {
+      await render(
+        <View style={{ flexDirection: 'row' }}>
+          <View testID="title" style={{ flex: 1 }} />
+          <PointsFigure count={1250000} size="hero" testID="pts" />
+        </View>,
+      );
+      for (const row of [260, 300, 358]) {
+        const [title, figure] = rowWidths(row, 0, [
+          { style: styleOf(screen.getByTestId('title')), content: 0 },
+          { style: rootStyle(), content: natural.hero },
+        ]);
+        expect(figure).toBe(natural.hero);
+        expect(title).toBe(row - natural.hero);
+      }
+    });
+
+    it('at the end of a key and value row (PT3), the value keeps its own width and the key keeps its', async () => {
+      await render(<PointsFigure count={250} size="row" testID="pts" />);
+      // the row size set at the board's size: a 15 star, 5, a 30 count, 5, a 50 word
+      const value = 15 + 5 + 30 + 5 + 50;
+      const [key, figure] = rowWidths(W, 0, [
+        { style: { flexShrink: 0 }, content: 80 },
+        { style: rootStyle(), content: value },
+      ]);
+      expect(figure).toBe(value);
+      expect(key).toBe(80);
+    });
+
+    it.each([
+      ['start', 'flex-start'],
+      ['center', 'center'],
+      ['end', 'flex-end'],
+    ] as const)('fitted with "%s": the room is the parent\'s width, and the content sits at the %s of it whatever the parent aligns', async (align, justify) => {
+      await render(<PointsFigure count={1250000} size="hero" fit={align} testID="pts" />);
+      const room = rootStyle();
+      expect(room).toMatchObject({ width: '100%', flexShrink: 1, minWidth: 0, flexDirection: 'row', justifyContent: justify });
+      for (const alignItems of ['stretch', 'center', 'flex-end', 'flex-start'] as const) {
+        // a percent width is the parent's whole width, so the parent's alignment moves nothing
+        const box = inColumn(W, alignItems, room, natural.hero);
+        expect(box).toEqual({ left: 0, width: W });
+        const span = contentSpan(box, room, natural.hero);
+        if (align === 'start') expect(span.left).toBe(0);
+        if (align === 'center') expect(span.left).toBeCloseTo((W - natural.hero) / 2, 9);
+        if (align === 'end') expect(span.right).toBe(W);
+      }
+    });
+
+    it('fitted with true is fitted to the start', async () => {
+      await render(<PointsFigure count={1250000} size="hero" fit testID="pts" />);
+      expect(rootStyle()).toMatchObject({ justifyContent: 'flex-start', width: '100%' });
+    });
+
+    it('fitted, it is the parent\'s width and no more: beside PT5\'s "Buy points" it takes the column\'s and leaves the button its own', async () => {
+      await render(
+        <View style={{ flexDirection: 'row' }}>
+          <View testID="column" style={{ flex: 1 }}>
+            <PointsFigure count={123456789} size="hero" fit testID="pts" />
+          </View>
+          <View testID="buy" style={{ width: 120 }} />
+        </View>,
+      );
+      const [column, buy] = rowWidths(W, 0, [
+        { style: styleOf(screen.getByTestId('column')), content: 0 },
+        { style: styleOf(screen.getByTestId('buy')), content: 0 },
+      ]);
+      expect(buy).toBe(120);
+      expect(column).toBe(W - 120);
+      // and the figure's room is that column, as a percent of it
+      expect(inColumn(column, 'stretch', rootStyle(), natural.hero).width).toBe(column);
+    });
+  });
+
   describe.each(['ios', 'web'] as const)('on %s: the figure measures itself and fits the room', (os) => {
     beforeEach(() => {
       jest.replaceProperty(Platform, 'OS', os);
@@ -364,7 +556,7 @@ describe('PointsFigure', () => {
     };
 
     it('draws full size and invisible until it is measured, then shrinks the count and the word to the room it is given', async () => {
-      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      await render(<PointsFigure count={1250000} size="hero" fit testID="pts" />);
       expect(sizeOf('1,250,000')).toBe(22);
       expect(styleOf(row()).opacity).toBe(0);
       expect(screen.getByText('1,250,000').props.numberOfLines).toBe(1);
@@ -385,7 +577,7 @@ describe('PointsFigure', () => {
     });
 
     it('keeps the copies out of the layout, invisible and away from screen readers, at the board\'s size whatever is drawn', async () => {
-      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      await render(<PointsFigure count={1250000} size="hero" fit testID="pts" />);
       await measure(120, 45, 150);
       for (const part of ['count', 'word'] as const) {
         const copy = copyOf(part);
@@ -403,7 +595,7 @@ describe('PointsFigure', () => {
     });
 
     it('stays put when it is measured again, and grows back when the room does', async () => {
-      await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
+      await render(<PointsFigure count={1250000} size="hero" fit testID="pts" />);
       await measure(120, 45, 150);
       const small = sizeOf('1,250,000');
       // the same readings again change nothing, and what is drawn is never read back (the copies are at the board's size)
@@ -419,7 +611,7 @@ describe('PointsFigure', () => {
     });
 
     it('fits a nine digit count into 150 px on one line, above the floor', async () => {
-      await render(<PointsFigure count={123456789} size="hero" testID="pts" />);
+      await render(<PointsFigure count={123456789} size="hero" fit testID="pts" />);
       await measure(142, 45, 150);
       const share = sizeOf('123,456,789') / 22;
       expect(sizeOf('123,456,789')).toBeGreaterThan(11);
@@ -429,7 +621,7 @@ describe('PointsFigure', () => {
     });
 
     it('moves the word under the count where one line would go under the floor, and the count keeps every digit', async () => {
-      await render(<PointsFigure count={123456789012} size="hero" testID="pts" />);
+      await render(<PointsFigure count={123456789012} size="hero" fit testID="pts" />);
       await measure(200, 45, 130);
       // the floors alone take 200 * 0.5 + 45 * 0.556 = 125 of the 98 a line has at 130, so the word goes under the count
       const stack = screen.getByTestId('pts-stack');
@@ -456,7 +648,7 @@ describe('PointsFigure', () => {
     });
 
     it('stacks 9 digits in 120 px and 12 digits in 150 px, the two the lead named, never below the room', async () => {
-      await render(<PointsFigure count={123456789} size="hero" testID="pts" />);
+      await render(<PointsFigure count={123456789} size="hero" fit testID="pts" />);
       await measure(142, 45, 120);
       expect(screen.getByTestId('pts-stack')).toBeTruthy();
       expect(25 + 142 * (sizeOf('123,456,789') / 22)).toBeLessThanOrEqual(120);
@@ -464,7 +656,7 @@ describe('PointsFigure', () => {
     });
 
     it('breaks a count that cannot fit at 11 px between its digit groups, never inside one and never with an ellipsis', async () => {
-      await render(<PointsFigure count={123456789012} size="chip" testID="pts" />);
+      await render(<PointsFigure count={123456789012} size="chip" fit testID="pts" />);
       // the chip is the star and the count: 14 + 4 of star and gap, 120 of count
       await layout(copyOf('count'), 120);
       await layout(room(), 400);
@@ -488,23 +680,65 @@ describe('PointsFigure', () => {
       expect(sizeOf('123,456,789,012')).toBe(13.5);
     });
 
-    it('takes a new count at once: it is hidden until the new count is measured, and a shorter one goes back to full size', async () => {
-      const { rerender } = await render(<PointsFigure count={1250000} size="hero" testID="pts" />);
-      await measure(120, 45, 150);
-      expect(sizeOf('1,250,000')).toBeLessThan(22);
-      await rerender(<PointsFigure count={1240} size="hero" testID="pts" />);
-      // the old count's width is not the new one's: nothing shows until the copy of the new count has been measured
+    it('keeps the fit it had while a new count is read: never a blank frame, and it grows back once the new copy is read', async () => {
+      const { rerender } = await render(<PointsFigure count={1250000} size="hero" fit testID="pts" />);
+      // before the first reading nothing shows
       expect(styleOf(row()).opacity).toBe(0);
+      await measure(120, 45, 150);
+      const small = sizeOf('1,250,000');
+      expect(small).toBeLessThan(22);
+      expect(styleOf(row()).opacity).toBeUndefined();
+      // a new count of the same width: the very next frame is drawn, at the same size, with no hidden frame between
+      await rerender(<PointsFigure count={1250001} size="hero" fit testID="pts" />);
+      expect(styleOf(row()).opacity).toBeUndefined();
+      expect(sizeOf('1,250,001')).toBe(small);
+      await layout(copyOf('count'), 120);
+      expect(styleOf(row()).opacity).toBeUndefined();
+      expect(sizeOf('1,250,001')).toBe(small);
+      // a shorter count is drawn at once at the fit it had, then at full size when its own copy has been read
+      await rerender(<PointsFigure count={1240} size="hero" fit testID="pts" />);
+      expect(styleOf(row()).opacity).toBeUndefined();
+      expect(sizeOf('1,240')).toBe(small);
       await layout(copyOf('count'), 45);
-      // the word is the same word, so its width still counts
       expect(styleOf(row()).opacity).toBeUndefined();
       expect(sizeOf('1,240')).toBe(22);
     });
 
+    it('is drawn at every step of a count that ticks, and a tick of the same width changes nothing it draws', async () => {
+      const opacities: unknown[] = [];
+      let commits = 0;
+      const { rerender } = await render(
+        <Profiler id="fig" onRender={() => (commits += 1)}>
+          <PointsFigure count={123456789} size="hero" fit testID="pts" />
+        </Profiler>,
+      );
+      await measure(142, 45, 150);
+      const settled = sizeOf('123,456,789');
+      const stacked = screen.queryByTestId('pts-stack') !== null;
+      for (let n = 123456790; n < 123456800; n++) {
+        await rerender(
+          <Profiler id="fig" onRender={() => (commits += 1)}>
+            <PointsFigure count={n} size="hero" fit testID="pts" />
+          </Profiler>,
+        );
+        opacities.push(styleOf(row()).opacity);
+        // the new text's copy reports the same width as the old one's: the fit is the same, so nothing below can move
+        await layout(copyOf('count'), 142);
+        opacities.push(styleOf(row()).opacity);
+        expect(sizeOf(formatPointsCount(n))).toBe(settled);
+        expect(screen.queryByTestId('pts-stack') !== null).toBe(stacked);
+      }
+      expect(opacities.every((value) => value === undefined)).toBe(true);
+      // one render for the new count and none for the reading of the same width
+      const before = commits;
+      await layout(copyOf('count'), 142);
+      expect(commits).toBe(before);
+    });
+
     it('reads a new text again even when it is as wide as the old one', async () => {
-      const { rerender } = await render(<PointsFigure count={1250} size="chip" testID="pts" />);
+      const { rerender } = await render(<PointsFigure count={1250} size="chip" fit testID="pts" />);
       const first = copyOf('count');
-      await rerender(<PointsFigure count={1240} size="chip" testID="pts" />);
+      await rerender(<PointsFigure count={1240} size="chip" fit testID="pts" />);
       // a new copy is mounted for a new text, so its first layout is always reported
       expect(copyOf('count')).not.toBe(first);
     });
@@ -513,7 +747,7 @@ describe('PointsFigure', () => {
       let commits = 0;
       await render(
         <Profiler id="fig" onRender={() => (commits += 1)}>
-          <PointsFigure count={1250000} size="hero" testID="pts" />
+          <PointsFigure count={1250000} size="hero" fit testID="pts" />
         </Profiler>,
       );
       await measure(120, 45, 150);
@@ -540,7 +774,7 @@ describe('PointsFigure', () => {
       let commits = 0;
       await render(
         <Profiler id="fig" onRender={() => (commits += 1)}>
-          <PointsFigure count={count} size={size} testID="pts" />
+          <PointsFigure count={count} size={size} fit testID="pts" />
         </Profiler>,
       );
       const shown = formatPointsCount(count);
@@ -835,6 +1069,12 @@ describe('the preview routes show every state without the API', () => {
     expect(routed.getByText('9 digits in 150 px')).toBeTruthy();
     expect(routed.getByText('Studio count, 15 digits in 120 px')).toBeTruthy();
     expect(styleOf(routed.getByTestId('points-fit-7-182').parent as never).width).toBe(182);
+    // the places: a hugging figure has no width of its own wherever the boards put it, and only PT5's balance is fitted
+    for (const place of ['studio', 'kv', 'center', 'end', 'pill']) {
+      expect(styleOf(routed.getByTestId(`points-place-${place}`)).width).toBeUndefined();
+    }
+    expect(styleOf(routed.getByTestId('points-place-balance')).width).toBe('100%');
+    expect(routed.getByLabelText('98,765,432 points')).toBeTruthy();
   });
 
   it('voice player: an error is left by pressing the button', async () => {
