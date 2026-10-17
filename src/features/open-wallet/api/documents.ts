@@ -135,9 +135,10 @@ export async function uploadDocument(kind: DocumentKind, file: PickedFile, back?
   appendFile(form, 'file', file);
   if (back) appendFile(form, 'file_back', back);
   const answer = api.POST('/api/hub/money/identity/documents', {
-    // The contract types the two files as strings; the body is the multipart form itself.
-    body: undefined as unknown as { kind: DocumentKind; file: string },
-    bodySerializer: () => form,
+    // The contract types the two files as strings; the body is the multipart form itself, handed on as it is. It must
+    // go in `body`: openapi-fetch skips the serializer when `body` is undefined, and the request then goes out empty.
+    body: form as unknown as { kind: DocumentKind; file: string },
+    bodySerializer: (body) => body as unknown as FormData,
   });
   return readView(await send(answer));
 }
