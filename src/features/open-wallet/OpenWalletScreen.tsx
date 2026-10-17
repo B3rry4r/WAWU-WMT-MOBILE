@@ -38,7 +38,7 @@ const SKELETON = { title: 28, line: 19, titleWidth: '70%', lineWidth: '50%', lab
 const NAV_TITLE = 'Complete your account';
 const NAV_STEP = '1 of 4';
 /** auth.js line 84 (A31): the lock row, a Lock 15 at 2 and a 13 px line, 8 apart. */
-const LOCK = { icon: 15, stroke: 2, size: 13, gap: 8 } as const;
+const LOCK = { icon: 15, stroke: 2, size: 13, between: 8 } as const;
 /** auth.js line 84: the BVN and NIN hints, and the lock line. */
 const BVN_HINT = 'Dial *565*0# to get it';
 const NIN_HINT = 'Dial *346# to get it';
@@ -439,6 +439,6 @@ const styles = StyleSheet.create({
   titleBlock: { gap: TITLE_GAP },
   title: { lineHeight: type.size.h1 * TITLE_LEADING },
   skeletonField: { gap: space.sm },
-  lock: { flexDirection: 'row', alignItems: 'center', gap: LOCK.gap },
+  lock: { flexDirection: 'row', alignItems: 'center', gap: LOCK.between },
   lockText: { flex: 1, fontSize: LOCK.size, lineHeight: canvasNormalLineHeight(LOCK.size) },
 });
