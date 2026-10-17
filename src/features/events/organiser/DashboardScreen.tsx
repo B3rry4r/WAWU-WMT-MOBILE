@@ -104,7 +104,8 @@ export function DashboardScreen({ id, onBack, onDoor, onTickets, onLinks, onEdit
             <View style={styles.tiles}>
               <StatTile label="Sold" value={data.ticketsSold} testID="dash-sold" />
               <StatTile label="Checked in" value={data.checkedIn} testID="dash-checked-in" />
-              <StatTile label="Left" value={data.remaining} testID="dash-left" />
+              {/* "Left" has no meaning once the event is called off (the Hub counts every voided ticket as left): it is not drawn (SWEEP-EVENTS EVENTS-08 L1). */}
+              {called ? null : <StatTile label="Left" value={data.remaining} testID="dash-left" />}
             </View>
             <NetCard kobo={data.netNaira * KOBO} percent={options.data ? options.data.tickets.hostSharePercent : null} />
             {called ? null : (

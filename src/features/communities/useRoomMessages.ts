@@ -154,6 +154,27 @@ export function useRoomMessages(id: string, looking: boolean) {
 
   const sending = useRef(false);
 
+  // A "Not sent" copy of words the Hub did store (the answer was lost) is settled when the same words arrive under this person's
+  // name, on the live socket or in a page: the pending copy is no longer drawn, instead of showing the words twice (INBOX-05 #34).
+  const ownId = me.data?.wawuUserId;
+  const settled = useMemo(() => {
+    const done = new Set<string>();
+    if (!ownId) return done;
+    for (const entry of outgoing) {
+      if (entry.status !== 'failed' || entry.uncertain !== true) continue;
+      if (items.some((message) => message.senderWawuId === ownId && message.text === entry.text && !entry.heldIds.has(message.id))) {
+        done.add(entry.localId);
+      }
+    }
+    return done;
+  }, [items, outgoing, ownId]);
+  const pending = useMemo(() => (settled.size === 0 ? outgoing : outgoing.filter((entry) => !settled.has(entry.localId))), [outgoing, settled]);
+  // The words were stored, so the credits they cost are spent: read the balance again.
+  const settledCount = settled.size;
+  useEffect(() => {
+    if (settledCount > 0) void queryClient.invalidateQueries({ queryKey: creditsKey });
+  }, [settledCount]);
+
   const meSender = useMemo<CommunitySender | null>(() => {
     const profile = me.data;
     if (!profile) return null;
@@ -268,12 +289,12 @@ export function useRoomMessages(id: string, looking: boolean) {
   return {
     ...query,
     items,
-    outgoing,
+    outgoing: pending,
     send,
     retry,
     discard,
     /** A send is on its way: the Send button waits. */
-    busy: outgoing.some((entry) => entry.status === 'sending'),
+    busy: pending.some((entry) => entry.status === 'sending'),
     me: meSender,
   };
 }

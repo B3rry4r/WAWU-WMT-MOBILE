@@ -356,6 +356,9 @@ export function useTicketBuy(args: TicketBuyArgs) {
         return { code: 'approved' };
       case 'refused':
         void nothingMoved();
+        // The Hub's reason may be that the seats went (sold out): the page behind reads its tiers again, so it does not go on
+        // offering a tier that has none left (SWEEP-EVENTS EVENTS-06 L1).
+        void client.invalidateQueries({ queryKey: ['events', 'tickets', eventId] });
         setPinOpen(false);
         setStatus(
           outcome.code === 'event_order_limit'

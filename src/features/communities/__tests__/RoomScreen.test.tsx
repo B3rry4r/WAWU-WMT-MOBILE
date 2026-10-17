@@ -484,6 +484,36 @@ describe('sending (I26)', () => {
     expect(rtl.screen.getAllByText('did it land?')).toHaveLength(1);
   });
 
+  it('INBOX-05 #34: a send with no answer whose message then arrives on the live socket clears its "Not sent" copy', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    const socket = await connect();
+    await rtl.screen.findByText('hello');
+    await type('stored but unanswered');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    // The Hub did store it; the socket delivers the stored message.
+    await rtl.act(async () => socket.say(liveMessage(message('stored but unanswered', ME), 'c9')));
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+    expect(rtl.screen.getAllByText('stored but unanswered')).toHaveLength(1);
+    expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
+  });
+
+  it('INBOX-05 #34: the same words from another member do not clear a "Not sent" copy', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    const socket = await connect();
+    await rtl.screen.findByText('hello');
+    await type('same words');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    await rtl.act(async () => socket.say(liveMessage(message('same words', 'u2'), 'c9')));
+    expect(rtl.screen.getByText('Not sent')).toBeTruthy();
+    expect(rtl.screen.getAllByText('same words')).toHaveLength(2);
+  });
+
   it('a send with no answer that did not land is sent again', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')]), paged([message('hello', 'u2')])];
     await renderRoom();

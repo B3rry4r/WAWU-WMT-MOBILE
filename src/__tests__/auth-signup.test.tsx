@@ -1153,11 +1153,18 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     await press('Back');
     await waitFor(() => expect(screen.getByText(EMAIL_LINE)).toBeTruthy());
 
-    // visit 1's answer now lands; the app has taken it in (it is what the flow last learned) and A3 still says email
+    // visit 1's answer now lands; it is not kept as what the flow last learned (SWEEP-AUTH N-2: only the latest ask sets it) and A3 still says email
     await act(async () => {
       release();
     });
-    await waitFor(() => expect(knownSignupChannel()).toBe('phone'));
+    // the answer takes a few real turns to reach the app's code; fake timers do not move these
+    const realImmediate = (jest.requireActual('timers') as typeof import('timers')).setImmediate;
+    for (let turn = 0; turn < 5; turn += 1) {
+      await act(async () => {
+        await new Promise<void>((resolve) => realImmediate(resolve));
+      });
+    }
+    expect(knownSignupChannel()).toBe('email');
     expect(screen.getByText(EMAIL_LINE)).toBeTruthy();
     expect(screen.queryByText(TEXT_LINE)).toBeNull();
   });

@@ -391,6 +391,9 @@ function Header({ item }: { item: PayItem }) {
       subtitle={item.subtitle}
       subtitleAccessory={item.verified ? <VerifiedTick kind={item.verified} size={TICK} /> : undefined}
       image={item.image}
+      // Left out, the header is the title alone: no empty tile before it (SWEEP-INBOX INBOX-20 L1, SHARED-CHANGES INBOX-13 #3).
+      bare
+      testID="pay-sheet-head"
     />
   );
 }

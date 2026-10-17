@@ -111,6 +111,11 @@ export type MediaCardProps = {
   imageLabel?: string;
   /** `row`: thumbnail beside the words (a sheet header). `stacked`: picture above the words (a shelf). */
   layout?: 'row' | 'stacked';
+  /**
+   * Row only: with no picture and no placeholder, draw the words alone instead of holding the picture's place with a quiet
+   * block. For a header whose item has no picture (the pay sheet's "Not enough" states); a shelf keeps the block so it never jumps.
+   */
+  bare?: boolean;
   /** Stacked only. Defaults to the shelf's 150 by 200 picture; a grid passes `'100%'`. */
   width?: DimensionValue;
   height?: number;
@@ -134,6 +139,7 @@ export function MediaCard({
   placeholder,
   image,
   imageLabel,
+  bare = false,
   layout = 'row',
   width = mediaMetrics.stackedWidth,
   height = mediaMetrics.stackedHeight,
@@ -287,7 +293,7 @@ export function MediaCard({
   const style = stacked ? styles.stacked : styles.row;
   const body = (
     <>
-      {picture}
+      {bare && !stacked && !hasPicture && !showPlaceholder ? null : picture}
       {words}
     </>
   );

@@ -17,6 +17,7 @@ import {
   warningBody,
   warningTitle,
   windowLabel,
+  windowsShown,
 } from '../model';
 
 const standing = (over: Partial<PaidMessageSettings['standing']> = {}): PaidMessageSettings['standing'] => ({
@@ -136,5 +137,19 @@ describe('the paid message settings model', () => {
     expect(lockedTitle(l)).toBe('Paid messages are off for 7 days');
     expect(lockedBody(l)).toBe('Back on 3 October. Publishing, communities and tips all keep working.');
     expect(lockedBody(l)).not.toMatch(/shop/i);
+  });
+});
+
+describe('windowsShown (INBOX-12 finding 4)', () => {
+  it('keeps the offered times as they are when the saved one is among them, or none is saved', () => {
+    expect(windowsShown([24, 48, 72, 168], 48)).toEqual([24, 48, 72, 168]);
+    expect(windowsShown([24, 48, 72, 168], null)).toEqual([24, 48, 72, 168]);
+  });
+
+  it('adds a saved time that is off the list, in order, without changing the list it was given', () => {
+    const offered = [24, 48, 72, 168];
+    expect(windowsShown(offered, 36)).toEqual([24, 36, 48, 72, 168]);
+    expect(windowsShown(offered, 336)).toEqual([24, 48, 72, 168, 336]);
+    expect(offered).toEqual([24, 48, 72, 168]);
   });
 });
