@@ -16,6 +16,7 @@ import {
 import { adoptSession } from '@/api/session';
 import { noteContactProved } from '@/features/claim/freshToken';
 import { markOfferPending } from '@/features/claim/offerStep';
+import { markBonusPending } from '@/features/verify/bonusStep';
 
 import { wireAccountType, type AccountType } from './accountType';
 import { authed } from './signupApi';
@@ -98,6 +99,8 @@ export async function confirmSignupCode(code: string, emailCode: string): Promis
   await clearSignup();
   // JOIN-03: this account is new, so it is asked once whether it has an access code (SHARED-CHANGES JOIN-03 #4).
   await markOfferPending(tokens.accessToken);
+  // VERIFY-01: and, after that, once to "Your bonus is waiting" (VF1), the same way (SHARED-CHANGES VERIFY-01 #1).
+  await markBonusPending(tokens.accessToken);
   await adoptSession(tokens);
 }
 

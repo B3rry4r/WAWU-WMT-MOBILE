@@ -89,6 +89,8 @@ export type MeScreenProps = {
   onOpenInvite?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
   onOpenVerification?: () => void;
+  /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
+  onOpenShop?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
 };
@@ -106,10 +108,10 @@ export type MeScreenProps = {
  *
  * DV2-03: a person with a running tier sees its badge by their name and the "N of M products" meter under the counts (`GET /me/tier`);
  * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). The Voice Intro player (Bio, AI voice, R-66) is
- * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile is not
- * pressed yet: the screen that finishes a draft is VERIFY-01's (VF2).
+ * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
+ * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenVerification, onOpenShop, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -215,7 +217,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               <Counts counts={countsOf(ready.counts)} />
               <TierMeter tier={tier} />
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
               {tab === 'about' ? (
                 <AboutBody
@@ -270,7 +272,7 @@ function TierMeter({ tier }: { tier: TierQuery }) {
   return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
 }
 
-function ContentBody({ query, drafts, creator }: { query: GridQuery; drafts: DraftsQuery; creator: boolean }) {
+function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void }) {
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -296,7 +298,7 @@ function ContentBody({ query, drafts, creator }: { query: GridQuery; drafts: Dra
   return (
     <View style={styles.gridWrap}>
       {note ? <View style={styles.note}>{note}</View> : null}
-      <ContentGrid tiles={tiles} />
+      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="me-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />

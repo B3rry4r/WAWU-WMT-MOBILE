@@ -11,6 +11,7 @@ import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/au
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PushBridge } from '@/features/push/PushBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
+import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -47,7 +48,9 @@ function useStoredTheme(): boolean {
  * emptied whenever the session ends, so one account's answers are never drawn
  * for the next (FIX-04). A signed-in account whose sign-up has an email step
  * left opens that step before the tabs; the server's progress decides (AUTH-04,
- * SHARED-CHANGES AUTH-04 #2). Categories (EXPLORE-01 #2) and the featured works
+ * SHARED-CHANGES AUTH-04 #2). So do A11, A12 and A13 (AUTH-06, SHARED-CHANGES AUTH-06 #1): the tabs wait while the progress
+ * says `creator_setup`, `interests` or `follows`; A11 is also reachable from "Become a creator" once the sequence is over, and
+ * the screens A11's rows open stay reachable while it is the step. Categories (EXPLORE-01 #2) and the featured works
  * screens (ME-11 #3) sit with the tabs: a signed-out visit to one never draws it.
  * So do every other signed-in screen that is not a tab: Payout bank, Edit profile and Social
  * links, the five steps of Open your wallet, and the five Settings screens (SHARED-05). The
@@ -58,6 +61,8 @@ function useStoredTheme(): boolean {
  * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
  * applied before the first screen is drawn, with the splash screen still up, so the next
  * launch never shows the other theme first (SETTINGS-01 #3 (a)).
+ * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
+ * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
  * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
@@ -68,9 +73,10 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
+  const bonus = useBonusStep(signedIn, gate.progress?.accountType);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
-  const inApp = signedIn && !gate.needsEmail && !offer.visible;
+  const inApp = signedIn && !gate.needsEmail && !offer.visible && !bonus.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -93,8 +99,24 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === null && bonus.visible}>
+          <Stack.Screen name="verify-bonus" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'interests'}>
+          <Stack.Screen name="interests" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'follows'}>
+          <Stack.Screen name="people-to-follow" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === null && !bonus.visible}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="shop" />
+          <Stack.Screen name="shop-product" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
+          <Stack.Screen name="creator-setup" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />

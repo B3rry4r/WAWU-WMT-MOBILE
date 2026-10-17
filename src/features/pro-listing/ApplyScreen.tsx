@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -14,6 +15,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
+import { setHubAccountType } from '@/features/after-signup/hubAccountType';
 import { canvasNormalLineHeight, font, radius, space, type, useWawu } from '@/theme';
 
 import { applyIn, fetchFields, fetchIsCreator, fetchMine, proKeys, refreshListings, type Application, type CredentialKind, type ProField } from './api';
@@ -52,11 +55,37 @@ export type ApplyScreenProps = {
   initialField?: string;
 };
 
-/** P10: the gate for an account that is not a creator's. Its way on (Become a creator, A11) is added by AUTH-06. */
+/**
+ * P10: the gate for an account that is not a creator's. Become a creator (AUTH-06) records the creator type on the Hub (no wallet is
+ * opened, R-6), re-reads what depends on it, and opens A11 (Set up your account). A refusal leaves the gate as it was, with a line
+ * saying so.
+ */
 export function CreatorGate({ title, onBack }: { title: string; onBack: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const become = async () => {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await setHubAccountType('creator');
+      await queryClient.invalidateQueries();
+      router.push('/creator-setup');
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <ProFrame title={title} onBack={onBack} gap={space.lg} centered testID="pro-gate">
       <EmptyState icon="UserCog" title="This needs a creator account" message="Setting one up is free." />
+      <Button label="Become a creator" size="md" onPress={() => void become()} loading={busy} style={styles.gateButton} testID="pro-become-creator" />
+      {failed ? (
+        <Text variant="secondary" tone="danger" accessibilityRole="alert" testID="pro-become-failed">
+          Couldn’t set up your account. Try again.
+        </Text>
+      ) : null}
     </ProFrame>
   );
 }
@@ -493,6 +522,8 @@ function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; lef
 }
 
 const styles = StyleSheet.create({
+  // P10's button is the board's compact pill (Btn size md, full false): the frame's column would stretch it, so it centres itself.
+  gateButton: { alignSelf: 'center' },
   kinds: { gap: fileMetrics.ten },
   kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   file: { flexDirection: 'row', alignItems: 'center', gap: fileMetrics.lead2words, paddingVertical: fileMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.tile },
