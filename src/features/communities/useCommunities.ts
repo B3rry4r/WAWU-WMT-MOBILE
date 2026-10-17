@@ -41,7 +41,7 @@ export function useMyCommunities() {
   return { ...query, items };
 }
 
-/** Suggested reads on by itself until it lists at least this many open rooms (or the Hub has no next page), whatever the screen's height. */
+/** Suggested reads on by itself until it lists at least this many rooms (or the Hub has no next page), whatever the screen's height. */
 export const SUGGESTED_READ_ON_ROOMS = 8;
 /** One pass reads on by itself for at most this many pages; the list's end-reached paging asks for the rest as the person scrolls. */
 export const SUGGESTED_READ_ON_PAGES = 5;
@@ -50,12 +50,10 @@ export const SUGGESTED_READ_ON_PAGES = 5;
  * The rooms the person could join (I24 "Suggested"), in the server's order: most members first (`GET /communities/suggested`,
  * which already leaves out rooms the person hosts, is in, has asked for or cannot see, so nothing is dropped on the phone).
  *
- * Only OPEN rooms are listed (R-47, INBOX-05 finding 18): a person can join an open room from this screen, but asking to join a
- * private one is INBOX-14's screen, which is not built, so a private room would be a row that does nothing. INBOX-14 removes
- * the filter and adds Ask (G-623). The server pages by its own list, so a page can hold few open rooms, or none, and
- * the list's end-reached paging cannot be relied on to ask for the next one: a list that does not fill the screen is never
- * scrolled to its end. So the next page is read on its own until the list holds at least `SUGGESTED_READ_ON_ROOMS` open
- * rooms or the Hub has no next page, whatever the screen's height (INBOX-05 defect 22), but for at most
+ * Every room is listed, open or private: an open room is joined in one tap, and a private room opens I30, where its host's monthly pass is
+ * paid for (INBOX-14, R-63; closes G-623). The server pages by its own list, so a page can hold few rooms, and a list that does not fill
+ * the screen is never scrolled to its end, so the next page is read on its own until the list holds at least `SUGGESTED_READ_ON_ROOMS` rooms
+ * or the Hub has no next page, whatever the screen's height (INBOX-05 defect 22), but for at most
  * `SUGGESTED_READ_ON_PAGES` pages in a pass; after that only the end-reached paging carries on. It starts only once `enabled`,
  * which the screen sets when it holds every room of "Your communities", so the person's own rooms are never still arriving
  * above the suggestions.
@@ -72,7 +70,7 @@ export function useSuggestedCommunities(enabled: boolean) {
     queryClient,
   );
   const items = useMemo<Community[]>(
-    () => firstSeen(query.data?.pages.flatMap((page) => page.items) ?? []).filter((room) => room.kind === 'open'),
+    () => firstSeen(query.data?.pages.flatMap((page) => page.items) ?? []),
     [query.data],
   );
   const { hasNextPage, isFetchNextPageError, isFetching, dataUpdatedAt, errorUpdatedAt, fetchNextPage } = query;

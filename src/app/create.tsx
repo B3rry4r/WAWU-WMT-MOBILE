@@ -9,8 +9,8 @@ import { listServicesTarget } from '@/features/pro-listing/door';
 
 /**
  * M19 · Create (`/create`), opened by the Create button on Home, Explore and Me (creator accounts, R-38). Content opens M20 on a
- * fresh draft, Event opens the host form (E13, or E21 without a tick), Service opens P5 or P8 and the draft row opens Your shop (VF2, `/shop`). Community (I32, INBOX-14) and
- * "Get verified" (M11, ME-12) are added by the tasks that build where they lead (R-47). Creator accounts only: anyone else who opens it is sent Home.
+ * fresh draft, Event opens the host form (E13, or E21 without a tick), Service opens P5 or P8 and the draft row opens Your shop (VF2, `/shop`). Community opens I32 (INBOX-14); "Get verified" (M11, ME-12)
+ * is added by the task that builds where it leads (R-47). Creator accounts only: anyone else who opens it is sent Home.
  */
 export default function CreateRoute() {
   const router = useRouter();
@@ -28,6 +28,7 @@ export default function CreateRoute() {
         router.push('/create-format');
       }}
       onEvent={() => router.push('/events/host')}
+      onCommunity={() => router.push('/community/new')}
       onService={() => void listServicesTarget(queryClient).then((href) => router.push(href))}
       onShop={() => router.push('/shop')}
       onOpenLibrary={() => router.push('/library')}

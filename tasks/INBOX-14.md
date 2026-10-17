@@ -7,7 +7,7 @@ order: 284
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: building
 depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04, INBOX-24]
 decisions: [R-62, R-63, R-47, R-69]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -17,11 +17,14 @@ artboards: [I30, I31, I37, I32, I33, I34]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-17, AUTH-06, ME-04, ME-07, INBOX-24.
-- **History:** none yet. Reports go to tasks/history/INBOX-14.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** re-cut to pay-to-join (R-63); now depends on INBOX-24. See the section below.
+As of 17 Oct 2026, part built (Sonnet builder, tier T2); status `building`.
+- **Branch:** mobile `wmt/INBOX-14` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/ME-07` `5f002bde` and `origin/wmt/INBOX-24` `3642ebda` merged (both sides of every record kept). Backend: none changed; read from `wmt/INBOX-24` `28cea21`, round 2 `0116060` changes no contract line.
+- **Built:** I30 and I31 (`src/features/community-pass/`, `/community/pass/[id]`): the host's price, the Hub's quote with the bank charge and the total, a fresh quote per tap, the PIN, one Idempotency-Key per attempt, a lost answer then a retry, Renew early, a pass that ended, the host, a member the host removed (the Hub's sentence, no Pay), no wallet, a short wallet (no Add, WALLET-05 is not built). I37 (the private room keeps its picture as the header, `CoverHeader`). I32 (`/community/new`: a private room is never sent without a price, the Hub judges the bounds), I33 (`/community/created/[id]`: link, Copy, Share link, Open room), I34 (`/community/requests/[id]`, only for a room that holds requests). Entries added: I24 Join on a private row, a private room a person is not in, the reminder's push route, Create's Community tile.
+- **Checks:** `tsc` EXIT 0; eslint on 28 changed files EXIT 0; jest community-pass 12, community-host 11, communities 148 (incl. RoomScreen 63), create 45, push routes: all pass; gates 0 fail, 9 warn (none mine), baseline passes.
+- **NOT RUN:** the test stack `inbox14_test` and the pictures at 390 px (light, dark, every state); V10 (a real Android phone). The full jest suite and `npm run check` (the merge agent).
+- **Not built yet (R-47, each is a row to add):** the entries to I32 from A11 "Start your first community" (and its count of five), M18 "Host a community", and I1's compose pencil; the host's way to I34 from a private room that holds requests; the "new community" copy for the Inbox. The contract must be regenerated (`npm run api`) once INBOX-24 merges (SHARED-CHANGES INBOX-14 #1).
+- **Next:** a builder with budget: the four entries above, the stack run with the Hub balance read after each case, the pictures; then a verifier.
+- **History:** reports go to tasks/history/INBOX-14.md.
 
 ## Design v2 update (16 Oct 2026)
 
@@ -109,13 +112,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-14.md](history/INBOX-14.md).
 
 ## Owner sign-off
 

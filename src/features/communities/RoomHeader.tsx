@@ -33,7 +33,6 @@ export type RoomHeaderProps = {
 /** I25's top bar: back, the room's picture and name with its member count, and the credit balance. */
 export function RoomHeader({ name, imageUrl, sub, credits, onBack }: RoomHeaderProps) {
   const { colors } = useWawu();
-  const empty = credits === 0;
   return (
     <View style={[styles.bar, { borderBottomColor: colors.borderHairline }]} testID="room-header">
       <IconButton icon="ChevronLeft" label="Back" onPress={onBack} size={headMetrics.back} testID="room-back" />
@@ -46,19 +45,26 @@ export function RoomHeader({ name, imageUrl, sub, credits, onBack }: RoomHeaderP
           {sub}
         </Text>
       </View>
-      {credits !== undefined ? (
-        <View
-          testID="room-credits"
-          accessible
-          accessibilityLabel={`${formatCredits(credits)} left`}
-          style={[styles.pill, { backgroundColor: empty ? colors.warningTint : colors.accentTint }]}
-        >
-          <Icon name="Coins" size={headMetrics.coin} color={empty ? colors.warning : colors.accentFg} strokeWidth={headMetrics.coinStroke} />
-          <Text variant="caption" tone={empty ? 'warning' : 'accentFg'} style={[font(700), { fontSize: headMetrics.pillFont }]}>
-            {formatCredits(credits)}
-          </Text>
-        </View>
-      ) : null}
+      {credits !== undefined ? <CreditPill credits={credits} /> : null}
+    </View>
+  );
+}
+
+/** The credit balance pill (design/_gen/inbox.js line 69, `credPill`): shared by the bar here and the private room's cover header. */
+export function CreditPill({ credits }: { credits: number }) {
+  const { colors } = useWawu();
+  const empty = credits === 0;
+  return (
+    <View
+      testID="room-credits"
+      accessible
+      accessibilityLabel={`${formatCredits(credits)} left`}
+      style={[styles.pill, { backgroundColor: empty ? colors.warningTint : colors.accentTint }]}
+    >
+      <Icon name="Coins" size={headMetrics.coin} color={empty ? colors.warning : colors.accentFg} strokeWidth={headMetrics.coinStroke} />
+      <Text variant="caption" tone={empty ? 'warning' : 'accentFg'} style={[font(700), { fontSize: headMetrics.pillFont }]}>
+        {formatCredits(credits)}
+      </Text>
     </View>
   );
 }

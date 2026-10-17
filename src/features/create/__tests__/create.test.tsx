@@ -59,6 +59,15 @@ describe('M19 · Create', () => {
     expect(calls.close).toHaveBeenCalledTimes(1);
   });
 
+  it('a creator can start a community from the Community tile, which opens I32 and sits before Service as drawn (INBOX-14)', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
+    const onCommunity = jest.fn();
+    await renderFrame(<CreateScreen onClose={jest.fn()} onContent={jest.fn()} onEvent={jest.fn()} onCommunity={onCommunity} onService={jest.fn()} />);
+    await fireEvent.press(await screen.findByTestId('create-tile-community'));
+    expect(onCommunity).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('A room your people talk in')).toBeTruthy();
+  });
+
   it('shows the tile words as drawn, and no tile or link whose screen is not built', async () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
     await open();

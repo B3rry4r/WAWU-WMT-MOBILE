@@ -41,6 +41,11 @@ export function routeForPush(raw: unknown): Href | null {
       const id = targetOf(data, 'community');
       return id ? { pathname: '/community/[id]', params: { id } } : null;
     }
+    case 'community_pass_ending': {
+      // INBOX-14 (R-63): the reminder 3 days before a pass ends opens that room's pass, where one tap renews it.
+      const id = targetOf(data, 'community');
+      return id ? { pathname: '/community/pass/[id]', params: { id } } : null;
+    }
     case 'sale':
     case 'tip_received':
     case 'dm_refunded':

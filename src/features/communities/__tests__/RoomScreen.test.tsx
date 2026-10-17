@@ -11,7 +11,8 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
 }));
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
+const mockReplace = jest.fn();
+jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush, replace: mockReplace }) }));
 
 /* A test double of the transport only: the socket the phone would open. The client, the session and the requests are real. */
 class FakeSocket {
@@ -550,17 +551,30 @@ describe('a person who is not in the room', () => {
   it('sees a private room as private, with no button to join or to ask (asking is another task\'s)', async () => {
     answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'none' }))];
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
+    answers[`GET /communities/${ROOM}/pass`] = [ok({ communityId: ROOM, sellsPass: false, priceKobo: null, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: false, isHost: false })];
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-private-note')).toBeTruthy();
     expect(rtl.screen.getByText('This community is private. Only members can read it.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('room-join')).toBeNull();
     expect(rtl.screen.queryByRole('button', { name: /^Ask/ })).toBeNull();
-    expect(rtl.screen.getByTestId('room-sub').props.children).toBe('1,204 members · private');
+    // A private room keeps its picture as the header (I37): the count is on the cover.
+    expect(rtl.screen.getByTestId('room-cover-sub').props.children).toBe('1,204 members');
+  });
+
+  it('a private room that sells a monthly pass opens its pass page in the room\'s place, where the host\'s price is paid (INBOX-14, R-63)', async () => {
+    mockReplace.mockClear();
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'none' }))];
+    answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
+    answers[`GET /communities/${ROOM}/pass`] = [ok({ communityId: ROOM, sellsPass: true, priceKobo: 200_000, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: true, isHost: false })];
+    await renderRoom();
+    await rtl.waitFor(() => expect(mockReplace).toHaveBeenCalledWith({ pathname: '/community/pass/[id]', params: { id: ROOM } }));
+    expect(rtl.screen.queryByTestId('room-private-note')).toBeNull();
   });
 
   it('whose request to a private room is still with the host is told so', async () => {
     answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'pending' }))];
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
+    answers[`GET /communities/${ROOM}/pass`] = [ok({ communityId: ROOM, sellsPass: false, priceKobo: null, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: false, isHost: false })];
     await renderRoom();
     expect(await rtl.screen.findByText('Your request is with the host. You can read here once they approve it.')).toBeTruthy();
   });

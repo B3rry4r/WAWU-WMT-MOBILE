@@ -29,6 +29,8 @@ export type CreateScreenProps = {
   onContent: () => void;
   /** Event opens E13, or E21 for an account without a tick (the host form decides). */
   onEvent: () => void;
+  /** Community opens I32 (INBOX-14). The tile is not drawn without it. */
+  onCommunity?: () => void;
   /** Service opens P5 (or P8 for a creator who is already listed). */
   onService: () => void;
   /** The draft row opens Your shop (VF2, VERIFY-01). The row is not drawn without it. */
@@ -39,10 +41,9 @@ export type CreateScreenProps = {
 
 /**
  * M19 · Create. Content, Event and Service, the draft row ("Your shop", VF2: drafts are free) and the uploads meter from the Hub's own
- * count. Community (opens I32, INBOX-14) and the meter's "Get verified" (opens M11, ME-12) are added by the tasks that build where they
- * lead (R-47).
+ * count. Community (opens I32, INBOX-14, built) and the meter's "Get verified" (opens M11, ME-12, added by that task) follow R-47.
  */
-export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, onOpenLibrary }: CreateScreenProps) {
+export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onService, onShop, onOpenLibrary }: CreateScreenProps) {
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   // The draft count is the Hub's; a read that fails leaves the row with its fixed words and Your shop says why when it opens.
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: Boolean(onShop) });
@@ -51,6 +52,7 @@ export function CreateScreen({ onClose, onContent, onEvent, onService, onShop, o
   const tiles: Tile[] = [
     { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: onContent, disabled: full },
     { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs a verified tick', onPress: onEvent },
+    ...(onCommunity ? [{ id: 'community', icon: 'Users' as const, title: 'Community', sub: 'A room your people talk in', onPress: onCommunity }] : []),
     { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
   ];
   const rows: Tile[][] = [];

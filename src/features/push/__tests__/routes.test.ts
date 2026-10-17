@@ -13,6 +13,15 @@ describe('where a tap on a notification goes (INBOX-21)', () => {
     });
   });
 
+  it('opens the room\'s pass for the reminder 3 days before it ends (INBOX-14, R-63)', () => {
+    expect(routeForPush({ notificationId: 'n2', kind: 'community_pass_ending', target: room })).toEqual({
+      pathname: '/community/pass/[id]',
+      params: { id: room.id },
+    });
+    expect(routeForPush({ notificationId: 'n2', kind: 'community_pass_ending' })).toBeNull();
+    expect(routeForPush({ kind: 'community_pass_ending', target: { kind: 'community', id: '../wallet' } })).toBeNull();
+  });
+
   it('opens nothing for a declined join: the Hub names no room in that push (backend community.service.ts)', () => {
     expect(routeForPush({ notificationId: 'n1', kind: 'community_join_declined' })).toBeNull();
   });
