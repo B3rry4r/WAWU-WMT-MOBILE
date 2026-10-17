@@ -27,6 +27,7 @@ const metrics = {
   bookW: 150,
   bookH: 210,
   bookPad: 18,
+  bookPadBottom: 24,
   bookRadius: 10,
   spine: 6,
   tagInset: 12,
@@ -134,7 +135,7 @@ export function Media({ piece, tag, by, signal = 0, testID = 'detail-media' }: M
     <View testID={testID} accessibilityLabel={`${BAR_TITLE[kind]}${ended ? ', finished' : ''}`} style={[styles.frame, { height: heightOf(kind), backgroundColor: colors.surfaceSunken }]}>
       {body}
       <View pointerEvents="none" style={styles.tag}>
-        <Pill icon={tag.icon} text={tag.text} testID={`${testID}-tag`} />
+        <Pill icon={tag.icon} text={tag.text} testID={`${testID}-tag`} flush />
       </View>
       {kind === 'pdf' ? <PdfReader uri={uri} title={piece.title} visible={reading} onClose={() => setReading(false)} testID={`${testID}-reader`} /> : null}
     </View>
@@ -148,7 +149,8 @@ const styles = StyleSheet.create({
     width: metrics.bookW,
     height: metrics.bookH,
     borderRadius: metrics.bookRadius,
-    paddingVertical: metrics.bookPad,
+    paddingTop: metrics.bookPad,
+    paddingBottom: metrics.bookPadBottom,
     paddingHorizontal: metrics.bookPad,
     justifyContent: 'space-between',
     overflow: 'hidden',

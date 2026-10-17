@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { userEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 /*
@@ -374,6 +375,41 @@ describe('H21: comments', () => {
     expect(await sheet.findByText('@Emeka yes, chapter 6')).toBeTruthy();
   });
 
+  it('two presses on Send in the same frame post the comment once, and the next comment posts after the answer', async () => {
+    const { screen } = await open();
+    const sheet = rtl.within(screen.getByTestId('comments-sheet'));
+    await rtl.fireEvent.changeText(sheet.getByTestId('comments-input'), 'Once only');
+    // Both presses land before the sheet has drawn "posting", as two clicks in one frame do.
+    await rtl.act(async () => {
+      void rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+      void rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    });
+    await rtl.waitFor(() => expect(hub.posts).toHaveLength(1));
+    await rtl.waitFor(() => expect(sheet.getByTestId('comments-input').props.value).toBe(''));
+    expect(hub.writes.filter((w) => w === 'POST /content/pdf-1/comments')).toHaveLength(1);
+    // The guard is let go on the answer: a second comment goes.
+    await rtl.fireEvent.changeText(sheet.getByTestId('comments-input'), 'And another');
+    await rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    await rtl.waitFor(() => expect(hub.posts).toHaveLength(2));
+    expect(hub.posts.map((x) => x.text)).toEqual(['Once only', 'And another']);
+  });
+
+  it('a comment that fails lets go of the guard: the same words post again once the Hub answers', async () => {
+    hub.postFails = true;
+    const { screen } = await open();
+    const sheet = rtl.within(screen.getByTestId('comments-sheet'));
+    await rtl.fireEvent.changeText(sheet.getByTestId('comments-input'), 'Try me twice');
+    await rtl.act(async () => {
+      void rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+      void rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    });
+    await sheet.findByText("Your comment couldn't be posted. Try again.");
+    expect(hub.writes.filter((w) => w === 'POST /content/pdf-1/comments')).toHaveLength(1);
+    hub.postFails = false;
+    await rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    await rtl.waitFor(() => expect(hub.posts).toHaveLength(1));
+  });
+
   it('a comment that fails keeps its words in the box and says so; posting again works', async () => {
     hub.postFails = true;
     const { screen } = await open();
@@ -505,6 +541,39 @@ describe('H25: a course', () => {
     expect(screen.getByText('Lesson 12')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Show fewer lessons' }));
     expect(screen.queryByText('Lesson 12')).toBeNull();
+  });
+});
+
+describe('the foot never sits over the page (H19 to H25)', () => {
+  const SCREEN = 844;
+  const FOOT = 113;
+  const paddingOf = (screen: Awaited<ReturnType<typeof boot>>['screen']) => StyleSheet.flatten(screen.getByTestId('detail-scroll').props.contentContainerStyle).paddingBottom as number;
+
+  it('a locked course pads its list by the foot it measured, so the last action row and the comments scroll up above the foot', async () => {
+    const { screen } = await boot(COURSE);
+    const foot = screen.getByTestId('detail-foot');
+    // The foot lies over the bottom of the screen, so the list runs under it and has to be padded by it.
+    expect(StyleSheet.flatten(foot.props.style)).toEqual(expect.objectContaining({ position: 'absolute', bottom: 0, left: 0, right: 0 }));
+    await rtl.act(async () => {
+      rtl.fireEvent(foot, 'layout', { nativeEvent: { layout: { x: 0, y: SCREEN - FOOT, width: 390, height: FOOT } } });
+    });
+    // At the end of the list its last pixel (the foot of the comments) is at the screen's bottom less this padding.
+    const lastRowBottom = SCREEN - paddingOf(screen);
+    expect(lastRowBottom).toBeLessThanOrEqual(SCREEN - FOOT);
+    // A taller foot (a phone with a home bar, large text) moves the end up with it.
+    await rtl.act(async () => {
+      rtl.fireEvent(foot, 'layout', { nativeEvent: { layout: { x: 0, y: SCREEN - 150, width: 390, height: 150 } } });
+    });
+    expect(SCREEN - paddingOf(screen)).toBeLessThanOrEqual(SCREEN - 150);
+  });
+
+  it.each([
+    ['a locked PDF', PDF],
+    ['a free video', VIDEO],
+  ])('%s has no foot and keeps the page\'s own space at the end', async (_name, id) => {
+    const { screen } = await boot(id);
+    expect(screen.queryByTestId('detail-foot')).toBeNull();
+    expect(paddingOf(screen)).toBe(40);
   });
 });
 

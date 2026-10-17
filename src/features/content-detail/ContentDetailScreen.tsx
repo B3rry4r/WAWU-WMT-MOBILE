@@ -90,6 +90,8 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
   const [rateOpen, setRateOpen] = useState(false);
   const [allLessons, setAllLessons] = useState(false);
   const [open, setOpen] = useState(0);
+  // The foot's own height (the unlock button, its balance line and the safe area under it), read from the screen: the list pads by it.
+  const [footHeight, setFootHeight] = useState(0);
 
   const { piece, detail, engagement, item } = page;
   // The Hub counts one view per person per piece per day, and never the owner's own, so opening the page tells it once.
@@ -189,11 +191,14 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
   const lessons = d.lessons;
   const shownLessons = allLessons ? lessons : lessons.slice(0, LESSONS_SHOWN);
   const course = kind === 'course';
+  // H25 locked is the one layout with a foot. It lies over the foot of the screen, and the list is padded by its measured height, so the
+  // last thing on the page (the comments) scrolls up clear of it on every screen size, whatever the list does when it is laid out.
+  const footed = course && locked;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="content-detail">
       <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} />
-      <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: course && locked ? space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: footed ? footHeight + space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} />
         <View style={styles.title}>
           <Text variant="sheetTitle" testID="detail-title">
@@ -266,8 +271,12 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
         </View>
       </ScrollView>
 
-      {course && locked ? (
-        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, m.footBottom), backgroundColor: colors.surfacePage }]} testID="detail-foot">
+      {footed ? (
+        <View
+          style={[styles.foot, { paddingBottom: Math.max(insets.bottom, m.footBottom), backgroundColor: colors.surfacePage }]}
+          onLayout={(e) => setFootHeight(e.nativeEvent.layout.height)}
+          testID="detail-foot"
+        >
           <WalletLine balanceKobo={balanceKobo} />
           <Button testID="detail-unlock" label={`Unlock course · ${formatNaira(priceKobo(p))}`} onPress={startUnlock} loading={unlock.asking} full />
         </View>
@@ -304,5 +313,5 @@ const styles = StyleSheet.create({
   comments: { gap: space.lg },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   grow: { flex: 1 },
-  foot: { paddingTop: m.footTop, paddingHorizontal: layout.gutter, gap: space.sm },
+  foot: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: m.footTop, paddingHorizontal: layout.gutter, gap: space.sm },
 });

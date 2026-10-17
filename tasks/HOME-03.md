@@ -25,6 +25,7 @@ As of 17 Oct 2026, built (bundle S1b, Sonnet builder, T1), waiting for a verifie
 - **Money:** Unlock uses HOME-12's sheets (H14 to H18) and Tip HOME-13's (H26 to H28): a fresh quote before the PIN, one Idempotency-Key per attempt. The price card keeps the price ("Unlock · ₦3,000"); the sheet shows the total.
 - **Not drawn (R-47):** "Yours forever" (G-HOME-03-3), "96% liked" as a percentage (G-HOME-03-1). Share link is `wawuafrica.com/content/<id>` (G-HOME-03-2). Download opens the file's address (G-HOME-03-4). Star words other than "Really good" are a default (G-HOME-03-5).
 - **Merge fallout fixed:** the Explore pill and Search field said "Search Who Made This??" after R-69 (SHARED-CHANGES HOME-03 #3).
+- **Round 2 (17 Oct 2026, findings 2 and 3):** Send posts once: a ref is set before the request and cleared on its answer (two presses in one frame, one POST; a failed post lets go too). The preview pill sits 12 from the picture's foot as drawn (`Pill` `flush`, SHARED-CHANGES HOME-03 #5) and the book's last line has the board's 24 under it: 6 px between the line and the pill, no shared area (H19, H20). H25's foot is HOME-08's.
 - **Next:** a verifier; passes V1, V4, V5, V6, V7, V9. Records: this file, `docs/LOG.md`, `BACKEND_GAPS.md` G-HOME-03-1 to 5.
 
 ## Current state

@@ -43,6 +43,9 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   const [text, setText] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<TextInput>(null);
+  // One send per comment: set before the request goes and cleared on its answer, so two presses in one frame (before `posting`
+  // has re-rendered) post once, as the pay sheets do.
+  const sending = useRef(false);
   const items = useMemo(() => page.comments.data?.pages.flatMap((p) => p.items) ?? [], [page.comments.data]);
   const tree = useMemo(() => threads(items), [items]);
   const posting = page.post.isPending;
@@ -60,7 +63,8 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
     setText('');
   };
   const send = () => {
-    if (!ready) return;
+    if (!ready || sending.current) return;
+    sending.current = true;
     setProblem(null);
     page.post.mutate(
       { text: clean, replyToId: replyTo?.id ?? null },
@@ -70,6 +74,9 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
           setReplyTo(null);
         },
         onError: () => setProblem(POST_FAILED),
+        onSettled: () => {
+          sending.current = false;
+        },
       },
     );
   };

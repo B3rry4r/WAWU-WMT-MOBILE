@@ -133,10 +133,10 @@ export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onF
   );
 }
 
-/** The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". */
-export function Pill({ icon, text, testID }: { icon: IconName; text: string; testID?: string }) {
+/** The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". `flush` drops the space under it, for a pill that is not followed by a name (the one on a piece's own picture). */
+export function Pill({ icon, text, testID, flush = false }: { icon: IconName; text: string; testID?: string; flush?: boolean }) {
   return (
-    <View style={styles.pillRow}>
+    <View style={flush ? styles.pillRowFlush : styles.pillRow}>
       <View testID={testID} style={[styles.pill, { backgroundColor: media.pill }]}>
         <Icon name={icon} size={metrics.pillIcon} color={media.ink} strokeWidth={ICON_STROKE.button} />
         <Text numberOfLines={1} style={[words.pill, { color: media.ink }]}>
@@ -332,6 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillRow: { flexDirection: 'row', marginBottom: metrics.pillBelow },
+  pillRowFlush: { flexDirection: 'row' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
