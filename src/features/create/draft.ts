@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { onSessionEnd } from '@/api/session';
 
 import { releaseUpload } from './api';
+import { resetDetails, setSent } from './details';
 import type { FormatId } from './model';
 
 /** A file that has gone up to the Hub's storage: what the create call (`POST /content`) takes as `fullAsset` or `previewAsset`. */
@@ -21,8 +22,9 @@ export type UploadedFile = {
 };
 
 /**
- * The piece being made, from M20 to the details step (ME-08). The Hub has no draft: the create call takes the title,
- * the price and both files at once, so what the steps collect is held here until the last one sends it.
+ * The piece being made, from M20 to the price step (ME-08). The Hub has no draft: the create call takes the title,
+ * the price and both files at once, so what the steps collect is held until the last one sends it: the format and the
+ * files here, the title, description, category and price in `details.ts`, which every reset below empties too.
  */
 export type Draft = { format: FormatId | null; full: UploadedFile | null; preview: UploadedFile | null };
 
@@ -50,6 +52,7 @@ export function setFormat(format: FormatId): void {
   if (draft.format === format) return;
   giveBack(draft.full);
   giveBack(draft.preview);
+  resetDetails();
   publish({ format, full: null, preview: null });
 }
 
@@ -70,6 +73,8 @@ export function setPreview(preview: UploadedFile | null): void {
 export function abandonDraft(): void {
   giveBack(draft.full);
   giveBack(draft.preview);
+  resetDetails();
+  setSent(null);
   publish(empty);
 }
 
@@ -78,6 +83,7 @@ export function abandonDraft(): void {
  * the session has ended and there is no one to ask on behalf of.
  */
 export function resetDraft(): void {
+  resetDetails();
   publish(empty);
 }
 

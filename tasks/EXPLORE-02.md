@@ -7,7 +7,7 @@ order: 101
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [EXPLORE-03, EXPLORE-05, SETTINGS-04, UI-02, UI-03, INBOX-05]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -17,10 +17,16 @@ artboards: [X4, X5, X6, X7]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EXPLORE-05.
-- **History:** none yet. Reports go to tasks/history/EXPLORE-02.md.
+As of 17 Oct 2026, round 2 (builder, Sonnet).
+- **Status:** verifying. Not yet checked by a verifier. Nothing merged or live.
+- **Branches:** mobile `wmt/EXPLORE-02-R2` (from `origin/wmt/P1` `9285017`, with `origin/wmt/EXPLORE-02` `86bbe0d9` merged); backend `wmt/EXPLORE-02` `0b0ed34` (round 1 `2d0d5d9` with `origin/wmt/MERGE-10` `3cf5a4b` merged). No migration. The contract is the backend's own, regenerated (`npm run contract:build`) and unchanged by the merge; P1 already carried it (SHARED-CHANGES EXPLORE-04 #1, EXPLORE-02 #1).
+- **Built (app):** `/creators` (X4) and `/search` (X5 to X12) as in round 1, on P1's copies of `parts.tsx`, `model.ts`, `SearchScreen.tsx` and `search.test.tsx`. Entries: Explore's search pill and "Who Made This?" See all (X1), Home's search button and the creators rail's See all (DV2-01's rail now draws it), the feed's search button, and the search button on /creators. R-69: the Explore pill and its label read "Search Who Made This?" (SHARED-CHANGES EXPLORE-02 #3 lists the two strings changed in `screens.test.tsx`, an absence check).
+- **Pictures (V5):** X1 and X4 to X12 at 390 px, light and dark, beside the renders, on a seeded stack (`explore02`, ports 7860-7867, Hub, real wawu-id, mobile export). The built screens match the boards in layout, copy, chips, rows and buttons in both themes; the data differs (names, counts, pictures). X12 was taken after the retries ended. Files: scratchpad `explore-02-b/pics/` (sheets in `pics/boards/`).
+- **V9 (real Hub, real wawu-id sign-in screen, no injected token):** Follow on a search row turned to Following and the Hub holds the follow row; Join on an open room opened the room and the Hub holds `joined`; Ask on a private room read Requested and the Hub holds `pending`; the search was remembered; popular chips drew once 3 people had searched the same text; with the Hub unreachable the failed state drew and Try again brought the results back.
+- **Checks:** backend: tsc 0, eslint 0 on the module, search specs 8 suites 241 tests passing (EXIT 0; they need the mock WAWU ID on its default service key), gates 0 fail, baseline ok. Mobile (final tree): tsc EXIT 0, eslint on the changed folders EXIT 0, jest on search, explore, home and feed 15 suites 249 passed (EXIT 0), gates 0 fail (EXIT 0), baseline ok.
+- **Fixture notes:** the stack does not seed by itself: `npm run db:seed` plus extra rows were added by hand; the mock WAWU ID answers a flat shape the app cannot read, so pictures need `--with id`.
+- **Open findings:** none known. DV2-01's task file still says See all is not drawn; it is now.
+- **Next:** verifier (V1, V4, V5, V6, V9); the lead merges the backend branch before this one.
 
 ## Read first
 
@@ -89,17 +95,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 and EXPLORE-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EXPLORE-02.md](history/EXPLORE-02.md).
 
 ## Owner sign-off
 
