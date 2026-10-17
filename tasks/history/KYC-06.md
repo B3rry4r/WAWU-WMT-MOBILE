@@ -25,3 +25,20 @@ Builder (Sonnet), 17 Oct 2026. Mobile `wmt/KYC-06` from `origin/wmt/MERGE-5` `7d
 
 _Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
 
+
+## Builder report (round 2)
+
+Builder (Sonnet), 17 Oct 2026. Mobile `wmt/KYC-06` continued from `b6629b4` (on `7de785d`); backend read-only at `a5e48fc`, no migration.
+
+**Files** (under `src/features/open-wallet/` unless named): new `ChoiceField.tsx`, `DetailsNeeded.tsx`, `documentFields.ts`, `__tests__/routeGuard.test.tsx`; changed `IdDocumentScreen`, `ProofOfAddressScreen`, `CheckingScreen`, `RejectedScreen`, `ReviewResume`, `draft`, `submit`, `leave`, `entry`, the four route files, `src/app/open-wallet.tsx` and `src/app/_layout.tsx` (SHARED-CHANGES KYC-06 #1, marked applied), `BACKEND_GAPS.md` (G-820 to G-822 notes, G-823 new). Tests changed in `documentsFlow.test.tsx` (this task's own): the A27 "Start again" test became "Add your details", the A27 open-call test carries the new fields, Submit is no longer asserted disabled, A28's line, and two A29 tests hold details first.
+
+**Red first, then green** (`documentsFlow.test.tsx`, "Round 2" blocks, and `routeGuard.test.tsx`): 24 of 46 tests and 4 of 8 failed before the code; all pass after. A rejected person with no details held is led to the first step from A29, A26 and A27 and sent nothing; the first step skips the resume (`skip`); with details held A27 sends them then the documents; photos and bill are dropped when the last holder closes and kept while A26 is still there; signed out, none of the four stays; the new fields are asked and checked only where the open call carries them; a passport asks no back; Submit names what is missing; A28 and A29 errors have Close.
+
+**In a browser** (stack `kyc_06`, own Metro cache, only ports 7460 and 7467 baked, real login, fixtures for `/money/*` only): cold load of A29 then Upload again lands on `/open-wallet?again=1` with the first step shown; A26 and A27 by a link with nothing held show "We need your details again" and lead there; signed out, each of the four goes to the welcome screen with no money call; home, A26, A27, back, back, reopen A26 reads "Tap to take a photo" on both tiles; Close on the A28 and A29 errors leaves to Home; a passport hides the back and unlocks Continue after the front. Pictures in `scratchpad/kyc-06-b/pics/` (`cmp-a26` to `cmp-a29`: board dark, built dark, board light, built light).
+
+**Gates and counts:** before 185 suites, 3268 tests; after 186 suites, 3297 tests, gates 10 run, 0 fail, 5 warn (the same five as main), lint 0 errors.
+
+**Gaps and shared changes:** G-820 (BVN and NIN with KYC-07), G-821 (sublines), G-822 resolved, G-823 new; SHARED-CHANGES KYC-06 #1 applied.
+
+**Not done:** the open call's browser trace and V9 on a `nuvion` Hub (see Current state).
+
