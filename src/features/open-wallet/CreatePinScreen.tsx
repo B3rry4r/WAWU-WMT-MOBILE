@@ -9,10 +9,10 @@ import { Button, IconButton } from '@/components/Button';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { ALERT, DOTS } from '@/components/pin-sheet/kit';
-import { Keypad } from '@/components/pin-sheet/Keypad';
+import { Keypad, PinDots } from '@/components/pin-sheet';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { font, layout, radius, space, useWawu } from '@/theme';
+import { font, layout, space, useWawu } from '@/theme';
 
 import { OPEN_WALLET_KEY } from './api/account';
 import { fetchOpenedWallet, openedWalletQuery, setTransactionPin } from './api/wallet';
@@ -287,7 +287,6 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPi
   const loading = phase === 'entering' && !read && !failed;
   const filled = phase === 'entering' ? digits.length : PIN_LENGTH;
   const missed = line?.wrongPin === true && digits.length === 0 && phase === 'entering';
-  const ring = missed ? colors.danger : colors.borderStrong;
 
   if (phase === 'already') {
     return (
@@ -363,14 +362,7 @@ export function CreatePinScreen({ onBack, onDone, onNotOpen, onLeave, onForgotPi
             </Text>
           </View>
           <View style={styles.middle}>
-            <View style={styles.dots} accessible accessibilityLabel={`${filled} of ${PIN_LENGTH} digits entered`} testID="open-wallet-pin-dots">
-              {Array.from({ length: PIN_LENGTH }, (_, i) => (
-                <View
-                  key={i}
-                  style={[styles.dot, i < filled ? { backgroundColor: colors.textPrimary } : { borderColor: ring, borderWidth: DOTS.ring }]}
-                />
-              ))}
-            </View>
+            <PinDots filled={filled} length={PIN_LENGTH} missed={missed} testID="open-wallet-pin-dots" />
             {status}
           </View>
           <Keypad inactive={keysOff} onDigit={onDigit} onDelete={onDelete} onClear={onClear} />
@@ -392,8 +384,6 @@ const styles = StyleSheet.create({
   title: { marginTop: BODY.titleNudge, textAlign: 'center' },
   center: { textAlign: 'center' },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: DOTS.padY },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart },
-  dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
   alertText: { flexShrink: 1 },
 });

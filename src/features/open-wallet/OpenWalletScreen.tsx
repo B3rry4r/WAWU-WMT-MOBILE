@@ -387,6 +387,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
         <AuthField
           scrollRef={scrollRef}
           label="BVN"
+          mono
           testID="open-wallet-bvn"
           value={bvn}
           onChangeText={edit(setBvn, 'bvn')}
@@ -407,6 +408,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
         <AuthField
           scrollRef={scrollRef}
           label="NIN"
+          mono
           testID="open-wallet-nin"
           inputRef={ninInput}
           value={nin}

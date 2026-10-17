@@ -7,7 +7,7 @@ import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { fieldMetrics } from '@/components/TextField';
+import { TextField, fieldMetrics } from '@/components/TextField';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { space, useWawu } from '@/theme';
@@ -21,9 +21,8 @@ import {
   savePayoutAccount,
   type PayoutAccount,
 } from './api/payoutAccount';
-import { BankField } from './BankField';
 import { BankSheet } from './BankSheet';
-import { NameLineView } from './NameLineView';
+import { nameLineHint } from './nameLine';
 import { canSave, digitsOnly, formFrom, isComplete, nameLine, shouldCheckName, type NameCheck, type NameLine, type PayoutForm } from './payoutForm';
 
 /** design/_gen/auth.js line 50: A21's body stacks its parts 16 apart. */
@@ -145,6 +144,7 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
   // A save the bank refused says so on the field, exactly as a refused name check does.
   const refusedOnSave = save.isError && isUnconfirmedAccount(save.error);
   const line: NameLine = refusedOnSave ? { kind: 'unconfirmed', message: save.error.message } : nameLine(form, saved, nameCheck);
+  const nameHint = nameLineHint(line);
   const footError = save.isError && !refusedOnSave ? failureMessage(save.error) : null;
 
   const edit = (next: PayoutForm) => {
@@ -185,12 +185,26 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
       }
     >
       <View style={styles.body}>
-        <BankField bank={form.bank} onPress={() => setPicking(true)} disabled={save.isPending} testID="payout-bank" />
+        <TextField
+          label="Bank"
+          testID="payout-bank"
+          value={form.bank?.name ?? ''}
+          placeholder="Choose your bank"
+          leadingIcon="Landmark"
+          trailingIcon="ChevronDown"
+          onPress={() => setPicking(true)}
+          disabled={save.isPending}
+          accessibilityLabel={form.bank ? `Bank, ${form.bank.name}` : 'Bank, choose your bank'}
+          accessibilityHint="Opens the list of banks"
+        />
         <View>
           <AuthField
             scrollRef={scrollRef}
             label="Account number"
             testID="payout-number"
+            mono
+            hint={nameHint?.hint}
+            tone={nameHint?.tone}
             value={form.accountNumber}
             // No `maxLength` on the raw input: the platform would cut a pasted "0987 654 321" to ten
             // characters before the spaces are taken out. `digitsOnly` keeps the digits, then caps at ten.
@@ -205,7 +219,6 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
             returnKeyType="done"
             onSubmitEditing={submit}
           />
-          <NameLineView line={line} testID="payout-name" />
         </View>
       </View>
       <BankSheet

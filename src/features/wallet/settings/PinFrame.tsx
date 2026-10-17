@@ -10,7 +10,7 @@ import { ALERT, DOTS } from '@/components/pin-sheet/kit';
 import { Text } from '@/components/Text';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
-import { CODE_LENGTH, PIN_LENGTH } from './pinFlow';
+import { CODE_LENGTH } from './pinFlow';
 
 /**
  * design/_gen/kit.js line 34, `nav`: a 56 bar with 20 at the sides and 12 between, the 42 round back button, the title
@@ -94,21 +94,6 @@ export function PinHead({ icon = true, title, line, testID }: PinHeadProps) {
   );
 }
 
-export type PinDotsProps = { filled: number; /** Ring the empty dots in danger: only a refused PIN does. */ missed?: boolean; testID?: string };
-
-/** kit.js line 52, `dots`: 16 across, 18 apart, the empty ones a 1.5 ring. */
-export function PinDots({ filled, missed, testID }: PinDotsProps) {
-  const { colors } = useWawu();
-  const ring = missed ? colors.danger : colors.borderStrong;
-  return (
-    <View style={styles.dots} accessible accessibilityLabel={`${filled} of ${PIN_LENGTH} digits entered`} testID={testID}>
-      {Array.from({ length: PIN_LENGTH }, (_, i) => (
-        <View key={i} style={[styles.dot, i < filled ? { backgroundColor: colors.textPrimary } : { borderColor: ring, borderWidth: DOTS.ring }]} />
-      ))}
-    </View>
-  );
-}
-
 export type StatusLineProps = { text: string; testID?: string };
 
 /** The inline error line under the dots or the boxes: a CircleAlert in danger and the sentence (auth.js line 14). */
@@ -186,8 +171,6 @@ const styles = StyleSheet.create({
   head: { alignItems: 'center', gap: space.sm, paddingTop: HEAD.top },
   center: { textAlign: 'center' },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: DOTS.padY },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart },
-  dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
   alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
   alertText: { flexShrink: 1 },
   boxes: { flexDirection: 'row', justifyContent: 'center', gap: BOX.apart, alignSelf: 'stretch' },

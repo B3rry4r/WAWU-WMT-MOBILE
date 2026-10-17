@@ -9,14 +9,13 @@ import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { fieldMetrics } from '@/components/TextField';
+import { TextField, fieldMetrics } from '@/components/TextField';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { Banner } from '@/components/Banner';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
-import { BioField } from './BioField';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { PICK_FAILED, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
@@ -241,7 +240,9 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           autoCorrect={false}
           disabled={busy}
         />
-        <BioField
+        <TextField
+          multiline
+          label="Bio"
           testID="edit-bio"
           value={form.bio}
           onChangeText={(bio) => edit((current) => ({ ...current, bio }))}
