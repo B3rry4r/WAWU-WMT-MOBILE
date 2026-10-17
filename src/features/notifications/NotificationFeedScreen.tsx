@@ -50,8 +50,8 @@ function withRead(data: Cached, id: string): Cached {
  * M31 and M32 · Notifications. The person's notifications, newest first, from `GET /me/notifications`, by the chips All, Money,
  * Messages and Content: each row says what the Hub says (its title, its words, its time) in the colour of its tone. A new one has the
  * accent dot and a bold title; opening a row marks it read and opens what it is about when that screen is built ("See why" on a piece
- * sent back opens M26, "Top up" on low credits raises I28). A row with nothing to open is pressed only to mark it read. Reply on a paid
- * question (I10) is added by INBOX-18 (R-47). With nothing at all, M32 says the person is caught up.
+ * sent back opens M26, "Top up" on low credits raises I28, "Reply" on a paid question opens I10). A row with nothing to open is pressed only
+ * to mark it read. With nothing at all, M32 says the person is caught up.
  */
 export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: NotificationFeedScreenProps) {
   const queryClient = useQueryClient();
@@ -103,6 +103,12 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
     if (href) onOpen(href);
   };
 
+  // A button under a row opens the screen it names (Reply goes to the asker's conversation, which the row itself does not).
+  const openAction = (item: FeedItem, href: Href) => {
+    if (!item.read) read.mutate(item.id);
+    onOpen(href);
+  };
+
   const raiseTopUp = (item: FeedItem) => {
     if (!item.read) read.mutate(item.id);
     setTopUp(true);
@@ -133,7 +139,7 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
         ) : (
           <View testID="notifications-list">
             {items.map((item) => (
-              <Row key={item.id} item={item} when={whenOf(item.createdAt, now)} onOpen={() => open(item)} onAction={(action) => (action.kind === 'top-up' ? raiseTopUp(item) : open(item))} />
+              <Row key={item.id} item={item} when={whenOf(item.createdAt, now)} onOpen={() => open(item)} onAction={(action) => (action.kind === 'top-up' ? raiseTopUp(item) : openAction(item, action.href))} />
             ))}
             {isFetchingNextPage ? <SkeletonRows count={1} testID="notifications-more-loading" /> : null}
             {list.isFetchNextPageError && !isFetchingNextPage ? (

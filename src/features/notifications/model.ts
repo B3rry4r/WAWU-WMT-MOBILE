@@ -2,6 +2,7 @@ import type { Href } from 'expo-router';
 
 import type { IconTileTone } from '@/components/IconTile';
 import type { IconName } from '@/components/icon';
+import { paidThreadHref } from '@/features/paid-answers/routes';
 import { routeForPush } from '@/features/push/routes';
 import { rowTime } from '@/features/wallet/history/lagosTime';
 
@@ -63,15 +64,19 @@ export function routeOf(item: Pick<FeedItem, 'kind' | 'target'>): Href | null {
   return routeForPush({ kind: item.kind, target: target ? { kind: target.kind, id: target.id } : undefined });
 }
 
-/** The button M31 draws under a row, for the rows whose screen is built: "See why" on a piece sent back, "Top up" on low credits. */
+/** The button M31 draws under a row, for the rows whose screen is built: "See why" on a piece sent back, "Top up" on low credits, "Reply" on a paid question. */
 export type RowAction = { label: string; kind: 'route'; href: Href } | { label: string; kind: 'top-up' };
 
-export function actionOf(item: Pick<FeedItem, 'kind' | 'target'>): RowAction | null {
+export function actionOf(item: Pick<FeedItem, 'kind' | 'target'> & { actor?: Pick<NonNullable<FeedItem['actor']>, 'wawuId'> | null }): RowAction | null {
   if (item.kind === 'content_rejected') {
     const href = routeOf(item);
     return href ? { label: 'See why', kind: 'route', href } : null;
   }
   if (item.kind === 'credits_low') return { label: 'Top up', kind: 'top-up' };
+  // A paid question waiting on the creator (INBOX-18): Reply opens the asker's conversation (I10), when the Hub names who asked.
+  if ((item.kind === 'dm_received' || item.kind === 'dm_deadline') && item.actor?.wawuId) {
+    return { label: 'Reply', kind: 'route', href: paidThreadHref(item.actor.wawuId, item.target?.kind === 'paid_question' ? item.target.id : undefined) };
+  }
   return null;
 }
 
