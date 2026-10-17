@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 81, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 83, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -128,6 +128,8 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | TIER-06 | L1 | Backend: the points cash-out quote token (`src/points/convert/points-convert-quote-token.ts`) is stateless and reusable until it expires. With 40,000 points and one token for 4,000, 6 parallel converts under different Idempotency-Keys all paid (201), each exactly the quoted cash with its own points deducted: no overpayment, so not a defect. POINTS-05 (the app) must take a fresh quote per attempt. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 2, finding 1 |
 | TIER-06 | L2 | Backend (latent): the cash-rate rule ignores the Founding pack bonus percent (`plan.tier.founding.pack_bonus_pct`, 10). Nothing applies it today (`src/plans/plans.service.ts:117` only displays it). When POINTS-02 applies it, a rate set at the exact maximum would pay about 10 percent more than a Founding buyer paid: POINTS-02 must make `pointsSales` (`src/plan-settings/plan-setting-rules.ts:34`) count the bonus points. Also written into `tasks/POINTS-02.md` Current state. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 2, finding 2 |
 | TIER-06 | L3 | Backend test flake: `pin-request-key.contract.spec.ts:202` (a random PIN inside a random digest) can fail on its own; it did not occur in the verifier's runs. Make the test deterministic. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 1, 'Sweep row only' |
+| TIER-07 | L2 | Deploy order: a Founding Maker granted by the OLD code between migration `20261024090000_maker_badge_number` and the new code gets no number until their next grant, so `badge.number` is null while the badge shows. The type allows null and the app must draw "Founding Maker" without a number then. Deploy the migration and the code together. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-07.md`, finding 2 |
+| TIER-07 | L3 | Backend (pre-existing, not this task's defect): `grant()` on a person whose Verify or Plus tier still runs extends that tier whichever tier was asked (waitlist claim), so no Founding number is given; the purchase route refuses that case. Decide whether the waitlist claim should refuse or switch. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-07.md`, finding 3 |
 
 ## Builder report
 
