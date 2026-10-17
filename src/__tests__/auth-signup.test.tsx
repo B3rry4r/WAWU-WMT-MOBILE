@@ -52,6 +52,9 @@ const routes = {
   '(tabs)/inbox': Inbox,
   '(tabs)/wallet': Wallet,
   '(tabs)/me': Me,
+  // DV2-05: the consent line's two words open these (public screens; their own tests live with the About feature).
+  terms: () => <NativeText>Terms page</NativeText>,
+  'privacy-policy': () => <NativeText>Privacy policy page</NativeText>,
 };
 
 type Call = { method: string; path: string; url: string; body: Record<string, unknown>; auth: string | null };
@@ -209,6 +212,8 @@ async function fillAndContinue(email = 'lennox@wawu.africa', phone = '0803 123 4
   await fireEvent.changeText(screen.getByTestId('sign-up-email'), email);
   await fireEvent.changeText(screen.getByTestId('sign-up-phone'), phone);
   await fireEvent.changeText(screen.getByTestId('sign-up-password'), password);
+  // DV2-05: A3 draws "I agree to the terms and privacy policy" (R-67), which must be ticked.
+  await fireEvent.press(screen.getByTestId('sign-up-consent'));
   await press('Continue');
 }
 
@@ -230,7 +235,9 @@ async function toA4(over: Record<string, unknown> = {}) {
 describe('A2 to A3', () => {
   it('a user who picks one card and taps Continue reaches A3, with no BVN field and no NIBSS line', async () => {
     await toA3();
-    expect(screen.getByText('Create your account')).toBeTruthy();
+    // DV2-05 (A3's 16 Oct board): the bar and the heading both read "Create your account", with "Free. Takes a minute." under it.
+    expect(screen.getAllByText('Create your account')).toHaveLength(2);
+    expect(screen.getByText('Free. Takes a minute.')).toBeTruthy();
     for (const label of ['Email', 'Phone number', 'Password']) expect(screen.getByText(label)).toBeTruthy();
     expect(screen.getByText('At least 8 characters')).toBeTruthy();
     expect(screen.queryByText(/BVN/)).toBeNull();
@@ -270,7 +277,7 @@ describe('A3: email, phone and password', () => {
     expect(sent.body).toEqual({ email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
     expect(screen.getByText('Verify your phone')).toBeTruthy();
     expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
-    expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy();
+    expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy();
     expect(screen.queryByText(/BVN/)).toBeNull();
   });
 
@@ -503,7 +510,7 @@ describe('resume after quitting', () => {
     hold();
     answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 500, resendIn: 12, emailCodeRequired: false, accountType: 'creator' });
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy());
     expect(screen.getByText('Resend in 0:12')).toBeTruthy();
     expect(callsTo('/auth/signup/resume')[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1' });
     expect(callsTo('/auth/phone/verify/start')).toEqual([]);
@@ -515,14 +522,14 @@ describe('resume after quitting', () => {
     hold();
     answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 500, resendIn: 12, emailCodeRequired: false });
     await renderRouter(routes, { initialUrl: '/phone-code' });
-    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy());
   });
 
   it('a browser reloaded on the code address has a Back button that opens A3, where the sent code can still be entered', async () => {
     hold();
     answers['POST /auth/signup/resume'] = ok({ step: 'phone', phone: '+2348031234412', expiresIn: 500, resendIn: 12, emailCodeRequired: false });
     await renderRouter(routes, { initialUrl: '/phone-code' });
-    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy());
     await press('Back');
     await waitFor(() => expect(screen.getByTestId('sign-up-email')).toBeTruthy());
     expect(screen.getByRole('link', { name: 'Enter the code we sent' })).toBeTruthy();
@@ -687,7 +694,7 @@ describe('fix round 1', () => {
     expect(mockVault.get(SIGNUP_ATTEMPT_KEY)).toBe('secret-attempt-1');
     expect(mockVault.get(SIGNUP_PHONE_KEY)).toBe('+2348031234412');
     await press('Enter the code we sent', 'link');
-    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy());
     await typeDigits('481902');
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
     expect(callsTo('/auth/phone/verify/confirm')[0].body.attempt).toBe('secret-attempt-1');
@@ -768,6 +775,7 @@ describe('fix round 1', () => {
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
+    await fireEvent.press(screen.getByTestId('sign-up-consent'));
     const button = screen.getByRole('button', { name: 'Continue' });
     await act(async () => {
       fireEvent.press(button);
@@ -1241,5 +1249,46 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
     await typeDigits('481902');
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
     expect(callsTo('/auth/signup/email-code/confirm')[0].body).toEqual({ phone: '+2348031234412', attempt: 'secret-attempt-1', code: '481902' });
+  });
+});
+
+describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the terms line)', () => {
+  it('a new person is asked for email, phone, password and the terms line, and never for a BVN', async () => {
+    await toA3();
+    expect(screen.getByLabelText('I agree to the terms and privacy policy')).toBeTruthy();
+    expect(screen.queryByText(/BVN|NIN|selfie/i)).toBeNull();
+    expect(screen.getByTestId('sign-up-consent').props.accessibilityState).toMatchObject({ checked: false });
+  });
+
+  it('Continue with the terms line unticked sends nothing and says to tick it; ticking it clears the line and the sign-up goes ahead', async () => {
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
+    await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
+    await press('Continue');
+    expect(screen.getByText('Tick the box to agree before you continue.')).toBeTruthy();
+    expect(sentCalls()).toEqual([]);
+    await fireEvent.press(screen.getByTestId('sign-up-consent'));
+    expect(screen.queryByText('Tick the box to agree before you continue.')).toBeNull();
+    expect(screen.getByTestId('sign-up-consent').props.accessibilityState).toMatchObject({ checked: true });
+    await press('Continue');
+    await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
+    // Nothing about the terms goes to WAWU ID: the line is consent to read, not a field.
+    expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'password', 'phone']);
+  });
+
+  it('the words "terms" and "privacy policy" open the Terms and the Privacy policy, and what was typed stays', async () => {
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
+    await fireEvent.press(screen.getByTestId('sign-up-consent-terms'));
+    await waitFor(() => expect(screen.getByText('Terms page')).toBeTruthy());
+    expect(sentCalls()).toEqual([]);
+  });
+
+  it('the privacy policy word opens the Privacy policy and leaves the box as it was', async () => {
+    await toA3();
+    await fireEvent.press(screen.getByTestId('sign-up-consent-privacy'));
+    await waitFor(() => expect(screen.getByText('Privacy policy page')).toBeTruthy());
+    expect(sentCalls()).toEqual([]);
   });
 });

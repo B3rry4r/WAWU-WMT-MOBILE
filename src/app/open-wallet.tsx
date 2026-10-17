@@ -25,6 +25,7 @@ export default function OpenWalletRoute() {
     <ReviewResume
       skip={again === '1'}
       onDocuments={way.needsDocuments}
+      onSelfie={way.selfie}
       onChecking={way.checking}
       onRejected={way.rejected}
       fallback={

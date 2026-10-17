@@ -42,6 +42,8 @@ export default function SignUpRoute() {
         }
         router.push('/phone-code');
       }}
+      onOpenTerms={() => router.push('/terms')}
+      onOpenPrivacy={() => router.push('/privacy-policy')}
       onEnterSentCode={held ? () => router.push('/phone-code') : undefined}
       onBack={router.canGoBack() ? () => router.back() : undefined}
     />

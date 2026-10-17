@@ -14,6 +14,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 
 import { openingProgressQuery, type OpeningProgress } from './api/review';
 import { useSessionAccount } from './sessionAccount';
+import { useDocumentsNext } from './useDocumentsNext';
 
 /**
  * design/_gen/auth.js line 67 (A28): an 88 ring, 6 thick, in the sunken
@@ -33,6 +34,8 @@ export type CheckingScreenProps = {
   onRejected: () => void;
   /** The documents are needed again (nothing was sent, or a correction reopened them): A26. */
   onNeedsDocuments: () => void;
+  /** Both documents are in and only the hosted selfie is left (DV2-05): A6. Left out, A26 is next. */
+  onSelfie?: () => void;
   /** Leaves Open your wallet (the way out beside Try again when the check cannot be read). */
   onLeave: () => void;
 };
@@ -52,17 +55,19 @@ export function checkingNext(progress: OpeningProgress): 'opened' | 'rejected' |
  * asks `GET /money/wallet` every few seconds and moves on when the Hub says
  * the account number is active (A8, "Approved"), or the review said no (A29).
  */
-export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onLeave }: CheckingScreenProps) {
+export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onSelfie, onLeave }: CheckingScreenProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const progress = useQuery(openingProgressQuery(owner, true));
   const next = progress.data ? checkingNext(progress.data) : null;
+  const documentsNext = useDocumentsNext(next === 'documents', owner, onSelfie !== undefined);
   useEffect(() => {
     if (next === 'opened') onOpened();
     else if (next === 'rejected') onRejected();
-    else if (next === 'documents') onNeedsDocuments();
-  }, [next, onOpened, onRejected, onNeedsDocuments]);
+    else if (next === 'documents' && documentsNext === 'selfie') onSelfie?.();
+    else if (next === 'documents' && documentsNext === 'documents') onNeedsDocuments();
+  }, [next, documentsNext, onOpened, onRejected, onNeedsDocuments, onSelfie]);
 
   if (progress.isError && progress.data === undefined) {
     return (

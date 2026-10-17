@@ -30,6 +30,8 @@ export type DocumentsView = {
   required: boolean;
   open: boolean;
   documents: DocumentRow[];
+  /** `not_used`: no hosted selfie in this opening (R-39); `needed`; `done`. */
+  selfie: 'not_used' | 'needed' | 'done';
   submitted: boolean;
   waitingFor: string[];
   maxBytes: number;
@@ -60,6 +62,7 @@ function readView(value: unknown): DocumentsView {
     required: v.required,
     open: v.open,
     documents: v.documents.map(readRow),
+    selfie: v.selfie === 'needed' || v.selfie === 'done' ? v.selfie : 'not_used',
     submitted: v.submitted === true,
     waitingFor: Array.isArray(v.waitingFor) ? (v.waitingFor as string[]).filter((step) => typeof step === 'string') : [],
     maxBytes: v.maxBytes as number,
@@ -81,6 +84,14 @@ async function send(request: Promise<Answer>): Promise<unknown> {
 /** GET /money/identity/documents. */
 export async function fetchDocuments(): Promise<DocumentsView> {
   return readView(await send(api.GET('/api/hub/money/identity/documents')));
+}
+
+/**
+ * True when both documents are in and the hosted selfie is all that is left (A6 is next): the Hub sends the opening
+ * for review only once the selfie has passed, so until then nothing is being checked.
+ */
+export function selfieOnlyLeft(view: DocumentsView | null | undefined): boolean {
+  return Boolean(view && !view.submitted && view.waitingFor.length === 1 && view.waitingFor[0] === 'selfie');
 }
 
 /** The row for one kind: always there, in the order identity, proof of address. */
