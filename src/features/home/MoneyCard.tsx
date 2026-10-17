@@ -25,6 +25,8 @@ export type MoneyCardProps = {
   retrying: boolean;
   /** Opens Send money (W7, WALLET-02). */
   onSend: () => void;
+  /** Opens Add money (W15, WALLET-05). */
+  onAdd: () => void;
   /** Opens Pay a bill (S2). */
   onOpenBills: () => void;
 };
@@ -35,11 +37,11 @@ export type MoneyCardProps = {
  * a balance is never cut off here either; with no figure, the Wallet tab's words for the state and its one
  * button take the figure's place.
  *
- * Send (WALLET-02) and Bills (BILLS-01) are the actions built; Add is added by WALLET-05 with its screen, and Scan by
+ * Send (WALLET-02), Add (WALLET-05) and Bills (BILLS-01) are the actions built, and Scan is added by
  * WALLET-20 after launch (R-27, R-41), each in the canvas's order (Send, Add, Bills, Scan), packed from the left; the chip's currency switch comes with the Dollar and Crypto accounts (WALLET-21),
  * so the chip is a label until then.
  */
-export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onOpenBills }: MoneyCardProps) {
+export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd, onOpenBills }: MoneyCardProps) {
   const { shadows } = useWawu();
 
   let body;
@@ -98,6 +100,7 @@ export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWa
       {body}
       <View style={styles.actions}>
         <CardAction testID="today-action-send" icon="ArrowUpRight" label="Send" accent onPress={onSend} />
+        <CardAction testID="today-action-add" icon="Plus" label="Add" onPress={onAdd} />
         <CardAction testID="today-action-bills" icon="Receipt" label="Bills" onPress={onOpenBills} />
       </View>
     </View>

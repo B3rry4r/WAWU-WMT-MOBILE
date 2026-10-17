@@ -305,7 +305,7 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Add', 'Scan', 'Shop', 'See all']) {
+    for (const label of ['Scan', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
@@ -449,11 +449,19 @@ describe('H1 · the Bills action on the balance card (BILLS-01, R-41)', () => {
     expect(mockPush).toHaveBeenCalledWith('/bills');
   });
 
-  it('draws Bills and only Bills among the card actions: Send, Add and Scan have no screen yet', async () => {
+  it('draws Send, Add and Bills among the card actions, in the board’s order, and no Scan: it has no screen yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
-    for (const label of ['Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    for (const id of ['today-action-send', 'today-action-add', 'today-action-bills']) expect(screen.getByTestId(id)).toBeTruthy();
+    expect(screen.queryByText('Scan')).toBeNull();
+  });
+
+  it('a user can tap Add on the balance card and reach Add money (WALLET-05, W15)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByTestId('today-action-add'));
+    expect(mockPush).toHaveBeenCalledWith('/add-money');
   });
 });
 

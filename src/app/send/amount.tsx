@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { AmountScreen } from '@/features/send/AmountScreen';
 import { payeeFromParams, payeeParams } from '@/features/send/model';
 import { useSystemBack } from '@/features/professionals/parts';
@@ -22,6 +23,7 @@ export default function SendAmountRoute() {
       payee={payee}
       initial={start === null ? undefined : { amountKobo: start, note: '' }}
       onBack={leave}
+      onAddMoney={(short) => router.push(addMoneyHref(short))}
       onContinue={({ amountKobo, note }) =>
         router.push({ pathname: '/send/review', params: { ...payeeParams(payee), amount: String(amountKobo), ...(note ? { note } : {}) } })
       }

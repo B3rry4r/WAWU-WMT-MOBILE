@@ -37,7 +37,7 @@ export type BuyCreditsArgs = {
   onSetPin: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
-  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): the short notice shows without the button. */
+  /** Add money for the shortfall (kobo). Opens Add money (W15) with the shortfall. A caller that leaves it out shows the short notice without the button. */
   onAddMoney?: (shortfallKobo: number) => void;
 };
 
@@ -52,7 +52,7 @@ const subjectOf = (pack: PackId) => `pack:${pack}`;
  * on screen (a changed total is shown first). One `Idempotency-Key` per attempt: a wrong PIN, a request that got no answer and a PIN
  * typed again all send the SAME key and the SAME quote, so the wallet is charged once; the attempt outlives the sheet
  * (`money-attempt/attempts`). A purchase the Hub took and has not finished is only read, never bought again. A person with no
- * wallet is led to Open your wallet and the sheet closes; a short wallet shows what is missing (Add money joins it once WALLET-05 builds it, R-47).
+ * wallet is led to Open your wallet and the sheet closes; a short wallet shows what is missing and offers Add money.
  */
 export function useBuyCredits(args: BuyCreditsArgs) {
   const { visible } = args;

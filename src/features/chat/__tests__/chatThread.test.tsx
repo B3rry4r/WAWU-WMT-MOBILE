@@ -53,7 +53,7 @@ beforeEach(() => {
 afterEach(() => clearClients());
 
 function handlers() {
-  return { onBack: jest.fn(), onSendMoney: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn() };
+  return { onBack: jest.fn(), onSendMoney: jest.fn(), onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() };
 }
 
 async function boot(h = handlers()) {
@@ -259,17 +259,17 @@ describe('I18 and I19: a request someone made of the person', () => {
     expect(hub.payments).toBe(1);
   });
 
-  it('a wallet too short is told so with no Add button (Add money is WALLET-05’s, R-47), and nothing is paid', async () => {
+  it('a wallet too short is told so with Add money, and nothing is paid', async () => {
     hub.balanceKobo = 50_000;
-    await bootIncoming();
+    const h = await bootIncoming();
     await tapPay();
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
     // The short sheet is headed as the review is: "Pay Femi", not "Request from Femi".
     expect(rtl.screen.getByText('Pay Femi')).toBeTruthy();
     expect(rtl.screen.queryByText('Request from Femi')).toBeNull();
     expect(hub.pays).toHaveLength(0);
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
-    expect(rtl.screen.getByText('Cancel')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(1_202_575 - 50_000);
   });
 
   it('an answer that never comes is followed by the SAME request: one debit', async () => {

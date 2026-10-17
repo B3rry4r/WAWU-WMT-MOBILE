@@ -47,7 +47,7 @@ export type TodayScreenProps = {
  * - creators to discover (`GET /creators`), without the viewer (`GET /users/me`).
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
- * search (EXPLORE-02), the bell (ME-14), Send (WALLET-02), Add (WALLET-05), See all (EXPLORE-02),
+ * search (EXPLORE-02), the bell (ME-14), See all (EXPLORE-02),
  * a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The ad card (H1, H36)
  * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot` whatever the person's TGIF
  * switch says; with no campaign, while it loads and when it cannot be read nothing shows, never an empty frame. The
@@ -151,6 +151,7 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
         onRetryBalance={() => void balance.refetch()}
         retrying={wallet.isFetching || balance.isFetching}
         onSend={() => router.push('/send')}
+        onAdd={() => router.push('/add-money')}
         onOpenBills={() => router.push('/bills')}
       />
       {sponsored ? (

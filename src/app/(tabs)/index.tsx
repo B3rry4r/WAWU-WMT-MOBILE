@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { HomeScreen } from '@/features/home/HomeScreen';
 import { useClaimPendingReferral } from '@/features/referral/pendingCode';
@@ -8,7 +9,7 @@ import { useClaimPendingReferral } from '@/features/referral/pendingCode';
  * The Home tab: Today (H1, H11, H36), and the Following and For you feed under the same tab row (HOME-01). A creator account
  * also sees the Create button, which opens M19 (ME-04, R-38). A code kept from a `wawu/r/<code>` link is claimed here once the
  * person is signed in, with nothing drawn for it (REF-03, G-812). The feed's wallet payments (a tip from the rail, HOME-13) lead to
- * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and the Wallet tab (add money).
+ * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and Add money (W15, with what was missing).
  */
 export default function HomeTab() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function HomeTab() {
         onOpenWallet: entry.open,
         onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
         onForgotPin: () => router.push('/reset-pin'),
-        onAddMoney: () => router.navigate('/wallet'),
+        onAddMoney: (short) => router.push(addMoneyHref(short)),
       }}
     />
   );

@@ -33,6 +33,8 @@ export type AmountScreenProps = {
   onContinue: (entry: { amountKobo: number; note: string }) => void;
   /** Coming back from W10 keeps what was typed. */
   initial?: { amountKobo: number; note: string };
+  /** W13's "Add money": opens Add money (W15) with what the amount is over the balance by (kobo). Left out, the button is not drawn. */
+  onAddMoney?: (shortfallKobo: number) => void;
 };
 
 /**
@@ -41,11 +43,11 @@ export type AmountScreenProps = {
  * there is an amount that the balance covers; what it costs on top is W10's (the fee quote), not guessed here.
  *
  * W13: an amount over the balance is drawn in the danger tone with "Over your balance of ₦485,250.75" in place of the balance line, and
- * Continue stays off. The bank's own figure is the one compared (never a sum). Add money, one tap away on the board, is WALLET-05's
- * to add (R-47). An amount the balance covers but the fees do not is W10's "not enough", which names the total.
+ * Continue stays off. The bank's own figure is the one compared (never a sum). "Add money", one tap away under that line as the board
+ * draws it, opens W15 with what the amount is over the balance by (WALLET-05). An amount the balance covers but the fees do not is W10's "not enough", which names the total.
  * The same screen serves a bank account (W8): the line under the name is its bank and number (`payeeLine`).
  */
-export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScreenProps) {
+export function AmountScreen({ payee, onBack, onContinue, initial, onAddMoney }: AmountScreenProps) {
   const owner = useSessionAccount(undefined);
   const { colors } = useWawu();
   const entry = useOpenWalletEntry();
@@ -135,6 +137,16 @@ export function AmountScreen({ payee, onBack, onContinue, initial }: AmountScree
             tone={amountKobo === 0 ? 'textMuted' : over ? 'danger' : 'textPrimary'}
           />
           {balanceLine}
+          {balance.data && over && onAddMoney ? (
+            <Button
+              testID="send-add-money"
+              label="Add money"
+              icon="Plus"
+              variant="secondary"
+              size="sm"
+              onPress={() => onAddMoney(amountKobo - (balance.data?.availableKobo ?? 0))}
+            />
+          ) : null}
         </View>
 
         <AmountPresets

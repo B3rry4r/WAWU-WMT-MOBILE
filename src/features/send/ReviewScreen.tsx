@@ -58,7 +58,7 @@ export type ReviewScreenProps = {
   onFailed?: (transferId: string) => void;
   /** Leave without a receipt: the wallet. */
   onLeave: () => void;
-  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05): the short notice shows without the button. */
+  /** Add money for the shortfall (kobo). Opens Add money (W15) with the shortfall. A caller that leaves it out shows the short notice without the button. */
   onAddMoney?: (shortfallKobo: number) => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
