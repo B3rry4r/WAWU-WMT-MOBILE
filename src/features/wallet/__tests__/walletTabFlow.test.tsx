@@ -182,7 +182,7 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
 });
 
 describe('the Wallet tab with a wallet, on the real router', () => {
-  it('a user sees no scan, Dollar, Crypto, Add money, Withdraw or Swap entry (their screens are not built, R-47) and no bills (R-52), the settings icon and the Send and To cash actions, and the tab stays on /wallet', async () => {
+  it('a user sees no scan, Dollar, Crypto, Add money, Withdraw or Swap entry (their screens are not built, R-47) and no bills (R-52), the settings icon and the Send, Buy points and To cash actions, and the tab stays on /wallet', async () => {
     opened = true;
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
@@ -192,11 +192,11 @@ describe('the Wallet tab with a wallet, on the real router', () => {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
     for (const name of ['Naira', 'Dollar', 'Crypto']) expect(screen.queryByRole('tab', { name })).toBeNull();
-    // The buttons on the tab are the settings icon (W35, WALLET-06), the card's own two (hide the balance, copy the number) and the two built actions, Send and To cash; the rest of the bar is the tab bar.
+    // The buttons on the tab are the settings icon (W35, WALLET-06), the card's own two (hide the balance, copy the number) and the three built actions, Send, Buy points and To cash; the rest of the bar is the tab bar.
     expect(screen.getByRole('button', { name: 'Wallet settings' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hide balance' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy account number' })).toBeTruthy();
-    for (const name of ['Send', 'To cash']) expect(screen.getByRole('button', { name })).toBeTruthy();
+    for (const name of ['Send', 'Buy points', 'To cash']) expect(screen.getByRole('button', { name })).toBeTruthy();
     for (const name of ['Bills', 'Power', 'More', 'Airtime', 'Data', 'TV']) expect(screen.queryByRole('button', { name })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
     expect(pathname()).toBe('/wallet');

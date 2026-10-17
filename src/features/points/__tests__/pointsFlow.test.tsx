@@ -273,9 +273,9 @@ describe('PT5 · your points', () => {
     expect(moves[1]).toHaveTextContent('2 Sep', { exact: false });
     expect(moves[2]).toHaveTextContent('Pending · today', { exact: false });
     expect(screen.getByText('Last 3')).toBeTruthy();
-    // Points are a count: nothing here is a naira value, and the Buy button is POINTS-06's (R-47).
+    // Points are a count: nothing here is a naira value. Buy points is the secondary pill beside the balance (POINTS-06).
     expect(screen.queryByText(/₦/)).toBeNull();
-    expect(screen.queryByRole('button', { name: /Buy/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Buy points' })).toBeTruthy();
     expect(screen.queryByText(/Example values/)).toBeNull();
   });
 
@@ -285,11 +285,9 @@ describe('PT5 · your points', () => {
     await renderRouter(routes, { initialUrl: '/points' });
     await screen.findByTestId('points-empty');
     expect(screen.getByText('No points yet')).toBeTruthy();
-    // Buying is POINTS-06's (R-47): the "Buy a pack" clause of PT5a is not drawn, and nothing here points at buying.
-    expect(screen.getByText('Get them with a tier or by inviting people.')).toBeTruthy();
-    expect(screen.queryByText(/buy/i)).toBeNull();
-    expect(screen.queryByText(/pack/i)).toBeNull();
-    expect(screen.queryByRole('button', { name: /buy/i })).toBeNull();
+    // Buying is built (POINTS-06): PT5a says "Buy a pack, or" first, and Buy points is the button beside the balance.
+    expect(screen.getByText('Buy a pack, or get them with a tier or by inviting people.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Buy points' })).toBeTruthy();
     expect(screen.getByTestId('points-balance')).toHaveTextContent('0', { exact: false });
     expect(screen.queryByTestId('points-lots')).toBeNull();
     expect(screen.queryByTestId('points-movements')).toBeNull();
@@ -325,7 +323,8 @@ describe('PT6 · convert to cash', () => {
     expect(screen.getByTestId('convert-balance')).toHaveTextContent('2,350', { exact: false });
     expect(screen.queryByText(/go further than cash/)).toBeNull();
     expect(screen.queryByText(/Example values/)).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Buy/ })).toBeNull();
+    // PT6 draws Buy beside the balance (POINTS-06).
+    expect(screen.getByRole('button', { name: 'Buy' })).toBeTruthy();
     // The first quote asks for no points: the Hub quotes the whole balance.
     expect(hub.quotesAsked[0]).toBeNull();
   });

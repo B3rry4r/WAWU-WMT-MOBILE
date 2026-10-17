@@ -262,6 +262,7 @@ function StateCard({ children }: { children: ReactNode }) {
 function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
   return [
     { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
+    { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
     { key: 'to-cash', icon: 'Banknote', label: 'To cash', onPress: () => router.push('/points-convert') },
   ];
 }

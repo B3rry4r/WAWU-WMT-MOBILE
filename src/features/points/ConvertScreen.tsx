@@ -51,6 +51,8 @@ export type ConvertScreenProps = {
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back here. */
   onSetPin: () => void;
+  /** Buy: PT4. */
+  onBuy: () => void;
 };
 
 /** The request this screen is sending: one key, the points and the quote token it carries. `sent` once it has left the phone with no answer that proves anything. */
@@ -60,7 +62,7 @@ type Attempt = { key: string; points: number; quoteToken: string; sent: boolean 
  * PT6 · Convert to cash, with PT6a (below the minimum) and PT6b (converted). The points to convert start as the whole balance
  * (the Hub quotes the whole balance when none is asked); typing asks the Hub again once the person pauses. The rate, the cash,
  * the minimum and why a figure cannot be converted are the Hub's, never the design's (R-65). The line "Spent on AI tools, points
- * go further than cash." is not drawn: the Hub serves no figure behind it (BACKEND_GAPS G-836). The Buy button is POINTS-06's.
+ * go further than cash." is not drawn: the Hub serves no figure behind it (BACKEND_GAPS G-836). Buy opens PT4 (POINTS-06).
  *
  * Once, with a fresh quote for each attempt (V8). Tapping Convert asks the Hub for a new quote of those points: a closed quote, or
  * figures that moved since the person looked, put the new figures on screen and stop; the same figures open the PIN sheet and the
@@ -391,7 +393,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
           />
         ) : null}
         {failure ? <Banner testID="convert-failed" tone="danger" title="We couldn't convert your points" body={failure} /> : null}
-        {quote ? <BalanceCard points={quote.balancePoints} testID="convert-balance" /> : null}
+        {quote ? <BalanceCard points={quote.balancePoints} buy={{ label: 'Buy', onPress: props.onBuy, testID: 'convert-buy' }} testID="convert-balance" /> : null}
         <PointsField digits={shownDigits} onChangeDigits={change} hint={hint} error={error} disabled={busy || pinOpen} testID="convert-points" />
         {quote ? (
           <GroupedList testID="convert-figures">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -16,17 +17,23 @@ import { endsFirst, endsLine, movementLine, movementLook, pointsInput, signedPoi
 /** design/_gen/points.js line 91, `balBar`: a card 14 by 16, "Your points" at 12.5 muted, the figure (size 22) 4 under it. */
 const balanceMetrics = { padV: 14, label: 12.5, under: 4 } as const;
 
-/** "Your points" and the balance, as PT5 and PT6 draw it. The Buy button beside it is POINTS-06's (R-47). */
-export function BalanceCard({ points, testID }: { points: number; testID?: string }) {
+/** The Buy button beside the balance: "Buy points" on PT5 (accented on PT5a, when there are none), "Buy" on PT6. It opens PT4. */
+export type BuyButton = { label: string; primary?: boolean; onPress: () => void; testID?: string };
+
+/** "Your points" and the balance, as PT5 and PT6 draw it, with the button that buys more beside it (POINTS-06). */
+export function BalanceCard({ points, buy, testID }: { points: number; buy?: BuyButton; testID?: string }) {
   return (
     <Card padded style={styles.balanceCard} testID={testID}>
-      <View style={styles.balanceColumn}>
-        <Text variant="caption" style={styles.balanceLabel}>
-          {WORDS.yourPoints}
-        </Text>
-        <View style={styles.balanceFigure}>
-          <PointsFigure count={points} size="hero" fit testID="points-balance" />
+      <View style={styles.balanceRow}>
+        <View style={styles.balanceColumn}>
+          <Text variant="caption" style={styles.balanceLabel}>
+            {WORDS.yourPoints}
+          </Text>
+          <View style={styles.balanceFigure}>
+            <PointsFigure count={points} size="hero" fit testID="points-balance" />
+          </View>
         </View>
+        {buy ? <Button testID={buy.testID ?? 'points-buy'} label={buy.label} variant={buy.primary ? 'primary' : 'secondary'} size="pill" onPress={buy.onPress} /> : null}
       </View>
     </Card>
   );
@@ -162,7 +169,8 @@ export function PointsField({ digits, onChangeDigits, hint, error, disabled, tes
 
 const styles = StyleSheet.create({
   balanceCard: { paddingVertical: balanceMetrics.padV },
-  balanceColumn: { flexShrink: 1, minWidth: 0 },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  balanceColumn: { flexShrink: 1, flexGrow: 1, minWidth: 0 },
   balanceLabel: { fontSize: balanceMetrics.label },
   balanceFigure: { marginTop: balanceMetrics.under, alignSelf: 'stretch' },
   lotsCard: { paddingVertical: lotMetrics.cardPadV },

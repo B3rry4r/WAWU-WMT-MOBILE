@@ -20,6 +20,7 @@ export default function PointsConvertRoute() {
       onDone={() => router.dismissTo('/wallet')}
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
+      onBuy={() => router.push('/points-buy')}
     />
   );
 }
