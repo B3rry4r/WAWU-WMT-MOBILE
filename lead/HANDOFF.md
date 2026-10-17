@@ -1,6 +1,6 @@
 # HANDOFF: where the build stands (read this first)
 
-As of Sat 17 Oct 2026 01:43 UTC (`date -u`), built from merge-notes (to 01:39), board.json and `git ls-remote`.
+As of Sat 17 Oct 2026 01:41 UTC (`date -u`), built from merge-notes (to 01:39), board.json and `git ls-remote`.
 Everything below can drift in minutes: check `git ls-remote` against these heads before acting, then merge-notes.
 
 ## 1. How to start
@@ -37,7 +37,7 @@ Open backend PRs: #83 EVENTS-11 (head a4b61fa) and #26 OPS-08 (93932ef): refresh
 Next action: brief a MERGE-6 builder to stack these on backend a5e48fc and app 7de785d (add TIER-06 if its r2 check
 passes), then one PR, the owner's approval prompt, deploy watch, health, app main fast-forward after a green full check.
 
-## 4. In flight (heads from ls-remote at 01:43; builders push as they go)
+## 4. In flight (heads from ls-remote at 01:41; builders push as they go)
 | Task | Round, state | Backend | App | Ports, stamp | Waits for |
 |---|---|---|---|---|---|
 | SETTINGS-06 delete account | r8 built, lean verifier running | 2ef4591 (incl main) | 112a8f1 (on old main) | 7110-7117; 20261024030000, 040000, 050000 | verdict; then batch 7. Forks gate line is now :67 (MERGE-6 re-keys GATES-02) |
