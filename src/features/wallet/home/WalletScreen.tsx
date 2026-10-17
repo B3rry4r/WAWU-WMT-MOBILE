@@ -13,6 +13,8 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, useWawu } from '@/theme';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
+import { myPassQuery, type MyPass } from '../api/pass';
+import { PassesTile } from '../pass/PassesTile';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { BillTiles } from './BillTiles';
 import { WalletActions } from './WalletActions';
@@ -26,7 +28,7 @@ import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
  * kit.js line 35 (`body`) leaves 120 under it over a tab bar that overlays it; here the bar is its own box.
  * W6's card (line 67) is padded 10 by 16 with a 28 corner.
  */
-const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16 } as const;
+const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16, infoGap: 10 } as const;
 
 /**
  * The Wallet tab (WALLET-01): W1, and its states W4 (loading), W5 (a new account) and W6 (the bank did
@@ -34,7 +36,8 @@ const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, stat
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where
  * it leads, as drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap
- * (WALLET-21); Add money (WALLET-05); the WAWU card row (WALLET-22). Send (WALLET-02) is built.
+ * (WALLET-21); Add money (WALLET-05); the WAWU card row (WALLET-22). Send (WALLET-02) is built. The Passes card (WALLET-38) is
+ * drawn when `GET /me/tier` has an event pass, in the row the Points card (DV2-02) will share (wallet.js line 47, 10 apart).
  * The settings icon is built (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves money beyond the three reads above.
  *
  * W6's card with its words also holds every other state that has no balance to show (no wallet, opening, frozen, a
@@ -56,6 +59,8 @@ export function WalletScreen() {
   const open = state === 'open' || state === 'frozen';
   const balance = useQuery(homeBalanceQuery(owner, open), queryClient);
   const recent = useQuery(recentTransactionsQuery(owner, open), queryClient);
+  // The Passes card: drawn only when the Hub says the person has a pass (WALLET-38). A read that fails draws nothing here.
+  const pass = useQuery(myPassQuery(owner), queryClient);
 
   const view = homeView(wallet, balance);
   const [hidden, setHidden] = useState(false);
@@ -63,9 +68,9 @@ export function WalletScreen() {
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];
-    if (open) asked.push(balance.refetch(), recent.refetch());
+    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch());
     await Promise.all(asked);
-  }, [wallet, balance, recent, open]);
+  }, [wallet, balance, recent, pass, open]);
 
   // Coming back to the tab asks again: the balance is the bank's, never one held from before.
   const seen = useRef(focused);
@@ -105,6 +110,8 @@ export function WalletScreen() {
             onToggleHidden={() => setHidden((was) => !was)}
             onOpenWallet={openWallet}
             onSend={() => router.push('/send')}
+            pass={pass.data ?? null}
+            onOpenPass={() => router.push('/pass')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -129,12 +136,15 @@ type BodyProps = {
   onToggleHidden: () => void;
   onOpenWallet: () => void;
   onSend: () => void;
+  /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
+  pass: MyPass | null;
+  onOpenPass: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, pass, onOpenPass, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -204,6 +214,11 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, onRetryWalle
             hidden={hidden}
             onToggleHidden={onToggleHidden}
           />
+          {pass ? (
+            <View testID="wallet-info-row" style={styles.infoRow}>
+              <PassesTile pass={pass} onPress={onOpenPass} />
+            </View>
+          ) : null}
           <WalletActions onSend={onSend} />
           <BillTiles />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
@@ -253,5 +268,6 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
   body: { flexGrow: 1, gap: BODY_GAP, paddingTop: HOME.bodyTop, paddingHorizontal: layout.gutter, paddingBottom: HOME.bodyBottom },
+  infoRow: { flexDirection: 'row', gap: HOME.infoGap },
   state: { borderRadius: ACCT.radius, paddingVertical: HOME.statePadV, paddingHorizontal: HOME.statePadH },
 });
