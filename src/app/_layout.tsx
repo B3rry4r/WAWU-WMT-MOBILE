@@ -105,6 +105,10 @@ export default function RootLayout() {
           <Stack.Screen name="open-wallet" />
           <Stack.Screen name="open-wallet-details" />
           <Stack.Screen name="open-wallet-selfie" />
+          <Stack.Screen name="open-wallet-id" />
+          <Stack.Screen name="open-wallet-address" />
+          <Stack.Screen name="open-wallet-checking" />
+          <Stack.Screen name="open-wallet-rejected" />
           <Stack.Screen name="open-wallet-account" />
           <Stack.Screen name="open-wallet-pin" />
           <Stack.Screen name="settings/index" />

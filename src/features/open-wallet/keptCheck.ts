@@ -32,6 +32,16 @@ import type { BvnCheck } from '@/api/walletIdentity';
  * the selfie match and the account opening. It goes with the rest on every
  * forget, and is never stored or logged.
  */
+/**
+ * The review opening has no BVN check to read a name from (the Hub answers `step_not_used`), and its open call
+ * takes the BVN and the NIN themselves, never a handle (BACKEND_GAPS G-460). So A31 holds the two numbers, digits
+ * only, here in memory until Submit sends them: never the secure store, never logged, gone with every forget
+ * (sign-out, session end, another account, the flow closing). They are shown masked, or not at all.
+ */
+export type HeldNumbers = { bvn: string; nin: string };
+/** What the person typed on the details step of the review opening, in the shape the open call takes. */
+export type HeldPerson = { firstName: string; lastName: string; dateOfBirth: string; gender: 'male' | 'female'; middleName?: string };
+
 /** A5's home address, in its three parts, as the person typed them. */
 export type HomeAddress = { street: string; city: string; state: string };
 
@@ -54,6 +64,10 @@ type Kept = {
   address: HomeAddress | null;
   occupation: string | null;
   notice: string | null;
+  /** The review opening only (KYC-07): the BVN and NIN typed on A31, held to go with the open call. */
+  numbers: HeldNumbers | null;
+  /** The review opening only (KYC-07): the name, date of birth and gender typed on the details step. */
+  person: HeldPerson | null;
 };
 
 let kept: Kept | null = null;
@@ -98,9 +112,53 @@ export function keepCheck(ticket: KeepTicket, check: BvnCheck): boolean {
     address: carried?.address ?? null,
     occupation: carried?.occupation ?? null,
     notice: null,
+    numbers: null,
+    person: null,
   };
   changed();
   return true;
+}
+
+/**
+ * Holds the BVN and NIN of the review opening for the ticket's owner (KYC-07). False, and nothing held, when the
+ * ticket was voided by a forget. The name and address typed on the details step of an earlier try of the same
+ * account carry over, so a person who comes back to A31 and corrects a digit finds the rest still filled in.
+ */
+export function keepNumbers(ticket: KeepTicket, numbers: HeldNumbers): boolean {
+  if (ticket.era !== era) return false;
+  const carried = kept && kept.owner === ticket.owner ? kept : null;
+  kept = {
+    owner: ticket.owner,
+    check: null,
+    handle: null,
+    address: carried?.address ?? null,
+    occupation: null,
+    notice: null,
+    numbers: { bvn: numbers.bvn, nin: numbers.nin },
+    person: carried?.person ?? null,
+  };
+  changed();
+  return true;
+}
+
+/** Holds the name, date of birth and gender (and the address) typed on the review opening's details step, beside the numbers. */
+export function keepPerson(ticket: KeepTicket, person: HeldPerson, address: HomeAddress): boolean {
+  if (ticket.era !== era || !kept || kept.owner !== ticket.owner || !kept.numbers) return false;
+  kept = { ...kept, person: { ...person }, address: { ...address } };
+  changed();
+  return true;
+}
+
+/** The numbers held for this account, or null (none held, or another person's). */
+export function readNumbers(owner: string | undefined): HeldNumbers | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.numbers;
+}
+
+/** The name, date of birth and gender held for this account, or null. */
+export function readPerson(owner: string | undefined): HeldPerson | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.person;
 }
 
 /**
@@ -195,6 +253,15 @@ export function useCheckNotice(owner: string | undefined): { notice: string; add
   const current = useSyncExternalStore(subscribe, () => kept, () => kept);
   if (!current || !owner || current.owner !== owner || current.check || !current.notice) return null;
   return { notice: current.notice, addressKept: current.address !== null };
+}
+
+/** For the review opening's details step (KYC-07): the numbers, with the name and address typed so far, or null while no numbers are held. */
+export function useHeldReview(
+  owner: string | undefined,
+): { numbers: HeldNumbers; person: HeldPerson | null; address: HomeAddress | null } | null {
+  const current = useSyncExternalStore(subscribe, () => kept, () => kept);
+  if (!current || !owner || current.owner !== owner || !current.numbers) return null;
+  return { numbers: current.numbers, person: current.person, address: current.address };
 }
 
 /** For A5 and A6: the kept check, its handle and A5's details together for this account, or null without a check. */

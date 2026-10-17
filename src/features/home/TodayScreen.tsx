@@ -10,6 +10,7 @@ import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
 import { useAd, useAdReports } from '@/features/ads/useAd';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { metrics as feedMetrics } from '@/features/feed/look';
+import { CompleteAccountFlag } from '@/features/open-wallet/CompleteAccountFlag';
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { fetchTgif, settingsKeys } from '@/features/settings/api/hub';
@@ -133,8 +134,11 @@ function TodayBody({ masked, onToggleMask }: Pick<TodayScreenProps, 'masked' | '
       />
     );
   }
+  // A30: until the wallet is open (no wallet yet, or the bank is still making it) the flag leads into the steps.
+  const incomplete = money.kind === 'notice' && (money.state === 'no_wallet' || money.state === 'opening');
   return (
     <>
+      {incomplete ? <CompleteAccountFlag onPress={() => router.push(OPEN_WALLET_PATH)} /> : null}
       <MoneyCard
         state={money}
         masked={masked}
