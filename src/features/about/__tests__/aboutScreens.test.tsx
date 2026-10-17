@@ -83,7 +83,7 @@ describe('Z9 · About', () => {
     expect(await rtl.screen.findByText('Banking by Test Bank')).toBeTruthy();
     expect(rtl.screen.getByText('Licence line the owner wrote')).toBeTruthy();
     expect(rtl.screen.getByText('help@example.test')).toBeTruthy();
-    expect(rtl.screen.getByText('About Who Made This')).toBeTruthy();
+    expect(rtl.screen.getByText('About Who Made This?')).toBeTruthy();
     expect(rtl.screen.getByText('Version 9.8.7')).toBeTruthy();
     expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/WAWU|Fintava|CBN|Flutterwave|—/);
   });
@@ -101,6 +101,37 @@ describe('Z9 · About', () => {
     await bootAbout();
     expect(await rtl.screen.findByText('Banking by Test Bank')).toBeTruthy();
     expect(rtl.screen.queryByTestId('about-licence')).toBeNull();
+  });
+
+  it('DV2-06 · shows "Banking by Nuvion" from the Hub, and draws no licence, CBN, tier or "held at" line while the owner has not confirmed one', async () => {
+    answers['/about'] = [ok({ bankName: 'Nuvion', licenceLine: null, supportEmail: 'help@example.test' })];
+    await bootAbout();
+    expect(await rtl.screen.findByText('Banking by Nuvion')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('about-licence')).toBeNull();
+    expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/CBN|[Ll]icen[cs]e|Tier|held at|WAWU|—/);
+  });
+
+  it.each(['', '   '])('DV2-06 · a blank licence line (%j) counts as empty and is not drawn', async (blank) => {
+    answers['/about'] = [ok({ bankName: 'Nuvion', licenceLine: blank, supportEmail: null })];
+    await bootAbout();
+    expect(await rtl.screen.findByText('Banking by Nuvion')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('about-licence')).toBeNull();
+  });
+
+  it('DV2-06 · draws no "Banking by" row while the Hub has no bank name (the Nuvion name is not set yet)', async () => {
+    answers['/about'] = [ok({ bankName: '  ', licenceLine: 'A line', supportEmail: 'help@example.test' })];
+    await bootAbout();
+    expect(await rtl.screen.findByText('Contact support')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('about-bank')).toBeNull();
+    expect(rtl.screen.queryByText(/Banking by/)).toBeNull();
+  });
+
+  it('DV2-06 · names the app with its question mark in the title and the description (R-69)', async () => {
+    answers['/about'] = [ok({ bankName: 'Nuvion', licenceLine: null, supportEmail: null })];
+    await bootAbout();
+    await rtl.screen.findByText('Banking by Nuvion');
+    expect(rtl.screen.getByText('About Who Made This?')).toBeTruthy();
+    expect(rtl.screen.getByText('Who Made This? helps African creators and professionals get paid for what they know.')).toBeTruthy();
   });
 
   it('a user can contact support: the mail app opens on the support address', async () => {
@@ -227,6 +258,13 @@ describe('Z10 · Terms and Z11 · Privacy policy', () => {
     expect(rtl.screen.getByText('Not available yet')).toBeTruthy();
     expect(rtl.screen.queryByTestId('policy-updated')).toBeNull();
     expect(rtl.screen.queryByTestId('policy-section-0')).toBeNull();
+  });
+
+  it('DV2-06 · until the owner confirms the words, the Terms screen draws no provider, licence or tier line of its own', async () => {
+    answers['/policies/terms'] = [ok({ slug: 'terms', available: false, title: null, effectiveDate: null, sections: [] })];
+    await bootPolicy('terms');
+    await rtl.screen.findByTestId('policy-terms-unavailable');
+    expect(JSON.stringify(rtl.screen.toJSON())).not.toMatch(/Nuvion|CBN|[Ll]icen[cs]e|Tier|held at|WAWU|—/);
   });
 
   it('shows a loading state while the text is on its way', async () => {

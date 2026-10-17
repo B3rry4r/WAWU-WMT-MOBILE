@@ -166,7 +166,7 @@ describe('Z3 · Notifications', () => {
     expect(checked('notify-contentReviews')).toBe(true);
     expect(checked('notify-newFollowers')).toBe(true);
     expect(checked('notify-promotions')).toBe(false);
-    for (const word of ['Money', 'Messages', 'Content', 'Money in', 'Tips, sales, transfers', 'Refunds', 'Paid questions', 'Including reply deadlines', 'Community messages', 'Reviews', 'Approved or sent back', 'New followers', 'From Who Made This', 'News and offers']) {
+    for (const word of ['Money', 'Messages', 'Content', 'Money in', 'Tips, sales, transfers', 'Refunds', 'Paid questions', 'Including reply deadlines', 'Community messages', 'Reviews', 'Approved or sent back', 'New followers', 'From Who Made This?', 'News and offers']) {
       expect(screen.getByText(word)).toBeTruthy();
     }
   });
@@ -507,7 +507,7 @@ describe('Z2 · Settings', () => {
     await boot();
     await screen.findByText('Lennox Emmanuel');
     expect(JSON.stringify(screen.toJSON())).not.toMatch(/Tier|WAWU|Fintava|—/);
-    expect(screen.getByText('About Who Made This')).toBeTruthy();
+    expect(screen.getByText('About Who Made This?')).toBeTruthy();
   });
 
   it('a user can open Notifications, Privacy, Password, About, Terms and Privacy policy, and their own details', async () => {
@@ -528,6 +528,19 @@ describe('Z2 · Settings', () => {
     expect(p.onOpenTerms).toHaveBeenCalledTimes(1);
     expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
     expect(p.onOpenProfile).toHaveBeenCalledTimes(1);
+  });
+
+  it('DV2-06 · the switch reads "TGIF each morning" with the notification line, names no time, and keeps writing /settings/tgif', async () => {
+    serve({ [TGIF_SET]: ok({ show: false }) });
+    await boot();
+    await screen.findByTestId('settings-tgif');
+    expect(screen.getByText('TGIF each morning')).toBeTruthy();
+    expect(screen.getByText('Daily verse and prayer, as a notification')).toBeTruthy();
+    expect(screen.queryByText('TGIF on Home')).toBeNull();
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/\d{1,2}:\d{2}|\d\s?(am|pm)\b/i);
+    await tap('settings-tgif');
+    await waitFor(() => expect(checked('settings-tgif')).toBe(false));
+    expect(bodiesOf('PATCH', '/api/hub/settings/tgif')).toEqual([{ show: false }]);
   });
 
   it('a user can switch TGIF off and on: the Hub holds it, and the switch follows the answer', async () => {
@@ -557,9 +570,9 @@ describe('Z2 · Settings', () => {
     serve({ [TGIF]: [refusal(500, 'The server is having trouble.'), ok({ show: false })] });
     await boot();
     expect(screen.getByTestId('settings-tgif-pending')).toBeTruthy();
-    await waitFor(() => expect(screen.getByLabelText('TGIF on Home did not load. Try again')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('TGIF each morning did not load. Try again')).toBeTruthy());
     expect(screen.queryByTestId('settings-tgif')).toBeNull();
-    await act(async () => fireEvent.press(screen.getByLabelText('TGIF on Home did not load. Try again')));
+    await act(async () => fireEvent.press(screen.getByLabelText('TGIF each morning did not load. Try again')));
     await screen.findByTestId('settings-tgif');
     expect(checked('settings-tgif')).toBe(false);
   });

@@ -34,6 +34,14 @@ const themeRow = { minHeight: 56, title: 15, valueSize: 14, chevron: 17 } as con
 /** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below. */
 const footMetrics = { padV: 4, signOut: 15 } as const;
 
+/**
+ * Z2's TGIF switch (R-59, DV2-06): it means "send me TGIF each morning" (HOME-16 sends the notice).
+ * The line names no time of day: the notice time is an admin setting on the Hub, and `GET /settings/tgif`
+ * does not serve it, so a time is not written here.
+ */
+export const TGIF_TITLE = 'TGIF each morning';
+export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
+
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
 
@@ -121,14 +129,14 @@ export function SettingsScreen(props: SettingsScreenProps) {
         {tgif.query.data ? (
           <SwitchRow
             testID="settings-tgif"
-            title="TGIF on Home"
-            subtitle="Daily verse and prayer"
+            title={TGIF_TITLE}
+            subtitle={TGIF_SUBTITLE}
             on={tgif.isOn('show')}
             busy={tgif.busy.includes('show')}
             onChange={(next) => void tgif.set('show', next)}
           />
         ) : (
-          <PendingRow testID="settings-tgif-pending" title="TGIF on Home" subtitle="Daily verse and prayer" failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
+          <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
         )}
         <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
         <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
@@ -139,7 +147,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         </Text>
       ) : null}
       <GroupedList testID="settings-about">
-        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This" onPress={props.onOpenAbout} />
+        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
         <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
         <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
       </GroupedList>
