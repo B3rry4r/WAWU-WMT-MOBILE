@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 14, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the INBOX-12 rows wait for batch 4 to merge; the other rows' source tasks are merged.
+- **Open lows:** 16, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** the INBOX-21 rows wait for INBOX-21 to merge (the push code is on its branch until then); the INBOX-12 rows wait for batch 4 to merge; the other rows' source tasks are merged. The WALLET-40 rows wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -61,6 +61,8 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | INBOX-16 | F2 | Hub (pre-existing, info): the 85/15 split on a wallet-bought lot is per spend, so draining the 120-credit / 100,000-kobo lot in 18 spends of 7 gave the host 84,994 and WAWU 15,006 (total exact 100,000). `src/credit-spend` is untouched by this branch; web lots round the same way. A single 120-credit spend gives exactly 85,000 / 15,000. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-16.md`, finding 2 |
 | INBOX-16 | F3 | Hub: the rollback in migration `20261024000000_credit_purchase_wallet_payment` drops `walletPaymentId`, the only link from a credits purchase to its payment (payments, ledger and credits stay). Acceptable for an unreleased additive column; say so in the rollback note if this ships. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-16.md`, finding 3 |
 | HOME-16 | F1 | Backend: the TGIF switch is read in the claim statement and again in emit (a later statement of the same transaction), `src/scheduler/tgif-daily-notice.service.ts:150-175` with `emitTgifDaily` in `src/notification/notification.service.ts`. A person who turns TGIF off in the millisecond between the two keeps a marker but gets no notice; if they turn it back on that morning they get none until tomorrow. Not reproduced (needs that exact moment). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`, finding 1 |
+| WALLET-40 | L1 | Mobile (pre-existing, INBOX-21's design, not WALLET-40): a push tapped while signed out is dropped, not held for after sign-in (`src/features/push/PushBridge.tsx`, `status === 'signedOut'` clears the tap). The `wallet_ready` tap therefore opens Wallet only when signed in; signed out, the person signs in and lands on Home. Same for every pushed kind. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 1 |
+| WALLET-40 | L3 | Backend (INBOX-03's design, unchanged): `PUSH_LOOKBACK_MINUTES = 15` (`src/push/push-config.ts:74`). If every push sweep is down for more than 15 minutes after the commit, the phone push for the "account number is ready" notice is never sent (the notice is still in the list). Never doubled. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 3 |
 
 ## Builder report
 

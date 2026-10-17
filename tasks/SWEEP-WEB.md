@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 7, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** WEBPAY-01 (not merged yet; its lows are listed now so none is lost).
+- **Open lows:** 8, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** WEBPAY-01 (not merged yet; its lows are listed now so none is lost). The WALLET-40 rows wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -54,6 +54,7 @@ The website (`wawuafrica`): WEBPAY and WEB tasks. Paused with the website (R-49)
 | WEBPAY-01 | D11 | The selfie hand-off assigns whatever URL the server answers with no https check. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 145 |
 | WEBPAY-01 | D12 | The wallet screen is not exactly as on main for a creator: one more call, and an "Open your wallet" card above the old payout wallet. Note. | branch `wmt/WEBPAY-01`, `tasks/WEBPAY-01.md`, Verifier report, line 146 |
 | HOME-16 | F2 | Web (follows the app after launch, R-49): a `tgif_daily` row now appears in the web's GET /notifications; the web has no case for the kind and its button goes to /notifications. Safe and additive; give the web a case when it follows. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`, finding 2 |
+| WALLET-40 | info 4 | Web (follows the app after launch, R-49): the web's /notifications has no `wallet_ready` in its kind type; an unknown kind shows the label "Update", the Bell icon and the href /notifications (`kinds.ts` `default`, `NotificationCard.tsx` `??`). Sensible and additive, the same as `money_in`. Give the web the kind when it follows. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 4 (info) |
 
 ## Builder report
 

@@ -15,6 +15,7 @@ import type { Href } from 'expo-router';
  *   - content_published, content_rejected, review_received: a piece of content (ME-07 and the content screens)
  *   - dm_received, dm_deadline: the paid question itself (INBOX-18); today the Inbox, where the question is listed
  * tgif_daily (HOME-16) is built: it opens the TGIF reader (`/tgif`) on the day in its target.
+ * wallet_ready (WALLET-40) is built: "Your account number is ready" opens the wallet home (`/wallet`), which shows the number.
  */
 export type PushTap = { kind?: unknown; target?: unknown };
 
@@ -43,6 +44,7 @@ export function routeForPush(raw: unknown): Href | null {
     case 'sale':
     case 'tip_received':
     case 'dm_refunded':
+    case 'wallet_ready':
       return '/wallet';
     case 'dm_received':
     case 'dm_deadline':

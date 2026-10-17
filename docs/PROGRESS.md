@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 149 of 293.**
+**Launch tasks done: 149 of 294.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 125 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 51 | 0 | 0 | 0 |
+| verifying | 52 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -57,6 +57,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
+- [WALLET-40](../tasks/WALLET-40.md) Alert when your account number is ready (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
@@ -239,6 +240,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
 - 17 Oct 2026 · REF-02 · Builder report (Sonnet builder; backend `wmt/REF-02` `1165e79` on `origin/wmt/MERGE-6` `fbf391f`, mobile `wmt/REF-02` on `70a7895` (docs only); migration `20261024140000_referral_points`; status verifying): a person has one code (`wawu/r/<code>`), `GET /me/referrals` and `POST /me/referrals/claim` are served, a first paid tier makes one reward (unique per referral), held for the plan's hold days and paid as `referral` point lots by a minute job, cancelled when the tier payment was refunded inside the hold or the referrer held no tier, milestones each once; every figure is a TIER-06 setting. 36 new tests green, backend CI green (Branch checks 38999309021, Protected routes 38999308931, Gates 38999309018).
 - 17 Oct 2026 · EVENTS-10 · Builder report (Sonnet builder; backend `wmt/EVENTS-10` `1b0ea03` on `wmt/MERGE-6` `fbf391f`, mobile record on `70a7895`; no migration; status verifying): calling an event off sends each wallet buyer everything they paid back, Fintava's charge included, through the hold, once per order under races, repeated cancels and sweeps; the order reads refunded with void tickets; a minute sweep finishes what the request did not reach; no ticket is made for an event called off a moment before; G-793.
 - 17 Oct 2026 · SHARED-06 · Builder report (Sonnet builder; mobile `wmt/SHARED-06` on `origin/wmt/MERGE-7` `f45ffbd`, no backend change; status verifying): 17 of 19 SHARED-CHANGES rows applied (tokens, API client, `Banner`, `Switch`, `SwitchRow`, `ScreenFrame`, `PinDots`, `TextField` props, `ListRow` lines, `Button` props, `PaySheet` `onOpenWallet`, social marks) and 14 stand-ins deleted; HOME-02 #4 and row 11 listed for their own tasks; 56 picture pairs, 48 identical and 8 explained.
@@ -253,4 +255,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · ADS-07 · Builder report (Sonnet builder; backend `wmt/ADS-07` `4ec121e` on main `a5e48fc`, mobile `wmt/ADS-07` on app main `7de785d`; migration `20261024110000_ads_explore_slider`; status verifying): a campaign cannot be saved without artwork (`POST` and `PATCH /admin/ads` answer 422 "Add artwork before you save this campaign"); campaigns saved without it are not served or counted and the admin list shows them (`needsArtwork`, `artwork=missing`, `needingArtwork`). New placement `explore_slider`: `GET /ads?placement=explore_slider` answers the live cards as a list, heaviest first. The app's picture-less card variant is removed and its contract copy refreshed. Schedule and resume are unchanged; no slide cap.
 - 17 Oct 2026 · EXPLORE-06 · Builder report (Sonnet builder; backend `wmt/EXPLORE-06` `24e0c48` from main `a5e48fc`, mobile `wmt/EXPLORE-06` docs only; no migration; status verifying): `GET /search/popular` names a community only with 10 or more joined members (R-57); the figure is `popularCommunityMinMembers()` (env `POPULAR_COMMUNITY_MIN_MEMBERS`, default 10) until TIER-06's registry is on main (SHARED-CHANGES EXPLORE-06 #1); 69 website and app calls byte-identical on the old and new build; new spec plus the 3 EXPLORE-05 popular specs 235 of 235 in `src/search-response`.
 - 17 Oct 2026 · WALLET-37 · Builder report, round 5 (Sonnet builder; backend `wmt/WALLET-37` `516a6bc` on `ff2b81f`; no migration; status verifying): the verifier's medium fixed. A bank send to an account that is not saved, with a name token the person did not get for it, is a name check: it spends one of the 30 an hour and past them answers 429 before the PIN without asking the bank, so no holder name comes back. A matching token or a saved account stays uncounted. A21 opens again when a rate-limit wait has passed. Finding 2 recorded in SWEEP-MONEY.
-- 17 Oct 2026 · WALLET-37 · Builder report, round 3 (Sonnet builder; backend `wmt/WALLET-37` `86a3183` on `7a366d0`; no migration, no app code; status verifying): the lead's rulings on round 2. With no kept BVN name the wallet's own account name is the verified name, and the bank's name matches it when every word of the bank's name is a word of the wallet name and at least two words match (a middle name the bank leaves out is fine; a different surname, one word alone, or a word the wallet name lacks is refused). The no-name refusal keeps `account_not_in_your_name`; the per-process count stays a sweep row. Table spec red first then green; the round 2 fixtures that quoted a shorter wallet name now name the full one.

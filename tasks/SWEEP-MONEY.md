@@ -19,8 +19,8 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 112, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
-- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet), and SETTINGS-06 (batch 7, not merged yet; its lows are listed now so none is lost), and WALLET-37, WALLET-38 and REF-02 (stacked on batch 7, not merged yet; their lows are listed now so none is lost).
+- **Open lows:** 113, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Waits on:** MONEY-16, NUV-06, WALLET-07, WALLET-04, WALLET-16, TIER-02 (not merged yet; its lows are listed now so none is lost), and WALLET-23 and FIX-26 (batch 3, not merged yet), and WALLET-35 and WALLET-09 (batch 4, not merged yet), and SETTINGS-06 (batch 7, not merged yet; its lows are listed now so none is lost), and WALLET-37, WALLET-38 and REF-02 (stacked on batch 7, not merged yet; their lows are listed now so none is lost). The WALLET-40 rows wait for batch 7 to merge (the code they name is on its branch until then).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
 ## Read first
@@ -159,6 +159,7 @@ Money, wallets, bills and tiers: MONEY, NUV, WALLET, BILLS and TIER tasks. Backe
 | REF-02 | L2 | Account purge (`src/account-purge/account-data-map.ts`, `ReferralReward` `referredWawuUserId` OWNED): deleting a referred account deletes their granted reward, so the referrer's verified count, level and multiplier drop (brought 2 to 1, verified 2 to 1) while the points and milestones stay. Repro: purge a referred person with a granted reward. Decide whether the reward should be kept with the person erased. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/REF-02.md`, finding 2 |
 | REF-02 | L3 | `onTierPaid` in `src/referrals/referral-reward.service.ts`: a reward made cancelled because the referrer held no tier at that moment is final; a tier bought later does not revive it. This matches "only a referrer with an active tier earns"; the owner may want it said in the app copy (REF-03). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/REF-02.md`, finding 3 |
 | REF-02 | L4 | `cancelReasonAtEnd` in `src/referrals/referral-reward.service.ts`: the referrer's tier is judged at `availableAt` from the single MakerTier row. If the job was down past the hold end and the referrer re-bought after a lapse, the row's activeFrom is later and a valid reward is cancelled. Not reproduced; from reading the code. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/REF-02.md`, finding 4 |
+| WALLET-40 | L2 | Backend (by design, stated in the task): a re-tap of Open wallet that reconciles a lost Fintava answer records the wallet and tells nobody (the person is looking at the answer). In the race test the sweep won 6 of 6 times, so the notice was sent each time. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 2 |
 
 ## Builder report
 
