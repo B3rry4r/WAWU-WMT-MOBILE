@@ -19,6 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Carried from TIER-06 (round 2, low 2, 17 Oct 2026):** the points cash-out rule in `src/plan-settings/plan-setting-rules.ts` (`pointsSales`, line 34: the cash rate may not exceed the price per point of any way points are sold) ignores the Founding pack bonus (`plan.tier.founding.pack_bonus_pct`, 10). Nothing applies the bonus today, so no gap exists now. When this task applies it, `pointsSales` must count the bonus points, or a rate set at the exact maximum pays about 10 percent more than a Founding buyer paid. Report: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/TIER-06.md`, round 2, finding 2.
 - **Next:** a builder starts from the brief below after these are done (or in review): TIER-05.
 - **History:** none yet. Reports go to tasks/history/POINTS-02.md.
 
