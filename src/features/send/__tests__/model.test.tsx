@@ -107,7 +107,7 @@ describe('what the send screens read and write', () => {
   it('Home’s balance card has Send and no Bills (bills are off, R-52), and Send calls the send', async () => {
     const onSend = jest.fn();
     await rtl.render(
-      <MoneyCard state={{ kind: 'figure', kobo: 48_525_075 }} masked={false} onToggleMask={() => undefined} onOpenWallet={() => undefined} onRetryWallet={() => undefined} onRetryBalance={() => undefined} retrying={false} onSend={onSend} />,
+      <MoneyCard state={{ kind: 'figure', kobo: 48_525_075 }} masked={false} onToggleMask={() => undefined} onOpenWallet={() => undefined} onRetryWallet={() => undefined} onRetryBalance={() => undefined} retrying={false} onSend={onSend} onAdd={() => undefined} />,
     );
     const names = rtl.screen.getAllByRole('button').map((b) => b.props.accessibilityLabel);
     expect(names.indexOf('Send')).toBeGreaterThanOrEqual(0);

@@ -187,7 +187,7 @@ afterEach(() => {
 });
 
 function handlers() {
-  return { onClose: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onOpenWallet: jest.fn(), onAdded: jest.fn() };
+  return { onClose: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn(), onOpenWallet: jest.fn(), onAdded: jest.fn() };
 }
 
 async function render(child: ReactElement) {
@@ -281,7 +281,7 @@ describe('I28: a short wallet keeps the packs', () => {
     expect(hub.buys[0].body).toMatchObject({ pack: 'starter', expectedTotalKobo: 52_325 });
   });
 
-  it('the Not enough note is for the chosen pack only, with no Add button (R-47): another pack brings the Buy button back', async () => {
+  it('the Not enough note and Add money are for the chosen pack only: another pack brings the Buy button back', async () => {
     hub.balanceKobo = 60_000;
     const h = handlers();
     await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
@@ -292,15 +292,15 @@ describe('I28: a short wallet keeps the packs', () => {
     expect(rtl.screen.getByText(/This costs ₦2,023\.25\. You have ₦600\.00\./)).toBeTruthy();
     expect(packButtons().every((button) => button !== null)).toBe(true);
     expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
-    expect(rtl.screen.queryByTestId('credits-add')).toBeNull();
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(202_325 - 60_000);
     await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-starter'));
     await rtl.waitFor(async () => expect((await buyButton()).props.accessibilityLabel).toContain('Buy 50 credits · ₦523.25'));
     expect(rtl.screen.queryByText(/Not enough in your Naira wallet/)).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
 
-  it('a wallet that covers no pack stays on the popular pack with the note and every pack drawn', async () => {
+  it('a wallet that covers no pack stays on the popular pack with the note, Add money and every pack drawn', async () => {
     hub.balanceKobo = 10_000;
     await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
@@ -343,26 +343,28 @@ describe('the attacks I28 survives', () => {
     expect(hub.buys).toHaveLength(2);
   });
 
-  it('a wallet too short is told so before any PIN, with no Add button (R-47), and nothing is bought', async () => {
+  it('a wallet too short is told so before any PIN, with Add money, and nothing is bought', async () => {
     hub.balanceKobo = 50_000;
     const h = handlers();
     await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
     expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
-    expect(rtl.screen.queryByTestId('credits-add')).toBeNull();
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(52_325);
     expect(hub.buys).toHaveLength(0);
   });
 
   it('a purchase the Hub refuses for a short wallet after the PIN shows the bank balance and keeps the key free', async () => {
     hub.mode = 'short_on_pay';
-    await boot();
+    const h = await boot();
     await reachPin();
     await enterPin('4829');
     await rtl.screen.findByText(/Not enough in your Naira wallet/);
     expect(hub.payments).toBe(0);
-    // The bank's own figure is what the sheet now reads; Add money is not drawn until WALLET-05 builds it (R-47).
-    expect(rtl.screen.queryByText(/^Add /)).toBeNull();
+    expect(h.onAddMoney).not.toHaveBeenCalled();
+    // The bank's own figure is what the sheet now reads, and Add money asks for exactly the shortfall.
+    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
+    expect(h.onAddMoney).toHaveBeenCalledWith(52_325);
   });
 
   it('an answer that never comes is followed by the SAME request, and the wallet is charged once', async () => {

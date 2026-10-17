@@ -168,13 +168,14 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 /** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. The settings icon is built since WALLET-06 (W35) and is drawn in every state. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Add money', 'Withdraw', 'Swap', 'WAWU card', 'Bills', 'Power', 'More', 'Airtime', 'Data', 'TV'];
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Swap', 'WAWU card', 'Bills', 'Power', 'More', 'Airtime', 'Data', 'TV'];
 /**
- * The actions that are built (DV2-02, the 16 Oct board): Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05), drawn when the
- * wallet is open. The board draws Add money and Withdraw too; their screens are other tasks', so until each adds its own it is not drawn (R-47).
+ * The actions that are built (DV2-02, the 16 Oct board): Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and
+ * To cash (POINTS-05), drawn when the wallet is open, in the board's order: all five columns.
  * There are no bills anywhere on the tab (R-52).
  */
-const ACTION_TILES = ['Send', 'Buy points', 'To cash'];
+const ACTION_TILES = ['Add money', 'Send', 'Withdraw', 'Buy points', 'To cash'];
+const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'to-cash'];
 /** The Points card, as a button: the Hub's own balance and the day the soonest points end (`POINTS` below). */
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
 const NOT_BUILT_IDS = [
@@ -272,14 +273,14 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.getByText('Transactions')).toBeTruthy();
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-info-row', 'wallet-points', 'wallet-actions', 'wallet-transactions', 'wallet-row-r1', 'wallet-row-r2'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    // Scan, the Dollar and Crypto tabs, Swap, Add money, Withdraw and the WAWU card row are not drawn; See all is, with the rows.
+    // Scan, the Dollar and Crypto tabs, Swap and the WAWU card row are not drawn; See all is, with the rows.
     expectNothingUnbuilt(app, { rows: true });
     expect(app.screen.getByText('See all')).toBeTruthy();
     // The canvas's one person's card details are not invented for anyone else: no digits, no status, no brand.
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the settings icon, the eye, Copy, the Points card, Send, Buy points, To cash, See all and the two rows, and each one works', async () => {
+  it('every button on W1 does something: the settings icon, the eye, Copy, the Points card, Add money, Send, Withdraw, Buy points, To cash, See all and the two rows, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
@@ -293,9 +294,15 @@ describe('W1 · Wallet · Naira', () => {
     expect(mockCopied).toEqual(['8100000417']);
     expect(mockPushed).toEqual([]);
     expect(sent.length).toBe(asks);
-    // Send (WALLET-02) opens W7.
+    // Add money (WALLET-05) opens W15, Send (WALLET-02) opens W7, Withdraw (WALLET-05) opens W17.
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Add money' }));
+    expect(mockPushed).toEqual(['/add-money']);
+    mockPushed.length = 0;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Send' }));
     expect(mockPushed).toEqual(['/send']);
+    mockPushed.length = 0;
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Withdraw' }));
+    expect(mockPushed).toEqual(['/withdraw']);
     // Buy points (POINTS-06) opens PT4, To cash (POINTS-05) opens PT6, and the Points card opens Your points (PT5).
     mockPushed.length = 0;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Buy points' }));
@@ -323,17 +330,18 @@ describe('W1 · Wallet · Naira', () => {
     const row = StyleSheet.flatten(app.screen.getByTestId('wallet-actions').props.style);
     expect(row.flexDirection).toBe('row');
     expect(row.justifyContent).toBe('flex-start');
-    expect(inOrder(idsInOrder(app), ['wallet-action-send', 'wallet-action-buy-points', 'wallet-action-to-cash'])).toEqual(['wallet-action-send', 'wallet-action-buy-points', 'wallet-action-to-cash']);
+    const ids = ACTION_KEYS.map((key) => `wallet-action-${key}`);
+    expect(inOrder(idsInOrder(app), ids)).toEqual(ids);
     // On a 390 window the board's square is 54, so a column is 70 wide.
-    for (const key of ['send', 'buy-points', 'to-cash']) expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-action-${key}`).props.style).width).toBe(70);
+    for (const key of ACTION_KEYS) expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-action-${key}`).props.style).width).toBe(70);
   });
 
-  it('the actions keep the size five columns would give them, so adding Add money and Withdraw resizes none of them', async () => {
+  it('the five actions fill the row the way the board draws it, and none runs past the screen', async () => {
     Dimensions.set({ window: { width: 320, height: 740, scale: 2, fontScale: 1 } });
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     // 320 less the two gutters, over five columns, less 16: a 40 square in a 56 column (not 54 and 70).
-    for (const key of ['send', 'buy-points', 'to-cash']) expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-action-${key}`).props.style).width).toBe(56);
+    for (const key of ACTION_KEYS) expect(StyleSheet.flatten(app.screen.getByTestId(`wallet-action-${key}`).props.style).width).toBe(56);
   });
 
   it('the Points card shows the Hub’s balance as a count, with the soonest end, and never naira (W1)', async () => {
@@ -425,7 +433,7 @@ describe('W4 · Wallet · loading', () => {
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
   });
 
-  it('draws W4 for what is built: the bar, then the shapes of the card, the Points card, the three actions and three rows, and no shape of a tab (R-47)', async () => {
+  it('draws W4 for what is built: the bar, then the shapes of the card, the Points card, the five actions and three rows, and no shape of a tab (R-47)', async () => {
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-loading')).toBeTruthy();
@@ -434,7 +442,7 @@ describe('W4 · Wallet · loading', () => {
       expect(app.screen.getByTestId(id)).toBeTruthy();
     }
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
-    expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(3);
+    expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(5);
     const stands = ['wallet-bar', 'wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
@@ -746,7 +754,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
   });
 
-  it('the loading shapes are the bar, the card, the Points card, three actions and three rows at 320, and nothing else', async () => {
+  it('the loading shapes are the bar, the card, the Points card, five actions and three rows at 320, and nothing else', async () => {
     narrow(320);
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
@@ -757,7 +765,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
       await new Promise((resolve) => setTimeout(resolve, 30));
     });
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
-    expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(3);
+    expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(5);
     expectNothingUnbuilt(app);
   });
 });
