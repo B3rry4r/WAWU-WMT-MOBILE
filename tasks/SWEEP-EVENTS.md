@@ -19,7 +19,7 @@ artboards: []
 
 As of 16 Oct 2026.
 - **Status:** todo. Not scheduled: the lead schedules a sweep (docs/WORKFLOW.md section 4, 15 Oct 2026). No branch.
-- **Open lows:** 4, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
+- **Open lows:** 6, in the table below. Collected from the open tasks and the lead's log of 10 to 15 Oct. Lows in older, merged tasks' reports are not collected here.
 - **Waits on:** EVENTS-11 (not merged yet; its lows are listed now so none is lost).
 - **Next:** when scheduled, a builder fixes each row or rules it "no" with the reason in the row; a verifier checks each row.
 
@@ -51,6 +51,8 @@ Events, tickets and the door scan: EVENTS tasks. Backend and mobile. Only the ro
 | EVENTS-11 | O8 | Once a ticket sold on a retired tier, the sold 409 names two tiers with the same name, one hidden from the host. Confusing message. | branch `wmt/EVENTS-11`, `tasks/EVENTS-11.md`, Verifier report, round 5, line 303 |
 | EVENTS-09 | N1 | The queue of two or more typed codes is unreachable and untested. Low. | `tasks/EVENTS-09.md`, Verifier report, round 3, line 437 |
 | EVENTS-09 | N2 | Two test gaps in the builder's file: a code typed over an unseen problem, and a tap-dismissed verdict followed by a new scan inside 3 s (stale hold timer). | `tasks/EVENTS-09.md`, Verifier report, round 3, line 438 |
+| EVENTS-07 | R3-1 | Backend: the host-erase hook (`src/event-ticketing/wallet/event-host-erasure.service.ts`) only detaches events that ALREADY have a wallet order. An event with none when the hook reads, that gets a first quote AND a PIN-paid order before the purge deletes the Event row, is still cascade-deleted with the hold left `held` (spec zz-vr3c C1, window simulated by a spy; buyer short 751,575 kobo). Needs the whole purchase inside the purge's runtime. A one-line widening (detach every upcoming or begun event of the host, not only those with wallet orders) closes it. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-07.md`, rounds 2 and 3, new finding 1 |
+| EVENTS-07 | R3-3 | Backend: the wallet-order create answers `wallet_not_open`, `wallet_opening`, `idempotency_key_*` and `fees_not_set` that are only in the operation description of `contract/openapi.json`, not typed errors, so the app client will not get them as typed (accepted by the lead for now). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-07.md`, rounds 2 and 3, new finding 3 |
 
 ## Builder report
 
