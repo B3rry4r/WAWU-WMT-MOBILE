@@ -5,7 +5,7 @@ import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, space, text } from '@/theme';
 
 import { subtitleOf, type SwitchGroup } from './groups';
-import { SwitchRow } from './SwitchRow';
+import { SwitchRow } from '@/components/SwitchRow';
 
 /** design/_gen/settings.js lines 14 and 15: each group is its small capital label, 8 above its card. */
 const LABEL_GAP = space.sm;

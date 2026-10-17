@@ -278,7 +278,7 @@ describe('Z3 · Notifications', () => {
 
 describe('a switch row', () => {
   it('ignores a press while its own save is in flight, and reports the value asked for otherwise', async () => {
-    const { SwitchRow } = mod<typeof import('../SwitchRow')>('../SwitchRow');
+    const { SwitchRow } = mod<typeof import('@/components/SwitchRow')>('@/components/SwitchRow');
     const onChange = jest.fn();
     await render(frame(<SwitchRow testID="row" title="Refunds" on={false} busy onChange={onChange} />));
     await tap('row');

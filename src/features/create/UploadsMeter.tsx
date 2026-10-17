@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { font, space, useWawu } from '@/theme';
 
 import type { Allowance } from './api';

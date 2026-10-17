@@ -8,7 +8,7 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { authed } from '@/features/auth/signupApi';
 import { space } from '@/theme';
 

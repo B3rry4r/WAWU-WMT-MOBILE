@@ -13,7 +13,7 @@ import { font } from '@/theme';
 import { fetchBlocked, settingsKeys, unblock, type BlockedAccount, type BlockedList } from './api/hub';
 import { loadProblem, sentenceOf } from './failure';
 import { startedInThisSession, useSignedIn } from './sessionGuard';
-import { SettingsFrame } from './SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 
 /** design/_gen/settings.js line 16 (Z5): rows 10 above and below, an avatar of 48, 12 between, a 15 name at 600; the body keeps its parts 4 apart. */
 const blockedMetrics = { padV: 10, avatar: 48, between: 12, name: 15, body: 4 } as const;
@@ -81,7 +81,7 @@ export function BlockedScreen({ onBack }: BlockedScreenProps) {
 
   const empty = list.data?.rows.length === 0;
   return (
-    <SettingsFrame title="Blocked accounts" onBack={onBack} gap={blockedMetrics.body} testID="blocked-screen">
+    <ScreenFrame idPrefix="settings" title="Blocked accounts" onBack={onBack} gap={blockedMetrics.body} testID="blocked-screen">
       {list.isError && !list.data ? (
         <ErrorState
           testID="blocked-error"
@@ -127,7 +127,7 @@ export function BlockedScreen({ onBack }: BlockedScreenProps) {
           </Text>
         </>
       )}
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }
 

@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 
 import { OPEN_WALLET_KEY } from './api/account';
 import { birthDate, CITY_MAX, detailsProblems, fullName, genderWord, OCCUPATION_MAX, openingName, STREET_MAX, tidyDetails, type DetailsProblems } from './details';

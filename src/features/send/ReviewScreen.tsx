@@ -428,6 +428,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         status={shown}
         onPay={pay}
         onAddMoney={props.onAddMoney}
+        onOpenWallet={entry.open}
         onCancel={goBack}
         onRetry={() => {
           // A send that did not go through starts again as a new intent, from a new quote.

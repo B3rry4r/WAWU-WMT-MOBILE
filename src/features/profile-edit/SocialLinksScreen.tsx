@@ -9,7 +9,7 @@ import { Text } from '@/components/Text';
 import { font, layout, useWawu } from '@/theme';
 
 import { updateDraft, useDraft } from './draft';
-import { EditFrame } from './EditFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { problemsOf, withHandle } from './form';
 import { SOCIAL, moved, unaddedOf, type SocialPlatform } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
@@ -69,7 +69,7 @@ export function SocialLinksScreen({ onClose }: SocialLinksScreenProps) {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <EditFrame
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1}
         testID="social-links"
         title="Social links"
         onBack={close}
@@ -106,7 +106,7 @@ export function SocialLinksScreen({ onClose }: SocialLinksScreenProps) {
             <AddRow key={platform} platform={platform} onAdd={() => add(platform)} />
           ))}
         </View>
-      </EditFrame>
+      </ScreenFrame>
     </GestureHandlerRootView>
   );
 }

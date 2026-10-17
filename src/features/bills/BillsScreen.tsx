@@ -7,7 +7,7 @@ import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { space, useWawu } from '@/theme';
 
 import { electricityBillersQuery } from './api';

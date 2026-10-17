@@ -7,7 +7,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { Money, formatMoney } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { Switch } from '@/features/settings/Switch';
+import { Switch } from '@/components/Switch';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { priceInput } from './model';

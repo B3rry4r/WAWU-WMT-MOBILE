@@ -17,11 +17,11 @@ import { THEME_LABEL, useDevicePrefs } from './devicePrefs';
 import { sentenceOf } from './failure';
 import { ROW_TILE } from './metrics';
 import { maskPhone } from './phone';
-import { SettingsFrame } from './SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { useSignedIn } from './sessionGuard';
 import { signOutOfThisPhone } from './signOutFlow';
-import { switchMetrics } from './Switch';
-import { SwitchRow, switchRowMetrics } from './SwitchRow';
+import { switchMetrics } from '@/components/Switch';
+import { SwitchRow, switchRowMetrics } from '@/components/SwitchRow';
 import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
 
@@ -98,7 +98,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
   };
 
   return (
-    <SettingsFrame title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
+    <ScreenFrame idPrefix="settings" title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
       <Header me={me.data} loading={me.isPending} onOpen={props.onOpenProfile} onRetry={() => void me.refetch()} />
       <GroupedList testID="settings-account">
         <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
@@ -171,7 +171,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         }}
         onClose={() => setChoosingTheme(false)}
       />
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }
 

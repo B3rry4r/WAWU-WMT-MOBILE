@@ -14,10 +14,9 @@ import { Icon } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { gradientEnds } from '@/components/MediaCard';
-import { blackAt } from '@/components/shadow';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { openLink } from '@/features/about/links';
 import { canPlay } from '@/features/feed/player';
 import { font, layout, radius, space, useWawu } from '@/theme';
@@ -34,7 +33,7 @@ import { WorksFrame } from './WorksFrame';
  * less the picture's 280); 14 between the parts; the strip is 84 high with 14 corners and 8 between; the
  * creator row is 40 across with the name at 14.5, on the page colour, 12 above and 34 below.
  */
-const heroMetrics = { height: 280, scrim: 0.35, scrimEnd: 0.4, playButton: 56, playIcon: 24 } as const;
+const heroMetrics = { height: 280, scrimEnd: 0.4, playButton: 56, playIcon: 24 } as const;
 const bodyMetrics = { top: 38, stack: 14, thumb: 84, thumbRadius: 14, thumbGap: space.sm, thumbsShown: 3, bottomRoom: 140 } as const;
 const navTop = 6;
 const footMetrics = { avatar: 40, name: 14.5, top: space.md, bottom: 34, between: 10 } as const;
@@ -161,7 +160,7 @@ function Work({ work, onBack, onOpenCreator, onRemoved }: WorkProps) {
     setShown(index);
   };
 
-  const scrim = { colors: [blackAt(heroMetrics.scrim), blackAt(0)] as const, locations: [0, heroMetrics.scrimEnd] as const };
+  const scrim = { colors: [colors.mediaBlack35, colors.mediaBlack0] as const, locations: [0, heroMetrics.scrimEnd] as const };
   const ends = gradientEnds(180);
 
   return (

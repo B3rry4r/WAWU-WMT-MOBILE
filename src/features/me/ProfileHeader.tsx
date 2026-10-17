@@ -7,7 +7,6 @@ import { Button, IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { VerifiedTick } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
-import { blackAt } from '@/components/shadow';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { hueFor } from '@/features/feed/model';
@@ -30,7 +29,6 @@ import type { SocialLink } from './model';
 export const headerMetrics = {
   cover: 200,
   statusBar: 50,
-  scrim: 0.3,
   scrimEnd: 0.5,
   buttonsTop: 6,
   buttons: 42,
@@ -83,7 +81,7 @@ export function ProfileTop({ coverUrl, top, canShare, onShare, onOpenMenu }: Pro
         {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
         <LinearGradient
           pointerEvents="none"
-          colors={[blackAt(headerMetrics.scrim), blackAt(0)]}
+          colors={[colors.mediaBlack30, colors.mediaBlack0]}
           locations={[0, headerMetrics.scrimEnd]}
           start={ends.start}
           end={ends.end}

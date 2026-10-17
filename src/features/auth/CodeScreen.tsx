@@ -10,7 +10,7 @@ import { TextField } from '@/components/TextField';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { AuthFrame } from './AuthFrame';
-import { Banner } from './Banner';
+import { Banner } from '@/components/Banner';
 import type { Failure } from './signInFailure';
 import { clock, type Outcome } from './signupFailure';
 import { useCountdown } from './useCountdown';

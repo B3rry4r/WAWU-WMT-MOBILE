@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, radius, space, type, useWawu } from '@/theme';
 
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 
 import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type OwnAccount } from './api/account';
 import { openingProgressQuery } from './api/review';

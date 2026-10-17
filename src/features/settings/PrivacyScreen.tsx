@@ -14,7 +14,7 @@ import { loadProblem, sentenceOf } from './failure';
 import { useSignedIn } from './sessionGuard';
 import { PRIVACY_GROUPS, privacyOn, type PrivacyKey } from './groups';
 import { ROW_TILE } from './metrics';
-import { SettingsFrame } from './SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { SwitchGroups } from './SwitchGroups';
 import { SwitchesLoading } from './SwitchesLoading';
 import { useSwitches } from './useSwitches';
@@ -59,7 +59,7 @@ export function PrivacyScreen({ onBack, onOpenBlocked, onOpenPolicy }: PrivacySc
   const state = exportStateOf(exports.data);
 
   return (
-    <SettingsFrame title="Privacy" onBack={onBack} gap={BODY_GAP} testID="privacy-screen">
+    <ScreenFrame idPrefix="settings" title="Privacy" onBack={onBack} gap={BODY_GAP} testID="privacy-screen">
       {query.data ? (
         <>
           <SwitchGroups
@@ -114,6 +114,6 @@ export function PrivacyScreen({ onBack, onOpenBlocked, onOpenPolicy }: PrivacySc
         onSend={() => ask.mutate(undefined, { onSuccess: () => setAsking(false) })}
         onClose={() => setAsking(false)}
       />
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }

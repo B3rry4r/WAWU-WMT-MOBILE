@@ -9,7 +9,7 @@ import type { SignupChannel } from '@/api/identity';
 
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
-import { Banner } from './Banner';
+import { Banner } from '@/components/Banner';
 import { signupFailure, type SignupFailure } from './signupFailure';
 
 /** The shortest password WAWU ID takes (`contract/identity/openapi.json`, `SignupDto.password.minLength`); A3's hint "At least 8 characters". */

@@ -6,8 +6,8 @@ import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Text } from '@/components/Text';
 import { AuthField } from '@/features/auth/AuthField';
-import { Banner } from '@/features/auth/Banner';
-import { EditFrame } from '@/features/profile-edit/EditFrame';
+import { Banner } from '@/components/Banner';
+import { ScreenFrame } from '@/components/ScreenFrame';
 
 import { createWork, fetchMyWorks, myWorksKey, worksRoot } from './api';
 import { PROFILE_FULL, saveFailure, uploadFailure, type SaveFailure } from './failure';
@@ -140,7 +140,7 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
 
   return (
     <>
-      <EditFrame
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1}
         testID="add-work"
         title="Add a work"
         onBack={back}
@@ -214,7 +214,7 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
           autoCapitalize="sentences"
           disabled={busy}
         />
-      </EditFrame>
+      </ScreenFrame>
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard this work?" testID="work-discard">
         <Text variant="sheetTitleSm">Discard this work?</Text>
         <Text variant="muted">What you added has not been saved.</Text>

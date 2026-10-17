@@ -80,6 +80,18 @@ export const darkColors = {
   tgifLabel: "#E2B4F5",
   tgifWarmGlow: "rgba(255, 160, 60, 0.35)",
   glowMoney: "rgba(148, 17, 201, 0.55)",
+  mediaWhite25: "rgba(255, 255, 255, 0.25)",
+  mediaWhite35: "rgba(255, 255, 255, 0.35)",
+  mediaWhite45: "rgba(255, 255, 255, 0.45)",
+  mediaWhite60: "rgba(255, 255, 255, 0.6)",
+  mediaInk38: "rgba(11, 10, 13, 0.38)",
+  mediaInk55: "rgba(11, 10, 13, 0.55)",
+  mediaBlack0: "rgba(0, 0, 0, 0)",
+  mediaBlack25: "rgba(0, 0, 0, 0.25)",
+  mediaBlack30: "rgba(0, 0, 0, 0.3)",
+  mediaBlack35: "rgba(0, 0, 0, 0.35)",
+  mediaBlack100: "rgba(0, 0, 0, 1)",
+  mediaCover: "#3B0B54",
 } as const;
 
 export type ColorToken = keyof typeof darkColors;
@@ -154,6 +166,18 @@ export const lightColors: Record<ColorToken, string> = {
   tgifLabel: "#E2B4F5",
   tgifWarmGlow: "rgba(255, 160, 60, 0.35)",
   glowMoney: "rgba(148, 17, 201, 0.55)",
+  mediaWhite25: "rgba(255, 255, 255, 0.25)",
+  mediaWhite35: "rgba(255, 255, 255, 0.35)",
+  mediaWhite45: "rgba(255, 255, 255, 0.45)",
+  mediaWhite60: "rgba(255, 255, 255, 0.6)",
+  mediaInk38: "rgba(11, 10, 13, 0.38)",
+  mediaInk55: "rgba(11, 10, 13, 0.55)",
+  mediaBlack0: "rgba(0, 0, 0, 0)",
+  mediaBlack25: "rgba(0, 0, 0, 0.25)",
+  mediaBlack30: "rgba(0, 0, 0, 0.3)",
+  mediaBlack35: "rgba(0, 0, 0, 0.35)",
+  mediaBlack100: "rgba(0, 0, 0, 1)",
+  mediaCover: "#3B0B54",
 };
 
 export type GradientToken = { angle: number; colors: readonly string[]; locations: readonly number[] };
@@ -205,6 +229,8 @@ export const darkShadows = {
   money: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: "rgba(255, 255, 255, 0.08)", inset: true }],
   debitCard: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -18, color: "rgba(41, 13, 67, 0.7)" }],
   cover: [{ offsetX: 0, offsetY: 30, blurRadius: 50, spreadDistance: -10, color: "rgba(0, 0, 0, 0.7)" }],
+  lift: [{ offsetX: 0, offsetY: 1, blurRadius: 3, spreadDistance: 0, color: "rgba(0, 0, 0, 0.08)" }],
+  knob: [{ offsetX: 0, offsetY: 2, blurRadius: 4, spreadDistance: 0, color: "rgba(0, 0, 0, 0.2)" }],
 } as const;
 
 export const lightShadows: Record<keyof typeof darkShadows, readonly ShadowToken[]> = {
@@ -215,6 +241,8 @@ export const lightShadows: Record<keyof typeof darkShadows, readonly ShadowToken
   money: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -22, color: "rgba(22, 21, 27, 0.6)" }],
   debitCard: [{ offsetX: 0, offsetY: 24, blurRadius: 40, spreadDistance: -18, color: "rgba(41, 13, 67, 0.7)" }],
   cover: [{ offsetX: 0, offsetY: 30, blurRadius: 50, spreadDistance: -10, color: "rgba(0, 0, 0, 0.7)" }],
+  lift: [{ offsetX: 0, offsetY: 1, blurRadius: 3, spreadDistance: 0, color: "rgba(0, 0, 0, 0.08)" }],
+  knob: [{ offsetX: 0, offsetY: 2, blurRadius: 4, spreadDistance: 0, color: "rgba(0, 0, 0, 0.2)" }],
 };
 
 export const space = {

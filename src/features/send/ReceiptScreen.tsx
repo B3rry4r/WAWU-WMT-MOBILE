@@ -18,7 +18,7 @@ import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { copyText } from '@/features/open-wallet/copy';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
-import { SwitchRow } from '@/features/settings/SwitchRow';
+import { SwitchRow } from '@/components/SwitchRow';
 import { radius, space, useWawu } from '@/theme';
 
 import { fetchBeneficiaries, removeBeneficiary, savedRowFor, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';

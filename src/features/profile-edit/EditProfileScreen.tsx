@@ -12,13 +12,13 @@ import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
 import { BioField } from './BioField';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
-import { EditFrame } from './EditFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { PICK_FAILED, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
@@ -69,7 +69,7 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
   if (me.isError || fields.isError) {
     const error = me.error ?? fields.error;
     return (
-      <EditFrame title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-problem">
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-problem">
         <ErrorState
           testID="edit-error"
           title="Your profile did not load"
@@ -79,13 +79,13 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
             if (fields.isError) void fields.refetch();
           }}
         />
-      </EditFrame>
+      </ScreenFrame>
     );
   }
 
   if (!me.data || !fields.data) {
     return (
-      <EditFrame title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-loading">
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-loading">
         <LoadingView label="Loading your profile">
           <View style={styles.skeleton}>
             <Skeleton height={COVER_SKELETON_H} radius={radius.media} />
@@ -98,7 +98,7 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
             <Skeleton height={BIO_SKELETON_H} radius={fieldMetrics.radius} />
           </View>
         </LoadingView>
-      </EditFrame>
+      </ScreenFrame>
     );
   }
 
@@ -198,7 +198,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
 
   return (
     <>
-      <EditFrame
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1}
         testID="edit-profile"
         title="Edit profile"
         onBack={back}
@@ -270,7 +270,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           ))}
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
-      </EditFrame>
+      </ScreenFrame>
       <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">
         <Text variant="sheetTitleSm">Discard your changes?</Text>
