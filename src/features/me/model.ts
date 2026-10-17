@@ -3,7 +3,7 @@ import { productsMeterCaption } from '@/components/ProductsMeter';
 import { APP_NAME } from '@/components/BrandMark';
 import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
-import { PROFILE_LINK_PREFIX } from '@/features/profile-edit/limits';
+import { profileLink } from '@/lib/appLinks';
 import { PLATFORMS, SOCIAL, bareHandle, handleOf, orderOf, type SocialHandles, type SocialPlatform } from '@/features/profile-edit/social';
 
 import type { ContentPiece, Experience, Listing, MyProfile, MyTier, ProductDraft, ProfileFields, ServiceState } from './api';
@@ -100,11 +100,11 @@ export function countsOf(stats: { followerCount: number; followingCount: number;
   ] as const;
 }
 
-/** What the share sheet carries: who this is and their profile link, written the app's way (`wawu/handle`). */
+/** What the share sheet carries: who this is and their profile link, `https://wawuafrica.com/u/<handle>` (LINKS-01, A2). */
 export function profileShareText(name: string, handle: string | null | undefined): string {
   const who = name ? `${name} on ${APP_NAME}` : APP_NAME;
   const bare = (handle ?? '').trim().replace(/^@+/, '');
-  return bare ? `${who}\n${PROFILE_LINK_PREFIX}${bare}` : who;
+  return bare ? `${who}\n${profileLink(bare)}` : who;
 }
 
 /** One tile of the Content grid: a free piece shows its views, a paid one its price and a lock, as M1 draws them. */

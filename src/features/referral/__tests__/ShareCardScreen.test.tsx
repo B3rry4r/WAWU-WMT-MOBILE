@@ -98,7 +98,7 @@ describe('Share card (RF2)', () => {
     await open();
     expect(await screen.findByTestId('invite-card')).toBeTruthy();
     expect(screen.getByTestId('invite-card-name')).toHaveTextContent('Lennox Emmanuel');
-    expect(screen.getByTestId('invite-card-link')).toHaveTextContent('wawu/r/lennox');
+    expect(screen.getByTestId('invite-card-link')).toHaveTextContent('wawuafrica.com/r/lennox');
     expect(screen.getByText('Join me on Who Made This? and get paid for what you know.')).toBeTruthy();
     expect(screen.getByLabelText('Creator tick')).toBeTruthy();
     const everything = JSON.stringify(screen.toJSON());
@@ -152,7 +152,7 @@ describe('Share card (RF2)', () => {
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
     await open();
     await fireEvent.press(await screen.findByTestId('invite-card-share'));
-    await waitFor(() => expect(share).toHaveBeenCalledWith({ message: 'Join me on Who Made This? and get paid for what you know. wawu/r/lennox' }));
+    await waitFor(() => expect(share).toHaveBeenCalledWith({ message: 'Join me on Who Made This? and get paid for what you know. https://wawuafrica.com/r/lennox' }));
     expect(screen.queryByTestId('invite-card-save')).toBeNull();
     expect(mockCapture).not.toHaveBeenCalled();
   });

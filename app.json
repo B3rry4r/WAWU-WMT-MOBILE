@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "africa.wawu.wmt",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:wawuafrica.com"
+      ]
     },
     "android": {
       "package": "africa.wawu.wmt",
@@ -28,6 +31,48 @@
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "com.google.android.gms.permission.AD_ID"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/r/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/selfie"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/receipt/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/u/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/c/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {

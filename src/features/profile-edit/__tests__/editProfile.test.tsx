@@ -162,9 +162,9 @@ describe('M8 · Edit profile', () => {
     await boot();
     const field = await screen.findByTestId('edit-handle');
     expect(field.props.value).toBe('@lennox');
-    expect(screen.getByText('wawu/lennox')).toBeTruthy();
+    expect(screen.getByText('wawuafrica.com/u/lennox')).toBeTruthy();
     await fireEvent.changeText(field, '@lennox_films');
-    expect(screen.getByText('wawu/lennox_films')).toBeTruthy();
+    expect(screen.getByText('wawuafrica.com/u/lennox_films')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('edit-save'));
     await saveLands();
     expect(patches()[0].body).toEqual({ handle: 'lennox_films' });

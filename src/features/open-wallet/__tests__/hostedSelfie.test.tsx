@@ -194,8 +194,9 @@ describe('A6 · Selfie hand-off and A7 · Back from the secure page', () => {
       rtl.fireEvent.press(app.screen.getByTestId('open-wallet-selfie-continue'));
     });
     await rtl.waitFor(() => expect(opened).toEqual([SECURE_PAGE]));
-    // No return address is sent: the app has no https one (G-827); the body is empty.
-    expect(JSON.parse(calls('POST', '/money/identity/liveness')[0].body)).toEqual({});
+    // LINKS-01 (G-827): the return address is the website's own /selfie, an app link the Hub lists in
+    // NUVION_LIVENESS_REDIRECT_ORIGINS; it carries nothing else.
+    expect(JSON.parse(calls('POST', '/money/identity/liveness')[0].body)).toEqual({ redirectUrl: 'https://wawuafrica.com/selfie' });
     // The person finishes there and switches back to the app: the result is read.
     fallback['GET /money/identity/liveness'] = liveness({ state: 'passed' });
     await rtl.act(async () => {
@@ -205,6 +206,34 @@ describe('A6 · Selfie hand-off and A7 · Back from the secure page', () => {
     expect(app.screen.getByText('Back from the secure page. Your selfie is approved.')).toBeTruthy();
     await rtl.fireEvent.press(app.screen.getByText('Continue'));
     expect(app.onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('LINKS-01: a Hub that does not list the return address answers document_request_invalid, and the selfie is started again with no address', async () => {
+    routes['POST /money/identity/liveness'] = [
+      { status: 400, body: { statusCode: 400, message: 'That return address is not allowed.', reason: { code: 'document_request_invalid', message: 'That return address is not allowed.' } } },
+      liveness({ state: 'pending', url: SECURE_PAGE }),
+    ];
+    const app = await hostedScreen();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(await app.screen.findByTestId('open-wallet-selfie-continue'));
+    });
+    await rtl.waitFor(() => expect(opened).toEqual([SECURE_PAGE]));
+    const posts = calls('POST', '/money/identity/liveness');
+    expect(posts).toHaveLength(2);
+    expect(JSON.parse(posts[0].body)).toEqual({ redirectUrl: 'https://wawuafrica.com/selfie' });
+    expect(JSON.parse(posts[1].body)).toEqual({});
+    expect(app.onDropped).not.toHaveBeenCalled();
+  });
+
+  it('LINKS-01: any other refusal is not started again', async () => {
+    routes['POST /money/identity/liveness'] = [{ status: 503, body: { statusCode: 503, message: 'The bank is not answering.', reason: { code: 'provider_unreachable', message: 'The bank is not answering.' } } }];
+    const app = await hostedScreen();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(await app.screen.findByTestId('open-wallet-selfie-continue'));
+    });
+    expect(await app.screen.findByText("We couldn't reach the secure page")).toBeTruthy();
+    expect(calls('POST', '/money/identity/liveness')).toHaveLength(1);
+    expect(opened).toEqual([]);
   });
 
   it('a person who has already passed is shown A7 straight away, and nothing is started', async () => {

@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 289.**
+**Launch tasks done: 176 of 290.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 104 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 57 | 0 | 0 | 0 |
+| verifying | 58 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -62,6 +62,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-40](../tasks/WALLET-40.md) Alert when your account number is ready (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [EVENTS-13](../tasks/EVENTS-13.md) Call-off: order cap, cancel once, free tickets (You)
+- [LINKS-01](../tasks/LINKS-01.md) Every link WAWU sends lands somewhere that works (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
@@ -271,6 +272,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · LINKS-01 · Round 3 built (Sonnet builder; web `wmt/LINKS-01` `629393c` on `252ae11`, mobile `wmt/LINKS-01` on `2142c846`; web and mobile only; status verifying): the website's `/receipt/<code>` adds "Check this receipt" (the Hub's `{NEXT_PUBLIC_API_BASE_URL}/api/hub/r/<code>`) beside "Open the app", with a live line in `check-site-mode`; A6 still sends `https://wawuafrica.com/selfie` and starts the selfie again with no address when the Hub answers `document_request_invalid`, so a Hub without `NUVION_LIVENESS_REDIRECT_ORIGINS` is not broken.
+- 17 Oct 2026 · LINKS-01 · Round 2 built (Sonnet builder; web `wmt/LINKS-01` `252ae11` on `239cbcf`, mobile `wmt/LINKS-01` on `c72a062b`; no backend, wawu-id or migration change; status verifying): by the lead's rulings the activation email (`/activate`, app opens sign-in), receipts (`/receipt/<code>`, never `/r/`), the profile share (`/u/<handle>`) and the room link (`/c/<slug>`) are app links with a fallback page, so 8 of the 9 broken links are fixed; H1 (the privacy export email) is left for FIX-53. Six app paths in `app.json`, both `.well-known` files and the app's routes; the profile Share and the Edit profile hint carry `https://wawuafrica.com/u/<handle>`. Hub setting still to set: `RECEIPT_VERIFY_BASE_URL=https://wawuafrica.com/receipt` (G-67).
+- 17 Oct 2026 · LINKS-01 · Built (Sonnet builder; web `wmt/LINKS-01` on `origin/main` `5b45d65`, mobile `wmt/LINKS-01` on `origin/wmt/MERGE-8` `cc436a53`; no backend, wawu-id or migration change; status verifying): 22 links WAWU sends or receives audited, 9 landed nowhere that works, 4 fixed (reset and sign-in-alert emails reopened in join-only mode; the invite shared as `https://wawuafrica.com/r/<code>`; the hosted selfie returns to `https://wawuafrica.com/selfie`), 5 left for a ruling. The website serves `/r/<code>` and `/selfie` as app links (small dark "Open in the WAWU app" page) and the two `.well-known` files; `app.json` registers them. Owner values missing: Apple team id and Android signing fingerprint. Order 298 taken by moving CHECK-3 and the 12 tasks after it up one.
 - 17 Oct 2026 · POINTS-05 · Built (Sonnet builder; mobile `wmt/POINTS-05` on `origin/wmt/MERGE-7` `04e49020`, no backend change, no migration; status verifying): Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b) from `GET /me/points` and the points convert routes, once with a fresh quote per attempt and the request kept on the phone until the Hub answers, Wallet's To cash button waits on SHARED-CHANGES POINTS-05 #2 (it fails six cases of a test that is not mine); the AI line, per-row detail and Buy buttons are not drawn (G-835, G-836, POINTS-06); V9 NOT RUN (no Nuvion-mode stack).
 - 17 Oct 2026 · SCHOOLS-11 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025131000_school_settlement`; status verifying): a school's 85% is sent from WAWU's account to its bank account at the class's start through the provider seam (`bankTransfer` from the merchant account), a class called off sends the fees back to the students' wallets, one decision per enrolment; a failed payout is retried once under a new reference and never doubles; the school's bank account is saved only after the bank confirms it; dashboard routes for finance and the superadmin.
 - 17 Oct 2026 · SCHOOLS-09 · Built (Sonnet builder; backend `wmt/B2` on `origin/wmt/MERGE-7` 432f017, mobile records only; migration `20261025130000_school_enrolment_report`; status verifying): the school gets one mail with the student's name, email, phone, course, intake and consent time when an enrolment is paid (or free); `GET /schools/enrolments` is My courses with current and finished tabs.
@@ -283,6 +287,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · ME-13 · Built (Sonnet builder; backend `wmt/ME-13` `ca103ec` on `wmt/MERGE-7` `9c40478`, mobile `wmt/ME-13` on `0aca612c`; no migration; status verifying): Verification at `/verification`, opened from a new Me menu row. The Identity check row is the wallet's state from the Hub (M16 no wallet, M17 a rejected review or a selfie step out of tries) and opens Open your wallet; M15 "Paid, still confirming" reads the new additive `GET /plans/purchases/pending`. Gaps G-870 to G-872, SHARED-CHANGES ME-13 #1 and #2.
 - 17 Oct 2026 · INBOX-15 · Built (Sonnet builder; backend `wmt/INBOX-15` `f304f26` on `origin/wmt/MERGE-7` `9c40478`, mobile record on `0aca612c`; migration `20261025040000_money_requests`; status verifying): a user asks the other person in a chat for money (`POST /chats/:chatId/money-requests`, a chat bubble of kind `money_request`); the other pays it through the WALLET-07 send path (Idempotency-Key, PIN, fee quote) or declines it, and a request is paid exactly once under parallel taps, replays and a lost provider answer; requests are rows in `GET /inbox` and the Money filter (`kind=money_request`), and reach the other phone live (`money_request.updated`).
 - 17 Oct 2026 · VERIFY-01, AUTH-06 · Patch round 4 (Sonnet builder; mobile `wmt/VERIFY-01` now holds AUTH-06's mobile side, `fe5b218c` merged): the merged route order fixed as verified, a discoverer never mounts VF1, P10's Become a creator is the compact pill, A13 has a Back to A12, a route test walks both sign-ups on the merged layout; status verifying.
-- 17 Oct 2026 · VERIFY-01 · Built (Sonnet builder; mobile `wmt/VERIFY-01` on `origin/wmt/MERGE-7` `04e49020` with REF-03 and DV2-05 merged, no backend change, no migration; status verifying): VF1 "Your bonus is waiting" from `GET /plans`, VF2 Your shop with the ring, the Draft tag and the draft form (`/product-drafts`), the draft tile on Me and a "Your shop" row on Create; the A4 hand-on is SHARED-CHANGES VERIFY-01 #1 and #2 (fenced, open); G-840 to G-842.
-- 17 Oct 2026 · AUTH-06 · Built, awaiting verification (DEV, YOU): A11, A12 and A13 open after sign-up from WAWU ID's progress, Become a creator (P10) opens A11, and the account type reaches the Hub's profile right after sign-up on a route of its own (`PUT /users/me/account-type`, no wallet); backend `GET/PUT /users/me/interests`, `GET /explore/suggested-creators`; gaps G-17, G-1711.
-- 17 Oct 2026 · EXPLORE-07 · Built (Sonnet builder; mobile `wmt/EXPLORE-07` on `origin/wmt/MERGE-7` `0aca612c`, no backend change, no migration; status verifying): the Explore slider takes turns between adverts (`GET /ads?placement=explore_slider`) and featured events, advert first, with dots and swipe and view and tap counts through ADS-05; adverts only with no event, no slider with neither; the TGIF card sits under it and opens the reader; creators rail heading is "Who Made This?"; X17 Sponsored block not drawn (an advert is served only while its event is upcoming).

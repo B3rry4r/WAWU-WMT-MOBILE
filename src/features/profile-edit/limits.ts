@@ -22,6 +22,3 @@ export const limits = {
 
 /** UpdateUserProfileDto.handle `pattern`: letters, numbers, dots and underscores. */
 export const HANDLE_PATTERN = /^[a-zA-Z0-9_.]+$/;
-
-/** CLAUDE.md, "Code": links are written `wawu/...`. M8's preview under the handle. */
-export const PROFILE_LINK_PREFIX = 'wawu/';

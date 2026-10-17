@@ -175,13 +175,13 @@ describe('M1 · Me', () => {
     expect(onEditProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('a user can tap Share: the share sheet gets their name and wawu/ link; when it cannot open they are told', async () => {
+  it('a user can tap Share: the share sheet gets their name and https profile link; when it cannot open they are told', async () => {
     answers = header();
     const share = jest.spyOn(Share, 'share').mockResolvedValueOnce({ action: 'sharedAction' });
     await boot();
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-share'));
-    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This\nwawu/lennox' });
+    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This\nhttps://wawuafrica.com/u/lennox' });
 
     share.mockRejectedValueOnce(new Error('no share sheet'));
     await fireEvent.press(screen.getByTestId('me-share'));
