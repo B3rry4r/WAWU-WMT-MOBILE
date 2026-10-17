@@ -1,12 +1,13 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { pressScale } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
-import { radius, useWawu } from '@/theme';
+import { radius } from '@/theme';
 
 import type { AdCard } from './api';
-import { adMetrics as m, adWords } from './look';
+import { adInk, adMetrics as m, adWords, shadeAt, slotChipFill } from './look';
 
 export type SponsoredSlotProps = {
   ad: AdCard;
@@ -15,43 +16,55 @@ export type SponsoredSlotProps = {
 };
 
 /**
- * H36 · The sponsored card on Today, in TGIF's place when TGIF is off: the artwork, SPONSORED, the headline, the line
- * under it, and the card's button word at the right. Every word but SPONSORED is the advertiser's, from `GET /ads`.
- * Every card has a picture (R-59): a campaign without artwork is never served, so there is no picture-less layout.
+ * H1 and H36 · The ad card on Today, always in TGIF's old place when the Hub serves a campaign (R-59): the artwork across the
+ * whole card under a shade, the AD chip at the top left, the headline and the line under it at the bottom left and the
+ * campaign's button word on a white pill at the bottom right. Every word but AD is the advertiser's, from `GET /ads`. The card
+ * is dark in both themes (a picture under a shade, white words), as the board draws it. Every card has a picture (R-59): a
+ * campaign without artwork is never served, so there is no picture-less layout. The board's three dots mean a rotation of
+ * adverts; the Hub serves one card for the place, so no dots are drawn (R-47). The pill is the card's own button word, not a
+ * second control: the whole card is the one button.
  */
 export function SponsoredSlot({ ad, onOpen }: SponsoredSlotProps) {
-  const { colors } = useWawu();
   const ring = useFocusRing();
   return (
     <Pressable
       testID="today-sponsored"
       accessibilityRole="button"
-      accessibilityLabel={`Sponsored. ${ad.headline}.${ad.subline ? ` ${ad.subline}.` : ''} ${ad.ctaLabel}`}
+      accessibilityLabel={`Ad. ${ad.headline}.${ad.subline ? ` ${ad.subline}.` : ''} ${ad.ctaLabel}`}
       onPress={onOpen}
       {...ring.handlers}
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: colors.surfaceCard, transform: [{ scale: pressed ? pressScale : 1 }] },
-        ring.style,
-      ]}
+      style={({ pressed }) => [styles.card, { transform: [{ scale: pressed ? pressScale : 1 }] }, ring.style]}
     >
-      {/* The canvas's inset hairline sits under the picture and the words, so it is drawn first and they cover it. */}
-      <View pointerEvents="none" style={[styles.hairline, { borderColor: colors.borderHairline }]} />
-      <Image testID="today-sponsored-artwork" source={ad.artworkUrl} style={styles.art} contentFit="cover" accessibilityElementsHidden />
-      <View style={styles.words}>
-        <Text style={[adWords.slotLabel, { color: colors.textMuted }]}>SPONSORED</Text>
-        <Text testID="today-sponsored-headline" numberOfLines={1} style={[adWords.slotHeadline, { color: colors.textPrimary }]}>
-          {ad.headline}
-        </Text>
-        {ad.subline ? (
-          <Text testID="today-sponsored-subline" numberOfLines={2} style={[adWords.slotSubline, { color: colors.textMuted }]}>
-            {ad.subline}
-          </Text>
-        ) : null}
+      <Image testID="today-sponsored-artwork" source={ad.artworkUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden />
+      <LinearGradient
+        testID="today-sponsored-shade"
+        pointerEvents="none"
+        colors={m.slotShade.colors.map(shadeAt) as unknown as readonly [string, string]}
+        locations={m.slotShade.locations as unknown as readonly [number, number]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.chip}>
+        <Text style={adWords.slotChip}>AD</Text>
       </View>
-      <Text testID="today-sponsored-cta" numberOfLines={1} style={[adWords.slotAction, styles.action, { color: colors.accentFg }]}>
-        {ad.ctaLabel}
-      </Text>
+      <View style={styles.words}>
+        <View style={styles.text}>
+          <Text testID="today-sponsored-headline" numberOfLines={1} style={adWords.slotHeadline}>
+            {ad.headline}
+          </Text>
+          {ad.subline ? (
+            <Text testID="today-sponsored-subline" numberOfLines={2} style={[adWords.slotSubline, styles.subline]}>
+              {ad.subline}
+            </Text>
+          ) : null}
+        </View>
+        <View testID="today-sponsored-button" style={styles.button}>
+          <Text testID="today-sponsored-cta" numberOfLines={1} style={adWords.slotButton}>
+            {ad.ctaLabel}
+          </Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -61,12 +74,31 @@ const styles = StyleSheet.create({
     height: m.slotHeight,
     borderRadius: radius.card,
     overflow: 'hidden',
-    flexDirection: 'row',
-    alignItems: 'stretch',
+    paddingVertical: m.slotPadY,
+    paddingHorizontal: m.slotPadX,
+    justifyContent: 'space-between',
     flexShrink: 0,
   },
-  hairline: { ...StyleSheet.flatten(StyleSheet.absoluteFill), borderRadius: radius.card, borderWidth: 1 },
-  art: { width: m.slotHeight },
-  words: { flex: 1, minWidth: 0, paddingVertical: m.slotPadY, paddingHorizontal: m.slotPadX, justifyContent: 'center', gap: m.slotGap },
-  action: { alignSelf: 'center', marginRight: m.slotActionRight, flexShrink: 1, maxWidth: '35%' },
+  chip: {
+    alignSelf: 'flex-start',
+    height: m.slotChipHeight,
+    paddingHorizontal: m.slotChipPadX,
+    borderRadius: radius.chip,
+    backgroundColor: slotChipFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  words: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: m.slotWordsGap },
+  text: { flex: 1, minWidth: 0 },
+  subline: { marginTop: m.slotSublineAbove },
+  button: {
+    height: m.slotButtonHeight,
+    paddingHorizontal: m.slotButtonPadX,
+    borderRadius: radius.button,
+    backgroundColor: adInk,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 1,
+    maxWidth: '45%',
+  },
 });

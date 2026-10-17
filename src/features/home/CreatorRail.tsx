@@ -48,7 +48,7 @@ export type CreatorRailProps = {
 };
 
 /**
- * "Creators to discover" (H1): a sideways rail of creators, each with Follow in place. The
+ * "Who Made This?" (H1, R-69): a sideways rail of creators, each with Follow in place. The
  * Hub's answer is changed at once and put right by its reply; a refused follow goes back and
  * says so. "See all" (X4) and a card opening the profile (M5) are added by EXPLORE-02 and
  * ME-02 with their screens (R-27, R-41).
@@ -120,7 +120,7 @@ export function CreatorRail({ creators, onRetry, retrying }: CreatorRailProps) {
 
   return (
     <View style={styles.section}>
-      <WawuText variant="h2">Creators to discover</WawuText>
+      <WawuText variant="h2">Who Made This?</WawuText>
       {body}
       {failed ? (
         <WawuText variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="today-follow-failed">

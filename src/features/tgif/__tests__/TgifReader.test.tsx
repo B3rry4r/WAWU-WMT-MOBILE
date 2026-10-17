@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text as NativeText, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text as NativeText, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { darkColors } from '@/theme/tokens.generated';
@@ -84,9 +84,9 @@ const statsOf = (amen: Partial<Record<(typeof cardOrder)[number], number>>, mine
   sharedByMe: false,
 });
 
-async function boot(props: { onClose?: () => void; onOpenInbox?: () => void; now?: Date } = {}) {
+async function boot(props: { onClose?: () => void; now?: Date } = {}) {
   const onClose = props.onClose ?? jest.fn();
-  await render(<TgifReader onClose={onClose} onOpenInbox={props.onOpenInbox} now={props.now ?? opened} />);
+  await render(<TgifReader onClose={onClose} now={props.now ?? opened} />);
   return { onClose };
 }
 
@@ -388,13 +388,78 @@ describe('States', () => {
     expect(rtl.screen.queryByTestId('tgif-text')).toBeNull();
   });
 
-  it('opens the share sheet from any card', async () => {
+  // DV2-01, R-58 a: Share opens the phone's own share sheet with the verse as text (it was H35's in-app sheet, built by HOME-09).
+  it("opens the phone's share sheet from any card, with the verse, where it is from and the link, and no in-app sheet", async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
     await boot();
     await rtl.screen.findByTestId('tgif-text');
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
-    expect(rtl.screen.queryByTestId('tgif-share-sheet')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
-    expect(await rtl.screen.findByTestId('tgif-share-sheet')).toBeTruthy();
+    expect(share).toHaveBeenCalledTimes(1);
+    expect((share.mock.calls[0][0] as { message: string }).message).toBe(`\u201c${day.verse}\u201d\nPsalm 118:24 (KJV)\nwawu/tgif`);
+    expect(rtl.screen.queryByTestId('tgif-share-sheet')).toBeNull();
+    share.mockRestore();
+  });
+
+  it('counts a share once the phone has sent something, and not when the sheet was closed without sending', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    const share = jest.spyOn(Share, 'share').mockResolvedValueOnce({ action: Share.dismissedAction }).mockResolvedValueOnce({ action: Share.sharedAction });
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.act(async () => undefined);
+    expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull();
+    share.mockRestore();
+  });
+
+  it('says so when the phone could not open its share sheet, and clears it on the next try', async () => {
+    const share = jest.spyOn(Share, 'share').mockRejectedValueOnce(new Error('no sheet')).mockResolvedValueOnce({ action: Share.dismissedAction });
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect((await rtl.screen.findByTestId('tgif-share-problem')).props.children).toBe('The verse could not be shared. Try again.');
+    expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull());
+    share.mockRestore();
+  });
+});
+
+// DV2-01, H29 to H34: the middle pill reads "N read today" with the eye, between Amen and Share.
+describe('the read count pill', () => {
+  const inRow = () => rtl.within(rtl.screen.getByTestId('tgif-controls'));
+
+  it('reads "N read today" with the Hub\'s count, in the compact form the Amen count uses, between Amen and Share', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({ verse: 2149 }), readers: 3412 })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('3.4K read today');
+    expect(rtl.screen.getByLabelText('3.4K read today')).toBeTruthy();
+    const order = (JSON.stringify(rtl.screen.toJSON()).match(/"testID":"tgif-(amen|readers|share)"/g) ?? []).map((m) => m.slice(15, -1));
+    expect(order).toEqual(['amen', 'readers', 'share']);
+    expect(inRow().queryByRole('button', { name: /read today/ })).toBeNull();
+  });
+
+  it("shows the Hub's answer to this person's own read when it is higher than the numbers it gave earlier (which lacked them)", async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 41 })];
+    answers[`POST /tgif/${DATE}/read`] = [ok({ readers: 42, counted: true })];
+    await boot();
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('42 read today');
+  });
+
+  it('is not drawn while the Hub has given no count', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = ['offline'];
+    answers[`POST /tgif/${DATE}/read`] = [refused(500, 'Server error')];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(rtl.screen.queryByTestId('tgif-readers')).toBeNull();
+    expect(rtl.screen.queryByText(/read today/)).toBeNull();
   });
 });
 

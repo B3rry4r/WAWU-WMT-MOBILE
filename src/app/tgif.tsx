@@ -19,7 +19,6 @@ export default function TgifRoute() {
       <TgifReader
         date={typeof date === 'string' ? date : undefined}
         onClose={leave}
-        onOpenInbox={() => router.push('/inbox')}
         onOpenEvent={(id) => router.push({ pathname: '/events/[id]', params: { id } })}
       />
     </>

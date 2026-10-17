@@ -17,9 +17,9 @@ import type { TgifCard, TgifDay } from './api/tgif';
 import { CardBackdrop } from './CardBackdrop';
 import { ink, looks } from './look';
 import { cardLabels, cardText, compactCount, fitSize, headerLine, readerDay, readerSteps, sponsoredSlot, wordLeading, wordSize, type WordRoom } from './model';
-import { partMetrics, Progress } from './parts';
-import { ShareSheet } from './ShareSheet';
-import { useAmen, useCountRead, useDay, useStats } from './useTgif';
+import { partMetrics, Progress, ReadPill } from './parts';
+import { COULD_NOT_SHARE_VERSE, shareVerse } from './sharePhone';
+import { useAmen, useCountRead, useCountShare, useDay, useStats } from './useTgif';
 
 /**
  * design/_gen/home.js, H29 to H34: where everything sits on a card. The canvas keeps 170 clear below
@@ -83,8 +83,6 @@ export function wordRoom(card: TgifCard, viewport: WordRoom): WordRoom {
 export type TgifReaderProps = {
   /** Leaves the reader: the close control, and Done on the last card. */
   onClose: () => void;
-  /** Where a person with no chats is sent from the share sheet. */
-  onOpenInbox?: () => void;
   /** Opens an event (E2): where the sponsored card's button leads. Without it the reader offers no sponsored card, so it never draws a button that does nothing. */
   onOpenEvent?: (eventId: string) => void;
   /** The moment the reader was opened; the day it reads is this moment's calendar day on the phone. */
@@ -95,18 +93,18 @@ export type TgifReaderProps = {
 
 /**
  * H29 to H34 · TGIF. The five cards of today, one at a time, full screen: tap to continue, Amen
- * on any card (and inline on the prayer), Share from any card (H35), Done on the last. Every word
+ * on any card (and inline on the prayer), Share from any card (the phone's share sheet, R-58 a), Done on the last. Every word
  * and count comes from the Hub: the text from `GET /tgif/{date}`, the Amen counts and which the
- * person has said from `GET /tgif/{date}/stats`. When a campaign is live, the sponsored card (H33,
+ * person has said, and how many have read today, from `GET /tgif/{date}/stats`. When a campaign is live, the sponsored card (H33,
  * `GET /ads?placement=tgif_card`, ADS-01) is a sixth step before the takeaway; the cards never wait for it.
  */
-export function TgifReader({ onClose, onOpenInbox, onOpenEvent, now, date: requested }: TgifReaderProps) {
+export function TgifReader({ onClose, onOpenEvent, now, date: requested }: TgifReaderProps) {
   const [date] = useState(() => readerDay(requested, now));
   const day = useDay(date);
   const ad = useAd('tgif_card', Boolean(onOpenEvent));
-  useCountRead(date, Boolean(day.data));
+  const marked = useCountRead(date, Boolean(day.data));
 
-  if (day.data) return <Cards date={date} day={day.data} ad={ad.data ?? null} onClose={onClose} onOpenInbox={onOpenInbox} onOpenEvent={onOpenEvent} />;
+  if (day.data) return <Cards date={date} day={day.data} ad={ad.data ?? null} marked={marked} onClose={onClose} onOpenEvent={onOpenEvent} />;
   return (
     <Frame onClose={onClose}>
       {day.isError ? (
@@ -150,12 +148,13 @@ type CardsProps = {
   date: string;
   day: TgifDay;
   ad: AdCard | null;
+  /** The day's readers as the Hub answered this person's own read, which includes them. */
+  marked: number | null;
   onClose: () => void;
-  onOpenInbox?: () => void;
   onOpenEvent?: (eventId: string) => void;
 };
 
-function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps) {
+function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(0);
@@ -164,13 +163,14 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
   const [passedSlot, setPassedSlot] = useState(false);
   const offer = onOpenEvent && ad && !passedSlot ? ad : null;
   const steps = readerSteps(Boolean(offer));
-  const [sharing, setSharing] = useState(false);
+  const [shareFailed, setShareFailed] = useState(false);
   // The scroll area's size once it has been laid out; until then the text is sized by its length alone.
   const [viewport, setViewport] = useState<WordRoom | null>(null);
   // Whether the words are taller than their area: only then the scroll bar is shown.
   const [overflow, setOverflow] = useState(false);
   const stats = useStats(date);
   const amen = useAmen(date);
+  const counted = useCountShare(date);
 
   const step = steps[Math.min(at, steps.length - 1)];
   const sponsored = step.kind === 'sponsored';
@@ -181,6 +181,8 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
   const mine = stats.data?.cards.find((c) => c.card === card);
   const said = Boolean(mine?.amenByMe);
   const count = mine && mine.amen > 0 ? compactCount(mine.amen) : undefined;
+  // The Hub's count for the day, or the count its answer to this person's own read gave if that is higher (it includes them); none until one has come.
+  const readers = Math.max(stats.data?.readers ?? 0, marked ?? 0);
   const text = cardText(day, card);
   const size = viewport ? fitSize(card, text, wordRoom(card, viewport)) : wordSize(card, text);
   const onViewport = ({ nativeEvent }: LayoutChangeEvent) => {
@@ -205,6 +207,15 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
     advance();
   };
   const toggleAmen = () => amen.say({ card, on: !said });
+  // Share opens the phone's own share sheet with the verse and its link (R-58 a); it counts once something has gone out.
+  const shareToday = async () => {
+    setShareFailed(false);
+    try {
+      if ((await shareVerse(day)) === 'shared') counted.mutate();
+    } catch {
+      setShareFailed(true);
+    }
+  };
 
   return (
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
@@ -289,6 +300,11 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
               Your Amen could not be saved. Try again.
             </Text>
           ) : null}
+          {shareFailed ? (
+            <Text variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-share-problem" style={[font(600), styles.problem]}>
+              {COULD_NOT_SHARE_VERSE}
+            </Text>
+          ) : null}
           <View style={styles.pills}>
             <Button
               testID="tgif-amen"
@@ -300,7 +316,8 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
               variant={said ? 'white' : 'glass'}
               onPress={toggleAmen}
             />
-            <Button testID="tgif-share" label="Share" icon="Share2" size="pill" variant="glass" onPress={() => setSharing(true)} />
+            {readers > 0 ? <ReadPill count={compactCount(readers)} /> : null}
+            <Button testID="tgif-share" label="Share" icon="Share2" size="pill" variant="glass" onPress={() => void shareToday()} />
           </View>
           <View style={styles.continueRow}>
             <Pressable testID="tgif-hint" accessible={false} onPress={advance} style={styles.hintArea}>
@@ -317,7 +334,6 @@ function Cards({ date, day, ad, onClose, onOpenInbox, onOpenEvent }: CardsProps)
         </View>
         </>
       )}
-      <ShareSheet visible={sharing} onClose={() => setSharing(false)} date={date} day={day} onOpenInbox={onOpenInbox} />
     </View>
   );
 }

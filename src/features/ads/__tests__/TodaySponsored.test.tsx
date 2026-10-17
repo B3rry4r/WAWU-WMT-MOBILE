@@ -6,8 +6,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { localDay } from '@/features/tgif/model';
 
 /**
- * H36 on Today (ADS-01): with TGIF off, the sponsored card takes TGIF's place, from `GET /ads?placement=today_slot`, and
- * opens its event. With TGIF on, with no campaign, while it loads and when it cannot be read, nothing is drawn.
+ * H1 and H36 on Today (ADS-01, reworked by DV2-01 under R-59): the ad card is always in TGIF's old place, from
+ * `GET /ads?placement=today_slot`, whatever the person's TGIF switch says, and opens its event. With no campaign, while it
+ * loads and when it cannot be read, nothing is drawn.
  */
 const mockPush = jest.fn();
 let mockFocused = true;
@@ -159,16 +160,18 @@ afterEach(async () => {
   clients.splice(0).forEach((c) => c.clear());
 });
 
-describe('H36 · the sponsored card on Today with TGIF off', () => {
+describe('H1 and H36 · the ad card on Today', () => {
   it("asks the Hub for Today's placement and draws the card in TGIF's place, with the advertiser's words and the button word the Hub served", async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
     expect(calls(T.ads)).toHaveLength(1);
     expect(calls(T.ads)[0].query).toBe('?placement=today_slot');
-    expect(screen.getByText('SPONSORED')).toBeTruthy();
+    expect(screen.getByText('AD')).toBeTruthy();
+    expect(screen.queryByText('SPONSORED')).toBeNull();
     expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Harvest Praise Night');
     expect(screen.getByTestId('today-sponsored-subline')).toHaveTextContent('Lagos · Sun 2 November · from ₦3,500');
     expect(screen.getByTestId('today-sponsored-cta')).toHaveTextContent('Book a seat');
+    expect(screen.getByTestId('today-sponsored-button')).toBeTruthy();
     expect(screen.getByTestId('today-sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
     expect(screen.queryByTestId('today-tgif')).toBeNull();
     expect(calls(T.day)).toHaveLength(0);
@@ -224,25 +227,41 @@ describe('H36 · the sponsored card on Today with TGIF off', () => {
   });
 });
 
-describe('Today with nothing sponsored to show', () => {
-  it('with TGIF on, the TGIF card is there, and no card is asked for or drawn', async () => {
+describe('Today with the TGIF card still on it (DV2-RM removes that card)', () => {
+  it("with TGIF on, the ad card is asked for and drawn too, in TGIF's old place above the TGIF card (R-59)", async () => {
     answers[T.tgif] = [ok({ show: true })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    await settle();
-    expect(calls(T.ads)).toHaveLength(0);
-    expect(screen.queryByTestId('today-sponsored')).toBeNull();
-    expect(screen.queryByText('SPONSORED')).toBeNull();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    expect(calls(T.ads)).toHaveLength(1);
+    const ids = (JSON.stringify(screen.toJSON()).match(/"testID":"[^"]+"/g) ?? []).map((m) => m.slice(10, -1));
+    expect(ids.indexOf('today-sponsored')).toBeGreaterThan(ids.indexOf('today-balance-card'));
+    expect(ids.indexOf('today-sponsored')).toBeLessThan(ids.indexOf('today-tgif'));
+    await rtl.waitFor(() => expect(reported()).toEqual(['view']));
   });
 
-  it('a TGIF switch that cannot be read leaves TGIF on, so no card is asked for', async () => {
+  it('a TGIF switch that cannot be read leaves TGIF on and the ad card is still asked for and drawn', async () => {
     answers[T.tgif] = ['offline'];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    expect(calls(T.ads)).toHaveLength(0);
-    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    expect(calls(T.ads)).toHaveLength(1);
   });
 
+  it('with TGIF on and no live campaign, the TGIF card is there and no ad frame is drawn', async () => {
+    answers[T.tgif] = [ok({ show: true })];
+    answers[T.ads] = [ok(null)];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    await rtl.waitFor(() => expect(calls(T.ads)).toHaveLength(1));
+    await settle();
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(screen.queryByText('AD')).toBeNull();
+  });
+
+});
+
+describe('Today with nothing sponsored to show', () => {
   it('with no live campaign (data: null), Today shows without a frame or a gap, and nothing is reported', async () => {
     answers[T.ads] = [ok(null)];
     const screen = await boot();
@@ -250,7 +269,7 @@ describe('Today with nothing sponsored to show', () => {
     await rtl.waitFor(() => expect(calls(T.ads)).toHaveLength(1));
     await settle();
     expect(screen.queryByTestId('today-sponsored')).toBeNull();
-    expect(screen.queryByText('SPONSORED')).toBeNull();
+    expect(screen.queryByText('AD')).toBeNull();
     expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy();
     expect(calls(T.events)).toHaveLength(0);
   });
@@ -282,11 +301,12 @@ describe('Today with nothing sponsored to show', () => {
     expect(screen.queryByTestId('today-loading')).toBeNull();
   });
 
-  it('while Today itself is loading, no card is asked for yet', async () => {
+  it('while Today itself is loading, the card is not drawn and no view is reported', async () => {
     answers[T.tgif] = ['hold'];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-loading')).toBeTruthy());
     await settle();
-    expect(calls(T.ads)).toHaveLength(0);
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(reported()).toEqual([]);
   });
 });
