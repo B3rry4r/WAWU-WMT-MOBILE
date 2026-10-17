@@ -356,13 +356,12 @@ describe('E13 to E15 · the wizard', () => {
     expect(rtl.screen.getByTestId('host-done')).toBeTruthy();
   });
 
-  it('draws Discover and Host event only: the My events tab (EVENTS-08) is not drawn (R-47)', async () => {
+  it('draws Discover, My events and Host event: the My events tab is EVENTS-08\'s and is built', async () => {
     serve(true);
     await bootHost();
     await rtl.screen.findByTestId('host-name');
     const labels = rtl.screen.getAllByRole('tab').map((t) => t.props.accessibilityLabel);
-    expect(labels).toEqual(['Discover', 'Host event']);
-    expect(rtl.screen.queryByTestId('events-tab-mine')).toBeNull();
+    expect(labels).toEqual(['Discover', 'My events', 'Host event']);
   });
 
   it('keeps everything typed after a failed submit, says why, and sends again on retry', async () => {

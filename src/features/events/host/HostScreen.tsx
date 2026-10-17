@@ -51,12 +51,14 @@ export type HostScreenProps = {
   onBack: () => void;
   onDiscover: () => void;
   onDone: () => void;
+  /** The My events tab, and E16's My events button (E17, EVENTS-08). */
+  onMine?: () => void;
   /** The clock the wizard checks a start against. */
   now?: () => number;
 };
 
 /** E13 to E16, and E21 for an account without a tick: the host wizard and its ends. */
-export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostScreenProps) {
+export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now }: HostScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
@@ -101,7 +103,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
   // A refetch that fails after the form is up never replaces it: what the person typed stays on screen.
   const failed = !verification.data && verification.isError ? verification.error : !options.data && options.isError ? options.error : null;
 
-  if (sent) return <Submitted name={sent.name} onDone={onDone} />;
+  if (sent) return <Submitted name={sent.name} onDone={onDone} onMyEvents={onMine} />;
 
   if (!loading && !failed && verification.data && (refused || !mayHost(verification.data))) {
     return <HostGate pricing={verification.data.pricing} onBack={onBack} />;
@@ -158,7 +160,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
   return (
     <View testID="host-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Host an event" onBack={back} backTestID="host-back" />
-      <EventsTabs active="host" onChange={(tab) => (tab === 'discover' ? onDiscover() : undefined)} />
+      <EventsTabs active="host" onChange={(tab) => (tab === 'discover' ? onDiscover() : tab === 'mine' ? onMine?.() : undefined)} />
       {loading ? (
         <HostSkeleton />
       ) : failed || !opts ? (

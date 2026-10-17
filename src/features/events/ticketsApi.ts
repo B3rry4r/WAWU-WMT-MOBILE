@@ -14,6 +14,8 @@ export type HeldTicket = components['schemas']['HeldTicketView'];
 export type HeldStub = components['schemas']['HeldTicketStub'];
 export type HeldEvent = components['schemas']['HeldTicketEventView'];
 export type HeldView = 'upcoming' | 'past';
+/** One order as the buyer's wallet order view reads it: `returned` says whether a called-off event's refund has landed (E11). */
+export type WalletOrder = components['schemas']['EventWalletOrderView'];
 
 type Envelope<T> = { data?: T | null; pagination?: { nextPage?: number | null; total?: number } };
 
@@ -23,6 +25,7 @@ export const HELD_PAGE_SIZE = 20;
 export const heldRootKey = ['events', 'held', 'list'] as const;
 export const heldKey = (view: HeldView) => [...heldRootKey, view] as const;
 export const heldTicketKey = (id: string) => ['events', 'held', 'one', id] as const;
+export const walletOrderKey = (orderId: string) => ['events', 'held', 'order', orderId] as const;
 
 /** A ticket id is a uuid; anything else in a link is not a ticket and is never sent to the Hub. */
 export const isTicketId = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -54,4 +57,14 @@ export async function fetchHeldTicket(id: string): Promise<HeldTicket> {
   const ticket = body?.data;
   if (!ticket || typeof ticket !== 'object' || !ticket.id || typeof ticket.code !== 'string') throw unreadable('ticket');
   return ticket;
+}
+
+/** `GET /events/orders/wallet/{orderId}` (EVENTS-07): what the order cost and, once the event is called off, what came back (EVENTS-10). Only the buyer reads it. */
+export async function fetchWalletOrder(orderId: string): Promise<WalletOrder> {
+  const body = (await unwrap(
+    api.GET('/api/hub/events/orders/wallet/{orderId}', { params: { path: { orderId } } }),
+  )) as unknown as Envelope<WalletOrder>;
+  const order = body?.data;
+  if (!order || typeof order !== 'object' || !order.id || typeof order.free !== 'boolean' || !order.returned) throw unreadable('order');
+  return order;
 }

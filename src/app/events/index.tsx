@@ -21,6 +21,7 @@ export default function EventsRoute() {
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       onOpenEvent={(id) => router.push({ pathname: '/events/[id]', params: { id } })}
       onHost={() => router.push('/events/host')}
+      onMine={() => router.push('/events/mine')}
     />
   );
 }
