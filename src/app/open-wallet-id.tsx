@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 
 import { IdDocumentScreen } from '@/features/open-wallet/IdDocumentScreen';
 import { OPEN_WALLET_ADDRESS_PATH } from '@/features/open-wallet/entry';
-import { useOpenWalletWay } from '@/features/open-wallet/leave';
+import { useDropDraftOnExit, useOpenWalletWay } from '@/features/open-wallet/leave';
 
 /**
  * A26 · Your ID document (KYC-06): the third step of the review opening, pushed on
@@ -12,6 +12,7 @@ import { useOpenWalletWay } from '@/features/open-wallet/leave';
 export default function OpenWalletIdRoute() {
   const router = useRouter();
   const way = useOpenWalletWay();
+  useDropDraftOnExit();
   return (
     <IdDocumentScreen
       onBack={() => (router.canGoBack() ? router.back() : way.leave())}
@@ -19,6 +20,7 @@ export default function OpenWalletIdRoute() {
       onChecking={way.checking}
       onOpened={way.opened}
       onLeave={way.leave}
+      onDetails={way.details}
     />
   );
 }

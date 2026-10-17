@@ -65,3 +65,9 @@ export const OPEN_WALLET_ADDRESS_PATH = '/open-wallet-address' as const;
 export const OPEN_WALLET_CHECKING_PATH = '/open-wallet-checking' as const;
 /** A29, Rejected (KYC-06): the bank's reasons and what to fix, with Upload again. */
 export const OPEN_WALLET_REJECTED_PATH = '/open-wallet-rejected' as const;
+/**
+ * The first step, opened on purpose to add the details again (KYC-06): a refusal or an expired opening asks for
+ * them, and the first step is the one that collects them. `again` keeps it from sending the person straight back
+ * to where the review stands.
+ */
+export const OPEN_WALLET_DETAILS_AGAIN = { pathname: OPEN_WALLET_PATH, params: { again: '1' } } as const;

@@ -5,6 +5,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
+import { Button } from '@/components/Button';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
@@ -32,6 +33,8 @@ export type CheckingScreenProps = {
   onRejected: () => void;
   /** The documents are needed again (nothing was sent, or a correction reopened them): A26. */
   onNeedsDocuments: () => void;
+  /** Leaves Open your wallet (the way out beside Try again when the check cannot be read). */
+  onLeave: () => void;
 };
 
 /** Where A28 goes from what the Hub says, or null while it keeps waiting. Pure, for the tests. */
@@ -49,7 +52,7 @@ export function checkingNext(progress: OpeningProgress): 'opened' | 'rejected' |
  * asks `GET /money/wallet` every few seconds and moves on when the Hub says
  * the account number is active (A8, "Approved"), or the review said no (A29).
  */
-export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments }: CheckingScreenProps) {
+export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onLeave }: CheckingScreenProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
@@ -63,7 +66,7 @@ export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments }: Check
 
   if (progress.isError && progress.data === undefined) {
     return (
-      <AuthFrame testID="open-wallet-checking-error" bare>
+      <AuthFrame testID="open-wallet-checking-error" bare footer={<Button label="Close" variant="secondary" full onPress={onLeave} testID="open-wallet-checking-leave" />}>
         <ErrorState
           title="We couldn't check just now"
           message={isApiError(progress.error) ? progress.error.message : 'Something went wrong. Try again.'}
@@ -81,7 +84,7 @@ export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments }: Check
           Checking your details
         </Text>
         <Text variant="muted" style={styles.line}>
-          Your account number arrives in a few moments.
+          This usually takes a few minutes.
         </Text>
       </View>
     </AuthFrame>

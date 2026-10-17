@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { OPEN_WALLET_DETAILS_PATH } from '@/features/open-wallet/entry';
 import { useOpenWalletWay } from '@/features/open-wallet/leave';
@@ -19,8 +19,11 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 export default function OpenWalletRoute() {
   const router = useRouter();
   const way = useOpenWalletWay();
+  // `again`: the person was sent here to add their details again (A27, A29), so the review is not resumed.
+  const { again } = useLocalSearchParams<{ again?: string }>();
   return (
     <ReviewResume
+      skip={again === '1'}
       onDocuments={way.needsDocuments}
       onChecking={way.checking}
       onRejected={way.rejected}

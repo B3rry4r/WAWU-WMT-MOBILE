@@ -6,6 +6,7 @@ import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/icon';
+import { Button } from '@/components/Button';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -16,6 +17,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { openingProgressQuery, type OpeningProgress, type ReviewReason } from './api/review';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
+import { needsOpening, useKeptDetailsHeld } from './submit';
 import { waitPhrase } from './wait';
 
 /** design/_gen/auth.js line 68 (A29): the card's 14 and 16 padding, 8 between "What to do" and each line; each line a Check 15 at 2.6 beside 14 text, 8 apart. */
@@ -26,8 +28,11 @@ const BETWEEN = 20;
 const SKELETON = { circle: 88, title: 34, card: 96 } as const;
 
 export type RejectedScreenProps = {
-  /** Upload again: A27 when only the proof of address was refused, else A26. */
-  onUploadAgain: (to: 'id' | 'address') => void;
+  /**
+   * Upload again: A27 when only the proof of address was refused, else A26; `details` when the Hub asks for the
+   * details again (a refusal always does) and nothing on this phone holds them, so the step that collects them comes first.
+   */
+  onUploadAgain: (to: 'id' | 'address' | 'details') => void;
   /** The review is not open to a new try (stopped, or the day's tries are used): leaves Open your wallet. */
   onLeave: () => void;
   /** The account turned out to be open, or the bank is checking again: where that goes. */
@@ -60,6 +65,7 @@ export function RejectedScreen({ onUploadAgain, onLeave, onOpened, onChecking }:
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const progress = useQuery(openingProgressQuery(owner));
+  const detailsHeld = useKeptDetailsHeld(owner);
   const data = progress.data;
   const stage = data?.review?.stage;
   const opened = data?.state === 'open' || data?.state === 'frozen';
@@ -71,7 +77,7 @@ export function RejectedScreen({ onUploadAgain, onLeave, onOpened, onChecking }:
 
   if (progress.isError && data === undefined) {
     return (
-      <AuthFrame testID="open-wallet-rejected-error" bare>
+      <AuthFrame testID="open-wallet-rejected-error" bare footer={<Button label="Close" variant="secondary" full onPress={onLeave} testID="open-wallet-rejected-leave" />}>
         <ErrorState
           title="We couldn't open this step"
           message={isApiError(progress.error) ? progress.error.message : 'Something went wrong. Try again.'}
@@ -81,10 +87,20 @@ export function RejectedScreen({ onUploadAgain, onLeave, onOpened, onChecking }:
     );
   }
   if (!data || opened || checking || (status === 'signedIn' && !owner)) return <Loading />;
-  return <Reasons progress={data} onUploadAgain={onUploadAgain} onLeave={onLeave} />;
+  return <Reasons progress={data} detailsHeld={detailsHeld} onUploadAgain={onUploadAgain} onLeave={onLeave} />;
 }
 
-function Reasons({ progress, onUploadAgain, onLeave }: { progress: OpeningProgress; onUploadAgain: RejectedScreenProps['onUploadAgain']; onLeave: () => void }) {
+function Reasons({
+  progress,
+  detailsHeld,
+  onUploadAgain,
+  onLeave,
+}: {
+  progress: OpeningProgress;
+  detailsHeld: boolean;
+  onUploadAgain: RejectedScreenProps['onUploadAgain'];
+  onLeave: () => void;
+}) {
   const { colors } = useWawu();
   const [now] = useState(() => Date.now());
   const review = progress.review;
@@ -100,7 +116,7 @@ function Reasons({ progress, onUploadAgain, onLeave }: { progress: OpeningProgre
       title="We couldn't open your wallet"
       message={reasons.map((reason) => reason.message).join(' ')}
       actionLabel={canTry ? 'Upload again' : 'Done'}
-      onAction={canTry ? () => onUploadAgain(uploadAgainTarget(reasons)) : onLeave}
+      onAction={canTry ? () => onUploadAgain(needsOpening(progress) && !detailsHeld ? 'details' : uploadAgainTarget(reasons)) : onLeave}
       top={TOP}
       between={BETWEEN}
     >

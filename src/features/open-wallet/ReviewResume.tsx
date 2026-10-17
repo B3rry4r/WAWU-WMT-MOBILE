@@ -30,6 +30,11 @@ export type ReviewResumeProps = {
   children: ReactNode;
   /** Drawn while the Hub is asked, so a person who belongs further on never sees the first step flash by. */
   fallback: ReactNode;
+  /**
+   * The person came here on purpose to add their details again (a refusal asks for them, A29's Upload again,
+   * A27): the first step is the step that collects them, so nothing is resumed and nothing is sent back to A29.
+   */
+  skip?: boolean;
 };
 
 /**
@@ -38,18 +43,18 @@ export type ReviewResumeProps = {
  * never back on the first question. A read that fails leaves the first step
  * as it was, which asks again for what it needs.
  */
-export function ReviewResume({ onDocuments, onChecking, onRejected, children, fallback }: ReviewResumeProps) {
+export function ReviewResume({ onDocuments, onChecking, onRejected, children, fallback, skip = false }: ReviewResumeProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
-  const progress = useQuery(openingProgressQuery(owner));
-  const target = progress.data ? resumeTarget(progress.data) : null;
+  const progress = useQuery({ ...openingProgressQuery(owner), enabled: Boolean(owner) && !skip });
+  const target = progress.data && !skip ? resumeTarget(progress.data) : null;
   useEffect(() => {
     if (target === 'documents') onDocuments();
     else if (target === 'checking') onChecking();
     else if (target === 'rejected') onRejected();
   }, [target, onDocuments, onChecking, onRejected]);
-  const asking = status === 'signedIn' && (!owner || progress.isPending);
+  const asking = !skip && status === 'signedIn' && (!owner || progress.isPending);
   if (asking || target !== null) return <>{fallback}</>;
   return <>{children}</>;
 }

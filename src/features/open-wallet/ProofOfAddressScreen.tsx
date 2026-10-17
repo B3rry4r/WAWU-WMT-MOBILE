@@ -18,14 +18,16 @@ import { Banner } from '@/features/auth/Banner';
 import { OPEN_WALLET_KEY } from './api/account';
 import { DOCUMENTS_KEY, documentProblem, fetchDocuments, fileProblem, rowOf } from './api/documents';
 import { openingProgressQuery, type OpeningProgress } from './api/review';
-import { addressLine } from './details';
+import { ChoiceField, ChoiceSheet } from './ChoiceField';
+import { DetailsNeeded } from './DetailsNeeded';
 import { fileLine, pickFailure, sendFailure, type Failure } from './documentCopy';
+import { labelOf, POSTAL_NEEDS, PROOF_TYPE_NEEDS, PROOF_TYPES, postalProblem } from './documentFields';
 import { FileRow, UploadTile } from './DocumentParts';
 import { pickProofFile } from './documents/pick';
-import { clearFiles, setAddress, setProof, useDraft } from './draft';
+import { clearFiles, setAddress, setPostalCode, setProof, setProofType, useDraft, useDraftLifetime } from './draft';
 import { readAddress } from './keptCheck';
 import { useSessionAccount } from './sessionAccount';
-import { detailsFromKept, NeedsDetails, needsOpening, sendOpening } from './submit';
+import { detailsFromKept, NeedsDetails, needsOpening, sendOpening, useKeptDetailsHeld } from './submit';
 
 const NAV_TITLE = 'Proof of address';
 /** design/_gen/auth.js line 66 (A27): the body's parts 14 apart. */
@@ -36,8 +38,10 @@ const ADDRESS_MAX = 200;
 const ADDRESS_NEEDS = 'Enter your home address: street, town and state.';
 const NEEDS_DETAILS: Failure = {
   title: 'We need your details again',
-  body: 'The details you gave are no longer held on this phone. Start again to send them.',
+  body: 'The details you gave are no longer held on this phone. Add them again to go on.',
 };
+const NEEDS_BILL: Failure = { title: 'Add your bill or statement', body: 'Choose a utility bill or bank statement from the last 3 months.' };
+const NEEDS_ID: Failure = { title: 'Add your ID first', body: 'Go back and take the photos of your ID.' };
 
 const tidy = (value: string) => value.replace(/\s+/g, ' ').trim();
 
@@ -55,8 +59,8 @@ export type ProofOfAddressScreenProps = {
   /** The bank is already checking (or the account is open). */
   onChecking: () => void;
   onOpened: () => void;
-  /** Back to the first step: the details of this opening are no longer held. */
-  onRestart: () => void;
+  /** The Hub asks for the details again and nothing holds them: the step that collects them. */
+  onDetails: () => void;
 };
 
 /**
@@ -65,12 +69,20 @@ export type ProofOfAddressScreenProps = {
  * none yet (or asks for them again after a refusal), then the ID's two sides
  * and this file, and goes to A28; the Hub sends the opening to the bank's
  * review itself once both documents are in (`submit.ts`).
+ *
+ * Round 2 (owner, 17 Oct 2026, G-820): where the open call carries the details
+ * (the Hub has no opening yet, or asks for them again), the postal code and the
+ * type of the document are asked beside the address. Submit is never a silent
+ * dead end: pressed with something missing it says what, under the field or in
+ * a banner, and sends nothing.
  */
-export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened, onRestart }: ProofOfAddressScreenProps) {
+export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened, onDetails }: ProofOfAddressScreenProps) {
   const { status } = useSession();
   const signedIn = useSessionAccount(undefined);
   const owner = signedIn ?? undefined;
   const draft = useDraft(owner);
+  useDraftLifetime();
+  const detailsHeld = useKeptDetailsHeld(owner);
   const queryClient = useQueryClient();
   const progressQuery = openingProgressQuery(owner);
   const progress = useQuery(progressQuery);
@@ -85,6 +97,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   const [failure, setFailure] = useState<Failure | null>(null);
   const [needsDetails, setNeedsDetails] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const live = useRef(true);
@@ -101,7 +115,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     if (seeded.current || !owner) return;
     seeded.current = true;
     const kept = readAddress(owner);
-    if (kept && draft.address === '') setAddress(owner, addressLine(kept));
+    // The street only: A5's town and state travel in the open call's own fields.
+    if (kept && draft.address === '') setAddress(owner, kept.street);
   }, [owner, draft.address]);
 
   const stage = progress.data?.review?.stage;
@@ -125,6 +140,10 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     );
   }
   const current = progress.data as OpeningProgress;
+  // A refusal or an expired opening asks for the details again: with nothing holding them, the bill waits for the step that does.
+  if ((stage === 'rejected' || stage === 'expired') && !detailsHeld) {
+    return <DetailsNeeded testID="open-wallet-address-details-needed" navTitle={NAV_TITLE} onBack={onBack} onDetails={onDetails} />;
+  }
   const view = documents.data;
   const proofRow = rowOf(view, 'proof_of_address');
   const identityRow = rowOf(view, 'identity');
@@ -133,10 +152,14 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   const proofIn = draft.proof !== null || heldProof;
   const idIn = draft.idFront !== null || heldId;
   const problem = addressProblem(draft.address);
-  const ready = proofIn && idIn && problem === null;
+  // The open call carries the postal code and the document type when the Hub has no opening yet or asks for the details again.
+  const sendsDetails = needsOpening(current);
+  const postalIssue = sendsDetails ? postalProblem(draft.postalCode) : null;
+  const typeIssue = sendsDetails && draft.proofType === null ? PROOF_TYPE_NEEDS : null;
+  const shows = attempted;
 
   const edit = (value: string) => {
-    if (!owner) return;
+    if (!owner || busy) return;
     setAddress(owner, value);
     setFailure(null);
     setNeedsDetails(false);
@@ -165,8 +188,10 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
 
   const submit = async () => {
     if (inFlight.current || !owner) return;
-    if (problem !== null) {
+    if (problem !== null || postalIssue !== null || typeIssue !== null || !proofIn || !idIn) {
       setAttempted(true);
+      setNeedsDetails(false);
+      setFailure(!idIn ? NEEDS_ID : !proofIn ? NEEDS_BILL : null);
       return;
     }
     inFlight.current = true;
@@ -179,7 +204,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       await sendOpening({
         progress: current,
         draft: { ...draft, address },
-        details: detailsFromKept(owner, address),
+        details: detailsFromKept(owner, { address, postalCode: draft.postalCode, idType: draft.idType, idNumber: draft.idNumber, proofType: draft.proofType }),
         onOpened: (answer) => {
           step = 'documents';
           queryClient.setQueryData(progressQuery.queryKey, answer);
@@ -215,8 +240,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       onBack={onBack}
       footer={
         <>
-          <Button label="Submit" full loading={busy} disabled={!ready} onPress={() => void submit()} testID="open-wallet-address-submit" />
-          {needsDetails ? <Button label="Start again" variant="secondary" full onPress={onRestart} testID="open-wallet-address-restart" /> : null}
+          <Button label="Submit" full loading={busy} onPress={() => void submit()} testID="open-wallet-address-submit" />
+          {needsDetails ? <Button label="Add your details" variant="secondary" full onPress={onDetails} testID="open-wallet-address-details" /> : null}
         </>
       }
     >
@@ -229,7 +254,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
           testID="open-wallet-address-field"
           value={draft.address}
           onChangeText={edit}
-          error={attempted && problem ? problem : undefined}
+          error={(shows || touched) && problem ? problem : undefined}
+          onBlur={() => setTouched(true)}
           maxLength={ADDRESS_MAX}
           autoComplete="street-address"
           textContentType="fullStreetAddress"
@@ -237,6 +263,32 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
           returnKeyType="done"
           disabled={busy}
         />
+        {sendsDetails ? (
+          <AuthField
+            scrollRef={scrollRef}
+            label="Postal code"
+            testID="open-wallet-postal"
+            value={draft.postalCode}
+            onChangeText={(value) => owner && !busy && setPostalCode(owner, value)}
+            error={shows && postalIssue ? POSTAL_NEEDS : undefined}
+            maxLength={20}
+            autoComplete="postal-code"
+            textContentType="postalCode"
+            autoCapitalize="characters"
+            returnKeyType="done"
+            disabled={busy}
+          />
+        ) : null}
+        {sendsDetails ? (
+          <ChoiceField
+            label="Document type"
+            value={labelOf(PROOF_TYPES, draft.proofType)}
+            onPress={() => setChoosing(true)}
+            error={shows && typeIssue ? typeIssue : undefined}
+            disabled={busy}
+            testID="open-wallet-proof-type"
+          />
+        ) : null}
         {draft.proof ? (
           <FileRow
             testID="open-wallet-proof"
@@ -259,6 +311,18 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
           />
         )}
       </View>
+      <ChoiceSheet
+        visible={choosing}
+        onClose={() => setChoosing(false)}
+        title="Choose the type of document"
+        options={PROOF_TYPES}
+        selected={draft.proofType}
+        onPick={(value) => {
+          if (owner) setProofType(owner, value);
+          setChoosing(false);
+        }}
+        testID="open-wallet-proof-type"
+      />
     </AuthFrame>
   );
 }
