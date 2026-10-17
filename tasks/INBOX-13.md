@@ -7,7 +7,7 @@ order: 107
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-05, INBOX-16, UI-02]
 decisions: [R-5, R-6, R-10, R-37, R-62, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,11 +17,15 @@ artboards: [I27, I28, I29]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-16.
-- **History:** none yet. Reports go to tasks/history/INBOX-13.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** I27 and I28 show costs by kind of message (R-62); the Hub serves them after INBOX-22.
+As of 17 Oct 2026.
+- **Status:** verifying. Built by a Sonnet builder in the S2 bundle (with INBOX-19 and INBOX-20): mobile `wmt/S2` from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/INBOX-15` merged in. No backend change, no migration.
+- **Built:** I27 (a member with no credits in a room where a message costs one: "You're out of credits", Buy credits), I28 (the Hub's packs, the Bank charge and the Total from its quote, Pay from wallet, "Buy 120 credits · total", the shared PIN sheet), I29 (what was paid and the new count); I24's strip has its Buy button. The shared pay sheet draws not enough, still confirming and refusals. A person with no wallet is led to Open your wallet.
+- **Decisions the builder took:** the sheet's title is "Buy WAWU Credits" (R-37 keeps the instrument's name; the 16 Oct canvas prints "Who Made This? Credits"); I27 and I28 do not say "Text and emoji are free" or print costs by kind until INBOX-22 serves them (G-881, R-47, WORKFLOW rule 7); I29's button reads "Back to chat" in a room and "Done" from I24.
+- **Attacks in tests:** a double tap on Buy (one quote, one PIN sheet, one purchase), a wrong PIN, a short wallet before and after the PIN, a lost answer then the same request again (same key and quote, also after the sheet was closed and opened), a price that moved, a purchase the Hub has not finished (read, never bought again), a refused purchase, no wallet.
+- **Attacks on the stack, once each:** wrong PIN 403 and nothing moved; the same key twice at once 201 and 409, +120 credits once, one debit; the same key again after the answer 201, no second debit; another person's quote refused 409 `quote_changed`.
+- **Stack (backend `wmt/INBOX-15` `c803256` on the Nuvion stand-in, name `s2_test`, ports 7760 to 7767, taken down after):** the web export of `wmt/S2` ran against the real Hub with two funded wallets; pictures in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-b/pics/` (`beside-<board>-<light|dark>.png`, board left, built right); the attacks below were run once each, results in `.../s2-b/logs/live-attacks.txt`.
+- **Open:** G-881; SHARED-CHANGES INBOX-13 #1 (applied here), #2 and INBOX-19 #1 (open). This task flipped two assertions that pinned its own absence (`RoomScreen.test.tsx` "offers no way to it", `CommunitiesView.test.tsx` no Buy).
+- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9). NOT RUN: V10 (no phone); a payment against a real provider (never run).
 
 ## Design v2 update (16 Oct 2026)
 
@@ -96,13 +100,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-13.md](history/INBOX-13.md).
 
 ## Owner sign-off
 

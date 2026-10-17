@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,6 +32,9 @@ const composerMetrics = {
   maxLines: 5,
 } as const;
 
+const lineHeight = composerMetrics.fieldFont * composerMetrics.fieldLine;
+const maxField = composerMetrics.fieldPadV * 2 + lineHeight * composerMetrics.maxLines;
+
 export type ChatComposerProps = {
   /** Takes the typed words; true means they were taken (and the field clears), false that nothing was sent. */
   onSend: (text: string) => boolean;
@@ -52,6 +55,14 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
   const input = useRef<TextInput>(null);
   const hasWords = value.trim().length > 0;
   const canSend = hasWords && !busy;
+  // In a browser the field is a textarea that does not grow: it takes the height of its text, up to `maxLines`.
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = input.current as unknown as { style: { height: string }; scrollHeight: number } | null;
+    if (!node) return;
+    node.style.height = 'auto';
+    node.style.height = `${Math.min(maxField, Math.max(composerMetrics.field, node.scrollHeight))}px`;
+  }, [value]);
   const press = () => {
     if (!canSend) return;
     if (onSend(value)) setValue('');
@@ -84,6 +95,7 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
         placeholder="Message"
         placeholderTextColor={colors.textMuted}
         multiline
+        numberOfLines={Platform.OS === 'web' ? 1 : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={[
@@ -129,9 +141,6 @@ export function ChatClosedBar() {
     </View>
   );
 }
-
-const lineHeight = composerMetrics.fieldFont * composerMetrics.fieldLine;
-const maxField = composerMetrics.fieldPadV * 2 + lineHeight * composerMetrics.maxLines;
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', gap: composerMetrics.between, paddingTop: composerMetrics.padTop, paddingHorizontal: composerMetrics.padH, borderTopWidth: StyleSheet.hairlineWidth },
