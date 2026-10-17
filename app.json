@@ -157,7 +157,9 @@
     },
     "owner": "moxnafrica",
     "extra": {
-      "router": {},
+      "router": {
+        "sitemap": false
+      },
       "eas": {
         "projectId": "d07de585-f201-4b3e-989a-34f948d6e860"
       }

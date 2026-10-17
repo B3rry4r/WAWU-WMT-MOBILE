@@ -173,8 +173,8 @@ describe('days', () => {
       toISOString: () => '2026-10-09T23:30:00.000Z',
     } as unknown as Date;
     expect(todayOf(lagosAfterMidnight)).toBe('2026-10-10');
-    // And the other way: Kiritimati (UTC+14) late in its day, where UTC is already the next one.
-    const kiritimatiNight = {
+    // And the other way: a phone west of UTC (Honolulu, UTC-10) late in its day, where UTC is already the next one.
+    const honoluluNight = {
       getFullYear: () => 2026,
       getMonth: () => 11,
       getDate: () => 31,
@@ -183,7 +183,7 @@ describe('days', () => {
       getUTCDate: () => 1,
       toISOString: () => '2027-01-01T09:30:00.000Z',
     } as unknown as Date;
-    expect(todayOf(kiritimatiNight)).toBe('2026-12-31');
+    expect(todayOf(honoluluNight)).toBe('2026-12-31');
   });
 });
 
