@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 296.**
+**Launch tasks done: 176 of 297.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 72 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 96 | 0 | 0 | 0 |
+| verifying | 97 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-64](../tasks/FIX-64.md) The school report spec waits for the first try to end, and the refund-notice migration can be undone (You)
 - [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
 - [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
