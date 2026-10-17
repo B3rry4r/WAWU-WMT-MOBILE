@@ -47,6 +47,8 @@ export type CreatorRailProps = {
   retrying: boolean;
   /** "See all" at the end of the heading opens All creators (X4). Not drawn without it. */
   onSeeAll?: () => void;
+  /** A follow or an unfollow the Hub accepted: whoever shows the rail can mark what depends on it (HOME-07, H12). */
+  onFollowChange?: () => void;
 };
 
 /**
@@ -55,7 +57,7 @@ export type CreatorRailProps = {
  * says so. "See all" opens All creators (X4, EXPLORE-02); a card opening the profile (M5) is added by
  * ME-02 with its screen (R-27, R-41).
  */
-export function CreatorRail({ creators, onRetry, retrying, onSeeAll }: CreatorRailProps) {
+export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowChange }: CreatorRailProps) {
   const client = useTodayClient();
   const [failed, setFailed] = useState<string | null>(null);
   const follow = useMutation(
@@ -67,6 +69,7 @@ export function CreatorRail({ creators, onRetry, retrying, onSeeAll }: CreatorRa
       },
       onSuccess: (following, { item }) => {
         client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following } : c)));
+        onFollowChange?.();
       },
       onError: (_error, { item, on }) => {
         client.setQueryData<CreatorSuggestion[]>(suggestionsKey, (list) => list?.map((c) => (c.wawuId === item.wawuId ? { ...c, following: !on } : c)));

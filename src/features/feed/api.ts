@@ -19,6 +19,9 @@ export type FeedItem = components['schemas']['FeedItem'];
 export type FeedCreator = components['schemas']['FeedCreator'];
 export type MediaFrame = components['schemas']['MediaFrame'];
 export type ContentDetail = components['schemas']['ContentDetail'];
+export type CreatorCardData = components['schemas']['CreatorCard'];
+export type ProfessionalCardData = components['schemas']['ProfessionalCard'];
+export type CardWork = components['schemas']['CardWork'];
 export type FeedScope = 'for_you' | 'following';
 
 type Entries = operations['FeedController_mixed']['responses'][200]['content']['application/json'];

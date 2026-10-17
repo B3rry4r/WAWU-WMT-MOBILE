@@ -37890,6 +37890,14 @@
      },
      "dmResponseHours": {
       "type": "number"
+     },
+     "city": {
+      "type": "string",
+      "nullable": true
+     },
+     "usualReplyMinutes": {
+      "type": "number",
+      "nullable": true
      }
     },
     "required": [
@@ -37907,7 +37915,9 @@
      "ratingAvg",
      "reviewCount",
      "dmPrice",
-     "dmResponseHours"
+     "dmResponseHours",
+     "city",
+     "usualReplyMinutes"
     ]
    },
    "FollowingCount": {
