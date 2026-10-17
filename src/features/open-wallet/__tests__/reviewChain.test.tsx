@@ -126,6 +126,27 @@ describe('A31 under the review opening', () => {
     expect(kept.readNumbers(OWNER)).toBeNull();
   });
 
+  it('KYC-07 L2: back from the next step the fields show only the last 4, Continue goes on with the held numbers, and touching a field empties both', async () => {
+    serve('review');
+    const app = await boot((onContinue, onClose) => <OpenWalletScreen onClose={onClose} onContinue={onContinue} />);
+    await rtl.fireEvent.changeText(await app.screen.findByTestId('open-wallet-bvn'), BVN);
+    await rtl.fireEvent.changeText(app.screen.getByTestId('open-wallet-nin'), NIN);
+    await rtl.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
+    // A31 stays under A5: what Back shows is the masked numbers, not the digits.
+    const shown = () => [app.screen.getByTestId('open-wallet-bvn').props.value, app.screen.getByTestId('open-wallet-nin').props.value] as string[];
+    expect(shown()).toEqual([`•••• ••• ${BVN.slice(-4)}`, `•••• ••• ${NIN.slice(-4)}`]);
+    expect(JSON.stringify(app.screen.toJSON())).not.toContain(BVN);
+    expect(JSON.stringify(app.screen.toJSON())).not.toContain(NIN);
+    // Continue again: on, with the numbers held, nothing typed again.
+    await rtl.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(2));
+    expect(kept.readNumbers(OWNER)).toEqual({ bvn: BVN, nin: NIN });
+    // Touching a field: both are empty, to be typed again.
+    await rtl.fireEvent(app.screen.getByTestId('open-wallet-bvn'), 'focus');
+    expect(shown()).toEqual(['', '']);
+  });
+
   it('a number that is not 11 digits is refused on the form and nothing is held', async () => {
     serve('review');
     const app = await boot((onContinue, onClose) => <OpenWalletScreen onClose={onClose} onContinue={onContinue} />);

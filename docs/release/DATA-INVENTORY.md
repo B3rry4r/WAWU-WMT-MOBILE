@@ -136,7 +136,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-089 | `ApprovalChallenge` | deviceId, one-time challenge | MONEY-02, MONEY-14 | Nobody outside WAWU | AA-08 |
 | I-090 | `FintavaWallet` | customerId, walletId, account number, account name | KYC-04, MONEY-12 | Held by the wallet provider | FI-04 |
 | I-091 | `FintavaWalletOpening` | state, BVN keyed hash, verified phone, attempts | KYC-05, MONEY-12 | Wallet provider (the opening) | PI-13, PI-07 |
-| I-092 | `FintavaWebhookEvent` | provider webhook payload and raw body (names, account numbers, amounts) | MONEY-07 (done) | Received from the wallet provider | FI-04 |
+| I-092 | `FintavaWebhookEvent` | provider webhook payload and raw body (names, account numbers, amounts); a handled delivery's body is cleared after 90 days (FIX-20) | MONEY-07 (done) | Received from the wallet provider | FI-04 |
 | I-093 | `WalletIdentity` | BVN and NIN keyed hashes and last 4, verified phone, occupation, BVN name keys | KYC-01, KYC-05 | Nobody outside WAWU (the numbers themselves go to the wallet provider and are not kept) | PI-13, PI-12, PI-07 |
 | I-094 | `BvnCheckAttempt` | outcome and time of each BVN check | KYC-05 | Nobody outside WAWU | PI-13 |
 | I-095 | `SelfieMatchAttempt` | outcome, confidence, time (never the image) | KYC-02 (done) | Nobody outside WAWU (the selfie itself goes to the wallet provider) | PF-01 |
@@ -349,7 +349,7 @@ Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 a
 | I-278 | MONEY-03 | H14 W10 | none | The pay-from-wallet sheet (shows price, fee, total) | Nobody outside WAWU | FI-04 |
 | I-279 | MONEY-04 | none | none | Conventions and the wallet contract (no data) | Nobody outside WAWU | NX-03 |
 | I-280 | MONEY-06 | none | none | The wallet-provider client: sends what other tasks collect | Wallet provider† | FI-04 |
-| I-281 | MONEY-07 | none | logged | Provider webhook deliveries stored whole (payload and raw body) | Received from the wallet provider† | FI-04 |
+| I-281 | MONEY-07 | none | logged | Provider webhook deliveries stored whole (payload and raw body); a handled delivery's body is cleared after 90 days (FIX-20) | Received from the wallet provider† | FI-04 |
 | I-282 | MONEY-08 | none | logged | Status checks of pending transfers | Wallet provider† | FI-04 |
 | I-283 | MONEY-09 | none | logged | PIN hash, wrong-try count, lock time | Nobody outside WAWU | FI-04 |
 | I-284 | MONEY-10 | none | logged | Ledger rows: amounts, counterparty, notes, references | Wallet provider† | FI-04 |

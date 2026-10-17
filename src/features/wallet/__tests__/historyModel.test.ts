@@ -255,6 +255,15 @@ describe('W27: the receipt of one movement', () => {
     expect(receipt.lines.find((l) => l.key === 'from')?.value).toBe('Naira wallet');
     expect(receipt.lines.find((l) => l.key === 'to')?.value).toBe('Ngozi Test');
     expect(receipt.lines.find((l) => l.key === 'account')?.value).toBe('GTBank ••6789');
+    // The line wraps, so a long bank name does not cut the last four digits off (WALLET-04 D4).
+    expect(receipt.lines.find((l) => l.key === 'account')?.wrap).toBe(true);
+  });
+
+  it('shows the total the Hub sent, never a sum made on the phone (WALLET-04 D2, M09)', () => {
+    // The Hub's figures do not add up here on purpose: the total stays the Hub's.
+    const receipt = receiptOf(row({ totalKobo: 2_599_999 }));
+    expect(receipt.cost?.find((c) => c.key === 'total')?.kobo).toBe(2_599_999);
+    expect(receipt.amountKobo).toBe(-2_599_999);
   });
 
   it('leaves WAWU’s fee out when there is none, and keeps the provider’s charge even when it is ₦0 (an airtime top-up)', () => {

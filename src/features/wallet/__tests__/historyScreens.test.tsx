@@ -317,6 +317,11 @@ describe('W26 · Transaction history', () => {
     });
     expect(asked('/money/transactions').length).toBe(before);
     await app.fireEvent.changeText(box, '  Ngozi ');
+    // The pause is real (WALLET-04 D3, M13): typing alone has not asked yet 150 ms in.
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    expect(asked('/money/transactions').at(-1)?.query.get('q')).not.toBe('Ngozi');
     await app.waitFor(() => expect(asked('/money/transactions').at(-1)?.query.get('q')).toBe('Ngozi'));
     expect(await app.screen.findByText('Ngozi Test')).toBeTruthy();
     expect(app.screen.queryByText('Bayo Test')).toBeNull();
@@ -329,7 +334,8 @@ describe('W26 · Transaction history', () => {
     const box = app.screen.getByLabelText('Search transactions');
     await app.fireEvent.changeText(box, 'Bayo');
     await app.fireEvent(box, 'submitEditing');
-    await app.waitFor(() => expect(asked('/money/transactions').at(-1)?.query.get('q')).toBe('Bayo'));
+    // Well inside the 350 ms pause (WALLET-04 D3, M14): the search key did not wait for it.
+    await app.waitFor(() => expect(asked('/money/transactions').at(-1)?.query.get('q')).toBe('Bayo'), { timeout: 200 });
   });
 
   it('a search that finds nothing says so, with the words searched for and no Pay a bill', async () => {
