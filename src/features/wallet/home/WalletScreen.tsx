@@ -110,6 +110,7 @@ export function WalletScreen() {
             onToggleHidden={() => setHidden((was) => !was)}
             onOpenWallet={openWallet}
             onSend={() => router.push('/send')}
+            onToCash={() => router.push('/points-convert')}
             pass={pass.data ?? null}
             onOpenPass={() => router.push('/pass')}
             onRetryWallet={() => void wallet.refetch()}
@@ -136,6 +137,8 @@ type BodyProps = {
   onToggleHidden: () => void;
   onOpenWallet: () => void;
   onSend: () => void;
+  /** "To cash" (POINTS-05): PT6. */
+  onToCash: () => void;
   /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
   pass: MyPass | null;
   onOpenPass: () => void;
@@ -144,7 +147,7 @@ type BodyProps = {
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, pass, onOpenPass, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, onToCash, pass, onOpenPass, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton />;
@@ -219,7 +222,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, onSend, pass, onOpen
               <PassesTile pass={pass} onPress={onOpenPass} />
             </View>
           ) : null}
-          <WalletActions onSend={onSend} />
+          <WalletActions onSend={onSend} onToCash={onToCash} />
           <BillTiles />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
