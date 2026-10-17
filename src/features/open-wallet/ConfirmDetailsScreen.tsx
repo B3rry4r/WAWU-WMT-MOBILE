@@ -23,6 +23,7 @@ import { birthDate, CITY_MAX, detailsProblems, fullName, genderWord, OCCUPATION_
 import { ConsentBox } from './ConsentBox';
 import { keepAddress, ticketFor, ticketIsLive, useHeldReview, useKeptOpening, type HomeAddress } from './keptCheck';
 import { ReviewDetailsForm } from './ReviewDetailsForm';
+import { useOpeningSending } from './sending';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
 import { StateField, StateSheet } from './StatePicker';
@@ -83,7 +84,10 @@ export function ConfirmDetailsScreen({ onBack, onContinue, onReviewContinue, onR
     enabled: Boolean(owner) && kept !== null,
   });
 
-  const lost = status === 'signedIn' && owner !== undefined && kept === null && held === null;
+  // A27 sends the details and documents from above this screen (DV2-05 round 2): the opening it puts on the Hub is not
+  // a lost flow, and a restart then would pop A27 off the stack in the middle of its send (FIX-47).
+  const sending = useOpeningSending();
+  const lost = status === 'signedIn' && owner !== undefined && kept === null && held === null && !sending;
   // The server holds another check than the one kept here (a newer one, or none): the details are not this check's.
   const stale = Boolean(kept && identity.data && identity.data.bvn?.last4 !== kept.check.identity.bvn?.last4);
   useEffect(() => {

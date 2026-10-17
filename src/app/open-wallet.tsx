@@ -3,9 +3,8 @@ import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { OPEN_WALLET_DETAILS_PATH } from '@/features/open-wallet/entry';
 import { useOpenWalletWay } from '@/features/open-wallet/leave';
 import { OpenWalletScreen } from '@/features/open-wallet/OpenWalletScreen';
+import { ResumeFallback } from '@/features/open-wallet/ResumeFallback';
 import { ReviewResume } from '@/features/open-wallet/ReviewResume';
-import { LoadingView } from '@/components/Skeleton';
-import { AuthFrame } from '@/features/auth/AuthFrame';
 
 /**
  * A31 · BVN and NIN, the first of four steps of Complete your account (R-6, with A14 as its state). Reached from
@@ -31,11 +30,7 @@ export default function OpenWalletRoute() {
       onSelfie={way.selfie}
       onChecking={way.checking}
       onRejected={way.rejected}
-      fallback={
-        <AuthFrame testID="open-wallet-resume" bare>
-          <LoadingView label="Loading your account">{null}</LoadingView>
-        </AuthFrame>
-      }
+      fallback={<ResumeFallback />}
     >
       <OpenWalletScreen
         onClose={() => (router.canGoBack() ? router.back() : router.replace('/'))}
