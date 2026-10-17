@@ -9,7 +9,7 @@ import { BonusScreen } from '@/features/verify/BonusScreen';
 /**
  * VF1 · Your bonus is waiting (`/verify-bonus`), shown once right after sign-up (SHARED-CHANGES VERIFY-01 #1, #2). "Build my shop"
  * opens VF2 (`/shop`). A drafts shop is for creator accounts (the Hub refuses the rest), so anyone else who opens it is sent Home.
- * Signed in only: the route graph does not guard it until row #2 is applied, so a signed-out visit is sent to the welcome screen here.
+ * Signed in only: the route graph guards it (a signed-out visit never draws it), and a signed-out visit that reaches it is sent to the welcome screen here too.
  */
 export default function VerifyBonusRoute() {
   const router = useRouter();

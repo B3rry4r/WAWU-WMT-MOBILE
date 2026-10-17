@@ -11,6 +11,7 @@ import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/au
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PushBridge } from '@/features/push/PushBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
+import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -58,6 +59,8 @@ function useStoredTheme(): boolean {
  * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
  * applied before the first screen is drawn, with the splash screen still up, so the next
  * launch never shows the other theme first (SETTINGS-01 #3 (a)).
+ * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
+ * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
  * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
@@ -68,9 +71,10 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
+  const bonus = useBonusStep(signedIn);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
-  const inApp = signedIn && !gate.needsEmail && !offer.visible;
+  const inApp = signedIn && !gate.needsEmail && !offer.visible && !bonus.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -93,8 +97,13 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && bonus.visible}>
+          <Stack.Screen name="verify-bonus" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && !bonus.visible}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="shop" />
+          <Stack.Screen name="shop-product" />
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />
