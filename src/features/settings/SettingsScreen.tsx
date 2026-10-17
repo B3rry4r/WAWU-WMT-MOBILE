@@ -31,8 +31,8 @@ const BODY_GAP = 12;
 const headerMetrics = { padV: 12, padH: 14, avatar: 52, between: 12, name: 16, tick: 15, tickGap: 5, line: 13, lineGap: 2, chevron: 17 } as const;
 /** Line 11, the Theme row: 56 high, a 15 title at 600, its value at 14 with a 17 chevron. */
 const themeRow = { minHeight: 56, title: 15, valueSize: 14, chevron: 17 } as const;
-/** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below. */
-const footMetrics = { padV: 4, signOut: 15 } as const;
+/** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below; "Delete account" under it at 13.5 in the muted colour. */
+const footMetrics = { padV: 4, signOut: 15, between: 14, deleteAccount: 13.5 } as const;
 
 /**
  * Z2's TGIF switch (R-59, DV2-06): it means "send me TGIF each morning" (HOME-16 sends the notice).
@@ -56,6 +56,8 @@ export type SettingsScreenProps = {
   onOpenClaimCode?: () => void;
   /** Wallet and PIN: W35 (WALLET-06). The row is drawn only when the screen has somewhere to open it (the route gives it). */
   onOpenWallet?: () => void;
+  /** Delete account (Z6, SETTINGS-05): the muted line under Sign out. Drawn only when the route gives a place to go. */
+  onOpenDeleteAccount?: () => void;
   onOpenAbout: () => void;
   onOpenTerms: () => void;
   onOpenPolicy: () => void;
@@ -66,8 +68,8 @@ export type SettingsScreenProps = {
 /**
  * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
  * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
- * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account is added by SETTINGS-05,
- * each where Z2 draws it.
+ * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account (SETTINGS-05, Z6) is the muted
+ * line under Sign out, each where Z2 draws it.
  */
 export function SettingsScreen(props: SettingsScreenProps) {
   const signedIn = useSignedIn();
@@ -168,6 +170,13 @@ export function SettingsScreen(props: SettingsScreenProps) {
           <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem">
             {problem}
           </Text>
+        ) : null}
+        {props.onOpenDeleteAccount ? (
+          <Pressable testID="settings-delete-account" accessibilityRole="button" accessibilityLabel="Delete account" hitSlop={space.sm} onPress={props.onOpenDeleteAccount}>
+            <Text variant="secondary" tone="textMuted" style={{ fontSize: footMetrics.deleteAccount, lineHeight: canvasNormalLineHeight(footMetrics.deleteAccount) }}>
+              Delete account
+            </Text>
+          </Pressable>
         ) : null}
       </View>
       <ThemeSheet
@@ -312,5 +321,5 @@ const styles = StyleSheet.create({
   pending: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: switchRowMetrics.minHeight, paddingVertical: switchRowMetrics.padV },
   pendingWords: { flex: 1, minWidth: 0 },
   pendingTitle: { fontSize: switchRowMetrics.title, lineHeight: canvasNormalLineHeight(switchRowMetrics.title) },
-  foot: { alignItems: 'center', gap: space.md, paddingVertical: footMetrics.padV },
+  foot: { alignItems: 'center', gap: footMetrics.between, paddingVertical: footMetrics.padV },
 });

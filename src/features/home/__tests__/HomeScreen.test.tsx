@@ -383,6 +383,7 @@ describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Add' })).toHaveLength(1);
+    for (const id of ['today-action-send', 'today-action-add']) expect(screen.getByTestId(id)).toBeTruthy();
     expect(screen.queryByTestId('today-action-bills')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
     for (const label of ['Bills', 'Scan']) expect(screen.queryByText(label)).toBeNull();
