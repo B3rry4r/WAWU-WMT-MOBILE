@@ -133,13 +133,18 @@ export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onF
   );
 }
 
-/** The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". `flush` drops the space under it, for a pill that is not followed by a name (the one on a piece's own picture). */
-export function Pill({ icon, text, testID, flush = false }: { icon: IconName; text: string; testID?: string; flush?: boolean }) {
+/**
+ * The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". `light` is H10's white pill
+ * with dark words; every other pill is dark glass with white ones. `flush` drops the space under it, for a pill
+ * that is not followed by a name (the one on a piece's own picture).
+ */
+export function Pill({ icon, text, testID, light = false, flush = false }: { icon: IconName; text: string; testID?: string; light?: boolean; flush?: boolean }) {
+  const ink = light ? media.inkOnLight : media.ink;
   return (
     <View style={flush ? styles.pillRowFlush : styles.pillRow}>
-      <View testID={testID} style={[styles.pill, { backgroundColor: media.pill }]}>
-        <Icon name={icon} size={metrics.pillIcon} color={media.ink} strokeWidth={ICON_STROKE.button} />
-        <Text numberOfLines={1} style={[words.pill, { color: media.ink }]}>
+      <View testID={testID} style={[styles.pill, { backgroundColor: light ? media.ink : media.pill }]}>
+        <Icon name={icon} size={metrics.pillIcon} color={ink} strokeWidth={ICON_STROKE.button} />
+        <Text numberOfLines={1} style={[words.pill, { color: ink }]}>
           {text}
         </Text>
       </View>
@@ -234,7 +239,9 @@ export function OfferBar({
     >
       <Icon name={offer.icon} size={compact ? metrics.offerIconCompact : metrics.offerIcon} color={media.ink} />
       <View style={styles.offerWords}>
-        <Text style={[words.offerTitle, { color: media.ink }]}>{offer.title}</Text>
+        <Text numberOfLines={1} style={[words.offerTitle, { color: media.ink }]}>
+          {offer.title}
+        </Text>
         <Text style={[words.offerSub, { color: media.ink }]}>{offer.subtitle}</Text>
       </View>
       <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>

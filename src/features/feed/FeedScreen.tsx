@@ -34,13 +34,19 @@ import {
   type FeedScope,
 } from './api';
 import { media, metrics } from './look';
-import { drawablePosts, postKind } from './model';
+import { feedRows, postKind, type FeedRow } from './model';
 import { fromPostBottom } from './parts';
 import { AudioPost } from './AudioPost';
+import { CoursePost } from './CoursePost';
+import { FeedCreatorCard } from './FeedCreatorCard';
+import { FeedProfessionalCard } from './FeedProfessionalCard';
+import { FollowingEmpty } from './FollowingEmpty';
 import { PdfPost } from './PdfPost';
 import { PhotoSetPost } from './PhotoSetPost';
 import type { PostProps } from './PostFrame';
+import { TemplatePost } from './TemplatePost';
 import { VideoPost } from './VideoPost';
+import { todayMetrics } from '@/features/home/look';
 
 /** The feed's own two tabs; Home adds Today before them (H1, HOME-01). */
 const scopes: readonly { view: HomeView; label: string }[] = homeViews.filter((v) => v.view !== 'today');
@@ -55,6 +61,10 @@ function Post(props: PostProps) {
       return <PdfPost {...props} />;
     case 'audio':
       return <AudioPost {...props} />;
+    case 'course':
+      return <CoursePost {...props} />;
+    case 'template':
+      return <TemplatePost {...props} />;
     default:
       return null;
   }
@@ -83,10 +93,10 @@ function FeedLoading({ height }: { height: number }) {
 }
 
 /**
- * Home's For you and Following feed (H2 to H6): one post fills the screen, a swipe up
- * brings the next. Posts come from `GET /feed/entries`; this task draws videos, photo sets,
- * PDFs and audio. Courses, templates and the creator and professional cards are HOME-07's
- * and are not drawn until it adds them.
+ * Home's For you and Following feed (H2 to H8): one post fills the screen, a swipe up
+ * brings the next. Posts come from `GET /feed/entries`: videos, photo sets, PDFs, audio, courses (H7)
+ * and templates (H8), and among them, on For you, a creator card (H9) and a professional card (H10).
+ * Following with no one followed is H12, and a feed that cannot be read is H13.
  *
  * On Home (HOME-01) the tab row also holds Today: `onToday` is called when it is pressed, and
  * the feed opens on `initialScope`, the tab pressed on Today.
@@ -101,11 +111,15 @@ export type FeedScreenProps = {
    * With it, the rail draws ₦ Tip (H26, HOME-13); left out, no payment can start from the feed.
    */
   pay?: FlowHandlers;
-  /** A post's caption opens that piece's own page (H19, HOME-03). Left out, the caption only reads. */
-  onOpenPiece?: (item: FeedItem) => void;
+  /** A post's caption, and a piece in a creator card's strip, open that piece's own page (H19, HOME-03). Left out, they only read. */
+  onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
+  /** A professional card's Profile opens their page (P2) with the listing's id. Not drawn without it. */
+  onOpenProfessional?: (id: string) => void;
+  /** "Find people to follow" on an empty Following, and the creators rail's "See all" beside it, open All creators (X4). Not drawn without it. */
+  onSeeAllCreators?: () => void;
 };
 
-export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece }: FeedScreenProps = {}) {
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece, onOpenProfessional, onSeeAllCreators }: FeedScreenProps = {}) {
   const pay = useFeedPay(payHandlers);
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
@@ -123,23 +137,16 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
   });
   const me = useQuery({ queryKey: meKey, queryFn: fetchMyId, staleTime: Infinity });
 
-  const posts = useMemo(() => {
-    const seen = new Set<string>();
-    return drawablePosts(feed.data?.pages.flatMap((p) => p.entries) ?? []).filter((p) => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
-  }, [feed.data]);
+  const rows = useMemo(() => feedRows(feed.data?.pages.flatMap((p) => p.entries) ?? []), [feed.data]);
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
   const pagesRead = feed.data?.pages.length ?? 0;
-  // A page holding only posts this task does not draw (HOME-07's) reads on, so a feed is never shown empty while the Hub has more.
+  // A page holding nothing the feed draws (a kind it has no layout for) reads on, so a feed is never shown empty while the Hub has more.
   useEffect(() => {
-    if (posts.length === 0 && pagesRead > 0 && hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [posts.length, pagesRead, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (rows.length === 0 && pagesRead > 0 && hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [rows.length, pagesRead, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const empty = feed.isSuccess && posts.length === 0 && !hasNextPage;
+  const empty = feed.isSuccess && rows.length === 0 && !hasNextPage;
   const following = useQuery({
     queryKey: followingCountKey,
     queryFn: fetchFollowingCount,
@@ -166,14 +173,14 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
     if (at !== current) setCurrent(at);
   };
 
-  const loading = feed.isPending || (posts.length === 0 && feed.isSuccess && Boolean(hasNextPage));
+  const loading = feed.isPending || (rows.length === 0 && feed.isSuccess && Boolean(hasNextPage));
   // Posts and their loading view are drawn over media; the empty and error views are a themed page (H12, H13).
-  const showsMedia = loading || posts.length > 0;
+  const showsMedia = loading || rows.length > 0;
 
   let body;
   if (loading) {
     body = <FeedLoading height={size.height} />;
-  } else if (feed.isError && posts.length === 0) {
+  } else if (feed.isError && rows.length === 0) {
     body = (
       <View style={styles.centre}>
         <ErrorState
@@ -185,23 +192,21 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
         />
       </View>
     );
+  } else if (empty && scope === 'following' && following.isPending) {
+    // The count that tells "you follow no one" from "they have not posted" is on its way.
+    body = null;
+  } else if (empty && scope === 'following' && following.data === 0) {
+    body = (
+      <FollowingEmpty top={chromeTop + metrics.tabsGap + todayMetrics.headRow + todayMetrics.headBottom + todayMetrics.bodyTop} myId={me.data ?? null} onFindPeople={onSeeAllCreators} />
+    );
   } else if (empty) {
-    const followsNobody = scope === 'following' && following.data === 0;
     body = (
       <View style={styles.centre}>
         <EmptyState
           testID="feed-empty"
           icon={scope === 'following' ? 'UserPlus' : 'Sparkles'}
-          title={
-            scope === 'for_you' ? 'Nothing to show yet' : followsNobody ? "You're not following anyone yet" : 'No new posts yet'
-          }
-          message={
-            scope === 'for_you'
-              ? 'New posts from creators show up here.'
-              : followsNobody
-                ? 'Follow creators and professionals and their new posts land here first.'
-                : 'When people you follow post something new, it lands here first.'
-          }
+          title={scope === 'for_you' ? 'Nothing to show yet' : 'No new posts yet'}
+          message={scope === 'for_you' ? 'New posts from creators show up here.' : 'When people you follow post something new, it lands here first.'}
         />
       </View>
     );
@@ -210,8 +215,8 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
       <FlatList
         key={scope}
         testID={`feed-${scope}`}
-        data={posts}
-        keyExtractor={(p: FeedItem) => p.id}
+        data={rows}
+        keyExtractor={(row: FeedRow) => row.key}
         pagingEnabled
         showsVerticalScrollIndicator={false}
         decelerationRate="fast"
@@ -227,20 +232,28 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
         initialNumToRender={2}
         maxToRenderPerBatch={2}
         windowSize={3}
-        renderItem={({ item, index }) => (
-          <Post
-            item={item}
-            active={focused && index === current}
-            width={size.width}
-            height={size.height}
-            myId={me.data ?? null}
-            chromeTop={chromeTop}
-            onTip={pay.onTip}
-            onUnlock={pay.onUnlock}
-            unlocking={pay.unlockingId === item.id}
-            onOpen={onOpenPiece}
-          />
-        )}
+        renderItem={({ item: row, index }) => {
+          if (row.kind === 'creator') {
+            return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} />;
+          }
+          if (row.kind === 'professional') {
+            return <FeedProfessionalCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenProfile={onOpenProfessional} />;
+          }
+          return (
+            <Post
+              item={row.item}
+              active={focused && index === current}
+              width={size.width}
+              height={size.height}
+              myId={me.data ?? null}
+              chromeTop={chromeTop}
+              onTip={pay.onTip}
+              onUnlock={pay.onUnlock}
+              unlocking={pay.unlockingId === row.item.id}
+              onOpen={onOpenPiece}
+            />
+          );
+        }}
       />
     );
   }

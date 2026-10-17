@@ -55,6 +55,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-20](../tasks/INBOX-20.md) Request money and pay a request (You)
 - [SCHOOLS-11](../tasks/SCHOOLS-11.md) Pay schools their share of course fees (You)
 - [WALLET-03](../tasks/WALLET-03.md) Send to a bank, not enough money, failed send (You)
+- [HOME-07](../tasks/HOME-07.md) Feed: course, template, creator and professional cards, empty and error (You)
 - [EVENTS-10](../tasks/EVENTS-10.md) Refund ticket buyers when an event is called off (You)
 - [EVENTS-08](../tasks/EVENTS-08.md) My events, organiser dashboard, call it off, called off (You)
 - [WALLET-05](../tasks/WALLET-05.md) Add money and withdraw (You)

@@ -81,14 +81,14 @@ const FOLLOWING = 'GET /feed/entries?scope=following&sort=trending&page=1&perPag
 
 const clients: QueryClient[] = [];
 
-async function boot() {
+async function boot(props: Record<string, unknown> = {}) {
   const { FeedScreen } = require('../FeedScreen') as typeof import('../FeedScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   const screen = await rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <FeedScreen />
+        <FeedScreen {...props} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -360,11 +360,229 @@ describe('H2 to H6 · the For you feed', () => {
     expect(screen.getByLabelText('Read the free pages of The Playbook')).toBeTruthy();
   });
 
-  it('a course or template (HOME-07) is not drawn, and the feed reads on until it has a post', async () => {
-    answers[FOR_YOU] = [page([content(item('c', { contentType: 'course' }))], 2)];
+  it('a card with no name is not offered, and the feed reads on until it has a screen', async () => {
+    answers[FOR_YOU] = [page([{ kind: 'creator', creator: { wawuId: 'u9', displayName: null } }], 2)];
     answers['GET /feed/entries?scope=for_you&sort=trending&page=2&perPage=10'] = [page([content(item('a'))])];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('post-a')).toBeTruthy());
-    expect(screen.queryByTestId('post-c')).toBeNull();
+    expect(screen.queryByTestId('creator-card-u9')).toBeNull();
+  });
+});
+
+const creatorCard = (over: Record<string, unknown> = {}) => ({
+  kind: 'creator',
+  creator: {
+    wawuId: 'u1',
+    displayName: 'Zainab Bello',
+    handle: 'zainab',
+    headline: 'Agribusiness trainer',
+    avatarUrl: null,
+    coverUrl: null,
+    verification: { creator: tick(true), professional: tick(false) },
+    badge: null,
+    followers: 18200,
+    posts: 64,
+    rating: 4.9,
+    knownFollowers: { count: 13, people: [{ wawuId: 'k1', displayName: 'Amaka Nwosu', avatarUrl: null }, { wawuId: 'k2', displayName: 'Tobi Ade', avatarUrl: null }] },
+    works: [
+      { id: 'w1', contentType: 'video', accessType: 'free', price: 0, locked: false, title: 'Free clip', thumbnailUrl: null, durationLabel: '4:12', pageCount: null, frameCount: 0, views: 12000 },
+      { id: 'w2', contentType: 'course', accessType: 'paid', price: 5000, locked: true, title: 'Soil course', thumbnailUrl: null, durationLabel: null, pageCount: null, frameCount: 0, views: 10 },
+    ],
+    followsCreator: false,
+    ...over,
+  },
+});
+
+const professionalCard = (over: Record<string, unknown> = {}) => ({
+  kind: 'professional',
+  professional: {
+    id: 'l1',
+    wawuId: 'p1',
+    displayName: 'Funmi Adeyemi',
+    handle: 'funmi',
+    headline: 'Chartered accountant',
+    avatarUrl: null,
+    coverUrl: null,
+    verification: { creator: tick(false), professional: tick(true) },
+    badge: null,
+    category: 'legal_services',
+    services: ['Tax filing', 'CAC returns', 'Bookkeeping', 'Pricing your work', 'Audit'],
+    ratingAvg: 4.9,
+    reviewCount: 212,
+    dmPrice: 1500,
+    dmResponseHours: 24,
+    city: 'Ikeja',
+    usualReplyMinutes: 180,
+    ...over,
+  },
+});
+
+describe('H7 to H13 · course, template, creator and professional cards, empty and error', () => {
+  it('a user sees H7: a course with its free lesson in the pill, and the course, its lessons and the price in the offer bar', async () => {
+    answers[FOR_YOU] = [
+      page([content(item('c', { contentType: 'course', title: 'VFX for Beginners', accessType: 'paid', price: 8000, fullAssetLocked: true, fullAssetUrl: null, previewAssetUrl: 'https://cdn.test/c-lesson.mp4', media: { contentId: 'c', contentType: 'course', durationLabel: null, pageCount: null, frameCount: 0, frames: [] } }))]),
+    ];
+    answers['GET /content/c/detail'] = [
+      ok({
+        contentId: 'c',
+        contentType: 'course',
+        updatedAt: '',
+        purchasedAt: null,
+        buyerCount: 0,
+        studentCount: 1280,
+        freePreview: { pages: null, seconds: null, lessons: 1 },
+        lessons: Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: null, isFree: i === 0 })),
+        rating: { average: null, count: 0, myRating: null, canRate: false, cannotRateReason: 'not_purchased' },
+      }),
+    ];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByText('Course · lesson 1 free')).toBeTruthy());
+    expect(screen.getByText('VFX for Beginners')).toBeTruthy();
+    expect(screen.getByText('12 lessons · Pay from wallet')).toBeTruthy();
+    expect(screen.getByTestId('offer-c-price').props.children).toBeTruthy();
+    expect(screen.getByTestId('video-c')).toBeTruthy();
+  });
+
+  it('a course the Hub cannot describe still shows its offer without the lesson words', async () => {
+    answers[FOR_YOU] = [page([content(item('c', { contentType: 'course', title: 'VFX for Beginners', accessType: 'paid', price: 8000, fullAssetLocked: true, fullAssetUrl: null }))])];
+    answers['GET /content/c/detail'] = [{ status: 500, body: { statusCode: 500, message: 'no' } }];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('offer-c')).toBeTruthy());
+    expect(screen.getByText('Course')).toBeTruthy();
+    expect(screen.getByText('Pay from wallet')).toBeTruthy();
+  });
+
+  it('a user sees H8: a template with its cover, the word Template, and its name and price in the offer bar', async () => {
+    answers[FOR_YOU] = [
+      page([content(item('t', { contentType: 'template', title: 'Aba Collection · patterns', accessType: 'paid', price: 3500, fullAssetLocked: true, fullAssetUrl: null, previewAssetUrl: 'https://cdn.test/t-cover.jpg' }))]),
+    ];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('post-t')).toBeTruthy());
+    expect(screen.getByText('Template')).toBeTruthy();
+    expect(screen.getByText('Aba Collection · patterns')).toBeTruthy();
+    expect(screen.getByText('Template · Pay from wallet')).toBeTruthy();
+    expect(screen.getByTestId('cover-t')).toBeTruthy();
+  });
+
+  it('a user sees H9: a creator card with the Hub\'s figures, the people they know, and the strip of work, and can Follow and open a piece', async () => {
+    answers[FOR_YOU] = [page([creatorCard()])];
+    answers['POST /creators/u1/follow'] = [{ status: 201, body: { statusCode: 201, message: 'OK', data: { following: true } } }];
+    const opened: string[] = [];
+    const screen = await boot({ onOpenPiece: (p: { id: string }) => opened.push(p.id) });
+    await rtl.waitFor(() => expect(screen.getByTestId('creator-card-u1')).toBeTruthy());
+    expect(screen.getByText('Creator for you')).toBeTruthy();
+    expect(screen.getByText('Zainab Bello')).toBeTruthy();
+    expect(screen.getByText('Agribusiness trainer')).toBeTruthy();
+    expect(screen.getByText('18.2K')).toBeTruthy();
+    expect(screen.getByText('64')).toBeTruthy();
+    expect(screen.getByText('4.9')).toBeTruthy();
+    expect(screen.getByText('and 12 people you know', { exact: false })).toBeTruthy();
+    expect(screen.getByLabelText('Soil course, locked, ₦5,000')).toBeTruthy();
+    expect(screen.getByLabelText('Free clip, 12K views')).toBeTruthy();
+    // Profile is ME-02's: nothing is drawn for it yet.
+    expect(screen.queryByText('Profile')).toBeNull();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('work-w2'));
+    });
+    expect(opened).toEqual(['w2']);
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('card-follow'));
+    });
+    await rtl.waitFor(() => expect(sent).toContain('POST /creators/u1/follow'));
+    await rtl.waitFor(() => expect(rtl.within(screen.getByTestId('card-follow')).getByText('Following')).toBeTruthy());
+  });
+
+  it('a refused follow from a card is put back, with a line that says so', async () => {
+    answers[FOR_YOU] = [page([creatorCard({ rating: null, knownFollowers: { count: 0, people: [] }, works: [] })])];
+    answers['POST /creators/u1/follow'] = [{ status: 500, body: { statusCode: 500, message: 'no' } }];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('card-follow')).toBeTruthy());
+    // A figure the Hub does not have is left out with the element around it.
+    expect(screen.queryByTestId('stat-rating')).toBeNull();
+    expect(screen.queryByTestId('card-known')).toBeNull();
+    expect(screen.queryByTestId('card-works')).toBeNull();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('card-follow'));
+    });
+    await rtl.waitFor(() => expect(screen.getByTestId('card-follow-failed')).toBeTruthy());
+    expect(screen.getByText("Zainab Bello wasn't followed. Try again.")).toBeTruthy();
+    expect(rtl.within(screen.getByTestId('card-follow')).getByText('Follow')).toBeTruthy();
+  });
+
+  it('a user sees H10: a professional card with rating, reviews and usual reply, no Trust Score, and Profile opens their page', async () => {
+    answers[FOR_YOU] = [page([professionalCard()])];
+    const opened: string[] = [];
+    const screen = await boot({ onOpenProfessional: (id: string) => opened.push(id) });
+    await rtl.waitFor(() => expect(screen.getByTestId('professional-card-l1')).toBeTruthy());
+    expect(screen.getByText('Professional')).toBeTruthy();
+    expect(screen.getByText('Funmi Adeyemi')).toBeTruthy();
+    expect(screen.getByText('Chartered accountant · Ikeja')).toBeTruthy();
+    expect(screen.getByText('4.9')).toBeTruthy();
+    expect(screen.getByText('212 reviews')).toBeTruthy();
+    expect(screen.getByText('~3h')).toBeTruthy();
+    expect(screen.getByText('usual reply')).toBeTruthy();
+    expect(screen.queryByText(/trust score/i)).toBeNull();
+    expect(screen.getByText('Tax filing')).toBeTruthy();
+    expect(screen.getByText('Pricing your work')).toBeTruthy();
+    expect(screen.queryByText('Audit')).toBeNull();
+    expect(screen.getByText('No reply in 24 hours and your ₦1,500 comes back.')).toBeTruthy();
+    // Message is INBOX-10's and Online now has no source: neither is drawn.
+    expect(screen.queryByText(/Message/)).toBeNull();
+    expect(screen.queryByText(/Online now/)).toBeNull();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('card-profile'));
+    });
+    expect(opened).toEqual(['l1']);
+  });
+
+  it('a professional card without a city, a reply time or reviews leaves those out, and has no Profile without somewhere to open it', async () => {
+    answers[FOR_YOU] = [page([professionalCard({ city: null, usualReplyMinutes: null, ratingAvg: null, reviewCount: 0 })])];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('professional-card-l1')).toBeTruthy());
+    expect(screen.getByText('Chartered accountant')).toBeTruthy();
+    expect(screen.queryByTestId('card-stats')).toBeNull();
+    expect(screen.queryByTestId('card-profile')).toBeNull();
+  });
+
+  it('a user who follows nobody sees H12: the card, Find people to follow, and the creators rail to Follow from', async () => {
+    answers[FOR_YOU] = [page([content(item('a'))])];
+    answers[FOLLOWING] = [page([])];
+    answers['GET /feed/following/count'] = [ok({ count: 0 })];
+    answers['GET /creators?page=1&perPage=12'] = [
+      ok([{ wawuId: 'c1', name: 'Adaeze O.', handle: 'adaeze', avatarUrl: null, field: 'Business strategist', pieceCount: 3, verification: { creator: tick(true), professional: tick(false) }, following: false }]),
+    ];
+    answers['POST /creators/c1/follow'] = [{ status: 201, body: { statusCode: 201, message: 'OK', data: { following: true } } }];
+    let found = 0;
+    const screen = await boot({ onSeeAllCreators: () => (found += 1) });
+    await rtl.waitFor(() => expect(screen.getByTestId('post-a')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('feed-tab-following'));
+    });
+    await rtl.waitFor(() => expect(screen.getByText("You're not following anyone yet")).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByText('Who Made This?')).toBeTruthy());
+    expect(screen.getByText('Follow creators and professionals and their new posts land here first.')).toBeTruthy();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('feed-find-people'));
+    });
+    expect(found).toBe(1);
+    await rtl.waitFor(() => expect(screen.getByTestId('today-follow-c1')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('today-follow-c1'));
+    });
+    await rtl.waitFor(() => expect(sent).toContain('POST /creators/c1/follow'));
+  });
+
+  it('an empty Following has no Find people button when All creators is not wired', async () => {
+    answers[FOR_YOU] = [page([content(item('a'))])];
+    answers[FOLLOWING] = [page([])];
+    answers['GET /feed/following/count'] = [ok({ count: 0 })];
+    answers['GET /creators?page=1&perPage=12'] = [ok([])];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('post-a')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent.press(screen.getByTestId('feed-tab-following'));
+    });
+    await rtl.waitFor(() => expect(screen.getByText("You're not following anyone yet")).toBeTruthy());
+    expect(screen.queryByTestId('feed-find-people')).toBeNull();
   });
 });

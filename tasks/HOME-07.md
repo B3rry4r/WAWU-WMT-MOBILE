@@ -7,7 +7,7 @@ order: 148
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [HOME-04, HOME-05, PROS-02, UI-02, UI-03, HOME-08, HOME-12, PROS-01, EXPLORE-02]
 decisions: [R-18, R-69]
 passes: [V1, V4, V5, V6, V9]
@@ -17,11 +17,14 @@ artboards: [H7, H8, H9, H10, H12, H13]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): HOME-08, HOME-12, EXPLORE-02.
-- **History:** none yet. Reports go to tasks/history/HOME-07.md.
-- **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** H12's rail title is "Who Made This?" (was "Creators to discover").
+As of 17 Oct 2026, built (bundle HOME-07, Sonnet builder, T1), waiting for a verifier.
+- **Status:** verifying. Mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`; backend `wmt/HOME-07` `61b6743` on `b5f5538` (additive, no migration).
+- **Built:** H7 a course post (its free lesson plays, "Course · lesson 1 free", "VFX for Beginners · 12 lessons · Pay from wallet · price"; the lessons come from `GET /content/{id}/detail`); H8 a template post (cover, "Template", name and price in the bar); H9 the creator card (name, tick, headline, followers, posts, rating, "Followed by Amaka and 12 people you know", a swipeable strip of their latest work with lock and price, Follow, a piece opens `/content/<id>`); H10 the professional card (rating, reviews, usual reply, services, "No reply in 24 hours and your ₦1,500 comes back.", Profile opens `/professionals/<id>`; no Trust Score, R-18); H12 an empty Following (the card, "Find people to follow" opens All creators, the "Who Made This?" rail with Follow in place); H13 the feed error with Try again (HOME-02's, kept).
+- **Backend:** the feed's `ProfessionalCard` gains `city` and `usualReplyMinutes` (the directory's own figures, one shared query). Spec added to `feed-cards.contract.spec.ts`.
+- **Not drawn, by R-47:** H9 Profile (ME-02, M5); H10 Message and its price (INBOX-10, I3); H13's second sentence "Anything you've bought is still in My purchases." (ME-14 builds My purchases). Not drawn, nothing backs it: "Online now", "near you", "Template · 9 patterns" (G-HOME-07-1, G-HOME-07-2, G-100, G-101).
+- **Decisions (agent, owner may override):** a course plays only its public preview in the feed (the creator's first lesson; the full file is the whole course); a course or template unlocked from the feed ends the sheet on "Done" (no player to open into; SHARED-CHANGES HOME-07 #2); a professional card shows at most four service chips (`CARD_SERVICE_CHIPS`).
+- **Next:** a verifier; passes V1, V4, V5, V6, V9. Pictures: scratchpad `home-07-b/pics` (390 px, light and dark, h7, h8, h9, h10, h12, h13). Records: this file, `BACKEND_GAPS.md` G-HOME-07-1 and 2, `SHARED-CHANGES.md` HOME-07 #1 to #3.
+- **History:** reports go to tasks/history/HOME-07.md.
 
 ## Design v2 update (16 Oct 2026)
 
@@ -112,7 +115,11 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Files: mobile `src/features/feed/` (new `CoursePost`, `TemplatePost`, `CardFrame`, `FeedCreatorCard`, `FeedProfessionalCard`, `FollowingEmpty`; edited `model`, `look`, `parts`, `PostFrame`, `VideoPost`, `FeedScreen`, `api`), `src/features/home/HomeScreen.tsx` and `CreatorRail.tsx`, `src/features/unlock/model.ts`, `src/app/(tabs)/index.tsx`, contract and generated types; backend `feed-cards.service.ts`, `professional-reply-time.ts` (`replyTimesFor`, shared with the directory), `professional.service.ts`, `contract/openapi.json`.
+Checks (a user can ...): H7 see a course's free lesson, its lessons and price, and the bar opens the unlock sheet (HOME-12); play the lesson (the preview file plays in the frame; no per-lesson files, G-HOME-08-2). H8 tap the bar and swipe on. H9 Follow (the Hub's answer, put back with a line when refused), swipe the strip, open a piece (`/content/<id>`). H10 open Profile (P2), read rating, reviews and usual reply, no Trust Score. H12 Find people to follow (X4) and Follow from the rail. H13 Try again (real aborted calls, then the Hub's posts). Each by jest (`FeedScreen.test.tsx` 24 tests, `model.test.ts`) and against the real Hub on stack `home07` (ports 7890 to 7897, Nuvion stand-in) in a 390 px browser, light and dark.
+Two tests of HOME-02's said a course and a template were "left to HOME-07"; they are replaced by the new ones (the task is what they waited for).
+Counts: `tsc --noEmit` clean; eslint (no fix) clean on 19 changed files; feed, home and unlock jest 9 suites, all pass (before: 8 suites, 132 tests; after: 167 tests with the unlock suite); gates before 928 files, 0 fail, 11 warn; after 934 files, 0 fail, 11 warn, 0 accepted. Backend: `feed-cards`, `professional` specs pass (the three suites on a seeded database); tsc and eslint clean; contract regenerated, two properties added.
+NOT RUN: a device, the real video player on a phone (web export plays stills only: the course preview in the seed is a picture), the H9 hue fallback picture (no portrait), the full mobile check and CI (the lead's batch).
 
 ## Verifier report
 

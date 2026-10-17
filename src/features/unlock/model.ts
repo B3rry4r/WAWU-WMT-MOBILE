@@ -34,7 +34,7 @@ export function unlockedLine(item: FeedItem): string {
   return `${what} yours, and it's in My purchases from now on.`;
 }
 
-const NOUN: Record<PostKind, string> = { video: 'video', audio: 'audio', pdf: 'PDF', photos: 'set' };
+const NOUN: Record<PostKind, string> = { video: 'video', audio: 'audio', pdf: 'PDF', photos: 'set', course: 'course', template: 'template' };
 
 /** H16's button: it opens the piece in place. */
 export function openLabel(item: FeedItem): string {
@@ -45,18 +45,23 @@ export function openLabel(item: FeedItem): string {
       return 'Read now';
     case 'photos':
       return 'See now';
+    // A course or a template has no player in the feed to open into (HOME-07): the sheet just ends, and the piece's own page has it.
+    case 'course':
+    case 'template':
+      return 'Done';
     default:
       return 'Watch now';
   }
 }
 
 /** The mark on that button: Play for something that plays, the book for the PDF. */
-export function openIcon(item: FeedItem): 'Play' | 'BookOpen' | 'Images' {
+export function openIcon(item: FeedItem): 'Play' | 'BookOpen' | 'Images' | 'Check' {
   const kind = kindOf(item);
+  if (kind === 'course' || kind === 'template') return 'Check';
   return kind === 'pdf' ? 'BookOpen' : kind === 'photos' ? 'Images' : 'Play';
 }
 
-const OPENING: Record<PostKind, string> = { video: 'the video', audio: 'the audio', pdf: 'the PDF', photos: 'the set' };
+const OPENING: Record<PostKind, string> = { video: 'the video', audio: 'the audio', pdf: 'the PDF', photos: 'the set', course: 'the course', template: 'the template' };
 
 /** H18's words: the total that left the wallet (the one H14 showed) and what could not be finished. */
 export function openingLine(item: FeedItem, totalKobo: number): string {

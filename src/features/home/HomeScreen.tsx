@@ -21,15 +21,17 @@ export type HomeScreenProps = {
   onCreate?: () => void;
   /** The search buttons (Today's head and the feed's tab row) open Search (X5, EXPLORE-02). Not drawn without it. */
   onSearch?: () => void;
-  /** "See all" on Today's creators opens All creators (X4, EXPLORE-02). Not drawn without it. */
+  /** "See all" on Today's creators, and "Find people to follow" on an empty Following, open All creators (X4, EXPLORE-02). Not drawn without it. */
   onSeeAllCreators?: () => void;
+  /** A professional card in the feed has Profile, which opens their page (P2, PROS-01) with the listing's id. Not drawn without it. */
+  onOpenProfessional?: (id: string) => void;
   /** Where the feed's wallet payments lead when they need somewhere else (HOME-13). */
   pay?: FlowHandlers;
-  /** A feed post's caption opens that piece's own page (H19, HOME-03). */
-  onOpenPiece?: (item: FeedItem) => void;
+  /** A feed post's caption, and a piece in a creator card's strip, open that piece's own page (H19, HOME-03). */
+  onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
 };
 
-export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, pay, onOpenPiece }: HomeScreenProps = {}) {
+export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfessional, pay, onOpenPiece }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -40,7 +42,16 @@ export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, pay, onOpenPi
       {view === 'today' ? (
         <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} />
       ) : (
-        <FeedScreen key={view} initialScope={view} onToday={() => setView('today')} onSearch={onSearch} pay={pay} onOpenPiece={onOpenPiece} />
+        <FeedScreen
+          key={view}
+          initialScope={view}
+          onToday={() => setView('today')}
+          onSearch={onSearch}
+          pay={pay}
+          onOpenPiece={onOpenPiece}
+          onOpenProfessional={onOpenProfessional}
+          onSeeAllCreators={onSeeAllCreators}
+        />
       )}
       {onCreate ? <CreateEntry onPress={onCreate} /> : null}
     </View>

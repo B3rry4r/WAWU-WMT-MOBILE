@@ -1,6 +1,6 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { font } from '@/theme';
+import { font, radius } from '@/theme';
 import { darkColors, darkGradients, darkShadows } from '@/theme/tokens.generated';
 
 /**
@@ -32,6 +32,8 @@ export const media = {
   waveRest: darkColors.mediaWhite35,
   /** White at 60%: the tabs that are not selected. */
   tabIdle: darkColors.mediaWhite60,
+  /** White at 25%: a chip's edge on a card (H10) and the soft disc behind a person with no portrait (H9, H10). */
+  chipEdge: darkColors.mediaWhite25,
   /** H4's book: the cover (the canvas's deep purple) and the pale page behind it. */
   cover: darkColors.mediaCover,
   page: darkColors.textPrimary,
@@ -40,6 +42,19 @@ export const media = {
   /** `--shadow-cover`, black at 70%: under H4's book and H6's square. */
   coverShadow: darkShadows.cover[0].color,
   accent: darkColors.accent,
+  /** H10's note: the blue tint with its edge, and the star's amber (the dark theme's, as the card is drawn over media). */
+  info: darkColors.info,
+  infoTint: darkColors.infoTint,
+  star: darkColors.warning,
+  /** Black at 30%: the veil over a locked piece's picture in H9's strip (the canvas's .28). */
+  tileVeil: darkColors.mediaBlack30,
+  /** H9 and H10's frame: dark at the top, clear from 18% to 30%, the dark scrim at 52% and the page's own black from 72% (the canvas's stops), built from the feed's scrim, the dark scrim and the page token. */
+  cardScrim: {
+    colors: [darkGradients.scrimFeed.colors[0], darkColors.mediaBlack0, darkColors.mediaBlack0, darkColors.surfaceScrim, darkColors.surfacePage],
+    locations: [0, 0.18, 0.3, 0.52, 0.72],
+  },
+  /** A tile of H9's strip: clear to 45%, then black at 75% (the canvas's own). */
+  tileScrim: { colors: [darkColors.mediaBlack0, darkColors.surfaceScrim], locations: [0.45, 1] },
   /** Under a post that has no picture of its own (a PDF, an audio file): the sunken ink. */
   backdrop: darkColors.surfaceSunken,
   scrim: darkGradients.scrimFeed,
@@ -186,6 +201,55 @@ export const metrics = {
   controlIcon: 24,
   /** The play mark in the middle of a paused video. */
   pausedIcon: 64,
+  /** The template's mark in the frame of a template with no picture. */
+  templateMark: 64,
+} as const;
+
+/** The canvas's sizes for the interstitial cards (H9 creator, H10 professional): 20 in from each side, 104 above the phone's bottom, 16 between rows. */
+export const cardMetrics = {
+  side: 20,
+  pillTop: 104,
+  stack: 16,
+  nameStack: 6,
+  nameGap: 8,
+  tick: 24,
+  panelRadius: radius.tile,
+  panelPadV: 12,
+  panelPadH: 16,
+  panelGap: 10,
+  statGap: 2,
+  starGap: 5,
+  star: 16,
+  knownGap: 10,
+  knownAvatar: 24,
+  knownOverlap: -8,
+  knownRing: 2,
+  tileGap: 8,
+  tileW: 104,
+  tileH: 132,
+  tileRadius: radius.input,
+  tileInset: 7,
+  tileLeft: 8,
+  tileIcon: 26,
+  tileIconGlyph: 13,
+  tileLock: 20,
+  tileLockTop: '44%',
+  tileBlur: 8,
+  buttonH: 50,
+  buttonGap: 8,
+  buttonIcon: 18,
+  buttonInner: 6,
+  /** The row stops this far short of the right edge, clear of the Create button. */
+  buttonRight: 70,
+  chipH: 32,
+  chipPad: 13,
+  chipGap: 6,
+  noteRadius: radius.tile,
+  notePadV: 12,
+  notePadH: 14,
+  /** The soft disc behind a person with no portrait. */
+  disc: 250,
+  discTop: 322,
 } as const;
 
 /** The canvas's type for the feed, each from the artboard's own CSS. */
@@ -211,6 +275,18 @@ export const words = StyleSheet.create({
   bookBy: type(10, 700, { letterSpacing: 10 * 0.14, opacity: 0.7, textTransform: 'uppercase' }),
   bookTitle: type(26, 700, { lineHeight: 26 * 1.05, letterSpacing: 26 * -0.03 }),
   bookPages: type(11, 400, { opacity: 0.7 }),
+  cardName: type(32, 700, { letterSpacing: 32 * -0.04, lineHeight: 32 }),
+  cardLine: type(14.5, 400, { opacity: 0.8 }),
+  statValue: type(18, 700, { letterSpacing: 18 * -0.02 }),
+  statLabel: type(12, 400, { opacity: 0.65 }),
+  known: type(13, 400, { opacity: 0.85 }),
+  knownBold: type(13, 700),
+  tileMain: type(12, 700),
+  tileSide: type(10.5, 600, { opacity: 0.75 }),
+  chip: type(13, 600),
+  note: type(13, 400, { lineHeight: 13 * 1.4 }),
+  button: type(15.5, 700),
+  failed: type(12.5, 600),
   endedTitle: type(22, 700, { letterSpacing: 22 * -0.025 }),
   endedBody: type(14.5, 400, { lineHeight: 14.5 * 1.45, opacity: 0.85, textAlign: 'center' }),
 });

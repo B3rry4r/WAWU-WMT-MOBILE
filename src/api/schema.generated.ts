@@ -10915,6 +10915,8 @@ export interface components {
             reviewCount: number;
             dmPrice: number;
             dmResponseHours: number;
+            city: string | null;
+            usualReplyMinutes: number | null;
         };
         FollowingCount: {
             count: number;

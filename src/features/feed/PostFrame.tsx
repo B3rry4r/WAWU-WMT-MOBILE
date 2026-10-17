@@ -6,7 +6,7 @@ import { nairaToKobo } from '@/api/kobo';
 import type { FeedItem } from './api';
 import { useEngagement } from './engagement';
 import { media, metrics } from './look';
-import { offerFor, pillFor, type PostKind } from './model';
+import { offerFor, pillFor, type CourseDetail, type PostKind } from './model';
 import { Byline, fromPostBottom, OfferBar, Pill, Rail, Scrim } from './parts';
 
 export type PostProps = {
@@ -49,10 +49,12 @@ type FrameProps = PostProps & {
   above?: ReactNode;
   /** Over the picture, top right: H3's frame counter. */
   corner?: ReactNode | ((space: MiddleSpace) => ReactNode);
+  /** A course's lessons and free lessons (H7): the pill and the offer bar say how many. */
+  detail?: CourseDetail | null;
 };
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
-export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, onOpen, backdrop, middle, above, corner }: FrameProps) {
+export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, onOpen, backdrop, middle, above, corner, detail }: FrameProps) {
   const [footHeight, setFootHeight] = useState(0);
   const [railTop, setRailTop] = useState(0);
   const onRailLayout = (e: LayoutChangeEvent) => {
@@ -67,8 +69,8 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
   const bottom = height - fromPostBottom(metrics.captionBottom) - footHeight - metrics.middleGap;
   const space: MiddleSpace = { top, bottom, height: Math.max(0, bottom - top), width, ready: footHeight > 0, railTop };
   const marks = useEngagement(item, active);
-  const offer = offerFor(item, kind);
-  const pill = pillFor(item, kind);
+  const offer = offerFor(item, kind, detail);
+  const pill = pillFor(item, kind, detail);
   const canFollow = !marks.follows && myId !== null && myId !== item.creatorWawuId;
   return (
     <View testID={`post-${item.id}`} style={[styles.page, { width, height, backgroundColor: media.black }]}>

@@ -6,9 +6,19 @@ import {
   counterRight,
   endedBodyWidth,
   caption,
+  feedRows,
+  followedByParts,
+  freeLessonsText,
+  isPicture,
+  placeLine,
+  refundNote,
+  reviewsText,
+  usualReply,
+  workTile,
   clock,
   compactCount,
   creatorName,
+  cardTick,
   drawablePosts,
   durationSeconds,
   durationText,
@@ -73,21 +83,122 @@ const locked = (over: Partial<FeedItem> = {}) =>
   piece({ accessType: 'paid', price: 2500, fullAssetLocked: true, fullAssetUrl: null, ...over });
 
 describe('which posts the feed draws', () => {
-  it('a user sees videos, photo sets, PDFs and audio; courses, templates and the cards are left to HOME-07', () => {
+  it('a user sees videos, photo sets, PDFs, audio, courses and templates, and the creator and professional cards among them (HOME-07)', () => {
     expect(postKind({ contentType: 'video' })).toBe('video');
     expect(postKind({ contentType: 'image' })).toBe('photos');
     expect(postKind({ contentType: 'pdf' })).toBe('pdf');
     expect(postKind({ contentType: 'audio' })).toBe('audio');
-    expect(postKind({ contentType: 'course' })).toBeNull();
-    expect(postKind({ contentType: 'template' })).toBeNull();
+    expect(postKind({ contentType: 'course' })).toBe('course');
+    expect(postKind({ contentType: 'template' })).toBe('template');
 
     const entries = [
       { kind: 'content', content: piece({ id: 'a' }) },
-      { kind: 'creator', creator: {} },
+      { kind: 'creator', creator: { wawuId: 'u1', displayName: 'Zainab Bello' } },
       { kind: 'content', content: piece({ id: 'b', contentType: 'course' }) },
-      { kind: 'content', content: piece({ id: 'c', contentType: 'pdf' }) },
+      { kind: 'content', content: piece({ id: 'a' }) },
+      { kind: 'professional', professional: { id: 'l1', displayName: 'Funmi Adeyemi' } },
+      { kind: 'creator', creator: { wawuId: 'u2', displayName: null } },
+      { kind: 'professional', professional: { id: 'l2', displayName: '  ' } },
+      { kind: 'creator', creator: { wawuId: 'u1', displayName: 'Zainab Bello' } },
     ] as unknown as FeedEntry[];
-    expect(drawablePosts(entries).map((p) => p.id)).toEqual(['a', 'c']);
+    expect(drawablePosts(entries).map((p) => p.id)).toEqual(['a', 'b', 'a']);
+    // Each screen once, in the Hub's order; a card with no name is not offered as a bare id.
+    expect(feedRows(entries).map((r) => r.key)).toEqual(['post-a', 'creator-u1', 'post-b', 'professional-l1']);
+  });
+
+  it('a user sees a picture only for a file that is one, whatever signs its address', () => {
+    expect(isPicture('https://cdn.test/a/cover.JPG?sig=1')).toBe(true);
+    expect(isPicture('https://cdn.test/a/cover.webp')).toBe(true);
+    expect(isPicture('https://cdn.test/a/lesson.mp4?sig=1')).toBe(false);
+    expect(isPicture('https://cdn.test/a/preview.pdf')).toBe(false);
+    expect(isPicture(null)).toBe(false);
+  });
+});
+
+describe('H7 and H8: a course and a template', () => {
+  const detail = { lessons: Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, title: `L${i}`, order: i + 1, durationLabel: null, isFree: i === 0 })), freePreview: { pages: null, seconds: null, lessons: 1 } };
+
+  it('a user sees how many lessons are free in the pill, and the course and its lessons in the offer bar', () => {
+    const course = locked({ contentType: 'course', title: 'VFX for Beginners', price: 8000 });
+    expect(pillFor(course, 'course', detail)).toEqual({ icon: 'GraduationCap', text: 'Course · lesson 1 free' });
+    const offer = offerFor(course, 'course', detail);
+    expect(offer?.title).toBe('VFX for Beginners');
+    expect(offer?.subtitle).toBe('12 lessons · Pay\u00a0from\u00a0wallet');
+    expect(freeLessonsText({ freePreview: { pages: null, seconds: null, lessons: 3 } })).toBe('lessons 1–3 free');
+  });
+
+  it('a course whose lessons are not read yet, or none free, leaves those words out and keeps the rest', () => {
+    const course = locked({ contentType: 'course', title: 'VFX for Beginners' });
+    expect(pillFor(course, 'course').text).toBe('Course');
+    expect(offerFor(course, 'course')?.subtitle).toBe('Pay\u00a0from\u00a0wallet');
+    expect(freeLessonsText({ freePreview: { pages: null, seconds: null, lessons: 0 } })).toBeNull();
+  });
+
+  it('a course the viewer may open says how many lessons it has, and has no offer bar', () => {
+    const own = piece({ contentType: 'course', accessType: 'paid', fullAssetLocked: false });
+    expect(pillFor(own, 'course', detail).text).toBe('Course · 12 lessons');
+    expect(offerFor(own, 'course', detail)).toBeNull();
+  });
+
+  it('a template says Template and names itself in the offer bar; the pattern count is not served', () => {
+    const template = locked({ contentType: 'template', title: 'Aba Collection · patterns', price: 3500 });
+    expect(pillFor(template, 'template')).toEqual({ icon: 'LayoutTemplate', text: 'Template' });
+    expect(offerFor(template, 'template')).toEqual({ icon: 'LayoutTemplate', title: 'Aba Collection · patterns', subtitle: 'Template · Pay\u00a0from\u00a0wallet' });
+  });
+});
+
+describe('H9 and H10: the creator and professional cards', () => {
+  it('a user sees the person\'s headline and, for a professional, their city', () => {
+    expect(placeLine('Agribusiness trainer')).toBe('Agribusiness trainer');
+    expect(placeLine('Chartered accountant', 'Ikeja')).toBe('Chartered accountant · Ikeja');
+    expect(placeLine(null, '')).toBe('');
+  });
+
+  it('a card leads with the tick it is about, and falls back to the other', () => {
+    const both = { creator: tick(true), professional: tick(true) };
+    expect(cardTick(both, 'pro')).toBe('pro');
+    expect(cardTick(both, 'creator')).toBe('creator');
+    expect(cardTick({ creator: tick(true), professional: tick(false) }, 'pro')).toBe('creator');
+    expect(cardTick({ creator: tick(false), professional: tick(false) }, 'pro')).toBeNull();
+  });
+
+  it('a user reads who they know that follows a creator, as the Hub counts it', () => {
+    const people = [
+      { wawuId: 'a', displayName: 'Amaka Nwosu', avatarUrl: null },
+      { wawuId: 'b', displayName: 'Tobi Ade', avatarUrl: null },
+    ];
+    const text = (known: Parameters<typeof followedByParts>[0]) => followedByParts(known)?.map((p) => p.text).join('');
+    expect(text({ count: 13, people })).toBe('Followed by Amaka and 12 people you know');
+    expect(followedByParts({ count: 13, people })?.[1]).toEqual({ text: 'Amaka', bold: true });
+    expect(text({ count: 2, people })).toBe('Followed by Amaka and Tobi');
+    expect(text({ count: 3, people })).toBe('Followed by Amaka and 2 people you know');
+    expect(text({ count: 1, people: people.slice(0, 1) })).toBe('Followed by Amaka');
+    expect(text({ count: 4, people: [{ wawuId: 'x', displayName: null, avatarUrl: null }] })).toBe('Followed by 4 people you know');
+    expect(followedByParts({ count: 0, people: [] })).toBeNull();
+  });
+
+  it('a user sees the usual reply as the directory counts it, and nothing when the Hub has no figure', () => {
+    expect(usualReply(25)).toBe('~25m');
+    expect(usualReply(180)).toBe('~3h');
+    expect(usualReply(2880)).toBe('~2d');
+    expect(usualReply(null)).toBeNull();
+    expect(usualReply(0)).toBeNull();
+    expect(reviewsText(212)).toBe('212 reviews');
+    expect(reviewsText(1)).toBe('1 review');
+  });
+
+  it('the refund note carries the professional\'s own window and price, never a literal', () => {
+    expect(refundNote(1500, 24)).toBe('No reply in 24 hours and your ₦1,500 comes back.');
+    expect(refundNote(2500.5, 1)).toBe('No reply in 1 hour and your ₦2,500.50 comes back.');
+    expect(JSON.stringify([refundNote(1500, 24)])).not.toMatch(/trust/i);
+  });
+
+  it('a piece in the strip shows its price behind a lock, or its views and length', () => {
+    const work = { id: 'w', contentType: 'course', accessType: 'paid', price: 5000, locked: true, title: 'VFX', thumbnailUrl: null, durationLabel: null, pageCount: null, frameCount: 0, views: 40 };
+    expect(workTile(work)).toMatchObject({ icon: 'GraduationCap', locked: true, left: '₦5,000', right: 'Course' });
+    expect(workTile({ ...work, contentType: 'video', accessType: 'free', price: 0, locked: false, durationLabel: '4:12', views: 12000 })).toMatchObject({ icon: 'Play', locked: false, left: '12K views', right: '4:12' });
+    expect(workTile({ ...work, contentType: 'image', accessType: 'free', locked: false, frameCount: 6, views: 2100 })).toMatchObject({ icon: 'Images', left: '2.1K views', right: '6' });
+    expect(workTile({ ...work, contentType: 'pdf', accessType: 'paid', price: 1500 })).toMatchObject({ icon: 'BookOpen', locked: true, left: '₦1,500', right: 'PDF' });
   });
 });
 
