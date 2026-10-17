@@ -1,2 +1,3 @@
 d0776eb (wmt/MERGE-11)
 8495423 (wmt/MERGE-8) with wawu-backend wmt/INBOX-15 c803256 money request paths and schemas added; merged with e41210e (wmt/B1)
+wawu-backend wmt/SETTINGS-05 56c4b61: DeleteAccountDto.reason and DELETE /account's summary applied to this copy (SHARED-CHANGES SETTINGS-05 #1)

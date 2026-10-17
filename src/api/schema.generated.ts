@@ -3366,7 +3366,9 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Asks to delete the account (R-17: it waits 30 days). Refused with
+         * Asks to delete the account (R-17: it waits 30 days). The body may carry
+         *     `reason`, why the person is leaving (Z7, SETTINGS-05), kept on the
+         *     deletion row. Refused with
          *     `409 account_deletion_blocked` while the wallet holds money, a hold is
          *     open or earnings are waiting (SETTINGS-06). `503 provider_unreachable`
          *     when the wallet provider does not answer, so "empty" is never guessed.
@@ -8230,7 +8232,13 @@ export interface components {
             templateId: string;
             limit?: number;
         };
-        DeleteAccountDto: Record<string, never>;
+        DeleteAccountDto: {
+            /**
+             * @description Why the person is leaving; left out when they did not say.
+             * @enum {string}
+             */
+            reason?: "not_using_enough" | "another_account" | "privacy" | "too_many_notifications" | "something_else";
+        };
         AccountDeletionBlockedReason: {
             /** @enum {string} */
             code: "account_deletion_blocked";
