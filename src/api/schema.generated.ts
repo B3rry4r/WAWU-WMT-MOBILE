@@ -5894,6 +5894,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/plans/purchases/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The purchase still going through for the caller, or `purchase: null`
+         *     (ME-13, M15): a payment still confirming, or confirmed and not yet
+         *     opened, the same ones that make a second purchase `payment_in_progress`.
+         *     Declared before the id so `pending` is never read as one. Needs no
+         *     wallet: a person with none has nothing going through.
+         */
+        get: operations["PlanPurchasesController_pending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/plans/purchases/{id}": {
         parameters: {
             query?: never;
@@ -12392,6 +12415,9 @@ export interface components {
             grant: components["schemas"]["PlanPurchaseGrantView"] | null;
             createdAt: string;
             paidAt: string | null;
+        };
+        PendingPlanPurchaseView: {
+            purchase: components["schemas"]["PlanPurchaseView"] | null;
         };
         BillReturnView: {
             /** @enum {string} */
@@ -24376,6 +24402,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    PlanPurchasesController_pending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingPlanPurchaseView"];
                 };
             };
         };

@@ -64,6 +64,8 @@ export type MeScreenProps = {
   onOpenPaid?: () => void;
   /** Settings, the last row of the Menu sheet (Z1): opens Z2. */
   onOpenSettings: () => void;
+  /** Verification (ME-13): the menu's row, drawn only when given. */
+  onOpenVerification?: () => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
 };
@@ -79,7 +81,7 @@ export type MeScreenProps = {
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
  * (PROS-03) are in.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onCreate }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenVerification, onCreate }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -197,6 +199,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        onOpenVerification={
+          onOpenVerification
+            ? () => {
+                setMenuOpen(false);
+                onOpenVerification();
+              }
+            : undefined
+        }
       />
     </View>
   );
