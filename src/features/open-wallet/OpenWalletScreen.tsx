@@ -42,7 +42,7 @@ const LOCK = { icon: 15, stroke: 2, size: 13, between: 8 } as const;
 /** auth.js line 84: the BVN and NIN hints, and the lock line. */
 const BVN_HINT = 'Dial *565*0# to get it';
 const NIN_HINT = 'Dial *346# to get it';
-const LOCK_LINE = 'Checked with NIBSS. Never shown on your profile.';
+const LOCK_LINE = 'Never shown on your profile.';
 
 let visits = 0;
 const nextVisit = () => {
