@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { useJobCheck } from '@/features/points/JobCheck';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import type { JobAction } from '@/features/points/studioApi';
@@ -41,6 +42,7 @@ function Harness() {
       ready.current += 1;
     },
     onBuyPoints: () => router.push({ pathname: '/points-buy', params: { from: 'studio' } }),
+    onAddMoney: (shortfall) => router.push(addMoneyHref(shortfall)),
     onForgotPin: () => router.push('/reset-pin'),
     onSetPin: () => router.push('/open-wallet-pin'),
     onLeave: () => router.replace('/studio'),

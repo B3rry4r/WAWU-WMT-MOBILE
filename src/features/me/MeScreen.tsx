@@ -268,6 +268,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               }
             : undefined
         }
+        onOpenTier={
+          onOpenTier
+            ? () => {
+                setMenuOpen(false);
+                onOpenTier();
+              }
+            : undefined
+        }
         onOpenVerification={
           onOpenVerification
             ? () => {

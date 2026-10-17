@@ -48,6 +48,15 @@ export function tickLine(ticks: readonly ('creator' | 'pro')[]): string | undefi
   return ticks.map((kind) => (kind === 'pro' ? 'Professional tick' : 'Creator tick')).join(' · ');
 }
 
+/**
+ * The line under Your tier on the Me menu (M7, VERIFY-05): the name of the tier the Hub says the person holds (`GET /me/tier`,
+ * `tier.name`). A person with no tier, or one the Hub sent no name for, has nothing to show under the title.
+ */
+export function tierLine(held: Pick<MyTier, 'state' | 'tier'> | null | undefined): string | undefined {
+  if (!held || held.state === 'none') return undefined;
+  return held.tier?.name?.trim() || undefined;
+}
+
 /** One social chip above the counts: the platform, what is written on the chip, and where a tap goes. */
 export type SocialLink = { platform: SocialPlatform; label: string; url: string };
 

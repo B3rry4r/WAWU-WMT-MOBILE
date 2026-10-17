@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
@@ -190,6 +190,37 @@ const stub = (name: string) => {
   return Stub;
 };
 
+/** W15 as a stand-in: it names the shortfall it was opened with, and Back returns to the screen that sent the person. */
+function AddMoneyStub() {
+  const router = useRouter();
+  const { short } = useLocalSearchParams<{ short?: string }>();
+  return (
+    <View>
+      <Text accessibilityRole="header">Add money</Text>
+      <Text testID="add-money-short">{`short ${short ?? ''}`}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()}>
+        <Text>Back</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Go elsewhere" onPress={() => router.replace('/')}>
+        <Text>Go elsewhere</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Somewhere that is not the screen the person left from: it can step back, so the screen below is shown again later. */
+function ElsewhereStub() {
+  const router = useRouter();
+  return (
+    <View>
+      <Text accessibilityRole="header">Home</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Step back" onPress={() => router.back()}>
+        <Text>Step back</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 beforeAll(async () => {
   session = require('@/api/session') as typeof import('@/api/session');
   queryClient = (require('@/api/query') as typeof import('@/api/query')).queryClient;
@@ -199,9 +230,10 @@ beforeAll(async () => {
         <Stack screenOptions={{ headerShown: false }} />
       </QueryClientProvider>
     ),
-    index: stub('Home'),
+    index: ElsewhereStub,
     welcome: stub('Welcome'),
     points: stub('Your points'),
+    'add-money': AddMoneyStub,
     'points-buy': stub('Buy points'),
     'reset-pin': stub('Reset PIN'),
     'open-wallet': stub('Open your wallet'),
@@ -436,16 +468,91 @@ describe('PT3, PT3a and PT3b · not enough points', () => {
     expect(hub.polls).toBeGreaterThanOrEqual(2);
   });
 
-  it('with the wallet too low too the sheet says so and Add money is not drawn (not built), only Not now', async () => {
+  it('with the wallet too low too the sheet says so and offers Add money, not Not now, and nothing is bought', async () => {
     hub.walletKobo = 1000;
     await toJob();
     await fireEvent.press(screen.getByTestId('preview-run'));
     expect(await screen.findByTestId('shortfall-low')).toHaveTextContent('Your wallet is too low too', { exact: false });
     expect(screen.getByTestId('shortfall-low')).toHaveTextContent('Add money, then try again.', { exact: false });
-    expect(screen.queryByText('Add money')).toBeNull();
+    expect(screen.getByTestId('shortfall-add')).toHaveTextContent('Add money');
+    expect(screen.queryByText('Not now')).toBeNull();
     expect(screen.queryByTestId('shortfall-confirm')).toBeNull();
-    await fireEvent.press(screen.getByTestId('shortfall-close'));
-    await waitFor(() => expect(screen.queryByTestId('shortfall-sheet')).toBeNull());
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('Add money opens W15 with exactly what the wallet is short, closes the sheet, and nothing is bought', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    // 160 missing points at 50 kobo each is 8,000 kobo; the wallet holds 1,000.
+    expect(await screen.findByTestId('add-money-short')).toHaveTextContent('short 7000');
+    expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('back from Add money the Hub quotes the job again: money in the wallet now shows the sheet that pays, and the person pays with the PIN', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    await screen.findByTestId('add-money-short');
+    const before = hub.quotes;
+    hub.walletKobo = 5_000_000;
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByTestId('shortfall-confirm')).toBeTruthy();
+    expect(screen.queryByTestId('shortfall-low')).toBeNull();
+    expect(hub.quotes).toBe(before + 1);
+    expect(hub.buys).toHaveLength(0);
+    await fireEvent.press(screen.getByTestId('shortfall-confirm'));
+    await screen.findByText(/ for buying /);
+    await tap('1234');
+    await waitFor(() => expect(hub.payments).toBe(1));
+  });
+
+  it('back from Add money with the wallet still short shows the sheet with Add money again, and nothing asks the Hub again by itself', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    await screen.findByTestId('add-money-short');
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByTestId('shortfall-low')).toBeTruthy();
+    expect(screen.getByTestId('shortfall-add')).toBeTruthy();
+    const settled = hub.quotes;
+    await sleep(50);
+    expect(hub.quotes).toBe(settled);
+  });
+
+  it('leaving Add money for somewhere else ends the trip: when the screen is shown again the Hub is not asked, and no sheet comes back unasked', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    await screen.findByTestId('add-money-short');
+    await fireEvent.press(screen.getByRole('button', { name: 'Go elsewhere' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Step back' }));
+    await screen.findByTestId('preview-run');
+    const settled = hub.quotes;
+    hub.walletKobo = 5_000_000;
+    await sleep(50);
+    expect(hub.quotes).toBe(settled);
+    expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('back from Add money with the points now covering the job, no sheet comes back', async () => {
+    hub.walletKobo = 1000;
+    await toJob();
+    await fireEvent.press(screen.getByTestId('preview-run'));
+    await fireEvent.press(await screen.findByTestId('shortfall-add'));
+    await screen.findByTestId('add-money-short');
+    const before = hub.quotes;
+    hub.points = 300;
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(hub.quotes).toBe(before + 1));
+    await sleep(50);
+    expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
 

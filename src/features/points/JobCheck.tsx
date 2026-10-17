@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect, usePathname } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 
@@ -14,6 +15,7 @@ import { PointsFigure } from '@/components/PointsFigure';
 import { EmptyState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -34,8 +36,8 @@ export type JobCheckOptions = {
   onReady: (quote: JobQuote, job: JobInput) => void;
   /** Buy points (PT4): the sheet's Buy points, "Buy points instead". */
   onBuyPoints: () => void;
-  /** Add money for the wallet's shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): PT3b then shows its note and "Not now". */
-  onAddMoney?: (shortfallKobo: number) => void;
+  /** PT3b's Add money, for the wallet's shortfall (kobo): the screen opens W15 with it (`addMoneyHref`, as every pay sheet does). The sheet closes first; when the screen is shown again the check starts again. */
+  onAddMoney: (shortfallKobo: number) => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back. */
@@ -43,6 +45,9 @@ export type JobCheckOptions = {
   /** "Back to AI tools" on the daily limit (PT7). */
   onLeave: () => void;
 };
+
+/** The route Add money lives at (W15): a trip there is not leaving. */
+const ADD_MONEY_PATH: string = addMoneyHref(0).pathname;
 
 type View_ = { kind: 'sheet'; job: JobInput; quote: JobQuote } | { kind: 'cap'; job: JobInput; quote: JobQuote } | null;
 
@@ -67,6 +72,22 @@ export function useJobCheck(options: JobCheckOptions): { check: (job: JobInput) 
   useEffect(() => {
     latest.current = options;
   });
+  // The job the person left for Add money (PT3b), and the screen they left from: when this screen is shown again the Hub quotes it again,
+  // so the sheet that comes back is the one the new balance earns (PT3 to pay, PT3b once more, or the job running). The trip ends when
+  // they come back, when they go anywhere that is not this screen or Add money, and when this screen goes away; after that nothing is
+  // quoted unasked.
+  const adding = useRef<{ job: JobInput; from: string } | null>(null);
+  const pathname = usePathname();
+  useEffect(() => {
+    const trip = adding.current;
+    if (trip && pathname !== trip.from && pathname !== ADD_MONEY_PATH) adding.current = null;
+  }, [pathname]);
+  useEffect(
+    () => () => {
+      adding.current = null;
+    },
+    [],
+  );
 
   /** Puts a quote where it belongs: the job runs, or the cap, or the sheet. Returns whether the job is running. */
   const settle = useCallback((job: JobInput, quote: JobQuote) => {
@@ -114,6 +135,15 @@ export function useJobCheck(options: JobCheckOptions): { check: (job: JobInput) 
     [settle],
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const trip = adding.current;
+      if (!trip) return;
+      adding.current = null;
+      void requote(trip.job);
+    }, [requote]),
+  );
+
   const node = (
     <>
       {view?.kind === 'sheet' ? (
@@ -126,7 +156,11 @@ export function useJobCheck(options: JobCheckOptions): { check: (job: JobInput) 
             setView(null);
             options.onBuyPoints();
           }}
-          onAddMoney={options.onAddMoney}
+          onAddMoney={(shortfallKobo) => {
+            adding.current = { job: view.job, from: pathname };
+            setView(null);
+            options.onAddMoney(shortfallKobo);
+          }}
           onForgotPin={() => {
             setView(null);
             options.onForgotPin();
@@ -162,7 +196,7 @@ type ShortfallSheetProps = {
   quote: JobQuote;
   onClose: () => void;
   onBuyPoints: () => void;
-  onAddMoney?: (shortfallKobo: number) => void;
+  onAddMoney: (shortfallKobo: number) => void;
   onForgotPin: () => void;
   onSetPin: () => void;
   /** The Hub's quote now, when it is not the one the person was shown (it moved, points arrived, a cap came into play). */
@@ -438,11 +472,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
           <>
             <Banner tone="warning" icon="Wallet" title={SHEET_WORDS.walletLowTitle} body={SHEET_WORDS.walletLowBody} testID="shortfall-low" />
             <View style={styles.buttons}>
-              {props.onAddMoney ? (
-                <Button testID="shortfall-add" label={SHEET_WORDS.addMoney} onPress={() => props.onAddMoney?.(quote.wallet?.payment.shortfallKobo ?? 0)} full />
-              ) : (
-                <Button testID="shortfall-close" label={SHEET_WORDS.notNow} onPress={props.onClose} variant="secondary" full />
-              )}
+              <Button testID="shortfall-add" label={SHEET_WORDS.addMoney} onPress={() => props.onAddMoney(quote.wallet?.payment.shortfallKobo ?? 0)} full />
             </View>
           </>
         ) : (
