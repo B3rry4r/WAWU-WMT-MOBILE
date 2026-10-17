@@ -25,6 +25,8 @@ import { asksSelfie, identityRow, STILL_CONFIRMING_BODY, STILL_CONFIRMING_TITLE,
 /** design/_gen/me.js line 55 (`verifBody`): the parts of the page stand 20 apart; the rows of a part, 10. */
 const BODY_GAP = 20;
 const SKELETON = { rowHeight: 76, labelHeight: 14 } as const;
+/** design/_gen/me.js line 49 (`kycPanel`): the pill and the chevron stand 10 apart. */
+const TRAILING = { between: 10 } as const;
 
 export type VerificationScreenProps = {
   onBack: () => void;
@@ -156,5 +158,5 @@ function Loading() {
 }
 
 const styles = StyleSheet.create({
-  trailing: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  trailing: { flexDirection: 'row', alignItems: 'center', gap: TRAILING.between },
 });
