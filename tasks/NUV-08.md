@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-17 Oct 2026. Round 2 (fix of the verifier's findings 1 to 4, 6, 7) pushed: backend `wmt/NUV-08` `ecebab9` on `wmt/MERGE-7` `0be61a4`. No PR.
+17 Oct 2026. Round 2 (fix of the verifier's findings 1 to 4, 6, 7) pushed: backend `wmt/NUV-08` `37a49f5` on `wmt/MERGE-7` `0be61a4`. No PR.
 - **Status:** verifying (round 2, a fresh verifier). Nuvion stood in everywhere; no real host called.
 - **Migration:** `20261025050000_nuvion_reconcile_findings` (one new table, `NuvionReconcileFinding`; the lead may rename at merge).
 - **Next:** a verifier (not the builder). The (key) check waits for the sandbox key and must also confirm that a statement's `transaction_id` is the transfer id, and ask Nuvion for a fee-reading call (see the fee check).
@@ -106,7 +106,7 @@ CI: `5b756e2` failed `webhook-retention-readers.spec.ts` (the sweep reads the ta
 `no-fee-or-limit-figures.spec.ts` (my setting name began `NUVION_FEE_`: renamed `NUVION_SIMULATE_FEES_HOURS` in `f48fddd`)
 and `account-deletion-round4.contract.spec.ts` T6b (SETTINGS-06, a file this task does not touch; not re-run by me).
 
-**Round 2 (17 Oct 2026, Sonnet builder, backend `ecebab9`; verifier report findings 1 to 4, 6, 7).** Shapes now come
+**Round 2 (17 Oct 2026, Sonnet builder, backend `37a49f5`; verifier report findings 1 to 4, 6, 7).** Shapes now come
 from the saved public docs (`nuvion-docs/`), not guesses; the stand-in serves the docs' shapes.
 1. HIGH statements: lines are `data.transactions[]`, paging `data.pagination` (`NuvionClient.statementPage`), line id
    `transaction_id`, time `date` (ISO), `type` credit|debit, `fee`, `running_balance`, `reference`, status completed|pending
