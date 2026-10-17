@@ -386,9 +386,9 @@ describe('W9 · the amount', () => {
 });
 
 describe('W10 · review, with W11 the PIN sheet', () => {
-  it('a user sending ₦25,000 sees Fintava’s charge, WAWU’s fee, Fees and the Total, the total on the button and "They get ₦25,000"', async () => {
+  it('a user sending ₦25,000 sees Bank charge, WAWU’s fee, Fees and the Total, the total on the button and "They get ₦25,000"', async () => {
     await toReview('25000', 'Rent contribution');
-    expect(screen.getByText("Fintava's charge")).toBeTruthy();
+    expect(screen.getByText("Bank charge")).toBeTruthy();
     expect(screen.getByText("WAWU's fee")).toBeTruthy();
     expect(screen.getByText('Fees')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
@@ -484,7 +484,7 @@ describe('W12 · the receipt', () => {
     expect(screen.getByText('16 Oct 2026, 10:42')).toBeTruthy();
     expect(screen.getByText('Naira wallet')).toBeTruthy();
     expect(screen.getByText('Rent')).toBeTruthy();
-    for (const label of ["Fintava's charge", "WAWU's fee", 'Fees', 'Total paid']) expect(screen.getByText(label)).toBeTruthy();
+    for (const label of ["Bank charge", "WAWU's fee", 'Fees', 'Total paid']) expect(screen.getByText(label)).toBeTruthy();
     expect(screen.getByLabelText('25,025 naira 75 kobo')).toBeTruthy();
     expect(screen.getByLabelText('15 naira 75 kobo')).toBeTruthy();
     expect(screen.getByLabelText('25 naira 75 kobo')).toBeTruthy();

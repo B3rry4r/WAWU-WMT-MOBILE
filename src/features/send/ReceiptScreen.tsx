@@ -32,7 +32,7 @@ export type ReceiptScreenProps = {
 
 /**
  * W12 · Send · success receipt: "₦25,000 sent" to a person, Completed, then the reference (it can be copied), the date (Lagos time),
- * where it came from, the note, Fintava's charge, WAWU's fee, Fees and Total paid (BRIEF W12, R-10). Every line is a field of the
+ * where it came from, the note, Bank charge, WAWU's fee, Fees and Total paid (BRIEF W12, R-10). Every line is a field of the
  * send the Hub holds (`GET /money/transfers/{id}`). Share receipt opens the phone's share sheet with the receipt's text and
  * reference (R-33); Done goes back to the wallet, where the new row is on top.
  *

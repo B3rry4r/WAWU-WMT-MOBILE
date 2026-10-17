@@ -5,7 +5,7 @@ import { useFocusRing } from '@/components/focusRing';
 import type { IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { Text } from '@/components/Text';
-import { APP_NAME } from '@/components/BrandMark';
+import { APP_NAME_COPY } from '@/lib/appName';
 import { font, radius, useWawu } from '@/theme';
 
 import { useAccountType, type AccountType } from './accountType';
@@ -136,7 +136,7 @@ export function AccountTypeScreen({ onBack, onContinue, initialPick }: AccountTy
           variant="h1"
           style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size }}
         >
-          {`What brings you to ${APP_NAME}?`}
+          {`What brings you to ${APP_NAME_COPY}`}
         </Text>
         <View accessibilityRole="radiogroup" accessibilityLabel="What brings you here" style={styles.cards}>
           {CHOICES.map((choice) => (

@@ -44,15 +44,15 @@ describe('what the send screens read and write', () => {
     expect(firstName('Amaka Nwosu')).toBe('Amaka');
   });
 
-  it('the quote’s parts are Fintava’s charge then WAWU’s fee, and a total that is not amount plus parts is refused', () => {
+  it('the quote’s parts are Bank charge then WAWU’s fee, and a total that is not amount plus parts is refused', () => {
     const quote = { amountKobo: 2_500_000, parts: [{ code: 'balance_transfer', source: 'provider', amountKobo: 1575 }, { code: 'wawu_fee', source: 'wawu', amountKobo: 1000 }], totalKobo: 2_502_575 } as never;
     expect(feeLinesOf(quote)).toEqual([
-      { label: "Fintava's charge", amountKobo: 1575 },
+      { label: "Bank charge", amountKobo: 1575 },
       { label: "WAWU's fee", amountKobo: 1000 },
     ]);
     expect(quoteAddsUp(quote)).toBe(true);
     expect(quoteAddsUp({ ...(quote as object), totalKobo: 2_502_576 } as never)).toBe(false);
-    expect(feeLinesOf({ parts: [{ code: 'a', source: 'provider', amountKobo: 1 }, { code: 'b', source: 'provider', amountKobo: 2 }] } as never)).toEqual([{ label: "Fintava's charge", amountKobo: 3 }]);
+    expect(feeLinesOf({ parts: [{ code: 'a', source: 'provider', amountKobo: 1 }, { code: 'b', source: 'provider', amountKobo: 2 }] } as never)).toEqual([{ label: "Bank charge", amountKobo: 3 }]);
   });
 
   it('a limit is said with the Hub’s own figure, and only when the send is over it', () => {
@@ -84,13 +84,13 @@ describe('what the send screens read and write', () => {
   it('the shared text holds the receipt and its reference, with every figure the one on screen', () => {
     expect(shareText(sent)).toBe(
       [
-        'Who Made This receipt',
+        'Who Made This? receipt',
         '₦25,000 sent',
         'To Amaka Nwosu · @amaka',
         'Date: 16 Oct 2026, 10:42',
         'From: Naira wallet',
         'Note: Rent',
-        "Fintava's charge: ₦15.75",
+        "Bank charge: ₦15.75",
         "WAWU's fee: ₦10.00",
         'Fees: ₦25.75',
         'Total paid: ₦25,025.75',

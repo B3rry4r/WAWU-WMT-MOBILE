@@ -235,7 +235,7 @@ describe('X1 · Explore', () => {
     for (const id of ['explore-search', 'explore-bell', 'explore-bell-dot', 'explore-featured-see-all', 'explore-create']) {
       expect(rtl.screen.queryByTestId(id)).toBeNull();
     }
-    for (const name of ['Search Who Made This', 'Notifications', 'See all creators', 'Create']) {
+    for (const name of ['Search Who Made This?', 'Notifications', 'See all creators', 'Create']) {
       expect(rtl.screen.queryByRole('button', { name })).toBeNull();
     }
     expect(rtl.screen.queryByText(/Search/)).toBeNull();
@@ -540,7 +540,7 @@ describe('X1 · Explore', () => {
     await settle();
     expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-    expect(rtl.screen.queryByRole('button', { name: 'Search Who Made This' })).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Search Who Made This?' })).toBeNull();
     expect(rtl.screen.queryByRole('button', { name: 'Notifications' })).toBeNull();
     expect(rtl.screen.queryAllByRole('button')).toHaveLength(0);
   });

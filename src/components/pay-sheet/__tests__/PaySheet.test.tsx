@@ -4,7 +4,7 @@ import { motion } from '@/theme';
 
 import { PaySheet, type PaySheetProps } from '..';
 
-const charge = { label: "Fintava's charge", amountKobo: 2325 };
+const charge = { label: "Bank charge", amountKobo: 2325 };
 
 function props(overrides: Partial<PaySheetProps> = {}): PaySheetProps {
   return {
@@ -28,7 +28,7 @@ describe('PaySheet', () => {
     const p = props();
     await render(<PaySheet {...p} />);
     expect(screen.getByText('₦2,500')).toBeTruthy();
-    expect(screen.getByText("Fintava's charge")).toBeTruthy();
+    expect(screen.getByText("Bank charge")).toBeTruthy();
     expect(screen.getByText('₦23.25')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('₦2,523.25')).toBeTruthy();
@@ -55,7 +55,7 @@ describe('PaySheet', () => {
         {...props({
           amountKobo: 2500000,
           fees: [
-            { label: "Fintava's charge", amountKobo: 4000 },
+            { label: "Bank charge", amountKobo: 4000 },
             { label: "WAWU's fee", amountKobo: 2500 },
           ],
         })}
@@ -119,7 +119,7 @@ describe('PaySheet', () => {
   });
 
   it('shows a ₦0 fee line and a total equal to the price', async () => {
-    await render(<PaySheet {...props({ fees: [{ label: "Fintava's charge", amountKobo: 0 }] })} />);
+    await render(<PaySheet {...props({ fees: [{ label: "Bank charge", amountKobo: 0 }] })} />);
     expect(screen.getByText('₦0')).toBeTruthy();
     expect(screen.getAllByText('₦2,500')).toHaveLength(2); // the price row and the Total row
     expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
@@ -152,7 +152,7 @@ describe('PaySheet', () => {
     const p = props({
       amountKobo: 2500000,
       fees: [
-        { label: "Fintava's charge", amountKobo: 4000 },
+        { label: "Bank charge", amountKobo: 4000 },
         { label: "WAWU's fee", amountKobo: 2500 },
       ],
       wallet: { kind: 'open', balanceKobo: 2500000 },
@@ -172,7 +172,7 @@ describe('PaySheet', () => {
       { label: 'Account', value: '0123456789' },
     ],
     fees: [
-      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: "Bank charge", amountKobo: 4000 },
       { label: "WAWU's fee", amountKobo: 2500 },
     ],
     notes: [{ label: 'Note', value: 'Rent contribution' }],
@@ -227,9 +227,9 @@ describe('PaySheet', () => {
   it('puts the Note after Total on a send, as W10 does', async () => {
     await render(<PaySheet {...props(send())} />);
     const labels = screen
-      .getAllByText(/^(Bank|Account|Fintava's charge|WAWU's fee|Fees|Total|Note)$/)
+      .getAllByText(/^(Bank|Account|Bank charge|WAWU's fee|Fees|Total|Note)$/)
       .map((n) => n.props.children);
-    expect(labels).toEqual(['Bank', 'Account', "Fintava's charge", "WAWU's fee", 'Fees', 'Total', 'Note']);
+    expect(labels).toEqual(['Bank', 'Account', "Bank charge", "WAWU's fee", 'Fees', 'Total', 'Note']);
     expect(screen.queryByText('Price')).toBeNull();
   });
 

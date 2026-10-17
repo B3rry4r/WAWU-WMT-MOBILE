@@ -89,7 +89,7 @@ export type PaySheetProps = {
   /** Rows before the fees that are not money (Yours; Bank, Account). */
   details?: readonly PayDetailRow[];
   /**
-   * The fee breakdown from the fee quote, one line per part (Fintava's charge,
+   * The fee breakdown from the fee quote, one line per part (Bank charge,
    * WAWU's fee). Any part can be zero. With two or more parts a "Fees" row
    * adds them up (DECISIONS.md R-23). The Total row always shows.
    */

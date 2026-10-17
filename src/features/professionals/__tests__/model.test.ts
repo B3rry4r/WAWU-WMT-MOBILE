@@ -69,10 +69,10 @@ describe('what a row and a profile show', () => {
     expect(credentialTitle('qualification')).toBe('Qualification');
     expect(credentialTitle('portfolio')).toBe('Work samples');
     expect(credentialTitle('something')).toBeNull();
-    expect(credentialLine('ICAN')).toBe('Issued by ICAN · checked by WAWU');
-    expect(credentialLine('  ICAN ')).toBe('Issued by ICAN · checked by WAWU');
-    expect(credentialLine(null)).toBe('Checked by WAWU');
-    expect(credentialLine('   ')).toBe('Checked by WAWU');
+    expect(credentialLine('ICAN')).toBe('Issued by ICAN · checked by Who Made This?');
+    expect(credentialLine('  ICAN ')).toBe('Issued by ICAN · checked by Who Made This?');
+    expect(credentialLine(null)).toBe('Checked by Who Made This?');
+    expect(credentialLine('   ')).toBe('Checked by Who Made This?');
   });
 
   it('P4 names the field that is empty; All says nobody is listed yet', () => {

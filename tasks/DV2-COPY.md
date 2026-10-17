@@ -7,7 +7,7 @@ order: 292
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: verifying
 depends_on: [DV2-01, DV2-02, DV2-05, DV2-06]
 decisions: [R-69, R-53, R-67, R-68, R-37]
 passes: [V1, V4, V5, V6]
@@ -17,11 +17,13 @@ artboards: [A2, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, X5, X14, X15,
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** M. **Wave:** 5 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): DV2-01, DV2-02, DV2-05, DV2-06.
-- **History:** none yet. Reports go to tasks/history/DV2-COPY.md.
+As of 17 Oct 2026, built by a Sonnet builder (T0 copy); waiting for a verifier.
+- **Status:** verifying. Branch `wmt/DV2-COPY` in the mobile repo only, from `origin/wmt/MERGE-10` `4b854ee4`. Copy only: no layout, colour or behaviour change; no backend change.
+- **Built:** the app's name is one constant, `APP_NAME_COPY` = "Who Made This?" in `src/lib/appName.ts`, and every string that names the app builds from it. The provider's part of a fee reads "Bank charge" on the pay sheet preview, the receipt, history detail and the send screens (`FEE_LABELS.provider`). The legal chat header is "Who Made This? Legal" (S14 to S17).
+- **Already right on this base, checked and left:** Z9 "Banking by <bank the Hub names>", A3 "I agree to the terms and privacy policy", the licence and deposit-insurance lines (the Hub's `licenceLine` and `depositInsuranceLine` print only when the Hub sends words, and it sends none), no CBN, "held at Nuvion" or "Tier 1" line, no ElevenLabs, no sample advertiser, no Instagram card (the phone's share sheet only).
+- **Not done, filed:** SHARED-CHANGES DV2-COPY #2 (fenced): `BrandMark.tsx` `APP_NAME` (the logo's accessibility label) and `app.json` `expo.name` (the launcher name) still say "Who Made This" without the question mark; they change together, with `brand.test` and `auth-welcome.test`, and the launcher name needs a new development build.
+- **For the owner, not changed:** the 16 Oct boards print "Who Made This? Credits" (S-series Buy Credits sheet) and "Who Made This? card", but this task and R-37's "where WAWU stays" keep WAWU Credits and the WAWU card. `HostedSelfieScreen` says "Our banking partner, Nuvion, takes your selfie" (A6, not in this task's boards; Nuvion is the bank R-67 shows).
+- **Next:** a verifier checks V1, V4, V5, V6 on the boards in the list; the lead applies SHARED-CHANGES DV2-COPY #2.
 
 ## Read first
 
@@ -54,7 +56,12 @@ Every built screen and string that names the app says "Who Made This?" with the 
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+- **Strings changed (31):** the app's name with its question mark 10 (profile share text, "On Who Made This? since", account type heading, send "On Who Made This?", the credential line twice, wallet and send receipt first line, Showcase placeholder, push channel name); fee label "Bank charge" 7 (history `FEE_LABELS.provider`, which the send screens and receipts read, Showcase 2, preview pay sheet 4); legal header "Who Made This? Legal" 5 (assistant, waiting, consultant sub-line twice, the empty chat); plus 9 doc comments.
+- **Files:** `src/lib/appName.ts` (new); `me/model.ts`, `AccountTypeScreen.tsx`, `professionals/model.ts`, `legal/model.ts` and `LegalChatScreen.tsx`, `push/registration.ts`, `send/RecipientScreen.tsx`, `send/model.ts`, `wallet/history/model.ts`, `showcase/Showcase.tsx`, `app/preview/pay-sheet.tsx`, pay-sheet comments, `SHARED-CHANGES.md` (#1 applied, #2 filed).
+- **Tests following the new copy (16 files):** pay-sheet `money` and `PaySheet`; `historyModel`, `historyScreens`, `walletHomeModel` (title); send `model`, `sendFlow`; professionals `model`, `screens`, `routes`; legal `model`, `LegalChatScreen`; me `model`, `MeScreen`; explore `screens`; push `pushFlow`. Only the quoted words changed; no assertion added, removed or loosened.
+- **Capability checks:** (1) name search: the only "Who Made This" without the question mark left in shipped strings is `BrandMark` `APP_NAME` and `app.json` (SHARED-CHANGES #2); no "WAWU" names the app. (2) pay sheet, receipt and history detail print "Bank charge" (specs above). (3) no licence or CBN line, no ElevenLabs, Instagram card or sample advertiser in a screen. (4) tests pass.
+- **Checks:** typecheck EXIT 0; eslint on 15 changed files plus the new one EXIT 0 (one warning, old, `professionals/__tests__/screens.test.tsx:17`); `jest --findRelatedTests` on the changed sources: 88 suites, 1778 tests, EXIT 0; `npm run gates` EXIT 0 (0 fail, 9 warn, 0 accepted; baseline entries 0; the warns are the existing PROVISIONAL lines).
+- **No gaps filed.**
 
 ## Verifier report
 

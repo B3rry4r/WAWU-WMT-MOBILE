@@ -248,7 +248,7 @@ describe('W27: the receipt of one movement', () => {
     expect(receipt.amountKobo).toBe(-2_506_500);
     expect(receipt.cost?.map((c) => [c.label, c.kobo])).toEqual([
       ['Amount', 2_500_000],
-      ["Fintava's charge", 4_000],
+      ["Bank charge", 4_000],
       ["WAWU's fee", 2_500],
       ['Total', 2_506_500],
     ]);
@@ -263,7 +263,7 @@ describe('W27: the receipt of one movement', () => {
     );
     expect(receipt.cost?.map((c) => [c.label, c.kobo])).toEqual([
       ['Amount', 200_000],
-      ["Fintava's charge", 0],
+      ["Bank charge", 0],
       ['Total', 200_000],
     ]);
     // Nobody named: no From or To line is made up for the other side.
@@ -287,11 +287,11 @@ describe('Share receipt: the text the phone’s share sheet is given (R-33)', ()
   it('carries the headline, the status, every line and the reference, and its figures are the screen’s', () => {
     const text = shareText(row());
     const lines = text.split('\n');
-    expect(lines[0]).toBe('Who Made This receipt');
+    expect(lines[0]).toBe('Who Made This? receipt');
     expect(lines[1]).toBe('Transfer to Ngozi Test');
     expect(lines[2]).toBe('−₦25,065.00 completed');
     expect(text).toContain('Amount: ₦25,000.00');
-    expect(text).toContain("Fintava's charge: ₦40.00");
+    expect(text).toContain("Bank charge: ₦40.00");
     expect(text).toContain("WAWU's fee: ₦25.00");
     expect(text).toContain('Total: ₦25,065.00');
     expect(lines.at(-2)).toBe('Date: 7 Oct 2026, 10:24');

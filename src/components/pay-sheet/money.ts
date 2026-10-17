@@ -8,7 +8,7 @@ import { formatMoney } from '@/components/Money';
  */
 
 export type PayFeeLine = {
-  /** What the charge is, as the user reads it ("Fintava's charge", "WAWU's fee"). */
+  /** What the charge is, as the user reads it ("Bank charge", "WAWU's fee"). */
   label: string;
   /** Integer kobo. Zero is valid and is shown as ₦0. */
   amountKobo: number;

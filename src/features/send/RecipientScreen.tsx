@@ -14,6 +14,7 @@ import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { isNoWallet, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { APP_NAME_COPY } from '@/lib/appName';
 import { space } from '@/theme';
 
 import { recentRecipientsQuery, searchRecipientsQuery, SEARCH_MIN_CHARS, type Recipient } from './api';
@@ -156,7 +157,7 @@ function Results({ query, onPick }: { query: UseQueryResult<Recipient[]>; onPick
   }
   return (
     <View testID="send-results" style={styles.section}>
-      <Text variant="label">On Who Made This</Text>
+      <Text variant="label">{`On ${APP_NAME_COPY}`}</Text>
       <GroupedList>
         {people.map((p) => (
           <ListRow

@@ -22,6 +22,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text, type TextVariant } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { TransactionRow } from '@/components/TransactionRow';
+import { APP_NAME_COPY } from '@/lib/appName';
 import { layout, radius, space, text, useWawu } from '@/theme';
 
 const textVariants = Object.keys(text) as TextVariant[];
@@ -183,7 +184,7 @@ function Inputs() {
       <TextField label="Error" defaultValue="Not right" error="This is what is wrong, and how to fix it" />
       <TextField label="Checking" defaultValue="Checking" loading />
       <TextField label="Disabled" defaultValue="Locked" disabled />
-      <TextField label="Search" leadingIcon="Search" placeholder="Search Who Made This" />
+      <TextField label="Search" leadingIcon="Search" placeholder={`Search ${APP_NAME_COPY}`} />
     </Section>
   );
 }
@@ -246,7 +247,7 @@ function Sheet() {
         <GroupedList>
           <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
           <KeyValueRow label="Yours" value="Forever, in My purchases" />
-          <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
+          <KeyValueRow label="Bank charge" value={<Money minorUnits={2325} size={14.5} />} />
           <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
         </GroupedList>
         <Button label="Unlock · ₦2,523.25" onPress={() => setSheetOpen(false)} full />
@@ -437,7 +438,7 @@ export function Showcase() {
       <Section title="Grouped list cards">
         <GroupedList>
           <KeyValueRow label="Price" value={<Money minorUnits={250000} size={14.5} decimals={false} />} />
-          <KeyValueRow label="Fintava's charge" value={<Money minorUnits={2325} size={14.5} />} />
+          <KeyValueRow label="Bank charge" value={<Money minorUnits={2325} size={14.5} />} />
           <KeyValueRow label="Total" value={<Money minorUnits={252325} size={14.5} />} />
           <KeyValueRow label="Yours" value="Forever, in My purchases" />
         </GroupedList>

@@ -199,7 +199,7 @@ describe('S14 · the assistant opens', () => {
     await renderScreen();
     expect(await rtl.screen.findByText(OPENER)).toBeTruthy();
     expect(rtl.screen.getByText(NOT_CHARGED)).toBeTruthy();
-    expect(rtl.screen.getByText('WAWU Legal')).toBeTruthy();
+    expect(rtl.screen.getByText('Who Made This? Legal')).toBeTruthy();
     expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Assistant · a consultant takes over');
     for (const t of TOPICS) expect(rtl.screen.getByRole('button', { name: t.label })).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Type your message')).toBeTruthy();
@@ -372,7 +372,7 @@ describe('S17 · a consultant joins', () => {
     await renderScreen();
     expect(await rtl.screen.findByText("Hi Chidi, I've read your brief.")).toBeTruthy();
     expect(rtl.screen.getByText('Adaora Nnaji')).toBeTruthy();
-    expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Consultant · WAWU Legal');
+    expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Consultant · Who Made This? Legal');
     expect(rtl.screen.getByText('Adaora joined. The assistant has stopped replying.')).toBeTruthy();
     expect(rtl.screen.getByText('Adaora Nnaji · Consultant')).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Message Adaora')).toBeTruthy();

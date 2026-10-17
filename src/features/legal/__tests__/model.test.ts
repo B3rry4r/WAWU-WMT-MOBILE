@@ -89,19 +89,19 @@ describe('chatRows', () => {
 
 describe('headerOf', () => {
   it('is the assistant with "a consultant takes over" until the person has said something (S14)', () => {
-    expect(headerOf(thread())).toEqual({ title: 'WAWU Legal', sub: 'Assistant · a consultant takes over', human: false });
+    expect(headerOf(thread())).toEqual({ title: 'Who Made This? Legal', sub: 'Assistant · a consultant takes over', human: false });
   });
   it('is just "Assistant" once they have (S15, S16)', () => {
-    expect(headerOf(thread({ messages: [msg('c1', 'client')] }))).toEqual({ title: 'WAWU Legal', sub: 'Assistant', human: false });
+    expect(headerOf(thread({ messages: [msg('c1', 'client')] }))).toEqual({ title: 'Who Made This? Legal', sub: 'Assistant', human: false });
   });
   it('waits for a consultant after the brief is sent', () => {
-    expect(headerOf(thread({ stage: 'sent', messages: [msg('c1', 'client')] }))).toEqual({ title: 'WAWU Legal', sub: 'Waiting for a consultant', human: false });
+    expect(headerOf(thread({ stage: 'sent', messages: [msg('c1', 'client')] }))).toEqual({ title: 'Who Made This? Legal', sub: 'Waiting for a consultant', human: false });
   });
   it('is the consultant, by name, once one has joined (S17)', () => {
-    expect(headerOf(thread({ stage: 'sent', consultant: ADAORA }))).toEqual({ title: 'Adaora Nnaji', sub: 'Consultant · WAWU Legal', human: true });
+    expect(headerOf(thread({ stage: 'sent', consultant: ADAORA }))).toEqual({ title: 'Adaora Nnaji', sub: 'Consultant · Who Made This? Legal', human: true });
   });
   it('is "Consultant" when the Hub holds no name', () => {
-    expect(headerOf(thread({ stage: 'sent', consultant: { name: '  ', joinedAt: at } }))).toEqual({ title: 'Consultant', sub: 'WAWU Legal', human: true });
+    expect(headerOf(thread({ stage: 'sent', consultant: { name: '  ', joinedAt: at } }))).toEqual({ title: 'Consultant', sub: 'Who Made This? Legal', human: true });
   });
 });
 

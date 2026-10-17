@@ -9,7 +9,7 @@ import type { components } from '@/api/schema.generated';
  *   phone; the last people this person sent to.
  * - `GET /money/transfers/presets` (WALLET-02): the quick amounts under the keypad and the note's length. Settings, never the
  *   design's figures.
- * - `GET /money/fees/quote?kind=wawu_transfer` (WALLET-15): Fintava's charge and WAWU's fee, each as its own part, the total
+ * - `GET /money/fees/quote?kind=wawu_transfer` (WALLET-15): Bank charge and WAWU's fee, each as its own part, the total
  *   and the signed quote the send must carry (R-10).
  * - `POST /money/transfers/wawu` (WALLET-07): the send. The PIN is the `X-Transaction-Pin` header and nothing else keeps it;
  *   the `Idempotency-Key` is one per payment intent and travels again, unchanged, on every retry.

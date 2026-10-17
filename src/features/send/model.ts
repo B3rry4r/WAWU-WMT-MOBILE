@@ -1,6 +1,7 @@
 import type { PayFeeLine } from '@/components/pay-sheet';
 import { formatMoney } from '@/components/Money';
 import { hueFor } from '@/features/feed/model';
+import { APP_NAME_COPY } from '@/lib/appName';
 import { FEE_LABELS, OWN_WALLET } from '@/features/wallet/history/model';
 import { longDateTime } from '@/features/wallet/history/lagosTime';
 
@@ -115,7 +116,7 @@ export const firstName = (name: string): string => name.trim().split(/\s+/)[0] ?
 export const searchText = (raw: string): string => raw.trim();
 
 /**
- * The quote's parts as lines, each charge as its own part (R-10): Fintava's charge, then WAWU's fee. A part that is zero stays
+ * The quote's parts as lines, each charge as its own part (R-10): Bank charge (R-53), then WAWU's fee. A part that is zero stays
  * (any part can be zero, the sheet shows ₦0.00). Two provider parts would share a label, so they are added into one line.
  */
 export function feeLinesOf(quote: Pick<FeeQuote, 'parts'>, providerLabel: string = FEE_LABELS.provider): PayFeeLine[] {
@@ -213,7 +214,7 @@ export function toLine(t: Pick<Transfer, 'toWawuUser'> & Partial<Pick<Transfer, 
 /** Share receipt (R-33): the phone's share sheet gets the receipt as text, with its reference. Every figure is the one on screen. */
 export function shareText(t: Transfer): string {
   const money = (kobo: number) => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
-  const out = ['Who Made This receipt', `${money(t.amountKobo)} sent`, toLine(t)].filter(Boolean);
+  const out = [`${APP_NAME_COPY} receipt`, `${money(t.amountKobo)} sent`, toLine(t)].filter(Boolean);
   for (const row of receiptRows(t)) {
     if (row.key === 'reference') continue;
     out.push(`${row.label}: ${row.money !== undefined ? formatMoney(row.money) : row.value}`);
