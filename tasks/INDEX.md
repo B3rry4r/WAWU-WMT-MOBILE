@@ -264,8 +264,9 @@ Builder and verifier are always different sessions.
 246. [DV2-COPY](DV2-COPY.md) Brand copy sweep: "Who Made This?", "Bank charge", "Banking by Nuvion
 247. [DV2-RM](DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card
 248. [FIX-45](FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together
-249. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-250. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+249. [EVENTS-13](EVENTS-13.md) Call-off: order cap, cancel once, free tickets
+250. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+251. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 
