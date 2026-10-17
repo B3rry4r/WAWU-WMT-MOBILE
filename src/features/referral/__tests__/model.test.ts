@@ -1,6 +1,6 @@
 import { afterNext, codeFromLink, formatMultiplier, levelPills, momentCopy, momentsOf, nextCard, rulesOf } from '../model';
 
-import { emptyReferrals, ladder, milestones, referrals, reward } from './fixtures';
+import { emptyReferrals, ladder, milestones, referrals, reward } from '../referralsForTests';
 
 describe('REF-03: what the screens say, from the Hub', () => {
   it('writes the Hub multipliers without trailing zeros', () => {

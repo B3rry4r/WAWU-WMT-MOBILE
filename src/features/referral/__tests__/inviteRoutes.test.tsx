@@ -15,7 +15,7 @@ import Me from '@/app/(tabs)/me';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 
-import { referrals } from './fixtures';
+import { referrals } from '../referralsForTests';
 
 const mockVault = new Map<string, string>();
 const mockFetch = jest.fn();

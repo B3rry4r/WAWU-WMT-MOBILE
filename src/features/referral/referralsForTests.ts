@@ -1,6 +1,6 @@
-import type { Referrals } from '../api';
+import type { Referrals } from './api';
 
-/** A referrals answer as the Hub serves it, with the launch ladder and milestones (plans.config.json), for tests only. */
+/** A referrals answer as the Hub serves it, with the launch ladder and milestones (plans.config.json). Tests only: nothing in the app imports this file. */
 export const ladder = (reached: number) =>
   [
     { verified: 1, multiplier: 1 },

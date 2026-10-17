@@ -9,7 +9,7 @@ import { IconTile } from '@/components/IconTile';
 import { PointsFigure } from '@/components/PointsFigure';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
-import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
+import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { formatCount, formatMultiplier, levelPills, NOBODY_YET, nextCard, type LevelPill } from './model';
 import type { Referrals } from './api';
@@ -33,6 +33,8 @@ export const inviteMetrics = {
   tilePadV: 10,
   tilePadH: 12,
   tileValue: 18,
+  /** The Points tile's figure sets its line at 1.2 (PointsFigure); the other three tiles follow it so the four sit on one line. */
+  tileLeading: 1.2,
   tileWord: 11.5,
   tileWordGap: 2,
   levelHead: 14,
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
   statsCard: { paddingVertical: inviteMetrics.statsPadV, gap: inviteMetrics.statsGap },
   tiles: { flexDirection: 'row', gap: inviteMetrics.tilesGap },
   tile: { flex: 1, minWidth: 0, borderRadius: radius.input, paddingVertical: inviteMetrics.tilePadV, paddingHorizontal: inviteMetrics.tilePadH },
-  tileValue: { fontSize: inviteMetrics.tileValue, lineHeight: canvasNormalLineHeight(inviteMetrics.tileValue) },
+  tileValue: { fontSize: inviteMetrics.tileValue, lineHeight: Math.round(inviteMetrics.tileValue * inviteMetrics.tileLeading) },
   tileWord: { fontSize: inviteMetrics.tileWord, marginTop: inviteMetrics.tileWordGap },
   levels: { gap: inviteMetrics.levelGap },
   levelHead: { flexDirection: 'row', alignItems: 'center', gap: inviteMetrics.levelGap },

@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 121 | 0 | 0 | 0 |
+| todo | 120 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 58 | 0 | 0 | 0 |
+| verifying | 59 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 110 | 27 | 11 | 5 |
 
@@ -55,6 +55,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-07](../tasks/TIER-07.md) A person's tier badge on their public profile (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
+- [REF-03](../tasks/REF-03.md) Invite and earn (You)
 - [KYC-06](../tasks/KYC-06.md) Complete your account: ID document, proof of address, checking, rejected (You)
 - [KYC-07](../tasks/KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4 (You)
 - [WALLET-38](../tasks/WALLET-38.md) Your pass (You)
@@ -246,6 +247,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 17 Oct 2026 · REF-03 · Builder report (Sonnet builder; mobile `wmt/REF-03` on `origin/wmt/DV2-03` `d4a0e95` plus `origin/wmt/DV2-COMP` `c6da2af`, no backend, wawu-id or migration change; status verifying): Invite and earn is built, RF1 to RF4. RF1, RF1a and RF1b read `GET /me/referrals`; RF3 and RF3a tell a reward or milestone the Hub made available, once per phone; RF4 prints the Hub's hold days; RF2 draws the card on the phone and hands its picture to the phone's share sheet (`react-native-view-shot`, SHARED-CHANGES REF-03 #1 applied), with no outside brand (R-68). The gift button on Me opens it; a `wawu/r/<code>` link keeps the code and claims it after sign-in, drawing nothing (G-812). Gaps G-812 (updated), G-830, G-831.
 - 17 Oct 2026 · WALLET-40 · Built (Sonnet builder; backend `wmt/WALLET-40` on `origin/wmt/MERGE-7` `850369a`, mobile `wmt/WALLET-40` on `ef8c23e`; no migration, no schema or contract change; status verifying): one `wallet_ready` notice ("Your account number is ready") per wallet, written in the transaction that records the wallet, for Nuvion's number going active and the legacy opening's sweep; none for a number ready in the opening request or for a wallet that failed; pushed; a tap opens the wallet home and A28 refreshes as it lands. G-823 served.
 - 17 Oct 2026 · EVENTS-13 · Round 2 (Sonnet builder; backend `wmt/EVENTS-13` `bce009c`, was `b22e1b6`): the twenty-buyers test counts `ordersRefunded: 20` again and fails when `CONCURRENCY` is 1 (5 refunded), passes at 5; the cancel answer is two declared shapes so the contract no longer calls `ordersLeftToSweep` nullable (`contract:build` twice identical); 29 of 30 runs of the twenty-buyers test, the 1 failure on its unchanged read-latency assertion (1521 ms read after the cancel ended). Status verifying.
 - 17 Oct 2026 · EVENTS-13 · Builder report (Sonnet builder; backend `wmt/EVENTS-13` `b22e1b6` on `wmt/MERGE-7` `ca9ec13`, mobile record on `3817f5b`; no migration; status verifying): a buyer holds at most N open paid ticket orders per event (admin setting `events.open_orders_per_buyer`, default 10; order N+1 is 409 `event_order_limit` before anything is recorded, held under a lock inside the payment's claim); two cancels at once answer one 201; a free order at the instant of a cancel keeps no valid ticket; the call-off answer says `ordersLeftToSweep` (EVENTS-10 F2 closed); the twenty-buyers test sends its cancel first and passes 30 of 30 under load (its flake was another process's hold sweep on the same database, not the 15 s budget). CI green except the gates job's one pre-existing FAIL.
@@ -260,4 +262,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · TIER-06 · Builder report, round 2 (Sonnet builder; backend `wmt/TIER-06` `361df74` on `317f464`, main `a5e48fc`; migration `20261024060100_wallet_payment_terms` plus a re-runnable `20261024060000_plan_settings`; status verifying): the verifier's findings fixed, each with a failing test first. A points cash-out is bound to its quote (`quoteToken`; a changed rate, minimum, cap or cash is `409 quote_changed`, nothing paid); a tier purchase grants the goods its quote showed (stored with the payment); the 25-verified referral step is off by default; the cash rate can never exceed what points are sold for (400 naming both settings); audit "from" is true under parallel saves; a failed reload after a save is logged as an error. Mobile: docs only (SHARED-CHANGES TIER-06 #4 and #5).
 - 17 Oct 2026 · TIER-06 · Builder report (Sonnet builder; backend `wmt/TIER-06` `c827262` on `origin/main` `a5e48fc`, mobile `wmt/TIER-06` on `origin/wmt/MERGE-5` `7de785d` (docs only); migration `20261024060000_plan_settings`; status verifying): 62 launch figures are admin settings behind `GET` and `PATCH /admin/plan-settings` with an audit row per change; `PLANS_CONFIG` is the live plan so `GET /plans`, the tier quote and the convert quote follow a change with no restart; passes carry optional `benefits` and `eventDate` (G-804). The W44 lines are not loaded by default (TIER-01 spec pins the pass shape), for the lead.
 - 17 Oct 2026 · TIER-07 · Builder report (Sonnet builder; backend `wmt/TIER-07` `493a276` on main `a5e48fc`, mobile `wmt/TIER-07` on `7de785d` (docs only); migration `20261024090000_maker_badge_number`; status verifying): a person's tier badge is on the profile fields, the feed, explore and directory cards while their tier runs, with the Founding Maker number (`badge.number`) taken once inside the tier grant, kept for life, gap-free and never reissued. The web's routes gain no key. 3 new specs, 7 mutants killed. G-803 built; G-420 (ranking by tier) not done, as the task says.
-- 17 Oct 2026 · KYC-07 · Built (status verifying; mobile `wmt/KYC-07` from KYC-06 `96f92d7`, no backend change): A30 flag on Home while the wallet is not open, A31 "Complete your account" 1 of 4, and the chain A31, A5, A26, A27, A28 made real under the review opening (numbers held in memory only, typed name and date of birth, no selfie); gaps G-824, G-825.

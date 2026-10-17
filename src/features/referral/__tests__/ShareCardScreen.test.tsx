@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { referrals } from './fixtures';
+import { referrals } from '../referralsForTests';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),

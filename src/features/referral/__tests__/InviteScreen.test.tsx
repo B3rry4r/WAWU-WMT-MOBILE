@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { emptyReferrals, ladder, milestones, referrals, reward } from './fixtures';
+import { emptyReferrals, ladder, milestones, referrals, reward } from '../referralsForTests';
 
 const mockVault = new Map<string, string>();
 jest.mock('expo-secure-store', () => ({
