@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components, operations } from '@/api/schema.generated';
+import { fetchMyCommunities } from '@/features/communities/api';
 import type { ExploreCreator } from '@/features/explore/api';
 import { fetchOpenedWallet } from '@/features/open-wallet/api/wallet';
 import { fetchSettings } from '@/features/paid-messages/api';
@@ -59,14 +60,28 @@ export async function fetchSuggested(picks: readonly string[]): Promise<ExploreC
 }
 
 /** What A11's rows show as done. `undefined` is "could not be read", never "not done". */
-export type SetupState = { priced?: boolean; profile?: boolean; published?: boolean; wallet?: boolean; failed: boolean };
+export type SetupState = { priced?: boolean; profile?: boolean; published?: boolean; community?: boolean; wallet?: boolean; failed: boolean };
 
-/** The four reads, each on its own: one that fails leaves its row unmarked and the other three drawn. */
+/** The most pages of the person's rooms looked through for one they host (twenty a page); a host past them is shown as not started, so the row can still be tapped. */
+const HOSTED_PAGES = 5;
+
+/** True when one of the rooms the person is in is theirs (`role` host). The Hub lists the most active first, so a host is found on the first page nearly always. */
+async function hostsACommunity(): Promise<boolean> {
+  for (let page = 1; page <= HOSTED_PAGES; page += 1) {
+    const rooms = await fetchMyCommunities(page);
+    if (rooms.items.some((room) => room.role === 'host')) return true;
+    if (rooms.nextPage === null) return false;
+  }
+  return false;
+}
+
+/** The five reads, each on its own: one that fails leaves its row unmarked and the other four drawn. */
 export async function fetchSetupState(): Promise<SetupState> {
-  const [price, stats, wallet] = await Promise.allSettled([
+  const [price, stats, wallet, community] = await Promise.allSettled([
     fetchSettings(),
     unwrap(api.GET('/api/hub/users/me/profile-stats')),
     fetchOpenedWallet(),
+    hostsACommunity(),
   ]);
   const s = stats.status === 'fulfilled' ? (stats.value as { data?: { postCount?: unknown; profileCompletenessMissing?: unknown } | null })?.data : undefined;
   const readStats = Boolean(s) && typeof s?.postCount === 'number' && Array.isArray(s?.profileCompletenessMissing);
@@ -74,7 +89,8 @@ export async function fetchSetupState(): Promise<SetupState> {
     priced: price.status === 'fulfilled' ? price.value.priceKobo !== null : undefined,
     profile: readStats ? (s!.profileCompletenessMissing as unknown[]).length === 0 : undefined,
     published: readStats ? (s!.postCount as number) >= 1 : undefined,
+    community: community.status === 'fulfilled' ? community.value : undefined,
     wallet: wallet.status === 'fulfilled' ? wallet.value.state === 'open' : undefined,
-    failed: price.status === 'rejected' || stats.status === 'rejected' || wallet.status === 'rejected' || !readStats,
+    failed: price.status === 'rejected' || stats.status === 'rejected' || wallet.status === 'rejected' || community.status === 'rejected' || !readStats,
   };
 }

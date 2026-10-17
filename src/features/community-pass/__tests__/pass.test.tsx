@@ -291,12 +291,15 @@ describe('I30: a private room that sells a pass', () => {
     expect(hub.payments).toBe(1);
   });
 
-  it('a wallet that is short shows what is missing, offers no Add money (not built, R-47) and sends nothing', async () => {
+  it('a wallet that is short shows what is missing and "Add ₦X", which opens W15 with the shortfall, and sends nothing (WALLET-05)', async () => {
     hub.balanceKobo = 50_000;
     await boot();
     await until(() => rtl.screen.getByTestId('pass-short'));
-    expect(rtl.screen.queryByTestId('pass-add')).toBeNull();
+    const add = await until(() => rtl.screen.getByTestId('pass-add'));
+    expect(add.props.accessibilityLabel).toContain('Add ₦1,523.25');
     expect(rtl.screen.getByTestId('pass-pay').props.accessibilityState.disabled).toBe(true);
+    rtl.fireEvent.press(add);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/add-money', params: { short: String(TOTAL - 50_000) } });
     expect(hub.buys).toHaveLength(0);
   });
 
@@ -347,6 +350,7 @@ describe('a member the host removed (R-63: there is no join request)', () => {
     await boot();
     const blocked = await until(() => rtl.screen.getByTestId('pass-blocked'));
     expect(blocked).toBeTruthy();
+    expect(rtl.screen.getByText('Removed by the host')).toBeTruthy();
     expect(rtl.screen.getByText(REMOVED)).toBeTruthy();
     expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
     expect(rtl.screen.queryByText(/Join ·|Renew ·/)).toBeNull();

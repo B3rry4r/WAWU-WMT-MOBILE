@@ -571,6 +571,16 @@ describe('a person who is not in the room', () => {
     expect(rtl.screen.queryByTestId('room-private-note')).toBeNull();
   });
 
+  it('removed by the host from a room that sells a pass lands on I30\'s "Removed by the host", not on a request still with the host (INBOX-24 round 2)', async () => {
+    mockReplace.mockClear();
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'pending' }))];
+    answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
+    answers[`GET /communities/${ROOM}/pass`] = [ok({ communityId: ROOM, sellsPass: true, priceKobo: 200_000, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: false, isHost: false })];
+    await renderRoom();
+    await rtl.waitFor(() => expect(mockReplace).toHaveBeenCalledWith({ pathname: '/community/pass/[id]', params: { id: ROOM } }));
+    expect(rtl.screen.queryByText('Your request is with the host. You can read here once they approve it.')).toBeNull();
+  });
+
   it('whose request to a private room is still with the host is told so', async () => {
     answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'pending' }))];
     answers[MESSAGES] = [refuse(403, 'Join this community to read or post in it.')];
@@ -598,6 +608,37 @@ describe('a person who is not in the room', () => {
     expect(await rtl.screen.findByTestId('room-unavailable')).toBeTruthy();
     expect(rtl.screen.getByText('This community isn’t available')).toBeTruthy();
     expect(rtl.screen.queryByTestId('composer')).toBeNull();
+  });
+});
+
+describe('the host of a private room (I34 entry, INBOX-14)', () => {
+  const requests = (total: number) => ok([{ id: 'q1', userWawuId: 'u9', status: 'pending', requestedAt: '2026-10-17T09:00:00.000Z', communityId: ROOM, joinedAt: null, handle: 'tolu', avatarUrl: null }], { pagination: { nextPage: null, total } });
+
+  it('sees a Join requests row while someone waits on them, and it opens I34', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'host' }))];
+    answers[`GET /communities/${ROOM}/requests?page=1&perPage=20`] = [requests(1)];
+    await renderRoom();
+    const entry = await rtl.screen.findByTestId('room-requests');
+    expect(rtl.screen.getByText('1 waiting')).toBeTruthy();
+    rtl.fireEvent.press(entry);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/community/requests/[id]', params: { id: ROOM } });
+  });
+
+  it('sees no row when nobody waits, and a member never asks the Hub who waits', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'host' }))];
+    answers[`GET /communities/${ROOM}/requests?page=1&perPage=20`] = [ok([], { pagination: { nextPage: null, total: 0 } })];
+    await renderRoom();
+    await rtl.screen.findByTestId('room-cover');
+    await settle(300);
+    expect(rtl.screen.queryByTestId('room-requests')).toBeNull();
+  });
+
+  it('a member of a private room is shown no such row', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ kind: 'private', role: 'member' }))];
+    await renderRoom();
+    await rtl.screen.findByTestId('room-cover');
+    await settle(300);
+    expect(rtl.screen.queryByTestId('room-requests')).toBeNull();
   });
 });
 

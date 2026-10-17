@@ -195,23 +195,29 @@ describe('A13 People to follow', () => {
 });
 
 describe('A11 Set up your account', () => {
+  /** `GET /communities/mine` (INBOX-14): the rooms the person is in; a row is theirs when its role is host. */
+  const rooms = (roles: string[]) => ({ status: 200, body: { statusCode: 200, message: 'OK', data: roles.map((role, i) => ({ id: `r${i}`, role })), pagination: { nextPage: null, total: roles.length } } }) as Answer;
   const priced = { enabled: true, priceKobo: 50000, responseHours: 24, creatorSharePct: 85, earnPerMessageKobo: 42500, raiseToKobo: null, options: { minPriceKobo: 1, maxPriceKobo: 2, pricePresets: [], responseWindowHours: [24] }, standing: { paused: false } };
   const stats = (over: Record<string, unknown> = {}) => ok({ postCount: 0, followerCount: 0, followingCount: 0, profileCompletenessPct: 40, profileCompletenessMissing: ['bio'], ...over });
 
-  it('a creator sees which steps are done, can open each of the four, and tap Later', async () => {
+  it('a creator sees which steps are done, can open each of the five, and tap Later', async () => {
     answers['GET /api/hub/paid-dm/settings'] = ok(priced);
     answers['GET /api/hub/users/me/profile-stats'] = stats();
+    answers['GET /api/hub/communities/mine'] = rooms(['member']);
     answers['GET /api/hub/money/wallet'] = ok({ state: 'not_open', account: null, limits: null, pin: { isSet: false } });
     const onOpen = jest.fn();
     const onLater = jest.fn();
     await render(frame(<CreatorSetupScreen onOpen={onOpen} onLater={onLater} />));
     await screen.findByTestId('setup-count');
-    expect(screen.getByText('1 of 4')).toBeTruthy();
+    expect(screen.getByText('1 of 5')).toBeTruthy();
     expect(screen.getByText('Your earnings wait until you open your wallet')).toBeTruthy();
     expect(screen.getByText('Nothing published yet')).toBeTruthy();
-    expect(screen.queryByText('Start your first community')).toBeNull();
+    // I32's row (INBOX-14): the board's title, with what the Hub says in place of its unbacked "Free to host".
+    expect(screen.getByText('Start your first community')).toBeTruthy();
+    expect(screen.getByText('None started yet')).toBeTruthy();
+    expect(screen.queryByText('Free to host')).toBeNull();
     expect(screen.queryByText('Free to list')).toBeNull();
-    for (const target of ['paid', 'profile', 'publish', 'wallet']) {
+    for (const target of ['paid', 'profile', 'publish', 'community', 'wallet']) {
       await fireEvent.press(screen.getByTestId(`setup-row-${target}`));
       expect(onOpen).toHaveBeenLastCalledWith(target);
     }
@@ -222,15 +228,18 @@ describe('A11 Set up your account', () => {
   it('counts every finished step', async () => {
     answers['GET /api/hub/paid-dm/settings'] = ok(priced);
     answers['GET /api/hub/users/me/profile-stats'] = stats({ postCount: 2, profileCompletenessMissing: [] });
+    answers['GET /api/hub/communities/mine'] = rooms(['member', 'host']);
     answers['GET /api/hub/money/wallet'] = ok({ state: 'open', account: { accountNumber: '0000000000', accountName: 'A B', bankName: 'Nuvion' }, limits: null, pin: { isSet: true } });
     await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
-    await screen.findByText('4 of 4');
+    await screen.findByText('5 of 5');
+    expect(screen.getByText('You host a community')).toBeTruthy();
     expect(screen.queryByTestId('setup-read-failed')).toBeNull();
   });
 
   it('keeps the rows working when a read fails', async () => {
     answers['GET /api/hub/paid-dm/settings'] = ok(priced);
     answers['GET /api/hub/users/me/profile-stats'] = stats({ postCount: 2, profileCompletenessMissing: [] });
+    answers['GET /api/hub/communities/mine'] = rooms([]);
     answers['GET /api/hub/money/wallet'] = 'offline';
     const onOpen = jest.fn();
     await render(frame(<CreatorSetupScreen onOpen={onOpen} onLater={jest.fn()} />));

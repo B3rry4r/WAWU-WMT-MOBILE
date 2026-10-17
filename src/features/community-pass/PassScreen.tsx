@@ -21,6 +21,7 @@ import { CoverHeader, CoverShare, coverMetrics } from '@/features/communities/Co
 import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { WalletRow } from '@/features/money-attempt/WalletRow';
 import { TOTAL_LABEL, WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
@@ -128,10 +129,13 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
     onOpenWallet: wallet.open,
     onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
     onForgotPin: () => router.push('/reset-pin'),
+    // A short wallet opens W15 with what is missing (WALLET-05); the route asks for the price again when the person comes back.
+    onAddMoney: (short) => router.push(addMoneyHref(short)),
   });
   const quote = buy.quote;
-  // A room that sells a pass and a person who cannot buy it: the host removed them (R-63 has no join request; the host lets them back in
-  // with the existing approve). The Hub says why in its own words on the pass quote, so they are read from there and shown, with no Pay.
+  // A room that sells a pass and a person who cannot buy it: the host removed them (a pending row in a pass room, G-INBOX-24-6; R-63 has no
+  // join request, and the host lets them back in with the existing approve). The Hub says why in its own words on the pass quote, so they
+  // are read from there and shown under "Removed by the host", with no Pay and no way to buy back in.
   const blocked = pass.sellsPass && !pass.isHost && !pass.active && !pass.canBuy;
   const why = useQuery({ queryKey: [...passQuoteKey(id), 'blocked'], queryFn: () => fetchPassQuote(id), enabled: blocked, retry: false, staleTime: 0, gcTime: 0 });
   const verb = pass.canRenew || pass.passUntil ? 'Renew' : 'Join';
@@ -220,7 +224,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
       <EmptyState
         testID="pass-blocked"
         icon="Lock"
-        title="You can’t join this room"
+        title="Removed by the host"
         message={isApiError(why.error) && why.error.message ? why.error.message : 'A pass can’t be bought here right now.'}
       />
     );

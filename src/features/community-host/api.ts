@@ -24,6 +24,8 @@ function unreadable(what: string): ApiError {
 }
 
 export const requestsKey = (id: string) => ['community', id, 'requests'] as const;
+/** How many are waiting on the host, for the room's entry to I34. Under `requestsKey`, so an approve or a decline that refreshes the list refreshes this too. */
+export const requestsCountKey = (id: string) => [...requestsKey(id), 'count'] as const;
 
 /** POST /communities/rooms. A room the Hub answers without its id or link is refused, never drawn. */
 export async function createRoom(input: CreateRoomInput): Promise<Room> {
@@ -73,4 +75,10 @@ export async function approveRequest(id: string, userWawuId: string): Promise<vo
 /** Decline: the request is removed. */
 export async function declineRequest(id: string, userWawuId: string): Promise<void> {
   await unwrap(api.DELETE('/api/hub/communities/{id}/requests/{userWawuId}', { params: { path: { id, userWawuId } } }));
+}
+
+/** How many people wait on the host in this room (the Hub's total of `GET /communities/{id}/requests`). Host only: anyone else is refused. */
+export async function fetchRequestsCount(id: string): Promise<number> {
+  const page = await fetchRequests(id, 1);
+  return page.items.filter((row) => row.status === 'pending').length > 0 ? Math.max(page.total, 1) : 0;
 }

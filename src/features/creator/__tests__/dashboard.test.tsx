@@ -76,6 +76,22 @@ describe('M18 · Creator dashboard', () => {
     expect(screen.queryByText(/KYC/)).toBeNull();
   });
 
+  it('Host a community is the last row of the set-up list and opens I32 (INBOX-14); without a way in it is not drawn', async () => {
+    const onCommunity = jest.fn();
+    await renderFrame(
+      <DashboardScreen onBack={jest.fn()} onOpenPaid={jest.fn()} onOpenWallet={jest.fn()} onOpenEarnings={jest.fn()} onOpenLibrary={jest.fn()} onOpenCommunity={onCommunity} />,
+    );
+    // The set-up list settles once the Hub has answered (the wallet row comes and goes), so the row is taken after that.
+    await screen.findByText('Earned in September');
+    await screen.findByText('On · ₦300 a message');
+    const row = screen.getByTestId('creator-community');
+    expect(screen.getByText('Host a community')).toBeTruthy();
+    // The board's "You keep 85% of credits" is not served (G-INBOX-14-1), so it is not written.
+    expect(screen.queryByText(/85%/)).toBeNull();
+    await fireEvent.press(row);
+    expect(onCommunity).toHaveBeenCalledTimes(1);
+  });
+
   it('with a wallet open there is no wallet row at all (the board draws only "Not opened / Open")', async () => {
     const handlers = await open();
     await screen.findByText('Earned in September');

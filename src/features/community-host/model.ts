@@ -56,6 +56,9 @@ export function requestLine(ago: string): string {
   return ago === 'Yest.' ? 'asked Yest.' : `asked ${ago} ago`;
 }
 
+/** The line under a waiting row in a room that sells a pass: the host removed them, they did not ask (G-INBOX-24-6). */
+export const removedLine = (): string => 'Removed from this room';
+
 /** What `POST /communities/rooms` is sent (R-63). */
 export type RoomInput = { name: string; description: string; kind: Kind; imageUrl?: string; passPriceKobo?: number };
 

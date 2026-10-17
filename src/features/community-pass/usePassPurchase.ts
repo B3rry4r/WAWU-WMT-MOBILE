@@ -35,7 +35,7 @@ export type PassPurchaseArgs = {
   onSetPin: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
-  /** Add money for the shortfall (kobo). Left out until Add money is built (WALLET-05, R-47): the short notice shows without the button. */
+  /** Add money for the shortfall (kobo): opens W15 with what is missing (WALLET-05). Without it the short notice shows without the button. */
   onAddMoney?: (shortfallKobo: number) => void;
 };
 
@@ -50,7 +50,7 @@ const subjectOf = (id: string) => `pass:${id}`;
  * one on screen (a changed total is shown first). One `Idempotency-Key` per attempt: a wrong PIN, a request that got no answer and a PIN typed
  * again all send the SAME key and the SAME quote, so the wallet is charged once and one pass is given; the attempt outlives the screen
  * (`money-attempt/attempts`). A purchase the Hub took and has not finished is only read, never paid again. A person with no wallet is
- * led to Open your wallet; a short wallet shows what is missing (Add money joins it once WALLET-05 builds it, R-47). Nothing is paid
+ * led to Open your wallet; a short wallet shows what is missing, with Add ₦X to W15 (WALLET-05). Nothing is paid
  * without a PIN-confirmed tap: no timer and no reminder starts a payment (R-63).
  */
 export function usePassPurchase(args: PassPurchaseArgs) {

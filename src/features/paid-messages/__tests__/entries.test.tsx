@@ -38,6 +38,7 @@ const ME = 'GET /api/hub/users/me';
 
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { SettingsEntry } = require('../SettingsEntry') as typeof import('../SettingsEntry');
+const { ComposeEntry } = require('@/features/community-host/ComposeEntry') as typeof import('@/features/community-host/ComposeEntry');
 const { InboxScreen } = require('@/features/inbox/InboxScreen') as typeof import('@/features/inbox/InboxScreen');
 const { ServicesTab } = require('@/features/me/ServicesTab') as typeof import('@/features/me/ServicesTab');
 const { ListingsScreen } = require('@/features/pro-listing/ListingsScreen') as typeof import('@/features/pro-listing/ListingsScreen');
@@ -101,6 +102,29 @@ describe('I1: the settings button in the Inbox header', () => {
       await new Promise((resolve) => setTimeout(resolve, 60));
     });
     expect(screen.queryByLabelText('Paid message settings')).toBeNull();
+  });
+});
+
+describe('I1: the compose pencil in the Inbox header (INBOX-14)', () => {
+  it('a creator sees it and it opens I32, New community', async () => {
+    answers[ME] = ok({ accountType: 'creator' });
+    const onOpen = jest.fn();
+    await frame(<ComposeEntry onOpen={onOpen} />);
+    fireEvent.press(await screen.findByLabelText('New community'));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('a plain account, an account with no type and a failed read see nothing: only creators host (R-47)', async () => {
+    for (const answer of [ok({ accountType: 'user' }), ok({ accountType: null }), 'offline' as Answer]) {
+      answers[ME] = answer;
+      const view = await frame(<ComposeEntry onOpen={jest.fn()} />);
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      });
+      expect(screen.queryByLabelText('New community')).toBeNull();
+      await view.unmount();
+      queryClient.clear();
+    }
   });
 });
 

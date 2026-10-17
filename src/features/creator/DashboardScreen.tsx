@@ -38,6 +38,8 @@ export type DashboardScreenProps = {
   onOpenEarnings: () => void;
   /** The My content row opens M28. */
   onOpenLibrary: () => void;
+  /** The "Host a community" row opens I32 (INBOX-14). Not drawn without it. */
+  onOpenCommunity?: () => void;
 };
 
 /** "On · ₦300 a message", or "Off". Both figures are the Hub's; a price it has not set is not written. */
@@ -52,9 +54,10 @@ export function paidLine(s: Pick<PaidMessageSettings, 'enabled' | 'priceKobo'>):
  * Hub's count, and the set-up list: the account (done, or the screen is not one), Paid messages with its price, and the wallet, which
  * asks for no identity check here (R-6): "Open your wallet, Not opened" and Open until the person has opened one, and then no row,
  * since there is nothing left to do. Earnings lands in the wallet by itself (R-11), so its row says so and opens W39; My content opens
- * M28 with the Hub's counts. "Get verified" under the meter is added by ME-12 and "Host a community" by INBOX-14 (R-47).
+ * M28 with the Hub's counts. "Host a community" (INBOX-14) is the last row of the set-up list and opens I32; the board's "You keep 85% of
+ * credits" under it is not served (G-INBOX-14-1), so the row has its title alone. "Get verified" under the meter is added by ME-12 (R-47).
  */
-export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnings, onOpenLibrary }: DashboardScreenProps) {
+export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnings, onOpenLibrary, onOpenCommunity }: DashboardScreenProps) {
   const owner = useSessionAccount(undefined);
   // The month's figure and whether a wallet is open are both what `GET /money/earnings` says: the same read (and cache entry) as W39.
   const earnings = useQuery(earningsQuery(owner));
@@ -104,6 +107,7 @@ export function DashboardScreen({ onBack, onOpenPaid, onOpenWallet, onOpenEarnin
           {earnings.data?.walletOpen === true ? null : (
             <WalletRow notOpened={earnings.data?.walletOpen === false} failed={earnings.isError} onOpen={onOpenWallet} onRetry={() => void earnings.refetch()} />
           )}
+          {onOpenCommunity ? <ListRow testID="creator-community" lead={<IconTile icon="Users" size={DASH.rowIcon} />} title="Host a community" onPress={onOpenCommunity} /> : null}
         </GroupedList>
       </View>
       <GroupedList testID="creator-more">

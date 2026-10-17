@@ -11,10 +11,11 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { fetchRoom, roomKey } from '@/features/communities/api';
+import { fetchPass, passKey } from '@/features/community-pass/api';
 import { font, layout, space, useWawu } from '@/theme';
 
 import { approveRequest, declineRequest, fetchRequests, requestsKey, type JoinRequest } from './api';
-import { askedAgo, requestLine } from './model';
+import { askedAgo, removedLine, requestLine } from './model';
 
 /** design/_gen/inbox.js line 89, `requests`: a 48 avatar, 12 beside the name (15.5 / 600) and its line (13, muted), the two buttons under at the `md` size, 8 apart. */
 const metrics = { avatar: 48, name: 15.5, line: 13, between: 12, padV: 14, buttons: 8, loadingRows: 3 } as const;
@@ -25,6 +26,8 @@ export type JoinRequestsScreenProps = { id: string; onBack: () => void };
  * I34 · Join requests (INBOX-14). The queue of a private room that already holds requests: who asked, how long ago, Decline and Approve.
  * A private room made now is joined by a pass and has no queue (R-63), so the screen is reached only from a room the Hub lists requests for.
  * The Hub serves the requester's handle and picture; the headline and city the board draws are not served (G-INBOX-14-2) and are left out.
+ * In a room that sells a pass a waiting row is a member the host removed (INBOX-24 round 2, G-INBOX-24-6), not someone who asked: the line says so,
+ * and Approve lets them back in while Decline keeps them out.
  */
 export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
   const { colors } = useWawu();
@@ -38,6 +41,9 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
     },
     queryClient,
   );
+  // Whether the room sells a pass decides what a waiting row means; until it is read the older words ("asked") are not written for a row.
+  const pass = useQuery({ queryKey: passKey(id), queryFn: () => fetchPass(id) }, queryClient);
+  const removedRoom = pass.data?.sellsPass === true;
   const items = useMemo(() => list.data?.pages.flatMap((page) => page.items).filter((row) => row.status === 'pending') ?? [], [list.data]);
   const settle = useMutation(
     {
@@ -74,7 +80,14 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
       />
     );
   } else if (items.length === 0) {
-    body = <EmptyState testID="requests-empty" icon="Users" title="No requests waiting" message="People who ask to join this room show up here." />;
+    body = (
+      <EmptyState
+        testID="requests-empty"
+        icon="Users"
+        title="No requests waiting"
+        message={removedRoom ? 'People you remove from this room wait here until you let them back in.' : 'People who ask to join this room show up here.'}
+      />
+    );
   } else {
     body = (
       <FlatList
@@ -87,6 +100,7 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
         renderItem={({ item }) => (
           <Row
             row={item}
+            line={pass.isPending ? '' : removedRoom ? removedLine() : requestLine(askedAgo(item.requestedAt))}
             busy={working === item.userWawuId}
             disabled={settle.isPending}
             onApprove={() => settle.mutate({ userWawuId: item.userWawuId, approve: true })}
@@ -110,7 +124,7 @@ export function JoinRequestsScreen({ id, onBack }: JoinRequestsScreenProps) {
   );
 }
 
-function Row({ row, busy, disabled, onApprove, onDecline }: { row: JoinRequest; busy: boolean; disabled: boolean; onApprove: () => void; onDecline: () => void }) {
+function Row({ row, line, busy, disabled, onApprove, onDecline }: { row: JoinRequest; line: string; busy: boolean; disabled: boolean; onApprove: () => void; onDecline: () => void }) {
   const who = row.handle ? `@${row.handle.replace(/^@/, '')}` : 'Someone';
   return (
     <View style={styles.row} testID={`request-${row.userWawuId}`}>
@@ -121,7 +135,7 @@ function Row({ row, busy, disabled, onApprove, onDecline }: { row: JoinRequest; 
             {who}
           </Text>
           <Text variant="caption" tone="textMuted" style={{ fontSize: metrics.line }}>
-            {requestLine(askedAgo(row.requestedAt))}
+            {line}
           </Text>
         </View>
       </View>
