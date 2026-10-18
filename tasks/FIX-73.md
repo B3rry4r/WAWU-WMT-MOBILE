@@ -18,13 +18,14 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026.
-- **Status:** verifying. Built by a Sonnet builder (tier T0). Mobile `wmt/FIX-73` from `origin/wmt/MERGE-16` `5ee3994d`. Mobile only; no backend, contract, migration or Fintava change.
+As of 18 Oct 2026, merging (lead): accepted by the lead on a diff read (T0) and stacked in batch 18.
+- **Status:** merging (lead). Stacked in batch 18 by MERGE-18 (mobile `wmt/MERGE-18`; no backend); not on main. Mobile `5699fe2f` (code `87dc1df2`). SWEEP-APP rows 131 and 137 carry its marks; SWEEP-APP-3 skips them.
+- **Built:** by a Sonnet builder (tier T0). Mobile `wmt/FIX-73` from `origin/wmt/MERGE-16` `5ee3994d`. Mobile only; no backend, contract, migration or Fintava change.
 - **1 SWEEP-APP row 137 (HOME-13 S1 L1, money):** `cleanAmountText` in `src/features/tips/model.ts` stripped every non-digit and joined what was left, so a pasted `12.50` became ₦1,250 and `12.5` became ₦125 (a 100x overcharge shown on the Tip button and the PIN sheet). Now everything from the first `.` on is dropped: `12.50` and `12.5` are ₦12, `0.99` and `.50` are nothing to send (the button stays off, "Choose an amount to tip.").
 - **Rule for a comma (decided here):** the field is a number pad, so only a paste brings a `.` or `,` in. A comma stays a thousands separator and is ignored, as the existing `1,250` assertions and the flow test pin: `1,250` is ₦1,250, `1,250.75` is ₦1,250. Only the dot ends the whole naira (Nigerian figures group with commas and use a dot for kobo). The sheet still shows the exact figure it will charge before the PIN.
 - **2 SWEEP-APP row 131 (AUTH-06 L3, copy):** A12's sub-line read "Pick 3 or more." where the board reads "Pick three or more." `interestsHint(minimum)` in `InterestsScreen.tsx` spells the Hub's minimum in words up to ten (digits above ten); the Hub's number is still the one used.
 - **Tests (red before, green after):** `tips/__tests__/model.test.ts` (the `12.50` assertion that pinned ₦1,250 now pins ₦12, per the row; new `12.5`, `12.`, `1,250.75`, `0.99`, `.50` and the `cleanAmountText` cases), `tips/__tests__/tipFlow.test.tsx` (a pasted `12.50` is quoted as 1200 kobo, the button reads "Tip ₦35.25", the field shows 12), `after-signup/__tests__/afterSignup.screens.test.tsx` (line 125 now the board's sentence; a new `interestsHint` case). Run on the unfixed source: 5 failed, 35 passed; on the fixed source: 40 of 40 pass (4 suites).
-- **Next:** an independent verifier; the lead's batch.
+- **Next:** the batch 18 pull request (the lead).
 
 ## Goal
 

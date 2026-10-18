@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 305.**
+**Launch tasks done: 176 of 308.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 51 | 0 | 0 | 0 |
+| todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 125 | 0 | 0 | 0 |
+| verifying | 130 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,8 +19,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-73](../tasks/FIX-73.md) A pasted tip amount keeps whole naira, and A12 says Pick three or more (You)
+- [FIX-71](../tasks/FIX-71.md) A community message's photo, video and voice note still load after a week (You)
 - [FIX-69](../tasks/FIX-69.md) The school places take their locks in one order, and the release sweep logs why it failed (You)
 - [FIX-68](../tasks/FIX-68.md) CHECK-1's findings: the Tip button wins its taps, no tier is not an error, one write per sign-up, Explore and the cards as drawn (You)
+- [FIX-66](../tasks/FIX-66.md) A move Nuvion accepts and then fails lands under a new reference, and WAWU's account ledger equals Nuvion's (You)
 - [FIX-65](../tasks/FIX-65.md) A purged account's uploaded files leave the bucket (You)
 - [FIX-64](../tasks/FIX-64.md) The school report spec waits for the first try to end, and the refund-notice migration can be undone (You)
 - [FIX-63](../tasks/FIX-63.md) Signed-in screens are guarded (every route that needs a session sits in the signed-in group) (You)
@@ -360,4 +363,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, bundle S1b): a piece's own page `/content/<id>`: H19 locked, H20 unlocked, H21 comments, H22 share, H23 rate, H24 free video, H25 course, on HOME-12's unlock and HOME-13's tip sheets; backend `GET /content/{id}/detail` also carries who made it (`wmt/S1b` `b5f5538`); a feed caption and a Search result open it; mobile `wmt/S1b` on MERGE-11 with S1 and EXPLORE-02-R2 merged; gaps G-HOME-03-1 to 5, G-HOME-08-1 to 3; status verifying.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.
-- 17 Oct 2026 · ME-03 · Built (Sonnet builder, T1; mobile `wmt/ME-03` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged, backend `wmt/ME-03` `353f27a` on `98efeef`, one additive field, no migration; status verifying): the Me menu (M7, Z1) whole in the canvas's order (Creator dashboard and My content for creators, My purchases, My courses, Saved, Notifications, Verification, Settings), every line the Hub's (month's earnings, uploads, the four counts, the tick state only), titles alone for nothing, loading or unreadable, a retry note when a read fails; `GET /me/counts` serves `enrolledCourses` (G-854 closed); real stack `me03_test`, a creator, a creator with no tick, a fan and a new account, each row opened its screen; VERIFY-05 has no branch in this base so "Your tier" is not drawn.

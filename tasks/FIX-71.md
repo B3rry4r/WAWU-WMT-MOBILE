@@ -18,7 +18,10 @@ tier: T1
 
 ## Current state
 
-As of 18 Oct 2026, verifying: built by a Sonnet builder (tier T1), not yet checked. Backend `wmt/FIX-71` (from `wmt/INBOX-22` `2d311df`); this record and the gap rows on mobile `wmt/FIX-71` (from `wmt/INBOX-22` `6c0313da`). No schema, no migration, no route, no Fintava file, no app code.
+As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 18.
+- **Status:** merging (lead). The verifier said PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-71.md`: every media reader signs fresh, removing each path's signing turns exactly its test red, `objectKeyFrom` old against new differs only for the 3 added folders). Backend `wmt/FIX-71` `5d8f50b`, this record `daaf894`. Stacked in batch 18 by MERGE-18 (backend `wmt/MERGE-18`, mobile `wmt/MERGE-18`); not on main.
+- **Merge (MERGE-18):** FIX-71 was built on INBOX-22 `2d311df`, so it merged after INBOX-22 round 2 (`a0f59fa`). Conflicts: `community-message.service.ts` (kept round 2's `assertUploaded` with `deliverableKeyFrom` and FIX-71's constructor, `withFreshMedia` on list, create, live, catch-up and rooms; `StorageService` imported once) and `community-message.module.ts` (`StorageModule` once). The inherited red `publishing-gate-coverage.spec.ts` is fixed by INBOX-22 round 2. The verifier's lows are SWEEP-INBOX rows FIX-71 L1 and L2 (open). SWEEP-APP FIX-65 F3 is closed by this task (`objectKeyFrom` now knows the chat and AI folders).
+- **Built:** by a Sonnet builder (tier T1). Backend `wmt/FIX-71` (from `wmt/INBOX-22` `2d311df`); this record and the gap rows on mobile `wmt/FIX-71` (from `wmt/INBOX-22` `6c0313da`). No schema, no migration, no route, no Fintava file, no app code.
 - **Closes:** G-INBOX-22-2. **Found by:** INBOX-22's builder.
 - **Cause:** a message's `imageUrl`, `videoUrl` and `voiceUrl` are stored as the 7-day signed link the app sent, so a week later every read of the room returned a dead link although the file was untouched.
 - **Fix:** the key is derived from the stored link (`objectKeyFrom`, as avatars and content previews already do) and signed on every read, in the five paths that return a message: the room's list, the answer to a send and to its repeat, the live event, the catch-up page and the last message of `GET /communities/mine`. New `src/community-message/message-media.ts`; `CommunityMessageService.withFreshMedia` / `withFreshMediaAll` call it; the list, `create`, `LiveDispatcher.communityMessage`, `LiveCatchUpService` and `CommunityRoomsService.mine` use them. Nothing stored is rewritten; an old row that holds a full link or a bare key works. The inbox preview (`GET /inbox`) carries no link, only a kind, so there is nothing to sign there.
@@ -27,7 +30,7 @@ As of 18 Oct 2026, verifying: built by a Sonnet builder (tier T1), not yet check
 - **Specs:** new `community-message-resign.contract.spec.ts` (9; red on `2d311df` for the list, the host's list, the send and its repeat, `mine`, the live event and the catch-up page, green after; the outsider refusal, the stored rows and a foreign last message pass on both), `message-media.spec.ts` (unit, 25) and `src/storage/tests/object-key-folders.spec.ts` (4). Storage is configured only to sign, at a host that does not resolve; nothing leaves the machine.
 - **Protected suite (V3):** 2 of 253 red, `GET` and `POST /communities/:id/messages` "videoUrl, voiceUrl not in the lock". They are INBOX-22's own, red on `2d311df` too, and nothing here adds a field.
 - **Merge note:** INBOX-22 round 2 changes `assertUploaded` in `community-message.service.ts`; this branch does not touch it. Functions changed in `storage.service.ts`: `objectKeyFrom` (loops `KEY_FOLDERS`), plus the new exports `KEY_FOLDERS` and `GENERATED_KEY_FOLDERS` and the import of `CHAT_UPLOAD_FOLDERS`. In `community-message.service.ts`: the constructor (adds `StorageService`), `create`, `list`, new `withFreshMedia` and `withFreshMediaAll`.
-- **Next:** an independent verifier (V3 protected suite, gates, the three specs).
+- **Next:** the batch 18 pull request (the lead).
 
 ## Read first
 
