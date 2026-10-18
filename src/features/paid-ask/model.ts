@@ -215,6 +215,11 @@ export function refundedCard(
     }
     return { tone: 'refunded', title: `${within}, so you got ${formatNaira(back)} back`, body: `It went back to your Naira wallet ${atWords(hold.settledAt, now)}. ${whoOf(name)} earned nothing.` };
   }
+  // INBOX-10 N1: while the refund is still moving the hold has no figure yet (it is written when the refund settles), so there is
+  // nothing to print; say the money is on its way instead of saying it was refunded.
+  if (wallet && (wallet.status === 'refunding' || (hold !== null && !hold.settledAt))) {
+    return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to your Naira wallet. ${whoOf(name)} earned nothing.` };
+  }
   return { tone: 'refunded', title: `${within}, so this question was refunded`, body: `${whoOf(name)} earned nothing.` };
 }
 
