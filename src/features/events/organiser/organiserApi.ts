@@ -3,6 +3,7 @@ import { ApiError } from '@/api/errors';
 import type { components, operations } from '@/api/schema.generated';
 
 import type { EventView, TicketType } from '../api';
+import { hostUnwrap } from '../host/hostTier';
 
 /**
  * What a host sees of their own events (E17, E18, E25) and what they can do to one, as the Hub's contract types it:
@@ -94,6 +95,7 @@ export async function cancelEvent(id: string, reason: string): Promise<CancelAns
 
 export type TierInput = { tier: TicketTier; name: string; priceNaira: number; quantity: number };
 
+/** `PUT /events/{id}/tickets`. Without a running tier the Hub answers `403 tier_required`, which arrives as a `HostTierRefusal` (E21's reason). */
 export async function saveTicketTypes(id: string, types: TierInput[]): Promise<void> {
-  await unwrap(api.PUT('/api/hub/events/{id}/tickets', { params: { path: { id } }, body: { types } }));
+  await hostUnwrap(api.PUT('/api/hub/events/{id}/tickets', { params: { path: { id } }, body: { types } }));
 }

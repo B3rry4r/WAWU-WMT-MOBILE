@@ -1,19 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import type { IconName } from '@/components/icon';
+import { ProductsMeter } from '@/components/ProductsMeter';
 import { Skeleton } from '@/components/Skeleton';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { draftsKey, fetchDrafts, fetchMyTier, tierKey } from '@/features/me/api';
+import { draftsKey, fetchDrafts, fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
+import { productsMeterOf } from '@/features/me/model';
 import { StudioRow } from '@/features/points/StudioRow';
 import { draftCount } from '@/features/verify/model';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { allowanceKey, fetchAllowance } from './api';
+import { allowanceKey, fetchAllowance, type Allowance } from './api';
 import { CreateFrame } from './CreateFrame';
 import { SlotsFullNotice, UploadsMeter, slotsFull } from './UploadsMeter';
 
@@ -28,7 +30,7 @@ export type CreateScreenProps = {
   onClose: () => void;
   /** Content opens M20. */
   onContent: () => void;
-  /** Event opens E13, or E21 for an account without a tick (the host form decides). */
+  /** Event opens E13, or E21 (Hosting needs a tier) for an account with no running tier and no live tick: the host form decides. */
   onEvent: () => void;
   /** Community opens I32 (INBOX-14). The tile is not drawn without it. */
   onCommunity?: () => void;
@@ -56,13 +58,13 @@ export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onServi
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: Boolean(onShop) });
   // At "5 of 5 used" a new piece would be refused when it is created, so Content does not start one (M27). Event and Service take no upload slot.
   const full = allowance.data ? slotsFull(allowance.data) : false;
-  // A running tier whose every place is used: Content opens VF13 (add five, or move up a tier) instead of a piece the Hub would refuse.
-  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, enabled: Boolean(onProductsFull), staleTime: 0, retry: false });
+  // The tier is the Hub's: the products meter (M19) and, at the limit of a running tier's products, Content opening VF13 in place of a piece the Hub would refuse.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
   const running = tier.data ? tier.data.state === 'active' || tier.data.state === 'ending' : false;
   const atLimit = Boolean(onProductsFull) && running && tier.data !== undefined && tier.data.productsAllowed > 0 && tier.data.productsUsed >= tier.data.productsAllowed;
   const tiles: Tile[] = [
     { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: atLimit && onProductsFull ? onProductsFull : onContent, disabled: full && !atLimit },
-    { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs a verified tick', onPress: onEvent },
+    { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs an active tier', onPress: onEvent },
     ...(onCommunity ? [{ id: 'community', icon: 'Users' as const, title: 'Community', sub: 'A room your people talk in', onPress: onCommunity }] : []),
     { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
   ];
@@ -84,15 +86,30 @@ export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onServi
       </View>
       {onStudio ? <StudioRow onPress={onStudio} /> : null}
       {onShop ? <ShopRow sub={drafts.data ? `${draftCount(drafts.data.length)} \u00b7 drafts are free` : 'Drafts are free'} onPress={onShop} /> : null}
-      {allowance.data ? (
-        <UploadsMeter allowance={allowance.data} onGetVerified={onGetVerified} />
-      ) : allowance.isError ? (
-        <MeterFailed message={isApiError(allowance.error) ? allowance.error.message : 'Check your connection and try again.'} onRetry={() => void allowance.refetch()} />
-      ) : (
-        <Skeleton testID="create-meter-loading" height={96} radius={radius.card} />
-      )}
+      <Meter tier={tier} allowance={allowance} onGetVerified={onGetVerified} />
     </CreateFrame>
   );
+}
+
+type TierQuery = UseQueryResult<MyTier>;
+type AllowanceQuery = UseQueryResult<Allowance>;
+
+/**
+ * M19's meter. A person with a running tier sees "2 of 3 products" with the tier's name and end date (`GET /me/tier`, the same card as
+ * Me). Without one, or when the tier cannot be read, the Hub's own uploads count (`GET /uploads/allowance`) stands in: it carries a tick
+ * that has not ended and a tier's places alike. A person the Hub allows nothing has nothing to count, so nothing is drawn. Each read has
+ * its own loading state, and the count's failure says so with Try again.
+ */
+function Meter({ tier, allowance, onGetVerified }: { tier: TierQuery; allowance: AllowanceQuery; onGetVerified?: () => void }) {
+  const products = productsMeterOf(tier.data);
+  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} caption={products.caption} testID="create-products" />;
+  if (tier.isPending) return <ProductsMeter loading used={0} allowed={0} testID="create-meter-loading" />;
+  // No running tier (or none readable): a tier that ended or never was draws no products meter.
+  if (allowance.data) return <UploadsMeter allowance={allowance.data} onGetVerified={onGetVerified} />;
+  if (allowance.isError) {
+    return <MeterFailed message={isApiError(allowance.error) ? allowance.error.message : 'Check your connection and try again.'} onRetry={() => void allowance.refetch()} />;
+  }
+  return <Skeleton testID="create-meter-loading" height={96} radius={radius.card} />;
 }
 
 function HubTile({ tile }: { tile: Tile }) {
