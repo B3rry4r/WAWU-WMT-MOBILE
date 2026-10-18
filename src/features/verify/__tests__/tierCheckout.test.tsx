@@ -36,6 +36,14 @@ const TIERS = [
 const BUMP = { points: 1000, priceMinor: 80_000 };
 const BANK_CHARGE = 2500;
 const PURCHASE_ID = '66666666-6666-4666-8666-666666666666';
+/**
+ * The day these cases are read on unless one says otherwise. An end date is written against today (it carries its year when it is not
+ * this year, FIX-78 F-3), so the clock is pinned: no case changes with the calendar. The router's test renderer installs the fake clock.
+ */
+const TODAY = '2026-10-18T09:00:00.000Z';
+const pinClock = (iso: string) => jest.setSystemTime(new Date(iso));
+/** The end of the held Verify tier when a case does not set one: later this year, on the pinned day. */
+const HELD_UNTIL = '2026-11-26T00:00:00.000Z';
 
 type Mode = 'ok' | 'pending' | 'lost' | 'changed' | 'failed' | 'wrongfirst';
 const hub = {
@@ -142,7 +150,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/me/tier') {
     if (hub.held === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
-    return ok({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: hub.until ?? `${new Date().getUTCFullYear()}-11-26T00:00:00.000Z`, productsAllowed: 3, productsUsed: 2, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: PASS.verify });
+    return ok({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: hub.until ?? HELD_UNTIL, productsAllowed: 3, productsUsed: 2, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: PASS.verify });
   }
   if (path === '/plans/purchases/quote') {
     hub.quotes.push({ kind: url.searchParams.get('kind') ?? '', tierId: url.searchParams.get('tierId'), bump: url.searchParams.get('bump') });
@@ -231,6 +239,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
+  pinClock(TODAY);
   Object.assign(hub, { mode: 'ok', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
@@ -343,12 +352,25 @@ describe('VF5 · Make it official', () => {
     expect(hub.quotes.slice(before).some((q) => q.bump === 'true')).toBe(false);
   });
 
-  it('a person on a tier that ends next year is told the year, so it does not read as ending this year (VF5b, FIX-78 F-3)', async () => {
+  /*
+   * A tier's end date carries its year when it is not this year (VF5b, FIX-78 F-3), and "this year" is the Lagos year: 23:00 UTC on 31 Dec is
+   * already midnight on 1 Jan in Lagos. Each row is read at a pinned instant, so the rows hold at every moment of the real year, the hour
+   * around New Year included: 23:30 UTC on 31 Dec is 00:30 on 1 Jan in Lagos.
+   */
+  it.each([
+    { now: '2026-10-18T09:00:00.000Z', until: '2027-07-15T10:00:00.000Z', when: 'until 15 Jul 2027' },
+    { now: '2026-12-31T22:59:59.000Z', until: '2027-07-15T10:00:00.000Z', when: 'until 15 Jul 2027' },
+    { now: '2026-12-31T23:00:00.000Z', until: '2027-07-15T10:00:00.000Z', when: 'until 15 Jul' },
+    { now: '2026-12-31T23:30:00.000Z', until: '2027-07-15T10:00:00.000Z', when: 'until 15 Jul' },
+    { now: '2027-01-01T00:30:00.000Z', until: '2027-07-15T10:00:00.000Z', when: 'until 15 Jul' },
+    { now: '2026-12-31T23:30:00.000Z', until: '2027-01-01T10:00:00.000Z', when: 'until 1 Jan' },
+  ])('a person on a tier ending $until, read at $now, is told "$when" (VF5b)', async ({ now, until, when }) => {
+    pinClock(now);
     hub.held = 'verify';
-    hub.until = `${new Date().getUTCFullYear() + 1}-07-15T10:00:00.000Z`;
+    hub.until = until;
     await renderRouter(routes, { initialUrl: '/tiers' });
     await screen.findByTestId('tiers-list');
-    expect(screen.getByTestId('tiers-blurb')).toHaveTextContent(`You're on Verify until 15 Jul ${new Date().getUTCFullYear() + 1}. Pay only the difference.`);
+    expect(screen.getByTestId('tiers-blurb')).toHaveTextContent(new RegExp(`^You're on Verify ${when}\\. Pay only the difference\\.$`));
   });
 });
 

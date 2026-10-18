@@ -40,6 +40,12 @@ const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data }
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 const DAY = 86_400_000;
+/**
+ * The day these cases are read on unless one says otherwise. An end date is written against today (it carries its year when it is not
+ * this year, FIX-78 F-3), so the clock is pinned: no case changes with the calendar. The router's test renderer installs the fake clock.
+ */
+const TODAY = '2026-10-18T09:00:00.000Z';
+const pinClock = (iso: string) => jest.setSystemTime(new Date(iso));
 /** The Hub's own sentence for a paused identity check (`403 identity_paused`, S7 round 2). */
 const HUB_PAUSE = 'Publishing is paused until your identity check passes. Your wallet is not finished opening. Send the documents the bank asked for.';
 const hub = {
@@ -182,6 +188,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
+  pinClock(TODAY);
   Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
@@ -357,10 +364,10 @@ describe('VF13 · a lost answer on the products sheet (SWEEP-APP-3, SWEEP-APP-2 
 
 describe('VF14 · your tier', () => {
   it('a user sees the Hub’s dates and counts (active), a warning when it ends soon, and the ended state with Renew', async () => {
+    hub.until = '2026-11-26T10:00:00.000Z';
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-name')).toHaveTextContent('Verify');
-    // 40 days from now can fall in next year, which then carries its year (FIX-78 F-3); the exact words are pinned below.
-    expect(screen.getByTestId('your-tier-line')).toHaveTextContent(/^Active until \d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
+    expect(screen.getByTestId('your-tier-line')).toHaveTextContent(/^Active until 26 Nov$/);
     expect(screen.getByTestId('your-tier-products')).toHaveTextContent(/2 of 3/);
     expect(screen.getByTestId('your-tier-points')).toHaveTextContent(/100/);
     expect(screen.getByTestId('your-tier-pass')).toHaveTextContent(/Watch live, apply/);
@@ -370,27 +377,47 @@ describe('VF14 · your tier', () => {
     expect(await screen.findByTestId('where')).toHaveTextContent('/checkout?kind=renew&tier=verify');
   });
 
-  it('a 12-month tier shows the year of its end, so it never reads as ending today (FIX-78 F-3)', async () => {
-    // Mid-year dates, so the Lagos year is the UTC year whatever hour the test runs.
-    const year = new Date().getUTCFullYear();
-    hub.until = `${year + 1}-07-15T10:00:00.000Z`;
+  /*
+   * An end date carries its year when it is not this year (FIX-78 F-3), and "this year" is the Lagos year: 23:00 UTC on 31 Dec is already
+   * midnight on 1 Jan in Lagos. Each row is read at a pinned instant, so the rows hold at every moment of the real year, the hour around
+   * New Year included: 23:30 UTC on 31 Dec is 00:30 on 1 Jan in Lagos.
+   */
+  it.each([
+    { now: '2026-10-18T09:00:00.000Z', until: '2027-07-15T10:00:00.000Z', words: 'Active until 15 Jul 2027' },
+    { now: '2026-12-31T22:59:59.000Z', until: '2027-07-15T10:00:00.000Z', words: 'Active until 15 Jul 2027' },
+    { now: '2026-12-31T23:00:00.000Z', until: '2027-07-15T10:00:00.000Z', words: 'Active until 15 Jul' },
+    { now: '2026-12-31T23:30:00.000Z', until: '2027-07-15T10:00:00.000Z', words: 'Active until 15 Jul' },
+    { now: '2027-01-01T00:30:00.000Z', until: '2027-07-15T10:00:00.000Z', words: 'Active until 15 Jul' },
+  ])('a tier ending $until, read at $now, says "$words" (a 12-month tier never reads as ending today)', async ({ now, until, words }) => {
+    pinClock(now);
+    hub.until = until;
     await renderRouter(routes, { initialUrl: '/your-tier' });
-    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(`Active until 15 Jul ${year + 1}`);
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(new RegExp(`^${words}$`));
   });
 
-  it('a tier that ends later this year says the day and no year', async () => {
-    const year = new Date().getUTCFullYear();
-    hub.until = `${year}-12-15T10:00:00.000Z`;
+  it.each([
+    { now: '2026-10-18T09:00:00.000Z', until: '2026-12-15T10:00:00.000Z', words: 'Active until 15 Dec' },
+    { now: '2026-12-31T22:30:00.000Z', until: '2026-12-31T22:45:00.000Z', words: 'Active until 31 Dec' },
+    { now: '2026-12-31T23:30:00.000Z', until: '2027-12-15T10:00:00.000Z', words: 'Active until 15 Dec' },
+    { now: '2027-01-01T00:30:00.000Z', until: '2027-12-15T10:00:00.000Z', words: 'Active until 15 Dec' },
+  ])('a tier that ends later this year, ending $until and read at $now, says the day and no year', async ({ now, until, words }) => {
+    pinClock(now);
+    hub.until = until;
     await renderRouter(routes, { initialUrl: '/your-tier' });
-    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(/^Active until 15 Dec$/);
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(new RegExp(`^${words}$`));
   });
 
-  it('a tier that ended last year says so with the year', async () => {
-    const year = new Date().getUTCFullYear();
+  it.each([
+    { now: '2026-10-18T09:00:00.000Z', until: '2025-07-15T10:00:00.000Z', words: 'Ended 15 Jul 2025' },
+    { now: '2026-12-31T22:59:59.000Z', until: '2026-07-15T10:00:00.000Z', words: 'Ended 15 Jul' },
+    { now: '2026-12-31T23:30:00.000Z', until: '2026-07-15T10:00:00.000Z', words: 'Ended 15 Jul 2026' },
+    { now: '2027-01-01T00:30:00.000Z', until: '2026-07-15T10:00:00.000Z', words: 'Ended 15 Jul 2026' },
+  ])('a tier that ended $until, read at $now, says "$words" (the year when it was another year)', async ({ now, until, words }) => {
+    pinClock(now);
     hub.tier = 'ended';
-    hub.until = `${year - 1}-07-15T10:00:00.000Z`;
+    hub.until = until;
     await renderRouter(routes, { initialUrl: '/your-tier' });
-    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(`Ended 15 Jul ${year - 1}`);
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(new RegExp(`^${words}$`));
   });
 
   it('an ending tier warns with the days left, and an ended one says published products stay up and publishing is paused', async () => {

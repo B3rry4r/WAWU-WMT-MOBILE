@@ -23,8 +23,8 @@ import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchQuestion, fetchThread, questionKey, threadKey, type QuestionView, type ThreadDetail } from './api';
 import { AskSheets } from './AskSheets';
-import { answeredCard, composerLabel, headerLine, isWaiting, offTitle, refundedCard, threadEntries, waitingCard, whoOf, type AskTerms } from './model';
-import { AskComposer, ClosedComposer, LockedComposer, StatusCardView, WaitingComposer } from './parts';
+import { answeredCard, composerLabel, followUpOf, headerLine, isWaiting, offTitle, refundedCard, threadEntries, waitingCard, whoOf, type AskTerms } from './model';
+import { AskComposer, ClosedComposer, FailedComposer, LockedComposer, StatusCardView, WaitingComposer } from './parts';
 import { useAsk } from './useAsk';
 import { useAskTerms } from './useAskTerms';
 import { useNow } from './useNow';
@@ -166,7 +166,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
             entry.status === 'awaiting_response'
               ? waitingCard(q, name, now)
               : entry.status === 'responded'
-                ? answeredCard(name, entry.last && terms?.kind === 'on' ? { priceKobo: terms.priceKobo, windowHours: terms.windowHours } : null)
+                ? answeredCard(name, entry.last ? followUpOf(terms, profile.isError) : null)
                 : refundedCard(q, name, recordOf(q.id), now);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}
@@ -180,7 +180,12 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   ) : waiting ? (
     <LockedComposer line={`You can send once ${whoOf(name)} replies`} />
   ) : terms === null ? (
-    <WaitingComposer />
+    // The creator's profile holds the terms. If that read failed, say so with Try again; the thread above stays readable.
+    profile.isError ? (
+      <FailedComposer title="Couldn't check if you can ask" message={readFailure(profile.error)} onRetry={() => void profile.refetch()} />
+    ) : (
+      <WaitingComposer />
+    )
   ) : terms.kind === 'off' ? (
     <ClosedComposer line={offTitle(name)} />
   ) : (

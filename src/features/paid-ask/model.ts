@@ -168,7 +168,8 @@ export function tookLong(sentAt: string, respondedAt: string): string | null {
 
 export type CardTone = 'waiting' | 'answered' | 'refunded' | 'late';
 
-export type StatusCard = { tone: CardTone; title: string; body: string };
+/** `body` is null while its words are not known yet (I5, before the creator's terms are here): the card draws a loading line, never a guess. */
+export type StatusCard = { tone: CardTone; title: string; body: string | null };
 
 /**
  * A question the Hub still has open: the countdown and where the money is (I4). Past its deadline the Hub has not yet paid it back.
@@ -187,9 +188,30 @@ export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string 
   };
 }
 
-/** A question the creator answered (I5). `followUp` is the next question's terms, said only when the Hub says paid messages are on. */
-export function answeredCard(name: string | null | undefined, followUp: { priceKobo: number; windowHours: number | null } | null): StatusCard {
+/** The next question's terms: its price and window, said only when the Hub says paid messages are on. */
+export type FollowUp = { priceKobo: number; windowHours: number | null };
+
+/**
+ * What the newest answered question's card may say about asking again. The terms come from the creator's profile and then the Hub's pause,
+ * two reads after the thread, so until both are here nothing is known: `'pending'`, never a guess that the question is closed. When the
+ * profile read failed (`failed`) nothing is known either, and the card says so instead of loading for good: `'failed'`. Switched off
+ * or paused is `null` (closed); on is the terms.
+ */
+export const followUpOf = (terms: AskTerms | null, failed = false): FollowUp | 'pending' | 'failed' | null =>
+  terms === null ? (failed ? 'failed' : 'pending') : terms.kind === 'on' ? { priceKobo: terms.priceKobo, windowHours: terms.windowHours } : null;
+
+/** What the card says when the creator's terms could not be read: it does not guess "closed" or an offer, and points at the Try again under the thread. */
+export const TERMS_FAILED_LINE = "We couldn't check if you can ask a follow-up. Try again below.";
+
+/**
+ * A question the creator answered (I5). `followUp` is the next question's terms, said only when the Hub says paid messages are on; `null`
+ * says the question is closed (an older answer, or the creator is not taking paid messages); `'pending'` says nothing yet (the body is null);
+ * `'failed'` says the terms could not be read.
+ */
+export function answeredCard(name: string | null | undefined, followUp: FollowUp | 'pending' | 'failed' | null): StatusCard {
   const lead = `${whoOf(name)} answered, so they've been paid`;
+  if (followUp === 'pending') return { tone: 'answered', title: lead, body: null };
+  if (followUp === 'failed') return { tone: 'answered', title: lead, body: TERMS_FAILED_LINE };
   if (!followUp) return { tone: 'answered', title: lead, body: 'This question is closed.' };
   const window = followUp.windowHours === null ? '' : ` Each paid message gets its own ${windowAdjective(followUp.windowHours)} window.`;
   return { tone: 'answered', title: lead, body: `Ask a follow-up for ${formatNaira(followUp.priceKobo)}.${window}` };
