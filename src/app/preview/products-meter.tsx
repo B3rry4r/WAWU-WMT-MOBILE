@@ -11,7 +11,8 @@ import { layout, space, useWawu } from '@/theme';
  * /preview/products-meter?state=<name>, or no state for every one. The figures and the date are the brief's example values, not
  * allowances: the app reads them from the Hub (`GET /me/tier`). A release build redirects home.
  */
-const caption = productsMeterCaption('Verify', '2026-11-26T12:00:00Z');
+// Read against the brief's own day, so the gallery keeps the board's "26 Nov" whatever day it is opened on.
+const caption = productsMeterCaption('Verify', '2026-11-26T12:00:00Z', new Date('2026-10-18T09:00:00Z'));
 
 const cases: Record<string, { props: ProductsMeterProps; note: string }> = {
   partial: { props: { used: 2, allowed: 3, caption }, note: 'Partway (M1, M19)' },

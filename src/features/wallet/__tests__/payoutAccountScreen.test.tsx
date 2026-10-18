@@ -121,6 +121,15 @@ describe('A21 · Payout bank', () => {
     expect(screen.getByTestId('payout-save')).toBeDisabled();
   });
 
+  it('a user is told before anything else that the account must be in their own name (A21, R-51)', async () => {
+    answers = { [`GET ${PAYOUT}`]: ok(null), [`GET ${BANKS}`]: ok(bankList) };
+    await boot();
+    await screen.findByText('Choose your bank');
+    expect(screen.getByTestId('payout-own-name')).toHaveTextContent('The account must be in your own name.');
+    // Not a creator-only screen: anyone with an open wallet reaches it from Withdraw, so it never says "Creators only".
+    expect(screen.queryByText(/Creators only/)).toBeNull();
+  });
+
   it('a user can paste an account number with spaces or hyphens: the field takes it whole and keeps the ten digits', async () => {
     answers = {
       [`GET ${PAYOUT}`]: ok(saved),
@@ -148,6 +157,7 @@ describe('A21 · Payout bank', () => {
     await boot();
     expect(await screen.findByText('SIMI MICHELLE · matches your BVN')).toBeTruthy();
     expect(screen.getByText('GTBANK PLC')).toBeTruthy();
+    expect(screen.getByTestId('payout-own-name')).toBeTruthy();
     expect(screen.getByTestId('payout-number').props.value).toBe('0123456789');
     expect(screen.getByTestId('payout-save')).toBeDisabled();
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([`GET ${PAYOUT}`]);

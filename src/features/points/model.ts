@@ -2,7 +2,7 @@ import { formatMoney } from '@/components/Money';
 import { formatPoints, formatPointsCount } from '@/components/PointsFigure';
 import type { IconName } from '@/components/icon';
 import type { IconTileTone } from '@/components/IconTile';
-import { lagos, lagosDay, MONTHS, parseTime } from '@/features/wallet/history/lagosTime';
+import { dateWords, lagosDay, parseTime } from '@/features/wallet/history/lagosTime';
 
 import type { ConvertQuote, PointLot, PointMovement, MyPoints } from './api';
 
@@ -34,10 +34,7 @@ export function rateText(rate: ConvertQuote['rate']): string {
 /** The day a lot ends, in Lagos time: "12 Jan", with the year when it is not this one ("30 Sep 2027"). */
 export function endsOn(iso: string, now: Date): string {
   const at = parseTime(iso);
-  if (!at) return '';
-  const local = lagos(at);
-  const date = `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]}`;
-  return local.getUTCFullYear() === lagos(now).getUTCFullYear() ? date : `${date} ${local.getUTCFullYear()}`;
+  return at ? dateWords(at, now) : '';
 }
 
 /** "ends 12 Jan". */

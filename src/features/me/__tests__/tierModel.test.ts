@@ -41,17 +41,25 @@ describe('headerBadgeOf', () => {
 });
 
 describe('productsMeterOf', () => {
+  /** The day these are written on: an end date is read against it, so none of them changes with the calendar. */
+  const NOW = new Date('2026-10-18T09:00:00Z');
+
   it('reads the figures and the caption from the Hub, the end day in Lagos time', () => {
-    expect(productsMeterOf(tier())).toEqual({ used: 2, allowed: 3, caption: 'Verify · ends 26 Nov' });
+    expect(productsMeterOf(tier(), NOW)).toEqual({ used: 2, allowed: 3, caption: 'Verify · ends 26 Nov' });
     // 23:30 UTC on the 25th is 00:30 on the 26th in Lagos.
-    expect(productsMeterOf(tier({ activeUntil: '2026-11-25T23:30:00.000Z' }))?.caption).toBe('Verify · ends 26 Nov');
+    expect(productsMeterOf(tier({ activeUntil: '2026-11-25T23:30:00.000Z' }), NOW)?.caption).toBe('Verify · ends 26 Nov');
+  });
+
+  it('carries the year for a 12-month tier, whose end is next year (FIX-78 F-3)', () => {
+    const founding = tier({ tier: { id: 'founding', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' });
+    expect(productsMeterOf(founding, NOW)?.caption).toBe('Founding Maker · ends 18 Oct 2027');
   });
 
   it('is null with no running tier or no allowance', () => {
-    expect(productsMeterOf(undefined)).toBeNull();
-    expect(productsMeterOf(tier({ state: 'none', tier: null, productsAllowed: 0, productsUsed: 0 }))).toBeNull();
-    expect(productsMeterOf(tier({ state: 'ended' }))).toBeNull();
-    expect(productsMeterOf(tier({ productsAllowed: 0 }))).toBeNull();
+    expect(productsMeterOf(undefined, NOW)).toBeNull();
+    expect(productsMeterOf(tier({ state: 'none', tier: null, productsAllowed: 0, productsUsed: 0 }), NOW)).toBeNull();
+    expect(productsMeterOf(tier({ state: 'ended' }), NOW)).toBeNull();
+    expect(productsMeterOf(tier({ productsAllowed: 0 }), NOW)).toBeNull();
   });
 });
 

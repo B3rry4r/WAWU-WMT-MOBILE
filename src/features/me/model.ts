@@ -289,8 +289,8 @@ export function headerBadgeOf(tier: MyTier | null | undefined, personBadge: Prof
 /** The meter under the counts (M1): products used of what the tier allows, with "Verify · ends 26 Nov". Null with no running tier or no allowance. */
 export type ProductsMeterView = { used: number; allowed: number; caption: string | undefined };
 
-export function productsMeterOf(tier: MyTier | null | undefined): ProductsMeterView | null {
+export function productsMeterOf(tier: MyTier | null | undefined, now: Date = new Date()): ProductsMeterView | null {
   const held = runningTier(tier);
   if (!held || !(held.productsAllowed > 0)) return null;
-  return { used: held.productsUsed, allowed: held.productsAllowed, caption: productsMeterCaption(held.tier?.name, held.activeUntil) };
+  return { used: held.productsUsed, allowed: held.productsAllowed, caption: productsMeterCaption(held.tier?.name, held.activeUntil, now) };
 }

@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { lagos, MONTHS } from '@/features/wallet/history/lagosTime';
+import { dateWords } from '@/features/wallet/history/lagosTime';
 import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import { Skeleton } from './Skeleton';
@@ -26,19 +26,15 @@ export function productsMeterLine(used: number, allowed: number): string {
   return `${used} of ${allowed} ${allowed === 1 ? 'product' : 'products'}`;
 }
 
-/** "26 Nov", "30 Sep": the Lagos clock's day and the board's three-letter month (the history's MONTHS table, never Intl, which writes "Sept"). */
-function lagosDayAndMonth(at: Date): string {
-  const local = lagos(at);
-  return `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]}`;
-}
-
 /**
  * The caption's text: "Verify · ends 26 Nov". The day is read in Lagos time, where the tier is sold and renewed, so a
- * person abroad sees the same day as the Hub's receipts. A tier with no end date (or one that is not a date) is its name alone.
+ * person abroad sees the same day as the Hub's receipts, in the board's three-letter month (never Intl, which writes "Sept"). The
+ * year is added when the date is not in the current Lagos year ("Verify · ends 18 Oct 2027"), so a 12-month tier never reads as
+ * ending today. A tier with no end date (or one that is not a date) is its name alone.
  */
-export function productsMeterCaption(tierName: string | null | undefined, endsAt?: string | Date | null): string | undefined {
+export function productsMeterCaption(tierName: string | null | undefined, endsAt?: string | Date | null, now: Date = new Date()): string | undefined {
   const day = endsAt ? new Date(endsAt) : undefined;
-  const ends = day && !Number.isNaN(day.getTime()) ? `ends ${lagosDayAndMonth(day)}` : undefined;
+  const ends = day && !Number.isNaN(day.getTime()) ? `ends ${dateWords(day, now)}` : undefined;
   if (tierName && ends) return `${tierName} · ${ends}`;
   return tierName || ends || undefined;
 }

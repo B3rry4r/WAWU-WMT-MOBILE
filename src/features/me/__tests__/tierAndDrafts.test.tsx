@@ -123,7 +123,8 @@ async function boot() {
 beforeEach(() => {
   answers = {};
   asked = [];
-  jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
+  // An end date is read against today, so the clock is the day these were written on (FIX-78 F-3): none changes with the calendar.
+  jest.useFakeTimers({ doNotFake: ['queueMicrotask'], now: new Date('2026-10-18T09:00:00Z') });
 });
 
 afterEach(() => {
@@ -141,6 +142,12 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
     expect(within(screen.getByTestId('me-tier-badge')).getByText('Verify Plus')).toBeTruthy();
     expect(asked).toContain(`GET ${TIER}`);
     expect(screen.queryByTestId('me-products-loading')).toBeNull();
+  });
+
+  it('a 12-month tier bought today shows its year, so it never reads as ending today (FIX-78 F-3)', async () => {
+    answers = base({ [`GET ${TIER}`]: ok(tierView({ tier: { id: 'founding_maker', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' })) });
+    await boot();
+    expect(await screen.findByTestId('me-products')).toHaveTextContent(/Founding Maker · ends 18 Oct 2027/);
   });
 
   it('a tier that is ending still shows both, and the meter follows the Hub when the person has added products', async () => {
