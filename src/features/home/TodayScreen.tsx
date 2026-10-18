@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -105,7 +106,9 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
   // The card is on screen once Today is drawn (not its loading or error view) and this tab is the one in front.
   const focused = useIsFocused();
   const sponsored = phase === 'ready' ? ad.data ?? null : null;
-  const reports = useAdReports(sponsored, focused);
+  // A view is told to the Hub once the card's picture is on screen: a picture that fails draws no card, so it is never viewed (SWEEP-APP rows 62 and 106).
+  const [pictureOf, setPictureOf] = useState<string | null>(null);
+  const reports = useAdReports(sponsored, focused && sponsored !== null && pictureOf === sponsored.artworkUrl);
 
   const retryAll = () => {
     void wallet.refetch();
@@ -149,6 +152,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
       {sponsored ? (
         <SponsoredSlot
           ad={sponsored}
+          onPictureLoad={() => setPictureOf(sponsored.artworkUrl)}
           onOpen={() => {
             reports.tap();
             router.push({ pathname: '/events/[id]', params: { id: sponsored.ctaDestinationId } });

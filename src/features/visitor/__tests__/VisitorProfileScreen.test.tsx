@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -245,6 +245,36 @@ describe('M5 and M6 · someone else\'s profile', () => {
     await fireEvent.press(screen.getByTestId('visitor-block-yes'));
     await waitFor(() => expect(h.onBlocked).toHaveBeenCalled());
     expect(count('POST /api/hub/settings/privacy/blocked')).toBe(1);
+  });
+});
+
+describe('M33 · Block and the place line (SWEEP-APP rows ME-02 L1, L3)', () => {
+  it('two quick taps on Block send one write', async () => {
+    answers = page({ [`POST ${BLOCK}`]: 'hang' });
+    await boot();
+    await fireEvent.press(await screen.findByTestId('visitor-menu-button'));
+    await fireEvent.press(await screen.findByTestId('visitor-menu-block'));
+    await fireEvent.press(await screen.findByTestId('visitor-block-yes'));
+    await fireEvent.press(screen.getByTestId('visitor-block-yes'));
+    await fireEvent.press(screen.getByTestId('visitor-block-yes'));
+    expect(count('POST /api/hub/settings/privacy/blocked')).toBe(1);
+  });
+
+  it('the pin marks a place that is there, and a person with no location gets the line without a pin', async () => {
+    answers = page();
+    await boot();
+    await fireEvent.press(await screen.findByTestId('me-tab-about'));
+    const withPlace = await screen.findByTestId('visitor-place');
+    expect(within(withPlace).queryByTestId('icon-MapPin', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('a person with no location has the since line alone, with no map pin', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok({ ...view(), fields: { ...view().fields, location: null } }) });
+    await boot();
+    await fireEvent.press(await screen.findByTestId('me-tab-about'));
+    const place = await screen.findByTestId('visitor-place');
+    expect(place).toHaveTextContent('On Who Made This? since 2025');
+    expect(within(place).queryByTestId('icon-MapPin', { includeHiddenElements: true })).toBeNull();
   });
 });
 

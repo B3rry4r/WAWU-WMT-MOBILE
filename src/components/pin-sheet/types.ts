@@ -96,4 +96,10 @@ export type PinSheetProps = {
    * `PinStateView.lockedUntil` (ISO 8601, null when not locked).
    */
   lockedUntil?: string | null;
+  /**
+   * The line for an answer that never arrived. Left out, it reads "We couldn't check your PIN. Try again." (right for a send,
+   * where the PIN was the thing in doubt). A sheet that pays passes `PAYMENT_UNANSWERED_LINE`: the payment may have gone
+   * through, and the retry goes with the same Idempotency-Key, so it happens once.
+   */
+  unansweredLine?: string;
 };

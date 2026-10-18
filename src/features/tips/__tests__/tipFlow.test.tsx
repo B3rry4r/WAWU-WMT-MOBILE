@@ -385,6 +385,8 @@ describe('H26 to H28: paying', () => {
     const asked = hub.quotes.length;
     await enterPin('4829');
     await rtl.waitFor(() => expect(hub.pays).toHaveLength(1));
+    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await enterPin('4829');
     await screen.findByText('₦2,000 sent to Tife');
     expect(hub.pays).toHaveLength(2);

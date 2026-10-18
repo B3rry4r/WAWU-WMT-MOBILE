@@ -11,7 +11,7 @@ import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { PaySheet, formatNaira } from '@/components/pay-sheet';
-import { PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -180,6 +180,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
       onClose={buy.closePin}
       approval={{ totalKobo: quote.payment.totalKobo, purpose: `a ${quote.periodDays} day pass` }}
       onSubmit={buy.submitPin}
+      unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={buy.forgotPin}
       lockedUntil={buy.lockedUntil}
     />

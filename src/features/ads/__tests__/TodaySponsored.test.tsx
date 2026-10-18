@@ -139,6 +139,11 @@ const settle = (ms = 30) =>
     await new Promise((resolve) => setTimeout(resolve, ms));
   });
 const hiddenOk = { includeHiddenElements: true };
+/** The card's picture arrives: only then is the card viewed (SWEEP-APP rows 62 and 106). */
+const pictureLoads = (screen: Awaited<ReturnType<typeof boot>>) =>
+  rtl.act(async () => {
+    rtl.fireEvent(screen.getByTestId('today-sponsored-artwork', hiddenOk), 'load', { nativeEvent: { source: { url: AD.artworkUrl } } });
+  });
 
 beforeAll(async () => {
   // The first Today drawn pays for loading its modules and drawing the balance and the rail; it is drawn once here, under a budget of its own.
@@ -178,6 +183,16 @@ describe('H1 and H36 · the ad card on Today', () => {
     expect(screen.queryByText(/keep TGIF free|sold from the/i)).toBeNull();
   });
 
+  it('draws nothing when the picture will not load, as for a campaign with no artwork (SWEEP-APP ADS-01 L5, DV2-01 L5)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent(screen.getByTestId('today-sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
+    });
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(screen.queryByText('AD')).toBeNull();
+  });
+
   it('sits right after the money card and before the services', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
@@ -188,18 +203,33 @@ describe('H1 and H36 · the ad card on Today', () => {
     expect(at('today-sponsored')).toBeLessThan(at('today-creator-' + ADA));
   });
 
-  it('counts a view once when it is on screen', async () => {
+  it('counts a view once when it is on screen with its picture', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await settle();
+    expect(reported()).toEqual([]);
+    await pictureLoads(screen);
     await rtl.waitFor(() => expect(reported()).toEqual(['view']));
     await settle();
     expect(reported()).toEqual(['view']);
+  });
+
+  it('counts no view for a card whose picture fails, which is not drawn (SWEEP-APP rows 62 and 106)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent(screen.getByTestId('today-sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
+    });
+    await settle();
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(reported()).toEqual([]);
   });
 
   it('does not count a view while Today is not the tab in front, and counts it when it is', async () => {
     mockFocused = false;
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await pictureLoads(screen);
     await settle();
     expect(reported()).toEqual([]);
     mockFocused = true;
@@ -210,6 +240,7 @@ describe('H1 and H36 · the ad card on Today', () => {
   it('opens the event (E2) from the card, and counts the tap once however often it is pressed', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await pictureLoads(screen);
     await rtl.fireEvent.press(screen.getByTestId('today-sponsored'));
     await rtl.fireEvent.press(screen.getByTestId('today-sponsored'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/events/[id]', params: { id: EVENT_ID } });
@@ -240,6 +271,7 @@ describe('Today has no TGIF card: the ad card holds its old place alone (R-59, D
     expect(calls(T.stats)).toHaveLength(0);
     const ids = (JSON.stringify(screen.toJSON()).match(/"testID":"[^"]+"/g) ?? []).map((m) => m.slice(10, -1));
     expect(ids.indexOf('today-sponsored')).toBeGreaterThan(ids.indexOf('today-balance-card'));
+    await pictureLoads(screen);
     await rtl.waitFor(() => expect(reported()).toEqual(['view']));
   });
 

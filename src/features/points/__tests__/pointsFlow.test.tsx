@@ -358,6 +358,35 @@ describe('PT6 · convert to cash', () => {
     expect(hub.converts).toHaveLength(0);
   });
 
+  // SWEEP-APP-3 row 123: zero, an emptied field and a count past what the Hub reads left Convert off with nothing said.
+  it('a field with nothing, zero or too many points says why Convert is off, and a count the Hub can quote clears the line', async () => {
+    await toConvert();
+    const asked = hub.quotesAsked.length;
+    await typePoints('', 'Type the points to convert.');
+    expect(screen.getByRole('button', { name: 'Convert' })).toBeDisabled();
+    await typePoints('0', 'The minimum is 500 points.');
+    expect(screen.getByRole('button', { name: 'Convert' })).toBeDisabled();
+    await typePoints('99999999999', 'That is more than one conversion can carry.');
+    expect(screen.getByRole('button', { name: 'Convert' })).toBeDisabled();
+    // None of the three was asked of the Hub.
+    expect(hub.quotesAsked).toHaveLength(asked);
+    await typePoints('1000', 'You get ₦400');
+    expect(screen.queryByText('That is more than one conversion can carry.')).toBeNull();
+    expect(hub.converts).toHaveLength(0);
+  });
+
+  // SWEEP-APP-3 row 124: the points ended between the look and the tap; the field said what is left but nothing said the balance moved.
+  it('when the points end between the look and the tap, the field says what is left and a notice says the balance changed', async () => {
+    await toConvert();
+    await typePoints('1000', 'You get ₦400');
+    hub.balance = 300;
+    await press('Convert');
+    expect(await screen.findByText('Your points changed while you looked. Check your balance before you convert.')).toBeTruthy();
+    expect(await screen.findByText('You have 300 points.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Convert' })).toBeDisabled();
+    expect(hub.converts).toHaveLength(0);
+  });
+
   it('a user with more than their balance is told what they have, and a wrong PIN then the right one sends the same key and converts once', async () => {
     hub.wrongFirst = true;
     await toConvert();

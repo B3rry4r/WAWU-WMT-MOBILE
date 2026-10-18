@@ -193,6 +193,49 @@ describe('the slides take turns (R-59)', () => {
     expect(pager.props.accessibilityLabel).toBe('Slide 2 of 3');
   });
 
+  // SWEEP-APP EXPLORE-07 L3: the place was kept by position, so a refetch that put a slide in front moved the person to another slide.
+  it('keeps the person on their slide when a refetch puts a slide in front of it', async () => {
+    const { ExploreSlider } = require('../ExploreSlider') as typeof import('../ExploreSlider');
+    const props = { showing: true, onOpenEvent: jest.fn() };
+    const before = sliderSlides([a1, a2] as never, [ev('e1', 'Creators Summit')] as never);
+    expect(before.map((s) => s.key)).toEqual(['ad-a1', 'event-e1', 'ad-a2']);
+    await rtl.render(wrap(<ExploreSlider slides={before} {...props} />));
+    await measure();
+    const pager = rtl.screen.getByTestId('explore-slider');
+    await rtl.act(async () => {
+      rtl.fireEvent.scroll(pager, { nativeEvent: { contentOffset: { x: 700, y: 0 }, contentSize: { width: 1050, height: 196 }, layoutMeasurement: { width: 350, height: 196 } } });
+    });
+    expect(pager.props.accessibilityLabel).toBe('Slide 3 of 3');
+    const after = sliderSlides([a3, a1, a2] as never, [ev('e1', 'Creators Summit')] as never);
+    expect(after.map((s) => s.key)).toEqual(['ad-a3', 'event-e1', 'ad-a1', 'ad-a2']);
+    await rtl.act(async () => {
+      rtl.screen.rerender(wrap(<ExploreSlider slides={after} {...props} />));
+    });
+    // Still the advert a2, which is now the fourth slide.
+    expect(rtl.screen.getByTestId('explore-slider').props.accessibilityLabel).toBe('Slide 4 of 4');
+  });
+
+  // SWEEP-APP-3 row 98: the place was kept by its key only after the first swipe, so a person who had not swiped was moved by a reorder.
+  it('keeps a person who has not swiped on the first slide they saw when a refetch puts slides in front of it', async () => {
+    const { ExploreSlider } = require('../ExploreSlider') as typeof import('../ExploreSlider');
+    const props = { showing: true, onOpenEvent: jest.fn() };
+    const before = sliderSlides([a1, a2] as never, [ev('e1', 'Creators Summit')] as never);
+    await rtl.render(wrap(<ExploreSlider slides={before} {...props} />));
+    await measure();
+    expect(rtl.screen.getByTestId('explore-slider').props.accessibilityLabel).toBe('Slide 1 of 3');
+    const after = sliderSlides([a3, a1, a2] as never, [ev('e1', 'Creators Summit')] as never);
+    expect(after.map((s) => s.key)).toEqual(['ad-a3', 'event-e1', 'ad-a1', 'ad-a2']);
+    await rtl.act(async () => {
+      rtl.screen.rerender(wrap(<ExploreSlider slides={after} {...props} />));
+    });
+    // Still the advert a1, which is now the third slide; the new first slide was never on screen, so its advert is not viewed.
+    expect(rtl.screen.getByTestId('explore-slider').props.accessibilityLabel).toBe('Slide 3 of 4');
+    await rtl.act(async () => {
+      await Promise.resolve();
+    });
+    expect(reportsFor('a3')).toEqual([]);
+  });
+
   it('with no featured event a user sees adverts only, and Upcoming events stays where it was (X17)', async () => {
     answers[ADS] = [ok([a1, a2])];
     answers[UPCOMING] = [eventsPage([ev('e1', 'Creators Summit')])];

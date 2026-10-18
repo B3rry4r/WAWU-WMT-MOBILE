@@ -49,8 +49,9 @@ export type MeMenuSheetProps = {
  * canvas gives the tick row), Verification (ME-13, `/verification`: the wallet's state, M15 to M17) and Settings (Z2, `/settings`).
  *
  * Every line under a title is the Hub's figure or the person's own state, never a literal: this month's earnings (`GET /money/earnings`),
- * the uploads used (`GET /uploads/allowance`), the four counts (`GET /me/counts`), the tier held (`GET /me/tier`) and the ticks held. A figure that is nothing, still
- * loading or unreadable leaves its row with the title alone (a made-up number is worse than none). Verification says the tick state
+ * the uploads used (`GET /uploads/allowance`), the four counts (`GET /me/counts`), the tier held (`GET /me/tier`) and the ticks held. A figure that is missing, still
+ * loading or unreadable leaves its row with the title alone (a made-up number is worse than none). A figure the Hub
+ * answers as nothing (this month's earnings of ₦0) is still drawn: "Creator dashboard / ₦0 this month" (meMenu.test.tsx pins it). Verification says the tick state
  * only (the canvas's "ID check in review" is gone, R-6). When a read fails the rows still open their screens and a note above them
  * says so with a way to try again (the boards draw no failed menu, so the note wears the Me page's own).
  */

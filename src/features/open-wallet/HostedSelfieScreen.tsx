@@ -108,8 +108,9 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
     gcTime: 0,
     retry: false,
     // Only while the page is pending: a final result (passed, not passed, expired, dropped) ends the asking, and so does
-    // the screen going (its query stops with it).
-    refetchInterval: (query) => (pageOpened && query.state.data?.state === 'pending' ? WATCH_MS : false),
+    // the screen going (its query stops with it). A page the Hub already holds as pending is asked about from the first read,
+    // not from a tap: after an app restart the person may be finishing it in the browser (SWEEP-APP row DV2-05 L1).
+    refetchInterval: (query) => (query.state.data?.state === 'pending' ? WATCH_MS : false),
   });
   const { refetch } = liveness;
   const view: Liveness | undefined = liveness.data;

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +41,7 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe });
   const referrals = useQuery({ queryKey: referralsKey, queryFn: fetchReferrals });
   const phone = useQuery({ queryKey: PHONE_CAN_SHARE, queryFn: canShareCard, staleTime: Infinity });
+  const queryClient = useQueryClient();
   const cardRef = useRef<View>(null);
   const busy = useRef(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -66,7 +67,12 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const share = () =>
     once(async () => {
       try {
-        if (asPicture) await shareCardFile(await pictureOfCard(cardRef), 'Share your invite');
+        // Pressed before the phone has said whether it can share a picture: wait for that answer (one probe, shared with the one
+        // already running) rather than send the text in the picture's place (SWEEP-APP row REF-03 L5).
+        const picture = phone.isPending
+          ? (await queryClient.fetchQuery({ queryKey: PHONE_CAN_SHARE, queryFn: canShareCard, staleTime: Infinity }).catch(() => false)) === true
+          : asPicture;
+        if (picture) await shareCardFile(await pictureOfCard(cardRef), 'Share your invite');
         else await Share.share({ message: `${CARD_LINE} ${link ?? ''}`.trim() });
       } catch {
         setProblem(COULD_NOT_SHARE);

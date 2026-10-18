@@ -283,7 +283,8 @@ describe('I30: a private room that sells a pass', () => {
     await enterPin('4829');
     await until(() => expect(hub.buys).toHaveLength(1));
     // The answer never came: the PIN sheet is still up and asks again with the same request.
-    await until(() => rtl.screen.getByText(/connection|try again|didn.t hear/i, { exact: false }));
+    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
+    await until(() => rtl.screen.getByText("We didn't get an answer. Try again: it will only happen once."));
     await enterPin('4829');
     await until(() => rtl.screen.getByTestId('pass-joined-title'));
     expect(hub.buys).toHaveLength(2);

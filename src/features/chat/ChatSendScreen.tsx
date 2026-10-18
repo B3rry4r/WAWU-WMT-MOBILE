@@ -11,7 +11,7 @@ import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { formatMoney, Money } from '@/components/Money';
 import { PaySheet, type PayStatus } from '@/components/pay-sheet';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -422,6 +422,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
           onClose={() => setPinOpen(false)}
           approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
           onSubmit={submitPin}
+          unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             setPinOpen(false);
             onForgotPin();

@@ -144,6 +144,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
           mono
           hint={hint?.hint}
           tone={hint?.tone}
+          announce={hint?.announce}
           value={form.accountNumber}
           // No `maxLength` on the raw input: the platform would cut a pasted "0123 456 789" to ten characters before the spaces are
           // taken out. `digitsOnly` keeps the digits, then caps at ten.

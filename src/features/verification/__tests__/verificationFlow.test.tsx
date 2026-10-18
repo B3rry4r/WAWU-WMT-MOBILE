@@ -42,7 +42,7 @@ type Hub = {
   wallet: { state: 'not_open' | 'opening' | 'open' | 'frozen'; openingFlow?: 'check' | 'review'; review?: { stage: string } | null };
   selfie: { matchedAt: string | null; checksLeft: number } | 'fails';
   tier: { state: string; tier?: { id: string; name: string } | null; activeUntil?: string | null };
-  pending: { id: string } | null;
+  pending: { id: string; status?: string } | null;
   failWallet: boolean;
 };
 const fresh = (): Hub => ({ wallet: { state: 'not_open' }, selfie: { matchedAt: null, checksLeft: 3 }, tier: { state: 'none' }, pending: null, failWallet: false });
@@ -75,7 +75,7 @@ function install() {
       case 'GET /me/tier':
         return ok({ tier: null, activeFrom: null, activeUntil: null, productsAllowed: 5, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...hub.tier });
       case 'GET /plans/purchases/pending':
-        return ok({ purchase: hub.pending ? { id: hub.pending.id, kind: 'tier', tierId: 'founding', status: 'pending' } : null });
+        return ok({ purchase: hub.pending ? { id: hub.pending.id, kind: 'tier', tierId: 'founding', status: hub.pending.status ?? 'pending' } : null });
       default:
         return new Response(JSON.stringify({ statusCode: 404, message: 'Not here' }), { status: 404 });
     }
@@ -165,6 +165,18 @@ describe('ME-13: Verification', () => {
     expect(banner).toHaveTextContent(/Don't pay again\. Check back in a minute\./);
     expect(screen.queryByText('Get it')).toBeNull();
     expect(screen.queryByText('Pay')).toBeNull();
+  });
+
+  // SWEEP-APP-3 row 126: the Hub can answer /pending with a purchase it has already decided (refunded when the plan could not be granted, or paid); that is nothing confirming, not an unreadable answer.
+  it.each(['refunded', 'paid', 'failed', 'reversed'])('M15: a purchase the Hub has already decided (%s) draws no banner and no error, as when nothing is confirming', async (status) => {
+    hub.wallet = { state: 'open' };
+    hub.pending = { id: 'p1', status };
+    await open();
+    await settled();
+    expect(calls.filter((c) => c === 'GET /plans/purchases/pending').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('verification-confirming')).toBeNull();
+    expect(screen.queryByTestId('verification-error')).toBeNull();
+    expect(screen.queryByText(/could not be read/i)).toBeNull();
   });
 
   it('with nothing confirming and no tier, there is no tier part and no banner', async () => {

@@ -1,5 +1,5 @@
 import { PaySheet } from '@/components/pay-sheet';
-import { PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { WALLET_NAME } from '@/features/events/buyModel';
 
 import { approvalPurpose } from './model';
@@ -37,6 +37,7 @@ export function PaySheets({ pay, title, subtitle }: { pay: LegalFeePay; title: s
         onClose={pay.closePin}
         approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
         onSubmit={pay.submitPin}
+        unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={pay.forgotPin}
         lockedUntil={pay.lockedUntil}
       />
@@ -54,6 +55,7 @@ export function PayPin({ pay }: { pay: LegalFeePay }) {
       onClose={pay.closePin}
       approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
       onSubmit={pay.submitPin}
+      unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={pay.forgotPin}
       lockedUntil={pay.lockedUntil}
     />

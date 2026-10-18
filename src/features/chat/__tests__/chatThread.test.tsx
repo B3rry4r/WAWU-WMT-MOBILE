@@ -302,6 +302,8 @@ describe('I18 and I19: a request someone made of the person', () => {
     await enterPin('4829');
     // The Hub took the payment and its answer was lost: the PIN is asked for again, the screen does not say it failed.
     await rtl.screen.findByText(/^Approve /);
+    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
+    expect(await rtl.screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     expect(hub.payments).toBe(1);
     await enterPin('4829');
     await rtl.screen.findByText('Paid');

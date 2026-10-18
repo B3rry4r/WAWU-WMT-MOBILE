@@ -12,7 +12,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { PaySheet } from '@/components/pay-sheet';
 import { formatNaira } from '@/components/pay-sheet/money';
-import { PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -199,6 +199,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
             onClose={sheet.closePin}
             approval={{ totalKobo: sheet.payment.totalKobo, payee: school }}
             onSubmit={sheet.submitPin}
+            unansweredLine={PAYMENT_UNANSWERED_LINE}
             onForgotPin={sheet.forgotPin}
             lockedUntil={sheet.lockedUntil}
           />

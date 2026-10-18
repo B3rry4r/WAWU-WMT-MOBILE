@@ -8,17 +8,28 @@ import { canvasNormalLineHeight, layout, radius, space } from '@/theme';
 import type { AdCard } from './api';
 import { adMetrics, adWords, chipFill, shadeAt } from './look';
 
-export type SponsoredBackdropProps = { ad: AdCard };
+export type SponsoredBackdropProps = {
+  ad: AdCard;
+  /** The picture would not load: the reader leaves this card out rather than show a bare dark ground. */
+  onFail?: () => void;
+};
 
 /**
  * H33's picture: the advertiser's artwork over the whole card, under the shade that keeps the words readable. Every
  * card has artwork (R-59), so there is no picture-less layout.
  */
-export function SponsoredBackdrop({ ad }: SponsoredBackdropProps) {
+export function SponsoredBackdrop({ ad, onFail }: SponsoredBackdropProps) {
   const { colors, locations } = adMetrics.shade;
   return (
     <View testID="sponsored-backdrop" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Image testID="sponsored-artwork" source={ad.artworkUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden />
+      <Image
+        testID="sponsored-artwork"
+        source={ad.artworkUrl}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        accessibilityElementsHidden
+        onError={onFail}
+      />
       <LinearGradient
         testID="sponsored-shade"
         colors={colors.map(shadeAt) as unknown as readonly [string, string, ...string[]]}

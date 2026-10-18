@@ -10,7 +10,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { PointsFigure } from '@/components/PointsFigure';
 import { EmptyState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -488,6 +488,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
           onClose={closePin}
           approval={{ totalKobo: pinTotal ?? total, purpose: pinPurpose(quote) }}
           onSubmit={submitPin}
+          unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();
             props.onForgotPin();

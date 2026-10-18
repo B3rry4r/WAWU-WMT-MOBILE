@@ -330,7 +330,7 @@ describe('PT4b and PT4c · paying with the PIN', () => {
     hub.mode = 'lost';
     await toBuy();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await tap('1234');
     expect(await screen.findByTestId('buy-added-title')).toBeTruthy();
     expect(hub.buys).toHaveLength(2);

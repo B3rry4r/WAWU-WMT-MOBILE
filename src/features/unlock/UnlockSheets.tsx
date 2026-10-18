@@ -7,7 +7,7 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { PaySheet } from '@/components/pay-sheet';
-import { PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
 import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { Text } from '@/components/Text';
@@ -140,6 +140,7 @@ export function UnlockSheets({
         onClose={flow.closePin}
         approval={{ totalKobo: quote.payment.totalKobo, payee }}
         onSubmit={flow.submitPin}
+        unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={() => {
           flow.closePin();
           onForgotPin();

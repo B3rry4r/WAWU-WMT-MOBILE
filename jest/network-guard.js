@@ -14,6 +14,10 @@
  * A test that mocks `fetch` (or `XMLHttpRequest`, or `WebSocket`) replaces the guarded global with
  * its own, so the guard never sees that test's requests. Only a request that would really leave
  * the machine is stopped.
+ *
+ * XMLHttpRequest is wrapped only when the test's global has one at setup time. Under jest-expo it has none (React Native's
+ * XHR is a module over a mocked native layer, which cannot reach a network), so `guardXhr` does nothing there and is
+ * exercised only on a scratch global in networkGuard.test.ts (SWEEP-APP row FIX-48 L2).
  */
 const { URL } = require('node:url');
 

@@ -475,7 +475,7 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     hub.mode = 'lost';
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await tap('1234');
     expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
     expect(hub.sends).toHaveLength(2);

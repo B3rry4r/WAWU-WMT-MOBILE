@@ -659,9 +659,14 @@ describe('the Create routes are for creator accounts', () => {
   }
 
   it('waits for the profile, then lets a creator in', async () => {
-    hub.answers[`GET ${ME}`] = profile('creator');
+    // SWEEP-APP-3 row 161: the profile is held while "checking" is read, so a loaded machine cannot answer it first (the test failed once at a load of 22).
+    hub.answers[`GET ${ME}`] = 'hang';
     await renderFrame(<Gate />);
     expect(screen.getByTestId('gate').props.children).toBe('checking');
+    hub.answers[`GET ${ME}`] = profile('creator');
+    await act(async () => {
+      await appClient.resetQueries();
+    });
     await waitFor(() => expect(screen.getByTestId('gate').props.children).toBe('creator'));
   });
 

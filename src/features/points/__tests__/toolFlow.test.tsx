@@ -338,6 +338,33 @@ describe('PT2a and PT2b · running a job', () => {
     expect(hub.made).toBe(1);
   });
 
+  // SWEEP-APP-3 row 166: the count under the title stayed at the balance from before Run while the job worked, though the Hub already held its points.
+  it('shows the Hub\'s balance, less the points the job holds, while the job is still working', async () => {
+    hub.workReads = 99;
+    await toTool();
+    expect(screen.getByTestId('points-subtitle')).toHaveTextContent('Points: 1,250');
+    await typeWords();
+    await run();
+    expect(screen.getByText('Making your VoiceOver')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('points-subtitle')).toHaveTextContent('Points: 1,000'));
+    expect(screen.getByText('Making your VoiceOver')).toBeTruthy();
+  });
+
+  // SWEEP-APP-3 row 167: with the job read failing the screen stayed on "Making your VoiceOver" with no message, asking again for ever.
+  it('says so when the job cannot be read, and stops asking for a job the Hub does not know', async () => {
+    hub.workReads = 99;
+    await toTool();
+    await typeWords();
+    await run();
+    delete hub.jobs['job-1'];
+    await sleep(2100);
+    expect(await screen.findByTestId('tool-job-error')).toBeTruthy();
+    const reads = hub.reads;
+    await sleep(10_000);
+    expect(hub.reads).toBe(reads);
+    expect(screen.getByText('Making your VoiceOver')).toBeTruthy();
+  });
+
   it('the player plays and pauses the audio', async () => {
     await toTool();
     await typeWords();

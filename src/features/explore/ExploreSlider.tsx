@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { useAdReports } from '@/features/ads/useAd';
@@ -47,10 +47,17 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
   const window = useWindowDimensions();
   const [measured, setMeasured] = useState<number | null>(null);
   const [index, setIndex] = useState(0);
+  // The slide the person is on, by its key: a refetch that inserts or reorders slides keeps them on the same one
+  // (SWEEP-APP row EXPLORE-07 L3), and the advert that is reported as viewed is that slide's.
+  const [placeKey, setPlaceKey] = useState<string | null>(slides[0]?.key ?? null);
+  // Slides that arrive after the first draw: the person is on the first from the start, not only after a first swipe (SWEEP-APP-3 row 98).
+  if (placeKey === null && slides.length > 0) setPlaceKey(slides[0].key);
+  const scroller = useRef<ScrollView>(null);
   // Until the frame has been measured the slide is the screen less the body's two gutters, which is what it will be.
   const width = measured ?? window.width - layout.gutter * 2;
   const count = slides.length;
-  const current = Math.min(index, Math.max(count - 1, 0));
+  const keyed = placeKey === null ? -1 : slides.findIndex((slide) => slide.key === placeKey);
+  const current = keyed >= 0 ? keyed : Math.min(index, Math.max(count - 1, 0));
   const active = slides[current];
   const reports = useAdReports(active?.kind === 'ad' ? active.ad : null, showing);
   const paged = count > 1;
@@ -62,16 +69,23 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
   }, []);
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const next = Math.round(e.nativeEvent.contentOffset.x / width);
-      setIndex((was) => (was === next ? was : Math.max(0, next)));
+      const next = Math.max(0, Math.round(e.nativeEvent.contentOffset.x / width));
+      setIndex((was) => (was === next ? was : next));
+      setPlaceKey(slides[next]?.key ?? null);
     },
-    [width],
+    [width, slides],
   );
+  // The slides changed under the person: the pager goes to where their slide now is (its scroll event then brings `index` along).
+  useEffect(() => {
+    if (keyed < 0 || keyed === index) return;
+    scroller.current?.scrollTo({ x: keyed * width, animated: false });
+  }, [keyed, index, width]);
 
   if (!active) return null;
   return (
     <View testID="explore-hero" onLayout={onLayout} style={styles.frame}>
       <ScrollView
+        ref={scroller}
         testID="explore-slider"
         horizontal
         pagingEnabled

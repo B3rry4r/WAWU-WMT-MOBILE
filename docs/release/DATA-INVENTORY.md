@@ -157,7 +157,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-112 | `TgifReaction` | userWawuId, day, card, kind (an Amen), one per person per card per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
 | I-413 | `TgifRead` | userWawuId, day (a read), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
 | I-414 | `TgifShare` | userWawuId, day (a share tap), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
-| I-113 | `TgifPreference` | userWawuId, show (the TGIF on Home switch) | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
+| I-113 | `TgifPreference` | userWawuId, show (the TGIF each morning switch, Z2) | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
 | I-119 | `ProfileWork` | featured work: title, role, client, year, link, category, description, media, position | ME-11, ME-16 | Public on the profile | PI-16, PF-01, PF-02 |
 | I-415 | `ProfileEducation` | school, field, start and end year | ME-02, ME-16 | Public on the profile | PI-16 |
 | I-416 | `FeaturedCreator` | the featured creator's account id, position in Explore, and `featuredByAdminId` (the staff member who chose them): a staff placement about a person, deleted with the creator's account (`OWNED` in `account-data-map.ts`) and left out of the data export (`EXPORT_EXCLUDED`) | EXPLORE-03 (staff, from the dashboard) | Nobody outside WAWU; the creator appears in Explore, where the profile is public anyway | NX-02 |
@@ -268,7 +268,7 @@ Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 a
 | I-197 | HOME-09 | H29 H30 H31 H32 H34 H35 | picked | H29 to H34 Amen, Tap to continue, Share, Done | Nobody outside WAWU | AA-11 |
 | I-198 | HOME-09 | H29 H30 H31 H32 H34 H35 | device | H35 share the verse image (share sheet, Save) | The app the person picks | AA-11, NX-05 |
 | I-199 | HOME-10 | none | logged | TgifReaction, TgifRead and share counts per day | Nobody outside WAWU | AA-11 |
-| I-200 | HOME-11 | none | picked | TGIF on Home switch kept on the account | Nobody outside WAWU | AA-09 |
+| I-200 | HOME-11 | none | picked | TGIF each morning switch kept on the account | Nobody outside WAWU | AA-09 |
 | I-201 | HOME-12 | H14 H15 H16 H17 H18 | typed | H15 PIN to approve an unlock | Nobody outside WAWU | FI-04 |
 | I-202 | HOME-12 | H14 H15 H16 H17 H18 | logged | Purchase and ledger row | Nobody outside WAWU (wallet provider† moves the money) | FI-03, FI-04 |
 | I-203 | HOME-13 | H26 H27 H28 | typed | H26 tip amount and an optional note; H27 PIN | The creator sees the name and note; wallet provider† moves the money | FI-04, MS-01 |

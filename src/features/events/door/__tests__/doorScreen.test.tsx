@@ -94,7 +94,7 @@ const clients: QueryClient[] = [];
 async function boot(props: { eventId?: string; onClose?: () => void } = {}) {
   const { DoorScreen } = require('../DoorScreen') as typeof import('../DoorScreen');
   const onClose = props.onClose ?? jest.fn();
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { gcTime: Infinity, retry: false } } });
   clients.push(client);
   await rtl.render(
     <QueryClientProvider client={client}>

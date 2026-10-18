@@ -72,6 +72,8 @@ export function CheckRow({ testID, label, on, disabled, onPress }: { testID: str
       testID={testID}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on, disabled }}
+      // The web export drops `accessibilityState.checked` from the DOM: a screen reader there needs `aria-checked` (SWEEP-APP-3 row 159).
+      aria-checked={on}
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}

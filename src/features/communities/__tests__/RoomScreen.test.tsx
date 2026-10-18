@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { CommunityMessage } from '../api';
@@ -132,6 +133,15 @@ function serve(extra: Record<string, Answer[]> = {}) {
     ...extra,
   };
 }
+
+/*
+ * SWEEP-APP-3 row 128 (ME-13 L4): the first render in this file pays for the renderer's start and React Native's lazily loaded components,
+ * which on a loaded machine and a cold transform cache ran past a test's 20 s. It is paid here, in a hook with a budget of its own.
+ */
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  await warm.unmount();
+}, 120_000);
 
 const back = jest.fn();
 async function renderRoom(signedIn = true) {

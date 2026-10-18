@@ -131,6 +131,15 @@ describe('H2 to H6 · the For you feed', () => {
     expect(screen.queryByText('Today')).toBeNull();
   });
 
+  // SWEEP-APP HOME-07 F3: H13's second sentence was left out while My purchases did not exist (ME-14 built it).
+  it("says on H13 that what the person bought is still in My purchases, beside Try again", async () => {
+    answers[FOR_YOU] = ['offline'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('feed-error')).toBeTruthy());
+    expect(screen.getByText("Check your connection. Anything you've bought is still in My purchases.")).toBeTruthy();
+    expect(screen.getByText('Try again')).toBeTruthy();
+  });
+
   it('a user offline sees the feed did not load, and Try again brings the posts', async () => {
     answers[FOR_YOU] = ['offline', page([content(item('a'))])];
     const screen = await boot();

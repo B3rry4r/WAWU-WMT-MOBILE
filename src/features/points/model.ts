@@ -95,6 +95,23 @@ export function pointsOf(digits: string): number | null {
   return Number.isSafeInteger(n) && n >= 1 && n <= 2147483647 ? n : null;
 }
 
+/** Under the field when it is empty: Convert is off because there is nothing to convert yet. */
+export const NO_POINTS_LINE = 'Type the points to convert.';
+/** Under the field when more points are typed than one conversion can be asked for at all (the Hub reads up to 2,147,483,647). */
+export const TOO_MANY_POINTS_LINE = 'That is more than one conversion can carry.';
+
+/**
+ * Why Convert is off when what is typed cannot be quoted at all: nothing, zero, or past what the Hub reads (SWEEP-APP-3 row 123).
+ * Zero says the minimum of the quote on screen (the Hub's own figure); with no quote yet it asks for at least one point.
+ * Null when the points can be asked about: the Hub's quote then speaks for itself (`blockLine`).
+ */
+export function unquotableLine(digits: string, minimumPoints: number | null): { tone: 'hint' | 'error'; text: string } | null {
+  if (pointsOf(digits) !== null) return null;
+  if (digits === '') return { tone: 'hint', text: NO_POINTS_LINE };
+  if (Number(digits) === 0) return { tone: 'error', text: minimumPoints !== null && minimumPoints > 1 ? `The minimum is ${formatPoints(minimumPoints)}.` : 'Type at least 1 point.' };
+  return { tone: 'error', text: TOO_MANY_POINTS_LINE };
+}
+
 /** The sentence under the field when the Hub says the points cannot be converted as they are. Every figure is the quote's. */
 export function blockLine(quote: Pick<ConvertQuote, 'blockedBy' | 'minimumPoints' | 'maximumPoints' | 'balancePoints'>): string | null {
   switch (quote.blockedBy) {
@@ -129,4 +146,6 @@ export const pinPurpose = (points: number): string => `converting ${formatPoints
 export const NOT_READY_LINE = 'We could not get this ready. Nothing was converted. Try again.';
 /** Shown when the figures changed while the person looked: the screen already shows the new ones. */
 export const CHANGED_LINE = 'The cash for your points has changed. Check the new amount before you convert.';
+/** Shown when the points ended between the look and the tap: the field already says what is left (SWEEP-APP-3 row 124). */
+export const BALANCE_MOVED_LINE = 'Your points changed while you looked. Check your balance before you convert.';
 export const QUOTE_ERROR_TITLE = "We couldn't check the cash for your points";

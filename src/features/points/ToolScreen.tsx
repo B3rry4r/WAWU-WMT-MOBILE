@@ -127,6 +127,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const job = useQuery({
     ...voiceJobQuery(owner, jobId),
     refetchInterval: (query) => {
+      // A job the Hub does not know (404) will not appear by being asked again (SWEEP-APP-3 row 167).
+      if (isApiError(query.state.error) && query.state.error.status === 404) return false;
       const data = query.state.data;
       return data === undefined || data.state === 'working' || (data.state === 'done' && !data.audioUrl) ? JOB_POLL_MS : false;
     },
@@ -159,6 +161,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
           queryClient.setQueryData(voiceJobQuery(owner, outcome.job.id).queryKey, outcome.job);
           pending.current = null;
           setJobId(outcome.job.id);
+          // The Hub already holds the job's points: read its balance again so the count under the title is the Hub's while the job works (SWEEP-APP-3 row 166).
+          void queryClient.invalidateQueries({ queryKey: myPointsQuery(owner).queryKey });
         } else if (outcome.kind === 'unanswered') {
           setUnsent(true);
         } else {
@@ -220,6 +224,14 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       alive = false;
     };
   }, [owner, tool.id, send]);
+
+  // The Hub does not know this job: its record goes, so the app does not look for it again on the next visit (SWEEP-APP-3 row 167).
+  const gone = isApiError(job.error) && job.error.status === 404;
+  useEffect(() => {
+    if (!owner || !gone || !activeKey.current) return;
+    void dropJobIntent(owner, activeKey.current);
+    activeKey.current = null;
+  }, [owner, gone]);
 
   // The person has seen the job's end: its record goes, and the Hub's balance is read again (points were kept, or came back).
   const ended = job.data?.state === 'failed' || (job.data?.state === 'done' && Boolean(job.data.audioUrl));
@@ -298,7 +310,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       ) : null}
       {view === 'failed' ? <Banner tone="danger" icon="CircleX" title={failed.title} body={failed.body} testID="tool-failed" /> : null}
       {view === 'unsent' ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.unsentTitle} body={TOOL_WORDS.unsentBody} testID="tool-unsent" /> : null}
-      {jobId && job.isError && job.data === undefined ? (
+      {jobId && job.isError && !ended ? (
         <Banner tone="warning" title={TOOL_WORDS.unreadableTitle} body={isApiError(job.error) && job.error.message ? job.error.message : TOOL_WORDS.unreadableBody} testID="tool-job-error" />
       ) : null}
       {check.node}

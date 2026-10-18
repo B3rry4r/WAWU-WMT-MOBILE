@@ -224,6 +224,7 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
             mono
             hint={nameHint?.hint}
             tone={nameHint?.tone}
+            announce={nameHint?.announce}
             value={form.accountNumber}
             // No `maxLength` on the raw input: the platform would cut a pasted "0987 654 321" to ten
             // characters before the spaces are taken out. `digitsOnly` keeps the digits, then caps at ten.

@@ -58,6 +58,7 @@ const hub = {
   buys: [] as { key: string | null; body: Record<string, unknown> }[],
   full: false,
   paused: false,
+  lostFirstBuy: false,
 };
 const FORMATS = [{ id: 'pdf', full: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000 }, preview: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000, kind: 'extract', seconds: null } }];
 const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: 'pdf', description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: 'paid', price: 4500, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
@@ -112,6 +113,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const key = request.headers.get('idempotency-key');
     hub.buys.push({ key, body });
     if (hub.buys.filter((b) => b.key === key).length === 1) hub.allowed += 5;
+    // The Hub took the payment and the answer never came back.
+    if (hub.lostFirstBuy && hub.buys.length === 1) throw new TypeError('Network request failed');
     return json(201, { statusCode: 201, message: 'Created', data: { id: 'x1', kind: 'extra_products', method: 'wallet', currency: 'NGN', amountMinor: 150_000, products: 5, status: 'paid', statusMessage: null, payment: null, transfer: null, grant: { productsAllowed: hub.allowed }, createdAt: '2026-10-17T00:00:00.000Z', paidAt: '2026-10-17T00:00:01.000Z' } });
   }
   return json(404, { statusCode: 404, message: `Not here: ${method} ${path}` });
@@ -177,7 +180,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -327,6 +330,26 @@ describe('VF13 · all products used', () => {
     expect(screen.getByTestId('full-added-line')).toHaveTextContent('You can publish up to 8 products now.');
     expect(hub.buys).toHaveLength(1);
     expect(hub.buys[0].body).toEqual({ kind: 'extra_products', method: 'wallet', expectedTotalKobo: 152_500, quoteToken: 'tok-extra' });
+  });
+});
+
+describe('VF13 · a lost answer on the products sheet (SWEEP-APP-3, SWEEP-APP-2 #1)', () => {
+  it('says the payment may have gone through and that the retry happens once, then sends the same key and the same body', async () => {
+    hub.used = 3;
+    hub.lostFirstBuy = true;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await screen.findByText('Add 5 for ₦1,525');
+    await fireEvent.press(screen.getByTestId('full-add'));
+    await screen.findByText(/ for 5 more products/);
+    await tap('1234');
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+    expect(hub.buys).toHaveLength(1);
+    await tap('1234');
+    expect(await screen.findByTestId('full-added-title')).toHaveTextContent('5 more products added');
+    expect(hub.buys).toHaveLength(2);
+    expect(hub.buys[1].key).toBe(hub.buys[0].key);
+    expect(hub.buys[1].body).toEqual(hub.buys[0].body);
+    expect(hub.allowed).toBe(8);
   });
 });
 
