@@ -1,7 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch';
 
 import { apiBaseUrl } from './env';
-import { networkError, toApiError } from './errors';
+import { ApiError, networkError, NO_ANSWER_CODE, noAnswerError, toApiError } from './errors';
 import { getAccessToken, isCurrentSessionToken, refreshAccessToken } from './session';
 import type { paths } from './schema.generated';
 
@@ -27,7 +27,9 @@ export { ApiError, isApiError } from './errors';
  *     SHARED-CHANGES WALLET-06 #5): a write that carries an Idempotency-Key AND
  *     is sent with `fetch: resendsUnderKey` by a screen that sends it again
  *     under that same key when no answer came ends the same way after
- *     WRITE_TIMEOUT_MS. The Hub may still do the work, so the repeat under the
+ *     WRITE_TIMEOUT_MS, as the network failure whose line is "We didn't get an
+ *     answer" and not "No connection" (`noAnswerError`; an offline phone still
+ *     reads as offline). The Hub may still do the work, so the repeat under the
  *     same key is what finds out. A write without a key is never aborted (it
  *     could move money twice), and neither is a keyed write whose screen does
  *     not re-send under the key (a new key per tap would repeat the work);
@@ -72,7 +74,8 @@ function withTimeouts(send: typeof fetch, resends: boolean): typeof fetch {
     try {
       return await send(new Request(input, { signal: controller.signal }), init);
     } catch (error) {
-      throw timedOut ? networkError() : error;
+      // A read that timed out is "No connection", as before. A write is told apart: it is not known that the phone is offline (F2).
+      throw timedOut ? (input.method === 'GET' ? networkError() : noAnswerError()) : error;
     } finally {
       clearTimeout(timer);
       input.signal.removeEventListener('abort', forward);
@@ -110,9 +113,10 @@ const auth: Middleware = {
     // The repeat after a refresh ends the way the first would have.
     return withTimeouts(fetch, sent.resends)(sent.copy);
   },
-  onError({ id }) {
+  onError({ id, error }) {
     sentWith.delete(id);
-    return networkError();
+    // Our own end of a write's wait keeps its sentence; any other failure to get an answer is "No connection".
+    return error instanceof ApiError && error.code === NO_ANSWER_CODE ? error : networkError();
   },
 };
 

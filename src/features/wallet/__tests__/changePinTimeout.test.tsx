@@ -22,11 +22,12 @@ jest.mock('expo-secure-store', () => ({
 
 type Reply = { status: number; body: unknown };
 type Sent = { method: string; path: string; pin: string | null; key: string | null; body: Record<string, unknown> | null; aborted: () => boolean };
-/** A reply made when the request arrives; 'never' is a Hub that takes the request and does not answer. */
-type Answer = Reply | 'never' | ((call: Sent) => Reply | 'never');
+/** A reply made when the request arrives; 'never' is a Hub that takes the request and does not answer; 'offline' is a phone with no network. */
+type Answer = Reply | 'never' | 'offline' | ((call: Sent) => Reply | 'never' | 'offline');
 
 const OWNER = '00000000-0000-4000-8000-0000000000a7';
 const ok = (data: unknown): Reply => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
+const refusal = (status: number, code: string, message: string): Reply => ({ status, body: { statusCode: status, message, data: null, reason: { code, message } } });
 const state = (over: Record<string, unknown> = {}): Reply => ok({ isSet: true, changedAt: '2026-07-10T09:00:00.000Z', triesLeft: 5, lockedUntil: null, ...over });
 
 let sent: Sent[] = [];
@@ -51,6 +52,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   let answer = fallback[route];
   if (!answer) throw new Error(`no answer for ${route}`);
   if (typeof answer === 'function') answer = answer(call);
+  if (answer === 'offline') throw new TypeError('Network request failed');
   if (answer === 'never')
     return new Promise<Response>((_resolve, reject) => {
       request.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
@@ -190,6 +192,87 @@ describe('W36 · a PIN change the Hub never answers (FIX-87)', () => {
     await wait(30_500);
   });
 
+  it('F1: Back from the no-answer line, then the SAME new PIN again, is the same change under the same key: the Hub answers its first, and no try is spent', async () => {
+    // A Hub that takes the first change and never answers it; a DIFFERENT key after that meets a PIN that has already changed.
+    fallback['PUT /money/pin'] = (call) => {
+      const known = landed.get(call.key ?? '');
+      if (known) return known;
+      if (landed.size > 0) return refusal(403, 'pin_incorrect', 'Wrong PIN. 4 tries left.');
+      landed.set(call.key ?? '', state({ changedAt: '2026-10-18T09:00:00.000Z' }));
+      return 'never';
+    };
+    const props = await bootChange();
+    await type('1234');
+    await rtl.screen.findByTestId('change-pin-new');
+    await type('4821');
+    await type('4821');
+    await rtl.screen.findByTestId('change-pin-saving');
+    await wait(30_500);
+    await rtl.screen.findByText(/^We couldn't tell whether your PIN was changed\./);
+    await press('Back');
+    expect(await rtl.screen.findByText('Step 1 of 2')).toBeTruthy();
+
+    // The same two entries again. The PIN in use is not asked for again, and the request is the first one, as it was.
+    await type('4821');
+    await type('4821');
+    await rtl.waitFor(() => expect(props.onChanged).toHaveBeenCalledTimes(1));
+    const puts = asked('PUT', '/money/pin');
+    expect(puts).toHaveLength(2);
+    expect(puts[1].key).toBe(puts[0].key);
+    expect(puts[1].pin).toBe(puts[0].pin);
+    expect(puts[1].body).toEqual(puts[0].body);
+    expect(landed.size).toBe(1);
+    expect(asked('POST', '/money/pin/verify')).toHaveLength(1);
+    expect(rtl.screen.queryByText(/Wrong PIN/)).toBeNull();
+  });
+
+  it('F1: the same new PIN typed again after Back is the same change, but another PIN is another change under another key', async () => {
+    hubThatLosesTheFirstAnswer();
+    const props = await bootChange();
+    await type('1234');
+    await rtl.screen.findByTestId('change-pin-new');
+    await type('4821');
+    await type('4821');
+    await rtl.screen.findByTestId('change-pin-saving');
+    await wait(30_500);
+    await rtl.screen.findByText(/^We couldn't tell whether your PIN was changed\./);
+    // Back, then a first entry the same and a second entry that differs: the Hub would refuse it as a mismatch, and it is not the held change.
+    await press('Back');
+    await rtl.screen.findByText('Step 1 of 2');
+    await type('4821');
+    await type('4822');
+    await rtl.waitFor(() => expect(asked('PUT', '/money/pin')).toHaveLength(2));
+    const keys = asked('PUT', '/money/pin').map((c) => c.key);
+    expect(new Set(keys).size).toBe(2);
+    expect(props.onChanged).not.toHaveBeenCalled();
+    await wait(30_500);
+  });
+
+  it('F2: the 30 s end reads "We didn\'t get an answer", not "No connection"; a phone with no network still reads "No connection"', async () => {
+    hubThatLosesTheFirstAnswer();
+    await bootChange();
+    await type('1234');
+    await rtl.screen.findByTestId('change-pin-new');
+    await type('4821');
+    await type('4821');
+    await rtl.screen.findByTestId('change-pin-saving');
+    await wait(30_500);
+    expect(await rtl.screen.findByText("We couldn't tell whether your PIN was changed. We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+    expect(rtl.screen.queryByText(/No connection/)).toBeNull();
+
+    // Another visit, on a phone that is offline: the failure is at once, and it is offline.
+    await rtl.cleanup();
+    sent = [];
+    fallback['PUT /money/pin'] = 'offline';
+    await bootChange();
+    await type('1234');
+    await rtl.screen.findByTestId('change-pin-new');
+    await type('4821');
+    await type('4821');
+    expect(await rtl.screen.findByText("We couldn't tell whether your PIN was changed. No connection. Check your internet and try again.")).toBeTruthy();
+    expect(rtl.screen.queryByText(/We didn't get an answer/)).toBeNull();
+  });
+
   it('a write without a key is never ended: the check of the PIN in use waits for the Hub for as long as it takes', async () => {
     fallback['POST /money/pin/verify'] = 'never';
     const props = await bootChange();
@@ -206,6 +289,65 @@ describe('W36 · a PIN change the Hub never answers (FIX-87)', () => {
 });
 
 describe('W37 · a reset the Hub never answers (FIX-87)', () => {
+  const RESET = ok({
+    resetId: '00000000-0000-4000-8000-0000000000b1',
+    sentTo: '+234 *** *** 4412',
+    resendAvailableAt: '2026-10-18T09:01:00.000Z',
+    resendInSeconds: 60,
+    expiresAt: '2026-10-18T09:10:00.000Z',
+  });
+
+  it('F1: Back to the boxes, then the SAME code and the SAME new PIN again, is the same reset under the same key: the code is not refused as used', async () => {
+    fallback['POST /money/pin/reset'] = RESET;
+    // The first confirm lands and is never answered; any other key then meets a code that was already used.
+    fallback['POST /money/pin/reset/confirm'] = (call) => {
+      const known = landed.get(call.key ?? '');
+      if (known) return known;
+      if (landed.size > 0) return refusal(400, 'reset_code_invalid', 'That code is not right or has already been used.');
+      landed.set(call.key ?? '', state({ changedAt: '2026-10-18T09:00:00.000Z' }));
+      return 'never';
+    };
+    const { ResetPinScreen } = require('../settings/ResetPinScreen') as typeof import('../settings/ResetPinScreen');
+    const props = { onBack: jest.fn(), onDone: jest.fn(), onNoWallet: jest.fn(), onNoPin: jest.fn() };
+    await rtl.render(frame(<ResetPinScreen {...props} />));
+    await rtl.screen.findByText('To +234 *** *** 4412');
+    await type('481902');
+    await type('4821');
+    await type('4821');
+    await rtl.screen.findByTestId('reset-pin-saving');
+    await wait(30_500);
+    await rtl.screen.findByText(/^We couldn't tell whether your PIN was reset\./);
+    // Back to the new PIN, Back to the boxes, and the same code and the same two entries again.
+    await press('Back');
+    await press('Back');
+    await type('481902');
+    await type('4821');
+    await type('4821');
+    await rtl.waitFor(() => expect(props.onDone).toHaveBeenCalledTimes(1));
+    const confirms = asked('POST', '/money/pin/reset/confirm');
+    expect(confirms).toHaveLength(2);
+    expect(confirms[1].key).toBe(confirms[0].key);
+    expect(confirms[1].body).toEqual(confirms[0].body);
+    expect(landed.size).toBe(1);
+    expect(rtl.screen.queryByText(/already been used/)).toBeNull();
+  });
+
+  it('F2: the 30 s end of a reset reads "We didn\'t get an answer", not "No connection"', async () => {
+    fallback['POST /money/pin/reset'] = RESET;
+    fallback['POST /money/pin/reset/confirm'] = 'never';
+    const { ResetPinScreen } = require('../settings/ResetPinScreen') as typeof import('../settings/ResetPinScreen');
+    const props = { onBack: jest.fn(), onDone: jest.fn(), onNoWallet: jest.fn(), onNoPin: jest.fn() };
+    await rtl.render(frame(<ResetPinScreen {...props} />));
+    await rtl.screen.findByText('To +234 *** *** 4412');
+    await type('481902');
+    await type('4821');
+    await type('4821');
+    await rtl.screen.findByTestId('reset-pin-saving');
+    await wait(30_500);
+    expect(await rtl.screen.findByText("We couldn't tell whether your PIN was reset. We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+    expect(rtl.screen.queryByText(/No connection/)).toBeNull();
+  });
+
   it('ends after 30 s as "no answer" and Try again sends the same request under the same key', async () => {
     const reset = ok({
       resetId: '00000000-0000-4000-8000-0000000000b1',

@@ -73,6 +73,70 @@ describe('a read the Hub never answers', () => {
   });
 });
 
+/*
+ * SWEEP-APP-7 V4 (c), closed by SWEEP-MONEY-5b: a caller's own abort of a read. A GET sent with the caller's `signal` ends at once when
+ * the caller aborts it (it does not wait for the 30 s), the request the Hub sees is aborted too, and no timer or listener is left behind.
+ * (The cap is per try and the body is not timed after the headers: ruled in the sweep row, not a defect.)
+ */
+describe('a read the caller aborts itself', () => {
+  it('ends when the caller aborts, long before the read timeout, and cancels the request the Hub sees', async () => {
+    const client = boot();
+    const controller = new AbortController();
+    const read = client
+      .unwrap(client.api.GET(GET_URL as never, { signal: controller.signal } as never))
+      .then(
+        () => 'answered',
+        (error: unknown) => error,
+      );
+    let settled = false;
+    void read.then(() => {
+      settled = true;
+    });
+    await jest.advanceTimersByTimeAsync(1_000);
+    expect(settled).toBe(false);
+    expect(held[0].request.signal.aborted).toBe(false);
+    controller.abort();
+    await jest.advanceTimersByTimeAsync(5);
+    expect(settled).toBe(true);
+    expect(held[0].request.signal.aborted).toBe(true);
+    // The caller's abort is not the read timeout: it ended at 1 s, and nothing is left to fire at 30 s.
+    expect(jest.getTimerCount()).toBe(0);
+    expect(client.isApiError(await read)).toBe(true);
+  });
+
+  it('a signal that is already aborted never waits: the read ends at once and the Hub sees an aborted request', async () => {
+    jest.resetModules();
+    globalThis.fetch = jest.fn((input: RequestInfo | URL) => {
+      const request = input instanceof Request ? input : new Request(String(input));
+      return request.signal.aborted
+        ? Promise.reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
+        : new Promise<Response>(() => undefined);
+    }) as typeof fetch;
+    const client = require('@/api/client') as typeof import('@/api/client');
+    const controller = new AbortController();
+    controller.abort();
+    const read = client.unwrap(client.api.GET(GET_URL as never, { signal: controller.signal } as never)).then(
+      () => 'answered',
+      (error: unknown) => error,
+    );
+    await jest.advanceTimersByTimeAsync(5);
+    expect(client.isApiError(await read)).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('an abort after the answer changes nothing: the answered read keeps its data and no timer is left', async () => {
+    const client = boot();
+    const controller = new AbortController();
+    const read = client.unwrap(client.api.GET(GET_URL as never, { signal: controller.signal } as never));
+    await jest.advanceTimersByTimeAsync(100);
+    held[0].answer(200, { data: { ok: true } });
+    await expect(read).resolves.toEqual({ data: { ok: true } });
+    controller.abort();
+    await jest.advanceTimersByTimeAsync(31_000);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+});
+
 describe('a write', () => {
   it('is never aborted by the read timeout: a slow money POST keeps its Idempotency-Key and gets the Hub\'s answer', async () => {
     const client = boot();

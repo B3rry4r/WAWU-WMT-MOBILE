@@ -57,6 +57,12 @@ export type ChangePinScreenProps = {
  * without looking at the PIN (no try is spent), and if it did not the repeat is the request. The screen never judges
  * by the PIN's `changedAt`, which moves for a change by anyone, and never asks the server with the new PIN. A new
  * attempt (other entries after a refusal) is a new key.
+ *
+ * A change that got no answer is held until an answer comes, also after Back (SWEEP-MONEY-5b F1). Back from the line "We
+ * couldn't tell whether your PIN was changed" returns to Step 1 and keeps the attempt: the same two entries typed again
+ * (with the PIN in use that was checked) are that same attempt and go under its key, so a change that did land is answered
+ * again and no try is spent on a PIN that has already moved; other entries are another change and take a new key. The
+ * attempt is memory in this screen only, like every PIN here: it is dropped when an answer comes and on leaving.
  */
 export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoWallet }: ChangePinScreenProps) {
   const { colors } = useWawu();
@@ -114,9 +120,9 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     await pin.refetch();
   };
 
+  // Does not touch `attempt`: a change with no answer outlives Back. An answer (`refused`, `finish`) is what drops it.
   const startAgainAt = (next: Stage, text: string | null, wrongPin = false) => {
     first.current = null;
-    attempt.current = null;
     setDigits('');
     setStage(next);
     if (text === null) setLine(null);
@@ -157,11 +163,16 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     }
   };
 
-  /** The second entry is in: this is one attempt, with one key for as long as it goes unanswered. */
+  /**
+   * The second entry is in: this is one attempt, with one key for as long as it goes unanswered. The same change as the one held
+   * (same PIN in use, same two entries) is that attempt again, under its key; any other is a new attempt.
+   */
   const submitNew = (firstEntry: string, secondEntry: string) => {
     const pinInUse = current.current;
     if (inFlight.current || pinInUse === null) return;
-    attempt.current = { key: newRequestKey(), current: pinInUse, newPin: firstEntry, newPinConfirmation: secondEntry };
+    const held = attempt.current;
+    const same = held !== null && held.current === pinInUse && held.newPin === firstEntry && held.newPinConfirmation === secondEntry;
+    if (!same) attempt.current = { key: newRequestKey(), current: pinInUse, newPin: firstEntry, newPinConfirmation: secondEntry };
     void send();
   };
 
@@ -279,7 +290,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
   const back = () => {
     if (waiting) return;
     if (stage === 'confirm') {
-      // Back from a change that has no answer yet gives that attempt up and frees the keypad (D4).
+      // Back from a change that has no answer frees the keypad (D4) and keeps the attempt: the same entries typed again are sent under its key (F1).
       setBusy('idle');
       startAgainAt('new', null);
       return;
