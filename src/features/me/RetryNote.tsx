@@ -11,6 +11,8 @@ export type RetryNoteProps = {
   /** What did not load, in the app's words ("Your tier did not load"). */
   title: string;
   onRetry: () => void;
+  /** What the round retry mark is called for a screen reader; it says what it retries when two notes can show together ("Try loading your tier again"). */
+  retryLabel?: string;
   testID?: string;
 };
 
@@ -18,7 +20,7 @@ export type RetryNoteProps = {
  * A part of the Me header or grid that failed to load while the rest of the page did: the profile stays on screen, and this
  * sits where the part would be with a round retry mark (named "Try again" for a screen reader). The boards draw no failed state, so it wears the meter's card.
  */
-export function RetryNote({ title, onRetry, testID }: RetryNoteProps) {
+export function RetryNote({ title, onRetry, retryLabel = 'Try again', testID }: RetryNoteProps) {
   const { colors } = useWawu();
   return (
     <View
@@ -32,7 +34,7 @@ export function RetryNote({ title, onRetry, testID }: RetryNoteProps) {
       <Text variant="body" tone="textSecondary" style={styles.title}>
         {title}
       </Text>
-      <IconButton icon="RotateCw" label="Try again" size={noteMetrics.retry} onPress={onRetry} testID={testID ? `${testID}-retry` : undefined} />
+      <IconButton icon="RotateCw" label={retryLabel} size={noteMetrics.retry} onPress={onRetry} testID={testID ? `${testID}-retry` : undefined} />
     </View>
   );
 }

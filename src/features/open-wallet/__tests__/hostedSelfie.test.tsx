@@ -523,6 +523,25 @@ describe('Round 2 · the secure page (findings 3 and 4)', () => {
     }
   });
 
+  // SWEEP-APP DV2-05 L1: after an app restart the Hub already holds a pending page; the asking started only at a tap.
+  it('a page the Hub already holds as pending is asked about from the first read, with no tap, and A7 comes when it passes', async () => {
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
+    try {
+      fallback['GET /money/identity/liveness'] = liveness({ state: 'pending', url: SECURE_PAGE });
+      const app = await hostedScreen();
+      await app.screen.findByTestId('open-wallet-selfie-continue');
+      const before = asked();
+      fallback['GET /money/identity/liveness'] = liveness({ state: 'passed' });
+      await rtl.act(async () => {
+        jest.advanceTimersByTime(5100);
+      });
+      await rtl.waitFor(() => expect(asked()).toBe(before + 1));
+      expect(await app.screen.findByText('Selfie done')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('the asking goes on while the page is pending, and stops when the screen goes', async () => {
     jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
     try {

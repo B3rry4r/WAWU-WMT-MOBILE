@@ -115,6 +115,31 @@ describe('Share card (RF2)', () => {
     expect(screen.queryByTestId('invite-card-problem')).toBeNull();
   });
 
+  // SWEEP-APP REF-03 L5: Share pressed before the phone's answer sent the text, not the picture.
+  it('Share pressed before the phone has said it can share a picture waits for the answer and sends the picture', async () => {
+    let probe: (can: boolean) => void = () => undefined;
+    mockFile.canShareCard.mockImplementation(() => new Promise<boolean>((resolve) => (probe = resolve)));
+    const text = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-share'));
+    expect(mockFile.shareCardFile).not.toHaveBeenCalled();
+    await act(async () => probe(true));
+    await waitFor(() => expect(mockFile.shareCardFile).toHaveBeenCalledTimes(1));
+    expect(text).not.toHaveBeenCalled();
+    expect(mockCapture).toHaveBeenCalledTimes(1);
+  });
+
+  it('Share pressed before the answer, on a phone that cannot share a picture, sends the line and the link as text', async () => {
+    let probe: (can: boolean) => void = () => undefined;
+    mockFile.canShareCard.mockImplementation(() => new Promise<boolean>((resolve) => (probe = resolve)));
+    const text = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-share'));
+    await act(async () => probe(false));
+    await waitFor(() => expect(text).toHaveBeenCalledTimes(1));
+    expect(mockFile.shareCardFile).not.toHaveBeenCalled();
+  });
+
   it('a second tap while the first is still working shares once', async () => {
     let finish: () => void = () => undefined;
     mockFile.shareCardFile.mockImplementation(() => new Promise<void>((resolve) => (finish = resolve)));

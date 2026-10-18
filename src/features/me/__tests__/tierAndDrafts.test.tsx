@@ -260,6 +260,36 @@ describe('M1 · drafts in the Content grid (DV2-03)', () => {
     expect(await screen.findByTestId('me-grid-empty')).toBeTruthy();
   });
 
+  // SWEEP-APP DV2-03 L1: the pieces waited for the drafts read, so one that never answered kept them hidden.
+  it('draws the published pieces while the drafts read has not answered, and puts the drafts in front when it does', async () => {
+    answers = base({ [`GET ${DRAFTS}`]: 'hang' });
+    await boot();
+    expect(await screen.findByTestId('me-tile-p1')).toBeTruthy();
+    expect(screen.getByTestId('me-tile-p2')).toBeTruthy();
+    expect(screen.queryByTestId('me-grid-loading')).toBeNull();
+  });
+
+  it('keeps the skeleton, not an empty state, while the drafts read is out and there are no pieces to draw', async () => {
+    answers = base({
+      [`GET ${DRAFTS}`]: 'hang',
+      [`GET ${GRID}?page=1&perPage=18`]: ok([], { pagination: { currentPage: 1, nextPage: null } }),
+    });
+    await boot();
+    expect(await screen.findByTestId('me-grid-loading')).toBeTruthy();
+    expect(screen.queryByTestId('me-grid-empty')).toBeNull();
+  });
+
+  // SWEEP-APP DV2-03 L4: two notes can show together, and both read "Try again" to a screen reader.
+  it('names what each retry mark retries, so the tier note and the drafts note are told apart', async () => {
+    answers = base({ [`GET ${TIER}`]: refusal(500, 'Server error'), [`GET ${DRAFTS}`]: refusal(500, 'Server error') });
+    await boot();
+    expect(await screen.findByTestId('me-tier-error')).toBeTruthy();
+    expect(await screen.findByTestId('me-drafts-error')).toBeTruthy();
+    expect(screen.getByLabelText('Try loading your tier again')).toBe(screen.getByTestId('me-tier-error-retry'));
+    expect(screen.getByLabelText('Try loading your drafts again')).toBe(screen.getByTestId('me-drafts-error-retry'));
+    expect(screen.queryByLabelText('Try again')).toBeNull();
+  });
+
   it('drafts that fail to load leave the pieces on screen with a note and a retry that brings the drafts', async () => {
     answers = base({ [`GET ${DRAFTS}`]: [refusal(500, 'Server error'), ok([draft('d1', 'Colour LUT pack')])] });
     await boot();

@@ -339,7 +339,7 @@ type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDra
  * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
  */
 function TierMeter({ tier }: { tier: TierQuery }) {
-  if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" onRetry={() => void tier.refetch()} />;
+  if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
   const meter = productsMeterOf(tier.data);
   return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
@@ -349,8 +349,10 @@ function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery;
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
-  // A creator's drafts lead the grid, so the grid waits for them too (a failed read does not hold it: the note below tells them).
-  if (!query.data || (creator && drafts.isPending)) {
+  // A creator's drafts lead the grid. The grid waits for them only when there is nothing else to draw, so a drafts read that never
+  // answers cannot hide the published pieces (SWEEP-APP row DV2-03 L1); a failed read does not hold it either: the note below tells them.
+  const nothingToDraw = !query.data || query.data.pages.every((page) => page.pieces.length === 0);
+  if (!query.data || (creator && drafts.isPending && nothingToDraw)) {
     return (
       <LoadingView label="Loading your content" testID="me-grid-loading">
         <GridSkeleton />
@@ -358,7 +360,7 @@ function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery;
     );
   }
   const draftsFailed = creator && drafts.isError && !drafts.data;
-  const note = draftsFailed ? <RetryNote testID="me-drafts-error" title="Your drafts did not load" onRetry={() => void drafts.refetch()} /> : null;
+  const note = draftsFailed ? <RetryNote testID="me-drafts-error" title="Your drafts did not load" retryLabel="Try loading your drafts again" onRetry={() => void drafts.refetch()} /> : null;
   const tiles = [...(drafts.data ?? []).map(draftTileOf), ...query.data.pages.flatMap((page) => page.pieces).map(tileOf)];
   if (tiles.length === 0) {
     return (
