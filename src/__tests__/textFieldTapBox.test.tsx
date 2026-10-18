@@ -1,6 +1,6 @@
 import * as rtl from '@testing-library/react-native';
 import { createRef } from 'react';
-import { StyleSheet, type TextInput } from 'react-native';
+import { Platform, StyleSheet, type TextInput } from 'react-native';
 
 import { TextField } from '@/components/TextField';
 
@@ -65,6 +65,85 @@ describe('SHARED-06 L2: a tap anywhere in a multiline field\'s box focuses its i
       got.push(n);
     }} value="" onChangeText={() => undefined} />);
     expect(got.some((n) => n !== null)).toBe(true);
+  });
+});
+
+/**
+ * SWEEP-APP-7: the three rows the verifier left on the tap box (SWEEP-APP-6b L1, L2, L3).
+ */
+describe('SWEEP-APP-6b L1: a callback ref is told when the input comes and goes, not on every render', () => {
+  it('one call with the input at mount and one with null at unmount, however many times the field draws again', async () => {
+    const got: (TextInput | null)[] = [];
+    const ref = (n: TextInput | null) => {
+      got.push(n);
+    };
+    const tree = (value: string) => <TextField testID="bio" label="Bio" multiline inputRef={ref} value={value} onChangeText={() => undefined} />;
+    const view = await rtl.render(tree(''));
+    expect(got).toHaveLength(1);
+    expect(got[0]).not.toBeNull();
+    for (const value of ['a', 'ab', 'abc', 'abcd', 'abcde']) await view.rerender(tree(value));
+    expect(got).toHaveLength(1);
+    await view.unmount();
+    expect(got).toHaveLength(2);
+    expect(got[1]).toBeNull();
+  });
+
+  it('is given the input again when the field swaps its input for another box (a picker field comes and goes)', async () => {
+    const got: (TextInput | null)[] = [];
+    const ref = (n: TextInput | null) => {
+      got.push(n);
+    };
+    const tree = (onPress?: () => void) => <TextField testID="bank" label="Bank" inputRef={ref} value="" onPress={onPress} onChangeText={() => undefined} />;
+    const view = await rtl.render(tree(() => undefined));
+    // A picker field draws no input at all: the form's ref has nothing to hold.
+    expect(got.every((n) => n === null)).toBe(true);
+    await view.rerender(tree());
+    expect(got.at(-1)).not.toBeNull();
+  });
+});
+
+describe('SWEEP-APP-6b L2: a disabled multiline field on the web', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('does not draw the text cursor over a box that takes no typing; an enabled one still does', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    await show({ disabled: true });
+    expect(flat('bio-box').cursor).toBeUndefined();
+    await rtl.screen.unmount();
+    await show();
+    expect(flat('bio-box').cursor).toBe('text');
+  });
+});
+
+describe('SWEEP-APP-6b L3: a tap in the padding below the text, on the web, puts the caret at the end', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('focuses the input and sets the caret after the last character, so typing does not replace an old selection', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    const ref = createRef<TextInput>();
+    await rtl.render(<TextField testID="bio" label="Bio" multiline inputRef={ref} value="Hello there" onChangeText={() => undefined} />);
+    const setSelection = jest.fn();
+    (ref.current as TextInput).setSelection = setSelection;
+    await rtl.userEvent.press(rtl.screen.getByTestId('bio-box'));
+    expect(setSelection).toHaveBeenCalledWith(11, 11);
+  });
+
+  it('an uncontrolled field is left to the browser (no value to measure), and the phones are left as they were', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    const ref = createRef<TextInput>();
+    await rtl.render(<TextField testID="bio" label="Bio" multiline inputRef={ref} />);
+    const setSelection = jest.fn();
+    (ref.current as TextInput).setSelection = setSelection;
+    await rtl.userEvent.press(rtl.screen.getByTestId('bio-box'));
+    expect(setSelection).not.toHaveBeenCalled();
+    await rtl.screen.unmount();
+    jest.restoreAllMocks();
+    const phone = createRef<TextInput>();
+    await rtl.render(<TextField testID="bio" label="Bio" multiline inputRef={phone} value="Hello there" onChangeText={() => undefined} />);
+    const onPhone = jest.fn();
+    (phone.current as TextInput).setSelection = onPhone;
+    await rtl.userEvent.press(rtl.screen.getByTestId('bio-box'));
+    expect(onPhone).not.toHaveBeenCalled();
   });
 });
 
