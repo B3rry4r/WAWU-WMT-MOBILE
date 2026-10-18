@@ -104,9 +104,15 @@ async function boot(props: { withEvents?: boolean } = {}) {
 }
 
 /** Taps forward until the card on screen is the sponsored one, or the last card (the arrow is gone there). */
-async function toSponsored() {
+async function toSponsored(options: { drawn?: boolean } = {}) {
   while (!rtl.screen.queryByTestId('sponsored-step') && rtl.screen.queryByTestId('tgif-next')) {
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+  }
+  // The picture is drawn (its load event), which is when the card counts as seen.
+  if (options.drawn !== false && rtl.screen.queryByTestId('sponsored-artwork', hiddenOk)) {
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('sponsored-artwork', hiddenOk), 'load', { nativeEvent: { source: { url: AD.artworkUrl } } });
+    });
   }
 }
 
@@ -186,6 +192,34 @@ describe('H33 · the sponsored card in the reader', () => {
     expect(reported()).toEqual(['view']);
   });
 
+  it('tells the Hub nothing while the picture is not drawn, and a view once it is (SWEEP-APP-4)', async () => {
+    await boot();
+    await rtl.waitFor(() => expect(segments().max).toBe(6));
+    await toSponsored({ drawn: false });
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(reported()).toEqual([]);
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('sponsored-artwork', hiddenOk), 'load', { nativeEvent: { source: { url: AD.artworkUrl } } });
+    });
+    await rtl.waitFor(() => expect(reported()).toEqual(['view']));
+  });
+
+  it('tells the Hub no view for a card whose picture fails: it is dropped and was never seen (SWEEP-APP-4)', async () => {
+    await boot();
+    await rtl.waitFor(() => expect(segments().max).toBe(6));
+    await toSponsored({ drawn: false });
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
+    });
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(rtl.screen.queryByTestId('sponsored-step')).toBeNull();
+    expect(reported()).toEqual([]);
+  });
+
   it('opens the event from the button, counts the tap once however often it is pressed, and stays on the card for the way back', async () => {
     const { onOpenEvent } = await boot();
     await rtl.waitFor(() => expect(segments().max).toBe(6));
@@ -219,7 +253,7 @@ describe('H33 · the sponsored card in the reader', () => {
   it('leaves the card out when its picture will not load: no bare dark card, the takeaway is the last of five (SWEEP-APP ADS-01 L5)', async () => {
     const { onClose } = await boot();
     await rtl.waitFor(() => expect(segments().max).toBe(6));
-    await toSponsored();
+    await toSponsored({ drawn: false });
     await rtl.act(async () => {
       rtl.fireEvent(rtl.screen.getByTestId('sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
     });

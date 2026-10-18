@@ -167,8 +167,8 @@ describe('ME-13: Verification', () => {
     expect(screen.queryByText('Pay')).toBeNull();
   });
 
-  // SWEEP-APP-3 row 126: the Hub can answer /pending with a purchase it has already decided (refunded when the plan could not be granted, or paid); that is nothing confirming, not an unreadable answer.
-  it.each(['refunded', 'paid', 'failed', 'reversed'])('M15: a purchase the Hub has already decided (%s) draws no banner and no error, as when nothing is confirming', async (status) => {
+  // SWEEP-APP-3 row 126: the Hub can answer /pending with a purchase it has already decided (refunded when the plan could not be granted, failed or reversed); that is nothing confirming, not an unreadable answer.
+  it.each(['refunded', 'failed', 'reversed'])('M15: a purchase the Hub has already decided (%s) draws no banner and no error, as when nothing is confirming', async (status) => {
     hub.wallet = { state: 'open' };
     hub.pending = { id: 'p1', status };
     await open();
@@ -177,6 +177,19 @@ describe('ME-13: Verification', () => {
     expect(screen.queryByTestId('verification-confirming')).toBeNull();
     expect(screen.queryByTestId('verification-error')).toBeNull();
     expect(screen.queryByText(/could not be read/i)).toBeNull();
+  });
+
+  // SWEEP-APP-4 (part 3's low on row 126): a purchase read as paid whose claim is still open still blocks a second buy, so it is "Paid, still confirming", not nothing.
+  it('M15: a purchase the Hub reads as paid but has not opened yet (claim still open) draws the confirming banner, and nothing to pay with', async () => {
+    hub.wallet = { state: 'open' };
+    hub.pending = { id: 'p1', status: 'paid' };
+    await open();
+    const banner = await screen.findByTestId('verification-confirming');
+    expect(banner).toHaveTextContent(/Paid, still confirming/);
+    expect(banner).toHaveTextContent(/Don't pay again\. Check back in a minute\./);
+    expect(screen.queryByText('Get it')).toBeNull();
+    expect(screen.queryByText('Pay')).toBeNull();
+    expect(screen.queryByTestId('verification-error')).toBeNull();
   });
 
   it('with nothing confirming and no tier, there is no tier part and no banner', async () => {

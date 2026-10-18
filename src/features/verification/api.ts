@@ -53,9 +53,12 @@ export async function fetchPendingPurchase(): Promise<PendingPurchase | null> {
   if (!view || typeof view !== 'object' || !('purchase' in view)) throw unreadable('payment');
   if (view.purchase === null) return null;
   if (!filled(view.purchase?.id) || !filled(view.purchase.status)) throw unreadable('payment');
-  // The Hub can answer with a purchase it has already decided (refunded when the plan could not be granted, paid, failed or
-  // reversed): that is nothing still confirming, not an answer the screen cannot read (SWEEP-APP-3 row 126).
-  if (view.purchase.status !== 'pending') return null;
+  // The Hub can answer with a purchase it has already decided (refunded when the plan could not be granted, failed or
+  // reversed): that is nothing still confirming, not an answer the screen cannot read (SWEEP-APP-3 row 126). A purchase that
+  // is paid but whose claim is still open (the plan is not opened yet) is the M15 state itself, "Paid, still confirming":
+  // the Hub still holds that person's next buy with payment_in_progress, so the banner stays until the Hub lets it go
+  // (SWEEP-APP-4, part 3's low on row 126).
+  if (view.purchase.status !== 'pending' && view.purchase.status !== 'paid') return null;
   return { id: view.purchase.id };
 }
 
