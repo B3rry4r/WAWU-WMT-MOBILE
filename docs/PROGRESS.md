@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 305.**
+**Launch tasks done: 176 of 306.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 51 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 125 | 0 | 0 | 0 |
+| verifying | 126 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-75](../tasks/FIX-75.md) The storage specs no longer share the Hub's real 10-minute timer (You)
 - [FIX-69](../tasks/FIX-69.md) The school places take their locks in one order, and the release sweep logs why it failed (You)
 - [FIX-68](../tasks/FIX-68.md) CHECK-1's findings: the Tip button wins its taps, no tier is not an error, one write per sign-up, Explore and the cards as drawn (You)
 - [FIX-65](../tasks/FIX-65.md) A purged account's uploaded files leave the bucket (You)
