@@ -31,6 +31,10 @@ As of 17 Oct 2026, built with INBOX-10 (Sonnet builder, T2), waiting for a verif
 - **Stack run (`s3_test`, ports 7890 to 7897, backend `wmt/S3` on the Nuvion stand-in; Hub balance = stand-in after each step):** a fan paid ₦1,500: a DOUBLE TAP on Send made one question and one debit (5,000,000 to 4,850,000); a wrong PIN moved nothing; a lost answer (the Hub took the payment, the phone heard 500) then the PIN again: the same key twice, one payment, one question, one debit (4,850,000 to 4,700,000); the creator answered with two bubbles and the thread showed "Replied in" and the follow-up offer; the window passed unanswered and the sweep paid every naira back in 56 s (4,700,000 to 4,850,000; "you got ₦1,500 back ... today at 22:36"); the no-reply rule then paused that creator and the thread said so in place of the composer; a fan with ₦900 saw I6 and Add opened W15 with the shortfall; a creator switched off and a creator paused showed Messages off. The stack charges a ₦0 bank charge, so ₦23.25 is only in the jest cases (the quote's shape).
 - **Checks:** mobile tsc 0, eslint 0 on changed files; jest paid-ask, inbox, chat, visitor 213 pass (45 new: 18 model, 19 flow, 3 row, 5 profile); gates and `check_tasks` 0 fail. Backend tsc 0, eslint 0, gates 0 fail, contract:build, wallet spec 13 pass. NOT RUN: full suites (CI), Fintava (never), a verifier. Mobile CI fails in seconds while billing is off.
 
+As of 18 Oct 2026, round 2 built after the check (Sonnet builder, T2), waiting for a verifier. Same branches as INBOX-10 (`wmt/S3`, mobile and backend); the full account is in INBOX-10's Current state.
+- **I7 (F1):** the amount is now the Hub's real returned total (`HoldView.refundedKobo` = what the refund moved, ₦1,523.25 with a 2,325 kobo charge), checked live: "you got ₦1,523.25 back" and the fan's balance +152,325.
+- **I6 (F2):** after Add money and back the sheet asks one fresh quote and shows Send (live: ₦900, deposit, back, "₦2,100.00 available", paid). Round 1's "₦0 bank charge on the stack" is replaced by a 2,325 kobo run.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
@@ -94,6 +98,8 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Builder report
 
 Built with INBOX-10 (same files): I6 in `AskSheets.tsx`, I7 in `model.refundedCard` and `PaidThreadScreen.tsx`, I8 in `visitor/parts.tsx`, the thread composer and `useAskTerms.ts`. Tests: `askFlow.test.tsx` (I6, I7, I8 in the thread), `VisitorProfileScreen.test.tsx` (I2, I8), `model.test.ts`. Not done: the pause date is not drawn (no board draws it, R-47).
+
+Round 2 (18 Oct 2026): I7's figure from the Hub's corrected hold view, and I6 re-asking on return, in `model.ts`, `useAsk.ts`, `hold-view.service.ts`; tests in `askFlow.test.tsx`, `model.test.ts`, `paid-dm-wallet.contract.spec.ts`.
 
 ## Verifier report
 

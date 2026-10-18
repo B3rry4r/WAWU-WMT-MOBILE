@@ -48,6 +48,12 @@ export function windowWords(hours: number): string {
   return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
 }
 
+/** The same window as a describing word, as the board writes it: "24-hour", "1-hour", "2-day" ("its own 24-hour window"). */
+export function windowAdjective(hours: number): string {
+  if (hours >= 48 && hours % 24 === 0) return `${hours / 24}-day`;
+  return `${hours}-hour`;
+}
+
 /** The window of a question the Hub already sent, from its two timestamps, in whole hours (null when they are not readable). */
 export function windowHoursOf(question: Pick<ThreadQuestion, 'sentAt' | 'deadlineAt'>): number | null {
   const hours = Math.round((Date.parse(question.deadlineAt) - Date.parse(question.sentAt)) / HOUR);
@@ -164,16 +170,20 @@ export type CardTone = 'waiting' | 'answered' | 'refunded' | 'late';
 
 export type StatusCard = { tone: CardTone; title: string; body: string };
 
-/** A question the Hub still has open: the countdown and where the money is (I4). Past its deadline the Hub has not yet paid it back. */
-export function waitingCard(q: Pick<ThreadQuestion, 'amountKobo' | 'deadlineAt'>, name: string | null | undefined, now: number): StatusCard {
+/**
+ * A question the Hub still has open: the countdown and where the money is (I4). Past its deadline the Hub has not yet paid it back.
+ * The lines say "your money" and no figure: the thread carries the question's price, and what the person paid (and gets back, every
+ * naira) is the price and the bank's charge, which the thread does not carry (I3 and I7 say the Hub's own total).
+ */
+export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number): StatusCard {
   const left = Date.parse(q.deadlineAt) - now;
   if (left <= 0) {
-    return { tone: 'late', title: 'No reply in time', body: `Your ${formatNaira(q.amountKobo)} is on its way back to your wallet.` };
+    return { tone: 'late', title: 'No reply in time', body: 'Your money is on its way back to your wallet.' };
   }
   return {
     tone: 'waiting',
     title: `${whoOf(name)} has ${leftLong(left)} left to reply`,
-    body: `Your ${formatNaira(q.amountKobo)} is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to your wallet.`,
+    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and all of it comes back to your wallet.`,
   };
 }
 
@@ -181,7 +191,7 @@ export function waitingCard(q: Pick<ThreadQuestion, 'amountKobo' | 'deadlineAt'>
 export function answeredCard(name: string | null | undefined, followUp: { priceKobo: number; windowHours: number | null } | null): StatusCard {
   const lead = `${whoOf(name)} answered, so they've been paid`;
   if (!followUp) return { tone: 'answered', title: lead, body: 'This question is closed.' };
-  const window = followUp.windowHours === null ? '' : ` Each paid message gets its own ${windowWords(followUp.windowHours)} window.`;
+  const window = followUp.windowHours === null ? '' : ` Each paid message gets its own ${windowAdjective(followUp.windowHours)} window.`;
   return { tone: 'answered', title: lead, body: `Ask a follow-up for ${formatNaira(followUp.priceKobo)}.${window}` };
 }
 
@@ -251,7 +261,12 @@ export function isWaiting(questions: readonly ThreadQuestion[], now: number): bo
   return questions.some((q) => q.mine && q.status === 'awaiting_response' && Date.parse(q.deadlineAt) > now);
 }
 
-/** What the composer offers once nothing is waiting: "Ask a follow-up · ₦1,500" after an answer, "Try again · ₦200" after a refund. */
+/**
+ * What the composer offers once nothing is waiting: "Ask a follow-up · ₦1,500" after an answer, "Try again · ₦200" after a refund, and
+ * "Ask a question · ₦1,500" in a thread with no question yet (the board draws no empty thread; this is the lead default, as the sheet
+ * and the profile button say "question").
+ */
 export function composerLabel(latest: ThreadQuestion | null, priceKobo: number): string {
-  return `${latest?.status === 'refunded' ? 'Try again' : 'Ask a follow-up'} · ${formatNaira(priceKobo)}`;
+  const verb = latest === null ? 'Ask a question' : latest.status === 'refunded' ? 'Try again' : 'Ask a follow-up';
+  return `${verb} · ${formatNaira(priceKobo)}`;
 }

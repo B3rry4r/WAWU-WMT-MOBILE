@@ -10,7 +10,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
  * quote and payment (headers and body), and answers a key it knows with the first payment, as the Hub does (`Idempotent-Replayed`),
  * before it looks at the PIN.
  */
-jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+// The navigator's focus: false while another screen (Add money) is on top of the thread, true when it is back in front.
+let mockFocused = true;
+jest.mock('expo-router', () => ({ useIsFocused: () => mockFocused }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
@@ -195,14 +197,20 @@ async function boot(pay = wired()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   const onBack = jest.fn();
-  await rtl.render(
+  const tree = () => (
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
         <PaidThreadScreen wawuId={CREATOR} onBack={onBack} pay={pay} />
       </SafeAreaProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  return { pay, onBack, client };
+  const view = await rtl.render(tree());
+  /** The navigator moved focus: the screen is drawn again with what it now reads. */
+  const refocus = async (focused: boolean) => {
+    mockFocused = focused;
+    await view.rerender(tree());
+  };
+  return { pay, onBack, client, refocus };
 }
 
 const { clearAttempts } = require('@/features/feedpay/usePaymentFlow') as typeof import('@/features/feedpay/usePaymentFlow');
@@ -210,6 +218,7 @@ const { clearAttempts } = require('@/features/feedpay/usePaymentFlow') as typeof
 rtl.configure({ asyncUtilTimeout: 6000 });
 
 beforeEach(() => {
+  mockFocused = true;
   clearAttempts();
   Object.assign(hub, {
     mode: 'paid',
@@ -259,7 +268,7 @@ describe('I4 · waiting for a reply', () => {
     await boot();
     const card = await rtl.screen.findByTestId('paid-card-w1');
     expect(rtl.within(card).getByTestId('paid-card-w1-title').props.children).toMatch(/^Chidi has 17h \d\dm left to reply$/);
-    expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/^Your ₦1,500 is held by Who Made This\? No reply by (today|tomorrow) \d\d:\d\d and it comes back to your wallet\.$/);
+    expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/^Your money is held by Who Made This\? No reply by (today|tomorrow) \d\d:\d\d and all of it comes back to your wallet\.$/);
     expect(rtl.screen.getByText(/₦1,500 paid$/)).toBeTruthy();
     expect(rtl.screen.getByTestId('paid-thread-sub').props.children).toBe('Paid DM · replies within 24h');
     expect(rtl.screen.getByTestId('paid-composer-locked-field').props.placeholder).toBe('You can send once Chidi replies');
@@ -293,7 +302,7 @@ describe('I5 · replied', () => {
     expect(rtl.screen.getByTestId('paid-thread-sub').props.children).toBe('Replied in 2h 14m');
     const card = rtl.screen.getByTestId('paid-card-a1');
     expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered, so they've been paid");
-    expect(rtl.within(card).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 24 hours window.');
+    expect(rtl.within(card).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.');
     expect(rtl.screen.getByRole('button', { name: 'Ask a follow-up · ₦1,500' })).toBeTruthy();
   });
 
@@ -473,6 +482,96 @@ describe('I6 · not enough in the wallet', () => {
     expect(pay.onAddMoney).toHaveBeenCalledWith(62_325);
     expect(hub.pays).toHaveLength(0);
   });
+
+  /** Opens the sheet with a wallet of ₦900, writes the words, taps Add, and leaves the thread for Add money (S3 round 2, F2). */
+  async function shortThenAway() {
+    hub.balanceKobo = 90_000;
+    const view = await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('paid-composer-ask'));
+    await rtl.fireEvent.changeText(await rtl.screen.findByTestId('ask-text'), 'How do I price a retainer?');
+    await rtl.screen.findByTestId('ask-short');
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Add ₦623.25' }));
+    expect(view.pay.onAddMoney).toHaveBeenCalledWith(62_325);
+    await view.refocus(false);
+    return view;
+  }
+
+  it('after Add money and coming back, a funded wallet shows Send and the new balance, not the old "You have ₦900.00"; the words stay', async () => {
+    const { refocus } = await shortThenAway();
+    expect(hub.drafts).toHaveLength(1);
+    const quotesBefore = hub.quotes;
+    hub.balanceKobo = 190_000; // the money landed while the person was away
+    await refocus(true);
+    expect(await rtl.screen.findByRole('button', { name: 'Send · ₦1,523.25' })).toBeTruthy();
+    expect(rtl.screen.queryByTestId('ask-short')).toBeNull();
+    expect(rtl.screen.queryByText(/You have ₦900/)).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('ask-wallet')).getByLabelText('1,900 naira')).toBeTruthy();
+    // One fresh quote of the same draft for the return: no new question, the words are the person's.
+    expect(hub.quotes).toBe(quotesBefore + 1);
+    expect(hub.drafts).toHaveLength(1);
+    expect(rtl.screen.getByTestId('ask-text').props.value).toBe('How do I price a retainer?');
+    expect(hub.pays).toHaveLength(0);
+  });
+
+  it('coming back with the wallet still short asks once and still says what is missing', async () => {
+    const { refocus } = await shortThenAway();
+    const quotesBefore = hub.quotes;
+    await refocus(true);
+    await rtl.waitFor(() => expect(hub.quotes).toBe(quotesBefore + 1));
+    expect(await rtl.screen.findByText('You need ₦1,523.25. You have ₦900.00.')).toBeTruthy();
+    expect(rtl.screen.getByRole('button', { name: 'Add ₦623.25' })).toBeTruthy();
+    // Staying in front (a redraw, the clock) asks nothing more.
+    await refocus(true);
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(hub.quotes).toBe(quotesBefore + 1);
+  });
+
+  it('when the wallet balance is read again and has moved, the sheet asks its quote again, once', async () => {
+    const { client } = await shortThenAway();
+    const quotesBefore = hub.quotes;
+    // The person did not leave the sheet (a deposit landed, or the balance was refreshed elsewhere).
+    hub.balanceKobo = 190_000;
+    await rtl.act(async () => {
+      await client.invalidateQueries({ queryKey: ['money', 'wallet', 'balance'] });
+    });
+    expect(await rtl.screen.findByRole('button', { name: 'Send · ₦1,523.25' })).toBeTruthy();
+    expect(hub.quotes).toBe(quotesBefore + 1);
+    expect(hub.drafts).toHaveLength(1);
+  });
+
+  it('the return and the balance read together make one fresh quote, not two', async () => {
+    const { refocus, client } = await shortThenAway();
+    const quotesBefore = hub.quotes;
+    hub.balanceKobo = 190_000;
+    await refocus(true);
+    await rtl.act(async () => {
+      await client.invalidateQueries({ queryKey: ['money', 'wallet', 'balance'] });
+    });
+    expect(await rtl.screen.findByRole('button', { name: 'Send · ₦1,523.25' })).toBeTruthy();
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(hub.quotes).toBe(quotesBefore + 1);
+  });
+
+  it('a payment on its way is left alone when the person comes back', async () => {
+    hub.mode = 'pending';
+    hub.balanceKobo = 48_525_075;
+    const { refocus } = await boot();
+    await openAndWrite();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: /^Send · ₦/ }));
+    await rtl.screen.findByText('Approve ₦1,523.25 to Chidi Eze');
+    await refocus(false);
+    const quotesBefore = hub.quotes;
+    await refocus(true);
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(hub.quotes).toBe(quotesBefore);
+    expect(hub.pays).toHaveLength(0);
+  });
 });
 
 describe('states', () => {
@@ -480,7 +579,9 @@ describe('states', () => {
     hub.thread = null;
     await boot();
     expect(await rtl.screen.findByTestId('paid-thread-empty')).toBeTruthy();
-    expect(rtl.screen.getByRole('button', { name: 'Ask a follow-up · ₦1,500' })).toBeTruthy();
+    // A first question is not a follow-up (S3 round 2, F5).
+    expect(rtl.screen.getByRole('button', { name: 'Ask a question · ₦1,500' })).toBeTruthy();
+    expect(rtl.screen.queryByRole('button', { name: /follow-up/ })).toBeNull();
   });
 
   it('a failed read shows the error with Try again, and no composer', async () => {

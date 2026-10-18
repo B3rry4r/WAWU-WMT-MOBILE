@@ -90,10 +90,14 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   });
   const recordOf = (id: string): QuestionView | null => records[refunded.findIndex((q) => q.id === id)] ?? null;
 
-  const ask = useAsk(pay, () => {
-    void cache.invalidateQueries({ queryKey: threadKey(wawuId) });
-    void cache.invalidateQueries({ queryKey: ['inbox'] });
-  });
+  const ask = useAsk(
+    pay,
+    () => {
+      void cache.invalidateQueries({ queryKey: threadKey(wawuId) });
+      void cache.invalidateQueries({ queryKey: ['inbox'] });
+    },
+    focused,
+  );
 
   const entries = useMemo(() => threadEntries(questions, now), [questions, now]);
   const latest = useMemo(() => [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))[0] ?? null, [questions]);

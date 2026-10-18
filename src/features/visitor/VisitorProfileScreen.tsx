@@ -88,6 +88,8 @@ export type VisitorProfileScreenProps = {
   pay?: FlowHandlers;
   /** A question was paid: the thread (I4) opens. Message and its price are drawn only when this and `pay` are given (R-47). */
   onOpenPaidThread?: (wawuId: string) => void;
+  /** False while another screen (Add money) is on top of this one, true when it is in front. The route says; the ask sheet asks its quote again on return (I6). */
+  focused?: boolean;
 };
 
 type ActionsAsk = NonNullable<ActionsProps['ask']>;
@@ -104,7 +106,7 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  * creator takes paid questions; when it does not, "Messages off" and the note under it (I8). Not drawn yet (the task that builds the
  * screen adds it, R-47): the Bio voice player (VOICE-01).
  */
-export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread }: VisitorProfileScreenProps) {
+export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, focused = true }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -115,7 +117,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const [confirmBlock, setConfirmBlock] = useState(false);
   const tip = useTip(pay ?? NOT_WIRED);
   const asking = Boolean(pay && onOpenPaidThread);
-  const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who));
+  const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who), focused);
 
   const view = profile.data ?? null;
   const person = view?.profile.wawuUserId ?? null;

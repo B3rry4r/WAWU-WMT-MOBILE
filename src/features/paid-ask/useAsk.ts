@@ -59,8 +59,13 @@ export function toResult(q: QuestionView): AskResult {
  * tap of Send (`usePaymentFlow`): a draft per rest in typing, never one per tap. Changed words are a new draft; the old one is never
  * paid. One `Idempotency-Key` per attempt, kept until the Hub decides, so a lost answer followed by a retry is one debit and one
  * question. A paid question ends the flow and tells the screen (`onAsked`), which opens the thread (I4).
+ *
+ * The quote carries the wallet's balance as it was when the Hub made it, so a person who goes to Add money and comes back (I6) must
+ * not be shown that old balance. The quote is asked again, once, when the screen is in front again (`focused`: false while Add money
+ * is on top, true on return) and when the wallet's balance is read again and has changed. The words typed stay, and the draft is the
+ * same draft (a fresh quote of it, not a new question).
  */
-export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, question: QuestionView) => void) {
+export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, question: QuestionView) => void, focused = true) {
   const [target, setTarget] = useState<AskTarget | null>(null);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -111,8 +116,33 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
   }, [settled, trimmed, ask]);
 
   const quote = flow.quote && flow.quote.question.text === trimmed ? flow.quote : null;
-  const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(open && quote && quote.payment.balanceKobo === null) });
-  const balanceKobo = flow.shortOf ?? quote?.payment.balanceKobo ?? balance.data?.availableKobo ?? null;
+  // The wallet's balance is read on its own when the quote has none, and while the sheet says the wallet is short: that is the one
+  // state a stale balance traps the person in (no Send, only "Add").
+  const quoteBalance = quote?.payment.balanceKobo ?? null;
+  const short = quote !== null && quoteBalance !== null && quote.payment.totalKobo > quoteBalance;
+  const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(open && quote && (quoteBalance === null || short)) });
+  const balanceKobo = flow.shortOf ?? quoteBalance ?? balance.data?.availableKobo ?? null;
+
+  // Back from Add money (or anywhere): one fresh quote, so a funded wallet shows Send and not the old "You have ₦900.00". Only a sheet
+  // that is reviewing is asked again; a payment in flight, a PIN or a failure is left exactly as it is.
+  const reviewing = open && flow.stage === null && !flow.pinOpen && flow.status.kind === 'review' && trimmed.length > 0;
+  const wasFocused = useRef(focused);
+  useEffect(() => {
+    const returned = focused && !wasFocused.current;
+    wasFocused.current = focused;
+    if (returned && reviewing) void ask();
+  }, [focused, reviewing, ask]);
+  // The wallet's balance was read again and it moved: the same, once. A balance that has not moved asks nothing, so two reads that
+  // disagree for good cannot make a loop; a quote already on its way (the return above) is not asked twice.
+  const freshBalance = balance.data?.availableKobo ?? null;
+  const seenBalance = useRef<number | null>(null);
+  useEffect(() => {
+    if (freshBalance === null) return;
+    const before = seenBalance.current;
+    seenBalance.current = freshBalance;
+    if (before === null || before === freshBalance || freshBalance === quoteBalance) return;
+    if (reviewing && !flow.asking) void ask();
+  }, [freshBalance, quoteBalance, reviewing, flow.asking, ask]);
 
   const begin = useCallback((who: AskTarget) => {
     setTarget(who);

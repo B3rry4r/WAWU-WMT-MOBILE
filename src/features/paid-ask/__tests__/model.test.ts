@@ -21,6 +21,7 @@ import {
   usualReplyLine,
   waitingCard,
   windowHoursOf,
+  windowAdjective,
   windowLine,
   windowWords,
 } from '../model';
@@ -108,20 +109,31 @@ describe('I4, I5 and I7: the cards', () => {
     const card = waitingCard(q({ deadlineAt: at(17, 52) }), 'Chidi Eze', NOW);
     expect(card.tone).toBe('waiting');
     expect(card.title).toBe('Chidi has 17h 52m left to reply');
-    expect(card.body).toBe('Your ₦1,500 is held by Who Made This? No reply by tomorrow 03:52 and it comes back to your wallet.');
+    // The person paid the price and the bank's charge and gets all of it back, so the line names no figure the thread cannot know.
+    expect(card.body).toBe('Your money is held by Who Made This? No reply by tomorrow 03:52 and all of it comes back to your wallet.');
+    expect(card.body).not.toMatch(/₦/);
   });
   it('past the deadline says the money is on its way back, never a negative time', () => {
     const card = waitingCard(q({ deadlineAt: at(-1) }), 'Chidi Eze', NOW);
     expect(card.tone).toBe('late');
-    expect(card.body).toBe('Your ₦1,500 is on its way back to your wallet.');
+    expect(card.body).toBe('Your money is on its way back to your wallet.');
   });
   it('after an answer offers the follow-up only with terms the Hub gave', () => {
     expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 24 })).toEqual({
       tone: 'answered',
       title: "Chidi answered, so they've been paid",
-      body: 'Ask a follow-up for ₦1,500. Each paid message gets its own 24 hours window.',
+      body: 'Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.',
     });
+    expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 48 }).body).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 2-day window.');
+    expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 1 }).body).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 1-hour window.');
     expect(answeredCard('Chidi Eze', null).body).toBe('This question is closed.');
+  });
+  it('writes the window as a describing word the way the board does: 24-hour, 1-hour, 2-day', () => {
+    expect(windowAdjective(24)).toBe('24-hour');
+    expect(windowAdjective(1)).toBe('1-hour');
+    expect(windowAdjective(48)).toBe('2-day');
+    expect(windowAdjective(72)).toBe('3-day');
+    expect(windowAdjective(36)).toBe('36-hour');
   });
   it('after a refund says the amount and the time from the wallet\'s own record, and only that', () => {
     const wallet = { status: 'refunded', payment: { hold: { refundedKobo: 152325, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
@@ -133,6 +145,23 @@ describe('I4, I5 and I7: the cards', () => {
     expect(noRecord.body).toBe('Zainab earned nothing.');
     const moving = { status: 'refunding', payment: { hold: { refundedKobo: 152325, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).title).toBe('No reply in 24 hours, so ₦1,523.25 is coming back');
+  });
+  it('prints the figure the Hub says came back, a charge of 2,325 kobo or none, and never adds the price and the charge up itself (S3 round 2, F1)', () => {
+    // The hold says ₦1,523.25 (price 150,000 + charge 2,325): that is the title, whatever else the payment holds.
+    const withCharge = {
+      status: 'refunded',
+      priceKobo: 150000,
+      payment: { priceKobo: 150000, totalKobo: 152325, fee: { totalFeeKobo: 2325 }, hold: { amountKobo: 150000, refundedKobo: 152325, settledAt: at(24, 5) } },
+    } as unknown as Parameters<typeof refundedCard>[2];
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', withCharge, new Date(at(25)).getTime()).title).toBe('No reply in 24 hours, so you got ₦1,523.25 back');
+    // A refund that returned only the price (the person caused it, or the bank charged nothing): the Hub's figure is the price, and
+    // the app prints that, though the payment's total is higher. It does not reach for the total.
+    const priceOnly = {
+      status: 'refunded',
+      priceKobo: 150000,
+      payment: { priceKobo: 150000, totalKobo: 152325, fee: { totalFeeKobo: 2325 }, hold: { amountKobo: 150000, refundedKobo: 150000, settledAt: at(24, 5) } },
+    } as unknown as Parameters<typeof refundedCard>[2];
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', priceOnly, new Date(at(25)).getTime()).title).toBe('No reply in 24 hours, so you got ₦1,500 back');
   });
 });
 
@@ -151,6 +180,9 @@ describe('the thread', () => {
     expect(isWaiting([answered], NOW)).toBe(false);
     expect(composerLabel(answered, 150000)).toBe('Ask a follow-up · ₦1,500');
     expect(composerLabel(q({ status: 'refunded' }), 20000)).toBe('Try again · ₦200');
+  });
+  it('an empty thread offers a first question, not a follow-up', () => {
+    expect(composerLabel(null, 150000)).toBe('Ask a question · ₦1,500');
   });
   it('headlines the latest question', () => {
     expect(headerLine(waiting)).toEqual({ text: 'Paid DM · replies within 24h', tone: 'muted' });

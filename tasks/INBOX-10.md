@@ -34,6 +34,13 @@ As of 17 Oct 2026, built (Sonnet builder, T2), waiting for a verifier.
 - **Gaps and shared changes:** `BACKEND_GAPS.md` G-INBOX-10-1 to 5 (G-146, G-ME-02-1 noted); `SHARED-CHANGES.md` INBOX-10 #1 to #4.
 - **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9). Pictures at 390 px, light and dark, board beside build, every state: scratchpad `s3-m/e2e/pics/` (`beside-<board>-<theme>.png` for I2 to I8; the rest stand alone). Stack `s3_test` was taken down.
 
+As of 18 Oct 2026, round 2 built after the check (Sonnet builder, T2), waiting for a verifier. Mobile `wmt/S3` from `674a9eff`, backend `wmt/S3` from `0723005`.
+- **F1 (medium) fixed:** I7 printed ₦1,500 when ₦1,523.25 came back. Root cause: `WalletHoldService.settle()` stores the held PRICE in `WalletHold.refundedKobo` (a database CHECK pins it to `amountKobo`) and `HoldView.refundedKobo` served that column, though the refund moved price + the payment's charge (`transferKobo`). The hold view is not in the protected registry and the dashboard does not read it, so it is corrected in place: `refundedKobo` now serves what the refund moved (`transferKobo`, the figure the provider's record matched), no migration. The app prints the Hub's figure and adds nothing up. Round 1's stack charged ₦0, which hid it.
+- **F2 (medium) fixed:** the ask sheet asks its quote again, once, when the screen is in front again after Add money (`useAsk(..., focused)`; the profile route and the thread pass `useIsFocused()`), and when the wallet balance read moves while the sheet says short. Same draft, words kept.
+- **F3, F4, F5 (low) fixed:** "its own 24-hour window"; the I4 held and late lines say "your money" with no figure (the thread cannot know the total); an empty thread offers "Ask a question · ₦1,500" (lead default: the board draws no empty thread).
+- **Live (stack `s3r2_test`, 7890 to 7897, bank charge 2,325 kobo, taken down):** fan asked, paid ₦1,523.25, window passed: refunded 152,325 (stored column 150,000, transfer 152,325), I7 "you got ₦1,523.25 back"; a ₦900 wallet saw I6, Add ₦623.25, a ₦1,200 deposit, back: one fresh quote, "₦2,100.00 available", Send, paid, debit 152,325. Hub = ledger = stand-in after each step, WAWU's account too. Pictures: scratchpad `s3r2-b/e2e/pics/` (I4, I6-after-return, I7, empty-thread, light and dark).
+- **Checks:** mobile tsc 0, eslint 0, jest paid-ask, visitor, inbox, chat pass (F2 tests fail on `674a9eff`, pass now), gates 0 fail. Backend tsc 0, eslint 0, `paid-dm-wallet.contract.spec.ts` (new case fails on the old view), `wallet-hold-nuvion.contract.spec.ts`, `hold-rules.spec.ts` pass; `contract:build` no change.
+
 ## Read first
 
 - `docs/WORKFLOW.md` (the rules every task follows)
@@ -111,6 +118,8 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Builder report
 
 Files: `src/features/paid-ask/` (api, model, useAsk, AskSheets, PaidThreadScreen, PaidFanRow, parts, routes, tests), `src/app/paid-thread/[wawuId].tsx`, `src/app/profile/[wawuId].tsx`, `src/features/visitor/` (Message and Messages off), `src/features/inbox/rows.tsx`, `src/features/chat/Bubbles.tsx` (one prop); backend `PaidQuestionDraftView.usualReplyMinutes` and its spec. Checks and the stack run are in Current state; the ask, the pay and the retry are tested in `askFlow.test.tsx` against the Hub's shapes and on the real stack. Not done: Message on P2, H10 and M35; the "+" and "..." (R-47).
+
+Round 2 (18 Oct 2026, F1 to F5): `src/features/paid-ask/{model,useAsk,PaidThreadScreen}`, `visitor/VisitorProfileScreen`, `src/app/profile/[wawuId].tsx`, their tests; backend `src/money/holds/hold-view.service.ts` (+ two comments) and a case in `paid-dm-wallet.contract.spec.ts`. Details in Current state.
 
 ## Verifier report
 
