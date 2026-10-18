@@ -503,6 +503,40 @@ describe('sending (I26)', () => {
     expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
   });
 
+  it('INBOX-05 W4b L2: when the stored message arrives on the socket the balance is read again (the words were paid for)', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(48), credits(47)];
+    await renderRoom();
+    const socket = await connect();
+    await rtl.screen.findByText('hello');
+    await rtl.screen.findByText('48 credits');
+    await type('stored but unanswered');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    await rtl.act(async () => socket.say(liveMessage(message('stored but unanswered', ME), 'c9')));
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+  });
+
+  it('INBOX-05 W4b L2: a page that brings the stored message clears its "Not sent" copy and the balance is read again', async () => {
+    const stored = message('landed unseen', ME);
+    answers[MESSAGES] = [paged([message('hello', 'u2')]), paged([stored, message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(48), credits(47)];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await rtl.screen.findByText('48 credits');
+    await type('landed unseen');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    // The socket comes up and syncs: it reads the newest page, which carries the stored message.
+    await connect();
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+    expect(rtl.screen.getAllByText('landed unseen')).toHaveLength(1);
+    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+  });
+
   it('INBOX-05 #34: the same words from another member do not clear a "Not sent" copy', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
     await renderRoom();

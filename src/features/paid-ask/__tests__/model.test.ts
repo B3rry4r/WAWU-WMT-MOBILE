@@ -146,6 +146,17 @@ describe('I4, I5 and I7: the cards', () => {
     const moving = { status: 'refunding', payment: { hold: { refundedKobo: 152325, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).title).toBe('No reply in 24 hours, so ₦1,523.25 is coming back');
   });
+  it('INBOX-10 N1: while the refund is still moving and the hold has no figure yet, says the money is on its way back, not that it was refunded', () => {
+    const owed = { status: 'refunding', payment: { hold: { refundedKobo: null, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', owed, NOW);
+    expect(card.title).toBe('No reply in 24 hours, so your money is on its way back');
+    expect(card.body).toBe('It is on its way to your Naira wallet. Zainab earned nothing.');
+    // A hold that is not settled says the same, whatever the wallet's own word for it.
+    const held = { status: 'refunded', payment: { hold: { refundedKobo: null, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', held, NOW).title).toBe('No reply in 24 hours, so your money is on its way back');
+    // No wallet record at all (a question paid the older way) still says only that it was refunded.
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', null, NOW).title).toBe('No reply in 24 hours, so this question was refunded');
+  });
   it('prints the figure the Hub says came back, a charge of 2,325 kobo or none, and never adds the price and the charge up itself (S3 round 2, F1)', () => {
     // The hold says ₦1,523.25 (price 150,000 + charge 2,325): that is the title, whatever else the payment holds.
     const withCharge = {

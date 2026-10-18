@@ -156,7 +156,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
         <SegmentedTabs
           label="Time to reply"
           testID="paid-window"
-          items={windowsShown(data.options.responseWindowHours, form.hours).map((hours) => ({ value: String(hours), label: windowLabel(hours) }))}
+          items={windowsShown(data.options.responseWindowHours, data.responseHours).map((hours) => ({ value: String(hours), label: windowLabel(hours) }))}
           value={form.hours === null ? '' : String(form.hours)}
           onChange={(value) => {
             if (!locked) change({ hours: Number(value) });
