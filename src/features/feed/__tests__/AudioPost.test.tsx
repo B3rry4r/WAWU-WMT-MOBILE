@@ -116,6 +116,13 @@ describe('FIX-68 N1: the audio waveform and the rail', () => {
     expect(waveRight).toBeLessThanOrEqual(railLeft(width));
   });
 
+  // SWEEP-APP-7 (SWEEP-APP-6b L4): the avatar's white ring (2) is drawn outside the rail's box (a -2 margin), and a tap on it belongs to the rail.
+  it.each([320, 340, 360, 375, 390, 412, 430])('on a %i wide phone the waveform ends clear of the avatar ring as well, so no bar has its outer pixels under the rail\'s reach', async (width) => {
+    await show(width);
+    const waveRight = (width + waveWidth()) / 2;
+    expect(waveRight).toBeLessThanOrEqual(railLeft(width) - metrics.avatarRing + 1e-9);
+  });
+
   it('on the canvas\'s 390 phone the waveform is drawn exactly as the canvas draws it: 44 bars of 3 with 2.5 between', async () => {
     await show(390);
     expect(waveWidth()).toBeCloseTo(WAVEFORM_BARS * metrics.waveBar + (WAVEFORM_BARS - 1) * metrics.waveGap, 5);

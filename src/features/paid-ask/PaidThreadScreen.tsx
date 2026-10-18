@@ -66,6 +66,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   );
   const profile = useQuery({ queryKey: visitorKey(wawuId), queryFn: () => fetchVisitorProfile(wawuId), retry: false }, cache);
   const terms = useAskTerms(wawuId, profile.data ? profile.data.profile : null);
+  // The terms could not be read only when there is no profile to read them from: a profile read once whose background re-read failed is still the person's data (FIX-79 L2).
+  const termsFailed = profile.isError && !profile.data;
 
   // No questions yet is the Hub's 404, not a failure: the thread is empty and the person can ask.
   const none = isApiError(thread.error) && thread.error.status === 404;
@@ -166,7 +168,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
             entry.status === 'awaiting_response'
               ? waitingCard(q, name, now)
               : entry.status === 'responded'
-                ? answeredCard(name, entry.last ? followUpOf(terms, profile.isError) : null)
+                ? answeredCard(name, entry.last ? followUpOf(terms, termsFailed) : null)
                 : refundedCard(q, name, recordOf(q.id), now);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}
@@ -181,7 +183,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     <LockedComposer line={`You can send once ${whoOf(name)} replies`} />
   ) : terms === null ? (
     // The creator's profile holds the terms. If that read failed, say so with Try again; the thread above stays readable.
-    profile.isError ? (
+    termsFailed ? (
       <FailedComposer title="Couldn't check if you can ask" message={readFailure(profile.error)} onRetry={() => void profile.refetch()} />
     ) : (
       <WaitingComposer />

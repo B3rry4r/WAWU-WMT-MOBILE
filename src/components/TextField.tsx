@@ -26,7 +26,7 @@ export const fieldMetrics = {
 /** The kit's multi-line box (design/_gen/me.js line 36, M8): 76 high at least, 14 above and below, 15 type on a 1.4 line, a 12 counter. */
 const multilineMetrics = { minHeight: 76, padV: 14, fontSize: 15, leading: 1.4, counter: 12 } as const;
 
-/** The browser's Pressable draws a pointing hand; the box around a text input draws the text cursor. */
+/** The browser's Pressable draws a pointing hand; the box around a text input draws the text cursor (not a disabled one: it takes no typing). */
 const webTextCursor = { cursor: 'text' } as object;
 
 /** A field that opens a picker (A21's Bank): a 19 lead in text-secondary, a 18 chevron, the parts 10 apart (design/_gen/auth.js line 50). */
@@ -98,7 +98,10 @@ export function TextField({
   const multiline = Boolean(rest.multiline);
   // The input is kept here and handed on to the form's own ref, so a press anywhere in a multiline box can focus it.
   const input = useRef<TextInput>(null);
-  useImperativeHandle(inputRef, () => input.current as TextInput);
+  // Handed on when the input mounts and again only when it is a new one (a picker field draws none; a multiline box is another parent), never on every render (SWEEP-APP-6b L1).
+  const picker = Boolean(onPress);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- picker and multiline are not read here: they say when the input element is a new one
+  useImperativeHandle(inputRef, () => input.current as TextInput, [picker, multiline]);
   const typed = typeof rest.value === 'string' ? rest.value : '';
   const over = max !== undefined && typed.length > max;
 
@@ -109,8 +112,15 @@ export function TextField({
   // focuses the input (SHARED-06 L2). The box is no control of its own: the input stays the one field a screen reader and the
   // keyboard reach (`tabIndex` too, as the browser's Pressable is a tab stop by default). A single-line input fills its row.
   const Box = multiline ? Pressable : View;
+  // On the web `focus()` puts back the textarea's old selection, so typing after a tap below the text would replace it: the caret goes after the last character, as a tap below the last line does (SWEEP-APP-6b L3).
+  // An uncontrolled field has no value to measure and is left to the browser; the phones place the caret themselves.
+  const pressBox = () => {
+    const field = input.current;
+    field?.focus();
+    if (Platform.OS === 'web' && field && typeof rest.value === 'string') field.setSelection(typed.length, typed.length);
+  };
   const tapBox = multiline
-    ? ({ accessible: false, focusable: false, tabIndex: -1, disabled: Boolean(disabled), onPress: () => input.current?.focus() } as const)
+    ? ({ accessible: false, focusable: false, tabIndex: -1, disabled: Boolean(disabled), onPress: pressBox } as const)
     : null;
 
   return (
@@ -152,7 +162,7 @@ export function TextField({
         style={[
           styles.box,
           multiline && styles.multilineBox,
-          multiline && Platform.OS === 'web' ? webTextCursor : null,
+          multiline && !disabled && Platform.OS === 'web' ? webTextCursor : null,
           {
             backgroundColor: disabled ? colors.surfaceSunken : colors.surfaceInput,
             borderColor: border,

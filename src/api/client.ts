@@ -20,9 +20,44 @@ export { ApiError, isApiError } from './errors';
  *     only within the session the request was sent in: a request from a
  *     session that has since ended (sign-out, another account) ends as
  *     signed out and is never sent again with the new session's token;
+ *   - a read (GET) the Hub does not answer within READ_TIMEOUT_MS ends as the
+ *     "No connection" error, so the screen shows its own error and Try again
+ *     and not a loading bar for good (FIX-79 L3). A write is never aborted:
+ *     it may already have moved money, and its Idempotency-Key path decides
+ *     what a repeat does;
  *   - `unwrap` turns any failure into one ApiError (see errors.ts).
  */
-export const api = createClient<paths>({ baseUrl: apiBaseUrl });
+/** How long a read may wait for the Hub's answer to start. Reads only; named so one place says it. */
+export const READ_TIMEOUT_MS = 30_000;
+
+/**
+ * `send` with the read timeout around every GET. A GET gets its own abort signal (the caller's, if it sent one, still
+ * aborts it too); any other method goes to `send` exactly as it came. Our own timeout surfaces as `networkError()`.
+ */
+function withReadTimeout(send: typeof fetch): typeof fetch {
+  return async (input, init) => {
+    if (!(input instanceof Request) || input.method !== 'GET') return send(input, init);
+    const controller = new AbortController();
+    const forward = () => controller.abort();
+    if (input.signal.aborted) forward();
+    else input.signal.addEventListener('abort', forward);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, READ_TIMEOUT_MS);
+    try {
+      return await send(new Request(input, { signal: controller.signal }), init);
+    } catch (error) {
+      throw timedOut ? networkError() : error;
+    } finally {
+      clearTimeout(timer);
+      input.signal.removeEventListener('abort', forward);
+    }
+  };
+}
+
+export const api = createClient<paths>({ baseUrl: apiBaseUrl, fetch: withReadTimeout(globalThis.fetch) });
 
 const sentWith = new Map<string, { token: string; copy: Request }>();
 
@@ -42,7 +77,7 @@ const auth: Middleware = {
     // Checked again now, just before sending: the session may have changed while the refresh ran.
     if (!token || !isCurrentSessionToken(sent.token) || !isCurrentSessionToken(token)) return undefined;
     sent.copy.headers.set('authorization', `Bearer ${token}`);
-    return fetch(sent.copy);
+    return withReadTimeout(fetch)(sent.copy);
   },
   onError({ id }) {
     sentWith.delete(id);

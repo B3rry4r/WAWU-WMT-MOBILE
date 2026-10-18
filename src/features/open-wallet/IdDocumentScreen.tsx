@@ -68,11 +68,14 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
   const detailsHeld = useKeptDetailsHeld(owner);
   const scrollRef = useRef<ScrollView>(null);
   const progress = useQuery(openingProgressQuery(owner));
-  // The Hub answers 409 `wallet_not_open` until the details were sent: then it has no limits to name yet, and the step still shows.
+  // The Hub answers 409 `wallet_not_open` until the details were sent: it has no limits to name yet, and the step still shows with its
+  // defaults. Where the progress already says no opening exists (the review opening, no review yet) the documents are not asked for at
+  // all, so a pass through this step does not log a refusal (G-SWEEP-APP-6-1).
+  const noOpeningYet = progress.data?.flow === 'review' && progress.data.review === null;
   const documents = useQuery({
     queryKey: [...DOCUMENTS_KEY, owner ?? ''] as const,
     queryFn: fetchDocuments,
-    enabled: Boolean(owner),
+    enabled: Boolean(owner) && progress.data !== undefined && !noOpeningYet,
     staleTime: 0,
     retry: false,
   });
@@ -97,7 +100,7 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
     else if (checking) onChecking();
   }, [opened, checking, onOpened, onChecking]);
 
-  const notOpenYet = documents.isError && documentProblem(documents.error) === 'not_open';
+  const notOpenYet = noOpeningYet || (documents.isError && documentProblem(documents.error) === 'not_open');
   const view: DocumentsView | undefined = documents.data;
 
   if (status === 'signedIn' && !owner) return <Loading onBack={onBack} />;
@@ -123,7 +126,7 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
       </AuthFrame>
     );
   }
-  if (!progress.data || (documents.isPending && !documents.isError) || opened || checking) return <Loading onBack={onBack} />;
+  if (!progress.data || (documents.isPending && !documents.isError && !noOpeningYet) || opened || checking) return <Loading onBack={onBack} />;
   // A refusal or an expired opening asks for the details again: with nothing holding them, the photos wait for the step that does.
   if ((stage === 'rejected' || stage === 'expired') && !detailsHeld) {
     return <DetailsNeeded testID="open-wallet-id-details" navTitle={NAV_TITLE} onBack={onBack} onDetails={onDetails} />;
