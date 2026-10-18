@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 315.**
+**Launch tasks done: 176 of 316.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 138 | 0 | 0 | 0 |
+| verifying | 139 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-84](../tasks/FIX-84.md) Tests that compare a sent photo link with a returned one compare the object and a valid signed link, never the whole signed link (You)
 - [FIX-82](../tasks/FIX-82.md) A test's clean-up never touches a database that is not a test database; the M19 test fails on the old route (You)
 - [FIX-78](../tasks/FIX-78.md) CHECK-1b's new findings: an end date a year away shows its year, the payout account says it must be in your own name (You)
 - [FIX-77](../tasks/FIX-77.md) A community message photo must be the sender's own upload on this bucket (You)
