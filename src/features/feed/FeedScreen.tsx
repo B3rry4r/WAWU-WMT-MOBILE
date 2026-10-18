@@ -189,7 +189,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
           testID="feed-error"
           icon="WifiOff"
           title="The feed didn't load"
-          message="Check your connection, then try again."
+          message="Check your connection. Anything you've bought is still in My purchases."
           onRetry={() => feed.refetch()}
         />
       </View>
