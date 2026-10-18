@@ -23,9 +23,9 @@ import type { Education } from './api';
 /**
  * design/_gen/me.js line 20 (`profTop`, a visitor's: Back on the left, Share and the three dots on the right) and line 24
  * (`pubActions`): Follow 1 part, Message 1.3, the 44 round "₦" (18 at 700) on the card colour with a hairline ring, 8 between.
- * Message is added by INBOX-10 with the screen it opens (R-47), so Follow and the tip button share the row.
+ * Message is drawn only when the screen it opens is wired (R-47); until then Follow and the tip button share the row.
  */
-const actionMetrics = { gap: space.sm, tip: 44, tipFont: 18 } as const;
+const actionMetrics = { gap: space.sm, tip: 44, tipFont: 18, messageGrow: 1.3 } as const;
 
 export type VisitorTopProps = {
   coverUrl: string | null;
@@ -73,10 +73,15 @@ export type ActionsProps = {
   onTip?: () => void;
   /** M33's pinned bar: Follow takes the whole row. */
   wide?: boolean;
+  /**
+   * Message with its price (I2), or "Messages off" (I8) when the Hub says the creator is not taking paid questions. Left out, nothing is
+   * drawn: the route has not wired the ask sheet, or the Hub has not said yet (R-47).
+   */
+  ask?: { kind: 'on'; label: string; onPress: () => void } | { kind: 'off' };
 };
 
 /** Follow, then Following once the Hub holds the follow (M6); and the ₦ tip button. */
-export function Actions({ following, busy, onToggleFollow, onTip, wide }: ActionsProps) {
+export function Actions({ following, busy, onToggleFollow, onTip, wide, ask }: ActionsProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -91,6 +96,13 @@ export function Actions({ following, busy, onToggleFollow, onTip, wide }: Action
         onPress={onToggleFollow}
         style={styles.followButton}
       />
+      {ask && !wide ? (
+        ask.kind === 'on' ? (
+          <Button testID="visitor-message" label={ask.label} icon="MessageCircle" variant="secondary" size="md" onPress={ask.onPress} style={styles.messageButton} />
+        ) : (
+          <MessagesOff />
+        )
+      ) : null}
       {onTip && !wide ? (
         <Pressable
           testID="visitor-tip"
@@ -112,6 +124,24 @@ export function Actions({ following, busy, onToggleFollow, onTip, wide }: Action
           </Text>
         </Pressable>
       ) : null}
+    </View>
+  );
+}
+
+/** I8's "Messages off": the secondary button's disabled look (sunken, a hairline ring, the disabled ink) on a part that is not a control, since nothing can be pressed. */
+function MessagesOff() {
+  const { colors } = useWawu();
+  return (
+    <View
+      testID="visitor-message-off"
+      accessible
+      accessibilityLabel="Messages off"
+      style={[styles.messageButton, styles.off, { backgroundColor: colors.surfaceSunken, borderColor: colors.borderHairline }]}
+    >
+      <Icon name="MessageCircleOff" size={17} color={colors.textDisabled} strokeWidth={2.2} />
+      <Text variant="body" style={[font(700), styles.offText, { color: colors.textDisabled }]}>
+        Messages off
+      </Text>
     </View>
   );
 }
@@ -283,6 +313,9 @@ const styles = StyleSheet.create({
   right: { flexDirection: 'row', gap: headerMetrics.buttonGap },
   actions: { flexDirection: 'row', alignItems: 'center', gap: actionMetrics.gap },
   followButton: { flex: 1 },
+  messageButton: { flex: actionMetrics.messageGrow },
+  off: { height: 44, borderRadius: radius.button, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs + space.xs / 2, paddingHorizontal: space.lg + space.xs / 2 },
+  offText: { fontSize: 14.5 },
   tip: { width: actionMetrics.tip, height: actionMetrics.tip, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   tipMark: { ...font(700), fontSize: actionMetrics.tipFont, lineHeight: canvasNormalLineHeight(actionMetrics.tipFont) },
   foot: { paddingTop: space.md, paddingHorizontal: layout.gutter, gap: space.sm },

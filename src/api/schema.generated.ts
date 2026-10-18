@@ -14219,6 +14219,7 @@ export interface components {
             text: string;
             priceKobo: number;
             replyWindowHours: number;
+            usualReplyMinutes: number | null;
         };
         PaidQuestionQuoteView: {
             question: components["schemas"]["PaidQuestionDraftView"];

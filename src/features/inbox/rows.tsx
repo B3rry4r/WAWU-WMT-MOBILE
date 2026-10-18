@@ -3,13 +3,14 @@ import type { ReactElement } from 'react';
 import { ChatInboxRow, MoneyRequestInboxRow } from '@/features/chat/ChatInboxRow';
 import { CommunityInboxRow } from '@/features/communities/CommunityInboxRow';
 import { drawsPaidRow, PaidInboxRow } from '@/features/paid-answers/PaidInboxRow';
+import { drawsPaidFanRow, PaidFanRow } from '@/features/paid-ask/PaidFanRow';
 
 import type { InboxItem, InboxKind, InboxUnread } from './api';
 
 /**
  * How each kind of inbox row is drawn. A kind is drawn by the task that builds the screen its row opens
  * (docs/WORKFLOW.md section 7), which adds its renderer here, as drawn:
- *   chat: INBOX-19 (opens the chat), paid_dm: INBOX-18 (a creator's side; the fan's side is INBOX-10's), community: INBOX-05,
+ *   chat: INBOX-19 (opens the chat), paid_dm: INBOX-18 (a creator's side) and INBOX-10 (a fan's side), community: INBOX-05,
  *   money_request: INBOX-20 (the Money view only).
  * Until a kind has a renderer its rows are not drawn (R-47): a row with nowhere to go would be a dead button.
  * What is drawn decides what is counted: the tab's badge adds up only the rows that are drawn (`drawnUnread`),
@@ -17,7 +18,7 @@ import type { InboxItem, InboxKind, InboxUnread } from './api';
  * and its paging do not depend on it.
  */
 export type InboxRowRenderer = ((item: InboxItem) => ReactElement) & {
-  /** A renderer that draws only some rows of its kind says which (a paid question's creator side); without it every row of the kind is drawn. */
+  /** A renderer that draws only some rows of its kind says which (a paid question's creator side or fan side); without it every row of the kind is drawn. */
   draws?: (item: InboxItem) => boolean;
 };
 export type InboxRowRenderers = Partial<Record<InboxKind, InboxRowRenderer>>;
@@ -25,7 +26,10 @@ export type InboxRowRenderers = Partial<Record<InboxKind, InboxRowRenderer>>;
 export const inboxRowRenderers: InboxRowRenderers = {
   chat: (item) => <ChatInboxRow item={item} />,
   community: (item) => <CommunityInboxRow item={item} />,
-  paid_dm: Object.assign((item: InboxItem) => <PaidInboxRow item={item} />, { draws: drawsPaidRow }),
+  paid_dm: Object.assign(
+    (item: InboxItem) => (item.paidDm?.side === 'fan' ? <PaidFanRow item={item} /> : <PaidInboxRow item={item} />),
+    { draws: (item: InboxItem) => drawsPaidRow(item) || drawsPaidFanRow(item) },
+  ),
   money_request: (item) => <MoneyRequestInboxRow item={item} />,
 };
 

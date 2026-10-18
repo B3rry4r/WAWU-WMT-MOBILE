@@ -304,3 +304,61 @@ describe('M33 · About, as a visitor', () => {
     expect(screen.queryByTestId('visitor-headline')).toBeNull();
   });
 });
+
+describe('I2 and I8 · Message with its price, and Messages off (INBOX-10)', () => {
+  const AVAILABLE = '/api/hub/paid-dm/creators/u2/availability';
+  const open = { creatorWawuId: 'u2', paused: false, pausedUntil: null };
+
+  async function bootAsk(withThread = true) {
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    const handlers = { onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() };
+    const onOpenPaidThread = jest.fn();
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} pay={handlers} onOpenPaidThread={withThread ? onOpenPaidThread : undefined} />));
+    return { onOpenPaidThread };
+  }
+
+  it('a user sees "Message · ₦300" beside Follow when the creator takes paid messages, and a tap opens the ask sheet', async () => {
+    answers = page({ [`GET ${AVAILABLE}`]: ok(open) });
+    await bootAsk();
+    const button = await screen.findByTestId('visitor-message');
+    expect(screen.getByRole('button', { name: 'Message · ₦300' })).toBeTruthy();
+    expect(screen.queryByTestId('visitor-message-off')).toBeNull();
+    expect(screen.queryByTestId('visitor-messages-off')).toBeNull();
+    await fireEvent.press(button);
+    expect(await screen.findByTestId('ask-sheet')).toBeTruthy();
+    expect(screen.getByText('Ask Lennox')).toBeTruthy();
+  });
+
+  it('a user sees "Messages off" and the note under it when the Hub has paused the creator (I8)', async () => {
+    answers = page({ [`GET ${AVAILABLE}`]: ok({ ...open, paused: true, pausedUntil: '2026-10-24T00:00:00.000Z' }) });
+    await bootAsk();
+    expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
+    expect(screen.getByLabelText('Messages off')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Messages off' })).toBeNull();
+    expect(screen.getByText("Lennox isn't taking paid messages right now")).toBeTruthy();
+    expect(screen.getByText("You can still follow, tip and buy Lennox's work.")).toBeTruthy();
+    expect(screen.queryByTestId('visitor-message')).toBeNull();
+    expect(screen.getByTestId('visitor-follow')).toBeTruthy();
+  });
+
+  it('shows "Messages off" for a creator who switched paid messages off, without asking the Hub about a pause', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })) });
+    await bootAsk();
+    expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
+    expect(screen.getByTestId('visitor-messages-off')).toBeTruthy();
+  });
+
+  it('still shows Message when the pause cannot be read: the Hub refuses in its own words if it must', async () => {
+    answers = page({ [`GET ${AVAILABLE}`]: refusal(500, 'Something went wrong') });
+    await bootAsk();
+    expect(await screen.findByTestId('visitor-message')).toBeTruthy();
+  });
+
+  it('draws neither Message nor the note when the route cannot open the thread (R-47)', async () => {
+    answers = page({ [`GET ${AVAILABLE}`]: ok(open) });
+    await bootAsk(false);
+    await screen.findByTestId('visitor-follow');
+    expect(screen.queryByTestId('visitor-message')).toBeNull();
+    expect(screen.queryByTestId('visitor-message-off')).toBeNull();
+  });
+});

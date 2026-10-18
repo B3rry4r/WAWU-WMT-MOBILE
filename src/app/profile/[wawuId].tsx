@@ -1,7 +1,9 @@
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
+import { paidThreadHref } from '@/features/paid-ask/routes';
 import { VisitorProfileScreen } from '@/features/visitor/VisitorProfileScreen';
 
 /**
@@ -13,6 +15,7 @@ import { VisitorProfileScreen } from '@/features/visitor/VisitorProfileScreen';
 export default function ProfileRoute() {
   const router = useRouter();
   const entry = useOpenWalletEntry();
+  const focused = useIsFocused();
   const { status } = useSession();
   const { wawuId } = useLocalSearchParams<{ wawuId: string }>();
   if (status === 'restoring') return null;
@@ -31,8 +34,10 @@ export default function ProfileRoute() {
         onOpenWallet: entry.open,
         onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
         onForgotPin: () => router.push('/reset-pin'),
-        onAddMoney: () => router.navigate('/wallet'),
+        onAddMoney: (short) => router.push(addMoneyHref(short)),
       }}
+      onOpenPaidThread={(who) => router.push(paidThreadHref(who))}
+      focused={focused}
     />
   );
 }

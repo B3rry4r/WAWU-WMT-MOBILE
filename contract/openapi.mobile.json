@@ -53135,6 +53135,10 @@
      },
      "replyWindowHours": {
       "type": "number"
+     },
+     "usualReplyMinutes": {
+      "type": "number",
+      "nullable": true
      }
     },
     "required": [
@@ -53142,7 +53146,8 @@
      "creator",
      "text",
      "priceKobo",
-     "replyWindowHours"
+     "replyWindowHours",
+     "usualReplyMinutes"
     ]
    },
    "PaidQuestionQuoteView": {
