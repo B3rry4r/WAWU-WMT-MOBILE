@@ -30,7 +30,7 @@ import {
   type ConvertQuote,
 } from './api';
 import { dropIntent, findIntent, putIntent } from './intent';
-import { blockLine, cashText, CHANGED_LINE, digitsOf, NOT_READY_LINE, pinPurpose, pointsOf, QUOTE_ERROR_TITLE, quoteMoved, rateText, WORDS } from './model';
+import { BALANCE_MOVED_LINE, blockLine, cashText, CHANGED_LINE, digitsOf, NOT_READY_LINE, pinPurpose, pointsOf, QUOTE_ERROR_TITLE, quoteMoved, rateText, unquotableLine, WORDS } from './model';
 import { PointsFrame } from './PointsFrame';
 import { BalanceCard, PointsField } from './parts';
 
@@ -218,6 +218,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
       if (!now.canConvert || quoteMoved(quote, now)) {
         setFresh(now);
         if (now.canConvert) setNotice(CHANGED_LINE);
+        else if (now.balancePoints !== quote.balancePoints) setNotice(BALANCE_MOVED_LINE);
         return;
       }
       attempt.current = { key: newRequestKey(), points: typed, quoteToken: now.quoteToken, sent: false };
@@ -352,8 +353,10 @@ export function ConvertScreen(props: ConvertScreenProps) {
 
   const unavailable = live.data === undefined && fresh === null && live.isError ? live.error : null;
   const code = isApiError(unavailable) ? unavailable.code : undefined;
-  const hint = current && quote.canConvert ? `You get ${cashText(quote.cashKobo)}` : undefined;
-  const error = current && !quote.canConvert ? (blockLine(quote) ?? undefined) : undefined;
+  // Empty, zero or too many points cannot be quoted: the field says why Convert is off (SWEEP-APP-3 row 123).
+  const unquotable = looked && (touched || shownDigits !== '') ? unquotableLine(shownDigits, quote?.minimumPoints ?? null) : null;
+  const hint = unquotable?.tone === 'hint' ? unquotable.text : current && quote.canConvert ? `You get ${cashText(quote.cashKobo)}` : undefined;
+  const error = unquotable?.tone === 'error' ? unquotable.text : current && !quote.canConvert ? (blockLine(quote) ?? undefined) : undefined;
   const youGet = current ? (quote.canConvert ? quote.cashKobo : 0) : null;
   const canTap = current && quote.canConvert && !busy;
 
