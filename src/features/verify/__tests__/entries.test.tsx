@@ -9,6 +9,20 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 
+// The Create route as a creator opens it: signed in, a creator account, a router that goes nowhere.
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
+  Redirect: () => null,
+}));
+jest.mock('@/api/session', () => ({
+  ...jest.requireActual('@/api/session'),
+  useSession: () => ({ status: 'signedIn', signIn: jest.fn(), signOut: jest.fn() }),
+}));
+jest.mock('@/features/create/CreateEntry', () => ({
+  ...jest.requireActual('@/features/create/CreateEntry'),
+  useCreatorGate: () => 'creator',
+}));
+
 let drafts: unknown[] = [];
 let draftReads = 0;
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -22,7 +36,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 }) as typeof fetch;
 
 const { ContentGrid } = require('@/features/me/ContentGrid') as typeof import('@/features/me/ContentGrid');
-const { CreateScreen } = require('@/features/create/CreateScreen') as typeof import('@/features/create/CreateScreen');
+const CreateRoute = (require('@/app/create') as typeof import('@/app/create')).default;
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const frame = (children: React.ReactNode) => (
@@ -54,9 +68,11 @@ describe('the entries VERIFY-01 adds', () => {
   });
 
   // SWEEP-APP-4: the 16 Oct board's M19 draws no "Your shop" row, so Create has none; the shop opens from M1's draft tile and VF1.
+  // FIX-82: the test renders the ROUTE (src/app/create.tsx), the file that hands the screen its entries. It is red on the old route,
+  // which passed the screen onShop (the row was drawn and the drafts were read), and green once the route stops passing it.
   it('M19: Create draws no Your shop row, as the board has none, and does not read the drafts', async () => {
     drafts = [{ id: 'a' }, { id: 'b' }];
-    await render(frame(<CreateScreen onClose={jest.fn()} onContent={jest.fn()} onEvent={jest.fn()} onService={jest.fn()} />));
+    await render(frame(<CreateRoute />));
     expect(await screen.findByText('Content')).toBeTruthy();
     expect(screen.queryByTestId('create-shop-row')).toBeNull();
     expect(screen.queryByText('Your shop')).toBeNull();
