@@ -202,6 +202,7 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" />
           <Stack.Screen name="paid-message-settings" />
           <Stack.Screen name="paid-questions/[wawuId]" />
+          <Stack.Screen name="paid-thread/[wawuId]" />
           <Stack.Screen name="pass" />
           <Stack.Screen name="points" />
           <Stack.Screen name="points-buy" />

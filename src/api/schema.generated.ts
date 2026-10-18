@@ -8170,6 +8170,57 @@ export interface components {
         SetTicketTypesDto: {
             types: components["schemas"]["TicketTypeDto"][];
         };
+        HostTierLowestDto: {
+            id: string;
+            name: string;
+            /** @description Whole minor units of the reason's `currency` (kobo or cents). */
+            priceMinor: number;
+        };
+        HostTierReasonDto: {
+            /**
+             * @description `tier_required`, or `account_type_required` for an account that is
+             *     neither a creator nor a professional (it carries no tier fields).
+             * @enum {string}
+             */
+            code: "tier_required" | "account_type_required";
+            /**
+             * @description `none` (never had a tier) or `ended`. Only on `tier_required`.
+             * @enum {string}
+             */
+            tierState?: "none" | "ended";
+            /**
+             * @description The currency of `lowestTier.priceMinor`. Absent only when the Hub could
+             *     not read the plan at that moment; the app then shows `message` alone.
+             * @enum {string}
+             */
+            currency?: "NGN" | "USD";
+            /** @description The lowest-priced tier in `currency`, for "From ...". */
+            lowestTier?: components["schemas"]["HostTierLowestDto"] | null;
+            /** @description What to do, in order. Only on `account_type_required`. */
+            steps?: string[];
+            /**
+             * @description Kept from the verification refusal this answer replaces so no reader of
+             *     it breaks: always empty. Only on `account_type_required`.
+             */
+            purchasable?: Record<string, never>[];
+            /** @description A sentence the app may show as it is. No em-dash. */
+            message: string;
+        };
+        HostTierErrorEnvelope: {
+            /**
+             * @description 403.
+             * @example 403
+             */
+            statusCode: number;
+            /**
+             * @description Always null on an error.
+             * @example null
+             */
+            data: Record<string, never> | null;
+            reason: components["schemas"]["HostTierReasonDto"];
+            /** @description Same as reason.message. */
+            message: string;
+        };
         BuyTicketsDto: {
             ticketTypeId: string;
             quantity: number;
@@ -12265,6 +12316,51 @@ export interface components {
             waitingHours: number;
             host: components["schemas"]["AdminEventHostView"];
         };
+        AdminEventTicketTypeView: {
+            id: string;
+            /** @enum {string} */
+            tier: "free" | "regular" | "vip" | "vvip" | "early_bird" | "group";
+            name: string;
+            priceNaira: number;
+            quantity: number;
+            sold: number;
+        };
+        AdminEventQueueItemView: {
+            ticketTypes: components["schemas"]["AdminEventTicketTypeView"][];
+            id: string;
+            name: string;
+            description: string;
+            hostOrg: string;
+            hostOrgBio: string | null;
+            /** @enum {string} */
+            format: "in_person" | "online" | "hybrid";
+            /** @enum {string} */
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            timeLabel: string | null;
+            timezone: string | null;
+            location: string;
+            address: string | null;
+            externalUrl: string | null;
+            hasRecap: boolean;
+            recapUrl: string | null;
+            recapText: string | null;
+            featured: boolean;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            lastDecisionReason: string | null;
+            goingCount: number;
+            speakers: components["schemas"]["EventSpeakerView"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            waitingHours: number;
+            host: components["schemas"]["AdminEventHostView"];
+        };
         AdminEventReviewEntryView: {
             id: string;
             /** @enum {string} */
@@ -12282,6 +12378,43 @@ export interface components {
             reviewedByAdminRole: "superadmin" | "reviewer" | "support" | "finance";
             /** Format: date-time */
             reviewedAt: string;
+        };
+        AdminEventReviewDetailView: {
+            ticketTypes: components["schemas"]["AdminEventTicketTypeView"][];
+            reviewHistory: components["schemas"]["AdminEventReviewEntryView"][];
+            id: string;
+            name: string;
+            description: string;
+            hostOrg: string;
+            hostOrgBio: string | null;
+            /** @enum {string} */
+            format: "in_person" | "online" | "hybrid";
+            /** @enum {string} */
+            type: "workshop" | "summit" | "webinar" | "meetup" | "competition" | "conference" | "concert";
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string | null;
+            timeLabel: string | null;
+            timezone: string | null;
+            location: string;
+            address: string | null;
+            externalUrl: string | null;
+            hasRecap: boolean;
+            recapUrl: string | null;
+            recapText: string | null;
+            featured: boolean;
+            /** @enum {string} */
+            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            lastDecisionReason: string | null;
+            goingCount: number;
+            speakers: components["schemas"]["EventSpeakerView"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            waitingHours: number;
+            host: components["schemas"]["AdminEventHostView"];
         };
         AdminEventDetailView: {
             reviewHistory: components["schemas"]["AdminEventReviewEntryView"][];
@@ -18428,6 +18561,15 @@ export interface operations {
                         /** Format: date-time */
                         salesEndAt: string | null;
                     }[];
+                };
+            };
+            /** @description reason.code: tier_required, account_type_required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostTierErrorEnvelope"];
                 };
             };
         };
@@ -25603,6 +25745,15 @@ export interface operations {
                     "application/json": components["schemas"]["EventView"];
                 };
             };
+            /** @description reason.code: tier_required, account_type_required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostTierErrorEnvelope"];
+                };
+            };
         };
     };
     EventController_mine: {
@@ -25709,6 +25860,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventView"];
+                };
+            };
+            /** @description reason.code: tier_required, account_type_required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostTierErrorEnvelope"];
                 };
             };
         };

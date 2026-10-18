@@ -20,7 +20,13 @@ import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, ty
 export type AskQuote = components['schemas']['PaidQuestionQuoteView'];
 export type QuestionView = components['schemas']['PaidQuestionWalletView'];
 export type ThreadDetail = components['schemas']['PaidDmThreadDetail'];
-export type ThreadQuestion = components['schemas']['PaidDmQuestion'];
+/**
+ * One question as the fan's thread reads it. `creatorEarning` (INBOX-18, the creator's share) is the creator's side and the fan's
+ * screens never read it, so it is optional here: S3 was built before the Hub served it (MERGE-17).
+ */
+export type ThreadQuestion = Omit<components['schemas']['PaidDmQuestion'], 'creatorEarning'> & {
+  creatorEarning?: components['schemas']['PaidDmQuestion']['creatorEarning'];
+};
 export type ThreadOther = components['schemas']['DmOtherParty'];
 export type Availability = components['schemas']['PaidDmAvailability'];
 
