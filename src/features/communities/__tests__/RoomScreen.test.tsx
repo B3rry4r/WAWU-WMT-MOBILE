@@ -105,6 +105,8 @@ function message(text: string | null, by: string = 'u2', over: Partial<Community
   return {
     id: `m${counter}`,
     imageUrl: null,
+    videoUrl: null,
+    voiceUrl: null,
     senderWawuId: by,
     text,
     sentAt: new Date(Date.now() - (1000 - counter) * 1000).toISOString(),
