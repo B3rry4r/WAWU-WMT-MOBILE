@@ -17,16 +17,15 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026, builder round 1 done (Sonnet builder, bundle S9). Status: verifying.
+As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 17.
+- **Status:** merging (lead). The verifier said PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S9.md`: the gate checked over HTTP, 40 checks 0 fail, NGN and USD refusals equal `GET /plans`; only 3 writers, all gated; a live event keeps selling after the tier ends; 10 of 10 mutants killed). Backend `wmt/S9` `50066b9`, records `f6b9c30e`. Stacked in batch 17 by MERGE-17 (backend `wmt/MERGE-17`, mobile `wmt/MERGE-17`); not on main.
+- **Merge (MERGE-17):** the backend carries EVENTS-11's migration `20261025090000_event_ticket_type_retired` and its lock change (`.pipeline/protected-registry.json`, `test/protected-routes/registry.ts`, the protected suite's spec), so the batch's backend pull request needs the owner's `relock-approved` label, as backend PR #83 does; its protected run is red by exactly 10 tests (first: `GET /admin/events/queue` `ticketTypes`) until then. The contract change is additive (3 new 403 responses, 3 new schemas): SHARED-CHANGES row EVENTS-12 #1, added at MERGE-17. The gap rows G-EVENTS-12-1, G-EVENTS-12-2 and G-FIX-12-1 were named in the task files and had no row; MERGE-17 added them to BACKEND_GAPS.md. DV2-04 follows in batch 18 and builds E21 on `tier_required`. The verifier's lows are SWEEP-EVENTS rows S9 L1, L2 and N1.
 - **Branches:** backend `wmt/S9` `50066b9` (built on `origin/wmt/EVENTS-11` `71117e4` with `origin/wmt/MERGE-14` `195de50` merged in, merge commit `4c52e57`, no conflicts; EVENTS-11's own lock change is carried as it was, nothing widened). Mobile `wmt/S9` (records only: this file and FIX-12's).
 - **Built:** hosting reads the tier. A live tick or a running tier (`active` or `ending`) hosts; anyone else gets 403 `tier_required` with `tierState` (`none` or `ended`), `currency` and the cheapest tier of `GET /plans` (`lowestTier`). Gated routes: `POST /events`, `PATCH /events/{id}`, `PUT /events/{id}/tickets` (the Hub has no `PUT /events/{id}`; PATCH is the edit).
 - **Ended tier:** refuses a new event, an edit and a price change; a live event stays public and keeps selling. Price changes on an approved event still go back to review (R-40).
 - **Decisions to confirm:** (1) a tier of any account type hosts (a buyer account with a running tier does); a buyer with neither still gets `account_type_required`. (2) The status stays 403 and the code is additive; `verification_required` is no longer answered by these routes (the web reads only `reason.code` and `message`). (3) Five spec assertions of `verification_required` became `tier_required` (see the report).
 - **Protected suite:** 253/253, all 244 required, against the branch's own lock (EVENTS-11's); this commit changes no file of the lock or the suite. Route table unchanged (603 routes, same order).
-- **Open findings:** none yet (not verified).
 - **Gaps:** G-EVENTS-12-1: the app's `hostApi.ts` does not know `tier_required` (DV2-04 builds E21 on it). G-EVENTS-12-2: nothing tells the app before a POST whether a person may host (a live tick hosts with state `none`); `GET /me/tier` could carry it. No SHARED-CHANGES row was filed (records limited to the task files): `contract/openapi.json` is additive, +140 lines.
-- **Next:** a verifier checks `wmt/S9`; DV2-04 builds the E21 screen on `tier_required` (the app still reads only `verification_required` and `account_type_required` in `hostApi.ts`).
-- **History:** none yet. Reports go to tasks/history/EVENTS-12.md.
 
 ## Read first
 

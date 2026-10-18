@@ -17,7 +17,8 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026, merging (lead): rows added at MERGE-16.
+As of 18 Oct 2026, merging (lead): rows added at MERGE-17.
+- **MERGE-17:** 3 rows added from the S3 verifiers' reports (INBOX-10 N1, N2 and F6, open); S3's F1 to F5 were closed by its round 2.
 - **MERGE-16:** 3 rows added from the INBOX-14 verifier's report (INBOX-14 L1, N1, N2, open); INBOX-24 R2-1 is closed by PASS-r3 (`1fdcf7a`).
 - **Status:** merging (lead). Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b`; verifier PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`: the 16 fixed rows check out, 12 red before and green after, the ruled-no reasons read hold). Stacked in batch 15 by MERGE-15 (backend, mobile and WAWU ID `wmt/MERGE-15`); not on main.
 - **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
@@ -83,6 +84,9 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | INBOX-14 | L1 | I30 has no "Host" row or "hosted by" line when the host has no handle (G-INBOX-14-4, recorded). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Findings (LOW) | Open: added at MERGE-16. |
 | INBOX-14 | N1 | Not graded: a host's pass earnings land by the earnings sweep (the first 170,000 kobo landed in under a minute; a later 340,000 was still "waiting" at the end); the fee is 0 on the stack (its default). Observation only. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Findings (LOW, not graded) | Open: added at MERGE-16. |
 | INBOX-14 | N2 | Not run by the verifier, so still open: V10 (an Android phone), the cover upload (G-INBOX-14-7), a webhook replay and a forged signature for passes (money core), the loading and error pictures of I30 to I34, and sign-in through the app's own screen (the mock id takes `email`, the app posts `identifier`: a stack limit). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Passes (NOT RUN) | Open: added at MERGE-16. |
+| INBOX-10 | N1 | While a lapsed question's refund is still moving (the question is `refunded` with the refund `owed`; the scheduler sets it at the deadline), the hold's stored `refundedKobo` is still null (written only at settle), so the hold view serves null and I7 has no figure to print. The card falls back to "No reply in 24 hours, so this question was refunded" for about 25 s on the stack while the money has not landed. Since round 1; read from code, not captured live (`src/scheduler/scheduler.service.ts:75`, `src/money/holds/wallet-hold.service.ts:859`, `src/features/paid-ask/model.ts:211`). Fix idea: serve `transferKobo` as the pending figure while the hold is `held` with action `refund`, or word the fallback "is on its way back". | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S3-r2.md`, Findings N1 | Open: found by the verifier at batch 17. |
+| INBOX-10 | N2 | Record only. The paid stamp under a question still says "₦1,500 paid" (the price, `amountKobo`) while the person paid ₦1,523.25; the boards draw the price only and the lead's default stands. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S3-r2.md`, Findings N2 | Open: found by the verifier at batch 17. |
+| INBOX-10 | F6 | Round 1, test gap. The loading state of the thread (`paid-thread-loading`, I4 to I7) was not captured live by the verifier; the builder's jest covers the skeleton. Round 2 did not capture it either. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S3.md`, Findings F6 | Open: found by the verifier at batch 17. |
 
 ## History
 

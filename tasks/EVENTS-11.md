@@ -21,6 +21,7 @@ As of 16 Oct 2026, from the lead's log (10 Oct) and the branch.
 - **Status:** review on its branch (round 5: no open defect). This file on main still says todo.
 - **Branches:** mobile `wmt/EVENTS-11` 9fcc932 (the verifier checked 9106928; what changed after: unknown, ask the lead). Backend `wmt/EVENTS-11` b92a591, PR #83.
 - **Merged and live:** nothing of this task.
+- **Stacked (MERGE-17, 18 Oct 2026):** the backend (`wmt/EVENTS-11` `71117e4`, with its migration `20261025090000_event_ticket_type_retired` and its lock change) is in backend `wmt/MERGE-17` through `wmt/S9` (EVENTS-12 and FIX-12 sit on it; the S9 verifier ran the suite on it). This mobile file and the mobile branch `wmt/EVENTS-11` are not in the batch. Not on main; the batch's backend pull request needs the owner's `relock-approved` label, as PR #83 does. SWEEP-EVENTS rows O7 and O8 are fixed by FIX-12.
 - **Held by:** the owner's `relock-approved` label on backend PR #83.
 - **Open findings:** blocker 0, high 0, medium 0. Lows O7 and O8 are in tasks/SWEEP-EVENTS.md. NOT RUN by the verifier: the full backend suite (it needs a network namespace).
 - **Next:** the owner applies the label; the lead merges #83 and signs off mobile.

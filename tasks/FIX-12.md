@@ -17,22 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026, builder round 1 done (Sonnet builder, bundle S9). Status: verifying.
+As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 17.
+- **Status:** merging (lead). Same commit and verdict as EVENTS-12 (backend `wmt/S9` `50066b9`; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S9.md`): PASS, no blocker, high or medium; R7, R8, R10 and O8 pinned by mutants, all killed. Stacked in batch 17 by MERGE-17; not on main.
+- **Merge (MERGE-17):** SWEEP-EVENTS rows EVENTS-11 O7 and O8 are marked fixed by this task. G-FIX-12-1 now has its BACKEND_GAPS.md row and a SWEEP-EVENTS row (FIX-12 L1).
 - **Branches:** backend `wmt/S9` `50066b9` (the same commit as EVENTS-12, on `origin/wmt/EVENTS-11` `71117e4` with `origin/wmt/MERGE-14` `195de50` merged in, `4c52e57`). Mobile `wmt/S9` (records only).
 - **Built:** specs for R7, R8 and R10, each failing on its mutant; the sold-tickets 409 names a tier once; PATCH on a host-cancelled event is a 409 with the sentence PUT already answers.
 - **No other answer changed:** PUT's cancelled 409 keeps its sentence (now one shared constant), and both routes work as before on a live event.
-- **Open findings:** none yet (not verified).
 - **Gap:** G-FIX-12-1 (low, for SWEEP-EVENTS): a sold-tickets 409 caused only by a sale on a retired tier names a tier the host sees as unsold (same name, other price); a plainer sentence needs the Hub to say which tier is hidden.
 - **Proof:** the new spec fails 3 tests on `4c52e57` (O8 and the two PATCH tests); R7, R8 and R10 hold on the old code and are pinned by mutants, all killed (5 of 5).
-- **Next:** a verifier checks `wmt/S9`. EVENTS-11 (PR #83) still waits for the owner's relock label; this branch carries its lock unchanged.
-- **History:** none yet. Reports go to tasks/history/FIX-12.md.
-
-## Current state
-
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-11.
-- **History:** none yet. Reports go to tasks/history/FIX-12.md.
 
 ## Read first
 

@@ -18,7 +18,9 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026, built, awaiting a lean verifier (T1). Mobile `wmt/FIX-68` from `origin/wmt/MERGE-15` `6535bb83`; no backend change (F-5 is a record).
+As of 18 Oct 2026, merging (lead): verified (PASS, no findings) and stacked in batch 17.
+- **Status:** merging (lead). The verifier said PASS with no finding of any grade (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-68.md`: the 6 changed specs give 16 failures on the base source and pass now; F-1 Tip wins 49 of 49 grid points and the bar still seeks; F-2, F-4, F-6, F-7 checked live). Mobile `wmt/FIX-68` `17b9466a`. Stacked in batch 17 by MERGE-17 (mobile `wmt/MERGE-17`); not on main.
+- **Merge (MERGE-17):** only BACKEND_GAPS.md met another branch; G-FIX-68-1 to -3 kept. G-FIX-68-3 (F-5) is closed by FIX-69 (G-FIX-69-1, backend `1ddf5b1`), both in this batch. The one note the verifier made (AudioPost's waveform not hit-tested) is SWEEP-APP row FIX-68 N1.
 - **F-1 (medium), fixed:** the scrub bar's own box now ends where the rail starts (`marginRight` of `barRight`), and the rail sits above the foot (zIndex 7 over 6), so a rail button wins every tap inside its box and the bar still seeks outside it. `VideoPost.test.tsx` (3 new cases; 2 failed on the base).
 - **F-2 (medium), fixed:** no tier is a plain state ("You have no tier yet", button "See tiers" opens the tier chooser), no alert, no "Try again". A Hub failure keeps its error and its real retry (reads the tier again). Lead default: VF14 draws active, ending and ended only, no "no tier" state. `publishAndTier.test.tsx` (2 new; the no-tier one failed on the base).
 - **F-3:** the owner's (terms text). No change.

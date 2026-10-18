@@ -17,7 +17,8 @@ artboards: []
 
 ## Current state
 
-As of 18 Oct 2026, merging (lead): part 1 (rows 1 to 56) verified and stacked in batch 16.
+As of 18 Oct 2026, merging (lead): rows added at MERGE-17.
+- **MERGE-17:** 2 rows added (FIX-68 N1, a note; FIX-65 F3, open). The 5 rows added at MERGE-16 and the earlier ones are unchanged.
 - **Merge (MERGE-16):** SWEEP-APP-1's verifier said MERGE (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`: every hunk named by a row, tests red before and green after, the data migration safe, the fenced timeout floor approved); its row 46 reason, row 51 (unlisted route files) and row 61 (advertiser on the chip) went to FIX-63. 3 rows were added to this table at MERGE-16, below the 18 from MERGE-15 (SWEEP-APP-1 L1 and L2, FIX-64 N1).
 - **Status:** building. Part 1 (SWEEP-APP-1, a Sonnet builder, 17 Oct 2026) went through rows 1 to 56 of the table in order and left the Outcome cell of each: 24 fixed, 32 ruled no with the reason; rows 57 to 62 not reached, rows 63 to 149 not looked at. Nothing waited: every source task up to row 62 is in MERGE-13.
 - **Branches:** mobile `wmt/SWEEP-APP-1` (from MERGE-13 `4c7b2acd`; heads in the builder report below); backend `wmt/SWEEP-APP-1` (from MERGE-13 `6bc7b20`, head `c40a24e`, one new data migration `20261026090000_no_em_dash_stored_refund_notice`).
@@ -219,6 +220,8 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | SWEEP-APP-1 | L1 | Row 31: the new `deleteMany` in `src/nuvion/tests/nuvion-opening.contract.spec.ts` has no guard that the database is a test one (the rest of the suite has none either). Low. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`, row 31 | |
 | SWEEP-APP-1 | L2 | Open item, rows 2, 10 and 54: the pictures at 390 px, light and dark, are still owed (no web export was made in part 1). The verifier read react-native-web's source instead: `textOneLine` sets `overflow: hidden; text-overflow: ellipsis` and `props.style` comes after it, so `overflow: visible` wins and the ellipsis cannot show. A picture owed, not a doubt. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`, rows 2, 10, 54 | |
 | FIX-64 | N1 | Follow-up, a removal task: drop `NotificationRefundNoticeBackup` (and its `rollback.sql` and spec) two weeks after migration `20261026090000_no_em_dash_stored_refund_notice` ships, when no rollback is wanted. | `tasks/FIX-64.md`, Current state (lead note, 18 Oct 2026) | |
+| FIX-68 | N1 | Note. AudioPost's waveform `Seekable` was not hit-tested (only the video post's bar was measured for F-1). The rail's zIndex 7 over the foot's 6 should make a rail button win its box there too, by the same rule. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-68.md`, Not done / notes | Open: found by the verifier at batch 17. |
+| FIX-65 | F3 | `objectKeyFrom` (`src/storage/storage.service.ts:221`) maps a signed URL to a key only for `UPLOAD_FOLDERS`, so an identity row that names a `chat/` or `ai/` file by URL (not a bare key) is not recognised and that file is deleted at the purge. Needs a hand-made request: the shipped clients file identity documents in the owner folders. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-65.md`, Findings F3 | Open: found by the verifier at batch 17. |
 
 ## History
 

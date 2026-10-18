@@ -17,24 +17,18 @@ artboards: [I2, I3, I4, I5]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-17, ME-02, HOME-07.
-- **History:** none yet. Reports go to tasks/history/INBOX-10.md.
+As of 18 Oct 2026, merging (lead): round 2 verified (MERGE) and stacked in batch 17.
+- **Status:** merging (lead). The verifier's round 1 said NOT merge (F1 and F2, both medium; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S3.md`); round 2 said MERGE for INBOX-10 and INBOX-11, F1 to F5 closed, two lows (N1, N2; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S3-r2.md`). Mobile `wmt/S3` `9b2f4446`, backend `wmt/S3` `2ae42ab`. Stacked in batch 17 by MERGE-17 (backend `wmt/MERGE-17`, mobile `wmt/MERGE-17`); not on main.
+- **Merge (MERGE-17):** S3 was built without INBOX-18 in its base, so `src/features/inbox/rows.tsx` combines the two paid renderers as SHARED-CHANGES INBOX-10 #2 says: the `paid_dm` entry draws `PaidInboxRow` (a creator's side, INBOX-18) or `PaidFanRow` (a fan's side, this task) by `item.paidDm.side`, and `draws` accepts either side. Both sides are drawn, no behaviour lost; `unread.test.tsx` changed one comment only. The route `paid-thread/[wawuId]` is listed in the signed-in group of `src/app/_layout.tsx` (FIX-63's `route-guard.test.tsx`). The backend part (`usualReplyMinutes`, the hold view's `transferKobo`) is in `wmt/MERGE-17` with no conflict and no migration. The merged contract requires `creatorEarning` (INBOX-18) on every `PaidDmQuestion`, which S3's `model.test.ts` fixture does not carry, so `ThreadQuestion` in `src/features/paid-ask/api.ts` makes that one field optional (a type only, the fan's screens never read it; no test changed). The verifier's lows are SWEEP-INBOX rows INBOX-10 N1, N2 and F6.
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
-
-## Current state
-
-As of 17 Oct 2026, built (Sonnet builder, T2), waiting for a verifier.
-- **Status:** verifying. Mobile `wmt/S3` on `origin/wmt/ME-02` `0bf05b8c` with `origin/wmt/MERGE-13` `4c7b2acd` merged (conflicts kept every side: BACKEND_GAPS, SHARED-CHANGES, PROGRESS, SOURCE_COMMIT, the Home props of ME-02 with MERGE-13's pay handlers). Backend `wmt/S3` on `origin/wmt/MERGE-13` `6bc7b20` with `origin/wmt/ME-02` `e8e8a1d` merged (conflicts in `user-profile.controller.ts` and `.module.ts`: kept both). **INBOX-18 is not in this base** (its branch is on MERGE-12): the creator answered in the stack run through the Hub's reply route; its `rows.tsx` change is the same `draws` filter (SHARED-CHANGES INBOX-10 #2 says how to combine the two paid renderers).
+- **Branches (round 1):** mobile `wmt/S3` on `origin/wmt/ME-02` `0bf05b8c` with `origin/wmt/MERGE-13` `4c7b2acd` merged (conflicts kept every side: BACKEND_GAPS, SHARED-CHANGES, PROGRESS, SOURCE_COMMIT, the Home props of ME-02 with MERGE-13's pay handlers). Backend `wmt/S3` on `origin/wmt/MERGE-13` `6bc7b20` with `origin/wmt/ME-02` `e8e8a1d` merged (conflicts in `user-profile.controller.ts` and `.module.ts`: kept both). **INBOX-18 is not in this base** (its branch is on MERGE-12): the creator answered in the stack run through the Hub's reply route; its `rows.tsx` change is the same `draws` filter (SHARED-CHANGES INBOX-10 #2 says how to combine the two paid renderers).
 - **Built:** `src/features/paid-ask/`, `/paid-thread/<creator>`. I2: Message with its price beside Follow on the profile (M5), drawn when the Hub says paid messages are on and the route can open the thread. I3: the ask sheet (words, window, what comes back, who holds it, the breakdown, Pay from wallet, "Send · total") then the PIN. I4, I5, I7: the fan's thread with the Hub's state under each question (countdown and where the money is; the creator's bubbles and "Replied in"; the refund with the amount and time from the wallet's hold). The composer is locked while one waits, then "Ask a follow-up" or "Try again" (the old words come back). The Inbox row for a fan's paid question (I1). One draft per rested words, a fresh quote per tap of Send, one Idempotency-Key per attempt kept until the Hub decides.
 - **Backend (additive, no migration):** `PaidQuestionDraftView.usualReplyMinutes` (I3's "Usually replies in", G-146 closed for the wallet path). Spec case added to `paid-dm-wallet.contract.spec.ts` (13 pass). No route was missing.
 - **Truth over the brief's words:** the refund line says the quote's total ("your ₦1,523.25 comes back"), not the price: the Hub returns the charge too since B3a round 2 (G-INBOX-10-4). "so they've been paid" for "he's" (G-INBOX-10-3). "Bank charge" for "Fintava's charge" (R-53).
 - **Not drawn, by R-47:** the "+" in the I5 and I7 composers and the "..." in the thread header (nothing built behind them); the Ask a question button on P2 (`professionals/ProfileScreen`), Message on H10's card and on M35: those routes do not pass the ask sheet yet, so INBOX-10's capability check for them is NOT DONE (one prop and one route line each, the hook `useAsk` and `AskSheets` are ready).
 - **Gaps and shared changes:** `BACKEND_GAPS.md` G-INBOX-10-1 to 5 (G-146, G-ME-02-1 noted); `SHARED-CHANGES.md` INBOX-10 #1 to #4.
-- **Next:** a verifier (V1, V4, V5, V6, V7, V8, V9). Pictures at 390 px, light and dark, board beside build, every state: scratchpad `s3-m/e2e/pics/` (`beside-<board>-<theme>.png` for I2 to I8; the rest stand alone). Stack `s3_test` was taken down.
 
-As of 18 Oct 2026, round 2 built after the check (Sonnet builder, T2), waiting for a verifier. Mobile `wmt/S3` from `674a9eff`, backend `wmt/S3` from `0723005`.
+Round 2, built after the check (18 Oct 2026, Sonnet builder, T2). Mobile `wmt/S3` from `674a9eff`, backend `wmt/S3` from `0723005`.
 - **F1 (medium) fixed:** I7 printed ₦1,500 when ₦1,523.25 came back. Root cause: `WalletHoldService.settle()` stores the held PRICE in `WalletHold.refundedKobo` (a database CHECK pins it to `amountKobo`) and `HoldView.refundedKobo` served that column, though the refund moved price + the payment's charge (`transferKobo`). The hold view is not in the protected registry and the dashboard does not read it, so it is corrected in place: `refundedKobo` now serves what the refund moved (`transferKobo`, the figure the provider's record matched), no migration. The app prints the Hub's figure and adds nothing up. Round 1's stack charged ₦0, which hid it.
 - **F2 (medium) fixed:** the ask sheet asks its quote again, once, when the screen is in front again after Add money (`useAsk(..., focused)`; the profile route and the thread pass `useIsFocused()`), and when the wallet balance read moves while the sheet says short. Same draft, words kept.
 - **F3, F4, F5 (low) fixed:** "its own 24-hour window"; the I4 held and late lines say "your money" with no figure (the thread cannot know the total); an empty thread offers "Ask a question · ₦1,500" (lead default: the board draws no empty thread).
@@ -115,15 +109,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-Files: `src/features/paid-ask/` (api, model, useAsk, AskSheets, PaidThreadScreen, PaidFanRow, parts, routes, tests), `src/app/paid-thread/[wawuId].tsx`, `src/app/profile/[wawuId].tsx`, `src/features/visitor/` (Message and Messages off), `src/features/inbox/rows.tsx`, `src/features/chat/Bubbles.tsx` (one prop); backend `PaidQuestionDraftView.usualReplyMinutes` and its spec. Checks and the stack run are in Current state; the ask, the pay and the retry are tested in `askFlow.test.tsx` against the Hub's shapes and on the real stack. Not done: Message on P2, H10 and M35; the "+" and "..." (R-47).
-
-Round 2 (18 Oct 2026, F1 to F5): `src/features/paid-ask/{model,useAsk,PaidThreadScreen}`, `visitor/VisitorProfileScreen`, `src/app/profile/[wawuId].tsx`, their tests; backend `src/money/holds/hold-view.service.ts` (+ two comments) and a case in `paid-dm-wallet.contract.spec.ts`. Details in Current state.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-10.md](history/INBOX-10.md).
 
 ## Owner sign-off
 
