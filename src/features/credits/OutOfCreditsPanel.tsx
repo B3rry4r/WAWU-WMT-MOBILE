@@ -14,14 +14,18 @@ import { OUT_LINE, OUT_TITLE } from './model';
  */
 const panelMetrics = { padV: 14, icon: 19, iconToText: 12, inner: 3, iconNudge: 1, buttonTop: 8, barTop: 10, barSide: 16 } as const;
 
-export type OutOfCreditsPanelProps = { onBuy: () => void };
+export type OutOfCreditsPanelProps = {
+  onBuy: () => void;
+  /** The words under the title. Left out, the older words are used. A room passes the board's, built from the Hub's costs by kind (INBOX-23). */
+  line?: string;
+};
 
 /**
  * I27 · Out of credits: a room where the person has no credits left. Reading stays free, and Buy credits opens I28. The words are
  * the ones that are true today (the Hub charges one credit for any message); the board's "Text and emoji stay free" waits for the
  * costs by kind of message (INBOX-22, R-62).
  */
-export function OutOfCreditsPanel({ onBuy }: OutOfCreditsPanelProps) {
+export function OutOfCreditsPanel({ onBuy, line = OUT_LINE }: OutOfCreditsPanelProps) {
   const { colors } = useWawu();
   return (
     <View testID="out-of-credits" style={[styles.bar, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline }]}>
@@ -31,7 +35,7 @@ export function OutOfCreditsPanel({ onBuy }: OutOfCreditsPanelProps) {
         </View>
         <View style={styles.text}>
           <Text variant="kvValue">{OUT_TITLE}</Text>
-          <Text variant="bannerBody">{OUT_LINE}</Text>
+          <Text variant="bannerBody">{line}</Text>
           <View style={styles.action}>
             <Button testID="out-of-credits-buy" label="Buy credits" size="sm" onPress={onBuy} />
           </View>

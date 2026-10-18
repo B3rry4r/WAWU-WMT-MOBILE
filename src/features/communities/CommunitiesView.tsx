@@ -142,6 +142,8 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
                 ? lastLine({
                     text: last.text,
                     hasPhoto: Boolean(last.imageUrl),
+                    hasVideo: Boolean(last.videoUrl),
+                    hasVoice: Boolean(last.voiceUrl),
                     mine: me.data !== undefined && last.senderWawuId === me.data.wawuUserId,
                     senderName: last.sender?.name ?? null,
                   })

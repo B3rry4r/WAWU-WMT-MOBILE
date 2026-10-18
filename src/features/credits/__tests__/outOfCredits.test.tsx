@@ -74,7 +74,7 @@ const room = (over: object = {}) => ({
   slug: 'lagos-freelancers',
   link: 'wawu/c/lagos-freelancers',
   role: 'member',
-  messageCostInCredits: 1,
+  messageCostInCredits: 0,
   ...over,
 });
 const credits = (creditBalance: number) => ok({ userWawuId: ME, creditBalance, trialEndsAt: null });
@@ -112,6 +112,8 @@ function serve(over: Record<string, Answer[]> = {}) {
   answers = {
     [`GET /communities/${ROOM}/room`]: [ok(room())],
     'GET /credits': [credits(48)],
+    // R-62: text and emoji free, a photo 1, a video and a voice note 3.
+    'GET /communities/message-cost': [ok({ creditsPerMessage: 0, creditsByKind: { text: 0, photo: 1, video: 3, voice: 3 } })],
     'GET /users/me': [ok({ wawuUserId: ME, firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null, verification })],
     [`GET /communities/${ROOM}/messages?page=1&perPage=20`]: [ok([], { pagination: { currentPage: 1, nextPage: null, perPage: 20, total: 0 } })],
     [`POST /communities/${ROOM}/read`]: [ok({ communityId: ROOM, lastReadAt: new Date().toISOString() })],
@@ -156,13 +158,11 @@ afterEach(async () => {
 });
 
 describe('I27: out of credits in a room', () => {
-  it('a member with no credits sees what is true, that reading stays free, and Buy credits opens the packs', async () => {
+  it('a member with no credits sees the board\'s words, built from the Hub\'s costs by kind, and Buy credits opens the packs', async () => {
     serve({ 'GET /credits': [credits(0)] });
     await renderRoom();
     expect(await rtl.screen.findByText('You’re out of credits')).toBeTruthy();
-    expect(rtl.screen.getByText('Reading stays free. Buy credits to send messages here.')).toBeTruthy();
-    // The board's "Text and emoji stay free" is not said: the Hub charges every message until INBOX-22.
-    expect(rtl.screen.queryByText(/Text and emoji/)).toBeNull();
+    expect(rtl.screen.getByText('Text and emoji stay free. Buy credits to send photos, video and voice notes.')).toBeTruthy();
     expect(rtl.screen.getByText('0 credits')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByTestId('out-of-credits-buy'));
     expect(await rtl.screen.findByTestId('credits-sheet')).toBeTruthy();

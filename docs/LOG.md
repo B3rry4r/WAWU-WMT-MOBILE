@@ -1,4 +1,5 @@
 # Work log
+- 18 Oct 2026 · INBOX-23 · Built (Sonnet builder, T2; mobile `wmt/INBOX-23` on `origin/wmt/MERGE-16` `5ee3994d`, no backend change; status verifying): community messages by kind, from the Hub's `creditsByKind` (R-62): text free and priced nowhere, a "+" and the photo card with "Send · 1" (I38), the strip and I27 words from the Hub, a sent photo in the thread; presign, PUT, confirm, then the send under one Idempotency-Key. Stack: text with 0 credits sends, a photo drops the count by the Hub's price, 0 credits blocks the photo, a double tap moves one credit; Hub count = ledger after each.
 - 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 
 Newest first. One line per thing that happened, written when it happens.

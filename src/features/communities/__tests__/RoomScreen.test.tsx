@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+import { QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -13,6 +14,8 @@ jest.mock('expo-secure-store', () => ({
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush, replace: mockReplace }) }));
+const mockPick = jest.fn();
+jest.mock('@/features/profile-edit/pickImage', () => ({ pickImage: () => mockPick(), canPickImage: true }));
 
 /* A test double of the transport only: the socket the phone would open. The client, the session and the requests are real. */
 class FakeSocket {
@@ -94,7 +97,7 @@ const room = (over: object = {}) => ({
   slug: 'lagos-freelancers',
   link: 'wawu/c/lagos-freelancers',
   role: 'member',
-  messageCostInCredits: 1,
+  messageCostInCredits: 0,
   ...over,
 });
 
@@ -109,12 +112,16 @@ function message(text: string | null, by: string = 'u2', over: Partial<Community
     text,
     sentAt: new Date(Date.now() - (1000 - counter) * 1000).toISOString(),
     communityId: ROOM,
+    videoUrl: null,
+    voiceUrl: null,
     costInCredits: by === HOST ? 0 : 1,
     sender: person(by, names[by] ?? 'Someone'),
     ...over,
   };
 }
 
+/** What the Hub says each kind costs (R-62): text and emoji free, a photo 1, a video and a voice note 3. */
+const costs = (over: object = {}) => ({ creditsPerMessage: 0, creditsByKind: { text: 0, photo: 1, video: 3, voice: 3, ...over } });
 const credits = (creditBalance: number) => ok({ userWawuId: ME, creditBalance, trialEndsAt: null });
 const me = ok({ wawuUserId: ME, firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null, verification });
 const MESSAGES = `GET /communities/${ROOM}/messages?page=1&perPage=20`;
@@ -123,6 +130,7 @@ function serve(extra: Record<string, Answer[]> = {}) {
   answers = {
     [`GET /communities/${ROOM}/room`]: [ok(room())],
     'GET /credits': [credits(48)],
+    'GET /communities/message-cost': [ok(costs())],
     'GET /users/me': [me],
     [`POST /communities/${ROOM}/read`]: [ok({ communityId: ROOM, lastReadAt: new Date().toISOString() })],
     'GET /inbox/unread': [ok({ total: 0, chats: 0, paidDms: 0, communities: 0 })],
@@ -135,9 +143,11 @@ const back = jest.fn();
 async function renderRoom(signedIn = true) {
   if (signedIn) await adoptSession({ accessToken: token, refreshToken: 'r' });
   return rtl.render(
-    <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>
-      <RoomScreen id={ROOM} onBack={back} />
-    </SafeAreaProvider>,
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}>
+        <RoomScreen id={ROOM} onBack={back} />
+      </SafeAreaProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -161,6 +171,7 @@ async function connect(cursor = 'c0') {
 const liveMessage = (m: CommunityMessage, cursor: string, communityId = ROOM) => ({ type: 'community.message', cursor, communityId, message: m });
 
 beforeEach(() => {
+  mockPick.mockReset();
   sent = [];
   posts = [];
   postKeys = [];
@@ -357,21 +368,24 @@ describe('older messages', () => {
 });
 
 describe('sending (I26)', () => {
-  it('a user types a message and presses Send: it is posted with that text, shown, and the balance is the server\'s new number', async () => {
+  it('a user types a message and presses Send: it is posted with that text, shown, free, and the balance is read again from the server', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
-    answers['GET /credits'] = [credits(48), credits(47)];
+    answers['GET /credits'] = [credits(48), credits(48)];
     await renderRoom();
     await rtl.screen.findByText('hello');
     await rtl.screen.findByText('48 credits');
     await type('Count me in, bringing the bank logo.');
-    expect(rtl.screen.getByText('Send · 1')).toBeTruthy();
-    answers[`POST /communities/${ROOM}/messages`] = [created(message('Count me in, bringing the bank logo.', ME, { costInCredits: 1, sender: undefined }))];
+    // Text and emoji are free (R-62): the button is the arrow and says no price.
+    expect(rtl.screen.queryByText(/^Send/)).toBeNull();
+    expect(rtl.screen.getByLabelText('Send message')).toBeTruthy();
+    answers[`POST /communities/${ROOM}/messages`] = [created(message('Count me in, bringing the bank logo.', ME, { costInCredits: 0, sender: undefined }))];
     await pressSend();
     expect(await rtl.screen.findByText('Count me in, bringing the bank logo.')).toBeTruthy();
     expect(posts.filter((request) => request.path === `/communities/${ROOM}/messages`)).toEqual([
       { path: `/communities/${ROOM}/messages`, body: { text: 'Count me in, bringing the bank logo.' } },
     ]);
-    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+    await rtl.waitFor(() => expect(sent.filter((s) => s === 'GET /credits')).toHaveLength(2));
+    expect(await rtl.screen.findByText('48 credits')).toBeTruthy();
     // The field is empty again and Send is the arrow.
     expect(rtl.screen.getByTestId('composer-input').props.value).toBe('');
     // The person's own message reads like any other, under their own name.
@@ -836,38 +850,217 @@ describe('defects found by the verifier', () => {
   });
 });
 
-describe('the price of a message, from the server (G-450)', () => {
-  it('the field says "Message · 1 credit" and the button "Send · 1", from the room view', async () => {
+const FILE = 'https://files.test/community/message/user-me/abc.jpg';
+const picked = () => ({ blob: new Blob(['x']), contentType: 'image/jpeg', extension: 'jpg', previewUri: 'file:///photo.jpg', discard: jest.fn() });
+const PACKS = ok({ packs: [{ pack: 'popular', credits: 120, priceKobo: 100_000, badge: 'popular' }] });
+/** The three calls a photo makes before it is sent (presign, the PUT of its bytes, confirm), as the Hub and its storage answer them. */
+const uploadWorks = () => {
+  answers['POST /uploads/presign'] = [ok({ uploadUrl: 'https://files.test/up/abc', fileUrl: FILE, key: 'community/message/user-me/abc.jpg' })];
+  answers['PUT /up/abc'] = [ok({})];
+  answers['POST /uploads/confirm'] = [ok({ key: 'community/message/user-me/abc.jpg', status: 'confirmed' })];
+};
+const POST_MESSAGE = `POST /communities/${ROOM}/messages`;
+const messagePosts = () => posts.filter((request) => request.path === `/communities/${ROOM}/messages`);
+const attachPhoto = async (photo = picked()) => {
+  mockPick.mockResolvedValueOnce(photo);
+  await rtl.fireEvent.press(rtl.screen.getByTestId('composer-attach'));
+  await rtl.screen.findByTestId('composer-photo');
+  return photo;
+};
+
+describe('the price of a message, from the Hub (R-62, INBOX-23)', () => {
+  it('text and emoji are free and say so: no price in the field or on the button', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
     await renderRoom();
     await rtl.screen.findByText('hello');
-    expect(sent).toContain(`GET /communities/${ROOM}/room`);
-    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message · 1 credit');
-    await type('Count me in');
-    expect(rtl.screen.getByText('Send · 1')).toBeTruthy();
-    expect(rtl.screen.getByLabelText('Send message, 1 credit')).toBeTruthy();
+    expect(sent).toContain('GET /communities/message-cost');
+    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message');
+    await type('Count me in 🎉');
+    expect(rtl.screen.queryByText(/^Send ·/)).toBeNull();
+    expect(rtl.screen.getByLabelText('Send message')).toBeTruthy();
     expect(rtl.screen.queryByText(/₦|naira/i)).toBeNull();
   });
 
-  it('shows the figure the server sends, not a built-in one: 3 credits reads "Message · 3 credits" and "Send · 3"', async () => {
-    answers[`GET /communities/${ROOM}/room`] = [ok(room({ messageCostInCredits: 3 }))];
+  it('a photo shows the Hub\'s costs and "Send · 1": 3 credits for a photo reads "Send · 3", not a built-in figure', async () => {
+    answers['GET /communities/message-cost'] = [ok(costs({ photo: 3, video: 5, voice: 4 }))];
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
     await renderRoom();
     await rtl.screen.findByText('hello');
-    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message · 3 credits');
-    await type('Count me in');
+    await attachPhoto();
+    expect(rtl.screen.getByTestId('composer-photo-line').props.children).toBe('Photos 3 credits · video 5 · voice notes 4');
     expect(rtl.screen.getByText('Send · 3')).toBeTruthy();
+    expect(rtl.screen.getByLabelText('Send photo, 3 credits')).toBeTruthy();
   });
 
-  it('the host sends free, so the field and the button carry no figure', async () => {
-    answers[`GET /communities/${ROOM}/room`] = [ok(room({ role: 'host', messageCostInCredits: 0 }))];
+  it('the host sends every kind free: the photo card carries no cost line and the button no figure', async () => {
+    answers[`GET /communities/${ROOM}/room`] = [ok(room({ role: 'host' }))];
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
     await renderRoom();
     await rtl.screen.findByText('hello');
-    expect(rtl.screen.getByTestId('composer-input').props.placeholder).toBe('Message');
-    await type('Welcome everyone');
-    expect(rtl.screen.getByText('Send')).toBeTruthy();
+    await attachPhoto();
+    expect(rtl.screen.queryByTestId('composer-photo-line')).toBeNull();
     expect(rtl.screen.queryByText(/^Send ·/)).toBeNull();
+    expect(rtl.screen.getByLabelText('Send photo')).toBeTruthy();
+  });
+
+  it('no "+" is drawn until the Hub has said what a photo costs, and text still sends', async () => {
+    answers['GET /communities/message-cost'] = [refuse(500, 'Something went wrong.')];
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await rtl.waitFor(() => expect(sent.filter((s) => s === 'GET /communities/message-cost').length).toBeGreaterThanOrEqual(1));
+    expect(rtl.screen.queryByTestId('composer-attach')).toBeNull();
+    await type('still free');
+    answers[POST_MESSAGE] = [created(message('still free', ME, { costInCredits: 0 }))];
+    await pressSend();
+    expect(await rtl.screen.findByText('still free')).toBeTruthy();
+  });
+});
+
+describe('sending a photo (I38)', () => {
+  it('a person attaches a photo, sees "Send · 1", sends it, and the count is read again from the Hub', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(48), credits(47)];
+    uploadWorks();
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await rtl.screen.findByText('48 credits');
+    const photo = await attachPhoto();
+    expect(rtl.screen.getByText('Photo')).toBeTruthy();
+    expect(rtl.screen.getByTestId('composer-photo-line').props.children).toBe('Photos 1 credit · video and voice notes 3');
+    expect(rtl.screen.getByText('Send · 1')).toBeTruthy();
+    answers[POST_MESSAGE] = [created(message(null, ME, { imageUrl: FILE, costInCredits: 1, sender: undefined }))];
+    await pressSend();
+    expect(await rtl.screen.findByTestId(/^post-m\d+-bubble-photo$/)).toBeTruthy();
+    expect(posts.map((request) => request.path)).toEqual(expect.arrayContaining(['/uploads/presign', '/uploads/confirm', `/communities/${ROOM}/messages`]));
+    expect(posts.find((request) => request.path === '/uploads/presign')?.body).toEqual({ folder: 'community/message', contentType: 'image/jpeg', extension: 'jpg', contentLength: 1 });
+    expect(posts.find((request) => request.path === '/uploads/confirm')?.body).toEqual({ key: FILE });
+    expect(messagePosts()).toEqual([{ path: `/communities/${ROOM}/messages`, body: { imageUrl: FILE } }]);
+    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+    expect(photo.discard).toHaveBeenCalled();
+    expect(rtl.screen.queryByTestId('composer-photo')).toBeNull();
+  });
+
+  it('words sent with a photo go in the same message', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    uploadWorks();
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await attachPhoto();
+    await type('The pattern from Saturday');
+    answers[POST_MESSAGE] = [created(message('The pattern from Saturday', ME, { imageUrl: FILE, costInCredits: 1, sender: undefined }))];
+    await pressSend();
+    expect(await rtl.screen.findByText('The pattern from Saturday')).toBeTruthy();
+    expect(messagePosts()).toEqual([{ path: `/communities/${ROOM}/messages`, body: { text: 'The pattern from Saturday', imageUrl: FILE } }]);
+  });
+
+  it('a double tap on Send sends the photo once, uploads it once and moves one credit', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    uploadWorks();
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await attachPhoto();
+    answers[POST_MESSAGE] = ['hold'];
+    await pressSend();
+    await pressSend();
+    await pressSend();
+    await settle();
+    expect(messagePosts()).toHaveLength(1);
+    expect(posts.filter((request) => request.path === '/uploads/presign')).toHaveLength(1);
+    expect(postKeys).toHaveLength(1);
+  });
+
+  it('a lost answer sends the photo again under the same key without uploading it twice', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    uploadWorks();
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await attachPhoto();
+    answers[POST_MESSAGE] = ['offline', created(message(null, ME, { imageUrl: FILE, costInCredits: 1, sender: undefined }))];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send again' }));
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+    expect(postKeys).toHaveLength(2);
+    expect(postKeys[1]).toBe(postKeys[0]);
+    expect(posts.filter((request) => request.path === '/uploads/presign')).toHaveLength(1);
+    expect(messagePosts().map((request) => request.body)).toEqual([{ imageUrl: FILE }, { imageUrl: FILE }]);
+  });
+
+  it('a photo that did not upload says so and Send again uploads it again', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    uploadWorks();
+    answers['PUT /up/abc'] = [refuse(403, 'Forbidden'), ok({})];
+    answers['POST /uploads/presign'] = [
+      ok({ uploadUrl: 'https://files.test/up/abc', fileUrl: FILE, key: 'k' }),
+      ok({ uploadUrl: 'https://files.test/up/abc', fileUrl: FILE, key: 'k' }),
+    ];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await attachPhoto();
+    answers[POST_MESSAGE] = [created(message(null, ME, { imageUrl: FILE, costInCredits: 1, sender: undefined }))];
+    await pressSend();
+    expect(await rtl.screen.findByText('Your photo did not upload. Try again.')).toBeTruthy();
+    expect(messagePosts()).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send again' }));
+    await rtl.waitFor(() => expect(messagePosts()).toHaveLength(1));
+    expect(posts.filter((request) => request.path === '/uploads/presign')).toHaveLength(2);
+  });
+
+  it('a photo the Hub refuses for credits shows its sentence and Buy credits, and sends again under the same key once bought', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(1), credits(0)];
+    answers['GET /credits/packs'] = [PACKS];
+    uploadWorks();
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await attachPhoto();
+    const sentence = 'A photo costs 1 WAWU Credit and you have none. You are 1 short. Text and emoji are free.';
+    answers[POST_MESSAGE] = [refuse(402, sentence, { reason: 'insufficient_credits' }), created(message(null, ME, { imageUrl: FILE, costInCredits: 1, sender: undefined }))];
+    await pressSend();
+    expect(await rtl.screen.findByText(sentence)).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId(/^outgoing-local-\d+-buy$/));
+    expect(await rtl.screen.findByTestId('credits-sheet')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send again' }));
+    await rtl.waitFor(() => expect(messagePosts()).toHaveLength(2));
+    expect(postKeys[1]).toBe(postKeys[0]);
+    expect(posts.filter((request) => request.path === '/uploads/presign')).toHaveLength(1);
+  });
+
+  it('with no credits a photo is blocked and Buy credits opens the packs, while text still sends', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(0)];
+    answers['GET /credits/packs'] = [PACKS];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    expect(await rtl.screen.findByText('Text and emoji stay free. Buy credits to send photos, video and voice notes.')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('composer-attach'));
+    expect(await rtl.screen.findByTestId('credits-sheet')).toBeTruthy();
+    expect(mockPick).not.toHaveBeenCalled();
+    expect(rtl.screen.queryByTestId('composer-photo')).toBeNull();
+    await type('text is free');
+    answers[POST_MESSAGE] = [created(message('text is free', ME, { costInCredits: 0, sender: undefined }))];
+    await pressSend();
+    expect(await rtl.screen.findByText('text is free')).toBeTruthy();
+    expect(messagePosts()).toEqual([{ path: `/communities/${ROOM}/messages`, body: { text: 'text is free' } }]);
+  });
+
+  it('the person can remove the photo before sending, and a photo the phone cannot read is said so', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    const photo = await attachPhoto();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('composer-photo-remove'));
+    expect(rtl.screen.queryByTestId('composer-photo')).toBeNull();
+    expect(photo.discard).toHaveBeenCalled();
+    expect(rtl.screen.getByTestId('composer-send').props.accessibilityState.disabled).toBe(true);
+    mockPick.mockRejectedValueOnce(new Error('unreadable'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('composer-attach'));
+    expect(await rtl.screen.findByText('That photo could not be read. Choose another.')).toBeTruthy();
+    mockPick.mockResolvedValueOnce(null);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('composer-attach'));
+    await settle();
+    expect(rtl.screen.queryByTestId('composer-photo')).toBeNull();
   });
 });
 
