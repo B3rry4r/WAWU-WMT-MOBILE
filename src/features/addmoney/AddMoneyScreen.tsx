@@ -20,7 +20,7 @@ import { copyText } from '@/features/open-wallet/copy';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { walletHomeQuery, type WalletHome } from '@/features/wallet/api/home';
-import { font, radius, space, useWawu } from '@/theme';
+import { font, radius, space, type, useWawu } from '@/theme';
 
 import {
   accountRows,
@@ -40,9 +40,16 @@ import { useLanding, type Landing } from './useLanding';
 
 /** kit.js line 61, `copyBtn`: 32 high, 12 at the sides, a pill on the sunken surface, the Copy glyph 14, the word 13 / 600, 6 between. */
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, ms: 2000 } as const;
-/** W15's card: the head's label is 12; W46's mark is 88 and its figure 36 (W12's own). */
-/** W46's head starts 120 under the status bar (the board's padding); the frame's own 8 is part of it, so headTop is 112 (SWEEP-APP-4 row 142). */
-const LOOK = { label: 12, dot: 10, mark: 88, figure: 36, rowValue: 14.5, headGap: 12, headTop: 112 } as const;
+/**
+ * W15's card: the head's label is 12. W46 is kit.js `result`: an 88 mark, the headline 30 / 700 at -0.035em with the word the same size as
+ * the figure (`type.size.title`, `type.tracking.title`), 10 between its parts and 8 more above the headline (`titleLift`), so the
+ * headline sits 18 under the mark; the card sits 20 under the line below it (the body's own gap, `space.xl`). The board sets no line
+ * height on the headline or the line under it (14.5, `sub`), so both take Alan Sans's normal, 1.3 (`titleLeading`, 39 at 30; measured
+ * in the browser), which puts the headline's ink 26.5 under the mark and the line under it 19 below the ink, as the board's picture
+ * measures (SWEEP-APP-5, row SWEEP-APP-4 L2).
+ * W46's head starts 120 under the status bar (the board's padding); the frame's own 8 is part of it, so headTop is 112 (SWEEP-APP-4 row 142).
+ */
+const LOOK = { label: 12, dot: 10, mark: 88, figure: type.size.title, figureTracking: type.tracking.title, rowValue: 14.5, headGap: 10, titleLift: 8, titleLeading: type.leading.snug, sub: 14.5, bodyGap: space.xl, headTop: 112 } as const;
 
 export type AddMoneyScreenProps = {
   /** What a pay sheet was short by (kobo), when it sent the person here: shown above the card. */
@@ -283,18 +290,25 @@ function Received({ landing, onDone }: { landing: Extract<Landing, { phase: 'lan
           <IconTile icon="ArrowDownLeft" tone="in" size={LOOK.mark} strokeWidth={2.4} />
           {first && !many ? (
             <View style={styles.figureRow}>
-              <Money testID="add-money-amount" minorUnits={first.amountKobo} size={LOOK.figure} weight={700} decimals={first.amountKobo % 100 !== 0} />
-              <Text variant="title" style={styles.figureWord}>
+              <Money
+                testID="add-money-amount"
+                minorUnits={first.amountKobo}
+                size={LOOK.figure}
+                weight={700}
+                decimals={first.amountKobo % 100 !== 0}
+                style={styles.figureTracking}
+              />
+              <Text variant="title" style={styles.figureLine}>
                 received
               </Text>
             </View>
           ) : (
-            <Text variant="title" testID="add-money-count" style={styles.centre}>
+            <Text variant="title" testID="add-money-count" style={[styles.centre, styles.lifted]}>
               {manyReceived(credits.length)}
             </Text>
           )}
           {from ? (
-            <Text variant="secondary" tone="textSecondary" testID="add-money-from" style={styles.centre}>
+            <Text variant="secondary" tone="textSecondary" testID="add-money-from" style={[styles.centre, styles.sub]}>
               {from}
             </Text>
           ) : null}
@@ -354,9 +368,12 @@ const styles = StyleSheet.create({
   waitingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   dot: { width: LOOK.dot, height: LOOK.dot, borderRadius: LOOK.dot / 2 },
   waitingTitle: { flexShrink: 1 },
-  receivedBody: { flex: 1, gap: space.lg, paddingTop: LOOK.headTop },
+  receivedBody: { flex: 1, gap: LOOK.bodyGap, paddingTop: LOOK.headTop },
   receivedHead: { alignItems: 'center', gap: LOOK.headGap },
-  figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm },
-  figureWord: { fontSize: LOOK.figure * 0.9 },
+  figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, marginTop: LOOK.titleLift },
+  figureTracking: { letterSpacing: LOOK.figureTracking * LOOK.figure, lineHeight: LOOK.figure * LOOK.titleLeading },
+  figureLine: { lineHeight: LOOK.figure * LOOK.titleLeading },
+  lifted: { marginTop: LOOK.titleLift, lineHeight: LOOK.figure * LOOK.titleLeading },
+  sub: { fontSize: LOOK.sub, lineHeight: LOOK.sub * LOOK.titleLeading },
   centre: { textAlign: 'center' },
 });

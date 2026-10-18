@@ -271,6 +271,32 @@ describe('a transfer lands (W45 to W46)', () => {
     expect(hub.balanceReads).toBe(reads);
   });
 
+  // SWEEP-APP-5 (SWEEP-APP-4 L2): kit.js `result` as W46 draws it, measured on the board's picture and on the web export of this screen:
+  // the headline is 30 (it was 36) at -0.035em, the word the same size as the figure (it was 0.9 of it), the headline sits 18 under the
+  // mark (10 and 8) and the card 20 under the line below it (it was 16), and that line is 14.5 (it was 13.5).
+  it('draws the headline as W46 does: 30 at -0.035em, the word as big as the figure, 18 under the mark, the card 20 under the line below', async () => {
+    await toAddMoney();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
+    await screen.findByTestId('add-money-waiting');
+    hub.balanceKobo = 53_525_075;
+    hub.rows = [row('new')];
+    await screen.findByTestId('add-money-received', undefined, { timeout: 4000 });
+    const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as object) as Record<string, number>;
+    const figure = flat(screen.getByTestId('add-money-amount'));
+    const word = flat(screen.getByText('received'));
+    expect(figure.fontSize).toBe(30);
+    expect(figure.letterSpacing).toBeCloseTo(-1.05, 5);
+    expect(word.fontSize).toBe(30);
+    expect(word.letterSpacing).toBeCloseTo(-1.05, 5);
+    expect(figure.lineHeight).toBeCloseTo(39, 5);
+    expect(word.lineHeight).toBeCloseTo(39, 5);
+    const head = screen.getByTestId('add-money-amount').parent!.parent!;
+    expect(flat(head).gap).toBe(10);
+    expect(flat(screen.getByTestId('add-money-amount').parent!).marginTop).toBe(8);
+    expect(flat(screen.getByTestId('add-money-from')).fontSize).toBe(14.5);
+    expect(flat(screen.getByTestId('add-money-received-body')).gap).toBe(20);
+  });
+
   it('says how many landed and lists each, when two came close together, with no total of ours (L2)', async () => {
     await toAddMoney();
     await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
