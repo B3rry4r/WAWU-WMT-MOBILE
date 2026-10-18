@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 63 | 0 | 0 | 0 |
+| todo | 61 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 106 | 0 | 0 | 0 |
+| verifying | 108 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -71,6 +71,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
 - [SETTINGS-08](../tasks/SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in (You)
 - [SETTINGS-05](../tasks/SETTINGS-05.md) Delete account (You)
+- [FIX-12](../tasks/FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11 (You)
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
 - [NUV-08](../tasks/NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures (You)
 - [TIER-04](../tasks/TIER-04.md) Add 5 more products (You)
@@ -85,6 +86,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
 - [INBOX-24](../tasks/INBOX-24.md) Private community monthly pass (backend) (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
+- [EVENTS-12](../tasks/EVENTS-12.md) Hosting an event needs an active tier (backend) (You)
 - [AITOOLS-01](../tasks/AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
@@ -320,6 +322,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 18 Oct 2026 · EVENTS-12, FIX-12 · Built (Sonnet builder, T2, bundle S9; backend `wmt/S9` `50066b9` on `origin/wmt/EVENTS-11` `71117e4` with `origin/wmt/MERGE-14` `195de50` merged, no conflicts; mobile `wmt/S9` records only; additive, no migration; status verifying): hosting an event reads the tier (a live tick or a running tier hosts; anyone else gets 403 `tier_required` with the cheapest tier of `GET /plans`), and the EVENTS-11 follow-ups (specs for R7, R8, R10; the sold 409 names a tier once; PATCH on a cancelled event is a 409). Protected suite 253/253, gates and baseline EXIT 0, route table unchanged.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, S1b round 2): the locked course's foot is padded by its measured height so nothing sits under it (H25); Send posts a comment once (H21); the preview pill no longer covers the book's page count (H19, H20); `Pill` gains `flush` (SHARED-CHANGES HOME-03 #5); tests added, none loosened; status verifying.
 - 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
@@ -334,4 +337,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · SETTINGS-05 · Built (Sonnet builder, T2 identity; mobile `wmt/SETTINGS-05` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `8f2efc8d` merged, backend `wmt/SETTINGS-05` `56c4b61` on `origin/wmt/SETTINGS-08`; migration `20261025181000`, contract changed; status verifying): Z2's Delete account line, Z6 (the bank's balance, Withdraw, no wallet warning without a wallet), Z7 (optional reason the Hub now keeps, type DELETE, the Hub's refusal in its words) and Z8 (the Hub's date, Done signs out); checked on a stack with the real wawu-id (blocked with money, blocked with an owed earning, scheduled, a sign-in cancelled once, a double tap made one schedule); gaps G-SETTINGS-05-1 and -2.
 - 17 Oct 2026 · POINTS-07 · Built (Sonnet builder, T2; mobile `wmt/POINTS-07` on `origin/wmt/AITOOLS-01` `8e5591a4`, contract from backend `90ab9aa`; no backend change; status verifying): Studio (`/studio`, PT1 and PT1a) lists the tools `GET /ai-tools` gives with the Hub's costs, from the Home Studio tile and the Create hub's Studio card (M19, with the points count); `useJobCheck` shows PT3, PT3a, PT3b or PT7 from `POST /points/quote` and buys exactly the missing points with the PIN, once (stack: 1,000 + 250 = 1,250 points, 1 debit after a wrong PIN; limit reached by 3 real jobs); gaps G-POINTS-07-1 to -4.
 - 17 Oct 2026 · AITOOLS-01 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`, mobile `wmt/AITOOLS-01` on `47555987`; migration `20261025182000_ai_tool_jobs`; status verifying): `GET /ai-tools` lists VoiceOver with its cost, `POST /ai-tools/voiceover/jobs` holds the points, makes the audio through one provider seam and keeps them only on success, `GET /ai-tools/jobs/{id}` says working, done or "No points were taken"; two jobs at once never go below zero, each cap is named with nothing held, a lost answer and a retry run one job. NOT RUN against the real voice provider (no key on any build machine); run against a local stand-in. G-AITOOLS-01-1 to -5 filed.
-- 17 Oct 2026 · ME-12, VERIFY-04, VERIFY-05 · Built (Sonnet builder, bundle S7; mobile `wmt/S7` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/WALLET-05` `4817f904` merged, both sides kept; no backend change, no migration; status verifying): `/tiers` (VF5, VF5b), `/checkout` (VF6 to VF6d, one fresh quote and one `Idempotency-Key` per attempt, the shared PIN sheet, a short wallet to Add money), `/tier-done` (VF7, VF7a), `/publish` (VF12 to VF12c with the identity check VF15 to VF15b), the VF13 sheet and `/your-tier` (VF14 to VF14b); entries on Create, the upload step, the draft form, Me and Settings. E21's See tiers is not drawn (G-ME-12-2).
