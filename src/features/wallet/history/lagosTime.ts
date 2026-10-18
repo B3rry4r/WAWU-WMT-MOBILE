@@ -54,8 +54,11 @@ export function dayKey(iso: string): string {
   return `${local.getUTCFullYear()}-${twoDigits(local.getUTCMonth() + 1)}-${twoDigits(local.getUTCDate())}`;
 }
 
-/** The year is left off for this year's dates. */
-function dateWords(at: Date, now: Date): string {
+/**
+ * "26 Nov" in Lagos time, with the year when the date is not in the current Lagos year ("26 Nov 2027"). The one rule every end date
+ * of a tier, a pass or a lot of points is written by, so a date a year away never reads as one this year (FIX-78 F-3).
+ */
+export function dateWords(at: Date, now: Date): string {
   const local = lagos(at);
   const date = `${local.getUTCDate()} ${MONTHS[local.getUTCMonth()]}`;
   return local.getUTCFullYear() === lagos(now).getUTCFullYear() ? date : `${date} ${local.getUTCFullYear()}`;

@@ -35,6 +35,12 @@ const LABEL_SKELETON_W = '30%';
 const footErrorMetrics = { icon: 15, stroke: 2.2, iconGap: 6 } as const;
 
 const NAV_TITLE = 'Where you get paid';
+/**
+ * A21's first line (auth.js line 50, `muted`). The board also opens it with "Creators only."; that half is left out because it is not
+ * true here: any person with an open wallet reaches this screen from Withdraw, and the Hub keeps no creator gate on the account
+ * (R-51 asks only that the account is in the person's own name, FIX-78 F-6).
+ */
+export const OWN_NAME_LINE = 'The account must be in your own name.';
 
 export type PayoutAccountScreenProps = {
   /** The round back button. */
@@ -204,6 +210,9 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
       }
     >
       <View style={styles.body}>
+        <Text variant="muted" testID="payout-own-name">
+          {OWN_NAME_LINE}
+        </Text>
         <TextField
           label="Bank"
           testID="payout-bank"

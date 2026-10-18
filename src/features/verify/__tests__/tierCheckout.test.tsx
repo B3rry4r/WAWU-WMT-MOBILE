@@ -41,6 +41,8 @@ type Mode = 'ok' | 'pending' | 'lost' | 'changed' | 'failed' | 'wrongfirst';
 const hub = {
   mode: 'ok' as Mode,
   held: 'none' as 'none' | 'verify',
+  /** The end date the Hub gives the tier held, when a test sets one (otherwise 26 Nov of this year). */
+  until: null as string | null,
   balanceKobo: 48_525_075,
   shortfall: false,
   priceDrift: 0,
@@ -140,7 +142,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/me/tier') {
     if (hub.held === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
-    return ok({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: '2026-11-26T00:00:00.000Z', productsAllowed: 3, productsUsed: 2, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: PASS.verify });
+    return ok({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: hub.until ?? `${new Date().getUTCFullYear()}-11-26T00:00:00.000Z`, productsAllowed: 3, productsUsed: 2, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: PASS.verify });
   }
   if (path === '/plans/purchases/quote') {
     hub.quotes.push({ kind: url.searchParams.get('kind') ?? '', tierId: url.searchParams.get('tierId'), bump: url.searchParams.get('bump') });
@@ -229,7 +231,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', held: 'none', balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
+  Object.assign(hub, { mode: 'ok', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -339,6 +341,14 @@ describe('VF5 · Make it official', () => {
     expect(screen.queryByTestId('tiers-continue', { includeHiddenElements: true })).toBeNull();
     await waitFor(() => expect(hub.quotes.slice(before).some((q) => q.kind === 'upgrade' && q.tierId === 'founding' && q.bump === 'false')).toBe(true));
     expect(hub.quotes.slice(before).some((q) => q.bump === 'true')).toBe(false);
+  });
+
+  it('a person on a tier that ends next year is told the year, so it does not read as ending this year (VF5b, FIX-78 F-3)', async () => {
+    hub.held = 'verify';
+    hub.until = `${new Date().getUTCFullYear() + 1}-07-15T10:00:00.000Z`;
+    await renderRouter(routes, { initialUrl: '/tiers' });
+    await screen.findByTestId('tiers-list');
+    expect(screen.getByTestId('tiers-blurb')).toHaveTextContent(`You're on Verify until 15 Jul ${new Date().getUTCFullYear() + 1}. Pay only the difference.`);
   });
 });
 

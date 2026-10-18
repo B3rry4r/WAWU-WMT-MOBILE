@@ -39,17 +39,20 @@ export function daysLeft(until: string | null, now: number = Date.now()): number
   return Number.isFinite(ms) ? Math.max(0, Math.ceil((ms - now) / DAY_MS)) : null;
 }
 
-/** "Ends in 3 days · 26 Nov", "Ends today · 26 Nov". */
+/** "Ends in 3 days · 26 Nov", "Ends today · 26 Nov"; a date outside this year carries its year ("Ends in 3 days · 2 Jan 2027"). */
 export function endingLine(until: string | null, now?: number): string {
   const left = daysLeft(until, now);
-  const day = dayOf(until);
+  const day = dayOf(until, new Date(now ?? Date.now()));
   const head = left === null ? 'Ending soon' : left === 0 ? 'Ends today' : `Ends in ${left} ${left === 1 ? 'day' : 'days'}`;
   return day ? `${head} · ${day}` : head;
 }
 
-/** The card's line for each state: "Active until 26 Nov", "Ends in 3 days · 26 Nov", "Ended 26 Nov". */
+/**
+ * The card's line for each state: "Active until 26 Nov", "Ends in 3 days · 26 Nov", "Ended 26 Nov". The date is the Hub's, never worked
+ * out from a price or a length, and carries its year when it is not this year ("Active until 18 Oct 2027", FIX-78 F-3).
+ */
 export function stateLine(tier: Pick<MyTier, 'state' | 'activeUntil'>, now?: number): string | null {
-  const day = dayOf(tier.activeUntil);
+  const day = dayOf(tier.activeUntil, new Date(now ?? Date.now()));
   if (tier.state === 'active') return day ? `Active until ${day}` : 'Active';
   if (tier.state === 'ending') return endingLine(tier.activeUntil, now);
   if (tier.state === 'ended') return day ? `Ended ${day}` : 'Ended';

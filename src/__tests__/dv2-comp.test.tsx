@@ -43,6 +43,8 @@ const flat = (style: unknown): Record<string, unknown> => Object.assign({}, ...[
 const styleOf = (node: unknown) => flat((node as { props: { style: unknown } }).props.style);
 const hidden = { includeHiddenElements: true };
 const renderedText = () => JSON.stringify(screen.toJSON());
+/** The day the caption tests are written on: an end date is read against it, so none of them changes with the calendar. */
+const NOW = new Date('2026-10-18T09:00:00Z');
 
 beforeEach(() => {
   mockScheme = 'dark';
@@ -137,42 +139,58 @@ describe('ProductsMeter', () => {
   });
 
   it('writes the caption in Lagos time, from the tier name and the end date', () => {
-    expect(productsMeterCaption('Verify', '2026-11-26T12:00:00Z')).toBe('Verify · ends 26 Nov');
-    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00Z')).toBe('Verify · ends 27 Nov');
-    expect(productsMeterCaption('Verify', null)).toBe('Verify');
-    expect(productsMeterCaption(null, '2026-11-26T12:00:00Z')).toBe('ends 26 Nov');
-    expect(productsMeterCaption('Verify', 'not a date')).toBe('Verify');
-    expect(productsMeterCaption(undefined, undefined)).toBeUndefined();
+    expect(productsMeterCaption('Verify', '2026-11-26T12:00:00Z', NOW)).toBe('Verify · ends 26 Nov');
+    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00Z', NOW)).toBe('Verify · ends 27 Nov');
+    expect(productsMeterCaption('Verify', null, NOW)).toBe('Verify');
+    expect(productsMeterCaption(null, '2026-11-26T12:00:00Z', NOW)).toBe('ends 26 Nov');
+    expect(productsMeterCaption('Verify', 'not a date', NOW)).toBe('Verify');
+    expect(productsMeterCaption(undefined, undefined, NOW)).toBeUndefined();
   });
 
   it('writes September as "Sep", the board\'s three letters, never "Sept"', () => {
-    expect(productsMeterCaption('Verify', '2026-09-30T12:00:00Z')).toBe('Verify · ends 30 Sep');
-    expect(productsMeterCaption('Verify', '2027-09-01T08:00:00Z')).toBe('Verify · ends 1 Sep');
-    expect(productsMeterCaption(null, '2026-09-30T12:00:00Z')).toBe('ends 30 Sep');
+    expect(productsMeterCaption('Verify', '2026-09-30T12:00:00Z', NOW)).toBe('Verify · ends 30 Sep');
+    // A date in another year carries its year (FIX-78 F-3), so a September a year away never reads as this September.
+    expect(productsMeterCaption('Verify', '2027-09-01T08:00:00Z', NOW)).toBe('Verify · ends 1 Sep 2027');
+    expect(productsMeterCaption(null, '2026-09-30T12:00:00Z', NOW)).toBe('ends 30 Sep');
   });
 
   it('writes every month as the history writes it, from the same table', () => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     months.forEach((name, i) => {
       const at = new Date(Date.UTC(2026, i, 15, 12));
-      expect(productsMeterCaption(null, at)).toBe(`ends 15 ${name}`);
+      expect(productsMeterCaption(null, at, NOW)).toBe(`ends 15 ${name}`);
     });
   });
 
   it('reads the day on the Lagos clock at midnight and at the ends of a month and a year', () => {
-    expect(productsMeterCaption('Verify', '2026-09-30T22:59:59Z')).toBe('Verify · ends 30 Sep');
-    expect(productsMeterCaption('Verify', '2026-09-30T23:00:00Z')).toBe('Verify · ends 1 Oct');
-    expect(productsMeterCaption('Verify', '2026-12-31T22:59:59Z')).toBe('Verify · ends 31 Dec');
-    expect(productsMeterCaption('Verify', '2026-12-31T23:59:00Z')).toBe('Verify · ends 1 Jan');
-    expect(productsMeterCaption('Verify', '2026-02-28T23:30:00Z')).toBe('Verify · ends 1 Mar');
-    expect(productsMeterCaption('Verify', '2028-02-28T23:30:00Z')).toBe('Verify · ends 29 Feb');
-    expect(productsMeterCaption('Verify', '2026-11-26T00:00:00Z')).toBe('Verify · ends 26 Nov');
+    expect(productsMeterCaption('Verify', '2026-09-30T22:59:59Z', NOW)).toBe('Verify · ends 30 Sep');
+    expect(productsMeterCaption('Verify', '2026-09-30T23:00:00Z', NOW)).toBe('Verify · ends 1 Oct');
+    expect(productsMeterCaption('Verify', '2026-12-31T22:59:59Z', NOW)).toBe('Verify · ends 31 Dec');
+    // Past midnight in Lagos it is already the next year, so the date carries it (FIX-78 F-3: this and the 2028 line were written without the year).
+    expect(productsMeterCaption('Verify', '2026-12-31T23:59:00Z', NOW)).toBe('Verify · ends 1 Jan 2027');
+    expect(productsMeterCaption('Verify', '2026-02-28T23:30:00Z', NOW)).toBe('Verify · ends 1 Mar');
+    expect(productsMeterCaption('Verify', '2028-02-28T23:30:00Z', NOW)).toBe('Verify · ends 29 Feb 2028');
+    expect(productsMeterCaption('Verify', '2026-11-26T00:00:00Z', NOW)).toBe('Verify · ends 26 Nov');
   });
 
   it('reads a date with an offset, and a Date, on the same clock', () => {
-    expect(productsMeterCaption('Verify', '2026-11-26T20:00:00-05:00')).toBe('Verify · ends 27 Nov');
-    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00+01:00')).toBe('Verify · ends 26 Nov');
-    expect(productsMeterCaption('Verify', new Date('2026-09-30T23:00:00Z'))).toBe('Verify · ends 1 Oct');
+    expect(productsMeterCaption('Verify', '2026-11-26T20:00:00-05:00', NOW)).toBe('Verify · ends 27 Nov');
+    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00+01:00', NOW)).toBe('Verify · ends 26 Nov');
+    expect(productsMeterCaption('Verify', new Date('2026-09-30T23:00:00Z'), NOW)).toBe('Verify · ends 1 Oct');
+  });
+
+  it('adds the year when the end date is not in the current year, on the Lagos clock (FIX-78 F-3)', () => {
+    // A 12-month tier bought today ends a year from today: it must not read as ending today.
+    expect(productsMeterCaption('Founding Maker', '2027-10-18T09:00:00.000Z', NOW)).toBe('Founding Maker · ends 18 Oct 2027');
+    expect(productsMeterCaption(null, '2027-01-02T12:00:00Z', NOW)).toBe('ends 2 Jan 2027');
+    // This year: no year.
+    expect(productsMeterCaption('Verify', '2026-12-30T12:00:00Z', NOW)).toBe('Verify · ends 30 Dec');
+    // The year turns at midnight in Lagos, not in UTC: 23:30 UTC on 31 Dec 2026 is 00:30 on 1 Jan 2027 there.
+    expect(productsMeterCaption('Verify', '2026-12-31T23:30:00Z', NOW)).toBe('Verify · ends 1 Jan 2027');
+    // A tier that ended last year says so.
+    expect(productsMeterCaption('Verify', '2025-10-18T09:00:00Z', NOW)).toBe('Verify · ends 18 Oct 2025');
+    // "Today" is read on the Lagos clock too: 23:30 UTC on 31 Dec is already next year there.
+    expect(productsMeterCaption('Verify', '2027-03-01T09:00:00Z', new Date('2026-12-31T23:30:00Z'))).toBe('Verify · ends 1 Mar');
   });
 });
 

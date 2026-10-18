@@ -47,6 +47,8 @@ const hub = {
   /** The Hub fails the tier read this many more times (a real failure, FIX-68 F-2). */
   tierFails: 0,
   tierReads: 0,
+  /** The Hub's own end date for the tier when a test sets one (otherwise a few days from now, by state). */
+  until: null as string | null,
   used: 2,
   allowed: 3,
   wallet: 'open' as 'open' | 'opening' | 'rejected',
@@ -67,7 +69,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
-  const until = new Date(Date.now() + (hub.tier === 'ending' ? 2.4 : hub.tier === 'ended' ? -3 : 40) * DAY).toISOString();
+  const until = hub.until ?? new Date(Date.now() + (hub.tier === 'ending' ? 2.4 : hub.tier === 'ended' ? -3 : 40) * DAY).toISOString();
   if (path === '/users/me') return ok({ wawuUserId: '00000000-0000-4000-8000-0000000000b4', accountType: 'creator', firstName: 'Lennox', lastName: 'Emmanuel' });
   if (path === '/me/tier') {
     hub.tierReads += 1;
@@ -177,7 +179,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -334,7 +336,8 @@ describe('VF14 · your tier', () => {
   it('a user sees the Hub’s dates and counts (active), a warning when it ends soon, and the ended state with Renew', async () => {
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-name')).toHaveTextContent('Verify');
-    expect(screen.getByTestId('your-tier-line')).toHaveTextContent(/^Active until \d{1,2} [A-Z][a-z]{2}$/);
+    // 40 days from now can fall in next year, which then carries its year (FIX-78 F-3); the exact words are pinned below.
+    expect(screen.getByTestId('your-tier-line')).toHaveTextContent(/^Active until \d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
     expect(screen.getByTestId('your-tier-products')).toHaveTextContent(/2 of 3/);
     expect(screen.getByTestId('your-tier-points')).toHaveTextContent(/100/);
     expect(screen.getByTestId('your-tier-pass')).toHaveTextContent(/Watch live, apply/);
@@ -342,6 +345,29 @@ describe('VF14 · your tier', () => {
     expect(screen.getByTestId('your-tier-renew')).toHaveTextContent('Renew · ₦1,000');
     await fireEvent.press(screen.getByTestId('your-tier-renew'));
     expect(await screen.findByTestId('where')).toHaveTextContent('/checkout?kind=renew&tier=verify');
+  });
+
+  it('a 12-month tier shows the year of its end, so it never reads as ending today (FIX-78 F-3)', async () => {
+    // Mid-year dates, so the Lagos year is the UTC year whatever hour the test runs.
+    const year = new Date().getUTCFullYear();
+    hub.until = `${year + 1}-07-15T10:00:00.000Z`;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(`Active until 15 Jul ${year + 1}`);
+  });
+
+  it('a tier that ends later this year says the day and no year', async () => {
+    const year = new Date().getUTCFullYear();
+    hub.until = `${year}-12-15T10:00:00.000Z`;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(/^Active until 15 Dec$/);
+  });
+
+  it('a tier that ended last year says so with the year', async () => {
+    const year = new Date().getUTCFullYear();
+    hub.tier = 'ended';
+    hub.until = `${year - 1}-07-15T10:00:00.000Z`;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    expect(await screen.findByTestId('your-tier-line')).toHaveTextContent(`Ended 15 Jul ${year - 1}`);
   });
 
   it('an ending tier warns with the days left, and an ended one says published products stay up and publishing is paused', async () => {

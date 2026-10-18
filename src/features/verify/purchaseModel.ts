@@ -1,5 +1,6 @@
 import { formatPoints } from '@/components/PointsFigure';
 import { CHANGED_LINE, lastsText, naira, NOT_READY_LINE, SHORT_LINE } from '@/features/points/buyModel';
+import { dateWords } from '@/features/wallet/history/lagosTime';
 
 import type { PlanTier, Purchase, PurchaseGrant, PurchaseQuote, PurchaseTarget } from './purchaseApi';
 
@@ -99,13 +100,12 @@ export function grantRows(grant: PurchaseGrant): GrantRow[] {
   return rows;
 }
 
-/** The tier a person holds, as "Active until 26 Nov": the Lagos day, the board's three-letter month (never Intl, which writes "Sept"). */
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export function dayOf(iso: string | null | undefined): string | null {
+/**
+ * The day a tier ends, as "Active until 26 Nov": the Lagos day and the board's three-letter month (never Intl, which writes "Sept").
+ * The year is added when the date is not in the current Lagos year ("18 Oct 2027"), so a 12-month tier never reads as ending today.
+ */
+export function dayOf(iso: string | null | undefined, now: Date = new Date()): string | null {
   if (!iso) return null;
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) return null;
-  const d = new Date(ms + 3_600_000);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  const at = new Date(iso);
+  return Number.isNaN(at.getTime()) ? null : dateWords(at, now);
 }
