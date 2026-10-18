@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 299.**
+**Launch tasks done: 176 of 300.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 63 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 108 | 0 | 0 | 0 |
+| verifying | 109 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-72](../tasks/FIX-72.md) A school payout that Nuvion accepts and then fails is paid under a new reference, once (You)
 - [FIX-70](../tasks/FIX-70.md) A fee given back that Nuvion accepts and then fails lands under a new reference, once (You)
 - [FIX-66](../tasks/FIX-66.md) A move Nuvion accepts and then fails lands under a new reference, and WAWU's account ledger equals Nuvion's (You)
 - [FIX-59](../tasks/FIX-59.md) My purchases lists every paid kind (tickets, credit packs, school fees, community passes) (You)
