@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -54,7 +54,7 @@ export function statementDeliveryQuery(owner: string | null) {
 export async function sendStatement(input: { from: string; to: string; format: StatementFormat; key: string }): Promise<StatementSent> {
   const { key, ...request } = input;
   const body = (await unwrap(
-    api.POST('/api/hub/money/statements/email', { params: { header: { 'Idempotency-Key': key } }, body: request }),
+    api.POST('/api/hub/money/statements/email', { params: { header: { 'Idempotency-Key': key } }, body: request, fetch: resendsUnderKey }),
   )) as unknown as Envelope<SentView>;
   const v = body?.data;
   if (!v || typeof v !== 'object' || typeof v.sentTo !== 'string' || v.sentTo.length === 0) throw unreadable('statement');

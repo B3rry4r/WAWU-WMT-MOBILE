@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
@@ -99,6 +99,7 @@ export function payQuestion(input: PayQuestionInput): Promise<PayOutcome<Questio
       api.POST('/api/hub/dm/send/wallet/pay', {
         params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
         body: { questionId: input.questionId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+        fetch: resendsUnderKey,
       }),
     readQuestion,
     'There is not enough in your wallet for this question.',

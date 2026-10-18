@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -145,6 +145,7 @@ export async function payFee(input: PayInput): Promise<PayOutcome> {
     result = await api.POST('/api/hub/legal/requests/{id}/pay/wallet', {
       params: { path: { id: input.requestId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
@@ -173,6 +173,7 @@ export async function buyPack(input: BuyInput): Promise<BuyOutcome> {
     result = await api.POST('/api/hub/plans/purchases', {
       params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { kind: 'points_pack', packId: input.packId, method: input.method, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

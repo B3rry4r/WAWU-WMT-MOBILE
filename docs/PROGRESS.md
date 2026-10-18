@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 325.**
+**Launch tasks done: 176 of 326.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 148 | 0 | 0 | 0 |
+| verifying | 149 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -104,6 +104,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-12](../tasks/FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11 (You)
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
 - [NUV-08](../tasks/NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures (You)
+- [FIX-87](../tasks/FIX-87.md) A PIN or money write the Hub never answers ends after 30 s, where its screen can send it again under the same key (You)
 - [TIER-04](../tasks/TIER-04.md) Add 5 more products (You)
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)

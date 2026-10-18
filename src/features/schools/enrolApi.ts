@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { readPaymentQuote, type PaymentQuote } from '@/features/events/buyApi';
@@ -249,6 +249,7 @@ export async function payFee(input: FeeInput): Promise<FeeOutcome> {
     result = await api.POST('/api/hub/money/payments', {
       params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { kind: 'school_fee', targetId: input.enrolmentId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

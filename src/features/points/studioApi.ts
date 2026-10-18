@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
@@ -180,7 +180,7 @@ export async function buyShortfall(input: ShortfallInput): Promise<ShortfallOutc
   const { pin, key, ...rest } = input;
   let result;
   try {
-    result = await api.POST('/api/hub/points/shortfall', { params: { header: { 'X-Transaction-Pin': pin, 'Idempotency-Key': key } }, body: rest });
+    result = await api.POST('/api/hub/points/shortfall', { params: { header: { 'X-Transaction-Pin': pin, 'Idempotency-Key': key } }, body: rest, fetch: resendsUnderKey });
   } catch {
     return { kind: 'unanswered' };
   }

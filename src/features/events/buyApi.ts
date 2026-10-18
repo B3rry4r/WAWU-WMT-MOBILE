@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -92,6 +92,7 @@ export async function createOrder(input: { eventId: string; lines: readonly Orde
     api.POST('/api/hub/events/{id}/orders/wallet', {
       params: { path: { id: input.eventId }, header: { 'Idempotency-Key': input.key } },
       body: { lines: input.lines.map((l) => ({ ticketTypeId: l.ticketTypeId, quantity: l.quantity })) },
+      fetch: resendsUnderKey,
     }),
   )) as unknown as Envelope<OrderQuote>;
   return readOrderQuote(body?.data);
@@ -179,6 +180,7 @@ export async function payOrder(input: PayInput): Promise<PayOutcome> {
     result = await api.POST('/api/hub/events/orders/wallet/pay', {
       params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { orderId: input.orderId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

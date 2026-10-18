@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { HTTP_CREATED, filled, isKobo, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
@@ -119,6 +119,7 @@ export async function buyPass(input: BuyPassInput): Promise<PassOutcome> {
     result = await api.POST('/api/hub/communities/{id}/pass', {
       params: { path: { id: input.id }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { expectedTotalKobo: input.quote.payment.totalKobo, quoteToken: input.quote.payment.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

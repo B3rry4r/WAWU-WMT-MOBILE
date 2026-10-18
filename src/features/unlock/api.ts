@@ -1,4 +1,4 @@
-import { api } from '@/api/client';
+import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
@@ -75,6 +75,7 @@ export function sendUnlock(input: SendUnlockInput): Promise<PayOutcome<Unlock>> 
       api.POST('/api/hub/content/{id}/unlock/wallet', {
         params: { path: { id: input.contentId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
         body: { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+        fetch: resendsUnderKey,
       }),
     readUnlock,
     'There is not enough in your wallet to unlock this.',

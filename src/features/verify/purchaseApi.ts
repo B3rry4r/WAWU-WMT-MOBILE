@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
@@ -279,6 +279,7 @@ export async function buy(input: PurchaseInput): Promise<PurchaseOutcome> {
     result = await api.POST('/api/hub/plans/purchases', {
       params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: purchaseBody(input),
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };
