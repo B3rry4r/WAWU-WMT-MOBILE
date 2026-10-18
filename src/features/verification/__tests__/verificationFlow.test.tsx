@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -190,6 +190,24 @@ describe('ME-13: Verification', () => {
     expect(screen.queryByText('Get it')).toBeNull();
     expect(screen.queryByText('Pay')).toBeNull();
     expect(screen.queryByTestId('verification-error')).toBeNull();
+  });
+
+  // SWEEP-APP-6 (ME-13 L3, seen on the stack with the stand-in's hold released): the payment is decided while the page is open.
+  it('M15: when the payment that was confirming is granted with the page open, the banner goes and the tier row comes, with no leaving the page', async () => {
+    hub.wallet = { state: 'open' };
+    hub.pending = { id: 'p1' };
+    await open();
+    await screen.findByTestId('verification-confirming');
+    expect(screen.queryByTestId('verification-held')).toBeNull();
+    hub.pending = null;
+    hub.tier = { state: 'active', tier: { id: 'verify', name: 'Verify' }, activeUntil: '2026-11-17T05:26:00.262Z' };
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: ['verification', 'pending'] });
+    });
+    await waitFor(() => expect(screen.queryByTestId('verification-confirming')).toBeNull());
+    const held = await screen.findByTestId('verification-held');
+    expect(held).toHaveTextContent(/Verify/);
+    expect(held).toHaveTextContent(/Active until 17 Nov 2026/);
   });
 
   it('with nothing confirming and no tier, there is no tier part and no banner', async () => {
