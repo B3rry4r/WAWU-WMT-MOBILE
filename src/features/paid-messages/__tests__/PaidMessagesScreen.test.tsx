@@ -223,6 +223,17 @@ describe('Paid messages (I21)', () => {
     expect(screen.getByRole('tab', { name: '24 hours' }).props.accessibilityState.selected).toBe(false);
   });
 
+  it('SWEEP-INBOX W4b L1: the saved off-list reply time (36 hours) stays a tab after another is tapped, so the person can go back to it', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ responseHours: 36 }));
+    await open();
+    expect(await screen.findByText('Take paid messages')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: '2 days' }));
+    expect(screen.getByRole('tab', { name: '2 days' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByRole('tab', { name: '36 hours' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: '36 hours' }));
+    expect(screen.getByRole('tab', { name: '36 hours' }).props.accessibilityState.selected).toBe(true);
+  });
+
   it('asks nothing for an empty price or one under the lowest, and shows a dash', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     await open();
