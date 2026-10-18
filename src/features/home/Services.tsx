@@ -98,7 +98,8 @@ function Tile({ service }: { service: Service }) {
 
 const styles = StyleSheet.create({
   root: { gap: m.headingBelow },
-  heading: { fontSize: m.heading, letterSpacing: m.headingTracking * m.heading },
+  /** The canvas's heading is `line-height: normal` (24 at 18.5); the body variant's own leading is 21.8, which drew the rows under it 2 high. */
+  heading: { fontSize: m.heading, lineHeight: canvasNormalLineHeight(m.heading), letterSpacing: m.headingTracking * m.heading },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: m.headingBelow },
   column: { width: '25%', alignItems: 'center' },
   tile: { alignItems: 'center', gap: m.labelGap, width: m.width },

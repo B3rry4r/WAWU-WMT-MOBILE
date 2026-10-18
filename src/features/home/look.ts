@@ -1,5 +1,6 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
+import { createButtonMetrics } from '@/components/CreateButton';
 import { canvasNormalLineHeight, font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -14,14 +15,23 @@ const metricsBase = {
   headTop: 6,
   headBottom: 14,
   headRow: 40,
+  /** `todayHead`'s buttons: the search and the bell are 40 round, `gap:8px`; the tab row keeps at least 8 clear of them (HOME-18). */
+  barButton: 40,
+  barButtonsApart: space.sm,
+  barClear: space.sm,
   /** `body(...)` on Today: 8 above the first card, 20 between parts, 20 at the sides. */
   bodyTop: 8,
   between: 20,
   bodyBottom: 32,
+  /**
+   * A creator's body ends higher: the Create button sits `createButtonMetrics.bottom` above the screen's foot and is 58 across, so the last
+   * row ends that far, and 16 more, above it, which keeps a card's Follow clear of the button at the end of the scroll (HOME-18).
+   */
+  bodyBottomCreator: createButtonMetrics.bottom + createButtonMetrics.size + space.lg,
   /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row (the shared fitted figure keeps 10 of it itself). */
   moneyPadTop: 18,
   moneyPadX: 18,
-  moneyPadBottom: 18,
+  moneyPadBottom: 16,
   figureTop: 14,
   figure: 38,
   /** The Naira chip: 30 high, `padding:0 10px 0 4px`, `gap:6px`, the flag 22, the words 13 at 600. */

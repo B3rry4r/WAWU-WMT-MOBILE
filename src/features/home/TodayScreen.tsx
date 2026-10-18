@@ -11,6 +11,8 @@ import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
 import { useAd, useAdReports } from '@/features/ads/useAd';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { metrics as feedMetrics } from '@/features/feed/look';
+import { countsKey, fetchCounts } from '@/features/me/counts';
+import { NotificationsBell } from '@/features/notifications/NotificationsBell';
 import { CompleteAccountFlag } from '@/features/open-wallet/CompleteAccountFlag';
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -35,6 +37,8 @@ export type TodayScreenProps = {
   onToggleMask: () => void;
   /** The search button at the end of the tab row opens Search (X5, EXPLORE-02). Not drawn without it. */
   onSearch?: () => void;
+  /** The bell at the end of the tab row opens Notifications (M31, `/notifications`). Not drawn without it, nor when signed out. */
+  onOpenNotifications?: () => void;
   /** "See all" on Creators to discover opens All creators (X4, EXPLORE-02). Not drawn without it. */
   onSeeAllCreators?: () => void;
   onOpenCreator?: (wawuId: string) => void;
@@ -47,29 +51,43 @@ export type TodayScreenProps = {
  * - creators to discover (`GET /creators`), without the viewer (`GET /users/me`).
  *
  * Entries whose screens are not built yet are added by the tasks that build them (R-27, R-41):
- * the bell (ME-14), a creator's profile (ME-02) and Create (ME-04); Scan after launch (WALLET-20). The ad card (H1, H36)
+ * Scan after launch (WALLET-20). The bell (M31, ME-14's screen, HOME-18's entry) opens Notifications and its dot reads `GET /me/counts`. The ad card (H1, H36)
  * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot`; with no campaign, while it loads and
  * when it cannot be read nothing shows, never an empty frame. Today draws no TGIF card and reads no TGIF (R-59, DV2-RM): TGIF is
  * on Explore (EXPLORE-07) and in the morning notification (HOME-16), and the notification opens the reader. The services row
  * (`Services`) draws Monetize for a creator account only. No Bills button on the money card and no Pay bills or Events tile
  * (R-52, R-61, DV2-RM).
  */
-export function TodayScreen({ onView, masked, onToggleMask, onSearch, onSeeAllCreators, onOpenCreator }: TodayScreenProps) {
+export function TodayScreen({ onView, masked, onToggleMask, onSearch, onOpenNotifications, onSeeAllCreators, onOpenCreator }: TodayScreenProps) {
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
   const focused = useIsFocused();
+  const client = useTodayClient();
   // Home exists only for a signed-in session; until one is read, Today draws its loading shapes and asks nothing.
-  const signedIn = useSession().status === 'signedIn';
+  const session = useSession().status;
+  const signedIn = session === 'signedIn';
   const chromeTop = Math.max(insets.top, feedMetrics.statusBar);
+  // The bell's dot is the Hub's unread count (`GET /me/counts`), read only for a signed-in person while the bell is drawn. A read that
+  // failed or has not come draws the bell without its dot, never an error; the notifications screen refreshes this count as it reads.
+  const bell = Boolean(onOpenNotifications) && session !== 'signedOut';
+  const counts = useQuery({ queryKey: countsKey, queryFn: fetchCounts, enabled: signedIn && bell }, client);
+  const unread = counts.data?.unreadNotifications ?? 0;
+  // A creator account has the Create button over the page's foot (ME-04), so its body ends higher (the same answer Create reads, under the same key).
+  const creator = useQuery({ queryKey: profileKey, queryFn: fetchMe, select: (profile) => profile.accountType === 'creator', enabled: signedIn }, client).data === true;
 
   return (
     <View testID="today" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: chromeTop + m.headTop }]}>
       {focused ? <StatusBar style={dark ? 'light' : 'dark'} /> : null}
       <View style={styles.head}>
-        <HomeTabs views={homeViews} selected="today" tone="page" onChange={onView} />
-        {onSearch ? <IconButton icon="Search" label="Search" size={m.headRow} onPress={onSearch} testID="today-search" /> : null}
+        <HomeTabs views={homeViews} selected="today" tone="page" onChange={onView} fit style={styles.tabs} />
+        {onSearch || bell ? (
+          <View testID="today-bar-buttons" style={styles.buttons}>
+            {onSearch ? <IconButton icon="Search" label="Search" size={m.barButton} onPress={onSearch} testID="today-search" /> : null}
+            {bell && onOpenNotifications ? <NotificationsBell variant="today" onPress={onOpenNotifications} unread={unread} testID="today-bell" /> : null}
+          </View>
+        ) : null}
       </View>
-      <ScrollView testID="today-scroll" contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="today-scroll" contentContainerStyle={[styles.body, creator ? styles.bodyCreator : null]} showsVerticalScrollIndicator={false}>
         {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} /> : <TodayLoading />}
       </ScrollView>
     </View>
@@ -168,6 +186,9 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  head: { height: m.headRow, marginBottom: m.headBottom, paddingHorizontal: gutter, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  head: { height: m.headRow, marginBottom: m.headBottom, paddingHorizontal: gutter, flexDirection: 'row', alignItems: 'center' },
+  tabs: { marginRight: m.barClear },
+  buttons: { flexDirection: 'row', alignItems: 'center', gap: m.barButtonsApart, flexShrink: 0 },
   body: { paddingTop: m.bodyTop, paddingHorizontal: gutter, paddingBottom: m.bodyBottom, gap: m.between },
+  bodyCreator: { paddingBottom: m.bodyBottomCreator },
 });

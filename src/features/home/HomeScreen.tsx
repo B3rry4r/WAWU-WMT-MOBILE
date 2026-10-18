@@ -21,6 +21,8 @@ export type HomeScreenProps = {
   onCreate?: () => void;
   /** The search buttons (Today's head and the feed's tab row) open Search (X5, EXPLORE-02). Not drawn without it. */
   onSearch?: () => void;
+  /** The bell in Today's bar opens Notifications (M31, ME-14). Not drawn without it. */
+  onOpenNotifications?: () => void;
   /** "See all" on Today's creators, and "Find people to follow" on an empty Following, open All creators (X4, EXPLORE-02). Not drawn without it. */
   onSeeAllCreators?: () => void;
   /** A professional card in the feed has Profile, which opens their page (P2, PROS-01) with the listing's id. Not drawn without it. */
@@ -33,7 +35,7 @@ export type HomeScreenProps = {
   onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
 };
 
-export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfessional, onOpenCreator, pay, onOpenPiece }: HomeScreenProps = {}) {
+export function HomeScreen({ onCreate, onSearch, onOpenNotifications, onSeeAllCreators, onOpenProfessional, onOpenCreator, pay, onOpenPiece }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -42,7 +44,7 @@ export function HomeScreen({ onCreate, onSearch, onSeeAllCreators, onOpenProfess
     <View testID="home" style={styles.root}>
       <View accessible accessibilityRole="header" accessibilityLabel="Home" style={styles.title} />
       {view === 'today' ? (
-        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} />
+        <TodayScreen onView={setView} masked={masked} onToggleMask={() => setMasked((m) => !m)} onSearch={onSearch} onOpenNotifications={onOpenNotifications} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} />
       ) : (
         <FeedScreen
           key={view}

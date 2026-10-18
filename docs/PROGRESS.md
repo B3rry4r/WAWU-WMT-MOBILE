@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 308.**
+**Launch tasks done: 176 of 309.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 130 | 0 | 0 | 0 |
+| verifying | 131 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -96,6 +96,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
+- [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
