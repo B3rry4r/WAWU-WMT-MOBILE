@@ -52,7 +52,10 @@ export async function fetchPendingPurchase(): Promise<PendingPurchase | null> {
   const view = body?.data;
   if (!view || typeof view !== 'object' || !('purchase' in view)) throw unreadable('payment');
   if (view.purchase === null) return null;
-  if (!filled(view.purchase?.id) || view.purchase.status !== 'pending') throw unreadable('payment');
+  if (!filled(view.purchase?.id) || !filled(view.purchase.status)) throw unreadable('payment');
+  // The Hub can answer with a purchase it has already decided (refunded when the plan could not be granted, paid, failed or
+  // reversed): that is nothing still confirming, not an answer the screen cannot read (SWEEP-APP-3 row 126).
+  if (view.purchase.status !== 'pending') return null;
   return { id: view.purchase.id };
 }
 
