@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 302.**
+**Launch tasks done: 176 of 303.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 55 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 118 | 0 | 0 | 0 |
+| verifying | 119 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-74](../tasks/FIX-74.md) A school payout the webhook completed at the quoted charge takes the provider's real charge, not a flag (You)
 - [FIX-64](../tasks/FIX-64.md) The school report spec waits for the first try to end, and the refund-notice migration can be undone (You)
 - [FIX-63](../tasks/FIX-63.md) Signed-in screens are guarded (every route that needs a session sits in the signed-in group) (You)
 - [FIX-62](../tasks/FIX-62.md) Wiring what batch 14 brought together (Add money from PT3b, Your tier row, M29 every kind, Saved opens a piece, unlock Done test) (You)
