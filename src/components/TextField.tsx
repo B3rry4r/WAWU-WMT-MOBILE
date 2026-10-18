@@ -57,6 +57,8 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'editable' | 'secure
   onPress?: () => void;
   /** Draws the hint as a result: `ok` in the positive colour with a CircleCheck, `warning` with a TriangleAlert, 600. */
   tone?: 'ok' | 'warning';
+  /** Reads the hint out as it changes (a polite live region) though it is a plain hint: A21's "Checking the account with the bank" (SWEEP-APP-3 row 91). */
+  announce?: boolean;
   /** Track the value out by .04em (phone, BVN, NIN and account numbers, as the kit's `mono` field). */
   mono?: boolean;
   /** With `multiline`: the most characters allowed; a "12 / 500" counter shows under the box and turns red above it. */
@@ -77,6 +79,7 @@ export function TextField({
   trailingIcon,
   onPress,
   tone,
+  announce,
   mono,
   max,
   onFocus,
@@ -202,7 +205,7 @@ export function TextField({
             <Text
               variant="caption"
               tone={error ? 'danger' : tone ? (tone === 'ok' ? 'positive' : 'warning') : 'textMuted'}
-              accessibilityLiveRegion={error || tone ? 'polite' : 'none'}
+              accessibilityLiveRegion={error || tone || announce ? 'polite' : 'none'}
               accessibilityRole={error ? 'alert' : undefined}
               style={[styles.messageText, max !== undefined && styles.messageGrow, tone && !error && styles.toneText]}
             >

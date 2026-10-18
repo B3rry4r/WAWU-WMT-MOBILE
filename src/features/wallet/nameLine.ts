@@ -5,7 +5,7 @@ import type { NameLine } from './payoutForm';
  * it is the name on the BVN. `ok` and `warning` are the field's result tones; the other lines are plain hints. `none` and `unconfirmed`
  * say nothing here (the field shows its own error). `way` is where the field is drawn: A21 saves the account, W8 sends to it.
  */
-export type NameHint = { hint: string; tone?: 'ok' | 'warning' };
+export type NameHint = { hint: string; tone?: 'ok' | 'warning'; /** The plain lines are read out as they change, as the polite live region they were before the field took them as hints. */ announce?: boolean };
 
 export function nameLineHint(line: NameLine, way: 'save' | 'send' = 'save'): NameHint | null {
   switch (line.kind) {
@@ -14,10 +14,10 @@ export function nameLineHint(line: NameLine, way: 'save' | 'send' = 'save'): Nam
       if (line.match === false) return { hint: `${line.name} · not the name on your BVN`, tone: 'warning' };
       return { hint: line.name, tone: 'ok' };
     case 'checking':
-      return { hint: 'Checking the account with the bank' };
+      return { hint: 'Checking the account with the bank', announce: true };
     case 'unchecked':
       // Saving checks the name with the bank. Send has nothing to save and stays off until the name is checked, so it says no more.
-      return { hint: way === 'send' ? 'We could not check the name now.' : 'We could not check the name now. Saving checks it with the bank.' };
+      return { hint: way === 'send' ? 'We could not check the name now.' : 'We could not check the name now. Saving checks it with the bank.', announce: true };
     default:
       return null;
   }
