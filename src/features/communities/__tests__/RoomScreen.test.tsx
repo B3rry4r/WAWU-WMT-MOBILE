@@ -503,6 +503,43 @@ describe('sending (I26)', () => {
     expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
   });
 
+  it('SWEEP-INBOX W4b L2: once the stored message settles a "Not sent" copy from the live socket, the credit balance is read again', async () => {
+    answers[MESSAGES] = [paged([message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(48), credits(47)];
+    await renderRoom();
+    const socket = await connect();
+    await rtl.screen.findByText('hello');
+    await rtl.screen.findByText('48 credits');
+    await type('stored but unanswered');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    expect(sent.filter((s) => s === 'GET /credits')).toHaveLength(1);
+    await rtl.act(async () => socket.say(liveMessage(message('stored but unanswered', ME), 'c9')));
+    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+    expect(sent.filter((s) => s === 'GET /credits')).toHaveLength(2);
+  });
+
+  it('SWEEP-INBOX W4b L2: a "Not sent" copy whose message a page then delivers (the newest page read when the socket is ready) is not drawn, and the balance is read again', async () => {
+    const stored = message('stored but unanswered', ME);
+    answers[MESSAGES] = [paged([message('hello', 'u2')]), paged([stored, message('hello', 'u2')])];
+    answers['GET /credits'] = [credits(48), credits(47)];
+    await renderRoom();
+    await rtl.screen.findByText('hello');
+    await rtl.screen.findByText('48 credits');
+    await type('stored but unanswered');
+    answers[`POST /communities/${ROOM}/messages`] = ['offline'];
+    await pressSend();
+    await rtl.screen.findByText('Not sent');
+    // The socket becoming ready reads the newest page, and that page holds the stored message.
+    await connect();
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Not sent')).toBeNull());
+    expect(rtl.screen.getAllByText('stored but unanswered')).toHaveLength(1);
+    expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
+    expect(await rtl.screen.findByText('47 credits')).toBeTruthy();
+    expect(sent.filter((s) => s === 'GET /credits')).toHaveLength(2);
+  });
+
   it('INBOX-05 #34: the same words from another member do not clear a "Not sent" copy', async () => {
     answers[MESSAGES] = [paged([message('hello', 'u2')])];
     await renderRoom();
