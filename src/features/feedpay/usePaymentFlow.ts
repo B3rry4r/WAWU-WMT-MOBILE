@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { onSessionEnd } from '@/api/session';
 import type { PayStatus } from '@/components/pay-sheet';
 import type { PinCheckResult } from '@/components/pin-sheet';
 import { OVER_LIMIT_TITLE, NO_TOTAL_TITLE, PRICE_CHANGED_LINE, limitLine, quoteAddsUp } from '@/features/events/buyModel';
@@ -81,10 +82,15 @@ type Attempt<Q> = { key: string; quote: Q };
 /** Attempts that were sent and not decided, by scope: kept across the sheet closing, so a retry is the same request. */
 const attempts = new Map<string, Attempt<unknown>>();
 
-/** Forgets every kept attempt (a test starts clean; the app never calls it: an undecided attempt stays until the Hub answers). */
+/**
+ * Forgets every kept attempt. The app does it when a session ends (sign-out, a refused refresh, another account signing in),
+ * so a second person making the identical tip or unlock in the same run never sends the first person's key and quote
+ * (SWEEP-APP-3 row 138); within one session an undecided attempt stays until the Hub answers.
+ */
 export function clearAttempts(): void {
   attempts.clear();
 }
+onSessionEnd(clearAttempts);
 
 export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(engine: Engine<Q, V>, handlers: FlowHandlers) {
   const client = useQueryClient();
