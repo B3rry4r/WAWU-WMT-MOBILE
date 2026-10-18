@@ -6,6 +6,7 @@ import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
 import type { PinCheckResult } from '@/components/pin-sheet';
 import { feeLines, limitLine, NO_TOTAL_TITLE, OVER_LIMIT_TITLE, PRICE_CHANGED_LINE, quoteAddsUp } from '@/features/events/buyModel';
+import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
@@ -31,6 +32,10 @@ export type FeePayArgs = {
 };
 
 const WALLET_NOT_READY = ['wallet_not_open', 'wallet_opening'];
+/** The fee payment attempt for a request, kept by the phone (`money-attempt`) so it outlives this screen (SWEEP-MONEY-5b F3). */
+const feeSubject = (requestId: string) => `legal-fee:${requestId}`;
+/** The same fee: the same stage at the same total. A fee that moved since the attempt was sent is another payment. */
+const sameFee = (a: FeeQuote, b: FeeQuote): boolean => a.stage === b.stage && a.payment.totalKobo === b.payment.totalKobo;
 /** The Hub's answer when no fee can be paid on the request now (cancelled, already paid, re-quoted since the letter was signed). */
 const NOT_PAYABLE = 'target_not_payable';
 
@@ -42,6 +47,10 @@ const NOT_PAYABLE = 'target_not_payable';
  * - **One Idempotency-Key per attempt.** The key is made when a PIN is first sent for a quote and travels again, unchanged, after a
  *   wrong PIN and after an answer that never came. Until the Hub has given an answer that proves nothing moved, the next tap on Pay
  *   reuses that attempt (same quote, same key) instead of asking again: the Hub answers a key it knows with the first payment.
+ * - **The attempt outlives the page** (SWEEP-MONEY-5b F3). It is kept by the phone, not by this screen, so a payment whose answer never
+ *   came (the wait ends after 30 s and the person can leave) is sent again under its key when the person comes back and taps Pay
+ *   for the same fee: the same stage at the same total, checked against a fresh quote first. A fee that moved is another payment and
+ *   takes a new key.
  * - **Nobody pays twice.** A payment the Hub took and has not finished (`pending`, or `payment_in_progress`) is only ever read
  *   (the matter every four seconds), never sent again.
  * - **A Pay that cannot work is never drawn.** When the Hub says no fee can be paid now (`target_not_payable`), the quote the page was
@@ -66,8 +75,14 @@ export function useLegalFeePay(args: FeePayArgs) {
   const [unpayable, setUnpayable] = useState(false);
   const [confirming, setConfirming] = useState<{ stage: FeeQuote['stage']; paymentId: string | null } | null>(null);
 
-  // The attempt that has been sent and not settled: the quote it carried and its key.
-  const attempt = useRef<{ quote: FeeQuote; key: string } | null>(null);
+  // The attempt that has been sent and not settled (the quote it carried and its key) is `attemptFor(subject)`, kept by the phone.
+  // `mine` is the key of the attempt this screen sent or checked against a fresh quote; an older one is checked before it is reused.
+  const subject = feeSubject(requestId);
+  const mine = useRef<string | null>(null);
+  const heldNow = (): Attempt<FeeQuote> | null => {
+    const held = attemptFor<FeeQuote>(subject);
+    return held !== null && held.key === mine.current ? held : null;
+  };
   // A tap is one at a time: set before anything is awaited, so two taps in one frame ask once.
   const tapping = useRef(false);
   const settled = useRef(false);
@@ -97,7 +112,7 @@ export function useLegalFeePay(args: FeePayArgs) {
     (stage: FeeQuote['stage']) => {
       if (settled.current) return;
       settled.current = true;
-      attempt.current = null;
+      dropAttempt(subject);
       setConfirming(null);
       setPinOpen(false);
       setPayOpen(false);
@@ -106,18 +121,18 @@ export function useLegalFeePay(args: FeePayArgs) {
       afterMoney();
       paid.current(stage);
     },
-    [afterMoney],
+    [afterMoney, subject],
   );
 
   const settleFailed = useCallback(
     (payment: Pick<FeePayment, 'status' | 'statusMessage'>) => {
-      attempt.current = null;
+      dropAttempt(subject);
       setConfirming(null);
       setPinOpen(false);
       setStatus({ kind: 'failed', message: failedPaymentLine(payment) });
       afterMoney();
     },
-    [afterMoney],
+    [afterMoney, subject],
   );
 
   /** Reads the Hub's records for a payment it has not finished: the payment (when its id is known) and the matter. */
@@ -215,10 +230,20 @@ export function useLegalFeePay(args: FeePayArgs) {
     setProblem(null);
     setLoading(true);
     try {
-      // An attempt that was sent and never settled is shown as it was sent.
-      if (attempt.current) return open(attempt.current.quote);
+      // An attempt this screen sent and never settled is shown as it was sent.
+      const sent = heldNow();
+      if (sent) return open(sent.quote);
       const got = await ask();
-      if (got) open(got);
+      if (!got) return;
+      // One kept from before the screen was left is asked about first: the same fee is that attempt again, a fee that moved is not.
+      const older = attemptFor<FeeQuote>(subject);
+      if (older !== null && sameFee(older.quote, got)) {
+        mine.current = older.key;
+        open(older.quote);
+      } else {
+        if (older !== null) dropAttempt(subject, older.key);
+        open(got);
+      }
     } finally {
       tapping.current = false;
       if (live.current) setLoading(false);
@@ -230,7 +255,7 @@ export function useLegalFeePay(args: FeePayArgs) {
     if (!quote || tapping.current) return;
     tapping.current = true;
     try {
-      if (!attempt.current) {
+      if (!heldNow()) {
         const again = await ask();
         if (!again) {
           setPayOpen(false);
@@ -249,8 +274,9 @@ export function useLegalFeePay(args: FeePayArgs) {
 
   const submitPin = async (pin: string): Promise<PinCheckResult> => {
     if (!quote || !owner) return { code: 'unanswered' };
-    const sending = attempt.current ?? { quote, key: newRequestKey() };
-    attempt.current = sending;
+    const sending: Attempt<FeeQuote> = heldNow() ?? { subject, key: newRequestKey(), quote, phase: 'sent', paymentId: null };
+    mine.current = sending.key;
+    keepAttempt(sending);
     const outcome = await payFee({
       requestId,
       expectedTotalKobo: sending.quote.payment.totalKobo,
@@ -259,9 +285,7 @@ export function useLegalFeePay(args: FeePayArgs) {
       pin,
     });
     // The Hub gave an answer that proves nothing moved for the key: the attempt is not kept, the next tap asks again.
-    const nothingMoved = () => {
-      attempt.current = null;
-    };
+    const nothingMoved = () => dropAttempt(subject, sending.key);
     switch (outcome.kind) {
       case 'pin_incorrect':
         return { code: 'pin_incorrect', triesLeft: outcome.triesLeft };

@@ -5,6 +5,7 @@ import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
 import type { PinCheckResult } from '@/components/pin-sheet';
+import { attemptFor, dropAttempt, keepAttempt } from '@/features/money-attempt/attempts';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
@@ -73,6 +74,11 @@ export type BuySheet = {
 
 const WALLET_NOT_READY = ['wallet_not_open', 'wallet_opening'];
 
+/** The order request for these tickets at this event, kept by the phone (`money-attempt`) while the Hub has not answered it (SWEEP-MONEY-5b F3). */
+const orderSubject = (eventId: string, signature: string) => `event-order:${eventId}:${signature}`;
+/** The Hub answered the order request with a refusal (a 4xx that is not "still running"): nothing was made, so its key is free. No answer and a 5xx are not answers. */
+const refusedByHub = (error: unknown): boolean => isApiError(error) && error.status >= 400 && error.status < 500 && error.code !== 'idempotency_in_progress';
+
 /**
  * Buying tickets from the wallet, from E2's Get tickets to E5 (EVENTS-06): the order, E3's quote, E4's PIN, the payment, and
  * E10's still-confirming. One `Idempotency-Key` per payment intent: a wrong PIN, a request that got no answer and a PIN typed
@@ -98,7 +104,9 @@ export function useTicketBuy(args: TicketBuyArgs) {
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
 
-  // One key per tap on Get tickets: the same tickets asked for again answer the same order.
+  // One key per tap on Get tickets: the same tickets asked for again answer the same order. Also after the person left the page
+  // with no answer: the request is kept by the phone (`orderSubject`) until the Hub answers it, so a later tap on the same tickets
+  // is that request again and not a second order (F3).
   const createKey = useRef<{ sig: string; key: string } | null>(null);
   // One key per payment intent: the same quote is paid with the same key.
   const payKey = useRef<{ token: string; key: string } | null>(null);
@@ -234,10 +242,14 @@ export function useTicketBuy(args: TicketBuyArgs) {
     const lines = orderLines(tiers, basket);
     if (lines.length === 0) return;
     const sig = JSON.stringify(lines);
-    if (createKey.current?.sig !== sig) createKey.current = { sig, key: newRequestKey() };
+    const subject = orderSubject(eventId, sig);
+    if (createKey.current?.sig !== sig) createKey.current = { sig, key: attemptFor(subject)?.key ?? newRequestKey() };
+    const key = createKey.current.key;
+    keepAttempt({ subject, key, quote: lines, phase: 'sent', paymentId: null });
     setStarting(true);
     try {
-      const made = await createOrder({ eventId, lines, key: createKey.current.key });
+      const made = await createOrder({ eventId, lines, key });
+      dropAttempt(subject, key);
       if (made.payment === null) {
         // A basket that costs nothing is issued on the spot (R-8): the tickets, with no wallet and no PIN.
         if (made.order.status === 'paid') settlePaid(made.order, null);
@@ -246,6 +258,7 @@ export function useTicketBuy(args: TicketBuyArgs) {
         open(made);
       }
     } catch (error) {
+      if (refusedByHub(error)) dropAttempt(subject, key);
       if (!leadToWallet(error)) setNotice(isApiError(error) && error.message ? error.message : 'Check your connection and try again.');
     } finally {
       setStarting(false);

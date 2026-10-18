@@ -142,6 +142,10 @@ const hub = {
   /** How many times the page asked for the tier list. */
   tierReads: 0,
   createFails: null as null | { status: number; reason: Record<string, unknown> },
+  /** SWEEP-MONEY-5b F3: this many order requests are taken by the Hub and their answer is lost (the phone sees a failed fetch). */
+  createLost: 0,
+  /** SWEEP-MONEY-5b F2: the Hub takes the order request and never answers it. */
+  createHang: false,
   creates: [] as { key: string | null; body: { lines: { ticketTypeId: string; quantity: number }[] } }[],
   pays: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   /** Every payment the Hub made, by Idempotency-Key: a key it knows is answered again, never paid again. */
@@ -168,6 +172,15 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (path === '/events/e-1/orders/wallet' && method === 'POST') {
     const body = (await request.json()) as { lines: { ticketTypeId: string; quantity: number }[] };
     hub.creates.push({ key: request.headers.get('idempotency-key'), body });
+    if (hub.createLost > 0) {
+      hub.createLost -= 1;
+      throw new TypeError('Network request failed');
+    }
+    if (hub.createHang) {
+      return new Promise<Response>((_resolve, reject) => {
+        request.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+      });
+    }
     if (hub.createFails) return refuse(hub.createFails.status, hub.createFails.reason);
     hub.lines = body.lines;
     const price = orderView('awaiting_payment', body.lines).ticketsKobo;
@@ -218,6 +231,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 const { EventDetailScreen } = require('../EventDetailScreen') as typeof import('../EventDetailScreen');
 const { OrderTicketScreen } = require('../OrderTicketScreen') as typeof import('../OrderTicketScreen');
 const { forgetBuyIntentsInMemory, buyIntentsKey, putBuyIntent } = require('../buyIntent') as typeof import('../buyIntent');
+const { forgetAttempts } = require('@/features/money-attempt/attempts') as typeof import('@/features/money-attempt/attempts');
 void [Animated, Image, Modal, Pressable, ScrollView, NativeText, TextInput, View];
 
 // The first draw of the ticket card (the QR) and of the sheets is slow on a cold transform cache under load.
@@ -231,6 +245,7 @@ beforeAll(async () => {
 beforeEach(() => {
   mockVault.clear();
   forgetBuyIntentsInMemory();
+  forgetAttempts();
   mockCalendar.mockClear();
   Object.assign(hub, {
     mode: 'paid',
@@ -238,6 +253,8 @@ beforeEach(() => {
     tiers: [REGULAR, VIP],
     tierReads: 0,
     createFails: null,
+    createLost: 0,
+    createHang: false,
     creates: [],
     pays: [],
     paidKeys: new Set<string>(),
@@ -424,6 +441,83 @@ describe('E3 and E4: pay and PIN', () => {
     await getTickets();
     expect(await rtl.screen.findByText('You have reached the order limit for this event.')).toBeTruthy();
     expect(hub.pays).toHaveLength(0);
+  });
+
+  describe('an order request the Hub never answered (SWEEP-MONEY-5b F2 and F3)', () => {
+    it('F3: the answer was lost and the person left; the same tickets asked for again are the SAME request under the same key: one order', async () => {
+      await bootDetail();
+      hub.createLost = 1;
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
+      expect(await rtl.screen.findByText('No connection. Check your internet and try again.')).toBeTruthy();
+
+      // The person leaves the event and comes back: a new page, a new tap, the same tickets.
+      await rtl.cleanup();
+      await bootDetail();
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(2));
+      expect(hub.creates[1].key).toBe(hub.creates[0].key);
+      expect(hub.creates[0].key).toMatch(/\S/);
+      expect(hub.creates[1].body).toEqual(hub.creates[0].body);
+      expect(await rtl.screen.findByText('Bank charge')).toBeTruthy();
+      expect(new Set(hub.creates.map((c) => c.key)).size).toBe(1);
+    });
+
+    it('F3: other tickets are another request under another key', async () => {
+      await bootDetail();
+      hub.createLost = 1;
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
+      await rtl.cleanup();
+      await bootDetail();
+      await rtl.fireEvent.press(rtl.within(rtl.screen.getByTestId('tier-t-reg')).getByLabelText('More Regular tickets'));
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(2));
+      expect(hub.creates[1].key).not.toBe(hub.creates[0].key);
+      expect(hub.creates[1].body.lines).toEqual([{ ticketTypeId: 't-reg', quantity: 2 }]);
+    });
+
+    it('F3: once the Hub has refused an order request, the key is free: the next tap after leaving is a new request', async () => {
+      hub.createFails = { status: 409, reason: { code: 'event_order_limit', message: 'You have reached the order limit for this event.' } };
+      await bootDetail();
+      await getTickets();
+      expect(await rtl.screen.findByText('You have reached the order limit for this event.')).toBeTruthy();
+      await rtl.cleanup();
+      hub.createFails = null;
+      await bootDetail();
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(2));
+      expect(hub.creates[1].key).not.toBe(hub.creates[0].key);
+    });
+
+    it('F3: an order the Hub answered is done with: after leaving, the same tickets asked for again are a new order', async () => {
+      await bootDetail();
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
+      await rtl.screen.findByText('Bank charge');
+      await rtl.cleanup();
+      await bootDetail();
+      await getTickets();
+      await rtl.waitFor(() => expect(hub.creates).toHaveLength(2));
+      expect(hub.creates[1].key).not.toBe(hub.creates[0].key);
+    });
+
+    it('F2: an order request that gets no answer ends after 30 s and says "We didn\'t get an answer", not "No connection"', async () => {
+      await bootDetail();
+      hub.createHang = true;
+      jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask', 'setImmediate', 'clearImmediate'] });
+      try {
+        await getTickets();
+        await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
+        await rtl.act(async () => {
+          await jest.advanceTimersByTimeAsync(30_500);
+        });
+        expect(await rtl.screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+        expect(rtl.screen.queryByText(/No connection/)).toBeNull();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   it('a user with no wallet who taps Get tickets lands in Open your wallet', async () => {

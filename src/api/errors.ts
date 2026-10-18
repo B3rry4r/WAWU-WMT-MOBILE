@@ -146,6 +146,24 @@ export function networkError(): ApiError {
   return new ApiError('network', 0, 'No connection. Check your internet and try again.');
 }
 
+/** The `code` of the error `noAnswerError` makes: a screen that wants to tell "the Hub did not answer" from "no connection" reads it. */
+export const NO_ANSWER_CODE = 'no_answer';
+/**
+ * What a person reads when our own wait for the answer to a write ended (WRITE_TIMEOUT_MS). It is the line the PIN sheets
+ * already show (`PAYMENT_UNANSWERED_LINE`, which a test keeps equal to it). It does not say the phone is offline, because it
+ * may not be, and it does not say what happened: the repeat, under the same key, is what finds out.
+ */
+export const NO_ANSWER_LINE = "We didn't get an answer. Try again: it will only happen once.";
+
+/**
+ * A write the Hub took and did not answer within our wait (FIX-87, SWEEP-MONEY-5b F2). Still the network failure to every
+ * branch that reads `kind` and `status` (`network`, 0), so each screen that sends the same request again keeps doing so; only
+ * the sentence differs from `networkError()`, which stays the line for an offline phone and for a read that timed out.
+ */
+export function noAnswerError(): ApiError {
+  return new ApiError('network', 0, NO_ANSWER_LINE, NO_ANSWER_CODE);
+}
+
 export function isApiError(value: unknown): value is ApiError {
   return value instanceof ApiError;
 }

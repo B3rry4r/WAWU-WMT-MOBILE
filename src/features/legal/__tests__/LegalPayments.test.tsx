@@ -35,6 +35,7 @@ beforeAll(async () => {
   warm.unmount();
 });
 beforeEach(() => {
+  (require('@/features/money-attempt/attempts') as typeof import('@/features/money-attempt/attempts')).forgetAttempts();
   resetHub();
   mockCalendar.mockClear();
 });
@@ -159,6 +160,45 @@ describe('S18 · Book', () => {
     expect(hub.pays).toHaveLength(2);
     expect(hub.pays[1].key).toBe(hub.pays[0].key);
     expect(hub.payments).toBe(1);
+  });
+
+  it('F3: the answer was lost and the person LEFT the page; paying the same fee when they come back sends the same key, and the Hub debits once', async () => {
+    hub.mode = 'lost_after';
+    await boot();
+    await reachPin();
+    await enterPin('4829');
+    await rtl.waitFor(() => expect(hub.pays).toHaveLength(1));
+    // The wait ends, the person leaves the booking page and opens it again for the same consultation.
+    await rtl.cleanup();
+    const { onBooked } = await boot();
+    await reachPin();
+    await enterPin('4829');
+    await rtl.waitFor(() => expect(onBooked).toHaveBeenCalledTimes(1));
+    expect(hub.pays).toHaveLength(2);
+    expect(hub.pays[1].key).toBe(hub.pays[0].key);
+    expect(hub.pays[1].body).toEqual(hub.pays[0].body);
+    expect(hub.payments).toBe(1);
+  });
+
+  it('F3: a fee that moved while the person was away is another payment, under a new key and the new total', async () => {
+    hub.mode = 'lost_after';
+    // Two quotes for the first visit (the sheet opens, Pay asks again), then the fee is 16,000 for the visit after.
+    hub.prices = [1_500_000, 1_500_000, 1_600_000];
+    await boot();
+    await reachPin();
+    await enterPin('4829');
+    await rtl.waitFor(() => expect(hub.pays).toHaveLength(1));
+    await rtl.cleanup();
+    const { onBooked } = await boot();
+    await press('legal-slot-12:00');
+    await press('legal-book-pay');
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Pay · ₦16,015.75' }));
+    await rtl.screen.findByText(/^₦16,015.75 for your consultation/);
+    await enterPin('4829');
+    await rtl.waitFor(() => expect(onBooked).toHaveBeenCalledTimes(1));
+    expect(hub.pays).toHaveLength(2);
+    expect(hub.pays[1].key).not.toBe(hub.pays[0].key);
+    expect(hub.pays[1].body.expectedTotalKobo).toBe(1_601_575);
   });
 
   it('a short balance is the bank figure on the sheet, with the amount to add, and nothing is debited', async () => {

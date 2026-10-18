@@ -35,7 +35,8 @@ function boot() {
   return require('@/api/client') as typeof import('@/api/client');
 }
 
-const NO_ANSWER = { kind: 'network', status: 0, message: 'No connection. Check your internet and try again.' };
+// SWEEP-MONEY-5b F2: our own end of a write's wait reads "We didn't get an answer", not "No connection" (the phone may well be online).
+const NO_ANSWER = { kind: 'network', status: 0, code: 'no_answer', message: "We didn't get an answer. Try again: it will only happen once." };
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -88,6 +89,35 @@ describe('a keyed write its screen re-sends under the same key', () => {
       expect(sent.request.headers.get('x-transaction-pin')).toBe('4821');
       expect(sent.body).toBe('{"newPin":"1357","newPinConfirmation":"1357"}');
     }
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('F2: the 30 s end of a write is not "No connection"; it says what happened, in the line the PIN sheets already use', async () => {
+    const client = boot();
+    const { PAYMENT_UNANSWERED_LINE } = require('@/components/pin-sheet') as typeof import('@/components/pin-sheet');
+    const write = change(client, 'key-f2').then(
+      () => 'answered',
+      (error: unknown) => error,
+    );
+    await jest.advanceTimersByTimeAsync(30_001);
+    const error = (await write) as Error;
+    expect(error.message).toBe(PAYMENT_UNANSWERED_LINE);
+    expect(error.message).not.toMatch(/No connection/);
+    expect(error).toMatchObject({ kind: 'network', status: 0 });
+  });
+
+  it('F2: a phone that is really offline still reads "No connection", for the same write', async () => {
+    jest.resetModules();
+    globalThis.fetch = jest.fn(async () => {
+      throw new TypeError('Network request failed');
+    }) as typeof fetch;
+    const client = require('@/api/client') as typeof import('@/api/client');
+    const error = await change(client, 'key-offline').then(
+      () => 'answered',
+      (e: unknown) => e,
+    );
+    expect(error).toMatchObject({ kind: 'network', status: 0, message: 'No connection. Check your internet and try again.' });
+    expect((error as { code?: string }).code).toBeUndefined();
     expect(jest.getTimerCount()).toBe(0);
   });
 
