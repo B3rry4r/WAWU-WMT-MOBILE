@@ -39,10 +39,10 @@ describe('a fan\'s paid question in the Inbox (I1)', () => {
     expect(await rtl.screen.findByText('You: Thanks, that helps')).toBeTruthy();
   });
 
-  it('draws only the fan\'s side: the creator\'s rows are INBOX-18\'s and stay undrawn until it lands (R-47)', () => {
+  it('draws the fan\'s side beside INBOX-18\'s creator side, and a row with no side stays undrawn (R-47)', () => {
     expect(drawsPaidFanRow(item())).toBe(true);
     expect(drawsPaidFanRow(item({ side: 'creator' }))).toBe(false);
     const rows = drawableRows([item(), item({ side: 'creator' }, { id: 'p2' }), item({}, { id: 'p3', paidDm: null })], inboxRowRenderers);
-    expect(rows.map((r) => r.id)).toEqual(['p1']);
+    expect(rows.map((r) => r.id)).toEqual(['p1', 'p2']);
   });
 });

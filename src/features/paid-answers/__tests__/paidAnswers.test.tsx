@@ -420,10 +420,10 @@ describe('entries', () => {
     hub.queue = [queueItem('q1', BISI, 'How do I price a logo for a bank?', 72 * MIN + 30_000)];
     await draw(<InboxScreen />);
     await rtl.waitFor(() => expect(rtl.screen.getByText('Paid DMs · 3')).toBeTruthy());
-    // The All list: the creator-side row reads "Paid DM · 18h left to reply"; the fan-side row (INBOX-10's) is not drawn.
+    // The All list: the creator-side row reads "Paid DM · 18h left to reply"; the fan-side row (INBOX-10's) is drawn beside it.
     await rtl.waitFor(() => expect(rtl.screen.getByTestId('row-paid_dm:1')).toBeTruthy());
-    expect(rtl.screen.queryByTestId('row-paid_dm:2')).toBeNull();
-    expect(rtl.screen.getByText('Paid DM · 18h left to reply')).toBeTruthy();
+    expect(rtl.screen.getByTestId('row-paid_dm:2')).toBeTruthy();
+    expect(rtl.screen.getAllByText('Paid DM · 18h left to reply')).toHaveLength(2);
     await rtl.fireEvent.press(rtl.screen.getByTestId('row-paid_dm:1'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/paid-questions/[wawuId]', params: { wawuId: 'fan-bisi' } });
 
@@ -432,11 +432,11 @@ describe('entries', () => {
     expect(rtl.screen.getByTestId('paid-row-q1')).toBeTruthy();
   });
 
-  it('a plain account is shown no Paid DMs chip and no paid row', async () => {
+  it('a plain account is shown no Paid DMs chip, and its own paid question is drawn (INBOX-10)', async () => {
     hub.accountType = 'user';
     hub.inbox = [dmRow('paid_dm:1', 'fan')];
     await draw(<InboxScreen />);
-    await rtl.waitFor(() => expect(rtl.screen.getByTestId('inbox-empty')).toBeTruthy());
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('row-paid_dm:1')).toBeTruthy());
     expect(rtl.screen.queryByText(/Paid DMs/)).toBeNull();
   });
 });
