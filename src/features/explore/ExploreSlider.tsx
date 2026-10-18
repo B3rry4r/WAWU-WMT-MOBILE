@@ -49,7 +49,9 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
   const [index, setIndex] = useState(0);
   // The slide the person is on, by its key: a refetch that inserts or reorders slides keeps them on the same one
   // (SWEEP-APP row EXPLORE-07 L3), and the advert that is reported as viewed is that slide's.
-  const [placeKey, setPlaceKey] = useState<string | null>(null);
+  const [placeKey, setPlaceKey] = useState<string | null>(slides[0]?.key ?? null);
+  // Slides that arrive after the first draw: the person is on the first from the start, not only after a first swipe (SWEEP-APP-3 row 98).
+  if (placeKey === null && slides.length > 0) setPlaceKey(slides[0].key);
   const scroller = useRef<ScrollView>(null);
   // Until the frame has been measured the slide is the screen less the body's two gutters, which is what it will be.
   const width = measured ?? window.width - layout.gutter * 2;
