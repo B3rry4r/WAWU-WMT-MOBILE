@@ -5,7 +5,12 @@ describe('what the tip sheet decides', () => {
     expect(koboOfTyped('1250')).toBe(125000);
     expect(koboOfTyped('1,250')).toBe(125000);
     expect(koboOfTyped('₦ 2 000')).toBe(200000);
-    expect(koboOfTyped('12.50')).toBe(125000); // the dot is dropped: a tip is whole naira, never kobo
+    expect(koboOfTyped('12.50')).toBe(1200); // a tip is whole naira: everything from the dot on is ignored (never 1250 naira)
+    expect(koboOfTyped('12.5')).toBe(1200); // never 125 naira
+    expect(koboOfTyped('12.')).toBe(1200);
+    expect(koboOfTyped('1,250.75')).toBe(125000); // a comma groups thousands, the dot ends the whole naira
+    expect(koboOfTyped('0.99')).toBeNull(); // under one whole naira: nothing to send
+    expect(koboOfTyped('.50')).toBeNull();
     expect(koboOfTyped('')).toBeNull();
     expect(koboOfTyped('abc')).toBeNull();
     expect(koboOfTyped('0')).toBeNull();
@@ -14,6 +19,10 @@ describe('what the tip sheet decides', () => {
 
   it('keeps a typed amount to digits, without leading zeros, and to ten of them', () => {
     expect(cleanAmountText('007,5')).toBe('75');
+    expect(cleanAmountText('12.50')).toBe('12');
+    expect(cleanAmountText('12.5')).toBe('12');
+    expect(cleanAmountText('0.99')).toBe('0');
+    expect(cleanAmountText('1,250')).toBe('1250');
     expect(cleanAmountText('123456789012345')).toBe('1234567890');
   });
 
