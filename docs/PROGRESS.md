@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 297.**
+**Launch tasks done: 176 of 298.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 62 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 107 | 0 | 0 | 0 |
+| verifying | 108 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-71](../tasks/FIX-71.md) A community message's photo, video and voice note still load after a week (You)
 - [FIX-59](../tasks/FIX-59.md) My purchases lists every paid kind (tickets, credit packs, school fees, community passes) (You)
 - [FIX-58](../tasks/FIX-58.md) The payment quote refuses an item the same payer has open, and the secret scan names where it matched (You)
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
