@@ -295,6 +295,15 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     expect(screen.getByTestId('tip-chip-500000').props.accessibilityState.selected).toBe(false);
   });
 
+  it('a pasted 12.50 is quoted and shown as 12 naira (a tip is whole naira), never 1,250', async () => {
+    const screen = await openSheet();
+    await rtl.fireEvent.changeText(screen.getByTestId('tip-other'), '12.50');
+    await rtl.waitFor(() => expect(hub.quotes.at(-1)).toEqual({ amountKobo: 1200 }));
+    expect(await screen.findByRole('button', { name: 'Tip ₦35.25' })).toBeTruthy();
+    expect(screen.getByTestId('tip-other').props.value).toBe('12');
+    expect(hub.quotes.some((q) => q.amountKobo === 125000 || q.amountKobo === 120000)).toBe(false);
+  });
+
   it('with no wallet yet, the quote leads to Open your wallet and no sheet stays up (R-6)', async () => {
     hub.quoteNoWallet = true;
     const pay = wired();

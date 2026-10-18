@@ -7,7 +7,7 @@ order: 258
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [INBOX-16, INBOX-05, WALLET-17]
 decisions: [R-62, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,21 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, cut by DESIGN-V2-CUT from the owner's 16 Oct 2026 designs and answers.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Size:** L. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
-- **Next:** a builder starts from the brief below after these are done (or in review): INBOX-16, WALLET-17.
-- **History:** none yet. Reports go to tasks/history/INBOX-22.md.
+As of 18 Oct 2026, merging (lead): round 2 accepted by the lead on a diff read and stacked in batch 18.
+- **Status:** merging (lead). Round 1 was FAIL (two medium; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-22.md`); round 2 (`a0f59fa`) fixed both and the lead accepted it on a diff read. Built by a Sonnet builder; the owner's `relock-approved` label is still needed before merge (SHARED-CHANGES INBOX-22 #1).
+- **Merge (MERGE-18):** the migration is restamped `20261027090000_community_message_media` (folder name only, the SQL byte-identical): `20261025190000` collided with `20261025190000_dm_reply_key` and sorted before the already applied `20261026090000_no_em_dash_stored_refund_notice`; `migrate deploy` applies it last, fresh and from MERGE-17, with no warning. CONVENTIONS.md kept both paragraphs (INBOX-18's reply key, this task's message cost). FIX-71 (built on `2d311df`) merged with round 2: `assertUploaded` (with `deliverableKeyFrom`) and FIX-71's constructor and `withFreshMedia` are both in. The two new upload folders met FIX-65's purge: its drift guard (`purge-files.spec.ts`) went red until `FILE_KINDS` decided `community/message-video` and `community/message-voice` (DELETE, as `community/message`); MERGE-18 added the two entries (backend `src/account-purge/purge-files.ts`, no test changed). The verifier's lows are SWEEP-INBOX rows INBOX-22 L3, L4 and L6 (open) and L5 (fixed by round 2).
+- **Branches:** backend `wmt/INBOX-22` `a0f59fa` (round 2) on `2d311df` on `origin/wmt/MERGE-14` `195de50`; mobile `wmt/INBOX-22` (records only). Migration `20261025190000_community_message_media` (two nullable columns and two CHECKs; the lead restamps it at merge if needed; the verifier found the stamp order cosmetic). CI on `a0f59fa`: Gates run 39084583570, Protected routes (V3) run 39084583555, Branch checks run 39084583591, all still running when the builder left (the lead watches them). CI on `2d311df` was: Gates green; V3 red with exactly the two expected `videoUrl`/`voiceUrl` widenings; Branch checks red on `earning-settlement` (Fintava, expected) and `publishing-gate-coverage` (finding 2, fixed in `a0f59fa`).
+- **What each kind costs, and where that comes from:** text and emoji 0 (R-62; no setting prices it), photo `community_credit_cost_photo` 1, video `community_credit_cost_video` 3, voice note `community_credit_cost_voice` 3 (R-62, this file, TIER-06 defaults). Read from `PlanSettingsService` at send time, so an admin change applies within a request.
+- **Built:** `POST /communities/:id/messages` charges the price of the message's kind. A message carries one photo, video or voice note at most (a second is 400). `videoUrl` and `voiceUrl` must be a link on this bucket's own host (the `fileUrl` presign handed back, checked with `deliverableKeyFrom` against the bucket's origin and prefix) and the sender's own confirmed upload into the new presign folders `community/message-video` and `community/message-voice` (400 and no charge otherwise; another host, a look-alike host, userinfo, a `%` escape or a folder buried under another path is 400). Free messages (text, or anything from the host) write no credit row, no ledger row and no host earning. A short balance is `402 insufficient_credits` with "A video costs 3 WAWU Credits and you have 2. You are 1 short. Text and emoji are free."; nothing is stored or taken and the key stays free. The debit, the message and the ledger row stay one transaction. The host's 85% is the existing per-spend allocation, so it is computed on credits spent (708 and 2125 kobo for a photo then a video on a 120-credit lot).
+- **`GET /communities/message-cost`:** `creditsPerMessage` stays and is now 0 (what a plain message costs); `creditsByKind` `{ text, photo, video, voice }` is new. The room view's `messageCostInCredits` is 0 for everyone for the same reason. The inbox preview (`lastMessage`) carries `videoUrl` and `voiceUrl`.
+- **For the lead (decisions the builder took):** (1) `creditsPerMessage` and `messageCostInCredits` read 0, not the photo price: the app as built before INBOX-23 then shows no "1 credit per message" and no longer blocks a person with no credits from typing. One line (`meteredMessageCost()`) changes it if the owner wants otherwise. (2) The three links on the send route may be 2048 characters, not 500: a real presigned link is 547 to 553 characters, so the old limit refused every real photo too. Only the limit moves (G-INBOX-22-3). (3) A failing low-credits notice after the commit is logged and no longer turns a paid message into a 500.
+- **V3:** on a fresh migrated and seeded database with the suite's own mock WAWU ID: `195de50` 253 of 253 green; `2d311df` and `a0f59fa` 251 of 253, the only reds `POST` and `GET /communities/:id/messages` ("`videoUrl`, `voiceUrl` not in the lock (response widened)"). The builder's first "28 entries fail" was an environment artifact (a stack mock WAWU ID), withdrawn.
+- **Specs that pinned the old rule and were changed** (not weakened; each named in the report): the three `community-message` specs, `credit-host-earnings`, `notification-wiring`, `community-image`, `community-discover`, `live.contract`. New: `community-message-kinds.contract.spec.ts` (24 tests; 5 mutants killed in round 1; the spec's uploads are now the real signed link from a local bucket that is never contacted).
+- **Verifier round 1 (FAIL, two medium), both fixed in round 2:** (1) a video or voice link on any host with the sender's own key was accepted and charged: fixed, only this bucket's own links pass (three new specs; the foreign-host and the folder-buried-under-a-path cases are red on `2d311df`, the plain another-person and wrong-folder cases were already refused and stay as cover). (2) `publishing-gate-coverage.spec.ts` listed only `imageUrl`: `videoUrl` and `voiceUrl` now sit beside it in the same entry (its reason text updated), nothing else in that spec changed. Lows: price change reaches a second Hub process within 15 s (PLAN_SETTINGS_REFRESH_SECONDS; the "within a request" above is true for the saving process); the `live.contract` loosening (Bola's own text post) is justified by R-62; both for the sweep, no change.
+- **Open:** G-INBOX-22-4 `imageUrl` is not checked as an upload, so a video file sent as `imageUrl` costs a photo's price (1, not 3); left alone on purpose, the web sends `imageUrl` and it is protected route input, so tightening it is its own task after the web follows. G-INBOX-22-1 the file size caps for a community video (100 MB) and voice note (25 MB) are PROVISIONAL(COMMUNITY-MEDIA-MAX-BYTES), not money, for the owner to confirm. G-INBOX-22-2 media links are stored as given (7-day signed links), as `imageUrl` is today, so a photo, video or voice note older than a week stops loading; the fix is signing on read in the list, live and catch-up paths. G-INBOX-22-3 as (2) above. G-807 and G-881 are served on the backend side; the app side is INBOX-23 and INBOX-13 (print the costs from `creditsByKind`; the app's contract copy needs `npm run api` from this branch).
+- **Fences touched:** SHARED-CHANGES INBOX-22 #1 (the schema columns, the route behaviour, `contract/openapi.json`, the two presign folders and the 2048 link limit; the row now names them).
+- **Not run:** Fintava specs and `community-pass-nuvion.contract.spec.ts` (names Fintava); the app; a real bucket upload (the stack's bucket host is a placeholder, so the confirmed-upload path ran on `StorageObject` rows).
+- **Next:** the batch 18 pull request (the lead); the owner's `relock-approved` label. Reports are in tasks/history/INBOX-22.md.
 
 ## Read first
 
@@ -52,13 +62,9 @@ Sending in a community costs credits by kind: text and emoji free, a photo 1 cre
 - [ ] A host's 85% share is computed on credits actually spent; free messages add nothing.
 - [ ] V3: the protected route suite is run before and after and the one expected difference is named.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-22.md](history/INBOX-22.md).
 
 ## Owner sign-off
 

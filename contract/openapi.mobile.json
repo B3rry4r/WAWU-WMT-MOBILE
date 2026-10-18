@@ -27639,6 +27639,8 @@
        "profile/cover",
        "community/image",
        "community/message",
+       "community/message-video",
+       "community/message-voice",
        "event/speaker",
        "event/banner",
        "profile/work"
@@ -32035,7 +32037,19 @@
      "imageUrl": {
       "type": "string",
       "description": "A photo posted in the room, as the `fileUrl` handed back by\n`POST /uploads/presign` for the `community/message` folder \u2014 images only,\nsee FOLDER_CONTENT_TYPES.",
-      "maxLength": 500,
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "videoUrl": {
+      "type": "string",
+      "description": "INBOX-22 (R-62). A video posted in the room, as the `fileUrl` handed back\nby `POST /uploads/presign` for the `community/message-video` folder and\nconfirmed with `POST /uploads/confirm`. The service checks that the file\nis the sender's own, from that folder, and has landed. Costs the video\nprice from admin settings.",
+      "maxLength": 2048,
+      "format": "uri"
+     },
+     "voiceUrl": {
+      "type": "string",
+      "description": "INBOX-22 (R-62). A voice note posted in the room, as the `fileUrl` of a\n`community/message-voice` upload, checked as `videoUrl` is. Costs the\nvoice note price from admin settings.",
+      "maxLength": 2048,
       "format": "uri"
      }
     }
@@ -49540,6 +49554,14 @@
       "type": "string",
       "nullable": true
      },
+     "videoUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "voiceUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "sentAt": {
       "type": "string",
       "format": "date-time"
@@ -49556,6 +49578,8 @@
      "id",
      "text",
      "imageUrl",
+     "videoUrl",
+     "voiceUrl",
      "sentAt",
      "senderWawuId",
      "sender"
@@ -49642,15 +49666,42 @@
      "lastActivityAt"
     ]
    },
+   "CommunityCreditsByKind": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "number"
+     },
+     "photo": {
+      "type": "number"
+     },
+     "video": {
+      "type": "number"
+     },
+     "voice": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "text",
+     "photo",
+     "video",
+     "voice"
+    ]
+   },
    "CommunityMessageCost": {
     "type": "object",
     "properties": {
      "creditsPerMessage": {
       "type": "number"
+     },
+     "creditsByKind": {
+      "$ref": "#/components/schemas/CommunityCreditsByKind"
      }
     },
     "required": [
-     "creditsPerMessage"
+     "creditsPerMessage",
+     "creditsByKind"
     ]
    },
    "CommunityRoomView": {
@@ -49830,6 +49881,14 @@
      "communityId": {
       "type": "string"
      },
+     "videoUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "voiceUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "costInCredits": {
       "type": "number"
      },
@@ -49845,6 +49904,8 @@
      "text",
      "sentAt",
      "communityId",
+     "videoUrl",
+     "voiceUrl",
      "costInCredits"
     ]
    },

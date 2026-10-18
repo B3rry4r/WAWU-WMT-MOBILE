@@ -73,7 +73,7 @@ describe('M19 · Create', () => {
     await open();
     await screen.findByTestId('create-meter');
     expect(screen.getByText('Video, course, audio, PDF, image or template')).toBeTruthy();
-    expect(screen.getByText('Needs a verified tick')).toBeTruthy();
+    expect(screen.getByText('Needs an active tier')).toBeTruthy();
     expect(screen.getByText('Get listed as a professional')).toBeTruthy();
     expect(screen.queryByTestId('create-tile-community')).toBeNull();
     expect(screen.queryByText('A room your people talk in')).toBeNull();
@@ -85,6 +85,86 @@ describe('M19 · Create', () => {
     await open();
     expect(await screen.findByText('4 of 5 used')).toBeTruthy();
     expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
+  });
+
+  // DV2-04 (R-43, M19): the products meter of a person with a tier, "Needs an active tier" on Event.
+  describe('the products meter', () => {
+    const TIER = '/api/hub/me/tier';
+    const running = (state: 'active' | 'ending', used = 2, allowed = 3) => ({
+      state,
+      tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } },
+      activeFrom: '2026-10-01T00:00:00.000Z',
+      activeUntil: '2026-11-26T12:00:00.000Z',
+      productsAllowed: allowed,
+      productsUsed: used,
+      extraProducts: 0,
+      pointsIncluded: 100,
+      firstVoiceIntroIncluded: true,
+      eventPass: null,
+    });
+    const none = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+
+    it('a person with a tier sees "2 of 3 products" with the tier name and end date from the Hub, in place of the uploads count', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active'));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+      await open();
+      const meter = await screen.findByTestId('create-products');
+      expect(meter).toHaveAccessibleName('2 of 3 products. Verify · ends 26 Nov');
+      expect(screen.getByText('2 of 3 products')).toBeTruthy();
+      expect(screen.getByText('Verify · ends 26 Nov')).toBeTruthy();
+      expect(screen.queryByTestId('create-meter')).toBeNull();
+      expect(screen.queryByText('Get verified')).toBeNull();
+    });
+
+    it('takes the figures from the Hub: a tier about to end with 5 of 8 shows those', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('ending', 5, 8));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 8, true));
+      await open();
+      expect(await screen.findByText('5 of 8 products')).toBeTruthy();
+    });
+
+    it('a person with no tier gets no products meter; a live tick keeps its uploads count', async () => {
+      hub.answers[`GET ${TIER}`] = ok(none);
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 25, true));
+      await open();
+      expect(await screen.findByTestId('create-meter')).toBeTruthy();
+      expect(screen.queryByTestId('create-products')).toBeNull();
+    });
+
+    it('a person the Hub allows nothing (no tier, no tick) sees no meter at all', async () => {
+      hub.answers[`GET ${TIER}`] = ok(none);
+      hub.answers[`GET ${ALLOWANCE}`] = ok({ ...allowance(0, 0), free: { uploads: 0 } });
+      await open();
+      await screen.findByTestId('create-tile-content');
+      await waitFor(() => expect(hub.sent.some((r) => r.path === ALLOWANCE)).toBe(true));
+      expect(screen.queryByTestId('create-products')).toBeNull();
+      expect(screen.queryByTestId('create-meter')).toBeNull();
+    });
+
+    it('shows a block the size of the meter while the tier is on its way', async () => {
+      hub.answers[`GET ${TIER}`] = 'hang';
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+      await open();
+      expect(await screen.findByTestId('create-meter-loading')).toBeTruthy();
+      expect(screen.queryByTestId('create-products')).toBeNull();
+    });
+
+    it('falls back to the Hub\'s uploads count when the tier cannot be read, and the tiles keep working', async () => {
+      hub.answers[`GET ${TIER}`] = 'offline';
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+      const calls = await open();
+      expect(await screen.findByTestId('create-meter')).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('create-tile-event'));
+      expect(calls.event).toHaveBeenCalledTimes(1);
+    });
+
+    it('says "Needs an active tier" under Event, as drawn, and leaves the old words out', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active'));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+      await open();
+      expect(await screen.findByText('Needs an active tier')).toBeTruthy();
+      expect(screen.queryByText(/verified tick/)).toBeNull();
+    });
   });
 
   // POINTS-07 (R-61, M19): the Studio card carries the tools the Hub lists and the person's points, and opens Studio.
@@ -307,6 +387,17 @@ describe('M21 · Upload', () => {
     await fireEvent.press(await screen.findByTestId('upload-drop'));
     expect(await screen.findByText('You have used all 5 of your free uploads.')).toBeTruthy();
     expect(screen.queryByTestId('upload-retry')).toBeNull();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('opens the tiers (VF5) when the Hub refuses the upload because no tier is running (402 tier_required), and keeps the page as it was', async () => {
+    hub.answers[`POST ${PRESIGN}`] = { status: 402, body: { statusCode: 402, message: 'Sending a file needs a tier.', data: null, reason: { code: 'tier_required', message: 'Sending a file needs a tier.' } } };
+    mockPick.mockResolvedValue(chosen('a.pdf', 'application/pdf'));
+    const onNeedTier = jest.fn();
+    await renderFrame(<UploadScreen format="pdf" onBack={jest.fn()} onContinue={jest.fn()} onNeedTier={onNeedTier} />);
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    await waitFor(() => expect(onNeedTier).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Sending a file needs a tier.')).toBeNull();
     expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBe(true);
   });
 

@@ -12,5 +12,5 @@ export default function SentBackRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/events'));
-  return <SentBackScreen id={String(id)} onBack={leave} onDone={() => router.replace('/events')} />;
+  return <SentBackScreen id={String(id)} onBack={leave} onDone={() => router.replace('/events')} onSeeTiers={() => router.push('/tiers')} />;
 }

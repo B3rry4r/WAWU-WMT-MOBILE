@@ -11,13 +11,15 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField, fieldMetrics } from '@/components/TextField';
+import { fetchMyTier, tierKey } from '@/features/me/api';
 import { canPickImage, pickImage, type PickedImage } from '@/features/profile-edit/pickImage';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { eventsKey, fetchOptions, optionsKey, type EventOptions, type EventView } from '../api';
 import { EventsTabs, NavBar } from '../chrome';
-import { HostGate, Submitted, footMetrics } from './HostEnds';
-import { createEvent, fetchMyVerification, isTickRefusal, mayHost, uploadBanner, verificationKey } from './hostApi';
+import { HostGateScreen } from './HostGateScreen';
+import { Submitted, footMetrics } from './HostEnds';
+import { createEvent, fetchMyVerification, mayHost, uploadBanner, verificationKey } from './hostApi';
 import {
   createBody,
   dayChoices,
@@ -37,6 +39,7 @@ import {
   type TicketDraft,
 } from './hostForm';
 import { AreaField, BannerTile, ChoiceSheet, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
+import { isHostTierRefusal, tierRunning, type HostTierRefusal } from './hostTier';
 
 /** events_b.js form1 to form3: `body(..., { between: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
 const bodyMetrics = { top: 14, between: 14, ticketsGap: 12, labelGap: 10, cardPad: 14, cardGap: 10, pairBetween: 10 } as const;
@@ -53,17 +56,26 @@ export type HostScreenProps = {
   onDone: () => void;
   /** The My events tab, and E16's My events button (E17, EVENTS-08). */
   onMine?: () => void;
+  /** E21's See tiers opens VF5. The button is not drawn without it. */
+  onSeeTiers?: () => void;
   /** The clock the wizard checks a start against. */
   now?: () => number;
 };
 
-/** E13 to E16, and E21 for an account without a tick: the host wizard and its ends. */
-export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now }: HostScreenProps) {
+/**
+ * E13 to E16, and E21 for an account without a tier: the host wizard and its ends. The entry is decided from what the app already
+ * reads: a running tier (`GET /me/tier`) or a verification tick that has not ended (`GET /verification/me`) opens the form; neither
+ * opens E21 (the Hub has no read that says "may host" before a POST, G-EVENTS-12-2). The Hub's 403 has the last word: a refused send
+ * opens E21 with the Hub's own sentence and price, whatever the app thought.
+ */
+export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now = Date.now }: HostScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
   const verification = useQuery({ queryKey: verificationKey, queryFn: fetchMyVerification });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
+  // Read again on every visit: a tier bought or ended since the last one decides the entry.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
 
   const [step, setStep] = useState<Step>(0);
   const [draft, setDraft] = useState<HostDraft>(emptyDraft);
@@ -73,7 +85,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now 
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [sent, setSent] = useState<EventView | null>(null);
-  const [refused, setRefused] = useState(false);
+  const [refused, setRefused] = useState<HostTierRefusal | null>(null);
   const inFlight = useRef(false);
 
   const set = (patch: Partial<HostDraft>) => {
@@ -99,14 +111,22 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now 
     return () => sub.remove();
   });
 
-  const loading = verification.isPending || options.isPending;
-  // A refetch that fails after the form is up never replaces it: what the person typed stays on screen.
-  const failed = !verification.data && verification.isError ? verification.error : !options.data && options.isError ? options.error : null;
+  const tickLive = verification.data ? mayHost(verification.data) : false;
+  const loading = verification.isPending || options.isPending || tier.isPending;
+  // A tier read that fails matters only when no live tick already opens the form; a refetch that fails after the form is up never replaces it.
+  const failed =
+    !verification.data && verification.isError
+      ? verification.error
+      : !options.data && options.isError
+        ? options.error
+        : verification.data && !tickLive && !tier.data && tier.isError
+          ? tier.error
+          : null;
 
   if (sent) return <Submitted name={sent.name} onDone={onDone} onMyEvents={onMine} />;
 
-  if (!loading && !failed && verification.data && (refused || !mayHost(verification.data))) {
-    return <HostGate pricing={verification.data.pricing} onBack={onBack} />;
+  if (!loading && !failed && verification.data && (refused || !(tickLive || tierRunning(tier.data)))) {
+    return <HostGateScreen refusal={refused} onBack={onBack} onSeeTiers={onSeeTiers} />;
   }
 
   const opts = options.data;
@@ -137,9 +157,11 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now 
       void client.invalidateQueries({ queryKey: eventsKey });
       setSent(event);
     } catch (error) {
-      if (isTickRefusal(error)) {
-        setRefused(true);
+      if (isHostTierRefusal(error)) {
+        // E21 is the answer, with the Hub's own words; what the app read about the tier and the tick is out of date.
+        setRefused(error as HostTierRefusal);
         void client.invalidateQueries({ queryKey: verificationKey });
+        void client.invalidateQueries({ queryKey: tierKey });
       } else {
         setFailure(isApiError(error) ? error.message : 'Your event was not sent. Try again.');
       }
@@ -171,6 +193,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, now = Date.now 
           onRetry={() => {
             void verification.refetch();
             void options.refetch();
+            void tier.refetch();
           }}
         />
       ) : (

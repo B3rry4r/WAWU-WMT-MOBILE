@@ -15,6 +15,11 @@ import { fetchInterests, interestsKey } from './api';
 
 export const INTERESTS_TITLE = 'What are you into?';
 
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'] as const;
+
+/** A12's sub-line, in the board's words ("Pick three or more."): the Hub's minimum is spelled out up to ten and shown as digits above that. */
+export const interestsHint = (minimum: number): string => `Pick ${NUMBER_WORDS[minimum] ?? minimum} or more. It tunes your feed.`;
+
 /** design/_gen/auth.js line 19, `chip`: 40 high, 16 across, 6 between the check and the label; the chips 8 apart. */
 const CHIP = { height: 40, padH: 16, inner: 6, between: 8, check: 14 } as const;
 
@@ -116,7 +121,7 @@ export function InterestsScreen({ step, onBack, onContinue }: InterestsScreenPro
       ) : (
         <View style={styles.body}>
           <Text variant="body" tone="textSecondary" testID="interests-hint">
-            {`Pick ${data.minimum} or more. It tunes your feed.`}
+            {interestsHint(data.minimum)}
           </Text>
           <View style={styles.chips}>
             {data.options.map((o) => (
