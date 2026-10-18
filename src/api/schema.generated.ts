@@ -7574,7 +7574,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "event/speaker" | "event/banner" | "profile/work";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -9187,6 +9187,22 @@ export interface components {
              *     see FOLDER_CONTENT_TYPES.
              */
             imageUrl?: string;
+            /**
+             * Format: uri
+             * @description INBOX-22 (R-62). A video posted in the room, as the `fileUrl` handed back
+             *     by `POST /uploads/presign` for the `community/message-video` folder and
+             *     confirmed with `POST /uploads/confirm`. The service checks that the file
+             *     is the sender's own, from that folder, and has landed. Costs the video
+             *     price from admin settings.
+             */
+            videoUrl?: string;
+            /**
+             * Format: uri
+             * @description INBOX-22 (R-62). A voice note posted in the room, as the `fileUrl` of a
+             *     `community/message-voice` upload, checked as `videoUrl` is. Costs the
+             *     voice note price from admin settings.
+             */
+            voiceUrl?: string;
         };
         HostedLinkDto: {
             txRef: string;
@@ -13406,6 +13422,8 @@ export interface components {
             id: string;
             text: string | null;
             imageUrl: string | null;
+            videoUrl: string | null;
+            voiceUrl: string | null;
             /** Format: date-time */
             sentAt: string;
             senderWawuId: string;
@@ -13432,8 +13450,15 @@ export interface components {
             /** Format: date-time */
             lastActivityAt: string | null;
         };
+        CommunityCreditsByKind: {
+            text: number;
+            photo: number;
+            video: number;
+            voice: number;
+        };
         CommunityMessageCost: {
             creditsPerMessage: number;
+            creditsByKind: components["schemas"]["CommunityCreditsByKind"];
         };
         CommunityRoomView: {
             name: string;
@@ -13482,6 +13507,8 @@ export interface components {
             /** Format: date-time */
             sentAt: string;
             communityId: string;
+            videoUrl: string | null;
+            voiceUrl: string | null;
             costInCredits: number;
             sender?: components["schemas"]["CommunityMessageSender"];
         };
