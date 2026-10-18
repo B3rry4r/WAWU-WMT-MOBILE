@@ -6,7 +6,6 @@ import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import type { IconName } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
-import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { fetchMyTier, tierKey } from '@/features/me/api';
 import { StudioRow } from '@/features/points/StudioRow';
