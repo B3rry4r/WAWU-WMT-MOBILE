@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 311.**
+**Launch tasks done: 176 of 312.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 134 | 0 | 0 | 0 |
+| verifying | 135 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-83](../tasks/FIX-83.md) A test that lists a message's media compares the object key and a valid signed link, never the whole signed link (You)
 - [FIX-78](../tasks/FIX-78.md) CHECK-1b's new findings: an end date a year away shows its year, the payout account says it must be in your own name (You)
 - [FIX-75](../tasks/FIX-75.md) The storage specs no longer share the Hub's real 10-minute timer (You)
 - [FIX-74](../tasks/FIX-74.md) A school payout the webhook completed at the quoted charge takes the provider's real charge, not a flag (You)
