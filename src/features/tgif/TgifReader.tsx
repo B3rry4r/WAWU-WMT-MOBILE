@@ -164,6 +164,8 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   // A card whose picture will not load is left out of the steps too (SWEEP-APP row ADS-01 L5): no bare dark card to skip.
   const [unloaded, setUnloaded] = useState<string | null>(null);
   const offer = onOpenEvent && ad && !passedSlot && unloaded !== ad.artworkUrl ? ad : null;
+  // The picture that has been drawn: a view is told to the Hub only once the card's picture is on screen, as on Today (SWEEP-APP-4 row 62/106 low).
+  const [drawn, setDrawn] = useState<string | null>(null);
   const steps = readerSteps(Boolean(offer));
   const [shareFailed, setShareFailed] = useState(false);
   // The scroll area's size once it has been laid out; until then the text is sized by its length alone.
@@ -178,7 +180,7 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   const sponsored = step.kind === 'sponsored';
   // On the sponsored step the card under it is the takeaway's, the one it leads to.
   const card: TgifCard = step.kind === 'card' ? step.card : 'takeaway';
-  const reports = useAdReports(offer, sponsored);
+  const reports = useAdReports(offer, sponsored && offer !== null && drawn === offer.artworkUrl);
   const last = at >= steps.length - 1;
   const mine = stats.data?.cards.find((c) => c.card === card);
   const said = Boolean(mine?.amenByMe);
@@ -232,7 +234,7 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   return (
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
       <StatusBar style="light" />
-      {sponsored && offer ? <SponsoredBackdrop ad={offer} onFail={() => setUnloaded(offer.artworkUrl)} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
+      {sponsored && offer ? <SponsoredBackdrop ad={offer} onFail={() => setUnloaded(offer.artworkUrl)} onLoad={() => setDrawn(offer.artworkUrl)} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + space.sm, paddingHorizontal: layout.gutter + insets.left }]}>
         <Progress steps={steps.length} at={at} />
         <View style={styles.header}>

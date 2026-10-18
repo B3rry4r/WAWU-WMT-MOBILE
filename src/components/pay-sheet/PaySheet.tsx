@@ -31,6 +31,11 @@ export type PayItem = {
   /** Thumbnail: a URL, or a bundled image (`require(...)`). Left out, the header is the title alone. */
   image?: string | number;
   /**
+   * A tile the caller draws left of the words when there is no `image`: S19's tinted circle with the call's icon, SC5's school logo
+   * (SHARED-CHANGES LEGAL-04 #1 and SCHOOLS-06 #1, applied in SWEEP-APP-4 as one optional node). Left out, the header is as it was.
+   */
+  lead?: ReactNode;
+  /**
    * Send: the recipient's short display name ("Chidinma Okoro"), which the
    * avatar's initials come from, as W10 draws "CO"; `title` stays the full name.
    */
@@ -384,7 +389,8 @@ function Failed(p: Inner & { message?: string }) {
 
 /** H14's head: the thumbnail, the title, and "Chidi Eze ✓ · Video · 18 min" (UI-02's `MediaCard`, row layout). */
 function Header({ item }: { item: PayItem }) {
-  return (
+  const led = item.lead !== undefined && item.lead !== null && item.image === undefined;
+  const card = (
     <MediaCard
       title={item.title}
       byline={item.by}
@@ -395,6 +401,14 @@ function Header({ item }: { item: PayItem }) {
       bare
       testID="pay-sheet-head"
     />
+  );
+  if (!led) return card;
+  // S19 and SC5 draw a tile of the caller's before the words (SWEEP-APP-4 row 140).
+  return (
+    <View testID="pay-sheet-lead-row" style={styles.leadRow}>
+      <View testID="pay-sheet-lead">{item.lead}</View>
+      <View style={styles.leadWords}>{card}</View>
+    </View>
   );
 }
 
@@ -507,6 +521,8 @@ const styles = StyleSheet.create({
   sendBody: { gap: space.lg + NUDGE },
   foot: { marginTop: 'auto', paddingTop: space.md, gap: space.sm + NUDGE },
   flex: { flex: 1, minWidth: 0 },
+  leadRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  leadWords: { flex: 1, minWidth: 0 },
   centre: { textAlign: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   sendHead: { alignItems: 'center', gap: space.xs + NUDGE, paddingTop: space.xs + NUDGE },

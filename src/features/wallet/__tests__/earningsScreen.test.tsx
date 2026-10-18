@@ -152,6 +152,10 @@ describe('W39 · Earnings (WALLET-13)', () => {
     expect(rtl.within(app.screen.getByTestId('earnings-tile-tip')).getByLabelText('17,000 naira 50 kobo')).toBeTruthy();
     expect(rtl.within(app.screen.getByTestId('earnings-tile-paid_dm')).getByLabelText('0 naira')).toBeTruthy();
     await app.screen.findByTestId('earnings-piece-content_unlock-c-1');
+    // SWEEP-APP-4 row 144: a whole-naira piece draws +₦76,500 with no ".00" (the board), and one with kobo keeps them.
+    expect(labelOf(app, 'earnings-piece-content_unlock-c-1')).toContain('+₦76,500');
+    expect(labelOf(app, 'earnings-piece-content_unlock-c-1')).not.toContain('76,500.00');
+    expect(labelOf(app, 'earnings-piece-tip-u-1')).toContain('+₦17,000.50');
     expect(allText(app)).toContain('Test lighting guide');
     expect(allText(app)).toContain('18 unlocks');
     expect(allText(app)).toContain('Tip for Ada Test');

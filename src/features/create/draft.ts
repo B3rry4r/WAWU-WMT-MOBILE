@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
+import { ApiError } from '@/api/errors';
 import { onSessionEnd } from '@/api/session';
 
 import { releaseUpload } from './api';
@@ -41,10 +42,33 @@ export const getDraft = (): Draft => draft;
 
 /**
  * A file the draft lets go of is given back to the Hub, which frees the space it reserved (ME-04). Sent and forgotten: the screen
- * never waits on it, and a failure leaves the file counted, which the next release of the same key can still settle.
+ * never waits on it. A release the Hub is too busy to take (429 `storage_busy`, 503) is asked again after the `Retry-After` it
+ * named, up to three tries in all, so the file is not left counted until some later release (SWEEP-APP-4 row 80); any other
+ * refusal, or a third try that fails, leaves the file counted, which the next release of the same key can still settle.
  */
+export const RELEASE_TRIES = 3;
+/** The wait when the Hub names none, and the most it is trusted to ask for. */
+export const RELEASE_FALLBACK_WAIT_S = 2;
+export const RELEASE_MAX_WAIT_S = 30;
+
+const busy = (error: unknown): error is ApiError => error instanceof ApiError && (error.status === 429 || error.status === 503);
+
+async function release(key: string): Promise<void> {
+  for (let attempt = 1; attempt <= RELEASE_TRIES; attempt += 1) {
+    try {
+      await releaseUpload(key);
+      return;
+    } catch (error) {
+      if (attempt === RELEASE_TRIES || !busy(error)) return;
+      const named = error.retryAfterSeconds;
+      const seconds = named && named > 0 ? Math.min(named, RELEASE_MAX_WAIT_S) : RELEASE_FALLBACK_WAIT_S;
+      await new Promise<void>((resolve) => setTimeout(resolve, seconds * 1000));
+    }
+  }
+}
+
 function giveBack(file: UploadedFile | null): void {
-  if (file) void releaseUpload(file.key).catch(() => undefined);
+  if (file) void release(file.key);
 }
 
 /** A different format starts the piece again: the files that went up for the old one are not this one's, so they are given back. */

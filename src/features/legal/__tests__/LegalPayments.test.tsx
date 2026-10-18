@@ -105,6 +105,9 @@ describe('S18 · Book', () => {
     expect(hub.bookings).toEqual([{ medium: 'zoom', scheduledFor: '2099-10-02T11:00:00.000Z' }]);
     expect(hub.quoteCalls).toBe(1);
     expect(rtl.screen.getByText('Video consultation')).toBeTruthy();
+    // SWEEP-APP-4 row 140: S19's head draws the call's icon tile before the words.
+    expect(rtl.screen.getByTestId('pay-sheet-lead-row')).toBeTruthy();
+    expect(rtl.screen.getByTestId('pay-sheet-lead')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(rtl.screen.getByRole('button', { name: 'Pay · ₦15,015.75' })).toBeTruthy();
   });

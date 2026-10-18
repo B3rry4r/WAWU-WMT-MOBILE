@@ -25,6 +25,7 @@ import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
 import { enrolKeys, fetchEnrolment, type Enrolment } from './enrolApi';
 import { classRow, CLOSED_LINE, CLOSED_TITLE, CONFIRMING_LINE, CONFIRMING_TITLE, enrolledLine, REFUNDED_TITLE, shareText, shortDay } from './enrolModel';
 import { DetailRow, DetailsCard, EnrolBar, enrolMetrics } from './enrolParts';
+import { SchoolLogo } from './parts';
 import { useEnrolPay } from './useEnrolPay';
 
 export type EnrolmentScreenProps = {
@@ -44,6 +45,9 @@ export type EnrolmentScreenProps = {
   /** Add money for the shortfall (kobo). */
   onAddMoney: (shortfallKobo: number) => void;
 };
+
+/** SC5's head tile: the school's logo, a 48 rounded square (SWEEP-APP-4 row 140). */
+const LOGO = { size: 48, corner: 14, initials: 17 } as const;
 
 const RECEIPT = { partGap: 18, mark: 88, headGap: 10, headTop: 70, title: 30, titleTracking: -0.035, sub: 14.5, paid: 14.5, note: 14 } as const;
 
@@ -180,7 +184,12 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
         <>
           <PaySheet
             visible={sheet.payOpen && !sheet.pinOpen}
-            item={{ title: enrolment.course.title, subtitle: when === '' ? school : `${school} · starts ${when}` }}
+            item={{
+              title: enrolment.course.title,
+              subtitle: when === '' ? school : `${school} · starts ${when}`,
+              // SC5 draws the school's logo tile before the course (SWEEP-APP-4 row 140): the Hub's enrolment names the school but sends no picture, so its initials.
+              lead: <SchoolLogo school={{ id: enrolment.school.id, name: school, logo: null }} size={LOGO.size} corner={LOGO.corner} initials={LOGO.initials} ring={{ width: 0, color: 'surfaceCard' }} testID="enrolment-school-logo" />,
+            }}
             amountKobo={sheet.payment.priceKobo}
             amountLabel="Course fee"
             fees={sheet.fees}

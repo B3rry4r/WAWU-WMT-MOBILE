@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { allowance, hub, installFetch, ok, refusal, renderFrame } from '../__helpers__/harness';
 
@@ -67,6 +68,15 @@ describe('M23 · Details', () => {
     expect(details.getDetails()).toMatchObject({ description: '84 pages on anchoring your rate.', category: 'business_entrepreneurship' });
   });
 
+  // SWEEP-APP-4 row 146: M23 has no "38 / 5000" counter under the description (the board draws none); the box stops at the Hub's limit.
+  it('M23 draws no character counter under the description and the box stops at the Hub limit', async () => {
+    await open();
+    await fireEvent.changeText(screen.getByTestId('details-description'), '84 pages on anchoring your rate.');
+    expect(screen.queryByText(/ \/ 5000/)).toBeNull();
+    expect(screen.queryByLabelText(/characters/)).toBeNull();
+    expect(screen.getByTestId('details-description').props.maxLength).toBe(5000);
+  });
+
   it('lists the 25 categories the Hub takes, ticks the chosen one and lets a person change it', async () => {
     details.setDetails({ category: 'finance' });
     await open();
@@ -111,6 +121,8 @@ describe('M24 · Price and M37 · Free piece', () => {
 
     await fireEvent.changeText(screen.getByTestId('price-input'), '3,0a00');
     expect(screen.getByTestId('price-input').props.value).toBe('3,000');
+    // SWEEP-APP-4 row 146: M24 draws the sign touching the figure, no gap between them.
+    expect(StyleSheet.flatten(screen.getByTestId('price-field-box').props.style).gap).toBe(0);
     expect(send().props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(send());
 

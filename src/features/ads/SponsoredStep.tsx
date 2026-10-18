@@ -12,13 +12,15 @@ export type SponsoredBackdropProps = {
   ad: AdCard;
   /** The picture would not load: the reader leaves this card out rather than show a bare dark ground. */
   onFail?: () => void;
+  /** The picture is drawn: only then is the card known to be on screen, so the reader tells the Hub a view then. */
+  onLoad?: () => void;
 };
 
 /**
  * H33's picture: the advertiser's artwork over the whole card, under the shade that keeps the words readable. Every
  * card has artwork (R-59), so there is no picture-less layout.
  */
-export function SponsoredBackdrop({ ad, onFail }: SponsoredBackdropProps) {
+export function SponsoredBackdrop({ ad, onFail, onLoad }: SponsoredBackdropProps) {
   const { colors, locations } = adMetrics.shade;
   return (
     <View testID="sponsored-backdrop" pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -29,6 +31,7 @@ export function SponsoredBackdrop({ ad, onFail }: SponsoredBackdropProps) {
         contentFit="cover"
         accessibilityElementsHidden
         onError={onFail}
+        onLoad={onLoad}
       />
       <LinearGradient
         testID="sponsored-shade"
