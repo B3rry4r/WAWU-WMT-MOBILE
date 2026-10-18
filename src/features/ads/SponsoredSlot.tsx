@@ -14,6 +14,8 @@ export type SponsoredSlotProps = {
   ad: AdCard;
   /** The whole card opens what it is for (its event). */
   onOpen: () => void;
+  /** The picture is on screen: Today tells the Hub the card was viewed only from here, never for a card whose picture failed (SWEEP-APP row 62/106). */
+  onPictureLoad?: () => void;
 };
 
 /**
@@ -26,7 +28,7 @@ export type SponsoredSlotProps = {
  * second control: the whole card is the one button. A picture that will not load draws nothing at all, as a campaign without
  * artwork does (SWEEP-APP rows ADS-01 L5, DV2-01 L5), never a card with a bare ground.
  */
-export function SponsoredSlot({ ad, onOpen }: SponsoredSlotProps) {
+export function SponsoredSlot({ ad, onOpen, onPictureLoad }: SponsoredSlotProps) {
   const ring = useFocusRing();
   // The address that failed, so a new campaign with a new picture is tried again.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export function SponsoredSlot({ ad, onOpen }: SponsoredSlotProps) {
         style={StyleSheet.absoluteFill}
         contentFit="cover"
         accessibilityElementsHidden
+        onLoad={onPictureLoad}
         onError={() => setFailedUrl(ad.artworkUrl)}
       />
       <LinearGradient
