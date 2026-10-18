@@ -29,7 +29,7 @@ import { ExploreSkeleton } from './ExploreSkeleton';
 import { ExploreSlider } from './ExploreSlider';
 import { FOLLOW_NOTICE_MS, useFollow } from './follow';
 import { LoadFailedBanner } from './LoadFailedBanner';
-import { CreatorsRailEmpty, ExploreEventsEmpty, SectionHeading, SeeAllCreators } from './parts';
+import { SectionHeading, SeeAllCreators } from './parts';
 import { sliderSlides } from './slider';
 
 /**
@@ -76,15 +76,16 @@ export type ExploreScreenProps = {
  * featured and upcoming events, the slider's adverts and today's TGIF. The slider at the top takes turns between an advert and
  * a featured event, an advert first (R-59); with no event it is adverts only (X17) and with neither it is not drawn. Under it
  * is the TGIF card (X1), which opens the reader. When the categories or the featured creators cannot be read, every section
- * stays drawn as it is when nothing is served (the bar, the neutral frames, the doors) under one banner with a Try again that
+ * stays drawn as it is when nothing is served (the bar, the doors) under one banner with a Try again that
  * reads everything again.
  *
  * Every entry drawn here opens something: a slide (E2), a category tile (X2, X3), an event card (E2), Upcoming events' See
  * all (E1), the TGIF card (H29), "Find a professional" (PROS-01), "Find a school" (SCHOOLS-03) and "List your services"
  * (PROS-03). A featured creator's card shows the creator and its Follow follows, but the card itself opens nothing, because
  * the profile it leads to is not built. What X1 draws for screens that are not built is not drawn: the search pill and
- * Featured creators' See all (EXPLORE-02), the bell (ME-14). The task that builds each one adds it, as drawn. A section with
- * nothing to show keeps its heading and draws neutral frames (`parts.tsx`). X17's Sponsored block, which the board draws in
+ * Featured creators' See all (EXPLORE-02), the bell (ME-14). The task that builds each one adds it, as drawn. The board draws no
+ * empty state for Featured creators or Upcoming events, so a row the Hub has nothing for is left out, heading and all (FIX-68 F-6,
+ * R-47, owner 9 Oct); it comes back the moment the Hub serves one. X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
 export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator }: ExploreScreenProps) {
@@ -180,12 +181,12 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
           items={categoryTiles(categories.data ?? [])}
           onOpen={(tile) => onOpenCategory(tile.kind === 'category' ? (tile.id as CategoryChoice) : 'all')}
         />
-        <View testID="explore-featured" style={styles.section}>
-          <SectionHeading
-            title="Who Made This?"
-            action={onSeeAllCreators ? <SeeAllCreators onPress={onSeeAllCreators} testID="explore-featured-see-all" /> : undefined}
-          />
-          {creators.length > 0 ? (
+        {creators.length > 0 ? (
+          <View testID="explore-featured" style={styles.section}>
+            <SectionHeading
+              title="Who Made This?"
+              action={onSeeAllCreators ? <SeeAllCreators onPress={onSeeAllCreators} testID="explore-featured-see-all" /> : undefined}
+            />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
               {creators.map((creator) => (
                 <CreatorCard
@@ -197,15 +198,9 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
                 />
               ))}
             </ScrollView>
-          ) : (
-            <CreatorsRailEmpty />
-          )}
-        </View>
-        {events.upcoming.length > 0 ? (
-          <ExploreEventsRail events={events.upcoming} onOpen={onOpenEvent} onSeeAll={onSeeAllEvents} />
-        ) : (
-          <ExploreEventsEmpty onSeeAll={onSeeAllEvents} />
-        )}
+          </View>
+        ) : null}
+        {events.upcoming.length > 0 ? <ExploreEventsRail events={events.upcoming} onOpen={onOpenEvent} onSeeAll={onSeeAllEvents} /> : null}
         <DoorsCard doors={doors} />
       </>
     );

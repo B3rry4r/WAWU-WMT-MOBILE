@@ -2,12 +2,12 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { VerifiedTick } from '@/components/icon';
-import { MediaCard, mediaMetrics } from '@/components/MediaCard';
+import { MediaCard } from '@/components/MediaCard';
 import { EmptyState } from '@/components/StateViews';
 import { Text as WawuText } from '@/components/Text';
+import { PortraitTile } from '@/features/explore/PortraitTile';
 import { hueFor } from '@/features/feed/model';
 import { space } from '@/theme';
 
@@ -20,7 +20,7 @@ import { suggestionLine, suggestionTick } from './model';
  * One creator on the rail: the shared stacked `MediaCard` (H1's `cCard`, 146 by 196), the tick after the name
  * through `titleAccessory`, and Follow as the card's shared `action` (lead ruling, HOME-01 round 3), which draws the
  * canvas's Follow (13 at 700) and Following (white at 20%, no ring) for every creator card. With no photo the card
- * shows the person's initials on their hue through `placeholder`.
+ * shows the canvas's portrait tile in the person's hue through `placeholder` (FIX-68 F-7).
  */
 function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggestion; onFollow: () => void; onOpen?: () => void; busy: boolean }) {
   const tick = suggestionTick(item);
@@ -34,7 +34,7 @@ function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggest
       title={item.name}
       subtitle={suggestionLine(item) ?? undefined}
       imageUrl={item.avatarUrl ?? undefined}
-      placeholder={<Avatar name={item.name} hue={hueFor(item.wawuId)} size={mediaMetrics.placeholderAvatar} decorative />}
+      placeholder={<PortraitTile hue={hueFor(item.wawuId)} testID={`today-creator-${item.wawuId}-portrait`} />}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}
       action={{ label: item.following ? 'Following' : 'Follow', on: item.following, onPress: onFollow, loading: busy, testID: `today-follow-${item.wawuId}` }}
     />

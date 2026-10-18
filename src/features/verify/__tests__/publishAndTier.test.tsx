@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, usePathname } from 'expo-router';
-import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Share, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
@@ -44,6 +44,9 @@ const DAY = 86_400_000;
 const HUB_PAUSE = 'Publishing is paused until your identity check passes. Your wallet is not finished opening. Send the documents the bank asked for.';
 const hub = {
   tier: 'active' as 'none' | 'active' | 'ending' | 'ended',
+  /** The Hub fails the tier read this many more times (a real failure, FIX-68 F-2). */
+  tierFails: 0,
+  tierReads: 0,
   used: 2,
   allowed: 3,
   wallet: 'open' as 'open' | 'opening' | 'rejected',
@@ -67,6 +70,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const until = new Date(Date.now() + (hub.tier === 'ending' ? 2.4 : hub.tier === 'ended' ? -3 : 40) * DAY).toISOString();
   if (path === '/users/me') return ok({ wawuUserId: '00000000-0000-4000-8000-0000000000b4', accountType: 'creator', firstName: 'Lennox', lastName: 'Emmanuel' });
   if (path === '/me/tier') {
+    hub.tierReads += 1;
+    if (hub.tierFails > 0) {
+      hub.tierFails -= 1;
+      return refuse(500, { message: 'Something went wrong on our side.' });
+    }
     if (hub.tier === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
     return ok({ state: hub.tier, tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: until, productsAllowed: hub.allowed, productsUsed: hub.used, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: { id: 'watch_apply', name: 'Watch live, apply' } });
   }
@@ -169,7 +177,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { tier: 'active', used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -355,5 +363,30 @@ describe('VF14 · your tier', () => {
     hub.tier = 'none';
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-none')).toBeTruthy();
+  });
+
+  it('no tier is not an error: no alert, no "Try again", and the one button says what it does and opens the tiers (FIX-68 F-2)', async () => {
+    hub.tier = 'none';
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    const none = await screen.findByTestId('your-tier-none');
+    expect(screen.queryByTestId('your-tier-error')).toBeNull();
+    expect(screen.queryByText('Try again')).toBeNull();
+    expect(within(none).queryByRole('alert')).toBeNull();
+    expect(screen.getByText('You have no tier yet')).toBeTruthy();
+    await fireEvent.press(screen.getByText('See tiers'));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/tiers?');
+    expect(hub.tierReads).toBe(1);
+  });
+
+  it('a Hub failure keeps its own error, and its Try again reads the tier again instead of opening the tiers (FIX-68 F-2)', async () => {
+    hub.tierFails = 1;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    await screen.findByTestId('your-tier-error');
+    expect(screen.queryByTestId('your-tier-none')).toBeNull();
+    expect(screen.queryByText('See tiers')).toBeNull();
+    await fireEvent.press(screen.getByText('Try again'));
+    expect(await screen.findByTestId('your-tier-name')).toHaveTextContent('Verify');
+    expect(hub.tierReads).toBe(2);
+    expect(screen.queryByTestId('where')).toBeNull();
   });
 });

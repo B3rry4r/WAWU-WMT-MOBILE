@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { isApiError } from '@/api/errors';
 import { signupProgressRequest, type SignupProgress } from '@/api/identity';
-import { setHubAccountType } from '@/features/after-signup/hubAccountType';
+import { hubNeedsType, readHubAccountType, setHubAccountType, type HubAccountType } from '@/features/after-signup/hubAccountType';
 
 import { authed } from './signupApi';
 
@@ -61,14 +61,24 @@ export async function refreshSignupGate(): Promise<void> {
   change({ phase: 'ready', progress, reopened: false });
 }
 
+/**
+ * While the sign-up's steps are open the write is made, idempotent. Once they are done (a cold start of a finished account) the Hub is asked
+ * first and written to only when it still lacks the type, so an ordinary start sends no write (FIX-68 F-4). A read that fails sends nothing.
+ */
+async function copyOnce(type: HubAccountType, finished: boolean): Promise<void> {
+  if (finished && !hubNeedsType(await readHubAccountType(), type)) return;
+  await setHubAccountType(type);
+}
+
 /** Copies the sign-up's account type to the Hub's profile once per session. Never throws: the next read tries again. */
 async function copyAccountType(progress: SignupProgress | null): Promise<void> {
   const type = progress?.inSequence ? progress.accountType : null;
   if (!type || copiedToHub === type) return;
+  const finished = progress?.step === 'done';
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      setHubAccountType(type).then(() => {
+      copyOnce(type, finished).then(() => {
         copiedToHub = type;
       }),
       new Promise<void>((resolve) => {
