@@ -79,6 +79,17 @@ export function VerificationScreen({ onBack, onOpenWallet }: VerificationScreenP
     wasFocused.current = focused;
   }, [focused, wantsSelfie, askProgress, askTier, askPending, askSelfie]);
 
+  // A payment that was still confirming is decided while this page is open (the Hub's answer goes from a purchase to
+  // nothing): the tier is asked about again, so the banner going is the tier row coming, not a page that says nothing
+  // until the person leaves and comes back (SWEEP-APP-6, ME-13 L3: seen on the stack when the held payment was released).
+  const wasConfirming = useRef(false);
+  const confirmingNow = Boolean(pending.data);
+  const decided = pending.data === null;
+  useEffect(() => {
+    if (wasConfirming.current && decided) void askTier();
+    wasConfirming.current = confirmingNow;
+  }, [confirmingNow, decided, askTier]);
+
   let body: React.ReactNode;
   if (failed) {
     body = (
