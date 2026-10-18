@@ -5,6 +5,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { fullName } from '@/features/profile-edit/form';
+import type { PickedImage } from '@/features/profile-edit/pickImage';
 import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { refreshInbox } from '@/features/inbox/unread';
 
@@ -16,6 +17,7 @@ import {
   newMessageKey,
   roomKey,
   sendMessage,
+  uploadMessagePhoto,
   type CommunityMessage,
   type CommunitySender,
 } from './api';
@@ -23,7 +25,12 @@ import {
 /** A message of the person's own that has not been confirmed by the server: on its way, or refused. */
 export type OutgoingMessage = {
   localId: string;
+  /** What was typed; empty for a photo sent on its own. */
   text: string;
+  /** The photo the person chose, kept until the message is stored or removed (the sending bubble draws it, and a retry may upload it again). */
+  photo?: PickedImage;
+  /** The address the photo was uploaded to, once it is up: a retry sends this and never uploads the same photo twice (the Hub's key covers the address). */
+  imageUrl?: string;
   /** The Hub's `Idempotency-Key` for this one message: made when it is composed, sent again unchanged on every retry, never used for another. */
   key: string;
   status: 'sending' | 'failed';
@@ -61,6 +68,13 @@ function firstSeen(items: readonly CommunityMessage[]): CommunityMessage[] {
   });
 }
 
+/** Whether `message` is the one `entry` sent: the person's own, not held when they tried, with the same photo, or the same words and no photo. */
+function sentBy(message: CommunityMessage, entry: OutgoingMessage, ownId: string): boolean {
+  if (message.senderWawuId !== ownId || entry.heldIds.has(message.id)) return false;
+  if (entry.photo) return entry.imageUrl !== undefined && message.imageUrl === entry.imageUrl;
+  return !message.imageUrl && message.text === entry.text;
+}
+
 let localCount = 0;
 const nextLocalId = () => `local-${(localCount += 1)}`;
 
@@ -93,6 +107,10 @@ export function useRoomMessages(id: string, looking: boolean) {
   );
   const [arrived, setArrived] = useState<CommunityMessage[]>([]);
   const [outgoing, setOutgoing] = useState<OutgoingMessage[]>([]);
+  const outgoingRef = useRef(outgoing);
+  useEffect(() => {
+    outgoingRef.current = outgoing;
+  }, [outgoing]);
 
   const take = useCallback((messages: readonly CommunityMessage[]) => {
     setArrived((held) => {
@@ -162,7 +180,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     if (!ownId) return done;
     for (const entry of outgoing) {
       if (entry.status !== 'failed' || entry.uncertain !== true) continue;
-      if (items.some((message) => message.senderWawuId === ownId && message.text === entry.text && !entry.heldIds.has(message.id))) {
+      if (items.some((message) => sentBy(message, entry, ownId))) {
         done.add(entry.localId);
       }
     }
@@ -189,8 +207,10 @@ export function useRoomMessages(id: string, looking: boolean) {
 
   /** The server stored it, so the person's own send reads like any other message. */
   const confirm = useCallback(
-    (localId: string, message: CommunityMessage) => {
+    (localId: string, message: CommunityMessage, photo?: PickedImage) => {
       take([{ ...message, sender: message.sender ?? meSender ?? undefined }]);
+      // The stored message has the photo now: the app's own copy of it is deleted.
+      photo?.discard?.();
       setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
       void queryClient.invalidateQueries({ queryKey: creditsKey });
     },
@@ -206,11 +226,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     async (entry: OutgoingMessage): Promise<CommunityMessage | null> => {
       const own = me.data ?? (await fetchMe());
       const page = await fetchMessages(id, 1);
-      return (
-        page.items.find(
-          (message) => message.senderWawuId === own.wawuUserId && message.text === entry.text && !entry.heldIds.has(message.id),
-        ) ?? null
-      );
+      return page.items.find((message) => sentBy(message, entry, own.wawuUserId)) ?? null;
     },
     [id, me.data],
   );
@@ -225,7 +241,17 @@ export function useRoomMessages(id: string, looking: boolean) {
       try {
         // A look-up that cannot be read is no answer: the message is sent again under its own key, and the Hub stores it once.
         const stored = entry.uncertain ? await landed(entry).catch(() => null) : null;
-        confirm(entry.localId, stored ?? (await sendMessage(id, entry.text, entry.key)));
+        if (stored) {
+          confirm(entry.localId, stored, entry.photo);
+          return;
+        }
+        // A photo goes up first, once: its address is kept on the message so a retry sends the same one under the same key.
+        let imageUrl = entry.imageUrl;
+        if (entry.photo && !imageUrl) {
+          imageUrl = await uploadMessagePhoto(entry.photo);
+          setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId ? { ...candidate, imageUrl } : candidate)));
+        }
+        confirm(entry.localId, await sendMessage(id, { text: entry.text || undefined, imageUrl }, entry.key), entry.photo);
       } catch (error) {
         const refused = isApiError(error) ? error : null;
         const outOfCredits = refused?.status === OUT_OF_CREDITS;
@@ -255,14 +281,15 @@ export function useRoomMessages(id: string, looking: boolean) {
     [id, confirm, landed],
   );
 
-  /** Sends what was typed. Returns false when nothing was sent (empty text, or a send is still running). */
+  /** Sends what was typed, with a photo if one was chosen. Returns false when nothing was sent (nothing to say, or a send is still running). */
   const send = useCallback(
-    (raw: string): boolean => {
+    (raw: string, photo?: PickedImage | null): boolean => {
       const text = raw.trim();
-      if (!text || sending.current) return false;
+      if ((!text && !photo) || sending.current) return false;
       const entry: OutgoingMessage = {
         localId: nextLocalId(),
         text,
+        photo: photo ?? undefined,
         key: newMessageKey(),
         status: 'sending',
         heldIds: new Set(itemsRef.current.map((message) => message.id)),
@@ -282,7 +309,9 @@ export function useRoomMessages(id: string, looking: boolean) {
     [outgoing, run],
   );
 
-  const discard = useCallback((localId: string) => {
+  /** Removes a message that was not sent. `keepPhoto` leaves the photo's own copy alone, for a message put back in the field to be changed. */
+  const discard = useCallback((localId: string, keepPhoto = false) => {
+    if (!keepPhoto) outgoingRef.current.find((entry) => entry.localId === localId)?.photo?.discard?.();
     setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
   }, []);
 

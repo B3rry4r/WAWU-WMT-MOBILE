@@ -1,3 +1,7 @@
+import { formatCredits } from '@/components/Credits';
+
+import type { CostsByKind } from './api';
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
@@ -84,12 +88,60 @@ export function firstName(name: string | null | undefined): string {
   return (name ?? '').trim().split(/\s+/)[0] ?? '';
 }
 
-export type LastWords = { text: string | null; hasPhoto: boolean; mine: boolean; senderName: string | null };
+export type LastWords = { text: string | null; hasPhoto: boolean; hasVideo?: boolean; hasVoice?: boolean; mine: boolean; senderName: string | null };
 
 /** The line under a room's name: "Tolu: who’s at the meetup Sat?", "You: Thanks", or "Tolu: Photo". Nothing said yet reads "No messages yet". */
-export function lastLine({ text, hasPhoto, mine, senderName }: LastWords): string {
-  const words = text?.trim() || (hasPhoto ? 'Photo' : '');
+export function lastLine({ text, hasPhoto, hasVideo, hasVoice, mine, senderName }: LastWords): string {
+  const words = text?.trim() || (hasPhoto ? 'Photo' : hasVideo ? 'Video' : hasVoice ? 'Voice note' : '');
   if (!words) return 'No messages yet';
   const who = mine ? 'You' : firstName(senderName);
   return who ? `${who}: ${words}` : words;
+}
+
+/** "photos", "photos and video", "photos, video and voice notes". */
+function listed(words: readonly string[]): string {
+  if (words.length <= 1) return words[0] ?? '';
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
+
+const upFirst = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
+
+/**
+ * I24's second line under the balance, from the Hub's costs by kind (R-62): "Chat free · photos, video, voice use credits". Only a kind
+ * the Hub prices above nothing is named as using credits; nothing is said of a kind it does not price.
+ */
+export function chatLine(costs: CostsByKind): string {
+  const paid = [costs.photo > 0 ? 'photos' : null, costs.video > 0 ? 'video' : null, costs.voice > 0 ? 'voice' : null].filter(
+    (word): word is string => word !== null,
+  );
+  const chat = costs.text > 0 ? `Messages ${formatCredits(costs.text)}` : 'Chat free';
+  return paid.length > 0 ? `${chat} · ${paid.join(', ')} use credits` : chat;
+}
+
+/**
+ * I38's line under "Photo", from the Hub's costs: "Photos 1 credit · video and voice notes 3". A video and a voice note that cost
+ * the same share a clause. Null when the Hub prices none of them.
+ */
+export function priceLine(costs: CostsByKind): string | null {
+  const parts: string[] = [];
+  if (costs.photo > 0) parts.push(`Photos ${formatCredits(costs.photo)}`);
+  if (costs.video > 0 && costs.video === costs.voice) {
+    parts.push(`video and voice notes ${costs.video}`);
+  } else {
+    if (costs.video > 0) parts.push(`video ${costs.video}`);
+    if (costs.voice > 0) parts.push(`voice notes ${costs.voice}`);
+  }
+  return parts.length > 0 ? upFirst(parts.join(' · ')) : null;
+}
+
+/**
+ * I27's words, from the Hub's costs: "Text and emoji stay free. Buy credits to send photos, video and voice notes." Null when the Hub
+ * prices no kind, because then there is nothing to buy credits for.
+ */
+export function outOfCreditsLine(costs: CostsByKind): string | null {
+  const paid = [costs.photo > 0 ? 'photos' : null, costs.video > 0 ? 'video' : null, costs.voice > 0 ? 'voice notes' : null].filter(
+    (word): word is string => word !== null,
+  );
+  if (paid.length === 0) return null;
+  return `${costs.text > 0 ? '' : 'Text and emoji stay free. '}Buy credits to send ${listed(paid)}.`;
 }

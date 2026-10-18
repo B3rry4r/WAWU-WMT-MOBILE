@@ -76,6 +76,9 @@ const MINE = 'GET /communities/mine?page=1&perPage=20';
 const SUGGESTED = 'GET /communities/suggested?page=1&perPage=20';
 const SUGGESTED_2 = 'GET /communities/suggested?page=2&perPage=20';
 
+/** What the Hub says each kind of message costs (R-62): text and emoji free, a photo 1, a video and a voice note 3. */
+const costs = (over: object = {}) => ({ creditsPerMessage: 0, creditsByKind: { text: 0, photo: 1, video: 3, voice: 3, ...over } });
+
 beforeEach(() => {
   mockFocused = true;
   sent = [];
@@ -83,7 +86,7 @@ beforeEach(() => {
   queryClient.clear();
   answers = {
     'GET /credits': [ok({ userWawuId: ME, creditBalance: 48, trialEndsAt: null })],
-    'GET /communities/message-cost': [ok({ creditsPerMessage: 1 })],
+    'GET /communities/message-cost': [ok(costs())],
     'GET /users/me': [ok({ wawuUserId: ME, firstName: 'Ada', lastName: 'Obi', handle: 'ada', avatarUrl: null, verification })],
   };
 });
@@ -117,22 +120,23 @@ describe('Communities (I24)', () => {
     answers[SUGGESTED] = [paged([])];
     await renderView();
     expect(await rtl.screen.findByText('48 WAWU Credits')).toBeTruthy();
-    expect(await rtl.screen.findByText('Reading is free · 1 credit per message you send')).toBeTruthy();
+    expect(await rtl.screen.findByText('Chat free · photos, video, voice use credits')).toBeTruthy();
     expect(rtl.screen.queryByText(/₦|naira/i)).toBeNull();
     expect(sent).toContain('GET /communities/message-cost');
   });
 
-  it('the price of a message is the server\'s figure: 2 credits reads "2 credits per message you send"', async () => {
-    answers['GET /communities/message-cost'] = [ok({ creditsPerMessage: 2 })];
+  it('the strip names only the kinds the Hub prices: a free photo is not said to use credits, and the words are never built in', async () => {
+    answers['GET /communities/message-cost'] = [ok(costs({ photo: 0 }))];
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
     answers[SUGGESTED] = [paged([])];
     await renderView();
-    expect(await rtl.screen.findByText('Reading is free · 2 credits per message you send')).toBeTruthy();
+    expect(await rtl.screen.findByText('Chat free · video, voice use credits')).toBeTruthy();
+    expect(rtl.screen.queryByText(/photos/)).toBeNull();
   });
 
   it('says only that reading is free while the price loads, and when it cannot be read, and states it once it can', async () => {
     const boom = refuse(500, 'Something went wrong.');
-    answers['GET /communities/message-cost'] = [boom, boom, boom, ok({ creditsPerMessage: 1 })];
+    answers['GET /communities/message-cost'] = [boom, boom, boom, ok(costs())];
     answers[MINE] = [paged([mine('r1', 'Lagos Freelancers')])];
     answers[SUGGESTED] = [paged([])];
     const view = await renderView();
@@ -142,13 +146,13 @@ describe('Communities (I24)', () => {
     await rtl.waitFor(() => expect(sent.filter((request) => request === 'GET /communities/message-cost')).toHaveLength(3), { timeout: 8000 });
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(rtl.screen.getByText('Reading is free')).toBeTruthy();
-    expect(rtl.screen.queryByText(/credit per message|credits per message/)).toBeNull();
+    expect(rtl.screen.queryByText(/use credits/)).toBeNull();
     // Coming back to the view reads it again.
     mockFocused = false;
     await view.rerender(wrapView());
     mockFocused = true;
     await view.rerender(wrapView());
-    expect(await rtl.screen.findByText('Reading is free · 1 credit per message you send')).toBeTruthy();
+    expect(await rtl.screen.findByText('Chat free · photos, video, voice use credits')).toBeTruthy();
   }, 20_000);
 
   it('shows the balance the server holds, and "1 WAWU Credit" for one', async () => {

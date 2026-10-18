@@ -30,14 +30,14 @@ import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
-import { Composer } from './Composer';
+import { Composer, type ComposerAttach, type ComposerDraft } from './Composer';
 import { CoverHeader, CoverShare } from './CoverHeader';
-import { dayKey, dayLabel, membersFull } from './format';
+import { dayKey, dayLabel, membersFull, outOfCreditsLine, priceLine } from './format';
 import { GroupTile, tileMetrics } from './GroupTile';
 import { MessagePost, OutgoingPost } from './MessagePost';
 import { CreditPill, RoomHeader } from './RoomHeader';
 import { useJoinCommunity } from './useCommunities';
-import { useCredits } from './useCredits';
+import { useCredits, useMessageCost } from './useCredits';
 import { useRoomMessages, type OutgoingMessage } from './useRoomMessages';
 
 /**
@@ -123,14 +123,15 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const focused = useIsFocused();
   const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchRoom(id) }, queryClient);
   const credits = useCredits();
+  const prices = useMessageCost();
   const messages = useRoomMessages(id, focused);
   const [buying, setBuying] = useState(false);
-  const [draft, setDraft] = useState<{ id: number; text: string } | undefined>(undefined);
+  const [draft, setDraft] = useState<ComposerDraft | undefined>(undefined);
   const edit = (localId: string) => {
     const entry = messages.outgoing.find((candidate) => candidate.localId === localId);
     if (!entry) return;
-    setDraft({ id: (draft?.id ?? 0) + 1, text: entry.text });
-    messages.discard(localId);
+    setDraft({ id: (draft?.id ?? 0) + 1, text: entry.text, photo: entry.photo ?? null });
+    messages.discard(localId, true);
   };
   const retryAll = () => {
     void room.refetch();
@@ -220,13 +221,27 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
       </View>
     );
   } else {
-    body = <Thread room={room.data} messages={messages} onEdit={edit} />;
+    body = <Thread room={room.data} messages={messages} onEdit={edit} onBuy={() => setBuying(true)} />;
   }
 
   const showComposer = !hidden && !notMember && !room.isPending && !(room.isError && !room.data) && !messages.isPending && !(messages.isError && !messages.data);
 
-  // I27: no credits left in a room where a message costs one. Reading stays free; Buy credits opens I28.
-  const outOfCredits = showComposer && credits.data?.creditBalance === 0 && (room.data?.messageCostInCredits ?? 0) > 0;
+  // What a photo costs this person: the Hub's price by kind (R-62), and nothing for the host, who sends every kind free in their own room.
+  const costs = prices.data?.creditsByKind;
+  const hostSends = room.data?.role === 'host';
+  const photoCost = costs === undefined ? undefined : hostSends ? 0 : costs.photo;
+  // I27: no credits left while the Hub prices photos, video or voice notes. Text and emoji stay free, so the composer stays; Buy credits opens I28.
+  const outOfCredits = showComposer && !hostSends && credits.data?.creditBalance === 0 && costs !== undefined && outOfCreditsLine(costs) !== null;
+  // I38: the "+" is drawn once the Hub's prices are known. With no credits and a priced photo it opens Buy credits instead of the library.
+  const attach: ComposerAttach | undefined =
+    costs === undefined || photoCost === undefined
+      ? undefined
+      : {
+          photoCost,
+          line: hostSends ? null : priceLine(costs),
+          blocked: photoCost > 0 && credits.data?.creditBalance === 0,
+          onBuy: () => setBuying(true),
+        };
 
   return (
     <KeyboardAvoidingView
@@ -237,8 +252,8 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
       {header}
       {hostsPrivate && (waitingOnHost.data ?? 0) > 0 ? <JoinRequestsEntry id={id} count={waitingOnHost.data ?? 0} /> : null}
       <View style={styles.body}>{body}</View>
-      {outOfCredits ? <OutOfCreditsPanel onBuy={() => setBuying(true)} /> : null}
-      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} cost={room.data?.messageCostInCredits} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {outOfCredits && costs ? <OutOfCreditsPanel onBuy={() => setBuying(true)} line={outOfCreditsLine(costs) ?? undefined} /> : null}
+      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} attach={attach} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
       {buying ? <BuyCreditsEntry visible onClose={() => setBuying(false)} doneLabel="Back to chat" onAdded={() => void credits.refetch()} /> : null}
     </KeyboardAvoidingView>
   );
@@ -263,7 +278,7 @@ function JoinRequestsEntry({ id, count }: { id: string; count: number }) {
   );
 }
 
-function Thread({ room, messages, onEdit }: { room: RoomView | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void }) {
+function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void; onBuy: () => void }) {
   const { colors } = useWawu();
   const list = useRef<FlatList<Item>>(null);
   const [atBottom, setAtBottom] = useState(true);
@@ -319,12 +334,13 @@ function Thread({ room, messages, onEdit }: { room: RoomView | undefined; messag
             onRetry={() => messages.retry(item.entry.localId)}
             onDiscard={() => messages.discard(item.entry.localId)}
             onEdit={() => onEdit(item.entry.localId)}
+            onBuy={onBuy}
           />
         );
       }
       return <MessagePost message={item.message} sender={null} isHost={room !== undefined && item.message.senderWawuId === room.hostWawuId} />;
     },
-    [room, messages, onEdit],
+    [room, messages, onEdit, onBuy],
   );
 
   if (messages.items.length === 0 && messages.outgoing.length === 0 && !hasNextPage) {
