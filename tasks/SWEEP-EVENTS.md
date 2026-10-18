@@ -67,17 +67,9 @@ Events, tickets and the door scan: EVENTS tasks. Backend and mobile. Only the ro
 | EVENTS-12 | N1 | Info, stack only. Four older suites (event-running, event-door-scan, event-door-idempotency, event-held-tickets) fail 7 tests on a stack's seeded database (door staff and holder names), identically on the code before this task; they are green in CI. The protected suite run against the stack's own mock WAWU ID gives 8 reds (502 on the verification routes); run it on the suite's own mock. MERGE-17 saw the same 6 door-name reds on `wmt/MERGE-16` and on `wmt/MERGE-17`. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S9.md`, Findings L3 and L4 | Open: found by the verifier at batch 17. |
 | FIX-12 | L1 | A sold-tickets 409 caused only by a sale on a retired tier names a tier the host sees as unsold (the same name, another price). A plainer sentence needs the Hub to say which tier is hidden (G-FIX-12-1). | `tasks/FIX-12.md`, Current state (builder gap G-FIX-12-1) | Open: found by the verifier at batch 17. |
 
-## Builder report
+## History
 
-Fixed 3 (EVENTS-09 N2; EVENTS-06 L1; EVENTS-08 L1), ruled no 7, waiting 2 (EVENTS-11 O7, O8).
-- For the lead: EVENTS-07 R3-1 (host-erase widening) is left because its only harness is Fintava-named; EVENTS-06 L3 waits on the shared `amountJoiner` prop.
-- Checks run (EXIT 0 unless noted): mobile `tsc --noEmit`, eslint on every changed file, `npm run gates` and `check_baseline`; jest of every touched area (communities 140, push 60, paid-messages 45, door 103, buyTickets 22, organiser 21) and a wider run of chat, credits, events, schools, legal, money-attempt and auth-signup (40 suites, 799 tests); backend `tsc`, eslint on changed files (warnings only, none new), gates, the earn spec (29) and the TGIF spec (19), the protected suite (253 of 253, on a seeded test database); wawu-id `tsc`, eslint, prettier and `deletion-window.spec.ts` (28 of 28) against a local Postgres.
-- Fail-before runs were made by putting the old file back for one run (no stash).
-- Test databases `w4b_test_wawu_id` and `w4b_test_wawu_hub_test`, mock WAWU ID on 7841; all removed or stopped at hand-back.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-EVENTS.md](history/SWEEP-EVENTS.md).
 
 ## Owner sign-off
 

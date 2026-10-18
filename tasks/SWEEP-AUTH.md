@@ -17,10 +17,12 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 15.
+As of 18 Oct 2026, merging (lead): rows added at MERGE-19; SWEEP-IEA stacked in batch 19 (MERGE-19).
+- **MERGE-19:** SWEEP-IEA (mobile `357908a4`, backend `2c8a989`) merged with no conflict in this file. Its verifier said MERGE (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-IEA.md`: no blocker, high or medium; the 5 fixed rows do what they name, 11 ruled-no reasons checked against the code all hold). 1 row added from that report (SWEEP-IEA L1, open).
+- **Merge note (batch 15):** checked by an independent verifier and stacked in batch 15.
 - **Status:** merging (lead). Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b`; verifier PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`: the 16 fixed rows check out, 12 red before and green after, the ruled-no reasons read hold). Stacked in batch 15 by MERGE-15 (backend, mobile and WAWU ID `wmt/MERGE-15`); not on main.
 - **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
-- **Rows:** 6 fixed, 4 ruled no with the reason in the row, 0 waiting, 0 open. The SWEEP-IEA builder (Sonnet, `wmt/SWEEP-IEA`) worked the 4 rows that had no outcome: 2 fixed (SETTINGS-05 L1, L3), 2 ruled no (SETTINGS-05 L2, AUTH-07 W4b N3).
+- **Rows:** 11 in the table: 6 fixed, 4 ruled no with the reason in the row, 0 waiting, 1 open (SWEEP-IEA L1). The SWEEP-IEA builder (Sonnet, `wmt/SWEEP-IEA`) worked the 4 rows that had no outcome: 2 fixed (SETTINGS-05 L1, L3), 2 ruled no (SETTINGS-05 L2, AUTH-07 W4b N3).
 - **Next:** the batch 15 pull request (the lead). The verifier's lows are rows of this table (last column Open).
 
 ## Read first
@@ -57,18 +59,11 @@ Sign-up, sign-in and account recovery screens: AUTH tasks, and the findings of t
 | SETTINGS-05 | L2 | A creator with an owed earning and no wallet gets Continue open on Z6 and learns of the refusal only at Z7, after typing DELETE. Correct by R-6 and the Hub being the authority; a Hub read for it would let Z6 say so earlier. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 2 | No: needs a new Hub read and a line Z6 does not draw (R-47). The refusal at Z7 is the Hub's own sentence and the Hub is the authority (R-6); a creator with an owed earning and no wallet is told there. |
 | SETTINGS-05 | L3 | The backend reason spec (`account-deletion-reason.contract.spec.ts`) drives the service and the DTO pipe, not the HTTP route (the verifier checked the route on the stack). The owed earning in the builder's and the verifier's checks is a `WalletPayment` row of the shape B3a counts, not one made through a money route. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-05.md`, Findings 3 | Fixed in part, backend `2c8a989`: a new spec, `account-deletion-reason-route.contract.spec.ts` (4 tests), sends the reason through the real `DELETE /account` route with a signed token from the mock WAWU ID and the app's global pipe, filter and interceptor: a listed reason kept, none or `{}` stored as none, a value outside the list or a stray field answers 400 and schedules nothing, a repeat keeps the first reason. The owed earning staying a hand-made `WalletPayment` row is No: making one through a money route needs the money harness, whose specs here are Fintava-named; the refusal itself is the Hub's own and the verifier saw it on the stack. |
 | AUTH-07 | W4b N3 | Note. `forgetSignupChannel()` also bumps `lastAsk`; it has no product caller (tests only), so no behaviour change. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Notes 3 | No: a note, and the bump is intended. `forgetSignupChannel()` raises `lastAsk` so that an ask still on its way cannot set the channel back (its comment says so; `auth-signup-channel.test.ts` runs it). It has no product caller, so no behaviour changes. |
+| SWEEP-IEA | L1 | The new route spec `src/account/tests/account-deletion-reason-route.contract.spec.ts` (SETTINGS-05 L3) builds its app by hand (ValidationPipe, filter, interceptor) instead of `configureHubApp()` (`src/hub-app-config.ts`), which exists so specs answer as the Hub does. Today the options are identical, so the spec is true; it can drift. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-IEA.md`, Findings (SETTINGS-05 L3, LOW) | Open: found by the verifier at batch 19. |
 
-## Builder report
+## History
 
-Fixed 4 (AUTH-07 N-2, N-3; SETTINGS-08 L1, L2), ruled no 2 (CHECK-1 F-6, F-8), waiting 0.
-- Test N-1 in `auth-signup.test.tsx` pinned the old last-writer-wins answer; its one assertion now expects the latest ask's answer, because the row changes that behaviour.
-- Checks run (EXIT 0 unless noted): mobile `tsc --noEmit`, eslint on every changed file, `npm run gates` and `check_baseline`; jest of every touched area (communities 140, push 60, paid-messages 45, door 103, buyTickets 22, organiser 21) and a wider run of chat, credits, events, schools, legal, money-attempt and auth-signup (40 suites, 799 tests); backend `tsc`, eslint on changed files (warnings only, none new), gates, the earn spec (29) and the TGIF spec (19), the protected suite (253 of 253, on a seeded test database); wawu-id `tsc`, eslint, prettier and `deletion-window.spec.ts` (28 of 28) against a local Postgres.
-- Fail-before runs were made by putting the old file back for one run (no stash).
-- Test databases `w4b_test_wawu_id` and `w4b_test_wawu_hub_test`, mock WAWU ID on 7841; all removed or stopped at hand-back.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-AUTH.md](history/SWEEP-AUTH.md).
 
 ## Owner sign-off
 

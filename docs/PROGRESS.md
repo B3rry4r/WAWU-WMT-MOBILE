@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 308.**
+**Launch tasks done: 176 of 311.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 0 | 0 | 0 |
+| todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 130 | 0 | 0 | 0 |
+| verifying | 134 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-78](../tasks/FIX-78.md) CHECK-1b's new findings: an end date a year away shows its year, the payout account says it must be in your own name (You)
+- [FIX-75](../tasks/FIX-75.md) The storage specs no longer share the Hub's real 10-minute timer (You)
+- [FIX-74](../tasks/FIX-74.md) A school payout the webhook completed at the quoted charge takes the provider's real charge, not a flag (You)
 - [FIX-73](../tasks/FIX-73.md) A pasted tip amount keeps whole naira, and A12 says Pick three or more (You)
 - [FIX-71](../tasks/FIX-71.md) A community message's photo, video and voice note still load after a week (You)
 - [FIX-69](../tasks/FIX-69.md) The school places take their locks in one order, and the release sweep logs why it failed (You)
@@ -350,6 +353,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 18 Oct 2026 · DV2-04 · Built (Sonnet builder, T1; mobile `wmt/DV2-04` on `origin/wmt/MERGE-16` `5ee3994d`; no backend change, no migration, no shared change; status verifying): M19's Event tile says "Needs an active tier" and a person with a running tier sees the products meter ("2 of 3 products", tier name and end date, `GET /me/tier`) in place of the uploads count; E21 is "Hosting needs a tier" with the tier names and "From" the lowest price from `GET /plans` (or the 403's `lowestTier`) and See tiers opening VF5; the host form opens for a running tier or a live tick, and `403 tier_required` on create, edit (E22) and ticket prices opens E21 with the Hub's own sentence. Checked on a local merge of backend `wmt/S9` into `wmt/MERGE-16` (ports 7760-7767, down). G-DV2-04-1.
+- 18 Oct 2026 · INBOX-23 · Built (Sonnet builder, T2; mobile `wmt/INBOX-23` on `origin/wmt/MERGE-16` `5ee3994d`, no backend change; status verifying): community messages by kind, from the Hub's `creditsByKind` (R-62): text free and priced nowhere, a "+" and the photo card with "Send · 1" (I38), the strip and I27 words from the Hub, a sent photo in the thread; presign, PUT, confirm, then the send under one Idempotency-Key. Stack: text with 0 credits sends, a photo drops the count by the Hub's price, 0 credits blocks the photo, a double tap moves one credit; Hub count = ledger after each.
 - 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 - 17 Oct 2026 · FIX-61 · Built (Sonnet builder, T1; backend `wmt/FIX-61` `cc0da36` on `origin/wmt/MERGE-13` `6bc7b20`, test files only; status verifying): `paid-dm-wallet` "two answers in a day" failed on CI for about ten minutes of every day (starts 22:11 to 22:21 UTC) because the pay harness sweeps at a clock that runs ahead of the wall clock and the third answer's sweep fell after Lagos midnight (23:00 UTC), where a new move is right (R-55): a test cause, not the product. The harness gets `keepInLagosDay`, called by the two one-move-a-day specs; the rule is pinned on both sides of midnight with no database; reproduced by starting the spec at 22:12 to 22:20 UTC (fails) and passing after.
 - 17 Oct 2026 · INBOX-14 · Part built (Sonnet builder, T2; mobile `wmt/INBOX-14` on `origin/wmt/MERGE-11` `47555987` with `wmt/ME-07` and `wmt/INBOX-24` merged; no backend change, no migration; status building): I30 and I31 pay a private room's 30 day pass from the wallet (fresh quote per tap, PIN, one key per attempt, Renew, ended pass, removed member, short wallet without Add), I37 keeps the picture as the room header, I32 never sends a private room without a price, I33 and I34 built; entries from I24, Create and the reminder. Not done: the stack run, the pictures, the A11, M18 and I1 entries, the host's way to I34.
@@ -363,4 +367,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
 - 17 Oct 2026 · HOME-03, HOME-08 · Builder (Sonnet, bundle S1b): a piece's own page `/content/<id>`: H19 locked, H20 unlocked, H21 comments, H22 share, H23 rate, H24 free video, H25 course, on HOME-12's unlock and HOME-13's tip sheets; backend `GET /content/{id}/detail` also carries who made it (`wmt/S1b` `b5f5538`); a feed caption and a Search result open it; mobile `wmt/S1b` on MERGE-11 with S1 and EXPLORE-02-R2 merged; gaps G-HOME-03-1 to 5, G-HOME-08-1 to 3; status verifying.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
-- 17 Oct 2026 · EXPLORE-02 · Round 2 built (Sonnet builder; mobile `wmt/EXPLORE-02-R2` on `origin/wmt/P1` `9285017` with round 1 `86bbe0d9` merged, backend `wmt/EXPLORE-02` `0b0ed34` with MERGE-10 `3cf5a4b` merged; no migration; status verifying): All creators (X4) and Search (X5 to X12) with their entries, on P1's search files; the Explore pill reads `Search Who Made This?` (R-69) and the creators rail's See all is drawn. Pictures of X1 and X4 to X12 at 390 px light and dark on a seeded stack beside the boards, and V9 on the real Hub (follow, join, ask, failed and try again), done.

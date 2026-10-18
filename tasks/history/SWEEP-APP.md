@@ -20,3 +20,17 @@ Branches: mobile `wmt/SWEEP-APP-1`, backend `wmt/SWEEP-APP-1`; heads are in the 
 - **Not done:** no web export, so no pictures at 390 px light and dark for rows 2, 10 and 54 (jest proves the props and styles only). Rows 4, 5 and 7 could not be reproduced with a rebuilt delay harness (its mapping is not the verifier's), so row 4 is hardening, not a measured before and after. The `live-hardening` and `nuvion-opening` specs (rows 31 and 37) were typechecked and linted but not run: they open their own ports and are large.
 - **Checks:** see the hand-back for the EXIT lines.
 
+
+## Builder report
+
+Part 3, a Sonnet builder, 18 Oct 2026. Mobile `wmt/SWEEP-APP-3` from `wmt/SWEEP-APP-2` `cbddb802`. No backend change.
+- **Commits (mobile):** `d164ffc1` (104), `d4eff761` (62, 106), `7fa2bef6` (98), `e8bcf045` (the paying sheets), `b53fe19d` (123, 124), `a75e3e38` (138), `61268bab` (126), `b0b8fa0c` (161), `32005117` (159), `3c7092d7` (128), `ee8d3780` (91), `928d1f36` (166), `218b95cf` (167), then the task file commit.
+- **Part 2's check:** (1) row 104's test now flushes the refetch and reads the query; red on MERGE-16 `5ee3994d`, green on the head. (2) Today reports a view only once the picture is on screen. (3) The slider keeps its place by key from the first draw. (4) The sheets: tips, unlock, credits, community pass, products, points buy, request-pay, wallet send, chat send, withdraw and the AI job check all keep the sent attempt's Idempotency-Key and quote for the retry (read in usePaymentFlow, useBuyCredits, usePassPurchase, usePlanPurchase, buyIntent, useRequestPay, the send intent, the withdraw intent, JobCheck), so all eleven now pass `PAYMENT_UNANSWERED_LINE`; none was left out. One test per sheet (red before, 17 failures on the old code). The old-line assertions in sendFlow (6), bankSendFlow (1) and buyFlow (1) were updated to the new line, as the check allows.
+- **Tests that fail before and pass after:** every fixed row has one, except rows 128 and 161, which are load races that cannot be made red on demand.
+- **Checks:** see the hand-back for the tsc, eslint and gates EXIT lines.
+- **Not done:** 22 rows (list in Current state). No web export and no stack were made.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-APP.md](history/SWEEP-APP.md).
+
