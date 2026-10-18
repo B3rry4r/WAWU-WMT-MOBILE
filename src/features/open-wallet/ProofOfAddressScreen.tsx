@@ -93,10 +93,12 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   const queryClient = useQueryClient();
   const progressQuery = openingProgressQuery(owner);
   const progress = useQuery(progressQuery);
+  // Not asked for while the progress says no opening exists yet (the review opening, no review): the Hub refuses with 409 `wallet_not_open` then (G-SWEEP-APP-6-1).
+  const noOpeningYet = progress.data?.flow === 'review' && progress.data.review === null;
   const documents = useQuery({
     queryKey: [...DOCUMENTS_KEY, owner ?? ''] as const,
     queryFn: fetchDocuments,
-    enabled: Boolean(owner),
+    enabled: Boolean(owner) && progress.data !== undefined && !noOpeningYet,
     staleTime: 0,
     retry: false,
   });

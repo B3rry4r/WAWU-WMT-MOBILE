@@ -395,6 +395,49 @@ describe('Sending a file from the phone', () => {
   });
 });
 
+describe('G-SWEEP-APP-6-1 · the documents are not asked for before the opening exists', () => {
+  const asked = () => calls('GET', '/money/identity/documents');
+
+  it('A26 with no details sent yet draws its step and never reads the documents (the Hub would refuse with 409)', async () => {
+    fallback['GET /money/wallet'] = wallet({ review: null });
+    fallback['GET /money/identity/documents'] = refusal(409, 'wallet_not_open', 'Open your wallet first.');
+    const app = await idScreen();
+    expect(await app.screen.findByLabelText('Front, Tap to take a photo')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-id-error')).toBeNull();
+    expect(asked()).toHaveLength(0);
+  });
+
+  it('A27 with no details sent yet draws its fields and never reads the documents', async () => {
+    fallback['GET /money/wallet'] = wallet({ review: null });
+    fallback['GET /money/identity/documents'] = refusal(409, 'wallet_not_open', 'Open your wallet first.');
+    const app = await addressScreen();
+    expect(await app.screen.findByTestId('open-wallet-postal')).toBeTruthy();
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(asked()).toHaveLength(0);
+  });
+
+  it('A26 and A27 with an opening read the documents once each, for the limits and for what the Hub already holds', async () => {
+    const id = await idScreen();
+    await id.screen.findByLabelText('Front, Tap to take a photo');
+    expect(asked()).toHaveLength(1);
+    await rtl.cleanup();
+    sent = [];
+    const address = await addressScreen();
+    await address.screen.findByTestId('open-wallet-address');
+    await rtl.waitFor(() => expect(asked()).toHaveLength(1));
+  });
+
+  it('an older opening (the check, not the review) still reads the documents, so a wallet that takes none is told so', async () => {
+    fallback['GET /money/wallet'] = wallet({ openingFlow: 'check', review: null });
+    fallback['GET /money/identity/documents'] = documents({ required: false, open: false });
+    const app = await idScreen();
+    expect(await app.screen.findByText('Nothing to add here')).toBeTruthy();
+    expect(asked()).toHaveLength(1);
+  });
+});
+
 describe('A28 · Checking your details', () => {
   async function boot() {
     const { CheckingScreen } = require('../CheckingScreen') as typeof import('../CheckingScreen');
