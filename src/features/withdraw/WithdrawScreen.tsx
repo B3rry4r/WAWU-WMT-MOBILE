@@ -12,7 +12,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
@@ -407,6 +407,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
           onClose={() => setPinOpen(false)}
           approval={{ totalKobo: attempt.quote.totalKobo, payee: payout ? payout.accountName : 'your payout account' }}
           onSubmit={submitPin}
+          unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             setPinOpen(false);
             props.onForgotPin();

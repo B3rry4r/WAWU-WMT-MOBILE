@@ -445,6 +445,8 @@ describe('PT3, PT3a and PT3b · not enough points', () => {
     await tap('1234');
     await waitFor(() => expect(hub.buys).toHaveLength(1));
     await waitFor(() => expect(screen.getByTestId('shortfall-confirm')).toBeTruthy());
+    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     // The sheet asks for the PIN again; the Hub answers the key it knows with the first purchase.
     await tap('1234');
     await waitFor(() => expect(screen.queryByTestId('shortfall-sheet')).toBeNull());

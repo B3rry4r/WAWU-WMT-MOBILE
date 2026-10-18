@@ -6,7 +6,7 @@ import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
 import { formatMoney, Money } from '@/components/Money';
 import { feesTotalKobo, PaySheet } from '@/components/pay-sheet';
-import { PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { Text } from '@/components/Text';
 import { TOTAL_LABEL, WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { WalletRow } from '@/features/money-attempt/WalletRow';
@@ -43,6 +43,7 @@ export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
       onClose={sheet.closePin}
       approval={{ totalKobo: total, payee: name }}
       onSubmit={sheet.submitPin}
+      unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={sheet.forgotPin}
       lockedUntil={sheet.lockedUntil}
     />

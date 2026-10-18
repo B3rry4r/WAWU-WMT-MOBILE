@@ -8,7 +8,7 @@ import { balanceProblem, walletBalanceQuery } from '@/api/money';
 import { queryClient } from '@/api/query';
 import { IconButton } from '@/components/Button';
 import { PaySheet, type PayStatus, type PayWallet } from '@/components/pay-sheet';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -477,6 +477,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         onClose={() => setPinOpen(false)}
         approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
         onSubmit={submitPin}
+        unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={() => {
           setPinOpen(false);
           props.onForgotPin();

@@ -11,7 +11,7 @@ import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { formatPoints, PointsFigure } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
@@ -447,6 +447,7 @@ export function BuyScreen(props: BuyScreenProps) {
           onClose={closePin}
           approval={{ totalKobo: quote.payment.totalKobo, purpose: pinPurpose(quote) }}
           onSubmit={submitPin}
+          unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();
             props.onForgotPin();

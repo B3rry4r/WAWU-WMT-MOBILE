@@ -417,7 +417,7 @@ describe('W10 · review, with W11 the PIN sheet', () => {
     hub.mode = 'no_answer';
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await tap('1234');
     expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
     expect(hub.sends).toHaveLength(2);
@@ -575,7 +575,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     hub.mode = 'lost';
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await closeSheet();
     await fireEvent.press(screen.getByTestId('review-back'));
     await fireEvent.press(await screen.findByTestId('send-continue'));
@@ -592,7 +592,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     hub.mode = 'lost';
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await restartApp();
     await renderRouter(routes, { initialUrl: REVIEW_URL });
     await pay();
@@ -607,7 +607,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     hub.quoteTtlMs = 1500;
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await closeSheet();
     await sleep(1600);
     await fireEvent.press(await screen.findByRole('button', { name: /^Send ₦/ }));
@@ -625,7 +625,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     hub.quoteTtlMs = 1500;
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await closeSheet();
     await sleep(1600);
     hub.quoteExpiredForSend = true;
@@ -688,7 +688,7 @@ describe('W10 · a final answer lets the intent go (round 2)', () => {
     hub.mode = 'lost';
     await toReview();
     await pay();
-    expect(await screen.findByText("We couldn't check your PIN. Try again.")).toBeTruthy();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await restartApp();
     await renderRouter(routes, { initialUrl: REVIEW_URL });
     expect(await screen.findByTestId('send-review-retry')).toBeTruthy();

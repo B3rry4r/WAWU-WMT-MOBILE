@@ -415,6 +415,8 @@ describe('Withdraw, the PIN and W19', () => {
     // The Hub took it and the answer never came: the sheet asks again, and nothing moves on.
     await waitFor(() => expect(hub.sends).toHaveLength(1));
     expect(pathname()).toBe('/withdraw');
+    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
     await tick(300);
     await tap('1234');
     await screen.findByTestId('withdraw-receipt-screen');
