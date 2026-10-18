@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent, type TextStyle } from 'react-native';
+import { Platform, StyleSheet, View, type LayoutChangeEvent, type TextStyle } from 'react-native';
 
 import { font, useWawu } from '@/theme';
 
@@ -210,18 +210,18 @@ function drawFigure(
   const number = fit.broken ? (
     <View testID={testID ? `${testID}-groups` : undefined} style={styles.groups}>
       {pointsCountGroups(countText).map((group, at) => (
-        <Text key={at} variant="body" numberOfLines={1} style={[numberStyle, styles.natural]}>
+        <Text key={at} variant="body" numberOfLines={1} style={[numberStyle, styles.natural, onWeb()]}>
           {group}
         </Text>
       ))}
     </View>
   ) : (
-    <Text variant="body" numberOfLines={1} style={[numberStyle, styles.natural]}>
+    <Text variant="body" numberOfLines={1} style={[numberStyle, styles.natural, onWeb()]}>
       {countText}
     </Text>
   );
   const unit = showWord ? (
-    <Text variant="body" tone="textMuted" numberOfLines={1} style={[font(500), look.word, styles.natural]}>
+    <Text variant="body" tone="textMuted" numberOfLines={1} style={[font(500), look.word, styles.natural, onWeb()]}>
       {wordText}
     </Text>
   ) : null;
@@ -373,6 +373,9 @@ function PointsFitted({
   );
 }
 
+/** The web-only style that lets a one-line Text take its natural width; read at draw time, so the platform is the one in force. */
+const onWeb = () => (Platform.OS === 'web' ? styles.uncapped : null);
+
 const styles = StyleSheet.create({
   /** The hugging figure: one row as wide as its content, like a Text. The parent places it. */
   hug: { flexDirection: 'row', alignItems: 'center' },
@@ -397,6 +400,8 @@ const styles = StyleSheet.create({
    * `numberOfLines={1}` is capped at its box and ends in an ellipsis, so the overflow is left visible there (DV2-COMP L1).
    */
   natural: { flexShrink: 0, overflow: 'visible' },
+  /** react-native-web also caps a one-line Text at 100% of its parent, so the word after a spilled count would sit on its digits (SWEEP-APP-4 row 169's picture). */
+  uncapped: { maxWidth: 'none' } as unknown as TextStyle,
   /**
    * The copies sit in a row box of no size that clips them, so they take their natural width (an absolute child of a column box is offered
    * the box's width, which would cut the count), add nothing to the page's scroll, and cannot be seen or touched. They carry no

@@ -241,6 +241,19 @@ describe('PointsFigure', () => {
     }
   });
 
+  it('on the web the count and the word are not capped at their parent, so the word never sits on the digits (SWEEP-APP-4 row 169)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    await render(<PointsFigure count={12345678} size="hero" testID="pts" />);
+    for (const node of [screen.getByText('12,345,678'), screen.getByText('points')]) {
+      expect(styleOf(node).maxWidth).toBe('none');
+    }
+  });
+
+  it('off the web the count and the word set no max width', async () => {
+    await render(<PointsFigure count={12345678} size="hero" testID="pts" />);
+    expect(styleOf(screen.getByText('12,345,678')).maxWidth).toBeUndefined();
+  });
+
   it('keeps the board\'s sizes and lines at full size', async () => {
     await render(<PointsFigure count={1240} size="hero" />);
     expect(styleOf(screen.getByText('1,240'))).toMatchObject({ fontSize: 22, lineHeight: 26, letterSpacing: 0 });

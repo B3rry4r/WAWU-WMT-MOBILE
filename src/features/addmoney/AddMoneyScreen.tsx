@@ -41,7 +41,8 @@ import { useLanding, type Landing } from './useLanding';
 /** kit.js line 61, `copyBtn`: 32 high, 12 at the sides, a pill on the sunken surface, the Copy glyph 14, the word 13 / 600, 6 between. */
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, ms: 2000 } as const;
 /** W15's card: the head's label is 12; W46's mark is 88 and its figure 36 (W12's own). */
-const LOOK = { label: 12, dot: 10, mark: 88, figure: 36, rowValue: 14.5, headGap: 12, headTop: 20 } as const;
+/** W46's head starts 120 under the status bar (the board's padding); the frame's own 8 is part of it, so headTop is 112 (SWEEP-APP-4 row 142). */
+const LOOK = { label: 12, dot: 10, mark: 88, figure: 36, rowValue: 14.5, headGap: 12, headTop: 112 } as const;
 
 export type AddMoneyScreenProps = {
   /** What a pay sheet was short by (kobo), when it sent the person here: shown above the card. */
@@ -277,7 +278,7 @@ function Received({ landing, onDone }: { landing: Extract<Landing, { phase: 'lan
       bare
       footer={<Button testID="add-money-done" label="Done" full onPress={onDone} />}
     >
-      <View style={styles.receivedBody}>
+      <View testID="add-money-received-body" style={styles.receivedBody}>
         <View style={styles.receivedHead}>
           <IconTile icon="ArrowDownLeft" tone="in" size={LOOK.mark} strokeWidth={2.4} />
           {first && !many ? (

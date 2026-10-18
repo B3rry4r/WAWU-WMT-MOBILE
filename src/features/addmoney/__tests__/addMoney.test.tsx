@@ -2,7 +2,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { Share, Text, View } from 'react-native';
+import { Share, StyleSheet, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
@@ -260,6 +260,8 @@ describe('a transfer lands (W45 to W46)', () => {
     expect(await screen.findByTestId('add-money-received', undefined, { timeout: 4000 })).toBeTruthy();
     expect(screen.getByText('received')).toBeTruthy();
     expect(screen.getByTestId('add-money-from').props.children).toBe('From GTBank ••0921');
+    // SWEEP-APP-4 row 142: W46's head starts 120 under the status bar (the board's padding); the frame adds 8, so the body adds 112 (it added 20, about 90 too high).
+    expect(StyleSheet.flatten(screen.getByTestId('add-money-received-body').props.style).paddingTop).toBe(112);
     expect(screen.getByText('NUV-82KQ-1Z7A')).toBeTruthy();
     expect(screen.getByText('New balance')).toBeTruthy();
     expect(JSON.stringify(screen.toJSON())).toContain('535,250');

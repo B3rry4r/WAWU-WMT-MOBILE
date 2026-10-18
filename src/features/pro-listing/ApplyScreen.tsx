@@ -43,8 +43,8 @@ export const SCREEN_TITLE = 'Offer your services';
 /** design/_gen/kit.js line 67, `result`: an 88 circle with a 42 glyph at 2.2, 10 between the parts, the title 8 lower; pros.js line 35 sets `pt: 120`, `gap: 20`. */
 const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, paragraphMax: 290, top: 120, between: 20 } as const;
 /** pros.js line 34: the file's card is 14 by 16, a 12 gap to its words, 18 round; its name at 15 and its state at 12.5. */
-/** P10's gate: 18 from the line to the pill, and the 26 of room the shared EmptyState keeps under its words (SWEEP-APP-4 row 130). */
-const GATE_GAP = 18;
+/** P10's gate: the pill sits inside the board's block, 16 under the line (a 10 gap and a 6 margin) and with the block's 26 of room below it; the shared EmptyState keeps its 26 under its words instead (SWEEP-APP-4 row 130). */
+const GATE_GAP = 16;
 const GATE_EMPTY_ROOM = 26;
 
 const fileMetrics = { ten: 10, lead2words: 12, padV: 14, name: 15, state: 12.5, cross: 18, lead: 44 } as const;
@@ -527,8 +527,8 @@ function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; lef
 
 const styles = StyleSheet.create({
   // P10's button is the board's compact pill (Btn size md, full false): the frame's column would stretch it, so it centres itself.
-  // P10 puts the pill 18 under the line; the EmptyState keeps 26 of its own room under its words, so the pill is pulled up by the difference (SWEEP-APP-4 row 130).
-  gateButton: { alignSelf: 'center', marginTop: GATE_GAP - GATE_EMPTY_ROOM },
+  // P10 puts the pill 16 under the line, inside the block that keeps 26 below it; the EmptyState keeps its 26 under its words, so the pill is pulled up by the difference and the room moves under it (SWEEP-APP-4 row 130).
+  gateButton: { alignSelf: 'center', marginTop: GATE_GAP - GATE_EMPTY_ROOM, marginBottom: GATE_EMPTY_ROOM },
   gateFailed: { marginTop: space.sm },
   kinds: { gap: fileMetrics.ten },
   kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
