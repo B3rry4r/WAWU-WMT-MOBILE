@@ -51,8 +51,9 @@ const hub = {
    * While a gate is set the Hub holds that answer back until the test opens it: `thread` is the paid thread, `terms` is the creator's
    * profile and the Hub's pause. The thread is read first and the terms after it (the pause only once the profile is here), so holding
    * the terms shows the screen as a slow phone does: the thread, and not yet the creator's terms. Holding the thread shows the loading state.
+   * `pause` holds only the Hub's pause read, so the profile can be here (or fail on a second read) while the pause is still on its way.
    */
-  gate: { thread: null as null | Promise<void>, terms: null as null | Promise<void> },
+  gate: { thread: null as null | Promise<void>, terms: null as null | Promise<void>, pause: null as null | Promise<void> },
 };
 
 const person = { wawuUserId: CREATOR, displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, tick: 'creator' };
@@ -169,6 +170,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === `/paid-dm/creators/${CREATOR}/availability`) {
     if (hub.gate.terms) await hub.gate.terms;
+    if (hub.gate.pause) await hub.gate.pause;
     return ok({ creatorWawuId: CREATOR, paused: hub.paused, pausedUntil: hub.paused ? '2026-10-24T00:00:00.000Z' : null });
   }
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
@@ -232,6 +234,7 @@ async function boot(pay = wired()) {
 }
 
 const within = rtl.within;
+const { visitorKey } = require('@/features/visitor/api') as typeof import('@/features/visitor/api');
 const { clearAttempts } = require('@/features/feedpay/usePaymentFlow') as typeof import('@/features/feedpay/usePaymentFlow');
 
 rtl.configure({ asyncUtilTimeout: 6000 });
@@ -255,7 +258,7 @@ beforeEach(() => {
     threadReads: 0,
     profile: 'ok',
     profileReads: 0,
-    gate: { thread: null, terms: null },
+    gate: { thread: null, terms: null, pause: null },
   });
 });
 
@@ -266,8 +269,8 @@ afterEach(async () => {
   clients.splice(0).forEach((c) => c.clear());
 });
 
-/** Holds one of the Hub's answers (the thread, or the creator's terms) until the returned function is called. */
-function hold(what: 'thread' | 'terms'): () => void {
+/** Holds one of the Hub's answers (the thread, the creator's terms, or only the pause) until the returned function is called. */
+function hold(what: 'thread' | 'terms' | 'pause'): () => void {
   let open = () => {};
   hub.gate[what] = new Promise<void>((resolve) => {
     open = resolve;
@@ -458,6 +461,34 @@ describe('I5 · the creator\'s terms could not be read', () => {
     hub.profile = 'ok';
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
     expect(await rtl.screen.findByRole('button', { name: 'Ask a question · ₦1,500' })).toBeTruthy();
+  });
+
+  it('a creator\'s profile that was read once and fails on a second read is still the terms: no error flashes while the pause read is on its way (FIX-79 L2)', async () => {
+    const open = hold('pause');
+    const { client } = await boot();
+    const screen = rtl.screen;
+    // The profile is here; the pause read is held, so the terms are not known yet and the bar and the card load.
+    await screen.findByTestId('paid-card-a1-body-loading');
+    expect(await screen.findByTestId('paid-composer-loading')).toBeTruthy();
+    // The profile is read again in the background and the Hub fails it. The first read is still the person's data.
+    hub.profile = 'fail';
+    await rtl.act(async () => {
+      await client.refetchQueries({ queryKey: visitorKey(CREATOR) });
+    });
+    expect(client.getQueryState(visitorKey(CREATOR))?.status).toBe('error');
+    // Let the screen draw what it now reads (the cache tells its screens on the next tick).
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByTestId('paid-terms-error')).toBeNull();
+    expect(screen.queryByTestId('paid-composer-failed')).toBeNull();
+    expect(screen.getByTestId('paid-composer-loading')).toBeTruthy();
+    expect(within(screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body-loading')).toBeTruthy();
+    // The pause lands: the offer replaces the loading lines, with no error in between.
+    open();
+    await screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
+    expect(within(screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe(offer);
+    expect(screen.queryByTestId('paid-terms-error')).toBeNull();
   });
 
   it('a question still waiting needs no terms: the locked bar stays and no error is drawn', async () => {
