@@ -18,7 +18,9 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, builder round 1.
+As of 18 Oct 2026, merging (lead): accepted on a diff read and stacked in batch 16.
+- **Status:** merging (lead). The lead read the list and the test (`delete-account/scheduled` is reached signed in and signs out itself). Stacked in batch 16 by MERGE-16 (mobile `wmt/MERGE-16`); not on main.
+- **Merge (MERGE-16):** the test fails on any route file that is neither listed nor public, so MERGE-16 listed the 7 signed-in route files batches 15 and 16 added (`community/new`, `community/created/[id]`, `community/pass/[id]`, `community/requests/[id]` from INBOX-14; `paid-questions/[wawuId]` from INBOX-18; `profile/[wawuId]` from ME-02, signed in only, its app link stays `/u/<handle>`, already public; `studio-tool` from POINTS-07/08) and put `+not-found` (SWEEP-APP-1, CHECK-1 F-1) on the public list: it is the router's answer to an address no screen has, so it cannot sit behind a session, and it leaves to welcome (signed out) or Home. No assertion changed. SWEEP-APP rows SCHOOLS-10 L4, SHARED-05 L4 and ADS-01 L4 carry this task's cells beside SWEEP-APP-1's marks.
 - **Status:** verifying (round 1). Built by a Sonnet builder (tier T1). Mobile `wmt/FIX-63` from `origin/wmt/MERGE-14` `d76612f6`. No backend, contract, migration or Fintava change; no new route; no auth logic.
 - **Found by:** SWEEP-APP-1's check (SWEEP-APP row 51, SHARED-05 L4): route files not listed in `_layout.tsx` open to a signed-out visitor or a deep link. 84 were unlisted; 81 of them already sent a signed-out visitor to `/welcome` from their own route file, and 3 had no such redirect (`community/[id]` draws its own sign-in prompt signed out; `legal` and `tgif` drew their screen).
 - **Built:** the 84 are listed in the signed-in group that already holds Settings, Edit profile and Open your wallet (`signedIn && !gate.needsEmail && !offer.visible`), so the layout is the one place that sends a signed-out visit to the welcome screen (the existing pattern; their own redirects are left). SHARED-CHANGES FIX-63 #1 (the layout is fenced); it also applies the two open queue 4 rows WALLET-06 R1 and WALLET-04 R1.

@@ -18,7 +18,8 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, builder round 2.
+As of 18 Oct 2026, merging (lead): verified (PASS, one medium closed in round 2) and stacked in batch 16.
+- **Status:** merging (lead). Verdict PASS with one MEDIUM (a card-paid ticket row opened "This order is not available"; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-62.md`), closed by round 2 (`2822feb4`: card ticket rows open nothing, only wallet orders open the ticket; the Add money trip ends on leaving), accepted by the lead on a read of the report and the tests. Stacked in batch 16 by MERGE-16 (mobile `wmt/MERGE-16`); not on main. Its one low (the Add money trip in `JobCheck`) was closed by the same round.
 - **Status:** verifying (round 2). Built by a Sonnet builder (tier T1). Mobile `wmt/FIX-62` from `origin/wmt/MERGE-14` `d76612f6`. No backend, contract, migration or Fintava change; no new route.
 - **1 POINTS-07 (PT3b):** "Not now" is now "Add money" (the board draws only that button). It closes the sheet and opens W15 with the wallet's shortfall (`addMoneyHref`, as the pay sheets do); when the screen is shown again `useJobCheck` asks the Hub for the quote again, so the person gets PT3 (pay), PT3b once more, or the job runs. `onAddMoney` is now required on `useJobCheck` (POINTS-08 passes it from `addMoneyHref`); the dev harness `/preview/studio-job` passes it. Closes G-POINTS-07-2.
 - **2 ME-03 (M7):** a "Your tier" row opens `/your-tier`, after Notifications and before Verification, its line the Hub's tier name (`GET /me/tier`, the key the Me page reads); no line for no tier or a nameless one. The Verification row STAYS: M15 to M17 (the wallet's state, Open your wallet) has no other way in. Owner to rule if Verification should go.

@@ -17,10 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
+As of 18 Oct 2026, merging (lead): part 1 (rows 1 to 56) verified and stacked in batch 16.
+- **Merge (MERGE-16):** SWEEP-APP-1's verifier said MERGE (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`: every hunk named by a row, tests red before and green after, the data migration safe, the fenced timeout floor approved); its row 46 reason, row 51 (unlisted route files) and row 61 (advertiser on the chip) went to FIX-63. 3 rows were added to this table at MERGE-16, below the 18 from MERGE-15 (SWEEP-APP-1 L1 and L2, FIX-64 N1).
 - **Status:** building. Part 1 (SWEEP-APP-1, a Sonnet builder, 17 Oct 2026) went through rows 1 to 56 of the table in order and left the Outcome cell of each: 24 fixed, 32 ruled no with the reason; rows 57 to 62 not reached, rows 63 to 149 not looked at. Nothing waited: every source task up to row 62 is in MERGE-13.
 - **Branches:** mobile `wmt/SWEEP-APP-1` (from MERGE-13 `4c7b2acd`; heads in the builder report below); backend `wmt/SWEEP-APP-1` (from MERGE-13 `6bc7b20`, head `c40a24e`, one new data migration `20261026090000_no_em_dash_stored_refund_notice`).
-- **Open lows:** 110 rows without an outcome (57 to 149 less ADS-01 L4, which FIX-63 closed, and 18 rows MERGE-15 added at the end of the table). FIX-63 also corrected the Finding cells of SCHOOLS-10 L4 and SHARED-05 L4 (both already closed). Rows 1 to 56 are closed in their Outcome cell, each naming its commit or its reason.
+- **Open lows:** 113 rows without an outcome (57 to 149 less ADS-01 L4, which FIX-63 closed; 18 rows MERGE-15 added and 3 rows MERGE-16 added at the end of the table). FIX-63 also corrected the Finding cells of SCHOOLS-10 L4 and SHARED-05 L4 (both already closed). Rows 1 to 56 are closed in their Outcome cell, each naming its commit or its reason.
 - **Needs the lead:** SHARED-CHANGES `SWEEP-APP-1 #1` (backend `src/common/auth/wawu-id-exchange.ts`, a floor of 100 ms on the two timeout settings, and a note on `redirect: 'error'`). Row 51 (31 unlisted route files) and row 61 (advertiser on the chip) are the lead's calls.
 - **Next:** SWEEP-APP part 2 takes rows 57 to 149 (pictures at 390 px light and dark are still owed for rows 2, 10 and 54, no web export was made in part 1); a verifier checks every row's outcome.
 
@@ -215,26 +216,15 @@ Findings that belong to no one area: flaky or racy tests (FIX tasks), SCHOOLS, a
 | ME-02 | L3 | `src/features/visitor/parts.tsx:166`: on M33 for a person with no location the first card reads only "On Who Made This? since 2026" with a map-pin icon, which marks a place that is not there. Cosmetic. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/ME-02.md`, Findings 3 | |
 | POINTS-08 | L1 | `src/features/points/ToolScreen.tsx:270` (subtitle) with `:222-229`: while a job works, "Points: 1,000" still shows the count from before Run, though the Hub already holds 250 (its balance reads 750). It corrects when the job ends. PT2a draws the same unchanged count, so this follows the board; the Hub's balance is the truth, so a re-read after the start would be better. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-08.md`, Findings 1 | |
 | POINTS-08 | L2 | `src/features/points/ToolScreen.tsx:127-132` and `:298`: the poll keeps going while reads fail or while a done job has no audio link, and the banner at :298 shows only when the page has no job data at all. With the job read answering 404 the screen stayed on "Making your VoiceOver" with no message (6 reads in 12 s) until the person left, and the stored intent never expires. The Hub 404s only a job that is not the person's, so this is reachable only after a Hub data loss. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-08.md`, Findings 2 | |
+| SWEEP-APP-1 | L1 | Row 31: the new `deleteMany` in `src/nuvion/tests/nuvion-opening.contract.spec.ts` has no guard that the database is a test one (the rest of the suite has none either). Low. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`, row 31 | |
+| SWEEP-APP-1 | L2 | Open item, rows 2, 10 and 54: the pictures at 390 px, light and dark, are still owed (no web export was made in part 1). The verifier read react-native-web's source instead: `textOneLine` sets `overflow: hidden; text-overflow: ellipsis` and `props.style` comes after it, so `overflow: visible` wins and the ellipsis cannot show. A picture owed, not a doubt. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-1.md`, rows 2, 10, 54 | |
+| FIX-64 | N1 | Follow-up, a removal task: drop `NotificationRefundNoticeBackup` (and its `rollback.sql` and spec) two weeks after migration `20261026090000_no_em_dash_stored_refund_notice` ships, when no rollback is wanted. | `tasks/FIX-64.md`, Current state (lead note, 18 Oct 2026) | |
 
-## Builder report
+## History
 
-_Filled in by the builder._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-APP.md](history/SWEEP-APP.md).
 
 ## Owner sign-off
 
 _Owner: date, and "go" or what blocks it._
-
-## Builder report, part 1 (SWEEP-APP-1, 17 Oct 2026)
-
-Branches: mobile `wmt/SWEEP-APP-1`, backend `wmt/SWEEP-APP-1`; heads are in the push line of the hand-back. Rows are handled in table order; each Outcome cell names its commit or its reason.
-
-- **Mobile fixes (with a test that fails before):** row 2 PointsFigure count never cut (overflow visible, preview cases `hug-8-100`, `hug-11-100`); row 3 advert tap reported for the pressed slide (`tapOf`); row 8 fees under a naira are prices (mutant `kobo < 100` now killed by two tests); row 10 `+not-found` and no site map; row 48 theme read given up on after 3 s; row 54 `aria-hidden` on five decorative tiles; row 55 gate tests wired into `npm run gates`. Row 4 and 6 are test hardening; 9, 14, 25, 36, 50 and 56 are wording.
-- **Backend fixes:** row 15 timeout floor (shared change `SWEEP-APP-1 #1`); row 17 a data migration for stored refund notices (tried on a test database: rewritten, other dashes left, second run changes nothing); row 21 `settleUpload` answers confirmed when the sweep got there first (new contract case fails with the fix taken out); rows 43 and 44 school link keeps the query as written and refuses credentials; rows 20, 31, 32, 37 are test files.
-- **Ruled no (32):** moot or fixed elsewhere (1, 11, 12, 30), a protected route or a design call (13, 16, 22, 23, 24), report wording (5, 7, 29), not code or needs a key (19, 26), Fintava (39, 40), a gate or baseline is not a sweep's to edit (41, 53), owner's or lead's call (42, 46, 47, 51), and the rest with the reason in the cell.
-- **Not done:** no web export, so no pictures at 390 px light and dark for rows 2, 10 and 54 (jest proves the props and styles only). Rows 4, 5 and 7 could not be reproduced with a rebuilt delay harness (its mapping is not the verifier's), so row 4 is hardening, not a measured before and after. The `live-hardening` and `nuvion-opening` specs (rows 31 and 37) were typechecked and linted but not run: they open their own ports and are large.
-- **Checks:** see the hand-back for the EXIT lines.
 

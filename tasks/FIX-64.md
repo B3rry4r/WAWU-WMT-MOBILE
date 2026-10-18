@@ -18,7 +18,9 @@ tier: T1
 
 ## Current state
 
-As of 17 Oct 2026, built, waiting for an independent verifier (tier T1).
+As of 18 Oct 2026, merging (lead): accepted and stacked in batch 16.
+- **Status:** merging (lead). Accepted by the lead (cause: the spec's wait, not the product; the migration now keeps what it rewrites and has a rollback that a spec runs). Stacked in batch 16 by MERGE-16 (backend `wmt/MERGE-16` holds `29e400b`, mobile `wmt/MERGE-16` holds this record); not on main.
+- **Merge (MERGE-16):** `school-report.contract.spec.ts` met SWEEP-MONEY-1 and SWEEP-MONEY-2, which fixed the same race a different way (a wait on `nextAttemptAt`); the file takes `firstTryDone` on all six waits (the lease release and `nextAttemptAt` are one update, so it covers them) and keeps SWEEP-MONEY-2's other wait. 12 of 12. The backup table's removal is SWEEP-APP row FIX-64 N1.
 - **Status:** verifying. Backend `wmt/FIX-64` `29e400b` (from `wmt/SWEEP-APP-1` `c40a24e`); this record on mobile `wmt/FIX-64` (from `wmt/MERGE-13` `4c7b2acd`). Branch CI runs 39079664643 (protected routes), 39079664662 (gates), 39079664660 (branch checks). No Fintava file touched; no app code.
 - **Found by:** CI run 39076927606 (`wmt/SWEEP-APP-1` `c40a24e`, shard 1, 23:10 UTC): SCHOOLS-09 "five servers sending the same report at once make one mail" got 2 requests for 1; and the lead's note that the em-dash migration cannot be undone.
 - **1. The test, the cause: the TEST, not the product, and not the Lagos day.** `enrol` starts the first try in the background (`void deliverQuietly`). The spec waited for `attempts >= 1`, but `attempts` counts from the moment a try is claimed, before the relay is called. The wait ended with that try still on its way; the spec then set the relay to ok, cleared its requests and freed the lease (`dueNow`), and the first try's request landed after that, beside the one its own five callers made: 2 requests, 1 mail. The lease does hold a second caller off while a try is in flight (it was the spec that freed it), so a school never got two mails.

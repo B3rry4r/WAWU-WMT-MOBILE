@@ -17,10 +17,11 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 15.
+As of 18 Oct 2026, merging (lead): rows added at MERGE-16.
+- **MERGE-16:** 3 rows added from the INBOX-14 verifier's report (INBOX-14 L1, N1, N2, open); INBOX-24 R2-1 is closed by PASS-r3 (`1fdcf7a`).
 - **Status:** merging (lead). Built by the W4b sweep builder (Sonnet) on `wmt/SWEEP-W4b`; verifier PASS, no blocker, high or medium (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`: the 16 fixed rows check out, 12 red before and green after, the ruled-no reasons read hold). Stacked in batch 15 by MERGE-15 (backend, mobile and WAWU ID `wmt/MERGE-15`); not on main.
 - **Branches:** mobile `wmt/SWEEP-W4b`; backend `wmt/SWEEP-W4b`; wawu-id `wmt/SWEEP-W4b` (heads in the hand-back; the last column of the table names the commit or ruling for each row).
-- **Rows:** 9 fixed, 11 ruled no with the reason in the row, 0 waiting; 3 more rows were added at MERGE-13 and stay open (last column); 9 more rows added at MERGE-15 from the verifiers' reports, open (last column).
+- **Rows:** 9 fixed, 11 ruled no with the reason in the row, 0 waiting; 3 more rows were added at MERGE-13 and stay open (last column); 9 more rows added at MERGE-15 from the verifiers' reports, open (last column); 3 more at MERGE-16 (INBOX-14 L1, N1, N2), open; INBOX-24 R2-1 closed by PASS-r3.
 - **Next:** the batch 15 pull request (the lead). The verifier's lows are rows of this table (last column Open).
 
 ## Read first
@@ -68,7 +69,7 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | INBOX-20 | L1 | The shared pay sheet's header (`src/components/pay-sheet/PaySheet.tsx:383`, `Header`) draws an empty rounded tile before the title on the "Not enough" sheets of a request ("Pay Ada", `RequestPaySheet.tsx:56`) and a send ("Send to Ada Seeded", `ChatSendScreen.tsx:401`); nothing is passed as `image`. Filed as SHARED-CHANGES INBOX-13 #3 (open). The credits short state no longer uses the sheet. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F2 and round 2 notes | Fixed, mobile `2a444edd`: `MediaCard` takes `bare`; the pay sheet header passes it, so a header with no picture is the title alone. SHARED-CHANGES INBOX-13 #3 marked applied. Tests in `PaySheet.test.tsx`. |
 | INBOX-19 | L1 | Known limit (G-880): the "You sent" bubble is kept on the sender's phone only (`src/features/chat/sends.ts`). A send whose answer was lost and never retried has no bubble, the receiver never sees one, and a new phone loses it. It survives a cold restart. Needs the Hub to write a chat message for a send. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S2.md`, finding F4 | No: known limit G-880. The Hub must write a chat message for a send (a new `ChatMessage.kind`, a money path). Not worth the risk here. |
 | INBOX-24 | L3 | `POST /communities/rooms` still creates a new private room with no `passPriceKobo` (`src/community/rooms/community-rooms.service.ts:96-107`); that room keeps host approval, which R-63 says does not exist. INBOX-14 must always send the price; the server does not require it. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-24.md`, Findings 3 | Open: added at MERGE-13, after this sweep's base. |
-| INBOX-24 | R2-1 | G-INBOX-24-6: in a pass room a removed member becomes a pending request (round 2), so the host's list of requests shows a person the host removed; and a removal in the seconds between a pay and its delivery is undone by the delivery (no money moves in that window). Decide whether the list tells the two apart, and close the window. | merge-notes.md, 17 Oct 21:25 (INBOX-24 round 2) | Open: added at MERGE-13, after this sweep's base. |
+| INBOX-24 | R2-1 | G-INBOX-24-6: in a pass room a removed member becomes a pending request (round 2), so the host's list of requests shows a person the host removed; and a removal in the seconds between a pay and its delivery is undone by the delivery (no money moves in that window). Decide whether the list tells the two apart, and close the window. | merge-notes.md, 17 Oct 21:25 (INBOX-24 round 2) | Fixed by PASS-r3 (MERGE-16): in a pass room `leave()` deletes only a joined row, a payment for a removed member is refused under a lock and refunded with its charge (backend `1fdcf7a`), and I34 draws only "Let back in" on a removed row (mobile `6d488574`). |
 | INBOX-24 | G-1 | G-INBOX-24-1: the pass reminder `community_pass_ending` is pushed and no Z3 switch covers it (R-63 asks for the reminder). It is on the push-policy spec's short list of kinds the owner confirms. If the owner wants a switch (for example "Community messages"), it is one line in `SETTINGS_GATE`. | BACKEND_GAPS.md, G-INBOX-24-1 (builder, low) | Open: added at MERGE-13, after this sweep's base. |
 | INBOX-18 | F3 | G-INBOX-18-1 stands: the Inbox badge adds `unread.paidDms` for both sides while only the creator side is drawn. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-18.md`, Findings F3 | Open: found by the verifier at batch 15. |
 | INBOX-18 | F4 | The stack's Nuvion fees are 0 for a DM, so a refund with the charge was proven at charge 0 only (`returnCharge: true`, `chargePaid` = total minus price, `wallet-hold.service.ts`, unchanged by this task). The closed card names the price only, so with a charge the fan gets back more than the text says. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-18.md`, Findings F4 | Open: found by the verifier at batch 15. |
@@ -79,20 +80,13 @@ Communities, rooms and the Inbox: INBOX tasks. Mobile, and the backend routes th
 | INBOX-05 | W4b L2 | Row 34 is fixed, but the "balance is read again" half has no test (removing the `invalidateQueries` effect passes), and only the socket path is tested, not a page delivering the stored message. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Findings L2 | Open: found by the verifier at batch 15. |
 | INBOX-05 | W4b N4 | Very low. The hidden "Not sent" copy is derived from the current items, so if the stored message later leaves the list the copy would return. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Notes 4 | Open: found by the verifier at batch 15. |
 | HOME-17 | W4b N1 | Note. The reason given for L1 (ruled no), "Prisma runs a migration in a transaction, so CONCURRENTLY cannot be used", is probably overstated for a single-statement file (not tested). The ruling stands: the migration is merged and its checksum must stay, and the index builds in under a second at 70k rows. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-W4b.md`, Notes 1 | Open: found by the verifier at batch 15. |
+| INBOX-14 | L1 | I30 has no "Host" row or "hosted by" line when the host has no handle (G-INBOX-14-4, recorded). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Findings (LOW) | Open: added at MERGE-16. |
+| INBOX-14 | N1 | Not graded: a host's pass earnings land by the earnings sweep (the first 170,000 kobo landed in under a minute; a later 340,000 was still "waiting" at the end); the fee is 0 on the stack (its default). Observation only. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Findings (LOW, not graded) | Open: added at MERGE-16. |
+| INBOX-14 | N2 | Not run by the verifier, so still open: V10 (an Android phone), the cover upload (G-INBOX-14-7), a webhook replay and a forged signature for passes (money core), the loading and error pictures of I30 to I34, and sign-in through the app's own screen (the mock id takes `email`, the app posts `identifier`: a stack limit). | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-14.md`, Passes (NOT RUN) | Open: added at MERGE-16. |
 
-## Builder report
+## History
 
-Fixed 9 (INBOX-05 34; INBOX-21 R2-1, R2-2; INBOX-12 4, R2-1, R2-2; INBOX-16 F3 as a gap note; HOME-16 F1; INBOX-20 L1), ruled no 11, waiting 0.
-- Decision made here: INBOX-12 finding 4 shows the saved off-list reply time as an extra tab.
-- Gap rows added: G-INBOX-16-1, G-INBOX-16-2, and the forced-end case in G-268 (b).
-- A SHARED-CHANGES row applied: INBOX-13 #3 (`MediaCard` `bare`).
-- Checks run (EXIT 0 unless noted): mobile `tsc --noEmit`, eslint on every changed file, `npm run gates` and `check_baseline`; jest of every touched area (communities 140, push 60, paid-messages 45, door 103, buyTickets 22, organiser 21) and a wider run of chat, credits, events, schools, legal, money-attempt and auth-signup (40 suites, 799 tests); backend `tsc`, eslint on changed files (warnings only, none new), gates, the earn spec (29) and the TGIF spec (19), the protected suite (253 of 253, on a seeded test database); wawu-id `tsc`, eslint, prettier and `deletion-window.spec.ts` (28 of 28) against a local Postgres.
-- Fail-before runs were made by putting the old file back for one run (no stash).
-- Test databases `w4b_test_wawu_id` and `w4b_test_wawu_hub_test`, mock WAWU ID on 7841; all removed or stopped at hand-back.
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-INBOX.md](history/SWEEP-INBOX.md).
 
 ## Owner sign-off
 
