@@ -18,8 +18,8 @@ tier: T0
 
 ## Current state
 
-As of 18 Oct 2026.
-- **Status:** verifying. Backend `wmt/FIX-84` `eb50a7b` (from `origin/wmt/MERGE-20` `af10ed2`); this record on mobile `wmt/FIX-84` (from `origin/wmt/MERGE-20` `90b00d9c`). Order -84, free. Test only: no source file, route, DTO, schema or Fintava file touched.
+As of 18 Oct 2026, merging (lead): accepted (T0, the lead's read; the assertions are not weakened) and stacked in batch 21 (backend `wmt/FIX-84` `eb50a7b`, mobile `d853b380`). Merge (MERGE-21): no conflict with FIX-83 in `community-message-kinds.contract.spec.ts` (both edits kept).
+- **Status:** merging (lead). Backend `wmt/FIX-84` `eb50a7b` (from `origin/wmt/MERGE-20` `af10ed2`); this record on mobile `wmt/FIX-84` (from `origin/wmt/MERGE-20` `90b00d9c`). Order -84, free. Test only: no source file, route, DTO, schema or Fintava file touched.
 - **Found by:** the FIX-83 builder's note that "takes the sender's own confirmed photo" (added by FIX-77) has the same shape as the test FIX-83 fixed.
 - **Cause:** since FIX-71 every answer and every read signs a message's media link fresh, so the returned link carries the `X-Amz-Date` (second resolution) and signature of the second the Hub answered in. A test that compares it with the link it sent is red whenever the two are signed in different seconds. The product is right; the assertions were wrong.
 - **How every spec was checked (not a grep):** the 31 spec files that sign links against the test bucket were run on `af10ed2` with the signer made to date each signing one second after the last, so any comparison of two separately signed links fails every time. 27 passed unchanged. 3 files failed, 8 tests (one more is FIX-83's, below). The admin verification review spec is red on this stack with or without that change (the mock WAWU ID refuses its service key), and the protected-route suite has the same 10 reds with and without it; neither compares a link.

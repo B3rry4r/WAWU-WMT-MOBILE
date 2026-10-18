@@ -18,8 +18,8 @@ tier: T0
 
 ## Current state
 
-As of 18 Oct 2026.
-- **Status:** verifying. Backend `wmt/FIX-83` `a0ca0f5` (from `origin/wmt/MERGE-19` `c56a576`); this record on mobile `wmt/FIX-83` (from `origin/wmt/MERGE-19` `d2af6e5b`). Order -83, free. Test only: no source file, route, DTO, schema or Fintava file touched.
+As of 18 Oct 2026, merging (lead): accepted (T0, the lead's read; test only) and stacked in batch 21 (backend `wmt/FIX-83` `a0ca0f5`, mobile `628a08bf`).
+- **Status:** merging (lead). Backend `wmt/FIX-83` `a0ca0f5` (from `origin/wmt/MERGE-19` `c56a576`); this record on mobile `wmt/FIX-83` (from `origin/wmt/MERGE-19` `d2af6e5b`). Order -83, free. Test only: no source file, route, DTO, schema or Fintava file touched.
 - **Found by:** the SWEEP-LATE check, finding 2 (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-LATE.md`). `community-message-kinds.contract.spec.ts` "lists a video and a voice note with their links" was red 5 of 6 runs on MERGE-18 and 2 of 6 on SWEEP-LATE, and red in SWEEP-LATE's CI run.
 - **Cause:** since FIX-71 every read signs a message's media link fresh, so the listed link has a new `X-Amz-Date` (second resolution) and a new signature whenever the list is read in a later second than the send. The test compared the whole listed string with the link it sent. The product is right (a fresh signature on read is FIX-71's ruled behaviour); the assertion was wrong.
 - **Fix (one spec):** the listed link is checked for what matters. The key is read from the sent link and from the listed link with the codebase's own reader (`objectKeyFrom`) and the two keys must be equal; the key must start with `<the kind's folder>/<the sender>/`; the listed link must be on this bucket at exactly that key; and it must be signed (a 64 hex signature is present, signed no later than now, `X-Amz-Expires` positive and the expiry in the future). No signature or date part is compared with the sent link. The video and the voice note each keep their own folder check; the "other two as null" assertions are unchanged.

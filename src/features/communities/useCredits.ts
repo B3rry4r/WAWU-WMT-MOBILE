@@ -14,9 +14,9 @@ export function useCredits() {
 }
 
 /**
- * What one message costs a member, from `GET /communities/message-cost`: the figure behind I24's "1 credit per message you
- * send". It is the server's number, never one written in the app. While it is unknown (loading, or it could not be read)
- * the strip says only what is always true, that reading is free.
+ * What each kind of message costs a member, from `GET /communities/message-cost`: the credits by kind (R-62) behind I24's
+ * "Chat free · photos, video, voice use credits". They are the server's numbers, never ones written in the app. While they are
+ * unknown (loading, or they could not be read) the strip says only what is always true, that reading is free.
  */
 export function useMessageCost() {
   return useQuery({ queryKey: messageCostKey, queryFn: fetchMessageCost }, queryClient);

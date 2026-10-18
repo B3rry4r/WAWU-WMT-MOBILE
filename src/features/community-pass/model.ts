@@ -7,7 +7,7 @@ import { formatMoney } from '@/components/Money';
 
 export const PRICE_CHANGED_LINE = 'The price changed. Check the new total before you pay.';
 export const STILL_CONFIRMING_LINE = 'We’re still confirming this pass. Don’t pay again. You’re in the moment it is done.';
-/** What I30 says about the room. The board also says text and emoji are free and media uses credits; the Hub charges a credit per message until INBOX-22 serves costs by kind (R-47, R-62), so only what is always true is said. */
+/** What I30 says about the room: that members pay the host to join and that reading is free. The credits by kind (R-62, `GET /communities/message-cost`) are shown in the room's own strip (I24), not here, so this line says only what is always true (R-47). */
 export const GATE_LINE = 'Members pay the host to join. Reading inside is free.';
 
 /** "₦2,000", with kobo only when there are some. */
