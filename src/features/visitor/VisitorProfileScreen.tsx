@@ -144,9 +144,14 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
     follow.mutate(!view.following);
   };
 
+  // One Block at a time, as for Follow: a second tap before the first answer sends nothing (SWEEP-APP row ME-02 L1).
+  const blocking = useRef(false);
   const block = useMutation(
     {
       mutationFn: () => blockPerson(person as string),
+      onSettled: () => {
+        blocking.current = false;
+      },
       onSuccess: () => {
         setConfirmBlock(false);
         setMenuOpen(false);
@@ -216,7 +221,14 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
                   {isApiError(block.error) && block.error.kind === 'network' ? block.error.message : 'Could not block them. Try again.'}
                 </Text>
               ) : null}
-              <Button testID="visitor-block-yes" label="Block" variant="primary" loading={block.isPending} onPress={() => block.mutate()} full />
+              <Button testID="visitor-block-yes" label="Block" variant="primary" loading={block.isPending}
+                onPress={() => {
+                  if (blocking.current) return;
+                  blocking.current = true;
+                  block.mutate();
+                }}
+                full
+              />
               <Button testID="visitor-block-no" label="Cancel" variant="secondary" onPress={() => { block.reset(); setConfirmBlock(false); }} full />
             </View>
           ) : (
@@ -357,7 +369,7 @@ function AboutBody({ wawuId, view, onOpenAllWorks, onOpenWork }: { wawuId: strin
   const education = useQuery({ queryKey: educationKey(person), queryFn: () => fetchEducation(person), retry: false }, cache);
   return (
     <View testID="visitor-about" style={styles.about}>
-      <IntroCard headline={headlineLine(view.profile)} place={placeLine(view.fields)} openTo={openToChips(view.fields.openTo)} />
+      <IntroCard headline={headlineLine(view.profile)} place={placeLine(view.fields)} located={Boolean(view.fields.location?.trim())} openTo={openToChips(view.fields.openTo)} />
       {works.isError ? (
         <ErrorState testID="visitor-works-error" title="Their featured works did not load" message={readFailure(works.error)} onRetry={() => void works.refetch()} />
       ) : !works.data ? (

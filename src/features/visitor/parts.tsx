@@ -147,10 +147,16 @@ const aboutMetrics = {
   schoolSubGap: 2,
 } as const;
 
-export type IntroProps = { headline: string | null; place: string | null; openTo: readonly { label: string; lead: boolean }[] };
+export type IntroProps = {
+  headline: string | null;
+  place: string | null;
+  /** The line names a place. Left out it is taken as true; false draws the line without the map pin (a person with no location: "On Who Made This? since 2026"). */
+  located?: boolean;
+  openTo: readonly { label: string; lead: boolean }[];
+};
 
 /** The first card: headline · company, where and since when, and the open-to chips. */
-export function IntroCard({ headline, place, openTo }: IntroProps) {
+export function IntroCard({ headline, place, located = true, openTo }: IntroProps) {
   const { colors } = useWawu();
   if (!headline && !place && openTo.length === 0) return null;
   return (
@@ -163,7 +169,7 @@ export function IntroCard({ headline, place, openTo }: IntroProps) {
         ) : null}
         {place ? (
           <View style={styles.place} testID="visitor-place">
-            <Icon name="MapPin" size={aboutMetrics.placeIcon} color={colors.textMuted} />
+            {located ? <Icon name="MapPin" size={aboutMetrics.placeIcon} color={colors.textMuted} /> : null}
             <Text variant="body" tone="textSecondary" style={styles.placeText}>
               {place}
             </Text>
