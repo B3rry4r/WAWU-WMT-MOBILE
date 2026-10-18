@@ -159,6 +159,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
           queryClient.setQueryData(voiceJobQuery(owner, outcome.job.id).queryKey, outcome.job);
           pending.current = null;
           setJobId(outcome.job.id);
+          // The Hub already holds the job's points: read its balance again so the count under the title is the Hub's while the job works (SWEEP-APP-3 row 166).
+          void queryClient.invalidateQueries({ queryKey: myPointsQuery(owner).queryKey });
         } else if (outcome.kind === 'unanswered') {
           setUnsent(true);
         } else {
