@@ -5,6 +5,9 @@ import type { ReactElement } from 'react';
 import { ActivityIndicator, Animated, BackHandler, Image, Modal, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// The plans are read per account (`plansQuery`); the account is known here without a sign-in.
+jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'acct-host' }));
+
 type Reply = { status?: number; body?: unknown; offline?: true; hold?: true };
 type Call = { method: string; path: string; body: unknown };
 
@@ -79,6 +82,18 @@ const tick = (creator: boolean, professional = false) => ({
 
 const created = { id: 'e-new', name: 'Pricing your work', status: 'pending' };
 
+/** `GET /me/tier` in the Hub's shape. */
+const tierView = (state: 'none' | 'active' | 'ending' | 'ended') =>
+  state === 'none'
+    ? { state, tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null }
+    : { state, tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: '2026-11-26T12:00:00.000Z', productsAllowed: 3, productsUsed: 1, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: null };
+
+/** `GET /plans`: three tiers, the cheapest at 100,000 kobo. */
+const plansView = (currency: 'NGN' | 'USD' = 'NGN') => {
+  const tier = (id: string, name: string, priceMinor: number) => ({ id, name, days: 30, products: 3, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor, eventPass: { id: 'p', name: 'Pass' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false });
+  return { currency, currencyFixed: false, tiers: [tier('founding', 'Founding Maker', 500_000), tier('verify', 'Verify', 100_000), tier('plus', 'Verify Plus', 300_000)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} };
+};
+
 const clients: QueryClient[] = [];
 
 async function render(child: ReactElement) {
@@ -93,16 +108,29 @@ async function render(child: ReactElement) {
   );
 }
 
-const serve = (verified: boolean, extra?: (c: Call) => Reply | undefined) => {
+/** The Hub as a host meets it: the tick (`verified`), the tier (`none` when not named), the options and the plans. */
+const serve = (verified: boolean, extra?: (c: Call) => Reply | undefined, tier: 'none' | 'active' | 'ending' | 'ended' = 'none') => {
   handler = (c) => {
+    const own = extra?.(c);
+    if (own) return own;
     if (c.path === '/verification/me') return ok(tick(verified));
+    if (c.path === '/me/tier') return ok(tierView(tier));
+    if (c.path === '/plans') return ok(plansView());
     if (c.path === '/events/options') return ok(options);
-    return extra?.(c);
+    return undefined;
   };
 };
 
-async function bootHost() {
-  const props = { onBack: jest.fn(), onDiscover: jest.fn(), onDone: jest.fn(), now: () => NOW };
+/** What serve() answers, as a function a handler can call for the paths it does not hold. */
+const serveOnce = (c: Call): Reply | undefined => {
+  if (c.path === '/verification/me') return ok(tick(false));
+  if (c.path === '/me/tier') return ok(tierView('none'));
+  if (c.path === '/events/options') return ok(options);
+  return undefined;
+};
+
+async function bootHost(over: Record<string, unknown> = {}) {
+  const props = { onBack: jest.fn(), onDiscover: jest.fn(), onDone: jest.fn(), onSeeTiers: jest.fn(), now: () => NOW, ...over };
   await render(<HostScreen {...props} />);
   return props;
 }
@@ -155,27 +183,85 @@ afterEach(async () => {
 
 const posts = () => calls.filter((c) => c.method === 'POST' && c.path === '/events');
 
-describe('E21 · Needs a tick', () => {
-  it('shows the gate, with the price from the system, to an account without a tick', async () => {
+/** The Hub's refusal of a host action for want of a tier (EVENTS-12), in its one error shape. */
+const tierRefusal = (over: { tierState?: 'none' | 'ended'; message?: string; lowestTier?: { id: string; name: string; priceMinor: number } | null; code?: string } = {}) => {
+  const message = over.message ?? 'Needs a tier. Pick a tier to host an event.';
+  const reason = { code: over.code ?? 'tier_required', message, tierState: over.tierState ?? 'none', currency: 'NGN', lowestTier: over.lowestTier === undefined ? { id: 'verify', name: 'Verify', priceMinor: 100_000 } : over.lowestTier };
+  return { status: 403, body: { statusCode: 403, message, data: null, reason } };
+};
+const ENDED_WORDS = 'Your tier has ended. Renew it to host a new event. Events that are already live keep selling.';
+
+describe('E21 · Needs a tier', () => {
+  it('a person with no tier and no tick sees Needs a tier, the tier names and the lowest price from the Hub, and no form', async () => {
     serve(false);
     await bootHost();
-    expect(await rtl.screen.findByText('Hosting needs a verified tick')).toBeTruthy();
-    expect(rtl.screen.getByText('A creator or professional tick, ₦2,000 a year.')).toBeTruthy();
+    expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-name')).toBeNull();
+    expect(posts()).toHaveLength(0);
+  });
+
+  it('writes the price from the plan, not from the screen: a plan that starts higher says so', async () => {
+    serve(false, (c) => (c.path === '/plans' ? ok({ ...plansView(), tiers: plansView().tiers.map((t) => ({ ...t, priceMinor: t.priceMinor + 50_000 })) }) : undefined));
+    await bootHost();
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
+  });
+
+  it('See tiers opens the tiers (VF5)', async () => {
+    serve(false);
+    const props = await bootHost();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('host-see-tiers'));
+    expect(props.onSeeTiers).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no See tiers button when the screen has nowhere to send it (R-47)', async () => {
+    serve(false);
+    await bootHost({ onSeeTiers: undefined });
+    await rtl.screen.findByTestId('host-gate-words');
+    expect(rtl.screen.queryByTestId('host-see-tiers')).toBeNull();
+    expect(rtl.screen.queryAllByRole('button').map((b) => b.props.testID)).toEqual(['host-back']);
+  });
+
+  it('a tier that ended, with no live tick, is told the same way (the Hub says more when it refuses)', async () => {
+    serve(false, undefined, 'ended');
+    await bootHost();
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('host-name')).toBeNull();
   });
 
-  it('draws no Get verified button: the screen it opens (ME-12) is not built (R-47)', async () => {
-    serve(false);
+  it('a running tier hosts without a tick, whether it is active or about to end', async () => {
+    for (const tier of ['active', 'ending'] as const) {
+      serve(false, undefined, tier);
+      await bootHost();
+      expect(await rtl.screen.findByTestId('host-name')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('host-gate')).toBeNull();
+      await rtl.cleanup();
+    }
+  });
+
+  it('a live tick with no tier still hosts: nothing live stops working', async () => {
+    serve(true);
     await bootHost();
-    await rtl.screen.findByTestId('host-gate');
-    expect(rtl.screen.queryByTestId('host-get-verified')).toBeNull();
-    expect(rtl.screen.queryByText('Get verified')).toBeNull();
-    expect(rtl.screen.queryAllByRole('button').map((b) => b.props.testID)).toEqual(['host-back']);
+    expect(await rtl.screen.findByTestId('host-name')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-gate')).toBeNull();
   });
 
   it('lets a professional tick host', async () => {
     handler = (c) => (c.path === '/verification/me' ? ok(tick(false, true)) : c.path === '/events/options' ? ok(options) : undefined);
     await bootHost();
+    expect(await rtl.screen.findByTestId('host-name')).toBeTruthy();
+  });
+
+  it('a tier that cannot be read, with no live tick, says so and asks again on Try again', async () => {
+    serve(false, (c) => (c.path === '/me/tier' ? { offline: true } : undefined));
+    await bootHost();
+    expect(await rtl.screen.findByTestId('host-error')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-gate')).toBeNull();
+    serve(false, undefined, 'active');
+    await rtl.fireEvent.press(rtl.screen.getByText('Try again'));
     expect(await rtl.screen.findByTestId('host-name')).toBeTruthy();
   });
 
@@ -187,18 +273,91 @@ describe('E21 · Needs a tick', () => {
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the gate when the Hub refuses the submit for a missing tick', async () => {
-    serve(true, (c) =>
-      c.method === 'POST' && c.path === '/events'
-        ? { status: 403, body: { statusCode: 403, message: 'Only verified accounts can host an event.', reason: { code: 'verification_required' } } }
-        : undefined,
-    );
+  it('shows a block where the words go while the plan is on its way, then the words', async () => {
+    handler = (c) => (c.path === '/plans' ? { hold: true } : serveOnce(c));
     await bootHost();
-    await fillBasics();
-    await fillWhen();
-    await fillTickets();
-    await press('host-send');
-    expect(await rtl.screen.findByText('Hosting needs a verified tick')).toBeTruthy();
+    await rtl.screen.findByTestId('host-gate-loading');
+    expect(rtl.screen.getByText('Hosting needs a tier')).toBeTruthy();
+    await rtl.act(async () => {
+      held.forEach((release) => release(new Response(JSON.stringify(ok(plansView()).body), { status: 200, headers: { 'content-type': 'application/json' } })));
+    });
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(rtl.screen.getByText('From ₦1,000.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('host-gate-loading')).toBeNull();
+  });
+
+  it('draws no price when the plan cannot be read, says so, and reads it again on Try again', async () => {
+    serve(false, (c) => (c.path === '/plans' ? { offline: true } : undefined));
+    await bootHost();
+    expect(await rtl.screen.findByTestId('host-gate-retry')).toBeTruthy();
+    expect(rtl.screen.queryByText(/From /)).toBeNull();
+    expect(rtl.screen.getByTestId('host-see-tiers')).toBeTruthy();
+    serve(false);
+    await press('host-gate-retry');
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(rtl.screen.getByText('From ₦1,000.')).toBeTruthy();
+  });
+
+  it('leaves a dollar price out: dollar prices wait for dollar accounts (R-64)', async () => {
+    serve(false, (c) => (c.path === '/plans' ? ok(plansView('USD')) : undefined));
+    await bootHost();
+    expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/From /)).toBeNull();
+  });
+
+  describe('when the Hub refuses the send (the last word)', () => {
+    const send = async () => {
+      await fillBasics();
+      await fillWhen();
+      await fillTickets();
+      await press('host-send');
+    };
+
+    it('opens E21 on 403 tier_required, with the Hub\'s own price, not a generic error', async () => {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? tierRefusal({ lowestTier: { id: 'verify', name: 'Verify', priceMinor: 150_000 } }) : undefined));
+      await bootHost();
+      await send();
+      expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
+      expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('host-failure')).toBeNull();
+      expect(rtl.screen.queryByTestId('host-name')).toBeNull();
+    });
+
+    it('tells an ended tier in the Hub\'s own words, with its price', async () => {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? tierRefusal({ tierState: 'ended', message: ENDED_WORDS }) : undefined));
+      await bootHost();
+      await send();
+      expect(await rtl.screen.findByText(ENDED_WORDS)).toBeTruthy();
+      expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+      expect(rtl.screen.queryByText(/Founding Maker/)).toBeNull();
+    });
+
+    it('opens E21 for an account type the Hub turns away without a tier (account_type_required)', async () => {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? { status: 403, body: { statusCode: 403, message: 'Hosting is for creators and professionals.', data: null, reason: { code: 'account_type_required', message: 'Hosting is for creators and professionals.', steps: ['Pick a tier'] } } } : undefined));
+      await bootHost();
+      await send();
+      expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
+      expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
+      expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    });
+
+    it('shows any other 403 as the Hub\'s sentence on the form, which stays', async () => {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? { status: 403, body: { statusCode: 403, message: 'You cannot host here.', data: null, reason: { code: 'something_else' } } } : undefined));
+      await bootHost();
+      await send();
+      expect(await rtl.screen.findByTestId('host-failure')).toHaveTextContent('You cannot host here.');
+      expect(rtl.screen.queryByTestId('host-gate')).toBeNull();
+    });
+
+    it('See tiers on the refusal opens the tiers', async () => {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? tierRefusal() : undefined));
+      const props = await bootHost();
+      await send();
+      await rtl.screen.findByTestId('host-gate');
+      await press('host-see-tiers');
+      expect(props.onSeeTiers).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
@@ -421,7 +580,7 @@ describe('E22 · Sent back', () => {
   });
 
   async function bootSentBack() {
-    const props = { id: 'e-9', onBack: jest.fn(), onDone: jest.fn() };
+    const props = { id: 'e-9', onBack: jest.fn(), onDone: jest.fn(), onSeeTiers: jest.fn() };
     await render(<SentBackScreen {...props} />);
     return props;
   }
@@ -475,6 +634,29 @@ describe('E22 · Sent back', () => {
     expect(props.onDone).not.toHaveBeenCalled();
   });
 
+  it('opens E21 when the Hub refuses the edit for want of a tier: its own words, its price, and See tiers (EVENTS-12)', async () => {
+    handler = (c) =>
+      c.path === '/events/options'
+        ? ok(options)
+        : c.path === '/plans'
+          ? ok(plansView())
+          : c.method === 'GET' && c.path === '/events/e-9'
+            ? ok(sentBack())
+            : c.method === 'PATCH'
+              ? tierRefusal({ tierState: 'ended', message: ENDED_WORDS })
+              : undefined;
+    const props = await bootSentBack();
+    await rtl.screen.findByTestId('sent-back-address');
+    await type('sent-back-address', '12 Ngwa Road');
+    await press('sent-back-send');
+    expect(await rtl.screen.findByText(ENDED_WORDS)).toBeTruthy();
+    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('sent-back-failure')).toBeNull();
+    await press('host-see-tiers');
+    expect(props.onSeeTiers).toHaveBeenCalledTimes(1);
+    expect(props.onDone).not.toHaveBeenCalled();
+  });
+
   it('shows an error with Retry when the event cannot be read', async () => {
     handler = () => ({ offline: true });
     await bootSentBack();
@@ -504,5 +686,27 @@ describe('the phone\'s Back', () => {
     });
     expect(props.onBack).toHaveBeenCalledTimes(1);
     spy.mockRestore();
+  });
+});
+
+describe('ticket prices on an event (PUT /events/{id}/tickets)', () => {
+  const { saveTicketTypes } = require('../../organiser/organiserApi') as typeof import('../../organiser/organiserApi');
+  const { HostTierRefusal, isHostTierRefusal } = require('../hostTier') as typeof import('../hostTier');
+  const types = [{ tier: 'regular' as const, name: 'Regular', priceNaira: 5000, quantity: 100 }];
+
+  it('meets a missing tier as the tier refusal, with the state and the Hub\'s lowest tier, never a generic failure', async () => {
+    handler = (c) => (c.method === 'PUT' && c.path === '/events/e-9/tickets' ? tierRefusal({ tierState: 'ended', message: ENDED_WORDS }) : undefined);
+    const error = await saveTicketTypes('e-9', types).catch((e: unknown) => e);
+    expect(isHostTierRefusal(error)).toBe(true);
+    expect(error).toBeInstanceOf(HostTierRefusal);
+    expect(error).toMatchObject({ status: 403, code: 'tier_required', tierState: 'ended', currency: 'NGN', message: ENDED_WORDS, lowestTier: { priceMinor: 100_000 } });
+  });
+
+  it('leaves every other refusal as the plain error it was', async () => {
+    handler = () => ({ status: 409, body: { statusCode: 409, message: 'Tickets are already on sale.', data: null } });
+    const error = await saveTicketTypes('e-9', types).catch((e: unknown) => e);
+    expect(isHostTierRefusal(error)).toBe(false);
+    expect(error).not.toBeInstanceOf(HostTierRefusal);
+    expect(error).toMatchObject({ status: 409, message: 'Tickets are already on sale.' });
   });
 });

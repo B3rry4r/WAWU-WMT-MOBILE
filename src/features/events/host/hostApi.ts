@@ -6,11 +6,12 @@ import type { PickedImage } from '@/features/profile-edit/pickImage';
 
 import type { EventView } from '../api';
 import type { createBody } from './hostForm';
+import { hostUnwrap } from './hostTier';
 
 /**
  * The host wizard's calls (E13 to E16, E21, E22), typed by the Hub's contract:
- * - `GET /verification/me`: the person's ticks and what a tick costs (E21 before the wizard starts),
- * - `POST /events`: the event and its ticket types in one submit (EVENTS-02),
+ * - `GET /verification/me`: the person's ticks (a live tick still hosts; the tier is `GET /me/tier`, read by the screen; E21 opens for neither),
+ * - `POST /events`: the event and its ticket types in one submit (EVENTS-02); `403 tier_required` is E21 (EVENTS-12),
  * - `PATCH /events/{id}`: a sent-back event, fixed and sent again (E22),
  * - `POST /uploads/presign` (folder `event/banner`, EVENTS-04): the banner image (E14).
  * The Hub's success body is `{ statusCode, message, data }`; the contract types only `data`
@@ -34,15 +35,12 @@ export async function fetchMyVerification(): Promise<MyVerification> {
   return me;
 }
 
-/** Hosting is for verified accounts (R-8 and the Hub's own check): a current creator or professional tick. */
+/** A live verification tick still hosts until it ends (EVENTS-12: nothing live stops working): a current creator or professional tick. */
 export const mayHost = (me: MyVerification) => me.verification.creator.verified || me.verification.professional.verified;
 
-/** The Hub's refusal codes that mean "get a tick first" (`IneligibilityReason.code`). */
-export const isTickRefusal = (error: unknown) =>
-  error instanceof ApiError && error.status === 403 && (error.code === 'verification_required' || error.code === 'account_type_required');
-
+/** A host call's answer. A missing tier arrives as a `HostTierRefusal` (hostTier.ts), so a screen can open E21 instead of a generic error. */
 async function readEvent(request: ReturnType<typeof api.POST> | ReturnType<typeof api.PATCH>): Promise<EventView> {
-  const body = (await unwrap(request as Promise<{ data?: unknown; error?: unknown; response: Response }>)) as Envelope<EventView>;
+  const body = (await hostUnwrap(request as Promise<{ data?: unknown; error?: unknown; response: Response }>)) as Envelope<EventView>;
   const event = body?.data;
   if (!event || typeof event !== 'object' || !event.id) throw unreadable('event');
   return event;

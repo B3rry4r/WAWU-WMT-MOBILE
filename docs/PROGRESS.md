@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 55 | 0 | 0 | 0 |
+| todo | 54 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 118 | 0 | 0 | 0 |
+| verifying | 119 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -114,6 +114,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [DV2-01](../tasks/DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count (You)
 - [DV2-02](../tasks/DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills (You)
 - [DV2-03](../tasks/DV2-03.md) Me follows the 16 Oct design: the profile header (You)
+- [DV2-04](../tasks/DV2-04.md) Create hub and event hosting: the tier gate (You)
 - [DV2-05](../tasks/DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design (You)
 - [DV2-06](../tasks/DV2-06.md) Settings: TGIF each morning, and the provider wording (You)
 - [DV2-COPY](../tasks/DV2-COPY.md) Brand copy sweep: "Who Made This?", "Bank charge", "Banking by Nuvion (You)
@@ -336,6 +337,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 18 Oct 2026 · DV2-04 · Built (Sonnet builder, T1; mobile `wmt/DV2-04` on `origin/wmt/MERGE-16` `5ee3994d`; no backend change, no migration, no shared change; status verifying): M19's Event tile says "Needs an active tier" and a person with a running tier sees the products meter ("2 of 3 products", tier name and end date, `GET /me/tier`) in place of the uploads count; E21 is "Hosting needs a tier" with the tier names and "From" the lowest price from `GET /plans` (or the 403's `lowestTier`) and See tiers opening VF5; the host form opens for a running tier or a live tick, and `403 tier_required` on create, edit (E22) and ticket prices opens E21 with the Hub's own sentence. Checked on a local merge of backend `wmt/S9` into `wmt/MERGE-16` (ports 7760-7767, down). G-DV2-04-1.
 - 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 - 17 Oct 2026 · FIX-61 · Built (Sonnet builder, T1; backend `wmt/FIX-61` `cc0da36` on `origin/wmt/MERGE-13` `6bc7b20`, test files only; status verifying): `paid-dm-wallet` "two answers in a day" failed on CI for about ten minutes of every day (starts 22:11 to 22:21 UTC) because the pay harness sweeps at a clock that runs ahead of the wall clock and the third answer's sweep fell after Lagos midnight (23:00 UTC), where a new move is right (R-55): a test cause, not the product. The harness gets `keepInLagosDay`, called by the two one-move-a-day specs; the rule is pinned on both sides of midnight with no database; reproduced by starting the spec at 22:12 to 22:20 UTC (fails) and passing after.
 - 17 Oct 2026 · INBOX-14 · Part built (Sonnet builder, T2; mobile `wmt/INBOX-14` on `origin/wmt/MERGE-11` `47555987` with `wmt/ME-07` and `wmt/INBOX-24` merged; no backend change, no migration; status building): I30 and I31 pay a private room's 30 day pass from the wallet (fresh quote per tap, PIN, one key per attempt, Renew, ended pass, removed member, short wallet without Add), I37 keeps the picture as the room header, I32 never sends a private room without a price, I33 and I34 built; entries from I24, Create and the reminder. Not done: the stack run, the pictures, the A11, M18 and I1 entries, the host's way to I34.
@@ -350,4 +352,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · ME-14 · Built (Sonnet builder, T1; mobile `wmt/ME-14` on `origin/wmt/MERGE-11` `47555987` with `origin/wmt/ME-07` `5f002bde` merged, no backend change, no migration; status verifying): M29 My purchases (`/purchases`, search on the Hub, paging, course progress), M30 Saved (`/saved`, tabs, take a save back), M31 and M32 Notifications (`/notifications`, chips, mark read on open, See why, Top up, caught up), the bell on X1 and the three Me menu rows with the Hub's counts; gaps G-ME-14-1 to 4, SHARED-CHANGES ME-14 #1 to #5.
 - 17 Oct 2026 · ME-07 · Built (Sonnet builder, T1; mobile `wmt/ME-07` on `origin/wmt/WALLET-13` `f1f57e10` with `origin/wmt/P1` `9285017` merged; no backend change, no migration; status verifying): the Creator dashboard (M18, `/creator`: the month's earnings and change from `GET /me/earnings`, the uploads meter, Set up with the wallet row "Open your wallet: Not opened / Open", Earnings "Lands in your wallet automatically", My content), My content (M28, `/library`), Rejected (M26, `/library/<id>`: the reviewer's reason, Replace the file, Edit details, Delete, Send again to M25), M27 as M20 with every upload used and Open library, View in library on M25, and Creator dashboard and My content in the Me menu for a creator. Walked on stack `me07` against the real Hub. Gaps G-ME-07-1 to -8 (the delete row says "Delete": the Hub already returns the place at a rejection), SHARED-CHANGES ME-07 #1, F1, F2; Get verified waits for ME-12, Host a community for INBOX-14.
 - 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
-- 17 Oct 2026 · ME-08, EXPLORE-04 · Builder (Sonnet, bundle P1): Create draws details (M23), price (M24), a free piece (M37) and sent for review (M25) against `POST /content`, with the Hub's own refusals shown and what nothing backs left out (G-ME-08-1 to -4); Search's creators, communities, nothing found, no recent searches and failed states (X8 to X12) come from `wmt/EXPLORE-02`'s search feature, fixed for batch 10 (shadow helper, kobo import, R-69 placeholder), without its entries (G-EXPLORE-04-1).

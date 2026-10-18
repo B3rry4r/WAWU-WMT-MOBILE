@@ -14,20 +14,29 @@ import { layout, space, useWawu } from '@/theme';
 import { detailKey, eventsKey, fetchEvent, fetchOptions, optionsKey } from '../api';
 import { NavBar } from '../chrome';
 import { footMetrics } from './HostEnds';
+import { HostGateScreen } from './HostGateScreen';
 import { updateEvent } from './hostApi';
 import { addressError, needsAddress } from './hostForm';
 import { SentBackNote } from './hostParts';
+import { isHostTierRefusal, type HostTierRefusal } from './hostTier';
 
 /** events_b.js `sentBack`: a body of 14 between rows whose top is the kit's default 8 (kit.js `body`). */
 const bodyMetrics = { top: 8, bottom: 14, between: 14 } as const;
 
-export type SentBackScreenProps = { id: string; onBack: () => void; onDone: () => void };
+export type SentBackScreenProps = {
+  id: string;
+  onBack: () => void;
+  onDone: () => void;
+  /** E21's See tiers opens VF5. The button is not drawn without it. */
+  onSeeTiers?: () => void;
+};
 
 /**
  * E22 · Sent back: an event an admin sent back, with the reviewer's words on top, the street address flagged
- * when it is the thing missing, and Send again. An edit sends the event back to review (the Hub's own rule).
+ * when it is the thing missing, and Send again. An edit sends the event back to review (the Hub's own rule). An edit needs a running
+ * tier like a new event does (EVENTS-12): a refused send opens E21 with the Hub's own sentence and price.
  */
-export function SentBackScreen({ id, onBack, onDone }: SentBackScreenProps) {
+export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
@@ -40,6 +49,7 @@ export function SentBackScreen({ id, onBack, onDone }: SentBackScreenProps) {
   const [errors, setErrors] = useState<{ name?: string; address?: string }>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [refused, setRefused] = useState<HostTierRefusal | null>(null);
   const inFlight = useRef(false);
   const mounted = useRef(true);
   useEffect(() => () => void (mounted.current = false), []);
@@ -67,12 +77,16 @@ export function SentBackScreen({ id, onBack, onDone }: SentBackScreenProps) {
       void client.invalidateQueries({ queryKey: eventsKey });
       onDone();
     } catch (error) {
-      if (mounted.current) setFailure(isApiError(error) ? error.message : 'Your event was not sent. Try again.');
+      if (!mounted.current) return;
+      if (isHostTierRefusal(error)) setRefused(error as HostTierRefusal);
+      else setFailure(isApiError(error) ? error.message : 'Your event was not sent. Try again.');
     } finally {
       inFlight.current = false;
       if (mounted.current) setSending(false);
     }
   };
+
+  if (refused) return <HostGateScreen refusal={refused} onBack={onBack} onSeeTiers={onSeeTiers} />;
 
   const failed = (!event.data && event.isError) || (!options.data && options.isError);
   const pending = event.isPending || options.isPending;
