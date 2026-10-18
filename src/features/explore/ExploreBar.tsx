@@ -2,18 +2,19 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
 import { APP_NAME, BrandMark } from '@/components/BrandMark';
-import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
+import { NotificationsBell } from '@/features/notifications/NotificationsBell';
 import { font, layout, radius, useWawu } from '@/theme';
 
 /**
  * design/_gen/explore.js `topBar`: the bar pads 6 above, 20 at the sides and 14 below around a 44 high row, 10 between
  * its parts, and the 34 wide mark leads it. The search pill (`srch`: 44 high, a full pill on the card colour with a 1 hairline
  * ring, an 18 glyph, 10 to the 15 words) follows the mark and takes the rest of the row; it opens Search (X5, EXPLORE-02) and is
- * drawn only when the screen is given `onSearch`. The notifications bell is ME-14's (M31): a 44 round button at the end of the
- * row with an 8 accent dot 10 from its top and 11 from its right while the Hub says something is unread; it is drawn only when
- * the screen is given `onOpenNotifications` (R-47). The row keeps its 44, so the body below sits where it will.
+ * drawn only when the screen is given `onSearch`. The notifications bell is ME-14's (M31), drawn by the shared `NotificationsBell`
+ * (which Today's bar draws too, HOME-18): a 44 round button at the end of the row with an 8 accent dot while the Hub says
+ * something is unread; it is drawn only when the screen is given `onOpenNotifications` (R-47). The row keeps its 44, so the body
+ * below sits where it will.
  */
 export const barMetrics = {
   top: 6,
@@ -25,11 +26,6 @@ export const barMetrics = {
   iconGap: 10,
   padH: 16,
   text: 15,
-  bell: 44,
-  dot: 8,
-  dotTop: 10,
-  dotRight: 11,
-  dotRing: 2,
 } as const;
 
 /** What the pill says and what a screen reader hears: the app's name with its question mark (R-69). */
@@ -82,18 +78,7 @@ export function ExploreBar({ onSearch, onOpenNotifications, unread = 0 }: Explor
           </NativeText>
         </Pressable>
       ) : null}
-      {onOpenNotifications ? (
-        <View style={styles.bell}>
-          <IconButton icon="Bell" label={unread > 0 ? 'Notifications, new ones waiting' : 'Notifications'} size={barMetrics.bell} onPress={onOpenNotifications} testID="explore-bell" />
-          {unread > 0 ? (
-            <View
-              testID="explore-bell-dot"
-              pointerEvents="none"
-              style={[styles.dot, { backgroundColor: colors.accent, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: barMetrics.dotRing, color: colors.surfaceCard }] }]}
-            />
-          ) : null}
-        </View>
-      ) : null}
+      {onOpenNotifications ? <NotificationsBell variant="explore" onPress={onOpenNotifications} unread={unread} testID="explore-bell" style={styles.bell} /> : null}
     </View>
   );
 }
@@ -110,6 +95,5 @@ const styles = StyleSheet.create({
   },
   pill: { flex: 1, height: barMetrics.row, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: barMetrics.iconGap, paddingHorizontal: barMetrics.padH },
   pillText: { flex: 1, fontSize: barMetrics.text },
-  bell: { marginLeft: 'auto', width: barMetrics.bell, height: barMetrics.bell },
-  dot: { position: 'absolute', top: barMetrics.dotTop, right: barMetrics.dotRight, width: barMetrics.dot, height: barMetrics.dot, borderRadius: barMetrics.dot / 2 },
+  bell: { marginLeft: 'auto' },
 });

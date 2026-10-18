@@ -7,7 +7,7 @@ import { useClaimPendingReferral } from '@/features/referral/pendingCode';
 
 /**
  * The Home tab: Today (H1, H11, H36), and the Following and For you feed under the same tab row (HOME-01). A creator account
- * also sees the Create button, which opens M19 (ME-04, R-38). Its search buttons open Search (X5) and Today's creators' See all
+ * also sees the Create button, which opens M19 (ME-04, R-38). Its search buttons open Search (X5), Today's bell opens Notifications (M31, HOME-18) and Today's creators' See all
  * opens All creators (X4), both EXPLORE-02's. A code kept from a `wawu/r/<code>` link is claimed here once the person is signed
  * in, with nothing drawn for it (REF-03, G-812). The feed's wallet payments (a tip from the rail, HOME-13) lead to
  * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and Add money (W15, with what was missing). A post's caption
@@ -28,6 +28,7 @@ export default function HomeTab() {
         onAddMoney: (short) => router.push(addMoneyHref(short)),
       }}
       onSearch={() => router.push('/search')}
+      onOpenNotifications={() => router.push('/notifications')}
       onSeeAllCreators={() => router.push('/creators')}
       onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
       onOpenProfessional={(id) => router.push({ pathname: '/professionals/[id]', params: { id } })}

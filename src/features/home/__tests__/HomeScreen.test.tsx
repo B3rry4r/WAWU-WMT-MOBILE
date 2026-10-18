@@ -7,9 +7,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => '00000000-0000-4000-8000-0000000000aa' }));
+let mockSession: 'signedIn' | 'signedOut' | 'restoring' = 'signedIn';
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
-  useSession: () => ({ status: 'signedIn' }),
+  useSession: () => ({ status: mockSession }),
 }));
 // The feed is HOME-02's and has its own tests; here it only has to show which tab it opened on and lead back to Today.
 jest.mock('@/features/feed/FeedScreen', () => {
@@ -79,6 +80,7 @@ const T = {
   balance: 'GET /money/wallet/balance',
   creators: 'GET /creators',
   me: 'GET /users/me',
+  counts: 'GET /me/counts',
 };
 
 function everyAnswer(): Record<string, Answer[]> {
@@ -92,14 +94,14 @@ function everyAnswer(): Record<string, Answer[]> {
 
 const clients: QueryClient[] = [];
 
-async function boot() {
+async function boot(props: import('../HomeScreen').HomeScreenProps = {}) {
   const { HomeScreen } = require('../HomeScreen') as typeof import('../HomeScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   return rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <HomeScreen />
+        <HomeScreen {...props} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -125,6 +127,7 @@ beforeAll(async () => {
 beforeEach(() => {
   answers = everyAnswer();
   sent = [];
+  mockSession = 'signedIn';
   mockPush.mockClear();
 });
 
@@ -508,5 +511,144 @@ describe('H1 · Monetize, and the rail title (R-61, R-69)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getByText('Who Made This?')).toBeTruthy();
     expect(screen.queryByText('Creators to discover')).toBeNull();
+  });
+});
+
+// HOME-18: the bell Explore's bar draws (ME-14) is also in Today's bar, with its dot read from `GET /me/counts`; and three spacings H1 draws.
+const counts = (unread: number) => ok({ purchases: 0, saved: 0, unreadNotifications: unread });
+const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as object) as Record<string, unknown>;
+
+describe('H1 · the bell in Today\'s bar (HOME-18)', () => {
+  it('a user sees the bell with its dot when the Hub says something is unread, and the bell opens Notifications', async () => {
+    answers[T.counts] = [counts(3)];
+    const onOpenNotifications = jest.fn();
+    const screen = await boot({ onOpenNotifications });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    expect(sent).toContain(T.counts);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Notifications, new ones waiting' }));
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the bell as H1 does: a 40 round button 8 from the search button, its dot 8 across, 9 from the top and 10 from the right', async () => {
+    answers[T.counts] = [counts(1)];
+    const screen = await boot({ onSearch: jest.fn(), onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    expect(flat(screen.getByTestId('today-bell'))).toMatchObject({ width: 40, height: 40 });
+    expect(flat(screen.getByTestId('today-search'))).toMatchObject({ width: 40, height: 40 });
+    expect(flat(screen.getByTestId('today-bell-dot'))).toMatchObject({ width: 8, height: 8, top: 9, right: 10 });
+    const buttons = screen.getByTestId('today-bar-buttons');
+    expect(flat(buttons)).toMatchObject({ flexDirection: 'row', gap: 8 });
+    type Kid = { props: { testID?: string }; children: Kid[] };
+    expect((buttons.children as unknown as Kid[]).map((c) => c.props.testID ?? c.children[0].props.testID)).toEqual(['today-search', 'today-bell']);
+  });
+
+  it('has no dot at 0 unread, but the bell is still there and still opens Notifications', async () => {
+    answers[T.counts] = [counts(0)];
+    const onOpenNotifications = jest.fn();
+    const screen = await boot({ onOpenNotifications });
+    await rtl.waitFor(() => expect(sent).toContain(T.counts));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Notifications' }));
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no dot when the count cannot be read, and Today still draws', async () => {
+    answers[T.counts] = ['offline'];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.waitFor(() => expect(sent).toContain(T.counts));
+    expect(screen.getByTestId('today-bell')).toBeTruthy();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+  });
+
+  it('the dot is the Hub\'s count, never a literal: it follows the count when it changes', async () => {
+    answers[T.counts] = [counts(5), counts(0)];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    await rtl.act(async () => {
+      await clients[0].invalidateQueries({ queryKey: ['me', 'counts'] });
+    });
+    await rtl.waitFor(() => expect(screen.queryByTestId('today-bell-dot')).toBeNull());
+  });
+
+  it('is drawn while Today loads (H11), without a dot, and the count is asked for with the rest', async () => {
+    answers = Object.fromEntries(Object.values(T).map((k) => [k, ['hold' as const]]));
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    expect(screen.getByTestId('today-loading')).toBeTruthy();
+    expect(screen.getByTestId('today-bell')).toBeTruthy();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+  });
+
+  it('is not drawn without a way to open Notifications (R-47): no bell, no dot, and the count is not asked for', async () => {
+    answers[T.counts] = [counts(4)];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.queryByTestId('today-bell')).toBeNull();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(sent).not.toContain(T.counts);
+  });
+
+  it('is not drawn when signed out, and nothing is asked of the Hub for it', async () => {
+    mockSession = 'signedOut';
+    answers[T.counts] = [counts(4)];
+    const screen = await boot({ onOpenNotifications: jest.fn(), onSearch: jest.fn() });
+    expect(screen.queryByTestId('today-bell')).toBeNull();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(screen.getByTestId('today-search')).toBeTruthy();
+    expect(sent).toEqual([]);
+  });
+
+  it('is the same bell Explore draws: one component, so its label and dot read alike on both bars', async () => {
+    const { NotificationsBell, bellFits } = require('@/features/notifications/NotificationsBell') as typeof import('@/features/notifications/NotificationsBell');
+    expect(bellFits.today).toEqual({ size: 40, dotTop: 9, dotRight: 10 });
+    expect(bellFits.explore).toEqual({ size: 44, dotTop: 10, dotRight: 11 });
+    await rtl.render(<NotificationsBell variant="today" onPress={() => undefined} unread={2} testID="b" />);
+    expect(rtl.screen.getByRole('button', { name: 'Notifications, new ones waiting' })).toBeTruthy();
+    expect(rtl.screen.getByTestId('b-dot')).toBeTruthy();
+  });
+});
+
+describe('H1 · three spacings the board draws (HOME-18)', () => {
+  it('the money card ends 16 under its actions, as H1 draws it (it was 18)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-card')).toBeTruthy());
+    expect(flat(screen.getByTestId('today-balance-card'))).toMatchObject({ paddingTop: 18, paddingBottom: 16, paddingHorizontal: 18 });
+  });
+
+  it('the loading shape of the card is as tall as the card: the figure, 38, with the actions under it', async () => {
+    const { todayMetrics } = require('../look') as typeof import('../look');
+    const { canvasNormalLineHeight } = require('@/theme') as typeof import('@/theme');
+    // padding 18 and 16, the chip row 30, 14 to the figure (38), 18 to the actions, a 48 circle, 6, and its word's canvas line.
+    expect(todayMetrics.skeletonMoney).toBe(18 + 30 + 14 + 38 + 18 + 48 + 6 + canvasNormalLineHeight(12) + 16);
+  });
+
+  it('the services heading has the board\'s line height, 24 at 18.5 (it was 21.8)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-services')).toBeTruthy());
+    const heading = screen.getByRole('header', { name: 'What would you like to do today?' });
+    expect(flat(heading)).toMatchObject({ fontSize: 18.5, lineHeight: 24 });
+  });
+
+  it('a creator\'s Today ends 90 under the rail, so Create (58 across, 16 above the bar) never covers a card\'s Follow', async () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+    const { createButtonMetrics } = require('@/components/CreateButton') as typeof import('@/components/CreateButton');
+    const screen = await boot({ onCreate: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
+    const bottom = flat({ props: { style: screen.getByTestId('today-scroll').props.contentContainerStyle } });
+    expect(bottom.paddingBottom).toBe(90);
+    expect(bottom.paddingBottom as number).toBeGreaterThanOrEqual(createButtonMetrics.bottom + createButtonMetrics.size + 16);
+  });
+
+  it('anyone else keeps the board\'s gap of 32 under the rail', async () => {
+    const screen = await boot({ onCreate: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const bottom = flat({ props: { style: screen.getByTestId('today-scroll').props.contentContainerStyle } });
+    expect(bottom.paddingBottom).toBe(32);
   });
 });
