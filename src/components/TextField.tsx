@@ -1,4 +1,4 @@
-import { useState, type Ref } from 'react';
+import { useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { canvasNormalLineHeight, font, layout, radius, space, text, type, useWawu } from '@/theme';
@@ -25,6 +25,9 @@ export const fieldMetrics = {
 
 /** The kit's multi-line box (design/_gen/me.js line 36, M8): 76 high at least, 14 above and below, 15 type on a 1.4 line, a 12 counter. */
 const multilineMetrics = { minHeight: 76, padV: 14, fontSize: 15, leading: 1.4, counter: 12 } as const;
+
+/** The browser's Pressable draws a pointing hand; the box around a text input draws the text cursor. */
+const webTextCursor = { cursor: 'text' } as object;
 
 /** A field that opens a picker (A21's Bank): a 19 lead in text-secondary, a 18 chevron, the parts 10 apart (design/_gen/auth.js line 50). */
 const pickMetrics = { lead: 19, trail: 18, between: 10 } as const;
@@ -93,12 +96,22 @@ export function TextField({
   const eyeRing = useFocusRing();
   const pickRing = useFocusRing();
   const multiline = Boolean(rest.multiline);
+  // The input is kept here and handed on to the form's own ref, so a press anywhere in a multiline box can focus it.
+  const input = useRef<TextInput>(null);
+  useImperativeHandle(inputRef, () => input.current as TextInput);
   const typed = typeof rest.value === 'string' ? rest.value : '';
   const over = max !== undefined && typed.length > max;
 
   const bad = Boolean(error) || Boolean(invalid) || over;
   const border = bad ? colors.danger : focused ? colors.accent : colors.borderHairline;
   const message = error ?? hint;
+  // A multiline input is as tall as what is typed in it, so the rest of its box would take no tap: a press anywhere in the box
+  // focuses the input (SHARED-06 L2). The box is no control of its own: the input stays the one field a screen reader and the
+  // keyboard reach (`tabIndex` too, as the browser's Pressable is a tab stop by default). A single-line input fills its row.
+  const Box = multiline ? Pressable : View;
+  const tapBox = multiline
+    ? ({ accessible: false, focusable: false, tabIndex: -1, disabled: Boolean(disabled), onPress: () => input.current?.focus() } as const)
+    : null;
 
   return (
     <View style={styles.root}>
@@ -133,11 +146,13 @@ export function TextField({
           {trailingIcon ? <Icon name={trailingIcon} size={pickMetrics.trail} color={colors.textMuted} /> : null}
         </Pressable>
       ) : (
-      <View
+      <Box
         testID={testID ? `${testID}-box` : undefined}
+        {...tapBox}
         style={[
           styles.box,
           multiline && styles.multilineBox,
+          multiline && Platform.OS === 'web' ? webTextCursor : null,
           {
             backgroundColor: disabled ? colors.surfaceSunken : colors.surfaceInput,
             borderColor: border,
@@ -147,7 +162,7 @@ export function TextField({
       >
         {leadingIcon ? <Icon name={leadingIcon} size={space.xl} color={colors.textMuted} /> : null}
         <TextInput
-          ref={inputRef}
+          ref={input}
           testID={testID}
           accessibilityLabel={label}
           accessibilityHint={message}
@@ -188,7 +203,7 @@ export function TextField({
           </Pressable>
         ) : null}
         {trailingIcon ? <Icon name={trailingIcon} size={space.xl} color={colors.textMuted} /> : null}
-      </View>
+      </Box>
       )}
       {message || max !== undefined ? (
         <View style={[styles.message, tone && !error && styles.toneMessage]}>
