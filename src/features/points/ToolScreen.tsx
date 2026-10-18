@@ -45,6 +45,8 @@ export type ToolScreenProps = {
   onBack: () => void;
   /** Buy points (PT4), opened from this tool so it can lead back here. */
   onBuyPoints: () => void;
+  /** PT3b's Add money, for the wallet's shortfall (kobo): opens W15 with it (FIX-62, `useJobCheck`). */
+  onAddMoney: (shortfallKobo: number) => void;
   onForgotPin: () => void;
   onSetPin: () => void;
   /** "Back to AI tools" on the daily limit (PT7). */
@@ -103,7 +105,7 @@ type ToolProps = ToolScreenProps & { owner: string | null; tool: AiTool; balance
 /** What the person is looking at: typing (PT2), the job working (PT2a), done (PT2b), failed (PT2c), or a request the Hub never answered. */
 type View_ = 'input' | 'working' | 'done' | 'failed' | 'unsent';
 
-function Tool({ owner, tool, balance, onBack, onBuyPoints, onForgotPin, onSetPin, onLeave }: ToolProps) {
+function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotPin, onSetPin, onLeave }: ToolProps) {
   const { colors } = useWawu();
   const [text, setText] = useState('');
   const [voiceId, setVoiceId] = useState(tool.voices[0]?.id ?? '');
@@ -196,6 +198,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onForgotPin, onSetPin
       });
     },
     onBuyPoints,
+    onAddMoney,
     onForgotPin,
     onSetPin,
     onLeave,
