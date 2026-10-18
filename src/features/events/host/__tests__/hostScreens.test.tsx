@@ -319,7 +319,7 @@ describe('E21 · Needs a tier', () => {
       await send();
       expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
       expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
+      expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
       expect(rtl.screen.queryByTestId('host-failure')).toBeNull();
       expect(rtl.screen.queryByTestId('host-name')).toBeNull();
     });
