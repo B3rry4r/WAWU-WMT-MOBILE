@@ -31,7 +31,7 @@ const OWNER = '00000000-0000-4000-8000-0000000000f8';
 const HUB_FAILED = "That didn't work. No points were taken. Try again.";
 const AUDIO = 'https://audio.test/job.mp3';
 
-type Mode = 'ok' | 'fail' | 'failquiet' | 'lost' | 'refuse' | 'off';
+type Mode = 'ok' | 'fail' | 'failquiet' | 'lost' | 'refuse' | 'off' | 'settled';
 const hub = {
   mode: 'ok' as Mode,
   points: 1250,
@@ -48,6 +48,8 @@ const hub = {
   jobs: {} as Record<string, Record<string, unknown>>,
   made: 0,
   reads: 0,
+  /** The key whose job the Hub could not write (mode 'settled'): its points went back, so the same key now meets a spent hold. */
+  spent: null as string | null,
 };
 
 function quote(body: Record<string, unknown>) {
@@ -119,6 +121,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (key && hub.jobs[key]) return json(200, { statusCode: 200, message: 'OK', data: jobView(hub.jobs[key]) });
     if (hub.mode === 'refuse') return refuse(409, { code: 'quote_changed', message: 'The cost changed or the quote ended. Check the points and run it again. No points were taken.' });
     if (hub.mode === 'off') return refuse(503, { code: 'ai_tool_unavailable', message: 'AI voice tools are not available right now. No points were taken.' });
+    if (hub.mode === 'settled') {
+      if (hub.spent === null) {
+        hub.spent = String(key);
+        return json(500, { statusCode: 500, message: 'Something went wrong' });
+      }
+      if (key === hub.spent) return refuse(409, { code: 'points_hold_settled', message: 'Those points were already given back.' });
+    }
     hub.made += 1;
     const characters = Array.from(String(body.text)).length;
     const job = {
@@ -202,7 +211,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', points: 1250, perMinute: 250, enabled: true, voices: true, cap: null, toolsFail: 0, quoteDrift: 0, workReads: 1, quotes: [], posts: [], jobs: {}, made: 0, reads: 0 });
+  Object.assign(hub, { mode: 'ok', points: 1250, perMinute: 250, enabled: true, voices: true, cap: null, toolsFail: 0, quoteDrift: 0, workReads: 1, quotes: [], posts: [], jobs: {}, made: 0, reads: 0, spent: null });
   (require('../voiceoverIntent') as { forgetJobIntentInMemory: () => void }).forgetJobIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -467,6 +476,28 @@ describe('V8 and V6 · answers that do not arrive, and refusals', () => {
     expect(screen.getByTestId('tool-refused')).toHaveTextContent('The cost changed or the quote ended. Check the points and run it again. No points were taken.', { exact: false });
     expect(screen.getByTestId('tool-run')).toBeTruthy();
     expect(hub.made).toBe(0);
+  });
+
+  it('SWEEP-MONEY AITOOLS-01 L2b · a start the Hub could not write, then Try again with the same key, is a plain refusal; the next Run is a new attempt under a new key and makes one job', async () => {
+    hub.mode = 'settled';
+    await toTool();
+    await typeWords();
+    await fireEvent.press(screen.getByTestId('tool-run'));
+    await screen.findByTestId('tool-unsent');
+    await fireEvent.press(screen.getByTestId('tool-resend'));
+    await screen.findByTestId('tool-refused');
+    expect(hub.posts).toHaveLength(2);
+    expect(hub.posts[1].key).toBe(hub.posts[0].key);
+    expect(screen.getByTestId('tool-refused')).toHaveTextContent('That did not start, and no points were taken. Run it again.', { exact: false });
+    expect(screen.queryByText(/already given back/)).toBeNull();
+    expect(screen.queryByTestId('tool-unsent')).toBeNull();
+    expect(hub.made).toBe(0);
+    await fireEvent.press(screen.getByTestId('tool-run'));
+    await screen.findByTestId('tool-working');
+    expect(hub.posts).toHaveLength(3);
+    expect(hub.posts[2].key).not.toBe(hub.posts[0].key);
+    expect(hub.made).toBe(1);
+    await untilDone();
   });
 
   it('the tool being off when Run is tapped is the Hub’s sentence, not a retry', async () => {

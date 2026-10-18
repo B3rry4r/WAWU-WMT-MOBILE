@@ -66,6 +66,9 @@ const HTTP_OK = 200;
 const HTTP_ACCEPTED = 202;
 const HTTP_SERVER_MIN = 500;
 
+/** Shown for `points_hold_settled` on a job start: the first try failed on the Hub's side and its points are back. */
+const SETTLED_WORDS = 'That did not start, and no points were taken. Run it again.';
+
 type Reason = { code?: unknown; message?: unknown };
 
 function reasonOf(error: unknown): { code: string | null; message: string } {
@@ -101,5 +104,8 @@ export async function startVoiceover(input: StartInput): Promise<StartOutcome> {
   // The one 5xx that is an answer: the Hub says the tool is off and that nothing was held.
   if (code === 'ai_tool_unavailable' && message) return { kind: 'refused', code, message };
   if (response.status >= HTTP_SERVER_MIN || code === 'idempotency_in_progress') return { kind: 'unanswered' };
+  // The Hub could not write the job, gave the points back, and the same key now meets that spent hold (SWEEP-MONEY, AITOOLS-01 L2b):
+  // the key is finished with, so this is a refusal (the record goes) and the next Run is a new attempt under a new key.
+  if (code === 'points_hold_settled') return { kind: 'refused', code, message: SETTLED_WORDS };
   return { kind: 'refused', code, message: message || 'That did not start. Try again.' };
 }
