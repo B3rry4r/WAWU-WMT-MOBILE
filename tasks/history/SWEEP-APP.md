@@ -34,3 +34,18 @@ Part 3, a Sonnet builder, 18 Oct 2026. Mobile `wmt/SWEEP-APP-3` from `wmt/SWEEP-
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-APP.md](history/SWEEP-APP.md).
 
+
+## Builder report
+
+Part 4, a Sonnet builder, 18 Oct 2026. Mobile `wmt/SWEEP-APP-4` from `wmt/SWEEP-APP-3` `703d2ed8`; backend `wmt/SWEEP-APP-4` from `wmt/MERGE-17` `f0022e3`.
+- **Commits (mobile):** `74972557` (reader view after the picture; paid banner), `d2a345f0` (M19), `c60e6f7a` (130, 140, 144, 146), `1b3008b0` (130 tuned, 142, 169), `59325b0c` (80), then the task file commit. **Backend:** `be23b8b` (63, 66, 135, 154, 168), `d73b71a` (70), `e67ab47` (90).
+- **Pictures:** 390 px, light and dark, board beside the app, from a temporary preview route (not committed) in a dev web export: `sweep-app-4-b/pics/beside-{130-gate,140-payservice,140-payschool,142-received,146-details,146-price,169-hug8,169-hug11}-{light,dark}.png`. Measured against the board's pixels where a figure is named (130: line to pill 37 against 39 at 2x).
+- **Tests that fail before and pass after:** every fixed row has one except 168 (a guard, not red on a test database), the 18-at-once case of row 63 (the lock case beside it is the red one) and the board pictures of 140 and 146, which have style and element assertions.
+- **Rulings made:** 74 and 151 as lead defaults (see their rows). 126's low: a paid purchase with an open claim draws the M15 banner; the buy path still answers payment_in_progress.
+- **Checks:** see the hand-back for the EXIT lines. tsc shows only the shared node_modules gap (`react-native-view-shot`, cardPicture.ts), as in parts 2 and 3.
+- **Not done:** 7 rows (list in Current state). No stack was started; the test database `swa4_test` was dropped.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-APP.md](history/SWEEP-APP.md).
+

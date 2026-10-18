@@ -18,8 +18,8 @@ tier: T0
 
 ## Current state
 
-As of 18 Oct 2026.
-- **Status:** verifying. Backend `wmt/FIX-82` `3609148` (from `wmt/SWEEP-APP-4` `e67ab47`); this record, the M19 test and the comment on mobile `wmt/FIX-82` (from `wmt/SWEEP-APP-4` `a458d455`). Order -82, free. No Fintava file touched, no route, DTO or schema changed.
+As of 18 Oct 2026, merging (lead): accepted on a diff read (tier T0) and stacked in batch 20.
+- **Status:** merging (lead). No separate verifier (T0): the lead read the diff and accepted it. Stacked in batch 20 by MERGE-20 with SWEEP-APP-4; not on main. Backend `wmt/FIX-82` `3609148` (from `wmt/SWEEP-APP-4` `e67ab47`); this record, the M19 test and the comment on mobile `wmt/FIX-82` (from `wmt/SWEEP-APP-4` `a458d455`). Order -82, free. No Fintava file touched, no route, DTO or schema changed.
 - **Found by:** the SWEEP-APP-4 check (lows 1 to 3; report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SWEEP-APP-4.md`).
 - **1. Row 168, `src/nuvion/tests/nuvion-opening.contract.spec.ts`:** the guard threw in `beforeAll`, but jest still ran `afterAll`, whose `nuvionWebhookEvent.deleteMany` for every `entities.*` event was not scoped to the spec. Now the database name is read from the server first, before anything starts; `beforeEach` and `afterAll` do nothing until that passed; the delete takes only the ids of the events the spec stored (`storedEvents`). Servers and env are not started before the check, so there is nothing else to close when it fails.
 - **Guard proof (scratch database `fix82_guardproof`, no "test" in the name, migrated, one `entities.updated` event seeded):** the old file (`e67ab47`) ran, threw its guard, and afterwards the row was gone (1 before, 0 after). The new file ran, threw its guard at once (`refuses to run on "fix82_guardproof"`), and the row was still there (1 before, 1 after). On a `fix82_wawu_hub_test` copy holding that same foreign event, the spec's dispatcher test passed and removed only the event it stored: the foreign row stayed. Both databases dropped.
@@ -28,7 +28,7 @@ As of 18 Oct 2026.
 - **3. `src/app/create.tsx` header comment:** the draft row is gone from it; it says the board draws none and Your shop opens from Me's draft tile and VF1.
 - **Checks:** backend tsc 0, eslint 0 on the spec, gates passed (0 fail, 128 warn, 88 accepted), baseline ok. Mobile tsc 0, eslint 0 on the two files, `entries.test.tsx` 3 of 3, `check_tasks --write` and `npm run tasks` exit 0 (356 tasks), mobile gates passed.
 - **Not done:** the whole nuvion-opening spec was not run (365 tests; it names Fintava tables), only the guard runs and its dispatcher test.
-- **Next:** an independent verifier; then the lead's batch.
+- **Next:** the batch 20 pull request (the lead).
 
 ## Read first
 
