@@ -415,6 +415,38 @@ describe('States', () => {
     share.mockRestore();
   });
 
+  // SWEEP-APP DV2-01 L1: on the web the share resolves with nothing when it went out.
+  it('counts a share when the phone answers with nothing at all (the web), and shows no problem', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    const share = jest.spyOn(Share, 'share').mockResolvedValue(undefined as never);
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull();
+    share.mockRestore();
+  });
+
+  // SWEEP-APP DV2-01 L4: three quick taps opened three sheets and sent three counts.
+  it('opens one sheet however fast Share is tapped, and counts one share', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    let finish: (value: { action: typeof Share.sharedAction }) => void = () => undefined;
+    const share = jest.spyOn(Share, 'share').mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect(share).toHaveBeenCalledTimes(1);
+    await rtl.act(async () => finish({ action: Share.sharedAction }));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    // Once the sheet is closed the next tap opens a new one.
+    share.mockResolvedValue({ action: Share.dismissedAction });
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect(share).toHaveBeenCalledTimes(2);
+    share.mockRestore();
+  });
+
   it('says so when the phone could not open its share sheet, and clears it on the next try', async () => {
     const share = jest.spyOn(Share, 'share').mockRejectedValueOnce(new Error('no sheet')).mockResolvedValueOnce({ action: Share.dismissedAction });
     await boot();
@@ -448,6 +480,20 @@ describe('the read count pill', () => {
     answers[`POST /tgif/${DATE}/read`] = [ok({ readers: 42, counted: true })];
     await boot();
     expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('42 read today');
+  });
+
+  // SWEEP-APP DV2-01 L3: the pill was the latest answer, so a lower later answer took it down.
+  it('never goes down while the reader is open: a later, lower count from the Hub leaves the pill where it was', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 10 })];
+    answers[`POST /tgif/${DATE}/read`] = [refused(500, 'Server error')];
+    await boot();
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('10 read today');
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 4 })];
+    await rtl.act(async () => {
+      await clients[clients.length - 1].refetchQueries({ predicate: (q) => JSON.stringify(q.queryKey).includes('stats') });
+    });
+    expect(calls(`GET /tgif/${DATE}/stats`)).toHaveLength(2);
+    expect(rtl.screen.getByTestId('tgif-readers-words').props.children).toBe('10 read today');
   });
 
   it('is not drawn while the Hub has given no count', async () => {

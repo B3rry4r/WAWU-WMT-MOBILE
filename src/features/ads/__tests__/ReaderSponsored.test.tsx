@@ -216,6 +216,19 @@ describe('H33 · the sponsored card in the reader', () => {
     expect(reported()).toEqual(['view', 'skip']);
   });
 
+  it('leaves the card out when its picture will not load: no bare dark card, the takeaway is the last of five (SWEEP-APP ADS-01 L5)', async () => {
+    const { onClose } = await boot();
+    await rtl.waitFor(() => expect(segments().max).toBe(6));
+    await toSponsored();
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
+    });
+    expect(rtl.screen.queryByTestId('sponsored-step')).toBeNull();
+    expect(rtl.screen.getByTestId('tgif-label')).toHaveTextContent('TAKEAWAY');
+    expect(segments()).toMatchObject({ now: 5, max: 5 });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('a tap on the words or the picture does not skip the card', async () => {
     await boot();
     await rtl.waitFor(() => expect(segments().max).toBe(6));

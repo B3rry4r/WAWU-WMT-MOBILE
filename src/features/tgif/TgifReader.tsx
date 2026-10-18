@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -161,7 +161,9 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   // The sponsored card joins the steps only while its place is still ahead: a card that arrives once the person is on the
   // takeaway is not put in front of them, and one that goes is not taken from under them.
   const [passedSlot, setPassedSlot] = useState(false);
-  const offer = onOpenEvent && ad && !passedSlot ? ad : null;
+  // A card whose picture will not load is left out of the steps too (SWEEP-APP row ADS-01 L5): no bare dark card to skip.
+  const [unloaded, setUnloaded] = useState<string | null>(null);
+  const offer = onOpenEvent && ad && !passedSlot && unloaded !== ad.artworkUrl ? ad : null;
   const steps = readerSteps(Boolean(offer));
   const [shareFailed, setShareFailed] = useState(false);
   // The scroll area's size once it has been laid out; until then the text is sized by its length alone.
@@ -182,7 +184,11 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   const said = Boolean(mine?.amenByMe);
   const count = mine && mine.amen > 0 ? compactCount(mine.amen) : undefined;
   // The Hub's count for the day, or the count its answer to this person's own read gave if that is higher (it includes them); none until one has come.
-  const readers = Math.max(stats.data?.readers ?? 0, marked ?? 0);
+  // The count only rises while the reader is open: a later answer that is lower (the read call failed, then a refetch) does not take the pill down (SWEEP-APP row DV2-01 L3).
+  const latestReaders = Math.max(stats.data?.readers ?? 0, marked ?? 0);
+  const [peakReaders, setPeakReaders] = useState(0);
+  if (latestReaders > peakReaders) setPeakReaders(latestReaders);
+  const readers = Math.max(latestReaders, peakReaders);
   const text = cardText(day, card);
   const size = viewport ? fitSize(card, text, wordRoom(card, viewport)) : wordSize(card, text);
   const onViewport = ({ nativeEvent }: LayoutChangeEvent) => {
@@ -208,19 +214,25 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   };
   const toggleAmen = () => amen.say({ card, on: !said });
   // Share opens the phone's own share sheet with the verse and its link (R-58 a); it counts once something has gone out.
+  // One sheet at a time: a second tap while a sheet is open opens nothing and sends no second count (SWEEP-APP row DV2-01 L4).
+  const sharing = useRef(false);
   const shareToday = async () => {
+    if (sharing.current) return;
+    sharing.current = true;
     setShareFailed(false);
     try {
       if ((await shareVerse(day)) === 'shared') counted.mutate();
     } catch {
       setShareFailed(true);
+    } finally {
+      sharing.current = false;
     }
   };
 
   return (
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
       <StatusBar style="light" />
-      {sponsored && offer ? <SponsoredBackdrop ad={offer} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
+      {sponsored && offer ? <SponsoredBackdrop ad={offer} onFail={() => setUnloaded(offer.artworkUrl)} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + space.sm, paddingHorizontal: layout.gutter + insets.left }]}>
         <Progress steps={steps.length} at={at} />
         <View style={styles.header}>

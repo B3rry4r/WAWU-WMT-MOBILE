@@ -178,6 +178,16 @@ describe('H1 and H36 · the ad card on Today', () => {
     expect(screen.queryByText(/keep TGIF free|sold from the/i)).toBeNull();
   });
 
+  it('draws nothing when the picture will not load, as for a campaign with no artwork (SWEEP-APP ADS-01 L5, DV2-01 L5)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent(screen.getByTestId('today-sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
+    });
+    expect(screen.queryByTestId('today-sponsored')).toBeNull();
+    expect(screen.queryByText('AD')).toBeNull();
+  });
+
   it('sits right after the money card and before the services', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());

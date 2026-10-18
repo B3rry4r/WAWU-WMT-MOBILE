@@ -1,4 +1,4 @@
-import { Share } from 'react-native';
+import { Share, type ShareAction } from 'react-native';
 
 import type { TgifDay } from './api/tgif';
 import { shareText } from './model';
@@ -14,6 +14,7 @@ export type VerseShare = 'shared' | 'dismissed';
  * sheet could not open, so the reader can say so.
  */
 export async function shareVerse(day: Pick<TgifDay, 'verse' | 'verseReference' | 'shareLink'>): Promise<VerseShare> {
-  const result = await Share.share({ message: shareText(day) }, { dialogTitle: "Share today's verse" });
-  return result.action === Share.dismissedAction ? 'dismissed' : 'shared';
+  // The web's Share resolves with nothing at all when a share went out, so the answer may be missing (SWEEP-APP row DV2-01 L1).
+  const result = (await Share.share({ message: shareText(day) }, { dialogTitle: "Share today's verse" })) as ShareAction | undefined;
+  return result?.action === Share.dismissedAction ? 'dismissed' : 'shared';
 }
