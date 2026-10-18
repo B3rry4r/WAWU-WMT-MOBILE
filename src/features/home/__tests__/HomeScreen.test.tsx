@@ -542,6 +542,31 @@ describe('H1 · the bell in Today\'s bar (HOME-18)', () => {
     expect((buttons.children as unknown as Kid[]).map((c) => c.props.testID ?? c.children[0].props.testID)).toEqual(['today-search', 'today-bell']);
   });
 
+  // SWEEP-APP-5 (HOME-18 L1): the dot's ring is part of the draw (8 across, ringed 2 in the card colour); a ring at 0 passed every test.
+  it('rings the dot 2 in the card colour, as the canvas draws it', async () => {
+    answers[T.counts] = [counts(1)];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    const { darkColors, lightColors } = require('@/theme/tokens.generated') as typeof import('@/theme/tokens.generated');
+    const ring = (flat(screen.getByTestId('today-bell-dot')).boxShadow as { color: string }[])[0];
+    expect(ring).toMatchObject({ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 2 });
+    expect([darkColors.surfaceCard, lightColors.surfaceCard]).toContain(ring.color);
+  });
+
+  // SWEEP-APP-5 (HOME-18 L1): Today's tab row is fitted to the room beside it (the 320 wide phone with the search and the bell). Dropping
+  // `fit` from Today's HomeTabs passed every test; the fit was proven only by the export. A narrow room now steps the row down.
+  it('fits the tab row to the room beside the buttons: a narrow room takes space from between the tabs', async () => {
+    const { tabFitSteps } = require('../HomeTabs') as typeof import('../HomeTabs');
+    const screen = await boot({ onSearch: jest.fn(), onOpenNotifications: jest.fn() });
+    const layout = (width: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height: 40 } } });
+    const gap = () => (flat(screen.getByTestId('home-tabs')) as { gap: number }).gap;
+    expect(gap()).toBe(tabFitSteps[0].gap);
+    await rtl.act(() => rtl.fireEvent(screen.getByTestId('home-tabs-room'), 'layout', layout(184)));
+    await rtl.act(() => rtl.fireEvent(screen.getByTestId('home-tabs'), 'layout', layout(223)));
+    expect(gap()).toBe(tabFitSteps[1].gap);
+    expect(tabFitSteps[1].gap).toBeLessThan(tabFitSteps[0].gap);
+  });
+
   it('has no dot at 0 unread, but the bell is still there and still opens Notifications', async () => {
     answers[T.counts] = [counts(0)];
     const onOpenNotifications = jest.fn();
