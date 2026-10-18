@@ -493,6 +493,12 @@ describe('the read count pill', () => {
       await clients[clients.length - 1].refetchQueries({ predicate: (q) => JSON.stringify(q.queryKey).includes('stats') });
     });
     expect(calls(`GET /tgif/${DATE}/stats`)).toHaveLength(2);
+    // The refetch's re-render lands a tick after the call returns: flush it, or this reads the old pill even without the fix.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const refetched = clients[clients.length - 1].getQueriesData<{ readers?: number }>({ predicate: (q) => JSON.stringify(q.queryKey).includes('stats') });
+    expect(refetched.some(([, data]) => data?.readers === 4)).toBe(true);
     expect(rtl.screen.getByTestId('tgif-readers-words').props.children).toBe('10 read today');
   });
 
