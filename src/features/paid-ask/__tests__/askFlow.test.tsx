@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { userEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 /*
@@ -43,6 +44,9 @@ const hub = {
   /** The wallet's record of the refunded question OLD_Q. */
   oldQuestion: null as null | Record<string, unknown>,
   threadReads: 0,
+  /** What GET /users/{id}/visitor-profile (the creator's terms) answers: 'ok', 'fail' (a 500) or 'drop' (the request is lost on the way). */
+  profile: 'ok' as 'ok' | 'fail' | 'drop',
+  profileReads: 0,
   /**
    * While a gate is set the Hub holds that answer back until the test opens it: `thread` is the paid thread, `terms` is the creator's
    * profile and the Hub's pause. The thread is read first and the terms after it (the pause only once the profile is here), so holding
@@ -150,7 +154,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return ok(hub.thread);
   }
   if (path === `/users/${CREATOR}/visitor-profile`) {
+    hub.profileReads += 1;
     if (hub.gate.terms) await hub.gate.terms;
+    if (hub.profile === 'drop') throw new TypeError('Network request failed');
+    if (hub.profile === 'fail') return json(500, { statusCode: 500, message: 'Something went wrong' });
     return ok({
       name: 'Chidi Eze',
       own: false,
@@ -224,6 +231,7 @@ async function boot(pay = wired()) {
   return { pay, onBack, client, refocus };
 }
 
+const within = rtl.within;
 const { clearAttempts } = require('@/features/feedpay/usePaymentFlow') as typeof import('@/features/feedpay/usePaymentFlow');
 
 rtl.configure({ asyncUtilTimeout: 6000 });
@@ -245,6 +253,8 @@ beforeEach(() => {
     payments: 0,
     oldQuestion: null,
     threadReads: 0,
+    profile: 'ok',
+    profileReads: 0,
     gate: { thread: null, terms: null },
   });
 });
@@ -379,6 +389,94 @@ describe('I5 · replied', () => {
     expect(rtl.screen.getByText("Chidi isn't taking paid messages right now")).toBeTruthy();
     expect(rtl.screen.queryByTestId('paid-composer-ask')).toBeNull();
     expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('This question is closed.');
+  });
+});
+
+describe('I5 · the creator\'s terms could not be read', () => {
+  const offer = 'Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.';
+
+  // Each cause by its real shape: the Hub answers 500, or the request is lost on the way.
+  it.each([
+    ['the Hub answers 500', 'fail'],
+    ['the request is dropped', 'drop'],
+  ] as const)('when %s: the thread stays readable, the card and the bar say so with Try again, and Try again reads the profile again and brings the offer', async (_cause, how) => {
+    hub.profile = how;
+    const { onBack } = await boot();
+    const screen = rtl.screen;
+    // The creator's profile is the only read that failed: the person still reads the thread, the creator's words and Back.
+    expect(await screen.findByText('Honestly, I priced by outcome, not hours.')).toBeTruthy();
+    const failed = await screen.findByTestId('paid-terms-error');
+    expect(within(failed).getByText("Couldn't check if you can ask")).toBeTruthy();
+    expect(within(failed).getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.getByTestId('paid-thread-sub').props.children).toBe('Replied in 2h 14m');
+    // No grey bar waits for good: not in the card, not in the bar. The card does not say "closed" or make an offer by guess either.
+    const card = screen.getByTestId('paid-card-a1');
+    expect(within(card).getByTestId('paid-card-a1-body').props.children).toBe("We couldn't check if you can ask a follow-up. Try again below.");
+    expect(within(card).queryByTestId('paid-card-a1-body-loading')).toBeNull();
+    expect(screen.queryByTestId('paid-composer-loading')).toBeNull();
+    expect(screen.queryByTestId('paid-composer-ask')).toBeNull();
+    expect(screen.queryByText('This question is closed.')).toBeNull();
+    expect(hub.profileReads).toBe(1);
+    await rtl.fireEvent.press(screen.getByTestId('paid-thread-back'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    // The Hub is back. Try again reads the profile again (a second read) and the offer appears where the error was.
+    hub.profile = 'ok';
+    await rtl.fireEvent.press(within(failed).getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
+    expect(hub.profileReads).toBe(2);
+    expect(within(screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe(offer);
+    expect(screen.queryByTestId('paid-terms-error')).toBeNull();
+    expect(screen.queryByTestId('paid-composer-failed')).toBeNull();
+  });
+
+  it('Try again while the Hub is still failing shows the loading bar while it reads, then the error again, and the next Try again can still succeed', async () => {
+    hub.profile = 'fail';
+    await boot();
+    const screen = rtl.screen;
+    await screen.findByTestId('paid-terms-error');
+    const open = hold('terms');
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByTestId('paid-composer-loading')).toBeTruthy();
+    expect(screen.queryByTestId('paid-terms-error')).toBeNull();
+    open();
+    await screen.findByTestId('paid-terms-error');
+    expect(hub.profileReads).toBe(2);
+    hub.profile = 'ok';
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
+    expect(hub.profileReads).toBe(3);
+  });
+
+  it('an empty thread whose profile failed says so too, and Try again brings the "Ask a question" button', async () => {
+    hub.thread = null;
+    hub.profile = 'fail';
+    await boot();
+    expect(await rtl.screen.findByTestId('paid-thread-empty')).toBeTruthy();
+    await rtl.screen.findByTestId('paid-terms-error');
+    expect(rtl.screen.queryByTestId('paid-composer-loading')).toBeNull();
+    hub.profile = 'ok';
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    expect(await rtl.screen.findByRole('button', { name: 'Ask a question · ₦1,500' })).toBeTruthy();
+  });
+
+  it('a question still waiting needs no terms: the locked bar stays and no error is drawn', async () => {
+    hub.thread = threadOf([waitingQ()]);
+    hub.profile = 'fail';
+    await boot();
+    await rtl.screen.findByTestId('paid-card-w1');
+    expect(await rtl.screen.findByTestId('paid-composer-locked')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('paid-terms-error')).toBeNull();
+  });
+
+  it('the loading line is as high as the offer (two lines of the card\'s leading), so the card does not grow when the terms arrive', async () => {
+    const open = hold('terms');
+    await boot();
+    await rtl.screen.findByTestId('paid-card-a1-body-loading');
+    const height = (node: { props: { style?: unknown } }) => (StyleSheet.flatten(node.props.style as never) as { height?: number }).height;
+    expect(height(rtl.screen.getByTestId('paid-card-a1-body-loading'))).toBeCloseTo(12.5 * 1.4 * 2, 5);
+    open();
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
   });
 });
 

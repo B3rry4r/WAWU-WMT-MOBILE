@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
+import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { useFocusRing } from '@/components/focusRing';
 import { font, radius, space, text as textStyles, useWawu } from '@/theme';
@@ -10,7 +11,10 @@ import { font, radius, space, text as textStyles, useWawu } from '@/theme';
 import type { StatusCard } from './model';
 
 /** design/_gen/inbox.js `heldCard`: an 18 corner on the tone's tint, 12 by 14 inside, an 18 mark 11 from the words; the title 14 / 600, the line 12.5 on a 1.4, 2 under it. */
-const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2, loadingWidth: '60%', loadingCorner: 8 } as const;
+const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2, loadingBar: 12, loadingLast: '60%', loadingCorner: 8 } as const;
+/** The offer is two lines of the body's leading ("Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window."): the loading line is as high, so the card does not grow when the terms arrive. */
+const bodyLeading = cardMetrics.body * cardMetrics.bodyLine;
+const offerLines = 2;
 
 const looks: Record<StatusCard['tone'], { tint: 'warningTint' | 'positiveTint'; ink: 'warning' | 'positive'; icon: IconName }> = {
   waiting: { tint: 'warningTint', ink: 'warning', icon: 'Clock' },
@@ -31,8 +35,15 @@ export function StatusCardView({ card, testID }: { card: StatusCard; testID?: st
           {card.title}
         </Text>
         {card.body === null ? (
-          // The line is not known yet (I5 before the creator's terms are here): a loading line, never "closed" or an offer by guess.
-          <Skeleton testID={testID ? `${testID}-body-loading` : undefined} width={cardMetrics.loadingWidth} height={cardMetrics.body * cardMetrics.bodyLine} radius={cardMetrics.loadingCorner} style={styles.bodyLoading} />
+          // The line is not known yet (I5 before the creator's terms are here): two loading lines, as high as the offer, never "closed" or an offer by guess.
+          <View testID={testID ? `${testID}-body-loading` : undefined} style={styles.bodyLoading}>
+            <View style={styles.loadingLine}>
+              <Skeleton height={cardMetrics.loadingBar} radius={cardMetrics.loadingCorner} />
+            </View>
+            <View style={styles.loadingLine}>
+              <Skeleton width={cardMetrics.loadingLast} height={cardMetrics.loadingBar} radius={cardMetrics.loadingCorner} />
+            </View>
+          </View>
         ) : (
           <Text variant="caption" tone="textSecondary" style={styles.body} testID={testID ? `${testID}-body` : undefined}>
             {card.body}
@@ -119,11 +130,21 @@ export function WaitingComposer() {
   );
 }
 
+/** The creator's terms could not be read (I5, I2): the shared error with Try again, in the composer's place. The thread above stays as it was. */
+export function FailedComposer({ title, message, onRetry }: { title: string; message: string; onRetry: () => void }) {
+  return (
+    <Bar testID="paid-composer-failed">
+      <ErrorState testID="paid-terms-error" title={title} message={message} onRetry={onRetry} />
+    </Bar>
+  );
+}
+
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'flex-start', gap: cardMetrics.between, borderRadius: cardMetrics.corner, paddingVertical: cardMetrics.padV, paddingHorizontal: cardMetrics.padH, alignSelf: 'stretch' },
   words: { flex: 1, minWidth: 0 },
   body: { fontSize: cardMetrics.body, lineHeight: cardMetrics.body * cardMetrics.bodyLine, marginTop: cardMetrics.bodyTop },
-  bodyLoading: { marginTop: cardMetrics.bodyTop },
+  bodyLoading: { marginTop: cardMetrics.bodyTop, height: bodyLeading * offerLines },
+  loadingLine: { height: bodyLeading, justifyContent: 'center' },
   bar: { paddingTop: composerMetrics.padTop, paddingHorizontal: composerMetrics.padH, borderTopWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: composerMetrics.between },
   field: {

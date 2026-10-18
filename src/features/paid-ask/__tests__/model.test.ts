@@ -132,8 +132,13 @@ describe('I4, I5 and I7: the cards', () => {
   it('says nothing about asking again until the creator\'s terms are known: no body, never "closed"', () => {
     expect(answeredCard('Chidi Eze', 'pending')).toEqual({ tone: 'answered', title: "Chidi answered, so they've been paid", body: null });
   });
-  it('turns the creator\'s terms into what an answer may say: not known yet, closed, or the offer', () => {
+  it('when the creator\'s terms could not be read the card says so in words, with a body of its own: not loading for good, never "closed", no offer', () => {
+    expect(answeredCard('Chidi Eze', 'failed')).toEqual({ tone: 'answered', title: "Chidi answered, so they've been paid", body: "We couldn't check if you can ask a follow-up. Try again below." });
+  });
+  it('turns the creator\'s terms into what an answer may say: not known yet, not readable, closed, or the offer', () => {
     expect(followUpOf(null)).toBe('pending');
+    expect(followUpOf(null, true)).toBe('failed');
+    expect(followUpOf({ kind: 'off', why: 'switched_off', pausedUntil: null }, true)).toBeNull();
     expect(followUpOf({ kind: 'off', why: 'switched_off', pausedUntil: null })).toBeNull();
     expect(followUpOf({ kind: 'off', why: 'paused', pausedUntil: '2026-10-24T00:00:00.000Z' })).toBeNull();
     expect(followUpOf({ kind: 'on', priceKobo: 150000, windowHours: 24 })).toEqual({ priceKobo: 150000, windowHours: 24 });
