@@ -1,4 +1,4 @@
-import { api } from '@/api/client';
+import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
@@ -82,6 +82,7 @@ export function sendTip(input: SendTipInput): Promise<PayOutcome<Tip>> {
           expectedTotalKobo: input.expectedTotalKobo,
           quoteToken: input.quoteToken,
         },
+        fetch: resendsUnderKey,
       }),
     readTip,
     'There is not enough in your wallet for this tip.',

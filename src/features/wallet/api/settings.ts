@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -133,6 +133,7 @@ export async function changePin(input: { current: string; newPin: string; newPin
     api.PUT('/api/hub/money/pin', {
       params: { header: { 'X-Transaction-Pin': input.current, 'Idempotency-Key': input.key } },
       body: { newPin: input.newPin, newPinConfirmation: input.newPinConfirmation },
+      fetch: resendsUnderKey,
     }),
   )) as unknown as Envelope<PinState>;
   const state = readPin(body?.data);
@@ -169,7 +170,7 @@ export async function startPinReset(): Promise<PinResetStarted> {
 export async function confirmPinReset(input: { resetId: string; code: string; newPin: string; newPinConfirmation: string; key: string }): Promise<PinSummary> {
   const { key, ...request } = input;
   const body = (await unwrap(
-    api.POST('/api/hub/money/pin/reset/confirm', { params: { header: { 'Idempotency-Key': key } }, body: request }),
+    api.POST('/api/hub/money/pin/reset/confirm', { params: { header: { 'Idempotency-Key': key } }, body: request, fetch: resendsUnderKey }),
   )) as unknown as Envelope<PinState>;
   const state = readPin(body?.data);
   if (!state.isSet) throw unreadable('PIN');

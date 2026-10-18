@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { fetchFeeQuote, readQuote, readTransfer, type FeeQuote, type Transfer } from '@/features/send/api';
 import { HTTP_CREATED, filled, reasonOf, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
@@ -105,6 +105,7 @@ export async function payMoneyRequest(input: PayRequestInput): Promise<PayReques
     result = await api.POST('/api/hub/chats/{chatId}/money-requests/{requestId}/pay', {
       params: { path: { chatId: input.chatId, requestId: input.requestId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { expectedTotalKobo: input.quote.totalKobo, quoteToken: input.quote.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

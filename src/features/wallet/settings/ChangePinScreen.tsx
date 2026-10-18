@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
+import { WRITE_TIMEOUT_MS } from '@/api/client';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { lockedLine } from '@/components/pin-sheet/format';
@@ -177,6 +178,7 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
     try {
       let unanswered: Refusal | null = null;
       for (let sends = 0; sends < REPEATS; sends += 1) {
+        const startedAt = Date.now();
         try {
           await changePin(held);
           if (!alive.current) return;
@@ -192,6 +194,8 @@ export function ChangePinScreen({ onBack, onChanged, onForgotPin, onNoPin, onNoW
           unanswered = refusal;
           // The server is still on the first one: it will answer it. Do not send a third.
           if (refusal.kind === 'in_progress') break;
+          // The Hub gave no answer for the whole wait (FIX-87): another send at once would only wait as long again. Try again is the person's.
+          if (Date.now() - startedAt >= WRITE_TIMEOUT_MS) break;
         }
       }
       setBusy('unsent');

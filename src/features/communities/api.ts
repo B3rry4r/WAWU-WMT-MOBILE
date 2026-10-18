@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components, paths } from '@/api/schema.generated';
 import { presign } from '@/features/profile-edit/api';
@@ -153,6 +153,7 @@ export async function sendMessage(id: string, body: MessageBody, key: string): P
       api.POST('/api/hub/communities/{id}/messages', {
         params: { path: { id }, header: { 'Idempotency-Key': key } },
         body: { ...(body.text ? { text: body.text } : {}), ...(body.imageUrl ? { imageUrl: body.imageUrl } : {}) },
+        fetch: resendsUnderKey,
       }),
     ),
     'message',

@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -80,6 +80,7 @@ export async function postReply(messageId: string, text: string, key: string): P
       api.POST('/api/hub/paid-dm/questions/{messageId}/replies', {
         params: { path: { messageId }, header: { 'Idempotency-Key': key } },
         body: { text },
+        fetch: resendsUnderKey,
       }),
     ),
     'answer',

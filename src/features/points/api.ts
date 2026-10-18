@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
@@ -183,6 +183,7 @@ export async function convertPoints(input: ConvertInput): Promise<ConvertOutcome
     result = await api.POST('/api/hub/points/convert', {
       params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
       body: { points: input.points, quoteToken: input.quoteToken },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };

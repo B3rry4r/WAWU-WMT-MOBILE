@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
@@ -87,7 +87,7 @@ export async function startVoiceover(input: StartInput): Promise<StartOutcome> {
   const { key, ...body } = input;
   let result;
   try {
-    result = await api.POST('/api/hub/ai-tools/voiceover/jobs', { params: { header: { 'Idempotency-Key': key } }, body });
+    result = await api.POST('/api/hub/ai-tools/voiceover/jobs', { params: { header: { 'Idempotency-Key': key } }, body, fetch: resendsUnderKey });
   } catch {
     return { kind: 'unanswered' };
   }

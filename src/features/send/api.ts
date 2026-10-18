@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
@@ -209,6 +209,7 @@ export async function sendToWawuUser(input: SendInput): Promise<SendOutcome> {
         quoteToken: input.quote.quoteToken,
         ...(input.note.trim() ? { note: input.note.trim() } : {}),
       },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };
@@ -250,6 +251,7 @@ export async function sendToBankAccount(input: BankSendInput): Promise<SendOutco
         ...(input.nameToken ? { nameToken: input.nameToken } : {}),
         ...(input.note.trim() ? { note: input.note.trim() } : {}),
       },
+      fetch: resendsUnderKey,
     });
   } catch {
     return { kind: 'unanswered' };
