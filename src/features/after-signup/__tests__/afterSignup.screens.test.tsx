@@ -45,7 +45,7 @@ const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { CreatorGate } = require('@/features/pro-listing/ApplyScreen') as typeof import('@/features/pro-listing/ApplyScreen');
 const { CreatorSetupScreen } = require('../CreatorSetupScreen') as typeof import('../CreatorSetupScreen');
 const { FollowScreen } = require('../FollowScreen') as typeof import('../FollowScreen');
-const { InterestsScreen } = require('../InterestsScreen') as typeof import('../InterestsScreen');
+const { InterestsScreen, interestsHint } = require('../InterestsScreen') as typeof import('../InterestsScreen');
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const calls = (method: string, path: string) => sent.filter((s) => s.method === method && s.path === path);
@@ -122,7 +122,7 @@ describe('A12 What are you into', () => {
     const onContinue = jest.fn(async () => undefined);
     await render(frame(<InterestsScreen step="1 of 2" onContinue={onContinue} />));
     await screen.findByTestId('interest-music_audio');
-    expect(screen.getByText('Pick 3 or more. It tunes your feed.')).toBeTruthy();
+    expect(screen.getByText('Pick three or more. It tunes your feed.')).toBeTruthy();
     expect(screen.getByText('Gaming & Esports')).toBeTruthy();
     expect(screen.getByTestId('interests-continue').props.accessibilityState?.disabled).toBe(true);
     await fireEvent.press(screen.getByTestId('interest-technology'));
@@ -132,6 +132,13 @@ describe('A12 What are you into', () => {
     expect(screen.getByTestId('interests-continue').props.accessibilityState?.disabled).toBeFalsy();
     await fireEvent.press(screen.getByTestId('interests-continue'));
     await waitFor(() => expect(onContinue).toHaveBeenCalledWith(['music_audio', 'film_video', 'technology']));
+  });
+
+  it("spells the Hub's minimum out in the board's words, up to ten, and in digits above that", () => {
+    expect(interestsHint(3)).toBe('Pick three or more. It tunes your feed.');
+    expect(interestsHint(1)).toBe('Pick one or more. It tunes your feed.');
+    expect(interestsHint(10)).toBe('Pick ten or more. It tunes your feed.');
+    expect(interestsHint(11)).toBe('Pick 11 or more. It tunes your feed.');
   });
 
   it('shows the picks saved before, an error with Try again, and a line when Continue fails', async () => {

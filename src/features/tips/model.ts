@@ -23,9 +23,14 @@ export const WALLET_NAME = 'Naira wallet';
 /** The most digits a typed amount takes: 10 digits is more naira than the Hub's own ceiling, which it checks and answers in words. */
 const MAX_DIGITS = 10;
 
-/** What a person typed in "Other amount", as digits only (a comma or a space is ignored). */
+/**
+ * What a person typed or pasted in "Other amount", as whole-naira digits only. The field is a number pad, so the only way a "." gets in
+ * is a paste, and a tip takes no kobo: everything from the first "." on is dropped, so "12.50" and "12.5" are 12 (never 1250 or 125) and
+ * "0.99" is nothing to send. A comma or a space is a thousands separator and is ignored, as before: "1,250" is 1250.
+ */
 export function cleanAmountText(text: string): string {
-  return text.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, MAX_DIGITS);
+  const wholeNaira = text.split('.')[0] ?? '';
+  return wholeNaira.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, MAX_DIGITS);
 }
 
 /** The typed amount in kobo, or null when nothing usable is typed. A tip is a whole number of naira (the Hub's quote takes no kobo). */
