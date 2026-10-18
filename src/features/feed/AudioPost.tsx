@@ -15,11 +15,11 @@ const WAVE_WIDTH = WAVEFORM_BARS * metrics.waveBar + (WAVEFORM_BARS - 1) * metri
 
 /**
  * How much of the canvas's waveform a phone this wide has room for. It is centred under the square, and the rail's box starts
- * `railRight` + the avatar in from the right edge, so a phone under about 360 wide would draw its last bars under the rail, where the
- * rail takes the tap (zIndex 7 over the middle's 3): the same room is kept on both sides and the bars are drawn smaller, never fewer
- * (FIX-68 N1). Phones from 360 up draw it as the canvas does.
+ * `railRight` + the avatar in from the right edge, and the avatar's ring (drawn outside that box) takes the tap too, so a phone under about
+ * 364 wide would draw its last bars under the rail, where the rail takes the tap (zIndex 7 over the middle's 3): the same room is kept on
+ * both sides and the bars are drawn smaller, never fewer (FIX-68 N1, SWEEP-APP-6b L4). Phones from 364 up draw it as the canvas does.
  */
-const waveFit = (width: number) => Math.max(0, Math.min(1, (width - 2 * (metrics.railRight + metrics.avatar)) / WAVE_WIDTH));
+const waveFit = (width: number) => Math.max(0, Math.min(1, (width - 2 * (metrics.railRight + metrics.avatar + metrics.avatarRing)) / WAVE_WIDTH));
 
 /** Bar heights while the file has not been read (or cannot be, on a phone build today): level. */
 const level = Array.from({ length: WAVEFORM_BARS }, () => 0.5);
