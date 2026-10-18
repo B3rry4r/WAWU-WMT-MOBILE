@@ -33,7 +33,6 @@ export default function CreateRoute() {
       onEvent={() => router.push('/events/host')}
       onCommunity={() => router.push('/community/new')}
       onService={() => void listServicesTarget(queryClient).then((href) => router.push(href))}
-      onShop={() => router.push('/shop')}
       onOpenLibrary={() => router.push('/library')}
       onGetVerified={() => router.push('/tiers')}
       onProductsFull={() => setFull(true)}

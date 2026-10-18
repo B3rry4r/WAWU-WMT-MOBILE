@@ -10,10 +10,12 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 let drafts: unknown[] = [];
+let draftReads = 0;
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname;
   if (request.method === 'GET' && path === '/api/hub/product-drafts') {
+    draftReads += 1;
     return new Response(JSON.stringify({ statusCode: 200, message: 'OK', data: drafts }), { status: 200, headers: { 'content-type': 'application/json' } });
   }
   return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
@@ -31,7 +33,10 @@ const frame = (children: React.ReactNode) => (
 
 const tile = (id: string, draft: boolean) => ({ id, title: id, still: null, kind: 'pdf' as const, locked: false, caption: id, spoken: draft ? `${id}, draft` : id, draft });
 
-beforeEach(() => jest.useFakeTimers({ doNotFake: ['queueMicrotask'] }));
+beforeEach(() => {
+  draftReads = 0;
+  jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
+});
 afterEach(() => jest.useRealTimers());
 
 describe('the entries VERIFY-01 adds', () => {
@@ -48,17 +53,14 @@ describe('the entries VERIFY-01 adds', () => {
     expect(screen.getByTestId('me-tile-d1').props.onPress).toBeUndefined();
   });
 
-  it('M19: the draft row says how many drafts the Hub holds and opens Your shop', async () => {
+  // SWEEP-APP-4: the 16 Oct board's M19 draws no "Your shop" row, so Create has none; the shop opens from M1's draft tile and VF1.
+  it('M19: Create draws no Your shop row, as the board has none, and does not read the drafts', async () => {
     drafts = [{ id: 'a' }, { id: 'b' }];
-    const onShop = jest.fn();
-    await render(frame(<CreateScreen onClose={jest.fn()} onContent={jest.fn()} onEvent={jest.fn()} onService={jest.fn()} onShop={onShop} />));
-    expect(await screen.findByText(/2 drafts · drafts are free/)).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('create-shop-row'));
-    expect(onShop).toHaveBeenCalledTimes(1);
-  });
-
-  it('M19: without the entry there is no draft row', async () => {
     await render(frame(<CreateScreen onClose={jest.fn()} onContent={jest.fn()} onEvent={jest.fn()} onService={jest.fn()} />));
+    expect(await screen.findByText('Content')).toBeTruthy();
     expect(screen.queryByTestId('create-shop-row')).toBeNull();
+    expect(screen.queryByText('Your shop')).toBeNull();
+    expect(screen.queryByText(/drafts are free/)).toBeNull();
+    expect(draftReads).toBe(0);
   });
 });
