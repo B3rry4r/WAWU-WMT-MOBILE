@@ -115,8 +115,6 @@ function message(text: string | null, by: string = 'u2', over: Partial<Community
     text,
     sentAt: new Date(Date.now() - (1000 - counter) * 1000).toISOString(),
     communityId: ROOM,
-    videoUrl: null,
-    voiceUrl: null,
     costInCredits: by === HOST ? 0 : 1,
     sender: person(by, names[by] ?? 'Someone'),
     ...over,
