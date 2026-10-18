@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 308.**
+**Launch tasks done: 176 of 310.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 130 | 0 | 0 | 0 |
+| verifying | 132 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-79](../tasks/FIX-79.md) Tests that fail by timing or by date: the paid thread's answer card, and FIX-78's end dates at New Year (You)
+- [FIX-78](../tasks/FIX-78.md) CHECK-1b's new findings: an end date a year away shows its year, the payout account says it must be in your own name (You)
 - [FIX-73](../tasks/FIX-73.md) A pasted tip amount keeps whole naira, and A12 says Pick three or more (You)
 - [FIX-71](../tasks/FIX-71.md) A community message's photo, video and voice note still load after a week (You)
 - [FIX-69](../tasks/FIX-69.md) The school places take their locks in one order, and the release sweep logs why it failed (You)

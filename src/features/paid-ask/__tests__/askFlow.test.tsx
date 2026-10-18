@@ -43,6 +43,12 @@ const hub = {
   /** The wallet's record of the refunded question OLD_Q. */
   oldQuestion: null as null | Record<string, unknown>,
   threadReads: 0,
+  /**
+   * While a gate is set the Hub holds that answer back until the test opens it: `thread` is the paid thread, `terms` is the creator's
+   * profile and the Hub's pause. The thread is read first and the terms after it (the pause only once the profile is here), so holding
+   * the terms shows the screen as a slow phone does: the thread, and not yet the creator's terms. Holding the thread shows the loading state.
+   */
+  gate: { thread: null as null | Promise<void>, terms: null as null | Promise<void> },
 };
 
 const person = { wawuUserId: CREATOR, displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, tick: 'creator' };
@@ -138,11 +144,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const method = request.method;
   if (path === `/paid-dm/threads/${CREATOR}`) {
     hub.threadReads += 1;
+    if (hub.gate.thread) await hub.gate.thread;
     if (hub.thread === 'fail') return json(500, { statusCode: 500, message: 'Something went wrong' });
     if (hub.thread === null) return json(404, { statusCode: 404, message: 'No paid questions with this person', data: null });
     return ok(hub.thread);
   }
   if (path === `/users/${CREATOR}/visitor-profile`) {
+    if (hub.gate.terms) await hub.gate.terms;
     return ok({
       name: 'Chidi Eze',
       own: false,
@@ -152,7 +160,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       listings: [],
     });
   }
-  if (path === `/paid-dm/creators/${CREATOR}/availability`) return ok({ creatorWawuId: CREATOR, paused: hub.paused, pausedUntil: hub.paused ? '2026-10-24T00:00:00.000Z' : null });
+  if (path === `/paid-dm/creators/${CREATOR}/availability`) {
+    if (hub.gate.terms) await hub.gate.terms;
+    return ok({ creatorWawuId: CREATOR, paused: hub.paused, pausedUntil: hub.paused ? '2026-10-24T00:00:00.000Z' : null });
+  }
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
   if (path === `/dm/${CREATOR}/send/wallet` && method === 'POST') {
     const body = (await request.json()) as { text: string };
@@ -234,6 +245,7 @@ beforeEach(() => {
     payments: 0,
     oldQuestion: null,
     threadReads: 0,
+    gate: { thread: null, terms: null },
   });
 });
 
@@ -243,6 +255,15 @@ afterEach(async () => {
   });
   clients.splice(0).forEach((c) => c.clear());
 });
+
+/** Holds one of the Hub's answers (the thread, or the creator's terms) until the returned function is called. */
+function hold(what: 'thread' | 'terms'): () => void {
+  let open = () => {};
+  hub.gate[what] = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return open;
+}
 
 async function enterPin(pin: string) {
   const user = userEvent.setup();
@@ -300,10 +321,55 @@ describe('I5 · replied', () => {
     expect(await rtl.screen.findByText('Honestly, I priced by outcome, not hours.')).toBeTruthy();
     expect(rtl.screen.getByText("Send me your current rate card and I'll tell you where it's soft.")).toBeTruthy();
     expect(rtl.screen.getByTestId('paid-thread-sub').props.children).toBe('Replied in 2h 14m');
+    // The offer comes from the creator's terms, which are read after the thread: wait for them, then read the card.
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
     const card = rtl.screen.getByTestId('paid-card-a1');
     expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered, so they've been paid");
     expect(rtl.within(card).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.');
     expect(rtl.screen.getByRole('button', { name: 'Ask a follow-up · ₦1,500' })).toBeTruthy();
+  });
+
+  it('until the creator\'s terms are here the newest answer says nothing about asking again, never "closed", and then gives the offer', async () => {
+    const open = hold('terms');
+    await boot();
+    expect(await rtl.screen.findByText('Honestly, I priced by outcome, not hours.')).toBeTruthy();
+    const card = rtl.screen.getByTestId('paid-card-a1');
+    expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered, so they've been paid");
+    expect(rtl.within(card).getByTestId('paid-card-a1-body-loading')).toBeTruthy();
+    expect(rtl.within(card).queryByTestId('paid-card-a1-body')).toBeNull();
+    expect(rtl.screen.queryByText('This question is closed.')).toBeNull();
+    expect(rtl.screen.getByTestId('paid-composer-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('paid-composer-ask')).toBeNull();
+    open();
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.');
+    expect(rtl.screen.queryByTestId('paid-card-a1-body-loading')).toBeNull();
+  });
+
+  it('a creator who turns out not to take paid messages gets "closed" only once the Hub has said so', async () => {
+    hub.paused = true;
+    const open = hold('terms');
+    await boot();
+    await rtl.screen.findByTestId('paid-card-a1');
+    expect(rtl.screen.getByTestId('paid-card-a1-body-loading')).toBeTruthy();
+    expect(rtl.screen.queryByText('This question is closed.')).toBeNull();
+    open();
+    await rtl.screen.findByTestId('paid-composer-closed');
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('This question is closed.');
+  });
+
+  it('an older answer is closed at once, and only the newest waits for the terms', async () => {
+    const older = { ...answeredQ(), id: 'a0', sentAt: iso(-30 * HOUR), deadlineAt: iso(-6 * HOUR), respondedAt: iso(-28 * HOUR) };
+    hub.thread = threadOf([answeredQ(), older]);
+    const open = hold('terms');
+    await boot();
+    await rtl.screen.findByTestId('paid-card-a1');
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a0')).getByTestId('paid-card-a0-body').props.children).toBe('This question is closed.');
+    expect(rtl.screen.getByTestId('paid-card-a1-body-loading')).toBeTruthy();
+    open();
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toMatch(/^Ask a follow-up for ₦1,500\./);
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a0')).getByTestId('paid-card-a0-body').props.children).toBe('This question is closed.');
   });
 
   it('draws no follow-up when the Hub says the creator is not taking paid messages, and says so in place of the composer (I8)', async () => {
@@ -579,8 +645,8 @@ describe('states', () => {
     hub.thread = null;
     await boot();
     expect(await rtl.screen.findByTestId('paid-thread-empty')).toBeTruthy();
-    // A first question is not a follow-up (S3 round 2, F5).
-    expect(rtl.screen.getByRole('button', { name: 'Ask a question · ₦1,500' })).toBeTruthy();
+    // A first question is not a follow-up (S3 round 2, F5). The button comes from the creator's terms, read after the thread: wait for it.
+    expect(await rtl.screen.findByRole('button', { name: 'Ask a question · ₦1,500' })).toBeTruthy();
     expect(rtl.screen.queryByRole('button', { name: /follow-up/ })).toBeNull();
   });
 
@@ -595,8 +661,12 @@ describe('states', () => {
   });
 
   it('shows the loading state before the Hub answers', async () => {
+    // The Hub is held, so the loading state is what the screen shows however fast the stand-in would have answered.
+    const open = hold('thread');
     await boot();
     expect(rtl.screen.getByTestId('paid-thread-loading')).toBeTruthy();
+    open();
     await rtl.screen.findByTestId('paid-card-a1');
+    expect(rtl.screen.queryByTestId('paid-thread-loading')).toBeNull();
   });
 });

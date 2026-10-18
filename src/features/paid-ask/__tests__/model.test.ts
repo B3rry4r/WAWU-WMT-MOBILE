@@ -5,6 +5,7 @@ import {
   askTerms,
   composerLabel,
   deadlineWords,
+  followUpOf,
   headerLine,
   heldLine,
   isWaiting,
@@ -127,6 +128,15 @@ describe('I4, I5 and I7: the cards', () => {
     expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 48 }).body).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 2-day window.');
     expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 1 }).body).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 1-hour window.');
     expect(answeredCard('Chidi Eze', null).body).toBe('This question is closed.');
+  });
+  it('says nothing about asking again until the creator\'s terms are known: no body, never "closed"', () => {
+    expect(answeredCard('Chidi Eze', 'pending')).toEqual({ tone: 'answered', title: "Chidi answered, so they've been paid", body: null });
+  });
+  it('turns the creator\'s terms into what an answer may say: not known yet, closed, or the offer', () => {
+    expect(followUpOf(null)).toBe('pending');
+    expect(followUpOf({ kind: 'off', why: 'switched_off', pausedUntil: null })).toBeNull();
+    expect(followUpOf({ kind: 'off', why: 'paused', pausedUntil: '2026-10-24T00:00:00.000Z' })).toBeNull();
+    expect(followUpOf({ kind: 'on', priceKobo: 150000, windowHours: 24 })).toEqual({ priceKobo: 150000, windowHours: 24 });
   });
   it('writes the window as a describing word the way the board does: 24-hour, 1-hour, 2-day', () => {
     expect(windowAdjective(24)).toBe('24-hour');

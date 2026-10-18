@@ -23,7 +23,7 @@ import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchQuestion, fetchThread, questionKey, threadKey, type QuestionView, type ThreadDetail } from './api';
 import { AskSheets } from './AskSheets';
-import { answeredCard, composerLabel, headerLine, isWaiting, offTitle, refundedCard, threadEntries, waitingCard, whoOf, type AskTerms } from './model';
+import { answeredCard, composerLabel, followUpOf, headerLine, isWaiting, offTitle, refundedCard, threadEntries, waitingCard, whoOf, type AskTerms } from './model';
 import { AskComposer, ClosedComposer, LockedComposer, StatusCardView, WaitingComposer } from './parts';
 import { useAsk } from './useAsk';
 import { useAskTerms } from './useAskTerms';
@@ -166,7 +166,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
             entry.status === 'awaiting_response'
               ? waitingCard(q, name, now)
               : entry.status === 'responded'
-                ? answeredCard(name, entry.last && terms?.kind === 'on' ? { priceKobo: terms.priceKobo, windowHours: terms.windowHours } : null)
+                ? answeredCard(name, entry.last ? followUpOf(terms) : null)
                 : refundedCard(q, name, recordOf(q.id), now);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}

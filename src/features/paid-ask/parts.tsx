@@ -10,7 +10,7 @@ import { font, radius, space, text as textStyles, useWawu } from '@/theme';
 import type { StatusCard } from './model';
 
 /** design/_gen/inbox.js `heldCard`: an 18 corner on the tone's tint, 12 by 14 inside, an 18 mark 11 from the words; the title 14 / 600, the line 12.5 on a 1.4, 2 under it. */
-const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2 } as const;
+const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, mark: 18, title: 14, body: 12.5, bodyLine: 1.4, bodyTop: 2, loadingWidth: '60%', loadingCorner: 8 } as const;
 
 const looks: Record<StatusCard['tone'], { tint: 'warningTint' | 'positiveTint'; ink: 'warning' | 'positive'; icon: IconName }> = {
   waiting: { tint: 'warningTint', ink: 'warning', icon: 'Clock' },
@@ -30,9 +30,14 @@ export function StatusCardView({ card, testID }: { card: StatusCard; testID?: st
         <Text variant="body" style={[font(600), { fontSize: cardMetrics.title }]} testID={testID ? `${testID}-title` : undefined}>
           {card.title}
         </Text>
-        <Text variant="caption" tone="textSecondary" style={styles.body} testID={testID ? `${testID}-body` : undefined}>
-          {card.body}
-        </Text>
+        {card.body === null ? (
+          // The line is not known yet (I5 before the creator's terms are here): a loading line, never "closed" or an offer by guess.
+          <Skeleton testID={testID ? `${testID}-body-loading` : undefined} width={cardMetrics.loadingWidth} height={cardMetrics.body * cardMetrics.bodyLine} radius={cardMetrics.loadingCorner} style={styles.bodyLoading} />
+        ) : (
+          <Text variant="caption" tone="textSecondary" style={styles.body} testID={testID ? `${testID}-body` : undefined}>
+            {card.body}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -118,6 +123,7 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'flex-start', gap: cardMetrics.between, borderRadius: cardMetrics.corner, paddingVertical: cardMetrics.padV, paddingHorizontal: cardMetrics.padH, alignSelf: 'stretch' },
   words: { flex: 1, minWidth: 0 },
   body: { fontSize: cardMetrics.body, lineHeight: cardMetrics.body * cardMetrics.bodyLine, marginTop: cardMetrics.bodyTop },
+  bodyLoading: { marginTop: cardMetrics.bodyTop },
   bar: { paddingTop: composerMetrics.padTop, paddingHorizontal: composerMetrics.padH, borderTopWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: composerMetrics.between },
   field: {
