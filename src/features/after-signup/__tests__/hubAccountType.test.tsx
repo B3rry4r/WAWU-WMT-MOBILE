@@ -73,6 +73,51 @@ describe('the account type reaches the Hub right after sign-up (G-17)', () => {
     expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
   });
 
+  describe('FIX-68 F-4: a finished sign-up writes only when the Hub does not hold the type already', () => {
+    const done = (type: 'user' | 'creator') => progress({ step: 'done', inSequence: true, accountType: type, steps: ['email', 'creator_setup', 'interests', 'follows'] });
+    const mine = (type: 'user' | 'creator' | null) => ok({ wawuUserId: '00000000-0000-4000-8000-000000000001', accountType: type });
+
+    it('a Hub that already holds the type is not written to on any start', async () => {
+      answers['GET /auth/signup/progress'] = done('creator');
+      answers['GET /api/hub/users/me'] = mine('creator');
+      await act(async () => refreshSignupGate());
+      resetSignupGate();
+      await act(async () => refreshSignupGate());
+      expect(signupGateState().phase).toBe('ready');
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
+    });
+
+    it('a person who picked user and became a creator since is not written back to user', async () => {
+      answers['GET /auth/signup/progress'] = done('user');
+      answers['GET /api/hub/users/me'] = mine('creator');
+      await act(async () => refreshSignupGate());
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
+    });
+
+    it('a Hub that never got the type (the copy failed all through the steps) is written to once, and not again', async () => {
+      answers['GET /auth/signup/progress'] = done('creator');
+      answers['GET /api/hub/users/me'] = mine(null);
+      answers['PUT /api/hub/users/me/account-type'] = ok({ accountType: 'creator' });
+      await act(async () => refreshSignupGate());
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(1);
+      expect(calls('PUT', '/api/hub/users/me/account-type')[0].body).toEqual({ accountType: 'creator' });
+      await act(async () => refreshSignupGate());
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(1);
+    });
+
+    it('a Hub that cannot be read sends nothing and still opens the app; the next start looks again', async () => {
+      answers['GET /auth/signup/progress'] = done('creator');
+      answers['GET /api/hub/users/me'] = 'offline';
+      await act(async () => refreshSignupGate());
+      expect(signupGateState().phase).toBe('ready');
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
+      answers['GET /api/hub/users/me'] = mine('creator');
+      await act(async () => refreshSignupGate());
+      expect(calls('GET', '/api/hub/users/me')).toHaveLength(2);
+      expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
+    });
+  });
+
   it('the bar shows where a step stands among the steps WAWU ID lists after the email, and nothing when it is alone', () => {
     const user = { step: 'interests', inSequence: true, accountType: 'user', emailProven: true, steps: ['email', 'interests', 'follows'] } as never;
     expect(stepLabel(user, 'interests')).toBe('1 of 2');

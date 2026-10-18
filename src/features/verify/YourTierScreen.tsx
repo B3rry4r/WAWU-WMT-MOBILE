@@ -9,7 +9,7 @@ import { Icon } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { formatPointsCount } from '@/components/PointsFigure';
 import { Skeleton } from '@/components/Skeleton';
-import { ErrorState } from '@/components/StateViews';
+import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TierBadge } from '@/components/TierBadge';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
@@ -95,7 +95,16 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
       </View>
     );
   } else if (!held) {
-    body = <ErrorState testID="your-tier-none" icon="BadgeCheck" title="You have no tier yet" message="Make it official to publish, upload files and unlock your points." onRetry={onSeeTiers} />;
+    // VF14 draws active, ending and ended, never "no tier" (lead default, G-FIX-68-1): a plain state, not an error, with a button that says what it does.
+    body = (
+      <EmptyState
+        testID="your-tier-none"
+        icon="BadgeCheck"
+        title="You have no tier yet"
+        message="Make it official to publish, upload files and unlock your points."
+        action={{ label: 'See tiers', onPress: onSeeTiers }}
+      />
+    );
   } else {
     const sold = plans.data.tiers.find((t) => t.id === held.id) ?? null;
     const canUpgrade = higherTiers(plans.data.tiers, held.id).length > 0;

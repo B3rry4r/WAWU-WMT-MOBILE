@@ -1,11 +1,11 @@
 import type { DimensionValue } from 'react-native';
 
-import { Avatar } from '@/components/Avatar';
 import { VerifiedTick } from '@/components/icon';
 import { MediaCard, mediaMetrics } from '@/components/MediaCard';
 import { hueFor } from '@/features/feed/model';
 
 import type { ExploreCreator } from './api';
+import { PortraitTile } from './PortraitTile';
 
 /**
  * design/_gen/explore.js `cCard`, drawn by the shared `MediaCard` (stacked): 150 by 200 on the rail, 218 high in the
@@ -43,7 +43,7 @@ export type CreatorCardProps = {
 };
 
 /**
- * One creator on Explore: their portrait (or their initials on their hue when they have none), handle and tick, what
+ * One creator on Explore: their portrait (or the canvas's portrait tile in their hue when they have none), handle and tick, what
  * they do, and Follow. Follow and Following are `MediaCard`'s own `action`, drawn as on Home's creator rail.
  */
 export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onPress, onToggleFollow, testID }: CreatorCardProps) {
@@ -59,7 +59,7 @@ export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, hei
       subtitle={creator.field ?? undefined}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : undefined}
       imageUrl={creator.avatarUrl ?? undefined}
-      placeholder={<Avatar name={creator.name} hue={hueFor(creator.wawuId)} size={mediaMetrics.placeholderAvatar} decorative />}
+      placeholder={<PortraitTile hue={hueFor(creator.wawuId)} testID={testID ? `${testID}-portrait` : undefined} />}
       width={width}
       height={height}
       onPress={onPress}

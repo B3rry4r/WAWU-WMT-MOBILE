@@ -144,8 +144,9 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
             value={`${clock(time.position)} of ${clock(time.length)}`}
             onSeek={(s) => seekTo(s * time.length)}
             onStep={(d) => seekTo(time.position + d * SKIP_SECONDS)}
+            style={styles.scrub}
           >
-            <TrackBar share={share} label={`${clock(time.position)} / ${clock(time.length)}`} testID={`scrub-fill-${item.id}`} />
+            <TrackBar inset={false} share={share} label={`${clock(time.position)} / ${clock(time.length)}`} testID={`scrub-fill-${item.id}`} />
           </Seekable>
         ) : null
       }
@@ -154,6 +155,8 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
 }
 
 const styles = StyleSheet.create({
+  /** The scrub bar's own box ends where the rail starts, so it can never take a tap meant for the Tip button (FIX-68 F-1). */
+  scrub: { marginRight: metrics.barRight },
   tapLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   paused: { opacity: 0.85 },
   ended: {

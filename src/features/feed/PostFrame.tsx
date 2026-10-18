@@ -90,7 +90,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
         onTip={onTip && myId !== null && myId !== item.creatorWawuId ? () => onTip(item) : undefined}
         onLayout={onRailLayout}
       />
-      <View pointerEvents="box-none" onLayout={onFootLayout} style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
+      <View testID={`foot-${item.id}`} pointerEvents="box-none" onLayout={onFootLayout} style={[styles.foot, { bottom: fromPostBottom(metrics.captionBottom) }]}>
         {above}
         <View pointerEvents="box-none" style={styles.words}>
           <Pill icon={pill.icon} text={pill.text} testID={`pill-${item.id}`} />

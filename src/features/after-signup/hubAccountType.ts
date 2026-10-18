@@ -14,3 +14,23 @@ export async function setHubAccountType(type: HubAccountType): Promise<HubAccoun
   if (held !== 'user' && held !== 'creator') throw new ApiError('unknown', 200, 'The account type could not be read. Try again.');
   return held;
 }
+
+/**
+ * The account type the Hub holds for this person (`GET /users/me`): null when it holds none yet. A read the Hub cannot answer throws, so the
+ * caller sends nothing and looks again on the next start.
+ */
+export async function readHubAccountType(): Promise<HubAccountType | null> {
+  const body = await unwrap(api.GET('/api/hub/users/me'));
+  const held = (body as { data?: { accountType?: unknown } | null } | null)?.data?.accountType;
+  if (held === null || held === undefined) return null;
+  if (held !== 'user' && held !== 'creator') throw new ApiError('unknown', 200, 'The account type could not be read. Try again.');
+  return held;
+}
+
+/**
+ * Whether the Hub still needs `type` written. It does not when it holds that type already, or holds `creator`: a creator is never moved
+ * back to a user, so writing `user` over one would change nothing (FIX-68 F-4).
+ */
+export function hubNeedsType(held: HubAccountType | null, type: HubAccountType): boolean {
+  return held !== type && held !== 'creator';
+}

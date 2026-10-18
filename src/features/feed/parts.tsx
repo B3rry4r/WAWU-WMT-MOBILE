@@ -296,10 +296,13 @@ export function Seekable({
   );
 }
 
-/** H2's scrubber and H4's reading bar: a thin track, its filled share, and the words beside it. */
-export function TrackBar({ share, label, testID }: { share: number; label: string; testID?: string }) {
+/**
+ * H2's scrubber and H4's reading bar: a thin track, its filled share, and the words beside it. It keeps clear of the
+ * rail by `barRight`; `inset={false}` leaves that to the box around it (a Seekable's own margin, so its hit area ends there too).
+ */
+export function TrackBar({ share, label, testID, inset = true }: { share: number; label: string; testID?: string; inset?: boolean }) {
   return (
-    <View style={styles.trackRow} pointerEvents="box-none">
+    <View style={[styles.trackRow, inset && styles.trackInset]} pointerEvents="box-none">
       <View style={styles.trackHit}>
         <View style={[styles.track, { backgroundColor: media.track }]}>
           <View testID={testID} style={[styles.trackFill, { width: `${Math.round(share * 1000) / 10}%`, backgroundColor: media.ink }]} />
@@ -316,7 +319,8 @@ const styles = StyleSheet.create({
     right: metrics.railRight,
     alignItems: 'center',
     gap: metrics.railGap,
-    zIndex: 6,
+    // Above the foot (6): a rail button wins every tap inside its own box, whatever else overlaps it (FIX-68 F-1).
+    zIndex: 7,
   },
   railItem: { alignItems: 'center', gap: metrics.railCountGap },
   tipPlate: { width: metrics.tipCircle, height: metrics.tipCircle, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
@@ -372,7 +376,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trackRow: { flexDirection: 'row', alignItems: 'center', gap: metrics.trackGap, marginRight: metrics.barRight },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: metrics.trackGap },
+  trackInset: { marginRight: metrics.barRight },
   trackHit: { flex: 1, height: metrics.trackHit, justifyContent: 'center' },
   track: { height: metrics.track, borderRadius: metrics.trackRadius, overflow: 'hidden' },
   trackFill: { height: '100%', borderRadius: metrics.trackRadius },

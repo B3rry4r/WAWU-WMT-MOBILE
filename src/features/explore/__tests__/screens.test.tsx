@@ -73,12 +73,12 @@ function card(wawuId: string, handle: string, field: string, over: Record<string
 }
 
 /**
- * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. A neutral frame
- * carries none of its own, so a name, date or figure on one is a word that is not in this list.
+ * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. Featured creators
+ * and Upcoming events are left out when the Hub has none (FIX-68 F-6), so their headings are not in this list.
  */
 const WORDS_BEFORE_TILES = [tgifDayLabel(localDay()), 'Sons, not slaves', '5 cards', 'All'];
 const WORDS_AFTER_TILES = [
-  'More', 'Who Made This?', 'Upcoming events', 'See all',
+  'More',
   'Find a professional', 'Accountants, lawyers, designers',
   'Find a school', 'Courses from schools and academies',
   'List your services', 'Get paid to answer questions',
@@ -103,6 +103,19 @@ const noEvents: Answer = {
   status: 200,
   body: { statusCode: 200, message: 'OK', data: [], pagination: { currentPage: 1, nextPage: null, perPage: 20, total: 0 } },
 };
+
+const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+  id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
+  format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+  location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+  contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+  featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+  speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
+});
+const pageOf = (items: unknown[]): Answer => ({
+  status: 200,
+  body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
+});
 
 /** Every destination Explore can open, each a spy; a test names the ones it taps. */
 function entries(over: Partial<ExploreScreenProps> = {}): ExploreScreenProps {
@@ -224,6 +237,7 @@ describe('X1 · Explore', () => {
     answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
+    answers[UPCOMING] = [pageOf([ev('e1', 'Creators Summit')])];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByText('Who Made This?');
     await settle();
@@ -245,6 +259,7 @@ describe('X1 · Explore', () => {
   it('every button on Explore does something: each press opens a built screen or follows, and a creator card is not one of them (R-47)', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers['POST /creators/c1/follow'] = [ok({ following: true }, 201)];
+    answers[UPCOMING] = [pageOf([ev('e1', 'Creators Summit')])];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByText('@adaeze');
@@ -255,6 +270,7 @@ describe('X1 · Explore', () => {
       'All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More categories',
       'Follow',
       'See all events',
+      'Creators Summit, 2 Nov, Eko Convention Centre',
       'Find a professional, Accountants, lawyers, designers',
       'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
@@ -276,6 +292,8 @@ describe('X1 · Explore', () => {
     expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
     expect(sent).toContain('POST /creators/c1/follow');
     expect(spies.onOpenEvent).not.toHaveBeenCalled();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Creators Summit, 2 Nov, Eko Convention Centre' }));
+    expect(spies.onOpenEvent).toHaveBeenCalledWith('e1');
   });
 
   it('a creator card opens nothing yet, and its Follow still follows', async () => {
@@ -324,31 +342,40 @@ describe('X1 · Explore', () => {
     },
   );
 
-  it('with nobody featured, a user sees Featured creators with three neutral cards, no See all (EXPLORE-02) and no invented creator', async () => {
+  it('with nobody featured, Featured creators is left out, heading and all: the board draws no empty state for it (FIX-68 F-6)', async () => {
     answers[featured] = [ok({ items: [] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-tiles');
-    expect(rtl.screen.getByText('Who Made This?')).toBeTruthy();
+    await settle();
+    expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-featured-empty')).toBeNull();
     expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
-    const empty = rtl.screen.getByTestId('explore-featured-empty');
-    expect(empty.props.accessibilityLabel).toBe('Featured creators, none to show');
-    expect(rtl.within(empty).queryByText(/@/)).toBeNull();
-    expect(rtl.within(empty).queryAllByRole('button')).toHaveLength(0);
+    expect(rtl.screen.queryByText(/@/)).toBeNull();
     expect(rtl.screen.queryByText('Follow')).toBeNull();
   });
 
-  it('with no advert and no event, a user sees no slider and no empty frame for it, and Upcoming events with a working See all (R-59)', async () => {
+  it('with creators featured, the row is back with its heading and a card each (FIX-68 F-6)', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
+    expect(rtl.screen.getByTestId('explore-featured-c1')).toBeTruthy();
+  });
+
+  it('with no advert and no event, a user sees no slider and no empty frame for it, and no Upcoming events row (R-59, FIX-68 F-6)', async () => {
     answers[featured] = [ok({ items: [] })];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByTestId('explore-tiles');
+    await settle();
     expect(rtl.screen.queryByTestId('explore-hero')).toBeNull();
     expect(rtl.screen.queryByTestId('explore-featured-event-empty')).toBeNull();
     expect(rtl.screen.queryByText('FEATURED EVENT')).toBeNull();
-    expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
-    expect(rtl.screen.getByTestId('explore-events-empty').props.accessibilityLabel).toBe('Upcoming events, none to show');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-events-see-all'));
-    expect(spies.onSeeAllEvents).toHaveBeenCalledTimes(1);
+    // The board draws no empty Upcoming events: with none, the row (and its See all) is not drawn.
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-events-empty')).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'See all events' })).toBeNull();
     expect(spies.onOpenEvent).not.toHaveBeenCalled();
   });
 
@@ -500,7 +527,7 @@ describe('X1 · Explore', () => {
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByTestId('explore-tiles');
-    expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
@@ -545,7 +572,7 @@ describe('X1 · Explore', () => {
     expect(rtl.screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  describe('a read that fails keeps every section drawn (R-47), under one banner with Try again', () => {
+  describe('a read that fails keeps the sections that are built drawn (R-47), under one banner with Try again', () => {
     beforeEach(() => {
       failAtOnce();
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
@@ -554,7 +581,7 @@ describe('X1 · Explore', () => {
     it.each([
       ['the categories', 'GET /explore/categories'],
       ['the featured creators', featured],
-    ])('when %s cannot be read, a user still sees the bar, TGIF, the tiles, both rails and the doors, and the one banner', async (_what, failing) => {
+    ])('when %s cannot be read, a user still sees the bar, TGIF, the tiles and the doors, and the one banner, with no empty rails', async (_what, failing) => {
       answers['GET /explore/categories'] = [ok({ items: categories })];
       answers[featured] = [ok({ items: [] })];
       answers[failing] = [refused(500, 'Something went wrong on our side')];
@@ -571,11 +598,12 @@ describe('X1 · Explore', () => {
       // The sections, as when nothing is served.
       expect(rtl.screen.getByTestId('explore-tgif')).toBeTruthy();
       expect(rtl.within(rtl.screen.getByTestId('explore-tiles')).getAllByRole('button').length).toBeGreaterThanOrEqual(2);
-      expect(rtl.screen.getByText('Who Made This?')).toBeTruthy();
+      // Nothing was served for the two rails, and the board draws no empty state for them: they are left out (FIX-68 F-6).
+      expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
       expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
-      expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
-      expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
-      expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
+      expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+      expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+      expect(rtl.screen.queryByRole('button', { name: 'See all events' })).toBeNull();
       for (const door of ['find-professional', 'find-school', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
       expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
     });
@@ -785,18 +813,6 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
   const featured = 'GET /explore/featured-creators?limit=10';
   const featuredEvent = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
   const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
-  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
-    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
-    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
-    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
-    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
-    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
-    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
-  });
-  const pageOf = (items: unknown[]): Answer => ({
-    status: 200,
-    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
-  });
   // 14 Oct 23:00 UTC is still 14 Oct in New York (15 Oct in Lagos).
   const summit = ev('ev-1', 'Creators Summit', { featured: true });
   const nyc = ev('ev-2', 'New York Night', { timezone: 'America/New_York', startsAt: '2026-10-14T23:00:00.000Z', venueName: null, location: 'New York' });
@@ -832,12 +848,12 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     const hero = rtl.screen.getByTestId('explore-hero');
     expect(rtl.within(hero).queryByTestId('explore-hero-dots', { includeHiddenElements: true })).toBeNull();
     expect(rtl.screen.queryByTestId('explore-featured-event-empty')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-events-empty')).toBeNull();
+    expect(rtl.screen.getByTestId('explore-events')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event-ev-1'));
     expect(onOpenEvent).toHaveBeenCalledWith('ev-1');
   });
 
-  it('a user still sees the tiles and creators when the events cannot be read, and the event sections as neutral frames', async () => {
+  it('a user still sees the tiles and creators when the events cannot be read, and no event section (FIX-68 F-6)', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[featuredEvent] = [refused(500, 'Down')];
     answers[upcoming] = [refused(500, 'Down')];
@@ -845,7 +861,8 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
     await settle();
     expect(rtl.screen.queryByTestId('explore-hero')).toBeNull();
-    expect(rtl.screen.getByTestId('explore-events-empty')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-events')).toBeNull();
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
   });
 
@@ -861,18 +878,6 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
   const featured = 'GET /explore/featured-creators?limit=10';
   const featuredEvent = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
   const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
-  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
-    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
-    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
-    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
-    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
-    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
-    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
-  });
-  const pageOf = (items: unknown[]): Answer => ({
-    status: 200,
-    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
-  });
   const screen = () => <ExploreScreen {...entries()} />;
 
   it('keeps X14, hero block included, while the events read is held, then draws the tiles once', async () => {
@@ -894,7 +899,7 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
     expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
   });
 
-  it('draws Explore with the event sections as neutral frames once a failed events read has settled, asking each only once', async () => {
+  it('draws Explore without the event sections once a failed events read has settled, asking each only once', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[featuredEvent] = [refused(500, 'Down')];
     answers[upcoming] = [refused(500, 'Down')];

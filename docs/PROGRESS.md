@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 299.**
+**Launch tasks done: 176 of 300.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 57 | 0 | 0 | 0 |
 | building | 0 | 0 | 0 | 0 |
-| verifying | 114 | 0 | 0 | 0 |
+| verifying | 115 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-68](../tasks/FIX-68.md) CHECK-1's findings: the Tip button wins its taps, no tier is not an error, one write per sign-up, Explore and the cards as drawn (You)
 - [FIX-61](../tasks/FIX-61.md) A paid-question spec that failed for ten minutes of every day no longer meets Lagos midnight (You)
 - [FIX-60](../tasks/FIX-60.md) The content share link opens the app (You)
 - [FIX-59](../tasks/FIX-59.md) My purchases lists every paid kind (tickets, credit packs, school fees, community passes) (You)

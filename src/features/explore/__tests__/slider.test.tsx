@@ -212,7 +212,8 @@ describe('the slides take turns (R-59)', () => {
     await rtl.screen.findByTestId('explore-hero');
     expect(slideIds()).toEqual(['explore-ad-a1']);
     expect(rtl.screen.queryByTestId('explore-hero-dots', hidden)).toBeNull();
-    expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
+    // With no event the Upcoming events row is not drawn (FIX-68 F-6).
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
     expect(rtl.screen.getByTestId('explore-slider').props.scrollEnabled).toBe(false);
   });
 
