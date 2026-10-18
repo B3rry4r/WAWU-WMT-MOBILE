@@ -43,6 +43,10 @@ export const SCREEN_TITLE = 'Offer your services';
 /** design/_gen/kit.js line 67, `result`: an 88 circle with a 42 glyph at 2.2, 10 between the parts, the title 8 lower; pros.js line 35 sets `pt: 120`, `gap: 20`. */
 const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, paragraphMax: 290, top: 120, between: 20 } as const;
 /** pros.js line 34: the file's card is 14 by 16, a 12 gap to its words, 18 round; its name at 15 and its state at 12.5. */
+/** P10's gate: 18 from the line to the pill, and the 26 of room the shared EmptyState keeps under its words (SWEEP-APP-4 row 130). */
+const GATE_GAP = 18;
+const GATE_EMPTY_ROOM = 26;
+
 const fileMetrics = { ten: 10, lead2words: 12, padV: 14, name: 15, state: 12.5, cross: 18, lead: 44 } as const;
 
 export type ApplyScreenProps = {
@@ -78,11 +82,11 @@ export function CreatorGate({ title, onBack }: { title: string; onBack: () => vo
     }
   };
   return (
-    <ProFrame title={title} onBack={onBack} gap={space.lg} centered testID="pro-gate">
+    <ProFrame title={title} onBack={onBack} gap={0} centered testID="pro-gate">
       <EmptyState icon="UserCog" title="This needs a creator account" message="Setting one up is free." />
       <Button label="Become a creator" size="md" onPress={() => void become()} loading={busy} style={styles.gateButton} testID="pro-become-creator" />
       {failed ? (
-        <Text variant="secondary" tone="danger" accessibilityRole="alert" testID="pro-become-failed">
+        <Text variant="secondary" tone="danger" accessibilityRole="alert" testID="pro-become-failed" style={styles.gateFailed}>
           Couldn’t set up your account. Try again.
         </Text>
       ) : null}
@@ -523,7 +527,9 @@ function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; lef
 
 const styles = StyleSheet.create({
   // P10's button is the board's compact pill (Btn size md, full false): the frame's column would stretch it, so it centres itself.
-  gateButton: { alignSelf: 'center' },
+  // P10 puts the pill 18 under the line; the EmptyState keeps 26 of its own room under its words, so the pill is pulled up by the difference (SWEEP-APP-4 row 130).
+  gateButton: { alignSelf: 'center', marginTop: GATE_GAP - GATE_EMPTY_ROOM },
+  gateFailed: { marginTop: space.sm },
   kinds: { gap: fileMetrics.ten },
   kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   file: { flexDirection: 'row', alignItems: 'center', gap: fileMetrics.lead2words, paddingVertical: fileMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.tile },

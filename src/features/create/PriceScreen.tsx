@@ -157,6 +157,7 @@ export function PriceField({ details, onChange }: { details: Details; onChange: 
         Price per sale
       </Text>
       <View
+        testID="price-field-box"
         style={[
           styles.fieldBox,
           { backgroundColor: colors.surfaceInput, borderColor: focused ? colors.accent : colors.borderHairline, borderWidth: focused ? fieldMetrics.ring : StyleSheet.hairlineWidth },
@@ -238,7 +239,8 @@ const styles = StyleSheet.create({
   note: { textAlign: 'center', fontSize: priceMetrics.note },
   fieldRoot: { alignSelf: 'stretch' },
   fieldLabel: { ...font(600), fontSize: fieldMetrics.label, marginBottom: space.sm },
-  fieldBox: { height: fieldMetrics.height, flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.lg, borderRadius: fieldMetrics.radius },
+  // M24 draws the sign touching the figure ("₦3,000"), no gap between them (SWEEP-APP-4 row 146).
+  fieldBox: { height: fieldMetrics.height, flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: space.lg, borderRadius: fieldMetrics.radius },
   sign: { fontSize: priceMetrics.sign },
   input: { ...text.body, ...font(700), flex: 1, fontSize: priceMetrics.value, paddingVertical: 0 },
   piece: { paddingVertical: priceMetrics.padV, paddingHorizontal: priceMetrics.padH },

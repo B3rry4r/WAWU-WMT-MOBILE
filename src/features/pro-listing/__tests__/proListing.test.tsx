@@ -435,6 +435,11 @@ describe('P5 to P7 · Offer your services', () => {
     expect(screen.getByText('This needs a creator account')).toBeTruthy();
     expect(screen.getByText('Setting one up is free.')).toBeTruthy();
     expect(screen.getByText('Become a creator')).toBeTruthy();
+    // SWEEP-APP-4 row 130: P10 puts the pill 18 under the line. The shared EmptyState keeps 26 of room under its words, so the frame adds no
+    // gap of its own and the pill is pulled up the difference (it sat about 45 under the line, 27 too low).
+    const { StyleSheet } = require('react-native') as typeof import('react-native');
+    expect(StyleSheet.flatten(screen.getByTestId('pro-become-creator').props.style)).toMatchObject({ marginTop: -8 });
+    expect(StyleSheet.flatten(screen.getByTestId('pro-scroll').props.contentContainerStyle).gap).toBe(0);
     expect(sent.map((s) => s.path)).toEqual(['/api/hub/users/me']);
     await act(async () => fireEvent.press(screen.getByLabelText('Back')));
     expect(onBack).toHaveBeenCalledTimes(1);

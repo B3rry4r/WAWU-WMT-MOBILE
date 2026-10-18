@@ -271,6 +271,8 @@ function Pieces({ items, loading, failed, hasMore, loadingMore, moreFailed, onRe
           title={piece.title || salesWords(piece.kind, 1)}
           subtitle={salesWords(piece.kind, piece.sales)}
           amountMinor={piece.earnedKobo}
+          // The board draws +₦42,000 with no ".00"; an amount with kobo keeps them (SWEEP-APP-4 row 144, SHARED-CHANGES SWEEP-APP-4 #1).
+          decimals={piece.earnedKobo % 100 !== 0}
           icon={pieceIcon(piece.kind)}
           tone="in"
         />

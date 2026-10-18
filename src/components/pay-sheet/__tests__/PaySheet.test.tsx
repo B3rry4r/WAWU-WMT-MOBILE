@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+import { Text } from 'react-native';
+
 import { motion } from '@/theme';
 
 import { PaySheet, type PaySheetProps } from '..';
@@ -49,6 +51,20 @@ describe('PaySheet', () => {
     expect(screen.getByText('Pay Ada')).toBeTruthy();
     // The head holds the words and nothing before them: one child, the words.
     expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(1);
+  });
+
+  it('SWEEP-APP-4 row 140: a header with a lead tile (S19, SC5) draws it before the words, and still no empty square', async () => {
+    const view = props({ item: { title: 'Video consultation', subtitle: 'Thu 2 Oct, 12:00 · 30 min', lead: <Text testID="lead-tile">V</Text> } });
+    await render(<PaySheet {...view} />);
+    expect(screen.getByTestId('pay-sheet-lead-row').children).toHaveLength(2);
+    expect(screen.getByTestId('pay-sheet-lead')).toContainElement(screen.getByTestId('lead-tile'));
+    expect(screen.getByText('Video consultation')).toBeTruthy();
+    expect(screen.queryByTestId('pay-sheet-head-image')).toBeNull();
+  });
+
+  it('SWEEP-APP-4 row 140: without a lead the header is as it was, with no lead row', async () => {
+    await render(<PaySheet {...props({ item: { title: 'Pay Ada' } })} />);
+    expect(screen.queryByTestId('pay-sheet-lead-row')).toBeNull();
   });
 
   it('a header with a picture still draws it before the title', async () => {

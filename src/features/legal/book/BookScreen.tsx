@@ -239,6 +239,7 @@ export function BookScreen({ requestId, onBack, onBooked, wallet }: BookArgs) {
         <PaySheets
           pay={pay}
           title={consultationTitle(medium.medium)}
+          icon={medium.icon}
           subtitle={sheetSubtitle(slot?.startsAt ?? null, slots.data?.minutes ?? null)}
         />
       ) : null}

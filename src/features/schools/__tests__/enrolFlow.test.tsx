@@ -356,6 +356,8 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(rtl.screen.getAllByText('Product Design Bootcamp').length).toBeGreaterThan(0);
     expect(rtl.screen.getByText('Greenfield Tech Academy · starts 3 Nov')).toBeTruthy();
+    // SWEEP-APP-4 row 140: SC5's head draws the school's logo tile (its initials, "GT") before the course.
+    expect(rtl.screen.getByTestId('enrolment-school-logo')).toHaveTextContent('GT');
     expect(rtl.screen.getByRole('button', { name: 'Pay · ₦150,015.75' })).toBeTruthy();
     expect(rtl.within(rtl.screen.getByTestId('enrolment-name-card')).getByText('Lennox Emmanuel')).toBeTruthy();
   });

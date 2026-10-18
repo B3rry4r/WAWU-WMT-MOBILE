@@ -57,7 +57,8 @@ export function DetailsScreen({ format, onBack, onContinue }: DetailsScreenProps
         testID="details-description"
         label="Description"
         multiline
-        max={limits.description}
+        // M23 draws no "38 / 5000" counter under the description (SWEEP-APP-4 row 146): the box stops at the Hub's limit instead.
+        maxLength={limits.description}
         value={details.description}
         onChangeText={(description) => setDetails({ description })}
         autoCapitalize="sentences"
