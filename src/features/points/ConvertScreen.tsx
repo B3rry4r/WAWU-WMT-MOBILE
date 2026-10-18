@@ -9,7 +9,7 @@ import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
-import { PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
 import { formatPoints } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -424,6 +424,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
           onClose={closePin}
           approval={{ totalKobo: pinQuote.cashKobo, purpose: pinPurpose(pinQuote.points) }}
           onSubmit={submitPin}
+          unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();
             props.onForgotPin();

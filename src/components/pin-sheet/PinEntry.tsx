@@ -18,6 +18,8 @@ export const PIN_LENGTH = 4;
 const TICK_MS = 1000;
 const ALERT_ICON = ALERT.icon;
 const UNANSWERED_LINE = "We couldn't check your PIN. Try again.";
+/** For a sheet that pays (SWEEP-APP rows POINTS-05 L3, LEGAL-04 S4 F5, ME-12 S7 F4): the answer did not arrive, so the PIN may have been right. */
+export const PAYMENT_UNANSWERED_LINE = "We didn't get an answer. Try again: it will only happen once.";
 
 /**
  * - entering: the keypad is live (with or without a message from the last try)
@@ -51,6 +53,7 @@ export function PinEntry({
   biometric,
   onForgotPin,
   lockedUntil,
+  unansweredLine = UNANSWERED_LINE,
   onBusyChange,
 }: PinEntryProps) {
   const { colors } = useWawu();
@@ -138,7 +141,7 @@ export function PinEntry({
         return;
       }
       case 'unanswered':
-        say(UNANSWERED_LINE);
+        say(unansweredLine);
         return;
     }
   };
