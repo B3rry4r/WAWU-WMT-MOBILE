@@ -9,8 +9,7 @@ import { HANDLE_PATTERN, limits } from '@/features/profile-edit/limits';
 /**
  * `https://wawuafrica.com/u/<handle>` opened in the installed app (LINKS-01, A2): a profile, as Share on Me sends it. Nothing is
  * drawn here. Signed out lands on the welcome screen. Signed in, a person's own handle opens the Me tab; anyone else's opens that
- * person's works (M34, `/works/<handle>`, which takes a handle), the one page of another person the app has built: a full
- * profile of someone else is not built yet, and when it is this route points there. A handle that cannot be one (wrong
+ * person's profile (M33, `/profile/<handle>`, which takes a handle). A handle that cannot be one (wrong
  * characters, too long) opens Home. If the Hub cannot say who the person is, the handle is taken as someone else's: nothing waits
  * on a retry.
  */
