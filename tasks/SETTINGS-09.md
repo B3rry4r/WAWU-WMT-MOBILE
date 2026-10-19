@@ -18,8 +18,8 @@ tier: T2
 
 ## Current state
 
-As of 19 Oct 2026, builder round 1 done. Waits for an independent verifier.
-- **Status:** verifying. Backend branch `wmt/SETTINGS-09` @ b16cc69 (from `wmt/MERGE-25` 223fe89), mobile `wmt/SETTINGS-09` (this file, SHARED-CHANGES, BACKEND_GAPS). WAWU ID holds no document (no storage, no document table), so it has no branch.
+As of 19 Oct 2026, merging (lead): checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-09.md`: MERGE, no blocker, high or medium) and stacked in batch 26 (backend `b16cc69`, mobile `fdb85b2e`). Its lows G-SETTINGS-09-1 and -2 and the info notes V-1 to V-4 are rows of `tasks/SWEEP-AUTH.md`.
+- **Status:** merging (lead). Backend branch `wmt/SETTINGS-09` @ b16cc69 (from `wmt/MERGE-25` 223fe89), mobile `wmt/SETTINGS-09` (this file, SHARED-CHANGES, BACKEND_GAPS). WAWU ID holds no document (no storage, no document table), so it has no branch.
 - **Where the documents live:** the Hub only. `StorageObject` rows plus the objects in the bucket. SETTINGS-06's purge refiles the ID documents under `wawuUserId = 'deleted-account'` (the key still names the person) and leaves the objects: `kyc/id-document`, `service-application/document`, `professional/document`, and any file a verification, KYC, application or professional row named. The rows that named them are deleted by the purge; nothing reads the set-aside rows and no route lists them.
 - **Built:** admin setting `id_docs_keep_days` (registry "Other rulings", days, default 1826 = 5 years, owner figure, whole number 365 to 3650; the floor stops a "5" typed for years from emptying the archive). A daily sweep `IdDocsRetentionService` (03:41, `src/account-purge/`), mounted by `AccountModule`.
 - **What the sweep deletes:** for each deletion row `purged` with `purgedAt` more than the days ago and no `idDocsErasedAt`: the account's set-aside ID documents, chosen by `listKeptFiles(...).owner` (the very list the purge note counted). The object leaves the bucket first, then its row. Rows are deleted, not blanked: nothing reads them, `key` is unique and non-null, and the audit line is on the deletion row. Never touched: a live account, a deletion not yet `purged`, files kept for buyers, event images kept while an event stands, the content folders, the deletion row itself.
@@ -28,7 +28,7 @@ As of 19 Oct 2026, builder round 1 done. Waits for an independent verifier.
 - **Migration:** `20261029100000_account_deletion_id_docs_erased` (four columns on `AccountDeletion`, additive) with `rollback.sql` that refuses while any account has `idDocsErasedAt` or `idDocsErased` set (tested both ways on a real database). SHARED-CHANGES SETTINGS-09 #1. No contract change (no route), so no contract rebuild.
 - **Checks (backend, db `settings09_wawu_hub_test`, bucket stand-in on 7860-7867):** tsc EXIT 0; eslint changed files EXIT 0; new spec 16 of 16; touched specs by name 12 suites, 124 tests; gates 0 fail; protected suite 251 of 253 with the same 2 failures as `wmt/MERGE-25` (community messages `videoUrl`/`voiceUrl` widened, INBOX-22).
 - **Open:** no blocker, high or medium. Lows G-SETTINGS-09-1 and -2 in BACKEND_GAPS. G-FIX-65-1 is answered by this task. The lead adds R-73 to DECISIONS.md (check_tasks reads it from there).
-- **Next:** an independent verifier; then the batch merge.
+- **Next:** the batch 26 pull request (the lead).
 
 ## Read first
 
@@ -53,11 +53,9 @@ wawu-backend: the setting in the registry, the daily sweep, four additive column
 - [ ] A live account's documents, a deletion not yet completed, and the rest of a deleted account (content kept for buyers, event images) are untouched.
 - [ ] Two sweeps at once, a sweep after a crash and a second sweep delete each file once and count it once.
 
-## Builder report
+## History
 
-Backend head `(set at push)` on `wmt/SETTINGS-09`. Files: `src/account-purge/id-docs-retention.{config,service,module}.ts`, `src/account-purge/purge-files.ts` (`listKeptFiles`, shared with `countKeptFiles`; comments only otherwise), `src/plan-settings/plan-setting-registry.ts` and `plan-settings.defaults.json`, `src/account/account.module.ts`, `prisma/schema.prisma`, the migration folder, `src/account-purge/tests/id-docs-retention.contract.spec.ts`.
-
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SETTINGS-09.md](history/SETTINGS-09.md).
 
 ## Owner sign-off
 

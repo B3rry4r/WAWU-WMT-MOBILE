@@ -18,8 +18,8 @@ tier: T0
 
 ## Current state
 
-As of 19 Oct 2026.
-- **Status:** verifying (lead). Records only, tier T0: no app code, no backend or WAWU ID change, no stack, no jest, no port. Mobile branch `wmt/OWNER-1019` from `origin/wmt/MERGE-25` `eb2ffa3b`.
+As of 19 Oct 2026, merging (lead): stacked in batch 26 (mobile `wmt/OWNER-1019` `7b49e863`, with AUTH-09, FIX-88, INBOX-25 and SETTINGS-09).
+- **Status:** merging (lead). Records only, tier T0: no app code, no backend or WAWU ID change, no stack, no jest, no port. Mobile branch `wmt/OWNER-1019` from `origin/wmt/MERGE-25` `eb2ffa3b`.
 - **Done:** four rulings after R-69 in `DECISIONS.md`: R-70 (Q-42, three old tests on the Fintava double, test files only, FIX-88), R-71 (Q-43, a host's removal pays back the unused days from the price paid, INBOX-25), R-72 (Q-44, sign-up and PIN reset codes by email at launch, `SIGNUP_VERIFY_CHANNEL=email`), R-73 (Q-45, ID documents kept hidden 5 years after an account's deletion, then deleted, SETTINGS-09). Notes "Updated by R-71" on R-63 and "Updated by R-72" on R-39.
 - **Cross-references:** Q-42 in SWEEP-APP, FIX-67, FIX-74, FIX-75, FIX-77, INBOX-24, AITOOLS-01, WALLET-16; Q-43 and its default in INBOX-24 and BACKEND_GAPS (G-INBOX-24-3, G-INBOX-24-6); Q-45 in FIX-65, SWEEP-MONEY and BACKEND_GAPS (G-FIX-65-1); Q-44 and its default in AUTH-07 (default line, release step 5) and BACKEND_GAPS (G-42, G-93, G-222, G-400); G-FIX-75-1 now points at FIX-88. SHARED-CHANGES holds none of the four questions, so it is unchanged.
 - **Tasks FIX-88, INBOX-25 and SETTINGS-09:** their builders already have worktrees (`wmt/FIX-88`, `wmt/INBOX-25`, `wmt/SETTINGS-09`) and make their own task files, so this task does not create them. Until they land, `Carried out by` and the BACKEND_GAPS task column name ids with no file.
@@ -49,9 +49,9 @@ The owner's four answers of 19 Oct 2026 are rulings, so the builders of FIX-88, 
 - [x] Each place that quoted Q-42, Q-43, Q-44 or Q-45, or the default each replaces, points at its ruling.
 - [x] `python3 scripts/tasks/check_tasks.py` passes and `tasks/INDEX.md` is current.
 
-## Builder report
+## History
 
-Sonnet records agent, T0, 19 Oct 2026. Files touched: `DECISIONS.md` (+18 lines), `BACKEND_GAPS.md` (8 rows), 12 task files (one sentence each), this file (filed after-launch at order 355 so the index numbers above it do not move), `docs/LOG.md` (one line), and the generated `tasks/INDEX.md` and `docs/PROGRESS.md`. Em-dashes added: 0.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OWNER-1019.md](history/OWNER-1019.md).
 
 ## Owner sign-off
 
