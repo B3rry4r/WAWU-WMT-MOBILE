@@ -1,3 +1,5 @@
+import { formatNaira } from '@/components/pay-sheet/money';
+
 /**
  * What I32 checks before it asks the Hub (INBOX-14), and what I34 says about a request. The Hub checks every one of these again and is the
  * judge: a name of 3 to 80 characters and a purpose of 1 to 500 are its own bounds (CreateRoomDto); a private room needs a picture; the
@@ -74,4 +76,15 @@ export function roomInput(form: { name: string; purpose: string; kind: Kind; pri
   const kobo = formKobo(form.price);
   if (kobo === null || !form.imageUrl) return null;
   return { ...base, imageUrl: form.imageUrl, passPriceKobo: kobo };
+}
+
+/**
+ * What the host's remove sheet says the member gets back (INBOX-25, R-71). The figure is the Hub's (`GET /communities/{id}/members/{userWawuId}
+ * /removal-quote`), in kobo, pro rata for the whole unused days; the phone never computes it. With nothing to give back (a pass that has ended,
+ * none, or a room that sells no pass) the sheet says nothing about money: `undefined`.
+ */
+export function removalRefundLine(quote: { refundKobo: number; unusedDays: number } | undefined): string | undefined {
+  if (!quote || !Number.isSafeInteger(quote.refundKobo) || quote.refundKobo <= 0) return undefined;
+  const days = quote.unusedDays === 1 ? '1 unused day' : `${quote.unusedDays} unused days`;
+  return `They get back ${formatNaira(quote.refundKobo)} for ${days} on their pass.`;
 }

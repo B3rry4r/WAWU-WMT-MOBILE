@@ -299,6 +299,7 @@ Builder and verifier are always different sessions.
 281. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
 282. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
 283. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+284. [INBOX-25](INBOX-25.md) A removed member gets the unused pass days back
 
 ## You · after launch
 
