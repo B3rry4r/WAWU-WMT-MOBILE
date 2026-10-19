@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 330.**
+**Launch tasks done: 176 of 331.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 154 | 0 | 0 | 0 |
+| verifying | 155 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
 - [FIX-88](../tasks/FIX-88.md) Three old backend specs that run on the Fintava double stop failing CI, by chance or by design (You)
 - [FIX-84](../tasks/FIX-84.md) Tests that compare a sent photo link with a returned one compare the object and a valid signed link, never the whole signed link (You)
 - [FIX-83](../tasks/FIX-83.md) A test that lists a message's media compares the object key and a valid signed link, never the whole signed link (You)
@@ -372,6 +373,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 19 Oct 2026 · FIX-92 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-92` `99c3703` on `origin/wmt/MERGE-12` `3d64d85`, mobile `wmt/FIX-92` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the root of the batch 12 deploy chain. `search-popular-privacy` cancels and removes the deletion it scheduled for the seeded plain user; `account-deletion-identity` holds every row that exists before it starts while it sweeps, so only its own people are purged. Red (credits-state fails) then green on one fresh database, eight suites, 73 tests. Closes G-FIX-90-1.
 - 19 Oct 2026 · OWNER-1019 · Records (Sonnet agent, T0; mobile `wmt/OWNER-1019` on `origin/wmt/MERGE-25` `eb2ffa3b`; no code; status verifying): the owner's four answers of 19 Oct become R-70 (Q-42, three old tests on the Fintava double may be updated, test files only, FIX-88), R-71 (Q-43, a host's removal of a member pays back the unused pass days from the price paid, INBOX-25), R-72 (Q-44, sign-up and PIN reset codes by email at launch) and R-73 (Q-45, ID documents kept hidden 5 years after an account's deletion, then deleted, SETTINGS-09). The places that quoted the questions or the defaults point at the rulings. Check: the PIN reset email route in WAWU ID (G-400) is on none of its branches; the sign-up email path is built and defaults off.
 - 18 Oct 2026 · SWEEP-MONEY-5b · Built (Sonnet builder, T2; mobile `wmt/SWEEP-MONEY-5b` 63151be6 on `origin/wmt/MERGE-24` `0cf68728`, no backend change; status verifying): FIX-87's lows. A PIN change or reset with no answer is kept across Back (the same entries go under the same key, no wrong-PIN try); our 30 s end of a write reads "We didn't get an answer" and an offline phone still reads "No connection"; the ticket order and the legal fee are kept by the phone until the Hub answers, so leaving the page and tapping again is one order and one payment; a caller's own abort of a read is tested. 10 specs red on the old code; walked in Expo web at 390 px against the real Hub (one PIN change, one order). Rows in SWEEP-MONEY (F1 to F4, new G1) and SWEEP-APP (SWEEP-APP-7 V4).
 - 18 Oct 2026 · DV2-04 · Built (Sonnet builder, T1; mobile `wmt/DV2-04` on `origin/wmt/MERGE-16` `5ee3994d`; no backend change, no migration, no shared change; status verifying): M19's Event tile says "Needs an active tier" and a person with a running tier sees the products meter ("2 of 3 products", tier name and end date, `GET /me/tier`) in place of the uploads count; E21 is "Hosting needs a tier" with the tier names and "From" the lowest price from `GET /plans` (or the 403's `lowestTier`) and See tiers opening VF5; the host form opens for a running tier or a live tick, and `403 tier_required` on create, edit (E22) and ticket prices opens E21 with the Hub's own sentence. Checked on a local merge of backend `wmt/S9` into `wmt/MERGE-16` (ports 7760-7767, down). G-DV2-04-1.
@@ -386,4 +388,3 @@ From `docs/LOG.md`, newest first.
 - 18 Oct 2026 · INBOX-10, INBOX-11 · Round 2 built after check S3 (Sonnet builder, T2; mobile `wmt/S3` from `674a9eff`, backend `wmt/S3` from `0723005`; additive, no migration; status verifying): F1 the hold view served the held price as `refundedKobo` though the refund moved price + charge (`transferKobo`); the view now serves what the refund moved, so I7 prints ₦1,523.25 (live with a 2,325 kobo charge, Hub = ledger = stand-in); F2 the ask sheet asks one fresh quote on return from Add money and when the wallet balance read moves, so a funded wallet shows Send; F3 "24-hour window"; F4 I4 lines say "your money"; F5 empty thread says "Ask a question" (lead default, no board).
 - 17 Oct 2026 · INBOX-10, INBOX-11 · Builder (Sonnet, T2; mobile `wmt/S3` on `origin/wmt/ME-02` `0bf05b8c` with `origin/wmt/MERGE-13` `4c7b2acd` merged, backend `wmt/S3` on `origin/wmt/MERGE-13` `6bc7b20` with `origin/wmt/ME-02` `e8e8a1d` merged; additive, no migration; status verifying): a fan asks a creator a paid question from the wallet. Message with its price on the profile (I2) or Messages off (I8); the ask sheet with the breakdown (I3) and the not-enough state with Add ₦X opening W15 (I6); the thread: waiting, replied, refunded (I4, I5, I7); the fan's Inbox row. On the stack a double tap made one question and one debit, a lost answer then a retry one payment, the window passing paid every naira back; Hub = stand-in after each. `PaidQuestionDraftView.usualReplyMinutes` added (G-146). Not done: Message on P2, H10, M35. INBOX-18 is not in this base (SHARED-CHANGES INBOX-10 #2).
 - 17 Oct 2026 · ME-02 · Builder (Sonnet, T1; mobile `wmt/ME-02` on `origin/wmt/HOME-07` `32cff62d`, backend `wmt/ME-02` `e8e8a1d` on `61b6743`; additive, no migration; status verifying): someone else's profile at `/profile/<wawuId or handle>` (M5 with Follow and the ₦ tip, M6 Following with one write per tap, M33 About as a CV with Follow pinned; Content, Services, About; a blocked or gone person shows the Hub's answer), one new route `GET /users/{wawuId}/visitor-profile`, and the entries that lead to it (Home rail, feed creator card, Explore, All creators, Categories, Search, a work's creator, `/u/<handle>`). Message waits for INBOX-10.
-- 17 Oct 2026 · HOME-07 · Builder (Sonnet, T1; mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`, backend `wmt/HOME-07` `61b6743` on `b5f5538`; additive, no migration; status verifying): the feed draws a course (H7, its free lesson plays, "Course · lesson 1 free", the course and its lessons in the offer bar) and a template (H8), the creator card (H9: stats, people you know, strip of work, Follow) and the professional card (H10: rating, reviews, usual reply, services, the refund note, Profile; no Trust Score), Following with no one followed (H12: Find people to follow and the creators rail) and the feed error (H13 unchanged); backend `ProfessionalCard` gains `city` and `usualReplyMinutes`; G-HOME-07-1 and 2.
