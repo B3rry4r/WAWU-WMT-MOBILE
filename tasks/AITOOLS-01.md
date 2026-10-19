@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
-- **Status:** merging (lead). Verdict: PASS (about 130 checks: holds, failures release, a late answer refused uncharged, 5 at once accepts one; 4 lows); branch CI red only on the Fintava-double stall spec (owner question Q-42) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/AITOOLS-01.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main.
+- **Status:** merging (lead). Verdict: PASS (about 130 checks: holds, failures release, a late answer refused uncharged, 5 at once accepts one; 4 lows); branch CI red only on the Fintava-double stall spec (owner question Q-42, ruled in R-70) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/AITOOLS-01.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main.
 - **Branches:** backend `wmt/AITOOLS-01` `90ab9aa` on `origin/wmt/MERGE-11` `d0776eb`; mobile `wmt/AITOOLS-01` (this file, SHARED-CHANGES AITOOLS-01 #1 to #4, gaps G-AITOOLS-01-1 to -5, the log line) on `origin/wmt/MERGE-11` `47555987`. No PR.
 - **Migration:** `20261025182000_ai_tool_jobs`: the table `AiToolJob` and the enum `AiJobState`. Additive; rollback is in the file.
 - **Built:** `src/ai-tools/`. `GET /ai-tools` (VoiceOver: points per minute, `enabled`, limits, voices, and the plan's `caps`), `POST /ai-tools/voiceover/jobs` (text, `voiceId`, `quoteToken`, required `Idempotency-Key`; 202 working), `GET /ai-tools/jobs/{id}` (working, done with `audioUrl`, failed with "No points were taken"). `POST /points/quote` gains `quoteToken`.
