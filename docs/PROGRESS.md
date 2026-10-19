@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 326.**
+**Launch tasks done: 176 of 327.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 149 | 0 | 0 | 0 |
+| verifying | 150 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -101,6 +101,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
 - [SETTINGS-08](../tasks/SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in (You)
 - [SETTINGS-05](../tasks/SETTINGS-05.md) Delete account (You)
+- [SETTINGS-09](../tasks/SETTINGS-09.md) A deleted account's ID documents are kept hidden for 5 years, then deleted (You)
 - [FIX-12](../tasks/FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11 (You)
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
 - [NUV-08](../tasks/NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures (You)
