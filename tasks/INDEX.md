@@ -355,6 +355,7 @@ Builder and verifier are always different sessions.
 51. [FIX-23](FIX-23.md) The web sign-up keeps the phone's dial code, so the billing currency reads it right
 52. [FIX-25](FIX-25.md) A photo uploaded from the website or the app's web build carries no location
 53. [SWEEP-WEB](SWEEP-WEB.md) Web sweep: the low findings of the website tasks
+54. [OWNER-1019](OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73
 
 ## Developer
 

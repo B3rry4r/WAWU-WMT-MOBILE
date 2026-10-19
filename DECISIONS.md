@@ -352,6 +352,7 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 - **Waiting on:** Nuvion's NGN fees and limits (the owner is asking).
 
 **Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
+*Updated by R-72 (owner, 19 Oct 2026): the sign-up code and the wallet PIN reset code both go by email at launch (`SIGNUP_VERIFY_CHANNEL=email`); a text-message provider comes later, only if the owner names one.*
 
 ### R-44 · Payments on the web are the same as the app
 *Owner, 8 Oct 2026 ("Same as the app"; payments are the priority now).*
@@ -539,6 +540,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-63 · Private communities: a monthly pass, renewed by a tap
 *Owner, 16 Oct 2026.* A person pays for 30 days from the wallet (the PIN, as every wallet payment). A reminder comes 3 days before the pass ends and one tap renews it. The host sets the price; the split is 85/15. There is no automatic monthly debit at launch and no host approval step to join.
 **Carried out by:** INBOX-24 (backend, new), INBOX-14 (screens I30 to I34 and I37, re-cut).
+*Updated by R-71 (owner, 19 Oct 2026): a host who removes a member pays back the unused days, worked out from the price paid. Leaving on one's own still pays nothing back.*
 
 ### R-64 · Tips and prices are Naira only at launch
 *Owner, 16 Oct 2026 (R-16 stands).* The Dollar and USDT picker drawn on H26 and M24 is not shown until dollar and crypto accounts exist.
@@ -563,3 +565,19 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-69 · The app's name in copy is "Who Made This?" with the question mark
 *Owner, 16 Oct 2026.* Updates R-37's copy rule: where the app names itself the text is "Who Made This?" with the question mark, on every screen and string. The logos are unchanged (R-37's mapping stays).
 **Carried out by:** DV2-COPY for built screens; every todo task that prints the name carries a dated line in its Current state.
+
+### R-70 · Three old tests on the Fintava double may be updated by an agent, test files only
+*Owner, 19 Oct 2026 (Q-42).* An agent may update three old backend tests that run on the Fintava double: `src/fintava/tests/fintava-stall.spec.ts` (its timing), the T6b cases of `src/account/tests/account-deletion-round4.contract.spec.ts` (their timing) and `src/money/earnings/tests/earning-settlement.contract.spec.ts` (it pins the earning rules from before R-55). Test files only: never the Fintava double, the Fintava adapter or any other Fintava code. This is the owner's exception to "never edit an assertion in a test you did not write" for these three files and no others. The earlier one-argument change at `src/account/tests/account-deletion.contract.spec.ts:539` stays as it is.
+**Carried out by:** FIX-88.
+
+### R-71 · A host who removes a member from a private community pays back the unused days
+*Owner, 19 Oct 2026 (Q-43).* When a host removes a member who still has paid days left on a private community's monthly pass (R-63), the member gets the unused days back, worked out from the price they paid. A member who leaves on their own still gets nothing back. Only the removal is ruled: a pass is still not refunded when the host stops being a creator (G-INBOX-24-3), and a removed member still cannot re-join without the host's approval (G-INBOX-24-6). Updates R-63.
+**Carried out by:** INBOX-25.
+
+### R-72 · Sign-up codes and wallet PIN reset codes go by email at launch
+*Owner, 19 Oct 2026 (Q-44).* At launch the sign-up code and the wallet PIN reset code are both sent by email. WAWU ID's setting is `SIGNUP_VERIFY_CHANNEL=email`. A text-message provider comes later, and only if the owner names one: no task builds or picks one before then. Confirms R-39's "No SMS" for both codes.
+**Carried out by:** AUTH-07's release step 5 (set the value and restart WAWU ID); the PIN reset code's email route in WAWU ID is G-400, which has no task yet (the lead assigns it).
+
+### R-73 · A deleted account's ID documents are kept hidden for 5 years, then deleted
+*Owner, 19 Oct 2026 (Q-45).* When an account is deleted, its ID documents (ID card photos, and the documents of service and professional applications) are kept for 5 years after the deletion, hidden from everyone, and then deleted. The files meant are those FIX-65 refiles under `deleted-account` (G-FIX-65-1). This replaces FIX-65's lead default ("kept and refiled, never deleted"). Everything else the purge deletes stays as FIX-65 built it.
+**Carried out by:** SETTINGS-09.

@@ -18,7 +18,7 @@ artboards: []
 ## Current state
 
 As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
-- **Status:** merging (lead). Verdict: merge (the B1 medium F1 and F3 closed by the R-55 round; 3 lows); branch CI red only on the Fintava-double earning-settlement spec (R-55, owner question Q-42) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-16-R55.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
+- **Status:** merging (lead). Verdict: merge (the B1 medium F1 and F3 closed by the R-55 round; 3 lows); branch CI red only on the Fintava-double earning-settlement spec (R-55, owner question Q-42, ruled in R-70) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-16-R55.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
 - **Branches:** backend `wmt/WALLET-16-R55` `9580bb0` (from `wmt/B1` `e41210e`; B1 not pushed to), mobile `wmt/WALLET-16-R55` (records and the contract copy). Migration `20261025140000_earning_daily_moves`, additive: table `EarningMove`, nullable `EarningSettlement.moveId`, CHECKs, two guard triggers. The stamps `20261025120000` and `20261025130000` are unchanged. SHARED-CHANGES WALLET-16 #8.
 - **Merged and live:** nothing of this task (it is in `wmt/MERGE-12`, not on main).
 - **Sweep start cutoff (lead ruling 17 Oct):** untouched; its spec passes.

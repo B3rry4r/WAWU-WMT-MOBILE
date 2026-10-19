@@ -35,7 +35,7 @@ Recorded by the lead as DECISIONS.md R-39 ("No SMS: codes go by email, as before
 
 - Sign-up's required verification is a 6-digit code mailed to the email typed on A3, sent the way WAWU ID already sends email (Resend). No text message is sent at sign-up.
 - The phone number is still asked on A3 (it is used later) but is not verified by a code at sign-up.
-- Reversible, additive: one WAWU ID setting, `SIGNUP_VERIFY_CHANNEL=phone|email`. **Default `phone` (lead ruling, 10 Oct 2026, round 2): today's behaviour, so deploying WAWU ID changes nothing by itself.** `email` is switched on by the release steps below and answers the old phone-code routes 409 `SIGNUP_CHANNEL_DISABLED`; `sms`, this value's name in round 1, is still read as `phone`. The Fintava SMS provider and every phone-code route stay in the code. No route is removed.
+- Reversible, additive: one WAWU ID setting, `SIGNUP_VERIFY_CHANNEL=phone|email`. **Default `phone` (lead ruling, 10 Oct 2026, round 2): today's behaviour, so deploying WAWU ID changes nothing by itself.** `email` is switched on by the release steps below and answers the old phone-code routes 409 `SIGNUP_CHANNEL_DISABLED`; `sms`, this value's name in round 1, is still read as `phone`. The Fintava SMS provider and every phone-code route stay in the code. No route is removed. Owner, 19 Oct 2026 (Q-44, R-72): the launch channel is `email`, and the PIN reset code goes by email too; a text provider comes later, only if the owner names one.
 
 ## Goal
 
@@ -57,7 +57,7 @@ The setting's default is `phone`, today's behaviour, so the order of release mat
 2. Release the app build with email codes to testers. Older builds, and sign-ups waiting on a text, keep working while the setting is `phone`. The new build asks `GET /auth/signup/channel` and words A3's line by the answer, so A3 and A4 name the same channel: text while the setting is `phone` ("We'll text a code to your phone.", "Verify your phone"), email once it is `email`.
 3. Confirm Resend in production: `RESEND_API_KEY` is set on WAWU ID and the sending domain is verified, shown by a real mail arriving in a real mailbox. A test that works: a forgot-password link asked for with `method: email` for an account whose email is **confirmed** (a web account, an account that finished a mailed sign-up, or a texted account that finished the email step). For a texted account whose email was never confirmed it answers 200 and sends nothing, which reads as "Resend is broken" and is not a test of Resend. G-213 (the sender and wording) is the owner's.
 4. Have a way to add and prove a phone later (G-222). A mailed sign-up whose number another account has typed is made without a number, and the person must be able to add and prove one before the setting goes to `email`. (Round 3, lead ruling.)
-5. Set `SIGNUP_VERIFY_CHANNEL=email` and restart WAWU ID.
+5. Set `SIGNUP_VERIFY_CHANNEL=email` and restart WAWU ID. (This is the launch setting: owner, 19 Oct 2026, Q-44, R-72.)
 6. From then an older app build and any sign-up still waiting on a text are refused (409 `SIGNUP_CHANNEL_DISABLED`) and start again at A3. Keep the time between steps 2 and 5 short, so testers on the new build and the old behaviour do not wait on each other.
 
 Rolling back is setting `phone` and restarting WAWU ID.
