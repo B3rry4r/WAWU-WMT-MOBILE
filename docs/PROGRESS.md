@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 327.**
+**Launch tasks done: 176 of 328.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 151 | 0 | 0 | 0 |
+| verifying | 152 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-88](../tasks/FIX-88.md) Three old backend specs that run on the Fintava double stop failing CI, by chance or by design (You)
 - [FIX-84](../tasks/FIX-84.md) Tests that compare a sent photo link with a returned one compare the object and a valid signed link, never the whole signed link (You)
 - [FIX-83](../tasks/FIX-83.md) A test that lists a message's media compares the object key and a valid signed link, never the whole signed link (You)
 - [FIX-82](../tasks/FIX-82.md) A test's clean-up never touches a database that is not a test database; the M19 test fails on the old route (You)
