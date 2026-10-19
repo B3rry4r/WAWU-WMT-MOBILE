@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 328.**
+**Launch tasks done: 176 of 329.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 152 | 0 | 0 | 0 |
+| verifying | 153 | 0 | 0 | 0 |
 | review | 1 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -110,6 +110,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
+- [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
 - [AUTH-09](../tasks/AUTH-09.md) WAWU ID emails the wallet PIN reset code (You)
@@ -153,7 +154,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [DV2-RM](../tasks/DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card (You)
 - [HOME-17](../tasks/HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up) (You)
 - [WALLET-40](../tasks/WALLET-40.md) Alert when your account number is ready (You)
-- [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
+- [INBOX-25](../tasks/INBOX-25.md) A removed member gets the unused pass days back (You)
 - [EVENTS-13](../tasks/EVENTS-13.md) Call-off: order cap, cancel once, free tickets (You)
 - [LINKS-01](../tasks/LINKS-01.md) Every link WAWU sends lands somewhere that works (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)

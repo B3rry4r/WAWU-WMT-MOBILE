@@ -1,0 +1,24 @@
+# INBOX-25 history
+
+## Builder report, round 1 (19 Oct 2026, Sonnet builder, T2)
+
+Backend `wmt/INBOX-25` `26fdf0d` from `wmt/MERGE-25` `223fe89`; mobile `wmt/INBOX-25` from `eb2ffa3b`.
+
+Built: the removal's refund (`CommunityPassRemoval.decide`, in the removal's own transaction), the payout (`CommunityPassRefundService`, the hold refund's lease, ask-never-resend and one-new-try-per-confirmed-failure rules through `WALLET_PROVIDER`), the host's take-back (`EarningDeduction` applied by the daily move), the Hub quote route, the notification, migration `20261029090000_community_pass_removal_refund` with `rollback.sql`.
+
+Tests (Nuvion stand-in stack, ports 7840 to 7847): `community-pass-removal-refund.contract.spec.ts` 12 of 12; 9 of the 12 fail with the refund decision switched off, the 3 that pass are the no-refund cases (0 unused days, leaving, guards). Touched specs on a fresh database: 8 suites, 134 tests. Protected suite on its own mock WAWU ID (port 7843): 251 of 253; the 2 red are `GET` and `POST /communities/:id/messages` widened by `videoUrl` and `voiceUrl` from MERGE-25's `20261027090000_community_message_media`.
+
+Assertions changed in tests this task did not write, because R-71 reverses what they pinned: `community-pass-nuvion.contract.spec.ts` (three removal cases: the balance now includes the refund, and a pass ended by the removal means 403 until a new pass), `push-policy.spec.ts` (the closed list of kinds and of push-only gates gains `community_pass_refunded`).
+
+Not done: no remove sheet is mounted (no board draws a member list or a remove entry, G-INBOX-25-1). A real Android phone (V10) not run. The mobile full check is the merge agent's.
+
+## Builder report, round 2 (19 Oct 2026, Sonnet builder, T2)
+
+Backend `wmt/INBOX-25` `894c058` on `26fdf0d`; mobile `wmt/INBOX-25` on `b58cee54` (records only). Fixes the verifier's F1 to F4 (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/INBOX-25.md`).
+
+- **F1 (high).** `CommunityPassRemoval.decide` set `startsAt = endsAt = now` on a pass that had not started, which `CommunityPass_period_valid` (`endsAt > startsAt`) refuses; the removal answered 500 and the member stayed. Now a pass not started is all unused (the quote and the decision both use `passRefundFigures`, so the quote equals what is paid) and is paid back whole inside the same single refund row and single payment. It is ended the way passes are ended here (`endsAt = now`, which is how access is read); a pass that has not started, or starts this very millisecond, also gets its start pulled back to one millisecond before now so the table check holds. The row is kept, not deleted: it holds the unique `walletPaymentId` (a payment confirmed again cannot grant the pass twice), the price and the refund mark that makes the removal once-only. Two new cases in `community-pass-removal-refund.contract.spec.ts`: a running pass (25 unused days) plus an unstarted renewal bought through the real purchase route: quote 366,666 kobo and 55 days, ONE refund row and ONE payment of 366,666, host share 311,666, member out (pending), both passes marked and over, no 500, a second tap pays nothing; and a pass starting exactly at the removal moment (200,000 back, ended without breaking the check). Both fail on the old code with 23514.
+- **F2.** `account-data-map.ts`: `CommunityPassRefund.userWawuId`, `CommunityPassRefund.hostWawuId` and `EarningDeduction.payeeWawuUserId` are COUNTERPARTY, kept for the ledger. A deletion of the member or the host removes none of these rows (amount, reference, the provider's answer and the host's debt record stay); a refund still waiting for a wallet stays in WAWU's account with no one to land it to.
+- **F3.** `tgif-daily-notice-units.spec.ts`: only the `PUSH_ONLY_GATE` list now includes `community_pass_refunded: 'moneyIn'` (R-71).
+- **F4.** `rollback.sql` is one DO block (guard and all drops together). Proved on a throwaway database with one refund row: plain `psql -f`, `psql -1 -f` and `psql < file` each refused with the message and left all 3 tables, the column and the migration stamp in place; on a clean database plain `psql -f` and `psql -1 -f` each dropped everything and the migration applied again afterwards.
+- **Not built (lead).** F6: a host may delete their account with a deduction still open; WAWU bears what is left (written in Current state). F5 and F7 are rows in `tasks/SWEEP-INBOX.md`.
+- **Checks.** Removal spec 14 of 14; community-pass-nuvion, community-pass-rules, push-policy, account-data-map, tgif-daily-notice-units, community-join-request and purge-kept-count 120 tests pass; tsc, eslint on changed files, gates (0 fail), check_baseline all EXIT 0. The contract does not change (no route or type touched), so `contract:build` was not run; `contract/SOURCE_COMMIT` names the new backend head.

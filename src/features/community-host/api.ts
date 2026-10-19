@@ -82,3 +82,24 @@ export async function fetchRequestsCount(id: string): Promise<number> {
   const page = await fetchRequests(id, 1);
   return page.items.filter((row) => row.status === 'pending').length > 0 ? Math.max(page.total, 1) : 0;
 }
+
+export type RemovalQuote = components['schemas']['CommunityPassRemovalQuoteView'];
+
+export const removalQuoteKey = (id: string, userWawuId: string) => ['community', id, 'removal-quote', userWawuId] as const;
+
+/** GET /communities/{id}/members/{userWawuId}/removal-quote (host only): what the member is paid back if the host removes them, figured by the Hub (INBOX-25, R-71). */
+export async function fetchRemovalQuote(id: string, userWawuId: string): Promise<RemovalQuote> {
+  const body = (await unwrap(
+    api.GET('/api/hub/communities/{id}/members/{userWawuId}/removal-quote', { params: { path: { id, userWawuId } } }),
+  )) as unknown as Envelope<RemovalQuote>;
+  const quote = body?.data;
+  if (!quote || typeof quote !== 'object' || !Number.isSafeInteger(quote.refundKobo) || !Number.isSafeInteger(quote.unusedDays)) {
+    throw unreadable('refund');
+  }
+  return quote;
+}
+
+/** DELETE /communities/{id}/members/{userWawuId}: the host removes the member; the unused days of a paid pass go back to the member's wallet (INBOX-25, R-71). */
+export async function removeMember(id: string, userWawuId: string): Promise<void> {
+  await unwrap(api.DELETE('/api/hub/communities/{id}/members/{userWawuId}', { params: { path: { id, userWawuId } } }));
+}

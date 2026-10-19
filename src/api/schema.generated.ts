@@ -5406,6 +5406,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/{id}/members/{userWawuId}/removal-quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What removing this member would give them back, for the host's remove
+         *     sheet (INBOX-25, R-71): the unused days of a paid monthly pass, pro rata
+         *     in kobo. Figured by the Hub; nothing is written or moved.
+         */
+        get: operations["CommunityController_removalQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/communities/{id}/members/{userWawuId}": {
         parameters: {
             query?: never;
@@ -5419,7 +5440,8 @@ export interface paths {
         /**
          * Remove a settled member. Separate from decline on purpose: ejecting
          *     someone who is already in must never be something a stale queue can do
-         *     by accident.
+         *     by accident. In a room that sells a monthly pass the member is paid back
+         *     the unused days (INBOX-25, R-71); the answer is the same `{ removed: true }`.
          */
         delete: operations["CommunityController_removeMember"];
         options?: never;
@@ -13415,6 +13437,13 @@ export interface components {
             joinedAt: string | null;
             handle: string | null;
             avatarUrl: string | null;
+        };
+        CommunityPassRemovalQuoteView: {
+            communityId: string;
+            userWawuId: string;
+            refundKobo: number;
+            unusedDays: number;
+            asOf: string;
         };
         CommunityMessageSender: {
             wawuId: string;
@@ -25579,6 +25608,28 @@ export interface operations {
                     "application/json": {
                         declined: boolean;
                     };
+                };
+            };
+        };
+    };
+    CommunityController_removalQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPassRemovalQuoteView"];
                 };
             };
         };
