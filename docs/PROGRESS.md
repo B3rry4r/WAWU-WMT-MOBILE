@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 47 | 0 | 0 | 0 |
+| todo | 46 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 159 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 2 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -134,6 +134,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-24](../tasks/INBOX-24.md) Private community monthly pass (backend) (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [EVENTS-12](../tasks/EVENTS-12.md) Hosting an event needs an active tier (backend) (You)
+- [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [AITOOLS-01](../tasks/AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
