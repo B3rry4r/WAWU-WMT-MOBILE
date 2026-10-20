@@ -7,14 +7,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 48 | 0 | 0 | 0 |
+| todo | 47 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 159 | 0 | 0 | 0 |
-| review | 1 | 0 | 0 | 0 |
+| review | 2 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 
 ## Being verified
@@ -368,7 +369,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked
