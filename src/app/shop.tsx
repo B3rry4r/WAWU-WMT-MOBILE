@@ -22,6 +22,7 @@ export default function ShopRoute() {
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       onAdd={() => router.push('/shop-product')}
       onOpenDraft={(id) => router.push({ pathname: '/shop-product', params: { id } })}
+      onHearName={() => router.push('/hear-name')}
     />
   );
 }
