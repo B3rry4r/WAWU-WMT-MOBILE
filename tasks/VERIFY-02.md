@@ -7,7 +7,7 @@ order: 271
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [VERIFY-01, VOICE-01, ME-12, DV2-COMP]
 decisions: [R-43, R-66, R-68]
 passes: [V1, V4, V5, V6, V9]
@@ -25,7 +25,8 @@ As of 20 Oct 2026, verifying (built by a Sonnet builder, T1; mobile `wmt/VERIFY-
 - **Differs from the boards, recorded:** "About 20 seconds when read" and the "30-second" in the too-long line are not drawn (nothing serves seconds, G-VERIFY-02-1); the limit is the Hub's (500 here, the boards' 250 is an example); web shots carry no status bar or home indicator.
 - **Not run:** audio through a real phone speaker and a real voice provider (stand-in only; the playing picture used a 20 s tone served in place of the stand-in's clip); Play again by hand on a device (a test and the live preview cover it).
 - **Filed:** BACKEND_GAPS G-VERIFY-02-1, G-VERIFY-02-2; SHARED-CHANGES VERIFY-02 #1 (a shared text area, open), #2 and R1 (the two entries and the two `_layout.tsx` lines, applied on the branch for the lead to confirm).
-- **Next:** the verifier (a fresh Sonnet, never the builder). Then the lead merges VERIFY-02 with VERIFY-03.
+- **Verified 20 Oct 2026 (fresh Sonnet verifier, T1): PASS, no finding medium or worse; status review.** Lows go to the VERIFY sweep (see Verifier report). The running-tier capability check (lands on VF8) is verified when VERIFY-03 lands, as ruled; **VERIFY-02 merges into main only together with VERIFY-03.**
+- **Next:** the lead merges VERIFY-02 with VERIFY-03.
 
 ## Read first
 
@@ -71,7 +72,30 @@ A person hears their name said in a studio voice (free), fixes it with a phoneti
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+**Verdict: PASS** (head under check `f1f28501` on base `025d8d58`; nothing medium or worse; 5 lows for the sweep). Verifier: a fresh Sonnet, 20 Oct 2026, built none of it.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Diff vs report | passed | 23 files, 3531 added, 996 deleted. Every file the builder lists is there; extras are `docs/PROGRESS.md`, `docs/LOG.md`, `contract/SOURCE_COMMIT` (records). The 996 deleted lines are the contract and generated-type sync: `contract/SOURCE_COMMIT` is `bb21578`, and `npm run api -- --backend <backend bb21578>` re-run by the verifier left `git status` clean (nothing hand-edited). |
+| tsc | passed | `npx tsc --noEmit` EXIT 0 (after `npm ci` on the branch lockfile) |
+| eslint | passed | the 14 changed source files, EXIT 0, no warning |
+| Tests | passed | `src/features/verify`, `src/features/me`, route-guard, route-graph and auth-guard: 26 suites, 540 tests, EXIT 0 (includes `voice.test.tsx`, `voiceEntries.test.tsx`) |
+| Gates | passed | `scripts/gates/run.py` EXIT 0 (10 run, 1172 files scanned, 0 fail, 16 warn, 0 accepted, none in changed files); `check_baseline.py` EXIT 0 (0 entries); `check_tasks.py` EXIT 0 (390 tasks) |
+| V1 (checks 1 to 3) | passed, one part deferred | Live on a local stack (Hub from backend `bb21578`, mock WAWU ID, voice and storage stand-ins, the branch's web export), signed in through the real sign-in screen. Check 1: the name played as VF3 opened, "Not quite right?" opened the spelling, "Play again" fired a new preview, "Save" showed the Saved pill and `GET /me/voice` then answered the kept spelling. Check 2: the box showed `156 / 500` (the Hub's `textMaxChars`, not the board's 250), 620 characters turned the box red with "Too long for a Voice Intro. Cut a sentence." and `620 / 500`, the button was disabled while over the limit and while empty. Check 3: with no tier "Hear it in my voice" landed on `/tiers`. Ended (`/your-tier`) and running (`/voice-consent`) are covered by `voiceEntries.test.tsx` (passed) only: **VF8 is VERIFY-03's, verified when it lands (lead ruling), not a finding.** |
+| V4 / V6 States | passed | Real causes: loading and error and voices-off and throttle by tests (passed); the Hub's real hourly preview limit: after about 16 previews in the hour (the screens' own plus the verifier's) the Hub answered `429 voice_preview_limit` and the app showed its own words, "You have heard your name a lot in the last hour. Try again a little later." under the disc (`shots/limit-429-dark.png`); too long and empty and over-the-limit button state by typing (above). |
+| V5 Picture | passed, with notes | VF3, VF3a, VF3b, VF4, VF4a, VF4b rendered with `render_design.py` and compared with the verifier's own web screenshots at 390 px, dark and light (`shots/cmp-{dark,light}-*.png`, board on top, built below). Layout, spacing, copy, icons, ring colours, the disabled button and the Saved pill match. Differences all recorded: no status bar or home indicator on web; the limit is the Hub's 500 (board's 250 is an example); "About 20 seconds when read" and "30-second" not drawn (G-VERIFY-02-1). Not captured by me: the VF3 playing picture (the stand-in clip ended before the shot, the disc showed Play, the builder's 20 s tone covers it) and VF4a in light (the dark run had kept words on the same account, so the light box showed them); the empty box is the same component and was seen in dark. Audio through a speaker not heard. |
+| V9 Live seam | passed | Values only the Hub could give: the person's name (Chidi Umeh) from the profile, `textMaxChars` 500, the kept spelling, the 429 text. |
+| Facts | passed | No literal limit on the intro (the Hub's `textMaxChars`; an answer without one is refused, `voiceApi.ts` `isIntro`); no seconds; no provider named (grep for brand names in the new files: none, R-68); no em-dash in user text; entries are the drawn ones (Me's prompt for a creator with no Voice Intro, Your shop's row only with a draft); nothing reintroduces the retired Shop (R-2: `/shop` here is VF2 Your shop); the two `_layout.tsx` lines are only `Stack.Screen` registrations. |
+
+**Findings**
+
+- low, differs-for-recorded-reason: **`IntroBox` is a local box beside the shared `TextField`** (`src/features/verify/voiceParts.tsx` 118-168). It duplicates the multi-line field's focus ring, danger ring and growth with the board's own metrics (200 high, 20 corner, no label). The shared field cannot draw the board without new optional props, `TextField` is fenced, and the request is filed (SHARED-CHANGES VERIFY-02 #1, open), so it is a stand-in with a removal plan (WORKFLOW section 4), not a silent fork. Repro: open `/voice-intro` and compare with `TextField multiline`. For the lead: apply row #1 (hide label, min height, corner) and let a follow-up swap `IntroBox` out.
+- low, defect: **`EntryRow` is not in the builder's "Shared parts" note** (`voiceParts.tsx` 76-116, used at `MeScreen.tsx` 240 and `ShopScreen.tsx` 77). It draws a card with an `IconTile`, title, caption and chevron, which `ListRow` in a `Card` also draws; it carries the board's 15 and 12.5 type where `ListRow` has 15.5 and 13. Same remedy as above (a row variant on `ListRow`); sweep.
+- low, differs-for-recorded-reason: **an ended tier goes to `/your-tier`, not VF5** (`voiceModel.ts` 16-21, `voice-intro.tsx` 27-28). The task text says VF5 for "no active tier". The same branch of the Publish entry (`shop-product.tsx` 26-29, VERIFY-04 task line 23, TIER-02 ended default) sends an ended tier to Your tier (VF14b "Your tier has ended ... Renew"), and VF5 sells a new tier. Judged right: one place renews. Flip is one line in `hearInMyVoiceRoute` if the lead rules otherwise.
+- low, unclear: **two literal field limits** `NAME_MAX = 60` and `PHONETIC_MAX = 80` (`voiceApi.ts` 27-28) are the contract DTO's `maxLength`, not values the Hub serves (R-47 says no literal limit). The 60 is G-VERIFY-02-2; the 80 on the spelling field is not in BACKEND_GAPS. The Hub refuses longer anyway. Repro: type 81 characters in the spelling field; the field stops at 80.
+- low, unclear: **no board draws Me's Voice Intro prompt for a person with none** (the Verify entry map's hotspot sits on the 52 high Bio pill; the builder drew a 76 high card with the legend's words "Voice Intro / Write it, hear it in your voice"). It is the drawn text at the drawn place, but the picture is the builder's. Owner or designer to confirm.
+
+Capability checks: 1 passed; 2 passed; 3 none passed live, ended and running by test, running's landing on VF8 awaits VERIFY-03; 4 passed (notes above); 5 passed; 6 passed. Test gap (not a defect): nothing kills a mutant that swaps `/your-tier` and `/tiers` for the ended case beyond `voiceEntries.test.tsx`'s own assertion; the test that would is a route-table check shared with Publish.
 
 ## Owner sign-off
 
