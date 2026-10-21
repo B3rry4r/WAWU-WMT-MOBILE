@@ -7,7 +7,7 @@ order: -104
 priority: launch
 repo: all
 type: backend-refactor
-status: verifying
+status: review
 depends_on: []
 decisions: [R-6, R-43, R-66, R-68]
 passes: [V1, V2, V3, V9]
@@ -17,14 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 21 Oct 2026, verifying: built by a Sonnet builder (T1; the consent-record row V2 treated as T2). No PR.
+As of 21 Oct 2026, review (verifier PASS, 3 lows, none above low): built by a Sonnet builder (T1; the consent-record row V2 treated as T2). No PR.
 - **Branches:** backend `wmt/SWEEP-VOICE` `1daf6be` on `origin/main` `d7dbf9e`; mobile `wmt/SWEEP-VOICE` (this file) on `origin/main` `905e391f`.
 - **Rows:** 9 fixed or ruled in the table below (V1 to V7, A1, A2); each names its commit or its ruling. Five more lows are left, one line each (below).
 - **Spec flipped:** one existing assertion. VOICE-01's check 4 used the plain account (`PLAIN`) as the person whose intro is served; V1 makes that account answer null, so the check now uses a creator (`BASIC`) as the owner. Nothing was weakened; V1 has its own case.
 - **Checks:** backend `tsc --noEmit` EXIT 0; eslint and prettier on the 6 changed `.ts` files EXIT 0; `voice-intro.contract` and `voice-provider-own-voice` specs in band 35 tests EXIT 0 (on a seeded DB), and `voice-intro.contract` alone 30 tests EXIT 0 on a migrated, NOT seeded DB (V7); `npm run test:protected` 2 suites, 253 tests EXIT 0 against the base lock; `contract:build` EXIT 0 and `contract/openapi.json` unchanged; gates EXIT 0 (0 fail); `check_baseline.py` EXIT 0. App `tsc --noEmit` EXIT 0; eslint on the 3 changed source files EXIT 0; jest (`src/features/verify`, `src/features/me`, lists, focus, route-guard, route-graph, auth-guard, keyed-write-sites) 30 suites, 637 tests EXIT 0, then the new `entryRow.test.tsx` 2 tests EXIT 0; `scripts/gates/run.py` EXIT 0 (10 run, 0 fail, 18 warn: one is the new PROVISIONAL mark), `check_baseline.py` EXIT 0, `check_tasks.py --write` EXIT 0 (392 tasks).
 - **Without the fix (proof):** the five backend cases (V1, V2, V3, V4, V5) fail on the unfixed services and rollback; V7's old spec fails (1 of 26) on a migrated, unseeded DB and the new one passes; `entryRow.test.tsx` fails 2 of 2 on the old `ListRow` and `EntryRow`.
 - **Not run:** the real voice provider (a provider key set on the Hub), the full backend suite (CI runs it), anything Fintava.
-- **Next:** a fresh Sonnet verifier checks each row; the lead merges backend and mobile branches together.
+- **Next:** the lead merges backend and mobile branches together; the 3 verifier lows (see Verifier report) go to the next sweep. The A2 picture check against VF2b and the Me prompt was not run.
 
 ## Read first
 
@@ -76,7 +76,28 @@ The Voice Intro: the Hub's `src/voice-intro/` and its migration, and the app's `
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md)._
+Verifier: a fresh Sonnet session (built none of it), 21 Oct 2026, tier T1 with V2 checked as T2. Backend `1daf6be` on `origin/main` `d7dbf9e`; mobile `227ca40a` code, `bcfc4840` records. **Verdict: PASS (merge). Nothing blocker, high or medium; 3 lows go to the next sweep.** Logs under the verifier's scratchpad `sweep-voice-v/`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 (public route, no public profile) | passed | `getPublicProfile` (the profile and `/users/public/:id`) 404s exactly when `CreatorState` is missing, so "no creator state" is exactly "no public profile" in this product; a plain account with a tier and an intro answers null byte for byte as a creator with none; unknown and blocked people still 404; served once creator state exists. Spec case passes; fails on `origin/main` services. |
+| V2 (rollback guard) | passed | `psql -1 -f rollback.sql` on a test DB: refuses (rc 3, 3 tables kept) for consent, words, sample, audio, a working run and a failed run; runs for a name spelling plus a preview only (tables dropped); runs on empty tables. Spec case passes, fails on old file. |
+| V3 (preview limit) | passed | Five failed previews (provider down x4, store down x1) leave 0 rows, then 2 succeed and the 3rd is 429. Failure is given back; success still counts. Fails on old services. |
+| V4 (failed run cost) | passed | View `costPoints` 0 for a failed run, the row keeps 200; done run shows its cost. Fails on old services. |
+| V5 (no name) | passed | `consent.line` is "Add your name to your profile first."; `giveConsent` with '' or '  ' refuses 409 `voice_name_required`, stores nothing; with a name unchanged. Fails on old services. HTTP route wired by `giveConsent(user.sub, personName(user), line)` (read, not run over HTTP). |
+| V6 (ruled no) | agree | Both `voice.*` and `voice_intro.*` keys are live in `plan-setting-registry.ts` and `plan-settings.defaults.json`; renaming is not additive. |
+| V7 (own rows) | passed | 30 of 30 on a migrated, unseeded DB; UserProfile, CreatorState, Voice* tables back to 0 after; the seeded DB keeps its 3 and 2. |
+| Flipped assertion | passed | Check 4 uses BASIC (a creator) as the owner; PLAIN has its own V1 case; nothing weakened. |
+| A1 | passed | `NAME_MAX` 60 and `PHONETIC_MAX` 80 are literals, marked `PROVISIONAL(VOICE-NAME-LIMITS)`, equal `NamePreviewDto` `Length(1, 60)` and `Length(1, 80)`, G-SWEEP-VOICE-1 filed; gate reads the mark. |
+| A2 | passed on code and test, picture NOT RUN | `EntryRow` is `Card` plus one `ListRow` with the optional `padV` (SHARED-CHANGES SWEEP-VOICE #1); default path unchanged (test); `entryRow.test.tsx` 2 of 2. The light and dark picture against VF2b and the Me prompt was NOT RUN (30 minute limit; no web export made). |
+| Diff vs report | passed | Backend 8 files and mobile source files match the builder's list; `contract/openapi.json`, schema, routes and the protected lock untouched. |
+
+Checks (each with EXIT 0 in its log): backend `tsc --noEmit`; eslint on the 6 changed `.ts` files; voice-intro.contract plus voice-provider-own-voice 2 suites, 35 tests (seeded DB); voice-intro.contract 30 tests on the migrated unseeded DB; the same spec against old services: 5 failed (V1, V2, V3, V4, V5), 25 passed; `npm run test:protected` 2 suites, 253 tests; gates 9 run, 1711 files, 0 fail; `check_baseline.py`. App: `tsc --noEmit` (needed `react-native-view-shot` added to the verifier's stale node_modules; the first run's one error was that missing module in unchanged `referral/cardPicture.ts`); eslint on the 4 changed files; jest verify, me, lists, focus 27 suites, 339 tests; `scripts/gates/run.py` 10 run, 1180 files, 0 fail, 18 warn (VOICE-NAME-LIMITS among them); `check_tasks.py` 392 tasks. No spec imports the Fintava double (the two voice specs and their harnesses name Fintava only in a comment). Ports 7860 and 7861; DBs `sweepvoicev_{hub,bare,prot}_test`.
+
+Findings (no defect above low):
+- **low, test-gap:** `rollback.sql` only refuses under `psql -1` or `ON_ERROR_STOP` (as its header says). A bare `psql -f rollback.sql` prints the error and then runs the three `DROP TABLE`s, losing the rows (reproduced: row kept the guard error, tables gone). Same pattern as the sibling guarded rollbacks; a later tidy could put the drops inside the same `DO` block or after `\set ON_ERROR_STOP on`.
+- **low, test-gap:** V5 is proved at the service (`profiles.giveConsent`), not over HTTP with a token that has no name; the mock WAWU ID has no nameless person. Killing mutant: drop the `name.trim()` check in `giveConsent` while keeping `consentLineFor`; the spec would still catch it, but a mis-wired controller would not be caught.
+- **low, differs-for-recorded-reason:** a new creator who has not yet published has no `CreatorState` row, so the public intro answers null for them until their first publish; the profile 404s for them too (`user-profile.service.ts` 316-324), so no screen shows a gap.
 
 ## Owner sign-off
 
