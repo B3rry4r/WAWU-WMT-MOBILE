@@ -7303,6 +7303,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the caller's name is said, and whether voices are on. */
+        get: operations["VoiceIntroController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice/name-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Hear your name" (VF3): the name, said in the studio voice. Free; limited
+         *     per hour by a setting (`429 voice_preview_limit`). `phonetic` is how it
+         *     sounds when the plain spelling is not said right. `503 voice_unavailable`
+         *     when voices are not set up on the Hub.
+         */
+        post: operations["VoiceIntroController_previewName"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Keeps how the caller's name is said (`null` puts it back to the plain name). */
+        put: operations["VoiceIntroController_saveName"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice-intro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Voice Intro as it stands: the words, the consent line to show and
+         *     whether it is given, whether a sample is in, the audio (`aiVoice: true`),
+         *     what the next try costs (free when the tier still includes the first one)
+         *     and the latest try.
+         */
+        get: operations["VoiceIntroController_intro"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice-intro/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The words of the Voice Intro. Up to `textMaxChars` (a setting): `400 voice_text_too_long` over it. */
+        put: operations["VoiceIntroController_saveText"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice-intro/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The caller agrees that this is their own voice. `line` must be the words
+         *     `GET /me/voice-intro` served (`409 voice_consent_line_changed` otherwise);
+         *     they are stored with the time.
+         */
+        post: operations["VoiceIntroController_consent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice-intro/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keeps the 30 second recording the caller uploaded: `POST /uploads/presign`
+         *     with the folder `voice/sample`, the file sent, `POST /uploads/confirm`,
+         *     then the `fileUrl` here. Only the caller's own landed upload is taken
+         *     (`400 voice_sample_unusable`); the consent comes first (`409
+         *     voice_consent_required`).
+         */
+        post: operations["VoiceIntroController_sample"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/voice-intro/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Makes the Voice Intro in the caller's own voice. The first one a tier
+         *     includes takes no points; any other holds the plan's `voice_intro` points
+         *     (200 by default). Answers `202` with the try `working`; `GET
+         *     /me/voice-intro` is what the app polls. The points are kept only when the
+         *     audio is made and given back when it is not (the try says "No points were
+         *     taken"). Needs an `Idempotency-Key`: the same key again answers the first
+         *     try (`200`, `Idempotent-Replayed: true`) and takes nothing more. Refused
+         *     with nothing taken: `409 voice_text_required`, `409 voice_consent_required`,
+         *     `409 voice_sample_required`, `409 voice_intro_busy`, `402
+         *     insufficient_points`, `422 points_cap_reached`, `503 voice_unavailable`.
+         */
+        post: operations["VoiceIntroController_generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/{wawuId}/voice-intro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `{ voiceIntro: { url, aiVoice: true } }`, or `{ voiceIntro: null }` for a person with none. `404` for no such person, or one hidden by a block. */
+        get: operations["VoiceIntroPublicController_voiceIntro"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -7600,7 +7784,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -8124,53 +8308,9 @@ export interface components {
              */
             certificateUrl?: string;
         };
-        AddToCartDto: {
-            /** Format: uuid */
-            productId: string;
-            quantity: number;
-        };
-        SetCartQuantityDto: {
-            /** @description Zero is meaningful: it removes the line. */
-            quantity: number;
-        };
-        CheckoutDto: {
-            deliveryName: string;
-            deliveryPhone: string;
-            deliveryAddress: string;
-            deliveryCity: string;
-            deliveryState: string;
-            deliveryNote?: string;
-        };
         VerifyShopOrderDto: {
             transaction_id: string;
             tx_ref: string;
-        };
-        UpsertProductDto: {
-            name: string;
-            brand?: string;
-            description: string;
-            /** @enum {string} */
-            category: "professional" | "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "power_accessories";
-            subcategory: string;
-            /**
-             * @description At least ₦1. A product priced at nothing is a mistake nobody notices until
-             *     it sells out, and it cannot be charged for through a payment provider.
-             */
-            priceNaira: number;
-            /** @description The "was" price. The service refuses one that does not exceed the price. */
-            compareAtNaira?: number;
-            stock: number;
-            /**
-             * @description At least one image is required for a LIVE product — the brief's whole
-             *     design is "large imagery, minimal text", and a card with no picture is a
-             *     grey box in the middle of it. Enforced on publish rather than on save, so
-             *     a draft can be written before the photos arrive.
-             */
-            images: string[];
-            wawuVerified?: boolean;
-            wawuPick?: boolean;
-            /** @enum {string} */
-            status?: "live" | "draft" | "hidden";
         };
         UpdateFulfilmentDto: {
             /** @enum {string} */
@@ -9683,6 +9823,25 @@ export interface components {
             voiceId: string;
             /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
             quoteToken: string;
+        };
+        NamePreviewDto: {
+            /** @description The name to say. */
+            name: string;
+            /** @description How it sounds ("Ah-DEH-oh-lah"), when the plain spelling is not said right. */
+            phonetic?: string;
+        };
+        SaveNameDto: {
+            /** @description The spelling to keep for how the name is said; null puts it back to the plain name. */
+            phonetic: string | null;
+        };
+        VoiceIntroTextDto: {
+            text: string;
+        };
+        VoiceConsentDto: {
+            line: string;
+        };
+        VoiceSampleDto: {
+            fileUrl: string;
         };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
@@ -11412,48 +11571,6 @@ export interface components {
             paymentPlan?: string | null;
             planBenefits?: string[] | null;
             planDescription?: string | null;
-        };
-        ProductView: {
-            id: string;
-            name: string;
-            slug: string;
-            brand: string | null;
-            description: string;
-            /** @enum {string} */
-            category: "professional" | "audio_music" | "video_film" | "lighting_studio" | "photography" | "computing" | "art_design" | "gaming_streaming" | "content_creation" | "live_events" | "power_accessories";
-            subcategory: string;
-            priceNaira: number;
-            compareAtNaira: number | null;
-            inStock: boolean;
-            lowStock: boolean;
-            images: string[];
-            wawuVerified: boolean;
-            wawuPick: boolean;
-            ratingAvg: number | null;
-            ratingCount: number;
-        };
-        CartItemView: {
-            id: string;
-            quantity: number;
-            product: components["schemas"]["ProductView"];
-            lineTotalNaira: number;
-        };
-        CartView: {
-            items: components["schemas"]["CartItemView"][];
-            itemCount: number;
-            subtotalNaira: number;
-            deliveryNaira: number;
-            totalNaira: number;
-        };
-        ShopCheckoutView: {
-            orderId: string;
-            flutterwaveConfig: {
-                txRef: string;
-                amount: number;
-                /** @enum {string} */
-                currency: "NGN";
-                publicKey: string;
-            };
         };
         ShopOrderItemView: {
             id: string;
@@ -14570,6 +14687,52 @@ export interface components {
             message: string | null;
             createdAt: string;
             finishedAt: string | null;
+        };
+        MyVoiceView: {
+            namePhonetic: string | null;
+            nameSavedAt: string | null;
+            available: boolean;
+        };
+        NamePreviewView: {
+            audioUrl: string;
+            aiVoice: boolean;
+        };
+        VoiceRunView: {
+            id: string;
+            /** @enum {string} */
+            state: "failed" | "done" | "working";
+            costPoints: number;
+            included: boolean;
+            message: string | null;
+            createdAt: string;
+            finishedAt: string | null;
+        };
+        VoiceIntroView: {
+            aiVoice: boolean;
+            text: string | null;
+            textMaxChars: number;
+            consent: {
+                line: string;
+                given: boolean;
+            };
+            sample: {
+                recorded: boolean;
+                minSeconds: number;
+                maxSeconds: number;
+            };
+            audioUrl: string | null;
+            next: {
+                free: boolean;
+                costPoints: number;
+            };
+            canGenerate: boolean;
+            run: components["schemas"]["VoiceRunView"];
+        };
+        PublicVoiceIntroView: {
+            voiceIntro: {
+                url: string;
+                aiVoice: boolean;
+            } | null;
         };
         AdminWaitlistRegistrationView: {
             id: string;
@@ -25733,6 +25896,13 @@ export interface operations {
                     };
                 };
             };
+            /** @description reason.code: shop_retired. The txRef is a Shop order: Shop is retired (R-2, OPS-08), so no new payment page is opened for it. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     EventController_list: {
@@ -29333,6 +29503,202 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyVoiceView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_previewName: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NamePreviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NamePreviewView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_saveName: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveNameDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyVoiceView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_intro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceIntroView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_saveText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceIntroTextDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceIntroView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_consent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceConsentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceIntroView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_sample: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceSampleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceIntroView"];
+                };
+            };
+        };
+    };
+    VoiceIntroController_generate: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per try. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceIntroView"];
+                };
+            };
+        };
+    };
+    VoiceIntroPublicController_voiceIntro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicVoiceIntroView"];
                 };
             };
         };

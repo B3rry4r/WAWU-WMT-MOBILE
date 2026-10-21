@@ -24,7 +24,6 @@
       },
       "predictiveBackGestureEnabled": false,
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.WRITE_SETTINGS",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR",
@@ -147,8 +146,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro.",
+          "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
       ],

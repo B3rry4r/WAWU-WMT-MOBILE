@@ -398,9 +398,12 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     expect(hub.buys[0].body).toEqual({ kind: 'tier', tierId: 'founding', bump: false, method: 'wallet', expectedTotalKobo: 502_500, quoteToken: 'tok-founding-p-502500' });
     expect(Object.values(hub.buys[0].body)).not.toContain('1234');
     expect(hub.payments).toBe(1);
-    // The board's "Record my voice" opens VF8, which VERIFY-03 builds: it is not drawn here.
-    expect(screen.queryByTestId('official-voice')).toBeNull();
-    await fireEvent.press(screen.getByTestId('official-done'));
+    // The board's "Record my voice" opens VF8, which VERIFY-03 built: it is drawn now, in the place of Done (this one assertion pinned
+    // the state before VERIFY-03, by its own comment).
+    expect(screen.getByTestId('official-voice')).toBeTruthy();
+    expect(screen.queryByTestId('official-done')).toBeNull();
+    // No dead end: the shared header's back is the way out for a person who does not record (the board draws no second button).
+    expect(screen.getByTestId('points-back')).toBeTruthy();
   });
 
   it('a user who ticks the offer pays the tier and the offer, and the Hub is sent it', async () => {

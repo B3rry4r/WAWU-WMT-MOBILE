@@ -11,6 +11,8 @@ import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
 import { CreateEntry } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
+import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
+import { EntryRow } from '@/features/verify/voiceParts';
 import { readFailure } from '@/features/profile-edit/failure';
 import { layout, radius, space, useWawu } from '@/theme';
 
@@ -107,6 +109,8 @@ export type MeScreenProps = {
   onOpenSaved?: () => void;
   /** Notifications (M31, ME-14): a row of the menu, drawn only when given. */
   onOpenNotifications?: () => void;
+  /** The Voice Intro prompt under the name (VF4, VERIFY-02): drawn only when given, for a creator account with no Voice Intro made yet. */
+  onOpenVoiceIntro?: () => void;
 };
 
 /**
@@ -122,11 +126,12 @@ export type MeScreenProps = {
  * only a mark beside the name, from the Hub's `verification`.
  *
  * DV2-03: a person with a running tier sees its badge by their name and the "N of M products" meter under the counts (`GET /me/tier`);
- * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). The Voice Intro player (Bio, AI voice, R-66) is
- * not drawn: the Hub serves no `voiceIntro` yet (VOICE-01, BACKEND_GAPS G-800), so there is nothing to play (R-47). A draft tile opens
+ * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). A creator with no Voice Intro made yet sees the
+ * prompt under the name, which opens VF4 (`GET /me/voice-intro`, VERIFY-02). The Voice Intro player (Bio, AI voice, R-66) is not drawn:
+ * it belongs to VERIFY-03 (VF11) and the profile's own task (DV2-03), so the prompt is all this screen shows of it (R-47). A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -180,6 +185,8 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
     enabled: wawuId !== null && tab === 'content',
   }, cache);
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: creator && tab === 'content' }, cache);
+  // The Voice Intro prompt asks the Hub whether a Voice Intro exists; a read that fails or is still on its way draws no prompt.
+  const voiceIntro = useQuery({ queryKey: voiceIntroKey, queryFn: fetchVoiceIntro, enabled: creator && Boolean(onOpenVoiceIntro) }, cache);
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (tab !== 'content' || !grid.hasNextPage || grid.isFetchingNextPage) return;
@@ -229,6 +236,9 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
                 onOpenTier={onOpenTier}
               />
               {notice ? <Banner tone="warning" title="That did not open" body={notice} testID="me-notice" /> : null}
+              {creator && onOpenVoiceIntro && voiceIntro.data && !voiceIntro.data.audioUrl ? (
+                <EntryRow testID="me-voice-intro" icon="AudioLines" title="Voice Intro" line="Write it, hear it in your voice" onPress={onOpenVoiceIntro} />
+              ) : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf(ready.counts)} />
               <TierMeter tier={tier} />
