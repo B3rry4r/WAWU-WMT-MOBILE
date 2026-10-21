@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 337.**
+**Launch tasks done: 176 of 338.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 6 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -24,6 +24,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -383,6 +384,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 21 Oct 2026 · FIX-96 · Built (Sonnet builder, T1; backend `wmt/FIX-96` `d6dd667` on `origin/main` `56e6ec0`; this record on mobile `wmt/FIX-96` from `origin/main` `905e391f`; status verifying): the first line of all 24 backend `rollback.sql` files is `\set ON_ERROR_STOP on`, so a bare `psql -f` stops where a guard raises and the drops never run (shown on a test database: the old file lost the row, the new one stops with the row and tables still there, exit 3); a new spec fails any rollback without the line; the two specs that run a whole rollback through pg or Prisma leave out backslash lines. No schema change, `test:protected` 253 passed on the base lock.
 - 21 Oct 2026 · VERIFY-03 round 3 · The verifier's FIX: Redo while recording stops and releases the recorder before the screen says ready (a test red before, green after); the microphone text names no length; VF7's way out is the shared header back (the board draws no second button); VF10a's title width and position tidied (not checked by picture); SHARED-CHANGES VERIFY-03 #1 confirmed by the lead. Verify, me and route suites 28 suites, 577 tests.
 - 21 Oct 2026 · VERIFY-03 round 2 · The app shows `consent.line` exactly as the Hub serves it and sends it back, and reads the recording's shortest and longest seconds from the Hub (`sample.minSeconds`, `sample.maxSeconds`); contract regenerated from backend `wmt/FIX-95` `699b783` (SHARED-CHANGES VERIFY-03 #3); G-VERIFY-03-1 and -2 closed; `DATA-SAFETY.md` and `DATA-INVENTORY.md` declare the voice recording (OWNER SIGN-OFF on each line). Tests: verify, me and route suites 28 suites, 576 tests.
 - 21 Oct 2026 · VERIFY-03 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-03` on `origin/wmt/VERIFY-02` `97177664`, app only; status verifying): VF8 (`/voice-consent`, the board's consent line with the person's name, the Hub's line stored), VF9, VF9a, VF9b, VF9c (record up to 30 s with `expo-audio`, a take under 15 s refused, upload through presign and confirm, then the keyed try), VF10, VF10a (a turning ring, the Hub's own "No points were taken") and VF11 (the shared player with Bio and AI voice, Use this, Edit text, Re-record); VF7's Record my voice drawn; the microphone text and RECORD_AUDIO in `app.json`. Live on a local stack (consent, take, upload, try, poll, a real provider failure, the Hub's 402, a denied microphone). NOT RUN: a real phone and a real provider (V10); the profile header player (M1 and the others have none yet). Gaps G-VERIFY-03-1 to 5; SHARED-CHANGES VERIFY-03 #1, #2.
@@ -397,4 +399,3 @@ From `docs/LOG.md`, newest first.
 - 18 Oct 2026 · SWEEP-MONEY-5b · Built (Sonnet builder, T2; mobile `wmt/SWEEP-MONEY-5b` 63151be6 on `origin/wmt/MERGE-24` `0cf68728`, no backend change; status verifying): FIX-87's lows. A PIN change or reset with no answer is kept across Back (the same entries go under the same key, no wrong-PIN try); our 30 s end of a write reads "We didn't get an answer" and an offline phone still reads "No connection"; the ticket order and the legal fee are kept by the phone until the Hub answers, so leaving the page and tapping again is one order and one payment; a caller's own abort of a read is tested. 10 specs red on the old code; walked in Expo web at 390 px against the real Hub (one PIN change, one order). Rows in SWEEP-MONEY (F1 to F4, new G1) and SWEEP-APP (SWEEP-APP-7 V4).
 - 18 Oct 2026 · DV2-04 · Built (Sonnet builder, T1; mobile `wmt/DV2-04` on `origin/wmt/MERGE-16` `5ee3994d`; no backend change, no migration, no shared change; status verifying): M19's Event tile says "Needs an active tier" and a person with a running tier sees the products meter ("2 of 3 products", tier name and end date, `GET /me/tier`) in place of the uploads count; E21 is "Hosting needs a tier" with the tier names and "From" the lowest price from `GET /plans` (or the 403's `lowestTier`) and See tiers opening VF5; the host form opens for a running tier or a live tick, and `403 tier_required` on create, edit (E22) and ticket prices opens E21 with the Hub's own sentence. Checked on a local merge of backend `wmt/S9` into `wmt/MERGE-16` (ports 7760-7767, down). G-DV2-04-1.
 - 18 Oct 2026 · INBOX-23 · Built (Sonnet builder, T2; mobile `wmt/INBOX-23` on `origin/wmt/MERGE-16` `5ee3994d`, no backend change; status verifying): community messages by kind, from the Hub's `creditsByKind` (R-62): text free and priced nowhere, a "+" and the photo card with "Send · 1" (I38), the strip and I27 words from the Hub, a sent photo in the thread; presign, PUT, confirm, then the send under one Idempotency-Key. Stack: text with 0 credits sends, a photo drops the count by the Hub's price, 0 credits blocks the photo, a double tap moves one credit; Hub count = ledger after each.
-- 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
