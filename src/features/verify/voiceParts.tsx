@@ -3,12 +3,14 @@ import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Press
 import Svg, { Circle } from 'react-native-svg';
 
 import { pressScale } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { playedBars, voicePlayerMetrics, waveShape } from '@/components/VoicePlayer';
-import { font, layout, radius, space, useWawu } from '@/theme';
+import { font, layout, useWawu } from '@/theme';
 
 /**
  * design/_gen/verify.js `playBig`: an 84 round accent disc with the FAB's shadow and a 34 mark at 2.2, white. `busy` is the Hub making the
@@ -74,8 +76,8 @@ export function NameWave({ progress, testID }: { progress: number; testID?: stri
   );
 }
 
-/** design/_gen/verify.js line 88 (the "Hear your name" row on VF2): a card, an accent 44 tile, a title (`cardTitle`, 15), a line (`caption`, 12.5), a chevron. */
-const entry = { corner: radius.card, pad: space.lg, tile: 44, gap: space.md, chevron: 20 } as const;
+/** design/_gen/verify.js line 88 (the "Hear your name" row on VF2): a card holding one row, an accent 44 tile, a title, a line and a chevron, 76 high. */
+const entry = { tile: 44, padV: 14 } as const;
 
 export type EntryRowProps = {
   icon: IconName;
@@ -85,34 +87,12 @@ export type EntryRowProps = {
   testID?: string;
 };
 
-/** A row that opens one of the Voice screens: VF2's "Hear your name" and Me's Voice Intro prompt. */
+/** A card with one `ListRow` that opens one of the Voice screens: VF2's "Hear your name" and Me's Voice Intro prompt. */
 export function EntryRow({ icon, title, line, onPress, testID }: EntryRowProps) {
-  const { colors } = useWawu();
-  const ring = useFocusRing();
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${line}`}
-      onPress={onPress}
-      {...ring.handlers}
-      style={({ pressed }) => [
-        styles.entry,
-        { backgroundColor: pressed ? colors.surfaceSunken : colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] },
-        ring.style,
-      ]}
-    >
-      <IconTile icon={icon} tone="accent" size={entry.tile} />
-      <View style={styles.entryWords}>
-        <Text variant="cardTitle" numberOfLines={1}>
-          {title}
-        </Text>
-        <Text variant="caption" numberOfLines={1}>
-          {line}
-        </Text>
-      </View>
-      <Icon name="ChevronRight" size={entry.chevron} color={colors.textMuted} />
-    </Pressable>
+    <Card>
+      <ListRow testID={testID} lead={<IconTile icon={icon} tone="accent" size={entry.tile} />} title={title} subtitle={line} padV={entry.padV} onPress={onPress} accessibilityLabel={`${title}. ${line}`} />
+    </Card>
   );
 }
 
@@ -312,8 +292,6 @@ const styles = StyleSheet.create({
   recordRing: { width: recordButton.size, height: recordButton.size, borderRadius: recordButton.size / 2, alignItems: 'center', justifyContent: 'center' },
   disc: { width: playDisc.size, height: playDisc.size, borderRadius: playDisc.size / 2, alignItems: 'center', justifyContent: 'center' },
   wave: { flexDirection: 'row', alignItems: 'center' },
-  entry: { flexDirection: 'row', alignItems: 'center', gap: entry.gap, borderRadius: entry.corner, padding: entry.pad },
-  entryWords: { flex: 1, minWidth: 0, gap: space.xs },
   introBox: { minHeight: introBox.minHeight, borderRadius: introBox.corner, padding: introBox.pad },
   introInput: {
     ...font(400),

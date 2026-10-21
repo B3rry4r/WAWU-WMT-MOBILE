@@ -52,6 +52,8 @@ export type ListRowProps = {
   onPress?: () => void;
   /** What a screen reader says when it is not just the title and subtitle. */
   accessibilityLabel?: string;
+  /** Room above and below the words, for a row that sits alone in a card taller than the kit's (default: the kit's 12; SHARED-CHANGES SWEEP-VOICE #1). */
+  padV?: number;
   testID?: string;
 };
 
@@ -68,6 +70,7 @@ export function ListRow({
   trailing,
   onPress,
   accessibilityLabel,
+  padV,
   testID,
 }: ListRowProps) {
   const { colors } = useWawu();
@@ -95,7 +98,7 @@ export function ListRow({
 
   if (!onPress) {
     return (
-      <View testID={testID} accessible accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')} style={styles.row}>
+      <View testID={testID} accessible accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')} style={[styles.row, padV !== undefined && { paddingVertical: padV }]}>
         {body}
       </View>
     );
@@ -107,7 +110,7 @@ export function ListRow({
       accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')}
       onPress={onPress}
       {...ring.handlers}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
+      style={({ pressed }) => [styles.row, padV !== undefined && { paddingVertical: padV }, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
     >
       {body}
     </Pressable>
