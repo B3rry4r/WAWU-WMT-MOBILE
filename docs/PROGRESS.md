@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 6 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -129,7 +129,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
 - [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
-- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
@@ -188,6 +187,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
