@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 336.**
+**Launch tasks done: 176 of 337.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 46 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 3 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -21,6 +21,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -380,6 +381,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 21 Oct 2026 · FIX-95 · Built (Sonnet builder, T1; backend `wmt/FIX-95` `699b783` on `origin/main` `bb21578`; this record on mobile `wmt/FIX-95` from `origin/main` `025d8d58`; status verifying): the Hub serves `consent.line` as "I am {name}. I agree that Who Made This? may create an AI version of my voice for my intros." (the name from its record of the person), stores exactly that line and takes back only the line it served for that person; the Voice Intro view serves `sample.minSeconds` and `sample.maxSeconds` from two PROVISIONAL plan settings (`voice_intro.sample_min_seconds` 15, `voice_intro.sample_max_seconds` 30). Additive. Protected suite 253 tests, voice and plan-settings specs 73 tests, gates EXIT 0.
 - 19 Oct 2026 · FIX-90 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-90` `c115ab2` on `origin/main` `3acc044`, mobile `wmt/FIX-90` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the four specs that failed the batch 26 whole-suite run (`event-host-wizard`, `event-door-scan`, `learn-entitlement`, `course-lesson`) stop reading the seeded plain user's rows, which `search-popular-privacy` (scheduled deletion left behind) and `account-deletion-identity` (sweep with a clock 30 days ahead, first in batch 12) purge; `fintava-stall` (R-70) allows the total time the loop was blocked, not the worst stall. Red then green on one fresh database. Gap G-FIX-90-1 (low).
 - 19 Oct 2026 · FIX-91 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-91-b12` `d40a363` on `origin/wmt/MERGE-12` `42a151d` and `wmt/FIX-91-b13` `2ccd3f8` on `origin/wmt/MERGE-13` `6bc7b20`; mobile `wmt/FIX-91` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): four specs stopped failing the deploy's whole-suite run because they counted rows other specs left. `paid-dm-wallet`, `host-share` and `event-host-payout` (batch 12) read only their own people's rows of WAWU's account (polluter: `school-enrolment`'s purge test, 15,000,000 kobo); the `ai-tools` sweep tests (batch 13) read their own hold (polluter: `account-deletion` keeps another person's held AI hold). Red then green with Nuvion stand-ins for the two Fintava-double polluters; 50 of 50 on a scratch merge into MERGE-26. Gaps G-FIX-91-1 and G-FIX-91-2 (low).
 - 19 Oct 2026 · FIX-92 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-92` `99c3703` on `origin/wmt/MERGE-12` `3d64d85`, mobile `wmt/FIX-92` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the root of the batch 12 deploy chain. `search-popular-privacy` cancels and removes the deletion it scheduled for the seeded plain user; `account-deletion-identity` holds every row that exists before it starts while it sweeps, so only its own people are purged. Red (credits-state fails) then green on one fresh database, eight suites, 73 tests. Closes G-FIX-90-1.
@@ -394,4 +396,3 @@ From `docs/LOG.md`, newest first.
 - 17 Oct 2026 · INBOX-14 · Part built (Sonnet builder, T2; mobile `wmt/INBOX-14` on `origin/wmt/MERGE-11` `47555987` with `wmt/ME-07` and `wmt/INBOX-24` merged; no backend change, no migration; status building): I30 and I31 pay a private room's 30 day pass from the wallet (fresh quote per tap, PIN, one key per attempt, Renew, ended pass, removed member, short wallet without Add), I37 keeps the picture as the room header, I32 never sends a private room without a price, I33 and I34 built; entries from I24, Create and the reminder. Not done: the stack run, the pictures, the A11, M18 and I1 entries, the host's way to I34.
 - 17 Oct 2026 · FIX-63 · Built (Sonnet builder, T1; mobile `wmt/FIX-63` on `origin/wmt/MERGE-14` `d76612f6`; no backend change, no migration; status verifying): the 84 route files that need a session and were not listed in `_layout.tsx` (SWEEP-APP row 51) are listed in the signed-in group, so a signed-out visit or a deep link lands on the welcome screen from the layout; the public ones (About, Terms, Privacy policy, the seven app links, `/claim-code`, the development screens) are a written list; `src/__tests__/route-guard.test.tsx` fails on a route file that is neither (SHARED-CHANGES FIX-63 #1). SWEEP-APP rows 46 and 61 written as ruled no with the true reason; the comment at `src/features/ads/api.ts` says the chip is the fixed word SPONSORED.
 - 18 Oct 2026 · EVENTS-12, FIX-12 · Built (Sonnet builder, T2, bundle S9; backend `wmt/S9` `50066b9` on `origin/wmt/EVENTS-11` `71117e4` with `origin/wmt/MERGE-14` `195de50` merged, no conflicts; mobile `wmt/S9` records only; additive, no migration; status verifying): hosting an event reads the tier (a live tick or a running tier hosts; anyone else gets 403 `tier_required` with the cheapest tier of `GET /plans`), and the EVENTS-11 follow-ups (specs for R7, R8, R10; the sold 409 names a tier once; PATCH on a cancelled event is a 409). Protected suite 253/253, gates and baseline EXIT 0, route table unchanged.
-- 17 Oct 2026 · WALLET-13 · Built (Sonnet builder, T1; mobile `wmt/WALLET-13` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/WALLET-16-R55` `e0f033e` merged; no backend change, no migration; status verifying): W39 Earnings at `/earnings` from `GET /money/earnings` and `/content` (this month and all time, by stream and by piece, no Move to wallet; money waiting leads to Open your wallet when there is no wallet, says once a day when there is one); loading, error, nothing earned and a month with nothing states; gaps G-WALLET-13-1 to 4; walked on stack w13.
