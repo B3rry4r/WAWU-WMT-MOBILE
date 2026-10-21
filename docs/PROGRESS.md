@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 6 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -129,6 +129,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
 - [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
+- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
@@ -187,7 +188,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -384,6 +384,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 21 Oct 2026 · SWEEP-JOIN round 2 · The verifier's fixes (Sonnet builder, T1; backend `wmt/SWEEP-JOIN` `6b66ea2`, web `d57c0fd`; status verifying): the held-place count compares with `::timestamp`, so the 30 minute hold no longer shifts with the database session zone (M1; a new spec under two non-UTC zones, red before, green after); unpaid starts that share a phone or an email, or are chained by them, are one person (L1); the page shows the Hub's words for `referral_attempts_limited` (L2). L3 (the in-memory guard's size bound) left as a low.
 - 21 Oct 2026 · SWEEP-JOIN · Built (Sonnet builder, T1; backend `wmt/SWEEP-JOIN` `c62eb21` on `origin/main` `2b461b5`, web `wmt/SWEEP-JOIN` `6ab8292` on `origin/main` `5b45d65`, this record on mobile `wmt/SWEEP-JOIN` from `origin/main` `905e391f`; status verifying): all five lows fixed. A limited referral code's held places count people, not starts (D3); an address that tries 30 unknown codes in 10 minutes is asked to wait, 429 `referral_attempts_limited` (D4); the registration answer's contract text says one of `flutterwaveConfig` and `completed` is present (D5) and the email start summary is true (JSDoc, SHARED-CHANGES `SWEEP-JOIN #1`); the /join number field fits an 11-digit number at 320 px (r2-1, measured). One assertion that pinned the D3 defect was updated.
 - 21 Oct 2026 · VERIFY-03 round 3 · The verifier's FIX: Redo while recording stops and releases the recorder before the screen says ready (a test red before, green after); the microphone text names no length; VF7's way out is the shared header back (the board draws no second button); VF10a's title width and position tidied (not checked by picture); SHARED-CHANGES VERIFY-03 #1 confirmed by the lead. Verify, me and route suites 28 suites, 577 tests.
 - 21 Oct 2026 · VERIFY-03 round 2 · The app shows `consent.line` exactly as the Hub serves it and sends it back, and reads the recording's shortest and longest seconds from the Hub (`sample.minSeconds`, `sample.maxSeconds`); contract regenerated from backend `wmt/FIX-95` `699b783` (SHARED-CHANGES VERIFY-03 #3); G-VERIFY-03-1 and -2 closed; `DATA-SAFETY.md` and `DATA-INVENTORY.md` declare the voice recording (OWNER SIGN-OFF on each line). Tests: verify, me and route suites 28 suites, 576 tests.
@@ -398,4 +399,3 @@ From `docs/LOG.md`, newest first.
 - 19 Oct 2026 · OWNER-1019 · Records (Sonnet agent, T0; mobile `wmt/OWNER-1019` on `origin/wmt/MERGE-25` `eb2ffa3b`; no code; status verifying): the owner's four answers of 19 Oct become R-70 (Q-42, three old tests on the Fintava double may be updated, test files only, FIX-88), R-71 (Q-43, a host's removal of a member pays back the unused pass days from the price paid, INBOX-25), R-72 (Q-44, sign-up and PIN reset codes by email at launch) and R-73 (Q-45, ID documents kept hidden 5 years after an account's deletion, then deleted, SETTINGS-09). The places that quoted the questions or the defaults point at the rulings. Check: the PIN reset email route in WAWU ID (G-400) is on none of its branches; the sign-up email path is built and defaults off.
 - 18 Oct 2026 · SWEEP-MONEY-5b · Built (Sonnet builder, T2; mobile `wmt/SWEEP-MONEY-5b` 63151be6 on `origin/wmt/MERGE-24` `0cf68728`, no backend change; status verifying): FIX-87's lows. A PIN change or reset with no answer is kept across Back (the same entries go under the same key, no wrong-PIN try); our 30 s end of a write reads "We didn't get an answer" and an offline phone still reads "No connection"; the ticket order and the legal fee are kept by the phone until the Hub answers, so leaving the page and tapping again is one order and one payment; a caller's own abort of a read is tested. 10 specs red on the old code; walked in Expo web at 390 px against the real Hub (one PIN change, one order). Rows in SWEEP-MONEY (F1 to F4, new G1) and SWEEP-APP (SWEEP-APP-7 V4).
 - 18 Oct 2026 · DV2-04 · Built (Sonnet builder, T1; mobile `wmt/DV2-04` on `origin/wmt/MERGE-16` `5ee3994d`; no backend change, no migration, no shared change; status verifying): M19's Event tile says "Needs an active tier" and a person with a running tier sees the products meter ("2 of 3 products", tier name and end date, `GET /me/tier`) in place of the uploads count; E21 is "Hosting needs a tier" with the tier names and "From" the lowest price from `GET /plans` (or the 403's `lowestTier`) and See tiers opening VF5; the host form opens for a running tier or a live tick, and `403 tier_required` on create, edit (E22) and ticket prices opens E21 with the Hub's own sentence. Checked on a local merge of backend `wmt/S9` into `wmt/MERGE-16` (ports 7760-7767, down). G-DV2-04-1.
-- 18 Oct 2026 · INBOX-23 · Built (Sonnet builder, T2; mobile `wmt/INBOX-23` on `origin/wmt/MERGE-16` `5ee3994d`, no backend change; status verifying): community messages by kind, from the Hub's `creditsByKind` (R-62): text free and priced nowhere, a "+" and the photo card with "Send · 1" (I38), the strip and I27 words from the Hub, a sent photo in the thread; presign, PUT, confirm, then the send under one Idempotency-Key. Stack: text with 0 credits sends, a photo drops the count by the Hub's price, 0 credits blocks the photo, a double tap moves one credit; Hub count = ledger after each.
