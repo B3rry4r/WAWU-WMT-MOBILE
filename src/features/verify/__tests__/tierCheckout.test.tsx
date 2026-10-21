@@ -402,6 +402,8 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     // the state before VERIFY-03, by its own comment).
     expect(screen.getByTestId('official-voice')).toBeTruthy();
     expect(screen.queryByTestId('official-done')).toBeNull();
+    // No dead end: the shared header's back is the way out for a person who does not record (the board draws no second button).
+    expect(screen.getByTestId('points-back')).toBeTruthy();
   });
 
   it('a user who ticks the offer pays the tier and the offer, and the Hub is sent it', async () => {

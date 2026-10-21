@@ -25,7 +25,7 @@ const HEAD = { title: 30, tracking: -0.035 } as const;
 export type OfficialScreenProps = {
   /** The purchase the Hub granted (`GET /plans/purchases/{id}`). */
   purchaseId: string;
-  /** Done: back to where the person started choosing a tier. */
+  /** The way out: back to where the person started choosing a tier. It is the header's back (the board draws no second button), so a person who does not record can leave. */
   onDone: () => void;
   /** The way into recording a Voice Intro (VF8). Left out until VERIFY-03 builds it: the button is then not drawn (R-47). */
   onRecordVoice?: () => void;
@@ -106,7 +106,7 @@ export function OfficialScreen({ purchaseId, onDone, onRecordVoice }: OfficialSc
 
   return (
     <View testID="official-screen" style={styles.root}>
-      <PointsFrame title="" gap={space.lg} foot={foot} centered>
+      <PointsFrame title="" onBack={onDone} gap={space.lg} foot={foot} centered>
         {body}
       </PointsFrame>
       {grant ? <Confetti /> : null}

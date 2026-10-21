@@ -30,14 +30,18 @@ const mockEmit = async (next: Partial<Snapshot>) => {
     mockListeners.forEach((listener) => listener(mockSnapshot));
   });
 };
+/** How many recordings are running: a `record` adds one, a `stop` takes one away. More than one is a microphone left recording. */
+let mockActive = 0;
 const mockRecorder = {
   currentTime: 0,
   uri: null as string | null,
   prepareToRecordAsync: jest.fn(async () => undefined),
   record: jest.fn(() => {
+    mockActive += 1;
     mockSnapshot = { ...mockSnapshot, isRecording: true };
   }),
   stop: jest.fn(async () => {
+    mockActive = Math.max(0, mockActive - 1);
     mockRecorder.uri = 'file:///recordings/take.m4a';
     mockSnapshot = { ...mockSnapshot, isRecording: false };
   }),
@@ -151,6 +155,7 @@ beforeEach(() => {
   mockAudio.mockClear();
   mockListeners.clear();
   mockSnapshot = { isRecording: false, durationMillis: 0, canRecord: false, mediaServicesDidReset: false, url: null };
+  mockActive = 0;
   mockRecorder.currentTime = 0;
   mockRecorder.uri = null;
   mockRecorder.prepareToRecordAsync.mockClear();
@@ -341,6 +346,28 @@ describe('VF9 · Record 30 seconds', () => {
     await fireEvent.press(screen.getByText('Redo'));
     expect(await screen.findByText('Find a quiet room.')).toBeTruthy();
     expect(screen.getByTestId('voice-take-ring-clock')).toHaveTextContent('0:00');
+  });
+
+  it('M1: Redo while recording stops and releases the recording, so record again leaves exactly one running', async () => {
+    await toRecording();
+    await fireEvent.press(screen.getByTestId('voice-take-record'));
+    await waitFor(() => expect(mockRecorder.record).toHaveBeenCalledTimes(1));
+    await mockEmit({ isRecording: true, durationMillis: 3_000 });
+    await waitFor(() => expect(screen.getByTestId('voice-take-record').props.accessibilityLabel).toBe('Stop recording'));
+    expect(mockActive).toBe(1);
+
+    await fireEvent.press(screen.getByText('Redo'));
+    // The microphone is let go before the screen says ready again.
+    await waitFor(() => expect(mockRecorder.stop).toHaveBeenCalledTimes(1));
+    expect(mockActive).toBe(0);
+    expect(await screen.findByText('Find a quiet room.')).toBeTruthy();
+    expect(screen.getByTestId('voice-take-ring-clock')).toHaveTextContent('0:00');
+
+    await fireEvent.press(screen.getByTestId('voice-take-record'));
+    await waitFor(() => expect(mockRecorder.record).toHaveBeenCalledTimes(2));
+    expect(mockActive).toBe(1);
+    // The first recording was stopped before the second began.
+    expect(mockRecorder.stop.mock.invocationCallOrder[0]).toBeLessThan(mockRecorder.record.mock.invocationCallOrder[1]);
   });
 
   it('VF9c: a take long enough shows Got it with Redo and Use this; Redo goes back to a clean take', async () => {

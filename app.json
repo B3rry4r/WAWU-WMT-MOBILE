@@ -146,7 +146,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record the 30 seconds that make your Voice Intro.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro.",
           "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }

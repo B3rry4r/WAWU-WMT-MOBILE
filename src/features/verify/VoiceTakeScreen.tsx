@@ -82,7 +82,9 @@ export function VoiceTakeScreen({ script, bounds, next, onBack, onUse }: VoiceTa
     }
   };
 
-  const redo = () => {
+  const redo = async () => {
+    // Redo while recording lets go of the microphone first: the screen says ready only once the recorder is stopped and released.
+    if (phase === 'recording') await rec.cancel();
     setTake(null);
     setFailure(null);
     setPhase('ready');
@@ -160,7 +162,7 @@ export function VoiceTakeScreen({ script, bounds, next, onBack, onUse }: VoiceTa
   ) : phase === 'done' ? (
     <View style={styles.pair}>
       <View style={styles.redo}>
-        <Button testID="voice-take-redo" label="Redo" variant="secondary" full disabled={busy} onPress={redo} />
+        <Button testID="voice-take-redo" label="Redo" variant="secondary" full disabled={busy} onPress={() => void redo()} />
       </View>
       <View style={styles.use}>
         <Button testID="voice-take-use" label="Use this" full loading={busy} onPress={() => void use()} />
@@ -171,7 +173,7 @@ export function VoiceTakeScreen({ script, bounds, next, onBack, onUse }: VoiceTa
       {phase === 'ready' ? (
         <View style={styles.side} />
       ) : (
-        <Pressable testID="voice-take-redo" accessibilityRole="button" accessibilityLabel="Redo" onPress={redo} hitSlop={space.md} style={styles.side}>
+        <Pressable testID="voice-take-redo" accessibilityRole="button" accessibilityLabel="Redo" onPress={() => void redo()} hitSlop={space.md} style={styles.side}>
           <Text variant="body" tone="textSecondary" style={[font(600), styles.redoWord]}>
             Redo
           </Text>

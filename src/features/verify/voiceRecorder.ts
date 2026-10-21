@@ -17,6 +17,8 @@ export type VoiceRecorder = {
   start: () => Promise<'started' | 'refused' | 'failed'>;
   /** Stops and answers the take, or null when nothing was recording or the file is missing. */
   stop: () => Promise<Take | null>;
+  /** Stops and lets go of the microphone without keeping a take (Redo while recording). Resolves once the recorder is released. */
+  cancel: () => Promise<void>;
 };
 
 /**
@@ -58,5 +60,14 @@ export function useVoiceRecorder(): VoiceRecorder {
     }
   }, [recorder, state.durationMillis]);
 
-  return { recording: state.isRecording, seconds: state.durationMillis / 1000, refused, start, stop };
+  const cancel = useCallback(async () => {
+    try {
+      await recorder.stop();
+    } catch {
+      // A recorder that was not recording has nothing to let go of.
+    }
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => undefined);
+  }, [recorder]);
+
+  return { recording: state.isRecording, seconds: state.durationMillis / 1000, refused, start, stop, cancel };
 }

@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 4 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -141,6 +141,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
 - [ME-12](../tasks/ME-12.md) Make it official: choose a tier and pay (You)
+- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
 - [VERIFY-04](../tasks/VERIFY-04.md) Publish your first product, and the identity check (You)
 - [VERIFY-05](../tasks/VERIFY-05.md) Your tier, and when you have used all your products (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
@@ -185,7 +186,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -382,6 +382,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 21 Oct 2026 · VERIFY-03 round 3 · The verifier's FIX: Redo while recording stops and releases the recorder before the screen says ready (a test red before, green after); the microphone text names no length; VF7's way out is the shared header back (the board draws no second button); VF10a's title width and position tidied (not checked by picture); SHARED-CHANGES VERIFY-03 #1 confirmed by the lead. Verify, me and route suites 28 suites, 577 tests.
 - 21 Oct 2026 · VERIFY-03 round 2 · The app shows `consent.line` exactly as the Hub serves it and sends it back, and reads the recording's shortest and longest seconds from the Hub (`sample.minSeconds`, `sample.maxSeconds`); contract regenerated from backend `wmt/FIX-95` `699b783` (SHARED-CHANGES VERIFY-03 #3); G-VERIFY-03-1 and -2 closed; `DATA-SAFETY.md` and `DATA-INVENTORY.md` declare the voice recording (OWNER SIGN-OFF on each line). Tests: verify, me and route suites 28 suites, 576 tests.
 - 21 Oct 2026 · VERIFY-03 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-03` on `origin/wmt/VERIFY-02` `97177664`, app only; status verifying): VF8 (`/voice-consent`, the board's consent line with the person's name, the Hub's line stored), VF9, VF9a, VF9b, VF9c (record up to 30 s with `expo-audio`, a take under 15 s refused, upload through presign and confirm, then the keyed try), VF10, VF10a (a turning ring, the Hub's own "No points were taken") and VF11 (the shared player with Bio and AI voice, Use this, Edit text, Re-record); VF7's Record my voice drawn; the microphone text and RECORD_AUDIO in `app.json`. Live on a local stack (consent, take, upload, try, poll, a real provider failure, the Hub's 402, a denied microphone). NOT RUN: a real phone and a real provider (V10); the profile header player (M1 and the others have none yet). Gaps G-VERIFY-03-1 to 5; SHARED-CHANGES VERIFY-03 #1, #2.
 - 20 Oct 2026 · VERIFY-02 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-02` on `origin/main` `025d8d58`, app only, no backend change; status verifying): VF3, VF3a, VF3b (`/hear-name`: the name said in the studio voice as it opens, "Not quite right?" opens the spelling, Play again, Save) and VF4, VF4a, VF4b (`/voice-intro`: the words with a count against the Hub's limit, off while empty or too long). "Hear it in my voice" goes to VF5 (no tier), Your tier (ended) or VF8 `/voice-consent` (VERIFY-03 registers it; merges together with VERIFY-03). Entries: Me's Voice Intro prompt, Your shop's Hear your name row. Gaps G-VERIFY-02-1 and -2; SHARED-CHANGES VERIFY-02 #1, #2, R1.
@@ -396,4 +397,3 @@ From `docs/LOG.md`, newest first.
 - 18 Oct 2026 · INBOX-23 · Built (Sonnet builder, T2; mobile `wmt/INBOX-23` on `origin/wmt/MERGE-16` `5ee3994d`, no backend change; status verifying): community messages by kind, from the Hub's `creditsByKind` (R-62): text free and priced nowhere, a "+" and the photo card with "Send · 1" (I38), the strip and I27 words from the Hub, a sent photo in the thread; presign, PUT, confirm, then the send under one Idempotency-Key. Stack: text with 0 credits sends, a photo drops the count by the Hub's price, 0 credits blocks the photo, a double tap moves one credit; Hub count = ledger after each.
 - 17 Oct 2026 · INBOX-18 · Built (Sonnet builder, T2; mobile `wmt/INBOX-18` on `origin/wmt/MERGE-12` `c840ed6d` with `origin/wmt/ME-14` `b44da0be` merged; backend `wmt/INBOX-18` `5dc9fa3` on `98efeef`, additive, no migration; status verifying): I9, I10, I11 for the creator (the Paid DMs chip, the paid row, Reply on M31), the Hub states the share and where it is, a double tap answers once, a late answer is refused and the fan repaid every naira
 - 17 Oct 2026 · FIX-61 · Built (Sonnet builder, T1; backend `wmt/FIX-61` `cc0da36` on `origin/wmt/MERGE-13` `6bc7b20`, test files only; status verifying): `paid-dm-wallet` "two answers in a day" failed on CI for about ten minutes of every day (starts 22:11 to 22:21 UTC) because the pay harness sweeps at a clock that runs ahead of the wall clock and the third answer's sweep fell after Lagos midnight (23:00 UTC), where a new move is right (R-55): a test cause, not the product. The harness gets `keepInLagosDay`, called by the two one-move-a-day specs; the rule is pinned on both sides of midnight with no database; reproduced by starting the spec at 22:12 to 22:20 UTC (fails) and passing after.
-- 17 Oct 2026 · INBOX-14 · Part built (Sonnet builder, T2; mobile `wmt/INBOX-14` on `origin/wmt/MERGE-11` `47555987` with `wmt/ME-07` and `wmt/INBOX-24` merged; no backend change, no migration; status building): I30 and I31 pay a private room's 30 day pass from the wallet (fresh quote per tap, PIN, one key per attempt, Renew, ended pass, removed member, short wallet without Add), I37 keeps the picture as the room header, I32 never sends a private room without a price, I33 and I34 built; entries from I24, Create and the reminder. Not done: the stack run, the pictures, the A11, M18 and I1 entries, the host's way to I34.

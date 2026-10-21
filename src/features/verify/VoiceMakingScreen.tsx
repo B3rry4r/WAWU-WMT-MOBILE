@@ -12,7 +12,7 @@ import { FAILED_FALLBACK } from './voiceModel';
 import { MakingRing } from './voiceParts';
 
 /** design/_gen/verify.js `vf10`: 14 between the ring and its words, the title at 22, the result sits 220 down with 20 between its parts. */
-const board = { ringToWords: 14, title: 22, top: 120, resultGap: 10, circle: 88, glyphStroke: 2.2, titleNudge: 8, titleWidth: 300 } as const;
+const board = { ringToWords: 14, title: 22, top: 120, resultGap: 10, circle: 88, glyphStroke: 2.2, titleNudge: 8, titleWidth: 250 } as const;
 
 /** Both boards have no bar and no way back: the try is under way or over, so the screen is the result and its one button. */
 function Bare({ children, foot, testID }: { children: ReactNode; foot?: ReactNode; testID: string }) {
@@ -82,5 +82,5 @@ const styles = StyleSheet.create({
   centred: { textAlign: 'center' },
   resultTitle: { textAlign: 'center', maxWidth: board.titleWidth, marginTop: board.titleNudge },
   resultLine: { textAlign: 'center', maxWidth: board.titleWidth },
-  result: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: board.resultGap, paddingBottom: board.top },
+  result: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: board.resultGap },
 });
