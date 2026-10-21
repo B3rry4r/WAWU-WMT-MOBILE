@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 
 import { pressScale } from '@/components/Button';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
@@ -167,7 +168,148 @@ export function IntroBox({ value, onChangeText, placeholder, label, over, disabl
   );
 }
 
+/** design/_gen/verify.js `vf9`: a 150 ring with a 132 disc inside (a 9 stroke), the time at 32 bold and "of 0:30" at 12 in the muted ink. */
+export const takeRing = { size: 150, inner: 132, time: 32, of: 12 } as const;
+const TAKE_STROKE = (takeRing.size - takeRing.inner) / 2;
+const TAKE_RADIUS = (takeRing.size - TAKE_STROKE) / 2;
+const TAKE_CIRCUMFERENCE = 2 * Math.PI * TAKE_RADIUS;
+
+export type TakeRingProps = {
+  /** How much of the ring is filled, 0 to 1. */
+  share: number;
+  /** "0:14". */
+  clock: string;
+  /** "of 0:30". */
+  of: string;
+  /** The ring turns red on a take that is too short. */
+  tone: 'accent' | 'danger';
+  testID?: string;
+};
+
+/** VF9's ring: a track, an arc from the top for how far the take has run, and the clock inside. */
+export function TakeRing({ share, clock, of, tone, testID }: TakeRingProps) {
+  const { colors } = useWawu();
+  const middle = takeRing.size / 2;
+  const arc = TAKE_CIRCUMFERENCE * Math.min(1, Math.max(0, share));
+  return (
+    <View
+      testID={testID}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Recording time"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(share * 100), text: `${clock} ${of}` }}
+      style={styles.takeRing}
+    >
+      <Svg width={takeRing.size} height={takeRing.size} viewBox={`0 0 ${takeRing.size} ${takeRing.size}`}>
+        <Circle cx={middle} cy={middle} r={TAKE_RADIUS} stroke={colors.surfaceSunken} strokeWidth={TAKE_STROKE} fill="none" />
+        {arc > 0 ? (
+          <Circle
+            cx={middle}
+            cy={middle}
+            r={TAKE_RADIUS}
+            stroke={tone === 'danger' ? colors.danger : colors.accent}
+            strokeWidth={TAKE_STROKE}
+            fill="none"
+            strokeDasharray={`${arc} ${TAKE_CIRCUMFERENCE - arc}`}
+            rotation={-90}
+            origin={`${middle}, ${middle}`}
+          />
+        ) : null}
+      </Svg>
+      <View style={styles.takeFigure} pointerEvents="none">
+        <Text variant="body" testID={testID ? `${testID}-clock` : undefined} style={[font(700), styles.takeClock]}>
+          {clock}
+        </Text>
+        <Text variant="body" tone="textMuted" style={[font(400), styles.takeOf]}>
+          {of}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/** design/_gen/verify.js `vf9`'s foot: a 76 round button with a 4 inset red ring and a 56 red disc, or a 28 square (8 cornered) while recording. */
+export const recordButton = { size: 76, ring: 4, disc: 56, square: 28, squareCorner: 8, side: 44, between: 40 } as const;
+
+export type RecordButtonProps = { recording: boolean; onPress: () => void; disabled?: boolean; testID?: string };
+
+export function RecordButton({ recording, onPress, disabled, testID }: RecordButtonProps) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  const size = recording ? recordButton.square : recordButton.disc;
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={recording ? 'Stop recording' : 'Start recording'}
+      accessibilityState={{ disabled: Boolean(disabled) }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={Math.max(0, (layout.tapMin - recordButton.size) / 2)}
+      {...ring.handlers}
+      style={({ pressed }) => [
+        styles.recordRing,
+        { boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: recordButton.ring, color: colors.danger, inset: true }], opacity: disabled ? 0.5 : 1, transform: [{ scale: pressed ? pressScale : 1 }] },
+        ring.style,
+      ]}
+    >
+      <View style={{ width: size, height: size, borderRadius: recording ? recordButton.squareCorner : size / 2, backgroundColor: colors.danger }} />
+    </Pressable>
+  );
+}
+
+/** design/_gen/verify.js `vf10`: the ring is 96 across. The Hub serves no percentage for a try, so the arc turns instead of filling. */
+export const makingRing = { size: 96, stroke: 8, arcDegrees: 100, turnMs: 1100 } as const;
+const MAKING_RADIUS = (makingRing.size - makingRing.stroke) / 2;
+const MAKING_CIRCUMFERENCE = 2 * Math.PI * MAKING_RADIUS;
+const MAKING_ARC = (makingRing.arcDegrees / 360) * MAKING_CIRCUMFERENCE;
+
+/** VF10's ring: turning once in 1.1 seconds, held still when the phone asks for less motion. */
+export function MakingRing({ label, testID }: { label: string; testID?: string }) {
+  const { colors } = useWawu();
+  const [turn] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    let loop: Animated.CompositeAnimation | null = null;
+    let live = true;
+    void Promise.resolve(AccessibilityInfo.isReduceMotionEnabled?.())
+      .catch(() => false)
+      .then((reduced) => {
+        if (!live || reduced) return;
+        loop = Animated.loop(Animated.timing(turn, { toValue: 1, duration: makingRing.turnMs, easing: Easing.linear, useNativeDriver: true }));
+        loop.start();
+      });
+    return () => {
+      live = false;
+      loop?.stop();
+    };
+  }, [turn]);
+  const rotate = turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const middle = makingRing.size / 2;
+  return (
+    <Animated.View testID={testID} accessibilityRole="progressbar" accessibilityLabel={label} style={{ transform: [{ rotate }] }}>
+      <Svg width={makingRing.size} height={makingRing.size} viewBox={`0 0 ${makingRing.size} ${makingRing.size}`}>
+        <Circle cx={middle} cy={middle} r={MAKING_RADIUS} stroke={colors.surfaceSunken} strokeWidth={makingRing.stroke} fill="none" />
+        <Circle
+          cx={middle}
+          cy={middle}
+          r={MAKING_RADIUS}
+          stroke={colors.accent}
+          strokeWidth={makingRing.stroke}
+          fill="none"
+          strokeDasharray={`${MAKING_ARC} ${MAKING_CIRCUMFERENCE - MAKING_ARC}`}
+          rotation={-90}
+          origin={`${middle}, ${middle}`}
+        />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
+  takeRing: { width: takeRing.size, height: takeRing.size, alignItems: 'center', justifyContent: 'center' },
+  takeFigure: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  takeClock: { fontSize: takeRing.time, lineHeight: Math.round(takeRing.time * 1.25), fontVariant: ['tabular-nums'] },
+  takeOf: { fontSize: takeRing.of, lineHeight: Math.round(takeRing.of * 1.3) },
+  recordRing: { width: recordButton.size, height: recordButton.size, borderRadius: recordButton.size / 2, alignItems: 'center', justifyContent: 'center' },
   disc: { width: playDisc.size, height: playDisc.size, borderRadius: playDisc.size / 2, alignItems: 'center', justifyContent: 'center' },
   wave: { flexDirection: 'row', alignItems: 'center' },
   entry: { flexDirection: 'row', alignItems: 'center', gap: entry.gap, borderRadius: entry.corner, padding: entry.pad },

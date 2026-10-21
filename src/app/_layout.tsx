@@ -130,6 +130,7 @@ export default function RootLayout() {
           <Stack.Screen name="shop-product" />
           <Stack.Screen name="hear-name" />
           <Stack.Screen name="voice-intro" />
+          <Stack.Screen name="voice-consent" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
           <Stack.Screen name="creator-setup" />
