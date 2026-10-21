@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 6 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 7 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,6 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
 - [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
@@ -129,7 +130,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
 - [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
-- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
