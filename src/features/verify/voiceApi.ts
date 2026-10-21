@@ -28,7 +28,11 @@ export type VoiceIntro = components['schemas']['VoiceIntroView'];
 export const voiceKey = ['voice', 'name'] as const;
 export const voiceIntroKey = ['voice', 'intro'] as const;
 
-/** The name field's limits as the contract states them (`NamePreviewDto.name` 60, `phonetic` 80); the Hub refuses anything longer. */
+/**
+ * The name field's limits as the contract states them (`NamePreviewDto.name` 60, `phonetic` 80); the Hub refuses anything longer. The Hub
+ * serves neither figure (BACKEND_GAPS G-SWEEP-VOICE-1), so they stay literals until it does, and then `GET /me/voice` is where they are read.
+ * PROVISIONAL(VOICE-NAME-LIMITS, owner=VOICE-01, why=the Hub serves no limit for the name or its spelling; these are the contract DTO's maxLength and the Hub refuses longer).
+ */
 export const NAME_MAX = 60;
 export const PHONETIC_MAX = 80;
 
