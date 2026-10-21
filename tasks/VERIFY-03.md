@@ -7,7 +7,7 @@ order: 272
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [VERIFY-02, VOICE-01, DV2-COMP, ME-12]
 decisions: [R-43, R-66, R-68]
 passes: [V1, V4, V5, V6, V9, V10]
@@ -99,6 +99,19 @@ Other checks: provider never named and no em-dashes in the voice screens or in `
 - **L4 (low, unclear, needs the lead):** `OfficialScreen.tsx:100` draws only "Record my voice" on VF7 (the board draws only that) and no Done, and VF8's Back returns to VF7. A person who has just paid and does not want to record can leave only with the phone's own back. Say whether the board's single button is final.
 - **L5 (low, tidy):** `TakeRing` and `MakingRing` (`voiceParts.tsx`) rebuild the track and arc of `ShopRing` (`parts.tsx:74`) instead of giving it props. Neither is a shared component (`src/components`), so not a fork finding; a later tidy.
 
+
+### Round 3 re-check (21 Oct 2026, same verifier, on `origin/wmt/VERIFY-03` `af72cd75`; only what changed). Verdict: PASS. Status to `review`.
+
+| Finding | Result | Evidence |
+|---------|--------|----------|
+| M1 Redo while recording | fixed | Live on the same stack (Hub from backend `wmt/FIX-95`, the branch's web export, fake microphone), repro with the original steps: record, Redo, record again, then a normal Stop as the control. After Redo the MediaRecorder reads `inactive` and the microphone track `ended` (before the fix: `recording` and `live`); after record again exactly one recorder is `recording` and the first is `inactive`; after a normal Stop both are `inactive` and every track `ended`. So on the web build the release is complete, and the builder's note about the track does not apply to what I measured: Redo and a normal Stop end alike. The new `voiceFlow.test.tsx` case ("M1: Redo while recording stops and releases the recording...") asserts one running after record, none after Redo (`stop` called once, before the screen says ready), one after record again, and that the first `stop` precedes the second `record`; a `redo` that does not call `rec.cancel()` fails it. |
+| L1 microphone text | fixed | `app.json:149` now reads "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro." (no length); `DATA-SAFETY.md` quotes the same text and SHARED-CHANGES VERIFY-03 #1 is updated. The `DATA-SAFETY.md` row still describes the recording as "30 seconds" in its own words (the default), a tidy-up if the owner changes it. |
+| L2 Android permission | closed | Confirmed by the lead (SHARED-CHANGES VERIFY-03 #1). |
+| L3 VF10a | fixed, a few pixels left | `cmp-{dark,light}-VF10a.png` from this run (`r3-pair-{dark,light}.png` beside `VF10`): the title now breaks "We couldn't make / your intro" at the board's width, and the block sits where the board's does (the circle about 4 px higher; the title's line height about 6 px tighter than the board's). The Hub's longer line wraps to two lines. VF10 unchanged and matching, both themes. |
+| L4 VF7 way out | fixed, a back the board does not draw | `OfficialScreen.tsx` passes `onBack={onDone}` to `PointsFrame` (the shared header back, as Checkout), no new copy; `tierCheckout.test.tsx` now also expects `points-back`. Checked by that test and by reading the code, not live (a bought tier is needed to open VF7). The board's VF7 draws no back arrow; the lead ruled for it. |
+| L5 ShopRing reuse | left as a low | Acceptable, as the lead said. |
+
+Checks on `af72cd75`: jest `src/features/verify` (with `voiceFlow` and `tierCheckout`), route-guard, route-graph, auth-guard, keyed-write-sites: 17 suites, 470 tests, EXIT 0. eslint on the 7 changed `.ts/.tsx` files EXIT 0. `scripts/gates/run.py` EXIT 0 (10 run, 0 fail, 17 warn, 1179 files scanned). `check_baseline.py` EXIT 0. `check_tasks.py` EXIT 0 (390 tasks). Still NOT RUN: V10 (a phone, microphone and provider), the listener's view of the intro (G-VERIFY-03-5). Cleaned up: stack and stand-ins stopped, databases dropped, worktrees removed, lsof on 7860-7867 and 7920-7927 empty.
 
 ## Owner sign-off
 
