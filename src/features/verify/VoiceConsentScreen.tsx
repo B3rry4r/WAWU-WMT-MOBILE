@@ -27,7 +27,7 @@ import {
   voiceIntroKey,
   voiceKey,
 } from './voiceApi';
-import { consentLineFor, makingResult, openingStage, sampleFileOf, scriptFor, voiceFailure, type FlowStage } from './voiceModel';
+import { makingResult, openingStage, recordingTerms, sampleFileOf, scriptFor, voiceFailure, type FlowStage } from './voiceModel';
 import { VoiceHearScreen } from './VoiceHearScreen';
 import { VoiceMakingScreen } from './VoiceMakingScreen';
 import { VoiceTakeScreen } from './VoiceTakeScreen';
@@ -55,8 +55,8 @@ export type VoiceConsentScreenProps = {
 
 /**
  * VF8 · Your voice, your consent, and the stages that follow it on the same route: VF9 (record), VF10 and VF10a (making, failed) and VF11
- * (hear yourself). The person reads the board's consent line with their own name from the Hub and agrees; the Hub files its own line
- * with the time (it refuses any other, G-VERIFY-03-2). The recording goes up through `POST /uploads/presign` and `/confirm`, is kept as the
+ * (hear yourself). The person reads the Hub's consent line exactly as served (`consent.line`, the board's words with their own name) and agrees; the Hub files exactly
+ * that line with the time and refuses any other. The recording goes up through `POST /uploads/presign` and `/confirm`, is kept as the
  * sample and the Hub starts the try (one Idempotency-Key a try, sent again unchanged when no answer came). The screen then polls the Hub
  * until the try is done (VF11) or failed (VF10a, in the Hub's own words, "No points were taken"). A try already under way when the
  * person comes back opens on VF10.
@@ -83,6 +83,7 @@ export function VoiceConsentScreen({ onBack, onWriteText, onUse }: VoiceConsentS
   const name = me.data ? nameOf(me.data) : '';
   const view = intro.data;
   const result = view ? makingResult(view) : null;
+  const terms = view ? recordingTerms(view) : null;
   // Where the flow opened is kept: a try that finishes while the person watches must land on VF11, not start over at VF8.
   const [opened, setOpened] = useState<FlowStage | null>(null);
   if (view && opened === null) setOpened(openingStage(view));
@@ -150,10 +151,10 @@ export function VoiceConsentScreen({ onBack, onWriteText, onUse }: VoiceConsentS
   };
 
   const readError = me.error ?? voice.error ?? intro.error;
-  const loadFailed = (me.isError && !me.data) || (voice.isError && !voice.data) || (intro.isError && !intro.data);
+  const loadFailed = (me.isError && !me.data) || (voice.isError && !voice.data) || (intro.isError && !intro.data) || (!!view && !terms);
 
-  if (stage === 'record' && view) {
-    return <VoiceTakeScreen script={scriptFor(name, view.text)} next={view.next} onBack={() => setChosen('consent')} onUse={useTake} />;
+  if (stage === 'record' && view && terms) {
+    return <VoiceTakeScreen script={scriptFor(terms.line, view.text)} bounds={terms.bounds} next={view.next} onBack={() => setChosen('consent')} onUse={useTake} />;
   }
   if (stage === 'making' && result?.kind === 'failed') {
     return <VoiceMakingScreen state="failed" message={retryFailure ?? result.message} busy={busy} onTryAgain={() => void tryAgain()} />;
@@ -194,7 +195,7 @@ export function VoiceConsentScreen({ onBack, onWriteText, onUse }: VoiceConsentS
         }}
       />
     );
-  } else if (!me.data || !voice.data || !view) {
+  } else if (!me.data || !voice.data || !view || !terms) {
     body = (
       <LoadingView label="Loading your voice" testID="voice-consent-loading">
         <View style={styles.loading}>
@@ -223,7 +224,7 @@ export function VoiceConsentScreen({ onBack, onWriteText, onUse }: VoiceConsentS
           <View style={styles.cardWords}>
             <Text variant="label">{"You'll read this first"}</Text>
             <Text variant="body" testID="voice-consent-line" style={[font(600), { fontSize: board.line, lineHeight: board.line * board.leading }]}>
-              {`“${consentLineFor(name)}”`}
+              {`“${terms.line}”`}
             </Text>
           </View>
         </Card>

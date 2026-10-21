@@ -14717,6 +14717,8 @@ export interface components {
             };
             sample: {
                 recorded: boolean;
+                minSeconds: number;
+                maxSeconds: number;
             };
             audioUrl: string | null;
             next: {

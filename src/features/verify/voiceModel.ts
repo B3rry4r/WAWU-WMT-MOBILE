@@ -77,25 +77,33 @@ export function voicesUnavailable(error: unknown): boolean {
   return error instanceof ApiError && error.code === 'voice_unavailable';
 }
 
+/** The shortest and longest recording, in seconds, as the Hub serves them (`sample.minSeconds`, `sample.maxSeconds`, two plan settings). */
+export type TakeBounds = { min: number; max: number };
+
 /**
- * How long a recording may run and how short it may be, in seconds. The Hub serves neither (it does not read how long a file is,
- * BACKEND_GAPS G-VOICE-01-2 and G-VERIFY-03-1), so the app times the take itself. The 30 is the board's and the Hub's own
- * wording ("your 30 second sample"); the owner has not named a shortest take.
- * PROVISIONAL(VOICE-SAMPLE-SECONDS, owner=VERIFY-03, why=no ruling names the shortest recording and the Hub serves neither bound; the board's too-short example is 8 s and its recording example 14 s, so the shortest is set at half the longest; owner to confirm).
+ * What VF8 to VF9 need from the Hub's view: the consent line exactly as served and the recording's shortest and longest seconds. A view
+ * without them (or with a shortest above the longest) is not drawn: no screen holds a consent text or a length of its own.
  */
-export const TAKE_SECONDS = { min: 15, max: 30 } as const;
+export function recordingTerms(view: Pick<VoiceIntro, 'consent' | 'sample'>): { line: string; bounds: TakeBounds } | null {
+  const line = view.consent?.line;
+  const min = view.sample?.minSeconds;
+  const max = view.sample?.maxSeconds;
+  const positive = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0;
+  if (typeof line !== 'string' || line.trim() === '' || !positive(min) || !positive(max) || min > max) return null;
+  return { line, bounds: { min, max } };
+}
 
 /** "0:14": the clock VF9 draws in the ring. */
 export const takeClock = voiceClock;
 
 /** How much of the ring a take fills, 0 to 1. */
-export function takeShare(seconds: number, max: number = TAKE_SECONDS.max): number {
+export function takeShare(seconds: number, max: number): number {
   if (!Number.isFinite(seconds) || seconds <= 0 || max <= 0) return 0;
   return Math.min(1, seconds / max);
 }
 
-/** A take shorter than the shortest is refused with the reason (VF9b); any other is kept (VF9c). */
-export function takeVerdict(seconds: number, min: number = TAKE_SECONDS.min): 'short' | 'done' {
+/** A take shorter than the Hub's shortest is refused with the reason (VF9b); any other is kept (VF9c). */
+export function takeVerdict(seconds: number, min: number): 'short' | 'done' {
   return Math.floor(seconds) < min ? 'short' : 'done';
 }
 
@@ -110,19 +118,9 @@ export function sampleFileOf(uri: string): { contentType: string; extension: str
   return { contentType: 'audio/mp4', extension: 'm4a' };
 }
 
-/**
- * VF8's line: the person's name from the Hub and the board's words ("I am Lennox Emmanuel. I agree that Who Made This? may create an
- * AI version of my voice for my intros."). The Hub stores consent against ITS OWN line (`consent.line`, sent back unchanged) and refuses
- * any other, so this wording is what the person reads and agrees to and the Hub's is what it files (BACKEND_GAPS G-VERIFY-03-2).
- */
-export function consentLineFor(name: string): string {
-  const who = name.trim();
-  return `${who ? `I am ${who}. ` : ''}I agree that Who Made This? may create an AI version of my voice for my intros.`;
-}
-
-/** VF9's script: the consent line, then the Voice Intro's words, read aloud as one. */
-export function scriptFor(name: string, words: string | null | undefined): string {
-  return [consentLineFor(name), (words ?? '').trim()].filter(Boolean).join(' ');
+/** VF9's script: the consent line exactly as the Hub served it (`consent.line`), then the Voice Intro's words, read aloud as one. */
+export function scriptFor(consentLine: string, words: string | null | undefined): string {
+  return [consentLine.trim(), (words ?? '').trim()].filter(Boolean).join(' ');
 }
 
 export type FlowStage = 'consent' | 'record' | 'making' | 'hear';

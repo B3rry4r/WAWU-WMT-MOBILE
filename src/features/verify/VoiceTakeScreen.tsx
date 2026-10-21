@@ -9,7 +9,7 @@ import { Text } from '@/components/Text';
 import { font, space, useWawu } from '@/theme';
 
 import { ShopFrame } from './parts';
-import { TAKE_SECONDS, takeClock, takeShare, takeVerdict, voiceFailure } from './voiceModel';
+import { takeClock, takeShare, takeVerdict, voiceFailure, type TakeBounds } from './voiceModel';
 import { RecordButton, recordButton, TakeRing } from './voiceParts';
 import { useVoiceRecorder, type Take } from './voiceRecorder';
 
@@ -21,6 +21,8 @@ type Phase = 'ready' | 'recording' | 'short' | 'done';
 export type VoiceTakeScreenProps = {
   /** What the person reads aloud: the consent line, then their Voice Intro's words. */
   script: string;
+  /** The shortest and longest recording, from the Hub. */
+  bounds: TakeBounds;
   /** What the next try costs, from the Hub: nothing while the tier still includes the first, else its points. */
   next: { free: boolean; costPoints: number };
   onBack: () => void;
@@ -34,17 +36,17 @@ export type VoiceTakeScreenProps = {
 /**
  * VF9 · Record 30 seconds, VF9a (recording), VF9b (too short) and VF9c (done). The script to read, a ring that fills to the longest take,
  * and the record button. A take shorter than the shortest is refused with the reason and the person records again; a full-length one
- * stops itself. The lengths are the app's own (they are not served: `TAKE_SECONDS`, G-VERIFY-03-1). When the phone refuses the
+ * stops itself. The lengths are the Hub's (`sample.minSeconds`, `sample.maxSeconds`). When the phone refuses the
  * microphone the ring gives way to a plain way forward: ask again, or open the phone's settings.
  */
-export function VoiceTakeScreen({ script, next, onBack, onUse }: VoiceTakeScreenProps) {
+export function VoiceTakeScreen({ script, bounds, next, onBack, onUse }: VoiceTakeScreenProps) {
   const { colors } = useWawu();
   const rec = useVoiceRecorder();
   const [phase, setPhase] = useState<Phase>('ready');
   const [take, setTake] = useState<Take | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const max = TAKE_SECONDS.max;
+  const { min, max } = bounds;
 
   const finish = useCallback(async () => {
     const got = await rec.stop();
@@ -55,8 +57,8 @@ export function VoiceTakeScreen({ script, next, onBack, onUse }: VoiceTakeScreen
     }
     const seconds = Math.min(got.seconds, max);
     setTake({ ...got, seconds });
-    setPhase(takeVerdict(seconds) === 'short' ? 'short' : 'done');
-  }, [rec, max]);
+    setPhase(takeVerdict(seconds, min) === 'short' ? 'short' : 'done');
+  }, [rec, min, max]);
 
   // A take that reaches the longest length stops itself.
   useEffect(() => {

@@ -102,7 +102,10 @@ const FILE = '/recordings/take.m4a';
 const UPLOAD = '/up/take.m4a';
 
 const WORDS = 'I shoot brand films for African founders.';
-const HUB_LINE = 'This is my own voice. I agree that WAWU makes an AI copy of it to read my Voice Intro aloud, and that the audio is marked as an AI voice.';
+/** What the Hub serves as `consent.line` (FIX-95): the board's words with the person's own name. The app prints it as served. */
+const HUB_LINE = 'I am Lennox Emmanuel. I agree that Who Made This? may create an AI version of my voice for my intros.';
+/** The shortest and longest recording, as the Hub serves them (`voice_intro.sample_min_seconds` and `_max_seconds`). */
+const BOUNDS = { minSeconds: 15, maxSeconds: 30 };
 const profile = (over: Record<string, unknown> = {}) => ({
   wawuUserId: 'u1',
   sub: 'u1',
@@ -121,7 +124,7 @@ const introView = (over: Record<string, unknown> = {}) => ({
   text: WORDS,
   textMaxChars: 500,
   consent: { line: HUB_LINE, given: false },
-  sample: { recorded: false },
+  sample: { recorded: false, ...BOUNDS },
   audioUrl: null,
   next: { free: true, costPoints: 0 },
   canGenerate: false,
@@ -164,8 +167,8 @@ function sendingAnswers(over: Record<string, Answer | Answer[]> = {}) {
     [`POST ${PRESIGN}`]: ok({ uploadUrl: `https://files.test${UPLOAD}`, key: 'k1', fileUrl: 'https://files.test/voice/sample/u1/take.m4a' }),
     [`PUT ${UPLOAD}`]: { status: 200, body: {} },
     [`POST ${CONFIRM}`]: ok({ key: 'k1', status: 'confirmed' }),
-    [`POST ${SAMPLE}`]: ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true } })),
-    [`POST ${GENERATE}`]: ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true }, run: run() }), 202),
+    [`POST ${SAMPLE}`]: ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true, ...BOUNDS } })),
+    [`POST ${GENERATE}`]: ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true, ...BOUNDS }, run: run() }), 202),
     ...over,
   } as Record<string, Answer | Answer[]>;
 }
@@ -214,6 +217,31 @@ describe('VF8 · Your voice, your consent', () => {
     expect(screen.getByText('Your AI voice is only used for your intros')).toBeTruthy();
     expect(screen.queryByText(/Delete it any time/)).toBeNull();
     expect(screen.getByText('I agree, start recording')).toBeTruthy();
+  });
+
+  it('prints consent.line exactly as served, whatever its words, and sends back those same words', async () => {
+    const served = 'I am Lennox Emmanuel. These are the words the Hub serves today.';
+    await boot({
+      [`GET ${INTRO}`]: ok(introView({ consent: { line: served, given: false } })),
+      [`POST ${CONSENT}`]: ok(introView({ consent: { line: served, given: true } })),
+    });
+    expect(await screen.findByTestId('voice-consent-line')).toHaveTextContent(`\u201C${served}\u201D`);
+    expect(screen.queryByText(/Who Made This\?/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('voice-consent-agree'));
+    await screen.findByTestId('voice-take-screen');
+    expect(calls('POST', CONSENT)).toEqual([expect.objectContaining({ body: { line: served } })]);
+    expect(screen.getByTestId('voice-take-script')).toHaveTextContent(`${served} ${WORDS}`);
+  });
+
+  it('an answer without the consent line or the recording lengths is refused, never drawn with numbers of the app\'s own', async () => {
+    answers = {
+      [`GET ${ME}`]: ok(profile()),
+      [`GET ${VOICE}`]: ok(voiceView()),
+      [`GET ${INTRO}`]: ok({ ...introView(), sample: { recorded: false } }),
+    };
+    await render(frame(<VoiceConsentScreen onBack={jest.fn()} onWriteText={jest.fn()} onUse={jest.fn()} />));
+    expect(await screen.findByTestId('voice-consent-error')).toBeTruthy();
+    expect(screen.queryByTestId('voice-consent-agree')).toBeNull();
   });
 
   it('agreeing stores the Hub\'s own line through the consent route, then opens the recording', async () => {
@@ -274,6 +302,21 @@ describe('VF9 · Record 30 seconds', () => {
     expect(screen.getByText('of 0:30')).toBeTruthy();
     expect(screen.getByText('Find a quiet room.')).toBeTruthy();
     expect(screen.queryByText('Redo')).toBeNull();
+  });
+
+  it('the title, the ring and the shortest take follow the Hub\'s lengths, not 30 and 15', async () => {
+    const bounds = { minSeconds: 10, maxSeconds: 20 };
+    await toRecording({
+      [`GET ${INTRO}`]: ok(introView({ sample: { recorded: false, ...bounds } })),
+      [`POST ${CONSENT}`]: ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: false, ...bounds } })),
+    });
+    expect(screen.getByText('Record 20 seconds')).toBeTruthy();
+    expect(screen.getByText('of 0:20')).toBeTruthy();
+    await record(9);
+    expect(await screen.findByText('Too short. Read the whole script.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Redo'));
+    await record(12);
+    expect(await screen.findByTestId('voice-take-got')).toBeTruthy();
   });
 
   it('VF9a: the recorder starts after the microphone is allowed, the ring runs and the line says to read at a normal pace', async () => {
@@ -424,7 +467,7 @@ async function toMaking(over: Record<string, Answer | Answer[]> = {}) {
 }
 
 describe('VF10 and VF10a · Making your intro', () => {
-  const kept = { consent: { line: HUB_LINE, given: true }, sample: { recorded: true } };
+  const kept = { consent: { line: HUB_LINE, given: true }, sample: { recorded: true, ...BOUNDS } };
   const working = (over: Record<string, unknown> = {}) => introView({ ...kept, run: run(), ...over });
   const failedRun = "That didn't work. No points were taken. Try again.";
   const failedView = () => working({ run: run({ state: 'failed', message: failedRun, finishedAt: '2026-10-20T10:01:00.000Z' }) });
@@ -469,7 +512,7 @@ describe('VF10 and VF10a · Making your intro', () => {
 
   it('Try again with no recording kept goes back to VF9', async () => {
     await toMaking();
-    answers[`GET ${INTRO}`] = ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: false }, run: run({ state: 'failed', message: failedRun }) }));
+    answers[`GET ${INTRO}`] = ok(introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: false, ...BOUNDS }, run: run({ state: 'failed', message: failedRun }) }));
     await fireEvent.press(await screen.findByTestId('voice-failed-again', {}, { timeout: 6000 }));
     expect(await screen.findByTestId('voice-take-screen')).toBeTruthy();
   }, 20_000);
@@ -477,7 +520,7 @@ describe('VF10 and VF10a · Making your intro', () => {
 
 describe('VF11 · Hear yourself', () => {
   const done = () =>
-    introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true }, run: run({ state: 'done' }), audioUrl: 'https://files.test/intro.mp3' });
+    introView({ consent: { line: HUB_LINE, given: true }, sample: { recorded: true, ...BOUNDS }, run: run({ state: 'done' }), audioUrl: 'https://files.test/intro.mp3' });
 
   it('the finished intro plays as it opens, labelled Bio with the AI voice tag, above the words it says; its three buttons lead on', async () => {
     const props = await toMaking();
@@ -499,18 +542,20 @@ describe('VF11 · Hear yourself', () => {
 });
 
 describe('the recording model', () => {
-  it('a take under the shortest is short, anything from the shortest up is kept', () => {
-    expect(model.takeVerdict(model.TAKE_SECONDS.min - 1)).toBe('short');
-    expect(model.takeVerdict(model.TAKE_SECONDS.min)).toBe('done');
-    expect(model.takeVerdict(model.TAKE_SECONDS.max)).toBe('done');
-    expect(model.takeVerdict(14.9)).toBe('short');
+  it('a take under the Hub\'s shortest is short, anything from the shortest up is kept', () => {
+    expect(model.takeVerdict(14, 15)).toBe('short');
+    expect(model.takeVerdict(15, 15)).toBe('done');
+    expect(model.takeVerdict(30, 15)).toBe('done');
+    expect(model.takeVerdict(14.9, 15)).toBe('short');
+    expect(model.takeVerdict(9, 10)).toBe('short');
   });
 
-  it('the ring fills with the take and never past full', () => {
-    expect(model.takeShare(0)).toBe(0);
-    expect(model.takeShare(15)).toBe(0.5);
-    expect(model.takeShare(45)).toBe(1);
-    expect(model.takeShare(Number.NaN)).toBe(0);
+  it('the ring fills with the take against the Hub\'s longest and never past full', () => {
+    expect(model.takeShare(0, 30)).toBe(0);
+    expect(model.takeShare(15, 30)).toBe(0.5);
+    expect(model.takeShare(45, 30)).toBe(1);
+    expect(model.takeShare(Number.NaN, 30)).toBe(0);
+    expect(model.takeShare(10, 20)).toBe(0.5);
     expect(model.takeClock(14)).toBe('0:14');
     expect(model.takeClock(30)).toBe('0:30');
   });
@@ -522,10 +567,9 @@ describe('the recording model', () => {
     expect(model.sampleFileOf('file:///a/take.webm?x=1')).toEqual({ contentType: 'audio/webm', extension: 'webm' });
   });
 
-  it('the consent line and the script carry the person\'s name and words; a missing name drops the first sentence', () => {
-    expect(model.consentLineFor('  Lennox Emmanuel ')).toBe('I am Lennox Emmanuel. I agree that Who Made This? may create an AI version of my voice for my intros.');
-    expect(model.consentLineFor('')).toBe('I agree that Who Made This? may create an AI version of my voice for my intros.');
-    expect(model.scriptFor('Lennox', '  Hello there.  ')).toBe('I am Lennox. I agree that Who Made This? may create an AI version of my voice for my intros. Hello there.');
+  it('the script is the consent line exactly as served, then the person\'s words', () => {
+    expect(model.scriptFor(HUB_LINE, '  Hello there.  ')).toBe(`${HUB_LINE} Hello there.`);
+    expect(model.scriptFor(HUB_LINE, null)).toBe(HUB_LINE);
   });
 
   it('the Hub\'s answer to a poll is still working, done with audio, or failed with its own words', () => {
