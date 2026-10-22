@@ -99,7 +99,7 @@ describe('FLIX-03 · the Flix movies rail (R-27, R-47)', () => {
 });
 
 describe('FLIX-03 · MV1, MV11, MV12', () => {
-  const props = { onBack: jest.fn(), onSearch: jest.fn(), onOpenMovie: jest.fn(), onWatch: jest.fn(), onTrailer: jest.fn(), onBrowse: jest.fn() };
+  const props = { onBack: jest.fn(), onSearch: jest.fn(), onOpenMovie: jest.fn(), onWatch: jest.fn(), onTrailer: jest.fn(), onBrowse: jest.fn(), onOpenTab: jest.fn() };
 
   it('MV11 while loading, then the Hub hero and rails; See all browses that rail', async () => {
     mockGet.mockImplementation((path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: ['Drama', 'Comedy'], languages: ['English'] }) : home(true, [{ key: 'top_rated', title: 'Top rated', movies: [card('m3')] }])));
@@ -113,6 +113,24 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     expect(props.onWatch).toHaveBeenCalledWith('m1');
     await fireEvent.press(screen.getByTestId('flix-hero-trailer'));
     expect(props.onTrailer).toHaveBeenCalledWith('m1');
+  });
+
+  it('draws the app tab bar under MV1 and a tab leaves for that tab', async () => {
+    mockGet.mockImplementation((path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: [], languages: [] }) : home(true)));
+    await render(wrap(<MoviesScreen {...props} />));
+    await screen.findByTestId('flix-hero');
+    expect(screen.getByText('Explore')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Inbox'));
+    expect(props.onOpenTab).toHaveBeenCalledWith('inbox');
+  });
+
+  it('MV1 draws nothing but the bar while movies are off (the gate is leaving)', async () => {
+    mockGet.mockResolvedValue(home(false));
+    await render(wrap(<MoviesScreen {...props} />));
+    await waitFor(() => expect(mockGet).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByTestId('movies-loading')).toBeNull());
+    expect(screen.queryByTestId('movies-error')).toBeNull();
+    expect(screen.queryByTestId('flix-hero')).toBeNull();
   });
 
   it('MV12 when the Hub fails, with Try again', async () => {

@@ -15,7 +15,7 @@ export default function MoviesRoute() {
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
   return (
-    <MoviesGate onOff={off}>
+    <MoviesGate onOff={off} showWhilePending>
       <MoviesScreen
         onBack={leave}
         onSearch={() => router.push('/movies/search')}
@@ -23,6 +23,7 @@ export default function MoviesRoute() {
         onWatch={(id) => router.push({ pathname: '/movies/[id]', params: { id, watch: '1' } })}
         onTrailer={(id) => router.push({ pathname: '/movies/[id]/trailer', params: { id } })}
         onBrowse={(filter) => router.push({ pathname: '/movies/all', params: browseParams(filter) })}
+        onOpenTab={(route) => router.navigate(route === 'index' ? '/' : `/${route}`)}
       />
     </MoviesGate>
   );

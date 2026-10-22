@@ -16,6 +16,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/
 import { fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
 import { heroMetrics as h, posterMetrics } from './look';
 import { heroLine } from './model';
+import { FlixTabBar } from './FlixTabBar';
 import { PosterCard, RailScroller, Scrim, SeeAll } from './parts';
 
 export type MoviesScreenProps = {
@@ -28,6 +29,8 @@ export type MoviesScreenProps = {
   onTrailer: (id: string) => void;
   /** A genre chip or a rail's See all: MV6 with that browse. */
   onBrowse: (filter: Partial<BrowseFilter>) => void;
+  /** A tab in the bar under the screen (MV1, MV11 and MV12 draw it, Explore lit): leaves for that tab by its route name. */
+  onOpenTab: (route: string) => void;
 };
 
 /** The browse a rail's See all opens: its own order, or the premieres for "Premiering soon". */
@@ -95,7 +98,7 @@ export function MoviesLoading() {
  * (New on Flixora, Most watched, Top rated, Premiering soon: only the ones that hold titles), all from `GET /movies`; the genres
  * from `GET /movies/filters`. Nothing here is a sample: a title, poster, rating or date comes from Flixora through the Hub.
  */
-export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer, onBrowse }: MoviesScreenProps) {
+export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer, onBrowse, onOpenTab }: MoviesScreenProps) {
   const home = useMoviesHome(queryClient);
   const filters = useQuery({ queryKey: filtersKey, queryFn: fetchFilters }, queryClient);
   const data = home.data?.enabled ? home.data : null;
@@ -105,6 +108,9 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
   let body;
   if (home.isPending) {
     body = <MoviesLoading />;
+  } else if (!home.isError && !data) {
+    // Movies are off: the gate is taking the person out, so nothing is drawn meanwhile.
+    body = null;
   } else if (home.isError || !data) {
     body = <ErrorState testID="movies-error" icon="WifiOff" title="Couldn't load movies" message="Check your connection and try again." onRetry={() => void home.refetch()} />;
   } else {
@@ -132,16 +138,19 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
     );
   }
   return (
-    <ScreenFrame
-      testID="movies-screen"
-      idPrefix="movies"
-      title="Flix movies"
-      gap={h.sectionGap}
-      onBack={onBack}
-      right={data ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
-    >
-      {body}
-    </ScreenFrame>
+    <View style={styles.page}>
+      <ScreenFrame
+        testID="movies-screen"
+        idPrefix="movies"
+        title="Flix movies"
+        gap={h.sectionGap}
+        onBack={onBack}
+        right={data ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
+      >
+        {body}
+      </ScreenFrame>
+      <FlixTabBar onOpenTab={onOpenTab} />
+    </View>
   );
 }
 
@@ -156,6 +165,7 @@ function RailRow({ movies, railKey, onOpen }: { movies: MovieCard[]; railKey: st
 }
 
 const styles = StyleSheet.create({
+  page: { flex: 1 },
   hero: { height: h.height, borderRadius: h.radius, overflow: 'hidden', flexShrink: 0 },
   badge: {
     position: 'absolute',

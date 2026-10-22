@@ -66,21 +66,25 @@ export function SearchScreen({ onBack, onOpenMovie }: { onBack: () => void; onOp
 
   return (
     <ScreenFrame testID="movies-search-screen" idPrefix="movies-search" title="Search" gap={space.md} keyboard onBack={onBack}>
-      <SearchField
-        testID="movies-search-field"
-        value={text.text}
-        onChange={text.setText}
-        onSubmit={(value) => void text.submit(value)}
-        onClear={() => void text.submit('')}
-        placeholder="Search movies"
-        maxLength={SEARCH_MAX}
-        autoFocus
-      />
+      <View style={styles.field}>
+        <SearchField
+          testID="movies-search-field"
+          value={text.text}
+          onChange={text.setText}
+          onSubmit={(value) => void text.submit(value)}
+          onClear={() => void text.submit('')}
+          placeholder="Search movies"
+          maxLength={SEARCH_MAX}
+          autoFocus
+        />
+      </View>
       {body}
     </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
+  /** The shared field fills the height it is given (it is made for a bar's row): this gives it the board's 46. */
+  field: { height: s.height },
   empty: { flex: 1, justifyContent: 'center' },
 });
