@@ -202,6 +202,11 @@ export default function RootLayout() {
           <Stack.Screen name="library/[id]/index" />
           <Stack.Screen name="library/[id]/replace" />
           <Stack.Screen name="library/index" />
+          <Stack.Screen name="movies/[id]/index" />
+          <Stack.Screen name="movies/[id]/trailer" />
+          <Stack.Screen name="movies/all" />
+          <Stack.Screen name="movies/index" />
+          <Stack.Screen name="movies/search" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="paid-message-settings" />
           <Stack.Screen name="paid-questions/[wawuId]" />

@@ -12,6 +12,7 @@ import { CreateEntry } from '@/features/create/CreateEntry';
 import { useAdList } from '@/features/ads/useAd';
 import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { FlixRail } from '@/features/movies/FlixRail';
 import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
 import { todayMetrics } from '@/features/home/look';
 import { countsKey, fetchCounts } from '@/features/me/counts';
@@ -69,6 +70,10 @@ export type ExploreScreenProps = {
   onOpenNotifications?: () => void;
   /** A featured creator's card opens their profile (M5, ME-02). The card is not pressed without it. */
   onOpenCreator?: (wawuId: string) => void;
+  /** The Flix movies rail's See all opens Flix movies (MV1, FLIX-03). The rail is not drawn without this and `onOpenMovie`. */
+  onSeeAllMovies?: () => void;
+  /** A poster on the Flix movies rail opens that movie (MV2, FLIX-03). */
+  onOpenMovie?: (id: string) => void;
 };
 
 /**
@@ -88,7 +93,7 @@ export type ExploreScreenProps = {
  * R-47, owner 9 Oct); it comes back the moment the Hub serves one. X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator, onSeeAllMovies, onOpenMovie }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -200,6 +205,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
             </ScrollView>
           </View>
         ) : null}
+        {onSeeAllMovies && onOpenMovie ? <FlixRail client={queryClient} testID="explore-flix" onSeeAll={onSeeAllMovies} onOpenMovie={onOpenMovie} /> : null}
         {events.upcoming.length > 0 ? <ExploreEventsRail events={events.upcoming} onOpen={onOpenEvent} onSeeAll={onSeeAllEvents} /> : null}
         <DoorsCard doors={doors} />
       </>

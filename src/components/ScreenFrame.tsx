@@ -27,6 +27,8 @@ export type ScreenFrameProps = {
   onBack?: () => void;
   /** The bar's right-hand word in the accent colour: "Save" on M8, "Done" on M9 (kit.js `nav` with `right`). */
   action?: ScreenFrameAction;
+  /** The bar's right-hand slot as a node (a 42 round icon button, as Flix movies' search and filter). Left out, the slot holds `action`. */
+  right?: ReactNode;
   /** The gap between the screen's parts. */
   gap: number;
   /** The start of the test ids the frame names: `<idPrefix>-back`, `<idPrefix>-scroll` and `<idPrefix>-action-spinner`. */
@@ -45,7 +47,7 @@ export type ScreenFrameProps = {
  * (a round back button, the title centred, optionally a word on the right) and scrolling content that keeps clear
  * of the phone's edges.
  */
-export function ScreenFrame({ title, onBack, action, gap, idPrefix, keyboard, titleLines, scrollRef, children, testID }: ScreenFrameProps) {
+export function ScreenFrame({ title, onBack, action, right, gap, idPrefix, keyboard, titleLines, scrollRef, children, testID }: ScreenFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const ring = useFocusRing();
@@ -68,6 +70,7 @@ export function ScreenFrame({ title, onBack, action, gap, idPrefix, keyboard, ti
           {title}
         </Text>
         <View style={[styles.side, styles.actionSide]}>
+          {right}
           {action ? (
             <Pressable
               testID={action.testID}

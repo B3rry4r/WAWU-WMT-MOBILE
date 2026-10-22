@@ -28,6 +28,8 @@ export default function ExploreTab() {
       onSeeAllCreators={() => router.push('/creators')}
       onOpenNotifications={() => router.push('/notifications')}
       onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
+      onSeeAllMovies={() => router.push('/movies')}
+      onOpenMovie={(id) => router.push({ pathname: '/movies/[id]', params: { id } })}
     />
   );
 }

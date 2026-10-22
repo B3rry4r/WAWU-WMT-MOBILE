@@ -14,6 +14,8 @@ import { fetchMyId, meKey } from '@/features/feed/api';
 import { metrics as feedMetrics } from '@/features/feed/look';
 import { countsKey, fetchCounts } from '@/features/me/counts';
 import { NotificationsBell } from '@/features/notifications/NotificationsBell';
+import { FLIX_PATH, FlixRail } from '@/features/movies/FlixRail';
+import { moviePath } from '@/features/movies/model';
 import { CompleteAccountFlag } from '@/features/open-wallet/CompleteAccountFlag';
 import { OPEN_WALLET_PATH } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -184,6 +186,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
         onOpenMonetize={isCreator ? () => router.push('/create') : undefined}
       />
       <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} onOpenCreator={onOpenCreator} />
+      <FlixRail client={client} testID="today-flix" onSeeAll={() => router.push(FLIX_PATH)} onOpenMovie={(id) => router.push(moviePath(id))} />
     </>
   );
 }
