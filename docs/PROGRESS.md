@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 9 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 10 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -19,6 +19,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
+- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 - [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
@@ -79,7 +80,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [LEGAL-04](../tasks/LEGAL-04.md) Legal: book and pay a consultation (You)
 - [HOME-13](../tasks/HOME-13.md) Tip a creator (You)
-- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [LEGAL-06](../tasks/LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price (You)
 - [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
 - [HOME-12](../tasks/HOME-12.md) Unlock from the feed (You)

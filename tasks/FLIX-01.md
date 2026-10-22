@@ -7,7 +7,7 @@ order: 119
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: []
 decisions: [R-74, R-75, R-39, R-67, R-68]
 passes: [V1, V2, V3, V4, V6, V8, V9]
@@ -17,13 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 22 Oct 2026, verifying: built by a Sonnet builder (T2), not yet verified.
-- **Branches:** backend `wmt/FLIX-01` (contract commit `312f16c`, then the build) on `origin/main` `1955fd1`; mobile `wmt/FLIX-01` (this file, SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09 and the PI-01 and PI-02 cells, the three G-FLIX rows updated). No PR.
-- **Routes (contract commit `312f16c`, unchanged since):** `GET /movies`, `/movies/browse`, `/movies/filters`, `/movies/search`, `/movies/{movieId}`, `POST /movies/{movieId}/watch` (200). Browse and search use the Hub's offset page (`data` array plus `pagination` with `total`). FLIX-03 builds from `contract/openapi.json`.
-- **Migration:** `20261031100000_flix_movies` (tables `MoviePartnerMovie`, `MoviePartnerSync`, `MoviePartnerLink`, `MoviePartnerConsent`; additive; rollback.sql proven).
-- **Not done (recorded, not findings):** the real Flixora adapter (FLIX-02: `MOVIE_PARTNER=flixora` stops the server at boot until then); every provider-dependent check is NOT RUN against Flixora (unblocked by FLIX-02 and the owner's partner key and sign-in secret); the movie routes' send-time throttling is the Hub's global one.
-- **Next:** an independent verifier (V1 to V4, V6, V8, V9). FLIX-03 (the app) starts from the contract.
-- **Facts the verifier should know:** the sign-up time used for `FLIXORA_TERMS_FROM` is `UserProfile.createdAt` (the access token carries none; a person who signed up before the date but finished onboarding after it counts as agreed, see the builder report); a person with an unverified email is sent with `email_verified: false` (WAWU ID's token carries no flag today, G-634).
+As of 22 Oct 2026, review (verifier PASS: no blocker, high or medium; 4 lows). Built by a Sonnet builder (T2), verified by a separate Sonnet verifier. No PR.
+- **Branches:** backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`, then the build) on `origin/main` `1955fd1`; mobile `wmt/FLIX-01` (this file, SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, the three G-FLIX rows). The verifier pushed nothing to the backend.
+- **Routes (unchanged since `312f16c`):** `GET /movies`, `/movies/browse`, `/movies/filters`, `/movies/search`, `/movies/{movieId}`, `POST /movies/{movieId}/watch` (200). FLIX-03 builds from `contract/openapi.json`. Migration `20261031100000_flix_movies` (4 new tables; rollback proven both ways).
+- **Verified (EXIT lines in the report):** tsc, eslint, 6 FLIX-01 specs (53 tests), `test:protected` 253/253, `contract:build` with no diff, gates 0 fail, baseline; plus a live stack: off, consent, links, deletion, rollback by psql.
+- **Open lows for the sweep (the report has file, line, repro):** L1 sign-up time is `UserProfile.createdAt` because WAWU ID exposes none (a WAWU ID change would fix it; /join registrants before the date who first open the app after it count as agreed); L2 no catalog pass at boot (empty rails for up to 5 minutes); L3 a full pass can drop a boundary title if the partner unpublishes mid-pass; L4 FLIX-02 needs one wiring line in `src/movie-partner/movie-partner.module.ts`.
+- **Not done:** the real Flixora adapter (FLIX-02: `MOVIE_PARTNER=flixora` stops the server at boot until then); every provider-dependent check is NOT RUN until FLIX-02 and the owner's key; `data-export-request.contract` (needs a running Hub) NOT RUN.
+- **Next:** the lead merges backend and mobile `wmt/FLIX-01` together; FLIX-03 starts from the contract.
 
 ## Read first
 
