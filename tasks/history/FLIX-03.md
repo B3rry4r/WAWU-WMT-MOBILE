@@ -42,3 +42,25 @@ Findings:
 
 Not findings (recorded): MV2 and MV9 trailer line, the posters and backdrops (the stand-in's addresses end in `.invalid`, so the placeholder block shows where the board shows a photo), MV1's missing Inbox count, MV10's "Clear search", MV8's SearchField (plain close icon on the board, ringed on the built), the "You're" apostrophe, the selected states in MV7 (a state, not a layout), and the open SHARED-CHANGES rows #1 (re-copy from main after FLIX-01 merges) and #4. Test-gap notes: no test pins the hero Watch button against a premiering title (finding 3); no test pins MV7's label wrap.
 
+
+## Verifier report (re-check, round 3)
+
+Verifier: a Sonnet agent that built none of it. Head `2ba310e0` (on `eb15429d`), Hub from backend `wmt/FLIX-01` `a71a70d` (`MOVIE_PARTNER=standin`), app exported from this head on a local stack. Own captures of MV7, MV9, MV12 and the "The Last Griot" hero, light and dark, in the verifier's scratchpad flix-03-v2/pics.
+
+**Verdict: PASS.**
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| M1 MV7 "Most watched" | fixed | wraps to two lines in the same 83 high track as the board (MV7 light and dark) |
+| M2 MV12 | fixed | purple primary Try again, block centred (icon at 39 percent of the screen, the board's at 42), light and dark; the retry icon stays (see below) |
+| M3 hero Watch on a premiering title | fixed | the stand-in hero "The Last Griot" (premieres 12 Nov) shows its premiere pill and Trailer only, no Watch; `/movies/standin-009?watch=1` opens no sheet; a released title with `watch=1` still opens MV4 |
+| Low: MV11 search | fixed | the search button shows while loading, none on MV12 (test) |
+| Low: MV9 pill | fixed | spans its column as the board draws it |
+| Low: 409 with no box | fixed | the box is drawn on a 409 and the next tap sends `agreeToTerms: true`; no line about a missing box |
+| Low: hero Trailer | fixed | drawn only when the movie has a trailer (read from the movie's own answer) |
+| New tests both ways | passed | on `eb15429d` code with the new test files copied in: 11 tests fail (M1, M2, M3 on the hero and on MV2 with `watch=1`, the three lows and the 409, the three shared-prop tests); on `2ba310e0` all pass |
+| Shared props #5 to #7 | defaults unchanged | `wrapLabels = false` gives one line, `actionVariant` left out gives the secondary button, `stretch = false` adds no style (diff read, plus `shared.test.tsx`); every suite that depends on SegmentedTabs, StateViews or StatusPill (146 suites, 3110 tests, `--findRelatedTests`) passes |
+| Gates | passed | tsc EXIT 0; eslint on the changed source files EXIT 0; movies, Home, Explore, exploreRoute, TodaySponsored, route-guard, route-graph: 16 suites, 506 tests, EXIT 0; gates 1203 files, 0 fail, 18 warn (none in the movies files), EXIT 0; check_baseline EXIT 0; check_tasks EXIT 0 |
+
+Judged: MV12's retry icon is not a finding. `ErrorState` draws the refresh icon on every screen that uses it, the button is now the board's purple primary in the board's place, and removing the icon for one board would need a fourth shared prop for a 17 px glyph; if the designer wants it gone it is a design-system change for every error state, not this task's. Recorded, not findings: the hero's premiere pill has no board (the board's hero never shows a premiering title), and it reuses MV9's pill so the two read alike; the hero's Trailer button appears once the movie's answer arrives (Watch is drawn at once on a released title); MV7's two-line label has slightly more line gap than the board (21 against 18 px) and still fits the track.
+

@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 9 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 10 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -20,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
@@ -125,7 +126,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
-- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
