@@ -7,7 +7,7 @@ order: 119
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: review
 depends_on: []
 decisions: [R-74, R-75, R-39, R-67, R-68]
 passes: [V1, V2, V3, V4, V6, V8, V9]
@@ -17,12 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 22 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. No dependencies; ready to schedule. FLIX-02 (the real Flixora adapter) and FLIX-03 (the app) wait for this task.
-- **Rulings:** R-74 (the catalog in the app, watching on Flixora) and R-75 (the account opens on the first "Watch on Flixora"; one setting unplugs it), both owner, 22 Oct 2026.
-- **Facts:** `docs/flixora/PARTNER-API.md` in this repo is the owner's paste of Flixora's partner docs. The stand-in is shaped on it; no call to Flixora is made in this task.
-- **History:** none yet. Reports go to tasks/history/FLIX-01.md.
+As of 22 Oct 2026, review (verifier PASS: no blocker, high or medium; 4 lows). Built by a Sonnet builder (T2), verified by a separate Sonnet verifier. No PR.
+- **Branches:** backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`, then the build) on `origin/main` `1955fd1`; mobile `wmt/FLIX-01` (this file, SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, the three G-FLIX rows). The verifier pushed nothing to the backend.
+- **Routes (unchanged since `312f16c`):** `GET /movies`, `/movies/browse`, `/movies/filters`, `/movies/search`, `/movies/{movieId}`, `POST /movies/{movieId}/watch` (200). FLIX-03 builds from `contract/openapi.json`. Migration `20261031100000_flix_movies` (4 new tables; rollback proven both ways).
+- **Verified (EXIT lines in the report):** tsc, eslint, 6 FLIX-01 specs (53 tests), `test:protected` 253/253, `contract:build` with no diff, gates 0 fail, baseline; plus a live stack: off, consent, links, deletion, rollback by psql.
+- **Open lows for the sweep (the report has file, line, repro):** L1 sign-up time is `UserProfile.createdAt` because WAWU ID exposes none (a WAWU ID change would fix it; /join registrants before the date who first open the app after it count as agreed); L2 no catalog pass at boot (empty rails for up to 5 minutes); L3 a full pass can drop a boundary title if the partner unpublishes mid-pass; L4 FLIX-02 needs one wiring line in `src/movie-partner/movie-partner.module.ts`.
+- **Not done:** the real Flixora adapter (FLIX-02: `MOVIE_PARTNER=flixora` stops the server at boot until then); every provider-dependent check is NOT RUN until FLIX-02 and the owner's key; `data-export-request.contract` (needs a running Hub) NOT RUN.
+- **Next:** the lead merges backend and mobile `wmt/FLIX-01` together; FLIX-03 starts from the contract.
 
 ## Read first
 
@@ -55,22 +56,18 @@ a stand-in; the real Flixora adapter is FLIX-02.
 
 ## Capability checks
 
-- [ ] `MOVIE_PARTNER=off` (and empty): `GET /movies` answers `enabled: false`, every other movie route answers 404 `movies_off`, no call is made to any partner and no link is given.
-- [ ] `standin` serves every route above, and every route is in the contract (`npm run contract:build`).
-- [ ] The sync copies new titles, updates changed ones with `updatedSince`, and removes titles the partner dropped; screens read only the copy.
-- [ ] A person who signed up on or after `FLIXORA_TERMS_FROM` gets a link straight away from `POST /movies/{movieId}/watch`; a person before it (or with the setting empty) gets 409 `terms_not_agreed` until `agreeToTerms: true`, which stores the consent first, with its time and how.
-- [ ] Each tap gets a fresh link; a link is never stored and never logged (V8: a second tap is a new link, a repeated consent stores one row).
-- [ ] After account deletion no link is given for that person.
-- [ ] The seam is given only the allowed fields (a spec checks it).
-- [ ] Protected routes unchanged (`npm run test:protected`); the new migration's rollback refuses while rows exist.
+- [x] `MOVIE_PARTNER=off` (and empty): `GET /movies` answers `enabled: false`, every other movie route answers 404 `movies_off`, no call is made to any partner and no link is given.
+- [x] `standin` serves every route above, and every route is in the contract (`npm run contract:build`).
+- [x] The sync copies new titles, updates changed ones with `updatedSince`, and removes titles the partner dropped; screens read only the copy.
+- [x] A person who signed up on or after `FLIXORA_TERMS_FROM` gets a link straight away from `POST /movies/{movieId}/watch`; a person before it (or with the setting empty) gets 409 `terms_not_agreed` until `agreeToTerms: true`, which stores the consent first, with its time and how.
+- [x] Each tap gets a fresh link; a link is never stored and never logged (V8: a second tap is a new link, a repeated consent stores one row).
+- [x] After account deletion no link is given for that person.
+- [x] The seam is given only the allowed fields (a spec checks it).
+- [x] Protected routes unchanged (`npm run test:protected`); the new migration's rollback refuses while rows exist.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FLIX-01.md](history/FLIX-01.md).
 
 ## Owner sign-off
 
