@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 9 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -125,7 +125,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
-- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
@@ -191,6 +190,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
