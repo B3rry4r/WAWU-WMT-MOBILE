@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 339.**
+**Launch tasks done: 176 of 342.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 0 | 0 | 0 |
+| todo | 46 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
 | review | 9 | 0 | 0 | 0 |

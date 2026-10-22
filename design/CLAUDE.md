@@ -16,5 +16,6 @@
 - Links are wawu/… (never wawu.africa/…). Emails stay @wawu.africa.
 - Schools: Explore door "Find a school" (Flow SC). Enroll + pay from wallet, or apply via the school's tracked WAWU link.
 - After any board change, rebuild WAWU Dark/Light with _gen/buildAll.js.
+- Flix movies (Flow MV): Flixora partner catalog. Rails on Explore (below "Who Made This?") and Home (below creators). Browse, trailer, filters in-app; "Watch on Flixora" hands off signed in (Chrome/Edge on a computer). No sign-up screens for it.
 - Professionals: paid DMs only. No booking or escrow.
 - Build boards with _gen/build.js (static HTML sections in <Flow>.sections.json, painted by the DC). No x-imports in boards (too slow).

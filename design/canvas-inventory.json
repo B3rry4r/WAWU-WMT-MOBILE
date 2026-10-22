@@ -1,5 +1,5 @@
 {
- "artboards": 360,
+ "artboards": 372,
  "items": [
   {
    "id": "A1",
@@ -341,7 +341,7 @@
    "id": "X1",
    "label": "X1 Explore",
    "flow": "Explore",
-   "hash": "d4875f8fff88098b"
+   "hash": "883139ff09022a00"
   },
   {
    "id": "X15",
@@ -440,10 +440,82 @@
    "hash": "d6296b0ec00e1f74"
   },
   {
+   "id": "MV1",
+   "label": "MV1 Flix movies",
+   "flow": "Flix Movies",
+   "hash": "b01ea98be40d4fcf"
+  },
+  {
+   "id": "MV2",
+   "label": "MV2 Movie",
+   "flow": "Flix Movies",
+   "hash": "4aeeac6751870d59"
+  },
+  {
+   "id": "MV4",
+   "label": "MV4 Continue on Flixora",
+   "flow": "Flix Movies",
+   "hash": "c8bbfe073911d673"
+  },
+  {
+   "id": "MV5",
+   "label": "MV5 Opening Flixora",
+   "flow": "Flix Movies",
+   "hash": "eeb7ba7b57697b9e"
+  },
+  {
+   "id": "MV3",
+   "label": "MV3 Trailer",
+   "flow": "Flix Movies",
+   "hash": "6c971c6d76cc5dc7"
+  },
+  {
+   "id": "MV6",
+   "label": "MV6 All movies",
+   "flow": "Flix Movies",
+   "hash": "7531477066cede42"
+  },
+  {
+   "id": "MV7",
+   "label": "MV7 Filter",
+   "flow": "Flix Movies",
+   "hash": "760f15d91276d8a0"
+  },
+  {
+   "id": "MV8",
+   "label": "MV8 Search",
+   "flow": "Flix Movies",
+   "hash": "2f30bd67662969fc"
+  },
+  {
+   "id": "MV9",
+   "label": "MV9 Premiering soon",
+   "flow": "Flix Movies",
+   "hash": "60401f5d4418fab7"
+  },
+  {
+   "id": "MV10",
+   "label": "MV10 No results",
+   "flow": "Flix Movies",
+   "hash": "0cdad0902ef67f28"
+  },
+  {
+   "id": "MV11",
+   "label": "MV11 Loading",
+   "flow": "Flix Movies",
+   "hash": "2236e9de5569dde1"
+  },
+  {
+   "id": "MV12",
+   "label": "MV12 Couldn't load",
+   "flow": "Flix Movies",
+   "hash": "9204b4842019f832"
+  },
+  {
    "id": "H1",
    "label": "H1 Today",
    "flow": "Home",
-   "hash": "2ed6e2a08c38616e"
+   "hash": "81256ae2483f354b"
   },
   {
    "id": "H2",
