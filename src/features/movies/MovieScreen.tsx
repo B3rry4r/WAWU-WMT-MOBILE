@@ -60,7 +60,7 @@ function Body({ movie, onTrailer, now }: { movie: MovieDetail; onTrailer: () => 
           <Poster uri={movie.posterImage} width={m.posterWidth} height={m.posterHeight} corner={m.posterRadius} testID="movie-poster" />
         </View>
         <View style={styles.words}>
-          {premiere ? <StatusPill testID="movie-premiere" label={premiere} tone="accent" icon="CalendarClock" /> : null}
+          {premiere ? <StatusPill testID="movie-premiere" label={premiere} tone="accent" icon="CalendarClock" stretch /> : null}
           <Text variant="h1" accessibilityRole="header" testID="movie-title" style={styles.title}>
             {movie.title}
           </Text>
@@ -218,7 +218,7 @@ export function MovieScreen({ movieId, onBack, onTrailer, onOpenTerms, onOpenPri
           movieId={movie.id}
           title={movie.title}
           mustAgreeTerms={movie.mustAgreeTerms}
-          visible={sheet}
+          visible={sheet && !ahead}
           onClose={() => setSheet(false)}
           onOpenTerms={onOpenTerms}
           onOpenPrivacy={onOpenPrivacy}

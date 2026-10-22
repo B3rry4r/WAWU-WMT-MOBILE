@@ -9,13 +9,14 @@ import { Icon } from '@/components/icon';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
+import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { SectionHeading } from '@/features/explore/parts';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
-import { fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
+import { detailKey, fetchDetail, fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
 import { heroMetrics as h, posterMetrics } from './look';
-import { heroLine } from './model';
+import { heroLine, premiereAhead, premiereText } from './model';
 import { FlixTabBar } from './FlixTabBar';
 import { PosterCard, RailScroller, Scrim, SeeAll } from './parts';
 
@@ -31,6 +32,8 @@ export type MoviesScreenProps = {
   onBrowse: (filter: Partial<BrowseFilter>) => void;
   /** A tab in the bar under the screen (MV1, MV11 and MV12 draw it, Explore lit): leaves for that tab by its route name. */
   onOpenTab: (route: string) => void;
+  /** The time "not premiered yet" is told against. Left out, now. */
+  now?: Date;
 };
 
 /** The browse a rail's See all opens: its own order, or the premieres for "Premiering soon". */
@@ -41,8 +44,11 @@ export function browseOf(rail: Pick<MovieRail, 'key'>): Partial<BrowseFilter> {
   return { sort: 'newest' };
 }
 
-function Hero({ movie, onWatch, onTrailer }: { movie: MovieCard; onWatch: () => void; onTrailer: () => void }) {
+function Hero({ movie, now, onWatch, onTrailer }: { movie: MovieCard; now: Date; onWatch: () => void; onTrailer: () => void }) {
   const { colors, gradients } = useWawu();
+  // The card does not say whether the title has a trailer: the movie's own answer does (the page it opens reads the same one).
+  const detail = useQuery({ queryKey: detailKey(movie.id), queryFn: () => fetchDetail(movie.id) }, queryClient);
+  const premiere = premiereAhead(movie, now) ? premiereText(movie.premierDate, now) : null;
   return (
     <View testID="flix-hero" style={[styles.hero, { backgroundColor: colors.surfaceSunken }]}>
       {movie.backdropImage ?? movie.posterImage ? (
@@ -57,6 +63,11 @@ function Hero({ movie, onWatch, onTrailer }: { movie: MovieCard; onWatch: () => 
       </View>
       <View style={styles.heroWords}>
         <View>
+          {premiere ? (
+            <View style={styles.heroPremiere}>
+              <StatusPill testID="flix-hero-premiere" label={premiere} tone="accent" icon="CalendarClock" />
+            </View>
+          ) : null}
           <Text variant="h1" tone="textOnAccent" numberOfLines={2} accessibilityRole="header" style={styles.heroTitle}>
             {movie.title}
           </Text>
@@ -64,10 +75,12 @@ function Hero({ movie, onWatch, onTrailer }: { movie: MovieCard; onWatch: () => 
             {heroLine(movie)}
           </Text>
         </View>
-        <View style={styles.heroButtons}>
-          <Button testID="flix-hero-watch" label="Watch on Flixora" variant="white" size="sm" onPress={onWatch} />
-          <Button testID="flix-hero-trailer" label="Trailer" variant="glass" size="sm" icon="Play" onPress={onTrailer} />
-        </View>
+        {premiere === null || detail.data?.trailer ? (
+          <View style={styles.heroButtons}>
+            {premiere === null ? <Button testID="flix-hero-watch" label="Watch on Flixora" variant="white" size="sm" onPress={onWatch} /> : null}
+            {detail.data?.trailer ? <Button testID="flix-hero-trailer" label="Trailer" variant="glass" size="sm" icon="Play" onPress={onTrailer} /> : null}
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -98,7 +111,7 @@ export function MoviesLoading() {
  * (New on Flixora, Most watched, Top rated, Premiering soon: only the ones that hold titles), all from `GET /movies`; the genres
  * from `GET /movies/filters`. Nothing here is a sample: a title, poster, rating or date comes from Flixora through the Hub.
  */
-export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer, onBrowse, onOpenTab }: MoviesScreenProps) {
+export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer, onBrowse, onOpenTab, now = new Date() }: MoviesScreenProps) {
   const home = useMoviesHome(queryClient);
   const filters = useQuery({ queryKey: filtersKey, queryFn: fetchFilters }, queryClient);
   const data = home.data?.enabled ? home.data : null;
@@ -112,11 +125,16 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
     // Movies are off: the gate is taking the person out, so nothing is drawn meanwhile.
     body = null;
   } else if (home.isError || !data) {
-    body = <ErrorState testID="movies-error" icon="WifiOff" title="Couldn't load movies" message="Check your connection and try again." onRetry={() => void home.refetch()} />;
+    // MV12 draws its message in the middle of the screen, with a purple Try again.
+    body = (
+      <View testID="movies-error-block" style={styles.centred}>
+        <ErrorState testID="movies-error" icon="WifiOff" title="Couldn't load movies" message="Check your connection and try again." actionVariant="primary" onRetry={() => void home.refetch()} />
+      </View>
+    );
   } else {
     body = (
       <>
-        {data.hero ? <Hero movie={data.hero} onWatch={() => onWatch(data.hero!.id)} onTrailer={() => onTrailer(data.hero!.id)} /> : null}
+        {data.hero ? <Hero movie={data.hero} now={now} onWatch={() => onWatch(data.hero!.id)} onTrailer={() => onTrailer(data.hero!.id)} /> : null}
         {genres.length > 1 ? (
           <View style={styles.bleed}>
             <FilterChips
@@ -145,7 +163,7 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
         title="Flix movies"
         gap={h.sectionGap}
         onBack={onBack}
-        right={data ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
+        right={data || home.isPending ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
       >
         {body}
       </ScreenFrame>
@@ -182,6 +200,8 @@ const styles = StyleSheet.create({
   heroWords: { position: 'absolute', left: h.inset, right: h.inset, bottom: h.inset, gap: h.between },
   heroTitle: { fontSize: h.title, lineHeight: undefined },
   heroLine: { fontSize: h.line, lineHeight: canvasNormalLineHeight(h.line), opacity: h.lineOpacity, marginTop: h.lineTop },
+  heroPremiere: { marginBottom: h.premiereGap },
+  centred: { flexGrow: 1, justifyContent: 'center' },
   heroButtons: { flexDirection: 'row', gap: h.buttonsGap },
   bleed: { marginHorizontal: -layout.gutter },
   section: { gap: space.md },

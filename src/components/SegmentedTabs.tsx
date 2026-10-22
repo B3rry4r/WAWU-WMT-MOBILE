@@ -16,10 +16,12 @@ export type SegmentedTabsProps<T extends string> = {
   onChange: (value: T) => void;
   /** What the tabs switch between, for a screen reader. */
   label: string;
+  /** Let a segment's words wrap to two lines instead of being cut to one (Flix movies' "Most watched", MV7). Left out, a label is one line as before. */
+  wrapLabels?: boolean;
   testID?: string;
 };
 
-function Segment({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+function Segment({ label, selected, onPress, lines }: { label: string; selected: boolean; onPress: () => void; lines: number }) {
   const { colors, shadows } = useWawu();
   const ring = useFocusRing();
   return (
@@ -41,7 +43,7 @@ function Segment({ label, selected, onPress }: { label: string; selected: boolea
       ]}
     >
       {selected ? <View testID="segment-lift" pointerEvents="none" style={[styles.lift, { boxShadow: shadows.lift }]} /> : null}
-      <Text variant="body" tone={selected ? 'textPrimary' : 'textSecondary'} numberOfLines={1} style={[font(600), styles.label]}>
+      <Text variant="body" tone={selected ? 'textPrimary' : 'textSecondary'} numberOfLines={lines} style={[font(600), styles.label]}>
         {label}
       </Text>
     </Pressable>
@@ -49,7 +51,7 @@ function Segment({ label, selected, onPress }: { label: string; selected: boolea
 }
 
 /** Two to four views of the same thing, side by side in one track (not the app's bottom tab bar). */
-export function SegmentedTabs<T extends string>({ items, value, onChange, label, testID }: SegmentedTabsProps<T>) {
+export function SegmentedTabs<T extends string>({ items, value, onChange, label, wrapLabels = false, testID }: SegmentedTabsProps<T>) {
   const { colors } = useWawu();
   return (
     <View
@@ -59,7 +61,7 @@ export function SegmentedTabs<T extends string>({ items, value, onChange, label,
       style={[styles.track, { backgroundColor: colors.surfaceSunken }]}
     >
       {items.map((item) => (
-        <Segment key={item.value} label={item.label} selected={item.value === value} onPress={() => onChange(item.value)} />
+        <Segment key={item.value} label={item.label} selected={item.value === value} onPress={() => onChange(item.value)} lines={wrapLabels ? 2 : 1} />
       ))}
     </View>
   );

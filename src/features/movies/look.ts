@@ -53,6 +53,8 @@ export const heroMetrics = {
   line: 13,
   lineOpacity: 0.8,
   lineTop: 3,
+  /** A premiere's pill sits this far above the title in the hero. */
+  premiereGap: 6,
   /** `mvHero`'s hero and rails are 18 apart on MV1 (the board's `body` spacing). */
   sectionGap: 18,
   /** `fxBadge`: 24 high, 9 across, the label 11 at 700 tracked .06em, the clapperboard 12, 5 apart. */

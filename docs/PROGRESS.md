@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 9 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -125,6 +125,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
+- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
@@ -190,7 +191,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -387,6 +387,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 22 Oct 2026 · FLIX-03 round 3 · The verifier's FIX built (Sonnet builder; mobile `wmt/FLIX-03`; status verifying): MV7 wraps "Most watched", MV12 is centred with the primary Try again, a title that has not premiered never offers Watch on Flixora (hero or page), MV11 draws search, MV9 pill stretches, a 409 draws the consent box, the hero Trailer needs a trailer. Three optional shared props (SHARED-CHANGES FLIX-03 #5 to #7), a test each; the changed pairs re-captured.
 - 22 Oct 2026 · FLIX-03 round 2 · Lead rulings built (Sonnet builder; mobile `wmt/FLIX-03`): the route-graph lines applied (route-guard passes), the app tab bar under MV1, MV11 and MV12, every built screen pictured beside its board light and dark over backend `b5913a1` with the stand-in partner; MV8 field fixed (it filled the screen on the web). No share button (G-FLIX-4) and no full-screen icon (SHARED-CHANGES FLIX-03 #4): neither is served or supported yet.
 - 22 Oct 2026 · FLIX-03 · Built (Sonnet builder, T1; mobile `wmt/FLIX-03` on `origin/main` `c951ec40`, against backend `wmt/FLIX-01` `312f16c`; status verifying): Flix movies MV1 to MV12 from the Hub, the rail on Today and Explore drawn only when the Hub says enabled, the watch link in the system browser with A3 consent only when `mustAgreeTerms`. Screenshots NOT RUN; SHARED-CHANGES FLIX-03 R1 needed for route-guard.
 - 21 Oct 2026 · SWEEP-JOIN round 2 · The verifier's fixes (Sonnet builder, T1; backend `wmt/SWEEP-JOIN` `6b66ea2`, web `d57c0fd`; status verifying): the held-place count compares with `::timestamp`, so the 30 minute hold no longer shifts with the database session zone (M1; a new spec under two non-UTC zones, red before, green after); unpaid starts that share a phone or an email, or are chained by them, are one person (L1); the page shows the Hub's words for `referral_attempts_limited` (L2). L3 (the in-memory guard's size bound) left as a low.
@@ -401,4 +402,3 @@ From `docs/LOG.md`, newest first.
 - 21 Oct 2026 · FIX-95 · Built (Sonnet builder, T1; backend `wmt/FIX-95` `699b783` on `origin/main` `bb21578`; this record on mobile `wmt/FIX-95` from `origin/main` `025d8d58`; status verifying): the Hub serves `consent.line` as "I am {name}. I agree that Who Made This? may create an AI version of my voice for my intros." (the name from its record of the person), stores exactly that line and takes back only the line it served for that person; the Voice Intro view serves `sample.minSeconds` and `sample.maxSeconds` from two PROVISIONAL plan settings (`voice_intro.sample_min_seconds` 15, `voice_intro.sample_max_seconds` 30). Additive. Protected suite 253 tests, voice and plan-settings specs 73 tests, gates EXIT 0.
 - 19 Oct 2026 · FIX-90 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-90` `c115ab2` on `origin/main` `3acc044`, mobile `wmt/FIX-90` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the four specs that failed the batch 26 whole-suite run (`event-host-wizard`, `event-door-scan`, `learn-entitlement`, `course-lesson`) stop reading the seeded plain user's rows, which `search-popular-privacy` (scheduled deletion left behind) and `account-deletion-identity` (sweep with a clock 30 days ahead, first in batch 12) purge; `fintava-stall` (R-70) allows the total time the loop was blocked, not the worst stall. Red then green on one fresh database. Gap G-FIX-90-1 (low).
 - 19 Oct 2026 · FIX-91 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-91-b12` `d40a363` on `origin/wmt/MERGE-12` `42a151d` and `wmt/FIX-91-b13` `2ccd3f8` on `origin/wmt/MERGE-13` `6bc7b20`; mobile `wmt/FIX-91` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): four specs stopped failing the deploy's whole-suite run because they counted rows other specs left. `paid-dm-wallet`, `host-share` and `event-host-payout` (batch 12) read only their own people's rows of WAWU's account (polluter: `school-enrolment`'s purge test, 15,000,000 kobo); the `ai-tools` sweep tests (batch 13) read their own hold (polluter: `account-deletion` keeps another person's held AI hold). Red then green with Nuvion stand-ins for the two Fintava-double polluters; 50 of 50 on a scratch merge into MERGE-26. Gaps G-FIX-91-1 and G-FIX-91-2 (low).
-- 19 Oct 2026 · FIX-92 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-92` `99c3703` on `origin/wmt/MERGE-12` `3d64d85`, mobile `wmt/FIX-92` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the root of the batch 12 deploy chain. `search-popular-privacy` cancels and removes the deletion it scheduled for the seeded plain user; `account-deletion-identity` holds every row that exists before it starts while it sweeps, so only its own people are purged. Red (credits-state fails) then green on one fresh database, eight suites, 73 tests. Closes G-FIX-90-1.

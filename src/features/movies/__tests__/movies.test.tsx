@@ -1,9 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Linking } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 
 import { ApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
+import { darkColors } from '@/theme/tokens.generated';
 
 import type { MovieCard, MovieDetail } from '../api';
 import { AllMoviesScreen } from '../AllMoviesScreen';
@@ -102,7 +103,15 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
   const props = { onBack: jest.fn(), onSearch: jest.fn(), onOpenMovie: jest.fn(), onWatch: jest.fn(), onTrailer: jest.fn(), onBrowse: jest.fn(), onOpenTab: jest.fn() };
 
   it('MV11 while loading, then the Hub hero and rails; See all browses that rail', async () => {
-    mockGet.mockImplementation((path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: ['Drama', 'Comedy'], languages: ['English'] }) : home(true, [{ key: 'top_rated', title: 'Top rated', movies: [card('m3')] }])));
+    mockGet.mockImplementation((path: string) =>
+      Promise.resolve(
+        path.endsWith('/filters')
+          ? ok({ genres: ['Drama', 'Comedy'], languages: ['English'] })
+          : path === '/api/hub/movies/{movieId}'
+            ? ok(detail('m1'))
+            : home(true, [{ key: 'top_rated', title: 'Top rated', movies: [card('m3')] }]),
+      ),
+    );
     await render(wrap(<MoviesScreen {...props} />));
     expect(screen.getByTestId('movies-loading')).toBeTruthy();
     expect(await screen.findByTestId('flix-hero')).toBeTruthy();
@@ -111,7 +120,7 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     expect(props.onBrowse).toHaveBeenCalledWith({ sort: 'rating' });
     await fireEvent.press(screen.getByTestId('flix-hero-watch'));
     expect(props.onWatch).toHaveBeenCalledWith('m1');
-    await fireEvent.press(screen.getByTestId('flix-hero-trailer'));
+    await fireEvent.press(await screen.findByTestId('flix-hero-trailer'));
     expect(props.onTrailer).toHaveBeenCalledWith('m1');
   });
 
@@ -131,6 +140,48 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     await waitFor(() => expect(screen.queryByTestId('movies-loading')).toBeNull());
     expect(screen.queryByTestId('movies-error')).toBeNull();
     expect(screen.queryByTestId('flix-hero')).toBeNull();
+  });
+
+  const NOW = new Date('2026-10-22T10:00:00Z');
+  const heroOf = (o: Partial<MovieCard>) => ok({ enabled: true, hero: card('m1', o), rails: [] });
+  const answers = (heroAnswer: unknown, movie: MovieDetail) => (path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: [], languages: [] }) : path === '/api/hub/movies/{movieId}' ? ok(movie) : heroAnswer);
+
+  it('a title that has not premiered never offers Watch on Flixora on the hero: its date and its trailer only (M3)', async () => {
+    mockGet.mockImplementation(answers(heroOf({ premiering: true, premierDate: '2026-11-12T09:00:00Z' }), detail('m1', { premiering: true, premierDate: '2026-11-12T09:00:00Z' })));
+    await render(wrap(<MoviesScreen {...props} now={NOW} />));
+    expect(await screen.findByText('Premieres Thu 12 Nov')).toBeTruthy();
+    expect(await screen.findByTestId('flix-hero-trailer')).toBeTruthy();
+    expect(screen.queryByTestId('flix-hero-watch')).toBeNull();
+    expect(screen.queryByText('Watch on Flixora')).toBeNull();
+  });
+
+  it('the hero draws Trailer only when the title has a trailer (low)', async () => {
+    mockGet.mockImplementation(answers(heroOf({}), detail('m1', { trailer: undefined })));
+    await render(wrap(<MoviesScreen {...props} now={NOW} />));
+    expect(await screen.findByTestId('flix-hero-watch')).toBeTruthy();
+    await waitFor(() => expect(mockGet.mock.calls.some((c) => c[0] === '/api/hub/movies/{movieId}')).toBe(true));
+    expect(screen.queryByTestId('flix-hero-trailer')).toBeNull();
+  });
+
+  it('MV11 draws the search button while it loads, MV12 none (low)', async () => {
+    mockGet.mockImplementation(() => new Promise(() => undefined));
+    const { unmount } = await render(wrap(<MoviesScreen {...props} />));
+    expect(screen.getByTestId('movies-loading')).toBeTruthy();
+    expect(screen.getByTestId('movies-search')).toBeTruthy();
+    await unmount();
+    queryClient.clear();
+    mockGet.mockRejectedValue(new ApiError('network', 0, 'No connection'));
+    await render(wrap(<MoviesScreen {...props} />));
+    await screen.findByText("Couldn't load movies");
+    expect(screen.queryByTestId('movies-search')).toBeNull();
+  });
+
+  it('MV12 draws its message in the middle with the primary Try again (M2)', async () => {
+    mockGet.mockRejectedValue(new ApiError('network', 0, 'No connection'));
+    await render(wrap(<MoviesScreen {...props} />));
+    await screen.findByText("Couldn't load movies");
+    expect(StyleSheet.flatten(screen.getByTestId('movies-error-block').props.style)).toMatchObject({ flexGrow: 1, justifyContent: 'center' });
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Try again' }).props.style).backgroundColor).toBe(darkColors.accent);
   });
 
   it('MV12 when the Hub fails, with Try again', async () => {
@@ -209,16 +260,28 @@ describe('FLIX-03 · MV4 and MV5, the watch link (R-75, V5)', () => {
     expect(screen.queryByText(/token=/)).toBeNull();
   });
 
-  it('a 409 and a 503 each say one plain sentence and open nothing', async () => {
-    mockPost.mockRejectedValueOnce(new ApiError('conflict', 409, 'x', 'terms_not_agreed'));
+  it('a 409 draws the consent box (never a line about a box that is not there); ticked, the next tap sends the agreement', async () => {
+    mockPost.mockRejectedValueOnce(new ApiError('conflict', 409, 'x', 'terms_not_agreed')).mockResolvedValueOnce(ok({ url: 'https://flixora.example.test/a#token=3', expiresAt: 'x' }));
+    await flow(false);
+    expect(screen.queryByTestId('flix-consent')).toBeNull();
+    await fireEvent.press(screen.getByTestId('flix-open'));
+    expect(await screen.findByTestId('flix-consent')).toBeTruthy();
+    expect(screen.queryByText(/Tick the box/)).toBeNull();
+    expect(screen.queryByTestId('flix-problem')).toBeNull();
+    expect(open).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId('flix-consent'));
+    await fireEvent.press(screen.getByTestId('flix-open'));
+    await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
+    expect(mockPost.mock.calls[1][1].body).toEqual({ agreeToTerms: true });
+  });
+
+  it('a 503 says one plain sentence and opens nothing', async () => {
+    mockPost.mockRejectedValueOnce(new ApiError('server', 503, 'x', 'movies_unavailable'));
     await flow(false);
     await fireEvent.press(screen.getByTestId('flix-open'));
-    expect(await screen.findByText('Tick the box to agree to the terms, then try again.')).toBeTruthy();
-    mockPost.mockRejectedValueOnce(new ApiError('server', 503, 'x', 'movies_unavailable'));
-    await fireEvent.press(screen.getByTestId('flix-open'));
-    expect(await screen.findByText('Flixora couldn’t be opened just now. Try again in a moment.')).toBeTruthy();
+    expect(await screen.findByText('Flixora couldn\u2019t be opened just now. Try again in a moment.')).toBeTruthy();
     expect(open).not.toHaveBeenCalled();
-    expect(watchProblem(new Error('x'))).toBe('Flixora couldn’t be opened. Try again.');
+    expect(watchProblem(new Error('x'))).toBe('Flixora couldn\u2019t be opened. Try again.');
   });
 });
 
@@ -255,6 +318,27 @@ describe('FLIX-03 · MV2, MV9 and the trailer', () => {
     expect(screen.getByText('Only the trailer is out until the premiere')).toBeTruthy();
     expect(screen.queryByTestId('movie-watch')).toBeNull();
     expect(screen.getByTestId('movie-foot-trailer')).toBeTruthy();
+  });
+
+  it('Watch on Flixora is never opened over a title that has not premiered, even with watch=1 (M3)', async () => {
+    mockGet.mockResolvedValue(ok(detail('m1', { premiering: true, premierDate: '2026-10-24T09:00:00Z' })));
+    await render(wrap(<MovieScreen {...base} startWatching />));
+    await screen.findByText('Premieres Sat 24 Oct');
+    expect(screen.queryByTestId('flix-open')).toBeNull();
+    expect(screen.queryByText('Continue on Flixora')).toBeNull();
+  });
+
+  it('watch=1 opens Continue on Flixora over a released title', async () => {
+    mockGet.mockResolvedValue(ok(detail('m1')));
+    await render(wrap(<MovieScreen {...base} startWatching />));
+    expect(await screen.findByTestId('flix-open')).toBeTruthy();
+  });
+
+  it("MV9's premiere pill stretches across its column as the board draws it (low)", async () => {
+    mockGet.mockResolvedValue(ok(detail('m1', { premiering: true, premierDate: '2026-10-24T09:00:00Z' })));
+    await render(wrap(<MovieScreen {...base} />));
+    const pill = await screen.findByTestId('movie-premiere');
+    expect(StyleSheet.flatten(pill.props.style).alignSelf).toBe('stretch');
   });
 
   it('after the premiere date the movie is watched on Flixora as any other', async () => {

@@ -69,7 +69,7 @@ function FilterBody({ filter, options, onApply }: Pick<FilterSheetProps, 'filter
       </Text>
       <View style={styles.group}>
         <Text variant="label">Sort</Text>
-        <SegmentedTabs label="Sort movies" testID="movies-sort" items={SORTS.map((s) => ({ value: s.value, label: s.label }))} value={draft.sort} onChange={(sort) => setDraft((d) => ({ ...d, sort }))} />
+        <SegmentedTabs label="Sort movies" wrapLabels testID="movies-sort" items={SORTS.map((s) => ({ value: s.value, label: s.label }))} value={draft.sort} onChange={(sort) => setDraft((d) => ({ ...d, sort }))} />
       </View>
       <OptionGroup title="Genre" testID="movies-genres" items={options?.genres ?? []} value={draft.genre} onChange={(genre) => setDraft((d) => ({ ...d, genre }))} />
       <OptionGroup title="Language" testID="movies-languages" items={options?.languages ?? []} value={draft.language} onChange={(language) => setDraft((d) => ({ ...d, language }))} />

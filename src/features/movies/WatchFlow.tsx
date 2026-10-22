@@ -29,7 +29,7 @@ export const CONTINUE_POINTS = [
 /** What a refusal says, in plain words. A 409 means the terms were not agreed; a 503 means the movie partner could not make a link. */
 export function watchProblem(error: unknown): string {
   if (isApiError(error)) {
-    if (error.status === 409) return 'Tick the box to agree to the terms, then try again.';
+    if (error.status === 409) return 'Agree to the terms to continue.';
     if (error.status === 503) return 'Flixora couldn’t be opened just now. Try again in a moment.';
     if (error.kind === 'network') return error.message;
   }
@@ -99,10 +99,14 @@ export function WatchFlow({ movieId, title, mustAgreeTerms, visible, onClose, on
   const client = useQueryClient();
   const [agreed, setAgreed] = useState(false);
   const [opening, setOpening] = useState(false);
+  // The Hub can ask for the agreement the page did not know it needed (a 409): the box is drawn then, never a line about a box that is not there.
+  const [needsAgreement, setNeedsAgreement] = useState(false);
+  const mustTick = mustAgreeTerms || needsAgreement;
   const [problem, setProblem] = useState<string | null>(null);
   // Every way out of the sheet leaves it clean for the next opening: the box unticked, no sentence.
   const close = () => {
     setAgreed(false);
+    setNeedsAgreement(false);
     setProblem(null);
     onClose();
   };
@@ -115,19 +119,24 @@ export function WatchFlow({ movieId, title, mustAgreeTerms, visible, onClose, on
   };
 
   const open = async () => {
-    if (opening || (mustAgreeTerms && !agreed)) return;
+    if (opening || (mustTick && !agreed)) return;
     setProblem(null);
     cancelled.current = false;
     setOpening(true);
     try {
-      const url = await watchMovie(movieId, mustAgreeTerms && agreed);
+      const url = await watchMovie(movieId, mustTick && agreed);
       if (cancelled.current) return;
       await Linking.openURL(url);
       // The agreement is now the Hub's: the next look at this movie does not ask again.
-      if (mustAgreeTerms) void client.invalidateQueries({ queryKey: detailKey(movieId) });
+      if (mustTick) void client.invalidateQueries({ queryKey: detailKey(movieId) });
       close();
     } catch (error) {
-      setProblem(watchProblem(error));
+      if (isApiError(error) && error.status === 409 && !mustTick) {
+        setNeedsAgreement(true);
+        void client.invalidateQueries({ queryKey: detailKey(movieId) });
+      } else {
+        setProblem(watchProblem(error));
+      }
     } finally {
       setOpening(false);
     }
@@ -153,8 +162,8 @@ export function WatchFlow({ movieId, title, mustAgreeTerms, visible, onClose, on
             </View>
           ))}
         </View>
-        {mustAgreeTerms ? <ConsentBox testID="flix-consent" agreed={agreed} busy={opening} onToggle={() => setAgreed((a) => !a)} onOpenTerms={onOpenTerms} onOpenPrivacy={onOpenPrivacy} /> : null}
-        <Button testID="flix-open" label="Open Flixora" disabled={mustAgreeTerms && !agreed} loading={opening} onPress={() => void open()} />
+        {mustTick ? <ConsentBox testID="flix-consent" agreed={agreed} busy={opening} onToggle={() => setAgreed((a) => !a)} onOpenTerms={onOpenTerms} onOpenPrivacy={onOpenPrivacy} /> : null}
+        <Button testID="flix-open" label="Open Flixora" disabled={mustTick && !agreed} loading={opening} onPress={() => void open()} />
         <Button testID="flix-not-now" label="Not now" variant="secondary" onPress={close} />
         {problem ? (
           <Text variant="errorLine" accessibilityRole="alert" testID="flix-problem" style={styles.center}>
