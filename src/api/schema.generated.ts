@@ -7487,6 +7487,115 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/movies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The movies screen and the rails on Home and Explore: a hero and the rails (new, most watched, top rated, premiering soon). Empty rails are left out. */
+        get: operations["MoviesController_home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/movies/browse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** "See all": the whole catalog copy, a page at a time, with a total. Sort `newest` (default), `rating`, `views` or `title`; filter by `genre`, `language` and `premiering`. */
+        get: operations["MoviesController_browse"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/movies/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The genres and languages the catalog holds now, for the filter sheet. */
+        get: operations["MoviesController_filters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/movies/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the catalog copy by title, original title or tagline, newest first. */
+        get: operations["MoviesController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/movies/{movieId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One title with its trailer (kind `file` or `youtube`) and whether this person must agree to the terms first (`mustAgreeTerms`). `404 movie_not_found` for a title the catalog does not hold. */
+        get: operations["MoviesController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/movies/{movieId}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Watch on Flixora": a fresh signed-in link for this tap, `{ url,
+         *     expiresAt }`. The first link opens the person's account on the partner's
+         *     side (R-75). `409 terms_not_agreed` until the person has agreed (signed up
+         *     on or after `FLIXORA_TERMS_FROM`, or `agreeToTerms: true`, which is stored
+         *     with its time first). `503 movies_unavailable` when the partner cannot
+         *     make a link right now. The link is never stored and never logged.
+         */
+        post: operations["MoviesController_watch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/offers/current": {
         parameters: {
             query?: never;
@@ -7515,6 +7624,8 @@ export interface paths {
          * Before paying: does this referral code apply, and what would the person
          *     pay. Never the limit, the count or the community. A code we do not have
          *     is a 404 `referral_unknown`. Advice only: the registration decides again.
+         *     An address that has tried too many codes we do not have is asked to wait
+         *     (429 `referral_attempts_limited`).
          */
         get: operations["WaitlistPublicController_referralCheck"];
         put?: never;
@@ -9842,6 +9953,13 @@ export interface components {
         };
         VoiceSampleDto: {
             fileUrl: string;
+        };
+        WatchMovieDto: {
+            /**
+             * @description True when the person ticked the agreement on MV4. Stored (once) with its
+             *     time before the link is made. Ignored for a person who already agreed.
+             */
+            agreeToTerms?: boolean;
         };
         CreateWaitlistRegistrationDto: {
             /** @description The offer the page showed (`GET /waitlist/offers/current`). */
@@ -14687,6 +14805,75 @@ export interface components {
             message: string | null;
             createdAt: string;
             finishedAt: string | null;
+        };
+        MovieCardView: {
+            id: string;
+            title: string;
+            genre: string[];
+            language: string | null;
+            year: number | null;
+            runtimeMinutes: number | null;
+            ageRating: string | null;
+            posterImage: string | null;
+            backdropImage: string | null;
+            rating: number;
+            ratingCount: number;
+            views: number;
+            premiering: boolean;
+            premierDate: string | null;
+            addedAt: string;
+        };
+        MovieRailView: {
+            /** @enum {string} */
+            key: "new" | "most_watched" | "top_rated" | "premiering_soon";
+            title: string;
+            movies: components["schemas"]["MovieCardView"][];
+        };
+        MoviesHomeView: {
+            enabled: boolean;
+            hero: components["schemas"]["MovieCardView"];
+            rails: components["schemas"]["MovieRailView"][];
+        };
+        MovieFiltersView: {
+            genres: string[];
+            languages: string[];
+        };
+        MovieCastView: {
+            name: string;
+            character: string | null;
+        };
+        MovieTrailerView: {
+            /** @enum {string} */
+            kind: "file" | "youtube";
+            url: string;
+        };
+        MovieDetailView: {
+            originalTitle: string | null;
+            synopsis: string;
+            tagline: string | null;
+            countryOfOrigin: string | null;
+            cast: components["schemas"]["MovieCastView"][];
+            trailer: components["schemas"]["MovieTrailerView"];
+            mustAgreeTerms: boolean;
+            id: string;
+            title: string;
+            genre: string[];
+            language: string | null;
+            year: number | null;
+            runtimeMinutes: number | null;
+            ageRating: string | null;
+            posterImage: string | null;
+            backdropImage: string | null;
+            rating: number;
+            ratingCount: number;
+            views: number;
+            premiering: boolean;
+            premierDate: string | null;
+            addedAt: string;
+        };
+        MovieWatchView: {
+            url: string;
+            expiresAt: string;
         };
         MyVoiceView: {
             namePhonetic: string | null;
@@ -29703,6 +29890,143 @@ export interface operations {
             };
         };
     };
+    MoviesController_home: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoviesHomeView"];
+                };
+            };
+        };
+    };
+    MoviesController_browse: {
+        parameters: {
+            query: {
+                /** @description Default `newest`. */
+                sort?: "newest" | "rating" | "views" | "title";
+                /** @description Exact genre, one of `GET /movies/filters`. */
+                genre?: string;
+                /** @description Exact language, one of `GET /movies/filters`. */
+                language?: string;
+                /** @description True: only titles with a premiere still ahead. */
+                premiering?: boolean;
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieCardView"][];
+                };
+            };
+        };
+    };
+    MoviesController_filters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieFiltersView"];
+                };
+            };
+        };
+    };
+    MoviesController_search: {
+        parameters: {
+            query: {
+                q: string;
+                page: number;
+                perPage: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieCardView"][];
+                };
+            };
+        };
+    };
+    MoviesController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movieId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieDetailView"];
+                };
+            };
+        };
+    };
+    MoviesController_watch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movieId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchMovieDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieWatchView"];
+                };
+            };
+        };
+    };
     WaitlistPublicController_currentOffer: {
         parameters: {
             query?: never;
@@ -29755,6 +30079,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description `reason.code` `referral_attempts_limited`: this address tried too many codes we do not have; wait a few minutes. (The plain rate limit has no `reason`.) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     WaitlistPublicController_register: {
@@ -29770,6 +30101,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Exactly one of `flutterwaveConfig` and `completed` is present. `flutterwaveConfig` (open the checkout with it) comes whenever `amountKobo` is above 0. `completed` comes instead when `amountKobo` is 0 (a free referral code): the registration is already paid and there is nothing to pay. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -29794,6 +30126,13 @@ export interface operations {
             };
             /** @description `reason.code` `offer_closed` (closed or not open yet) or `already_registered` (this phone or email already paid; nothing is charged). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `reason.code` `referral_attempts_limited`: this address tried too many codes we do not have, and a registration that carries a code waits; one with no code is not refused by it. (The plain rate limit has no `reason`.) */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

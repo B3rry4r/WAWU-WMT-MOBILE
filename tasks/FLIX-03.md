@@ -7,7 +7,7 @@ order: 216
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [FLIX-01]
 decisions: [R-74, R-75, R-67, R-69, R-27, R-47]
 passes: [V1, V4, V5, V6, V9]
@@ -18,8 +18,8 @@ artboards: [MV1, MV2, MV3, MV4, MV5, MV6, MV7, MV8, MV9, MV10, MV11, MV12]
 ## Current state
 
 As of 22 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after FLIX-01 is done (or in review). FLIX-02 (the real Flixora adapter) is not needed to build: the screens read only the Hub.
+- **Status:** verifying. Built on `wmt/FLIX-03` against the Hub contract of backend `wmt/FLIX-01` at `312f16c` (the six `/api/hub/movies` routes). Screens: MV1 to MV12 in `src/features/movies/`, routes in `src/app/movies/`, the rail on Today and Explore. Not merged; the contract copy must be refreshed from backend main once FLIX-01 merges (SHARED-CHANGES FLIX-03 #1).
+- **Next:** the verifier runs V1, V4, V5, V6, V9. The lead applies SHARED-CHANGES FLIX-03 R1 (the five `movies/*` lines in `_layout.tsx`); until then `route-guard.test.tsx` names the five route files. Side-by-side screenshots (V4) are NOT RUN in this round: no built-screen capture was produced, so the verifier renders both sides.
 - **Rulings:** R-74 (the catalog in the app, watching on Flixora; Flixora named as drawn) and R-75 (the first "Watch on Flixora" opens the Flixora account; MV4 shows the shared consent box only when the Hub says the person has not agreed), both owner, 22 Oct 2026.
 - **Design:** adopted on `wmt/FLIX-CUT` (22 Oct 2026). Flow MV is the new `design/Flix Movies Flow.dc.html`; `design/canvas-inventory.json` gains MV1 to MV12 (MV1 Flix movies, MV2 Movie, MV3 Trailer, MV4 Continue on Flixora, MV5 Opening Flixora, MV6 All movies, MV7 Filter, MV8 Search, MV9 Premiering soon, MV10 No results, MV11 Loading, MV12 Couldn't load).
 - **Screens that gain the rail:** two existing artboards changed hash and nothing else did. H1 (Home, Today) gains the "Flix movies" rail below the creators rail (both its Today and its Today-with-ad phone). X1 (Explore, root) gains it below the creators rail and above "Upcoming events". Checked: removing the rail from the new boards gives the old boards byte for byte. The Services Flow cover also draws Today as context (not an artboard, no hash); the bundle's auth, events and services sources carry the rail too but its Auth and Events boards were not rebuilt.
@@ -66,13 +66,9 @@ New files under `src/features/` for these screens and their route files under `s
 - [ ] MV9 plays the trailer only until the premiere date.
 - [ ] Light and dark match the board (V4), and no copy has an em-dash.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FLIX-03.md](history/FLIX-03.md).
 
 ## Owner sign-off
 
