@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 11 | 0 | 0 | 0 |
+| review | 12 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -21,6 +21,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 - [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
+- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
@@ -192,7 +193,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done

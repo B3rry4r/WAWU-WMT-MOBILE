@@ -7,7 +7,7 @@ order: 161
 priority: launch
 repo: all
 type: backend-refactor
-status: building
+status: review
 depends_on: []
 decisions: [R-13, R-17, R-27, R-30, R-37, R-43, R-47, R-72]
 passes: [V1, V2, V3, V9]
@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, built by a Sonnet builder (T1); verified 23 Oct 2026 by a separate Sonnet verifier: FIX (one high, see Verifier report). No PR.
+As of 23 Oct 2026, built by a Sonnet builder (T1); verified 23 Oct 2026 by a separate Sonnet verifier: FIX round 1, then PASS on the re-check (see Verifier report). No PR.
 - **Branches:** mobile `wmt/SWEEP-FLOWS` on `origin/main` `b1a460f3` (code and records); backend `wmt/SWEEP-FLOWS` on `origin/main` `13e27536` (`scripts/dev/stack.sh` and its README line only, B1).
 - **Rows:** B1 to B9, B12 and B14 fixed with a test that fails without the fix; B10 ruled no (reason in the row); B11, B13, B15, B16 are not this sweep (one line each below). Source: `flow-audit/REPORT.md`, section 2.
 - **Spec assertions flipped (each pinned a defect this sweep fixes):** `unlockFlow.test.tsx` x3 (the post stayed locked until Watch now or Done), `WalletSettingsScreen.test.tsx` x1 and `walletSettingsFlow.test.tsx` x1 (the Beneficiaries row), `aboutScreens.test.tsx` x1 ("Not available yet" row), `publishAndTier.test.tsx` x2 (the share line `wawu/<creator>/<slug>`). The unlock suite's stand-in feed now opens the piece once it is paid, as the Hub does.
@@ -142,6 +142,26 @@ Verifier: a separate Sonnet session (T1 check plus re-walk), 23 Oct 2026. Heads:
 
 Re-walk counts: PASS 9 (4 of them empty states only), NOT WALKED 8, PHONE ONLY 1, NOT RUN 1, BROKEN 0.
 
+
+
+### Re-check of the fix round (a2b50611), 23 Oct 2026: PASS
+
+**Verdict: PASS.** F1, L1 and L2 are fixed; L3 is recorded as G-SWEEP-FLOWS-2 and L4 as a low in this file. Nothing medium or worse is open.
+
+| Check | Result |
+|---|---|
+| No test assertion edited | The fix round touches one test file, `VisitorProfileScreen.test.tsx`, with 21 added lines and none removed; `homeRoute.test.tsx` is byte-identical to bfa3f807 and passes. |
+| Toast is the shared one | `(tabs)/index.tsx` still imports `Toast` from `@/components/Toast` and only changes `placement` to `bottom` and drops the insets hook (Explore and Categories use the same placement). |
+| New L1 test fails before, passes after | On bfa3f807's code it fails on its own assertion (a bought tile still drawn locked); on a2b50611 it passes with homeRoute (29 of 29). It also pins that a piece the Hub says is locked, or says nothing about, stays locked. |
+| L1 live (390 x 844, light) | Before paying, the creator's grid tile carried the lock (l1-01). After paying an unlock from For you and "See now", the same tile in the same session lost its lock and read "Lagos Light Study, yours, 2,000 naira" (l1-03 without a reload, l1-04 after one). The Hub's own grid answer said `fullAssetLocked: false` for that viewer. A dim veil remains because the stand-in storage serves no picture, which the grid draws behind any tile without a still. |
+| L2 live | After a scheduled deletion and a new sign-in, "Your account deletion is cancelled. Welcome back." sits at the bottom (box 663 to 730 px) above the tab bar (top 767 px) and covers none of the Today, Following, For you row (62 to 83 px) (l2-01). It overlays the creators strip for its 6 seconds, as Explore's notices overlay theirs. |
+| app `tsc --noEmit` | EXIT 0 |
+| eslint (no --fix) on the 5 changed files | EXIT 0, 0 errors, 1 old warning (`MB18`, unchanged) |
+| Full jest (`npx jest --ci --maxWorkers=2`) | EXIT 0: 315 of 315 suites, 5289 of 5289 tests |
+| Gates | `run.py` EXIT 0 (10 gates, 1211 files scanned, 0 fail, 18 warn); `check_baseline.py` EXIT 0 (0 entries); gate unit tests EXIT 0 |
+| `check_tasks.py` | EXIT 0 (397 tasks) |
+
+Stack `sweepflowsv` (a fresh one, WAWU ID at origin/main 9596928, Hub on backend ba8bf9f); stopped, databases dropped, ports 7870 to 7877 and 7930 to 7937 empty.
 
 ## Owner sign-off
 
