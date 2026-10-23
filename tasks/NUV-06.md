@@ -56,7 +56,7 @@ holder's name; WAWU can pay out from its operational account. All of it as Nuvio
 - [ ] A bank send's `outflows.completed`, `.failed`, `.cancelled` and `.refunded` reach the ledger once; a failed send gives the money back once.
 - [ ] A payout from WAWU's operational account to a creator's payout account goes once and reaches the ledger once.
 - [ ] An account saved in the Fintava days is checked by name before its first Nuvion send.
-- [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it.
+- [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it. FAILED 23 Oct 2026 (NUV-KEYS): the route works with the key, but our body needs `issuer.code`, our reader needs `details.name`, and a counterparty needs email and address (`src/nuvion/areas/payouts.ts` lines 291-297, 899-914, 1343-1356; a fix task is needed; bank 044 test account ending 0031 resolves on dev).
 
 ## History
 

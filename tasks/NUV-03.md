@@ -54,8 +54,8 @@ Opening a wallet adds an ID document (front, and back where it has two sides) an
 - [x] A person cannot read, replace or submit another person's documents (404); an upload with no opening started gets the existing no-wallet answer.
 - [x] A person can start the hosted selfie, come back, and the opening reads its result (approved, not approved, still pending); when the stand-in says Nuvion's selfie API is not available to the key (round 2: only `error_endpoint_not_found` 404 and `error_auth_permission_denied` or `error_auth_elevated_permission_required` 403), `hostedLiveness` is off for everyone and the opening goes on without a selfie (R-39); a refusal about one person's request or entity is that person's to retry and never lets them skip the step.
 - [x] WAWU keeps no document content (the spec reads the tables and the storage bucket after an upload).
-- [ ] (key) `POST /kyc/liveness/sessions` with a child `entity_id` works with an API key, or the report records that it does not and the selfie step stays off.
-- [ ] (key) Two small PNG uploads and a submission reach a sandbox decision.
+- [x] (key) `POST /kyc/liveness/sessions` with a child `entity_id` works with an API key, or the report records that it does not and the selfie step stays off. PASSED 23 Oct 2026 (NUV-KEYS): 200 with a `query_id` and a saas.veriff.com `url`; the selfie result itself was not run (it needs a person).
+- [x] (key) Two small PNG uploads and a submission reach a sandbox decision. PASSED 23 Oct 2026 (NUV-KEYS): through the Hub for two people, approved 3.5 to 6.4 s later; `file_back` is honoured.
 
 ## Builder report
 

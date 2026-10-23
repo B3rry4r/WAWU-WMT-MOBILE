@@ -64,7 +64,7 @@ papered over.
 - [ ] `listTransactions` returns every movement of a month across pages, with fee and running balance, for a person and for the operational account.
 - [ ] A webhook subscription that is missing, inactive or unreadable is reported, not silent; nothing is renewed (round 2).
 - [ ] The fee check reports once that it is not available and calls no fee route (round 2).
-- [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run.
+- [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run. NOT RUN 23 Oct 2026 (NUV-KEYS): no transfer could be made; the statement route answers 200 and `money:check` finished clean on 1 wallet.
 
 ## History
 

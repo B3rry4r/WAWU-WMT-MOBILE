@@ -54,7 +54,7 @@ on Nuvion (R-42, which takes the place of R-19's Fintava merchant wallet).
 - [ ] `outflows.failed`, `.cancelled` and `.refunded` reverse the ledger entry once; a replayed delivery changes nothing.
 - [ ] After a run of payments, releases and refunds on the stand-in, the ledger's figure for the operational account equals the stand-in's `available` balance (V8: ledger equals provider).
 - [ ] A payer without the amount plus fee gets MONEY-19's shortfall answer and no transfer is sent.
-- [ ] (key) A sandbox book transfer between two child accounts and from a child to the operational account, by `nuvion_ban` (confirms SANDBOX-FINDINGS item 9).
+- [ ] (key) A sandbox book transfer between two child accounts and from a child to the operational account, by `nuvion_ban` (confirms SANDBOX-FINDINGS item 9). NOT RUN 23 Oct 2026 (NUV-KEYS): every dev account holds NGN 0; a real `nuvion_ban` is accepted as the receiver up to the funds check (400 `error_transfer_insufficient_funds`).
 
 ## Builder report
 
