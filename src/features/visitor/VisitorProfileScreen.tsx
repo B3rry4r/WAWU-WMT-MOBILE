@@ -21,7 +21,7 @@ import { hueFor } from '@/features/feed/model';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 import { fetchGridPage, gridKey } from '@/features/me/api';
 import { ContentGrid, GridSkeleton } from '@/features/me/ContentGrid';
-import { countsOf, roleLinesOf, socialLinksOf, tileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
+import { countsOf, roleLinesOf, socialLinksOf, visitorTileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
 import { Counts, HeaderSkeleton, NameBlock, SocialChips, bodyTop } from '@/features/me/ProfileHeader';
 import { ProfileTabs } from '@/features/me/ProfileTabs';
 import { AskSheets } from '@/features/paid-ask/AskSheets';
@@ -412,7 +412,7 @@ function ContentBody({ query }: { query: GridQuery }) {
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(tileOf);
+  const tiles = query.data.pages.flatMap((page) => page.pieces).map(visitorTileOf);
   if (tiles.length === 0) {
     return <EmptyState testID="visitor-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What they publish shows here." />;
   }

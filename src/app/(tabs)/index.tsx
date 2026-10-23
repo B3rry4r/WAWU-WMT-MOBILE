@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Toast } from '@/components/Toast';
 import { useDeletionCancelledNotice } from '@/features/delete-account/cancelNotice';
@@ -16,14 +15,13 @@ import { useClaimPendingReferral } from '@/features/referral/pendingCode';
  * in, with nothing drawn for it (REF-03, G-812). The feed's wallet payments (a tip from the rail, HOME-13) lead to
  * Open your wallet (no wallet yet, R-6), A9 (no PIN yet), Forgot PIN and Add money (W15, with what was missing). A post's caption
  * opens that piece's own page (H19, HOME-03), and so does a piece in a creator card's strip (H9); a professional card's Profile opens their page (P2).
- * A person who signed in again during a scheduled deletion sees a plain notice here that it is cancelled (R-17, SWEEP-FLOWS B14).
+ * A person who signed in again during a scheduled deletion sees a plain notice here that it is cancelled (R-17, SWEEP-FLOWS B14): the shared Toast at the bottom, above the tab bar, as Explore's notices are (it needs no safe-area inset, and it never covers the Today, Following and For you row).
  * An empty Following has "Find people to follow" (H12), which opens All creators (X4).
  */
 export default function HomeTab() {
   const router = useRouter();
   const entry = useOpenWalletEntry();
   useClaimPendingReferral();
-  const insets = useSafeAreaInsets();
   const cancelled = useDeletionCancelledNotice();
   return (
     <>
@@ -42,7 +40,7 @@ export default function HomeTab() {
         onOpenProfessional={(id) => router.push({ pathname: '/professionals/[id]', params: { id } })}
         onOpenPiece={(item) => router.push({ pathname: '/content/[id]', params: { id: item.id } })}
       />
-      <Toast message={cancelled.message} tone="success" placement="top" offset={insets.top + 8} lines={2} duration={6000} onHide={cancelled.clear} testID="deletion-cancelled" />
+      <Toast message={cancelled.message} tone="success" placement="bottom" lines={2} duration={6000} onHide={cancelled.clear} testID="deletion-cancelled" />
     </>
   );
 }

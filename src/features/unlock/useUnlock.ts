@@ -67,6 +67,8 @@ export function useUnlock(handlers: FlowHandlers) {
       if (media) applyUnlock(client, itemId, { fullAssetUrl, media });
     });
     void client.invalidateQueries({ queryKey: ['feed'] });
+    // The creator's profile grid draws a bought piece open, from the same per-viewer answer (L1).
+    void client.invalidateQueries({ queryKey: ['profile', 'content'] });
     void client.invalidateQueries({ queryKey: detailKey(itemId) });
     void client.invalidateQueries({ queryKey: walletBalanceQuery.queryKey });
   }, [client, itemId, paidView]);

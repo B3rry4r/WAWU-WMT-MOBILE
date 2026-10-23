@@ -159,6 +159,17 @@ export function tileOf(piece: ContentPiece): GridTile {
 }
 
 /**
+ * A tile on someone else's profile: a paid piece the viewer has bought (the Hub says `fullAssetLocked: false` for that viewer) is drawn
+ * open, with no frost and no lock, never as locked (SWEEP-FLOWS L1). Anything the Hub does not say is open stays locked. The owner's own
+ * grid keeps `tileOf`: the Hub counts the owner as unlocked, and M1 draws their paid pieces frosted with the price.
+ */
+export function visitorTileOf(piece: ContentPiece): GridTile {
+  const tile = tileOf(piece);
+  if (piece.accessType !== 'paid' || piece.fullAssetLocked !== false) return tile;
+  return { ...tile, locked: false, spoken: `${piece.title}, yours, ${tile.caption}` };
+}
+
+/**
  * A draft as a tile of the grid (M1 draws it first, tagged Draft). A draft has no file, so no picture and no views: the tile shows
  * the kind of file it will be (an image mark when none is chosen yet) and its title.
  */

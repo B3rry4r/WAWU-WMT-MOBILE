@@ -441,3 +441,24 @@ describe('SWEEP-FLOWS B3 · a free chat can always be started from a profile (R-
     expect(screen.queryByTestId('visitor-message-free')).toBeNull();
   });
 });
+
+describe('SWEEP-FLOWS L1 · a piece the viewer bought is not drawn as locked on the creator\'s profile', () => {
+  const grid = (...pieces: Record<string, unknown>[]) => ({ [`GET ${GRID}`]: ok(pieces, { pagination: { currentPage: 1, nextPage: null } }) });
+
+  async function boot() {
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} />));
+  }
+
+  it('a paid piece the Hub says is open for this viewer has no frost, veil or lock; one still locked keeps them', async () => {
+    answers = page(grid({ ...piece('bought', 'paid', 8000, 3), fullAssetLocked: false }, { ...piece('closed', 'paid', 8000, 3), fullAssetLocked: true }, piece('silent', 'paid', 8000, 3)));
+    await boot();
+    await screen.findByTestId('me-tile-bought');
+    expect(screen.queryByTestId('me-tile-bought-veil')).toBeNull();
+    expect(screen.getByLabelText('Piece bought, yours, ₦8,000')).toBeTruthy();
+    expect(screen.getByTestId('me-tile-closed-veil')).toBeTruthy();
+    expect(screen.getByLabelText('Piece closed, paid, ₦8,000')).toBeTruthy();
+    // An answer that does not say is read as locked.
+    expect(screen.getByTestId('me-tile-silent-veil')).toBeTruthy();
+  });
+});

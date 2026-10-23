@@ -25,6 +25,15 @@ As of 23 Oct 2026, built by a Sonnet builder (T1); verified 23 Oct 2026 by a sep
 - **Proved on the stack (name `sweepflows`, Hub 7870, WAWU ID 7871 real, Nuvion stand-in, mail stand-in 7930, all stopped and the databases dropped):** B1 only. `GET /auth/signup/channel` answered `email`, `POST /auth/signup` answered 200 with `channel: email`, and the mail stand-in recorded the code mail. Before: `flow-audit/shots/auth-user-06-after-continue.png` (503 on the same origin/main). **NOT RUN:** the 390 x 844 before and after pictures for B2 to B9 (out of step budget); the unit and route tests above are the proof for those, and the audit's pictures are the before.
 - **Not run:** any real provider, anything Fintava, the full suites (the merge agent runs the full check).
 
+## Fix round (23 Oct 2026, builder, after the verifier's FIX)
+
+- **F1 (high), fixed:** `src/app/(tabs)/index.tsx` no longer calls `useSafeAreaInsets()`. The other tab screens do not either: Explore's notice is the shared `Toast` with `placement="bottom"` and its default offset (`ExploreScreen.tsx`), and the tab screens' tests (`homeRoute.test.tsx` included) render without a provider. The `useSafeAreaInsets` shared test wrappers (`library/__helpers__`, `chat/testing`, `create/__helpers__`) belong to features that read insets themselves, so this notice took its place from the shared component instead; no test was edited, `homeRoute.test.tsx` passes unchanged.
+- **L2 (low), fixed with F1:** the B14 notice is the shared Toast at the bottom (above the tab bar, as Explore's notices), so it never covers the Today, Following and For you row.
+- **L1 (low), fixed:** `visitorTileOf` (`src/features/me/model.ts`) draws a paid piece with `fullAssetLocked: false` for the viewer open (no frost, veil or lock, spoken "yours"), used by the creator's profile grid only (the owner's own grid keeps `tileOf`, as the Hub counts the owner as unlocked); an answer that does not say stays locked. `useUnlock` also reads the profile grids again when an unlock is paid. Test: `VisitorProfileScreen.test.tsx` "SWEEP-FLOWS L1", fails without.
+- **L3 recorded, not fixed:** BACKEND_GAPS G-SWEEP-FLOWS-2 (`GET /api/hub/communities/{id}/messages` answers 403 to a non-member while the screen says "Reading is free").
+- **L4 recorded, low, not fixed:** the app logs a 404 `GET /product-drafts/<id>` after VF12 publishes (the draft is gone by then); no effect seen.
+- **Legal assistant:** not walked on the stack (the network guard stays); to be tested on the server once the key is there.
+
 ## Read first
 
 - `docs/WORKFLOW.md`, section 4; `docs/roles/BUILDER.md`; the audit report `flow-audit/REPORT.md` (sections 2 and 3).
