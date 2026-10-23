@@ -7,7 +7,7 @@ order: 161
 priority: launch
 repo: all
 type: backend-refactor
-status: verifying
+status: building
 depends_on: []
 decisions: [R-13, R-17, R-27, R-30, R-37, R-43, R-47, R-72]
 passes: [V1, V2, V3, V9]
@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, built by a Sonnet builder (T1), not yet verified. No PR.
+As of 23 Oct 2026, built by a Sonnet builder (T1); verified 23 Oct 2026 by a separate Sonnet verifier: FIX (one high, see Verifier report). No PR.
 - **Branches:** mobile `wmt/SWEEP-FLOWS` on `origin/main` `b1a460f3` (code and records); backend `wmt/SWEEP-FLOWS` on `origin/main` `13e27536` (`scripts/dev/stack.sh` and its README line only, B1).
 - **Rows:** B1 to B9, B12 and B14 fixed with a test that fails without the fix; B10 ruled no (reason in the row); B11, B13, B15, B16 are not this sweep (one line each below). Source: `flow-audit/REPORT.md`, section 2.
 - **Spec assertions flipped (each pinned a defect this sweep fixes):** `unlockFlow.test.tsx` x3 (the post stayed locked until Watch now or Done), `WalletSettingsScreen.test.tsx` x1 and `walletSettingsFlow.test.tsx` x1 (the Beneficiaries row), `aboutScreens.test.tsx` x1 ("Not available yet" row), `publishAndTier.test.tsx` x2 (the share line `wawu/<creator>/<slug>`). The unlock suite's stand-in feed now opens the piece once it is paid, as the Hub does.
@@ -68,7 +68,71 @@ Every broken flow the audit found for a person using the app is fixed, or ruled 
 
 ## Verifier report
 
-_Not yet verified._
+**Verdict: FIX.** Every row B1 to B9, B12 and B14 works on the live stack; one existing test is red on the branch (F1, high). B10 is ruled no (lead). Nothing else is medium or worse.
+
+Verifier: a separate Sonnet session (T1 check plus re-walk), 23 Oct 2026. Heads: mobile `a649b6cc` on `origin/main` `b1a460f3`; backend `ba8bf9f` (stack.sh and README only). Stack `sweepflowsv` (Hub 7870, WAWU ID 7871 real, web export 7873, Nuvion stand-in 7876, mail 7930, voice 7931, storage 7932), 390 x 844, light first; screenshots in `flow-audit/after/` beside the audit's `flow-audit/shots/`.
+
+### Live rows (each walked as a person; AFTER picture beside the audit's BEFORE)
+
+| Row | Result | What was seen (after/ file) |
+|---|---|---|
+| B1 | PASS | Create an account (A3 says "We'll email you a code"), A4 Continue answered 201, the mail stand-in recorded "Your WAWUAfrica verification code", the 6-digit code was accepted, claim-offer opened (b1-01..03). Before: auth-user-06-after-continue (503). |
+| B2 | PASS | Bola, For you, Unlock the full set, PIN: the card lost its Unlock bar the moment H16 showed, with no reload; wallet read back 98,000 naira; a reload showed the same card (b2-01..07). Before: home-user-08. |
+| B3 | PASS | Free chat with a creator whose paid messages are off: "Message Ngozi Eze" under the "Messages off" note opened the chat, one message sent and shown, no Hub refusal, no 4xx (b3-01..03). |
+| B4 | PASS | A creator bought Founding Maker inside sign-up setup; VF7 "Record my voice" opened /voice-consent, "Write my Voice Intro" opened /voice-intro, both inside setup (b4-01..08). |
+| B5 | PASS | Same creator: checklist, Later went straight Home; VF1 never drawn (b5-01..02). |
+| B6 | PASS | No tier: "Uploading needs a tier / Drafts are free. Pick a tier when you are ready to publish."; with the tier: "Uploading is open" (b6-01, b5-01). |
+| B7 | PASS | On a light-scheme browser, Theme, Dark: the screen went dark at once and stayed dark after a reload; Light went light (b7-02..04). Phone check still the owner's. |
+| B8 | PASS | About, Contact support (signed in) opened the support chat /chat/<id> (b8-01..02). Visitor path covered by test only. |
+| B9 | PASS | Wallet settings shows PIN, Statements, Account details, Help with a payment; no Beneficiaries row (b9-01). |
+| B12 | PASS | Published piece shows and shares `wawuafrica.com/content/<id>`; the id equals the Hub's content id (admin queue), and the admin approve answered 200 for it. Community: the card reads wawuafrica.com/c/<slug>, Copy put `https://wawuafrica.com/c/lagos-photographers` on the clipboard and the share sheet got the same (b12-01..03). No wawuafrica.com request was made. |
+| B14 | PASS | Delete account, Z7, Done, sign in again: "Your account deletion is cancelled. Welcome back." shown over Home (b14-01..05). |
+
+### Checks
+
+| Check | Result |
+|---|---|
+| App `tsc --noEmit` | EXIT 0 |
+| eslint on the 36 changed ts/tsx files | EXIT 0, 0 errors, 1 warning (`MB18` unused in publishAndTier.test.tsx, same line on origin/main) |
+| Full mobile jest (`npx jest --ci --maxWorkers=2`) | EXIT 1: 314 of 315 suites pass, 5287 of 5288 tests pass; the one failure is F1 |
+| Gates | `run.py` EXIT 0 (10 gates, 1211 files scanned, 0 fail, 18 warn); `check_baseline.py` EXIT 0 (0 entries); gate unit tests EXIT 0 (56 tests) |
+| `check_tasks.py` | EXIT 0 (397 tasks) |
+| Flipped assertions (unlockFlow x3, WalletSettingsScreen x1, walletSettingsFlow x1, aboutScreens x1, publishAndTier x2) | each pins exactly the defect its row fixes (still-locked post, a "6 saved" Beneficiaries row, "Not available yet", `wawu/<creator>/<slug>`); the diff changes nothing else; the unlock suite's feed stand-in now opens the piece once paid, as the Hub does |
+| New and changed tests on origin/main's code | 13 of 13 suites fail (25 tests), as the builder said; B2, B3, B9, B8, B6, B5, B4, B12 fail on their assertions; themePick (B7) and cancelNotice (B14) fail on the missing module, so the live walk is their proof |
+| SHARED-CHANGES SWEEP-FLOWS #1 (theme/index.ts, override.ts) and #2 (_layout.tsx) | match the code; theme/index.ts changes only the import and `useWawu`'s `dark`; _layout.tsx moves two screens and a comment |
+
+### Findings
+
+- **F1 (high, defect):** `src/features/home/__tests__/homeRoute.test.tsx` "opens Notifications (M31) from the bell in Today's bar" fails on the branch with "No safe area value available" and passes on origin/main. `src/app/(tabs)/index.tsx:26` now calls `useSafeAreaInsets()` (the B14 toast) and that test renders HomeTab with no SafeAreaProvider. Repro: `npx jest --ci src/features/home/__tests__/homeRoute.test.tsx`. The full check is red until the test or the hook is made to agree (the fix is the builder's, the verifier edits nothing).
+- **L1 (low, observed, not checked on origin/main):** after buying "Lagos Light Study", the creator's profile content grid still draws that tile with a lock and the price (b3-01).
+- **L2 (low):** B14's notice sits over the top of the Today / Following / For you row at 390 px and hides it for a few seconds (b14-04).
+- **L3 (low):** a non-member opening an open community reads "Join to read and write here. Reading is free." while the Hub answers 403 to the message read until they join.
+- **L4 (low, note):** the app logs a 404 `GET /product-drafts/<id>` after VF12 publishes (the draft is gone by then); no effect seen.
+- Not this sweep, unchanged: B10 (ruled no by the lead), B11, B13 (the web export still throws `setSelection` on multi-line fields), B15, B16.
+
+### Re-walk (flows the audit did not reach; marks as in the audit)
+
+| Flow | Mark | Note |
+|---|---|---|
+| Inbox: paid question thread | NOT WALKED | the creator's paid messages stayed off; out of step budget |
+| Inbox: pay a request | NOT WALKED | out of step budget |
+| Inbox: a fan joining a community | PASS | Join answered, "1 member", composer and "Buy credits" for a new joiner (rw-community-joined) |
+| Professionals: directory | PASS (empty state only) | "Nobody listed yet" with "Offer your services"; no approved listing existed |
+| Professionals: profile, message | NOT WALKED | needs an approved listing |
+| Events: my tickets | PASS (empty state only) | "No upcoming tickets" |
+| Events: organiser dashboard, call it off | NOT WALKED | needs a hosted, approved event with a sale |
+| Events: door scan | PHONE ONLY | camera |
+| Schools: apply on the school's site, class full | NOT WALKED | no school seeded |
+| Schools: My courses | PASS (empty state only) | "No courses yet" with "Find a school"; the with-a-course case NOT WALKED |
+| Settings: blocked accounts | PASS | Block from the profile menu, listed, Unblock, list empty again |
+| Settings: download my data | PASS | the request (`POST /settings/privacy/export`) answered and the row read "On its way to your email"; the mail itself not confirmed |
+| Settings: switches honoured by the server | PASS | privacy and notification switches sent a PATCH and kept their value after a reload |
+| Explore: categories | PASS | all categories listed with creators |
+| Explore: search results | PASS | "light" found both pieces under Content |
+| Services, Legal: chat opener and first message | NOT RUN | lead addition: the stack's Hub cannot reach Gemini (`block-net.cjs` refuses every host that is not this machine and `stack.sh` sets `GEMINI_API_KEY=` empty). Letting that one host through means weakening the stack's network guard, which the permission check refused; it needs the lead's explicit go-ahead (an allow setting in `stack.sh`, or a Hub started outside it). The key file was not opened. |
+
+Re-walk counts: PASS 9 (4 of them empty states only), NOT WALKED 8, PHONE ONLY 1, NOT RUN 1, BROKEN 0.
+
 
 ## Owner sign-off
 

@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 11 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -105,7 +105,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-05](../tasks/WALLET-05.md) Add money and withdraw (You)
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
-- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
 - [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
@@ -193,6 +192,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
