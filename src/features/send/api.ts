@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { nameOrSomeone } from '@/features/feed/model';
 
 /**
  * The calls behind Send to a WAWU user (WALLET-02: W7, W9, W10, W11, W12), as the backend contract types them.
@@ -37,10 +38,11 @@ function unreadable(what: string): ApiError {
 
 function readRecipient(value: unknown): Recipient {
   const v = value as Partial<Recipient> | null;
-  if (!v || typeof v !== 'object' || !filled(v.wawuUserId) || !filled(v.displayName)) throw unreadable('recipients');
+  if (!v || typeof v !== 'object' || !filled(v.wawuUserId)) throw unreadable('recipients');
   return {
     wawuUserId: v.wawuUserId,
-    displayName: v.displayName,
+    // A person with a wallet and no name is a valid recipient: named as the feed names them, and the rest of the list is read as usual.
+    displayName: nameOrSomeone(v.displayName, v.handle),
     handle: filled(v.handle) ? v.handle : null,
     avatarUrl: filled(v.avatarUrl) ? v.avatarUrl : null,
     tick: v.tick === 'creator' || v.tick === 'professional' ? v.tick : null,

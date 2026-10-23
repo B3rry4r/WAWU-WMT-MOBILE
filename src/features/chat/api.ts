@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { nameOrSomeone } from '@/features/feed/model';
 import { filled } from '@/features/money-attempt/refusal';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
@@ -52,8 +53,9 @@ export function readMessage(value: unknown): ChatMessage {
 export async function fetchChat(chatId: string): Promise<ChatSummary> {
   const body = (await unwrap(api.GET('/api/hub/chats/{chatId}', { params: { path: { chatId } } }))) as unknown as Envelope<ChatSummary>;
   const chat = body?.data;
-  if (!chat || !filled(chat.id) || !chat.other || !filled(chat.other.wawuId) || !filled(chat.other.name)) throw unreadable('chat');
-  return chat;
+  if (!chat || !filled(chat.id) || !chat.other || !filled(chat.other.wawuId)) throw unreadable('chat');
+  // The Hub gives a person with no name and no handle `name: ""`: they are named as the feed names them, and the chat opens.
+  return { ...chat, other: { ...chat.other, name: nameOrSomeone(chat.other.name, chat.other.handle) } };
 }
 
 /** One page of messages, newest first. `nextCursor` is null on the last page. */

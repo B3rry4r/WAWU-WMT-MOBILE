@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 19 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -37,6 +37,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-101](../tasks/FIX-101.md) The last app items before the Android test build (unlock with no creator name, bank send wait, Create Event tile, called-off ticket, category outside the taxonomy, Flix cold open) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -200,7 +201,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-101](../tasks/FIX-101.md) The last app items before the Android test build (unlock with no creator name, bank send wait, Create Event tile, called-off ticket, category outside the taxonomy, Flix cold open) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -397,6 +397,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · FIX-101 round 2 · The verifier's FIX built (Sonnet builder, T1; mobile `wmt/FIX-101` on `9eaf3c0f`; status verifying): a chat with a person who has no name opens (named as the feed names them, else "Someone"), a recipient with no name no longer fails the whole recipients list, and the racy movies loading tests hold the catalog read instead of racing it. App only.
 - 23 Oct 2026 · FIX-101 · Built (Sonnet builder, T1; mobile `wmt/FIX-101` on `origin/main` `0352cc11`; status verifying): the last app items before the Android test build. A piece whose creator has no display name unlocks (the quote is never refused for a name; the sheet names them as the feed does, else "Someone"); a bank send the Hub is still working on no longer says "Your last try got no answer" (timeout `WRITE_TIMEOUT_MS` 30 s, unchanged); Create's Event tile drops "Needs an active tier" while a tier is held; a called-off event's ticket under Past says "Called off"; a listing outside the taxonomy opens with its category; a cold open of Flix movies shows a plain wait. App only, no backend, no shared change.
 - 23 Oct 2026 · FIX-100 · Built (Sonnet builder, T1; mobile `wmt/FIX-100` on `origin/main` `89669d9f`; status verifying): the app findings of the pre-build re-walk. P2 draws "Ask a question · price" and opens the paid question (H2); a failed enrolment quote keeps SC5 with the price problem, Try again and the held place (M1); "Finish your profile" names what the Hub says is missing (L1); the community "created" screen has a back button (L3); Flix genre chips split compound genres (L6); Explore draws "Who Made This?" with its empty state (U1); an open wallet with no PIN leads the tab to create one (U3b). One test per item fails on `origin/main`.
 - 23 Oct 2026 · FLIX-04 · Built (Sonnet builder, T1; backend `wmt/FLIX-04` `1209f3c` on `origin/main` `dd00e85`, mobile `wmt/FLIX-04` on `origin/main` `89669d9f`; status verifying): Flix movies show "not live yet" until business talks finish (R-77). New `MOVIE_PARTNER=soon`: no adapter, no sync, no call; `GET /movies` answers `{ enabled: false, soon: true, hero: null, rails: [] }`, every other movies route 404 `movies_off`. The app keeps the rails on Home and Explore (title and one card with the two lines) and the movies screen (S13's shared Banner, no catalog, search, filters or watch button); `enabled: false` without `soon` still hides everything. Tests fail on `origin/main` and pass here; V5 pictures not rendered.
@@ -411,4 +412,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · FIX-97 round 2 · Lead ruling built (Sonnet builder, T2; backend `wmt/FIX-97` `e678f35`, mobile `wmt/FIX-97`; status verifying): the local stack's Nuvion stand-in (`scripts/dev/nuvion-standin.cjs`) and `scripts/nuvion/counterparty-lookup-check.ts` match dev: the lookup takes `issuer.code` and answers `details.name`, an unknown number is 404 `error_resource_not_found`, a counterparty without email and address is dev's 422, the entity read carries the address. On a local stack a name check answers "Forrest Green" and a bank send reaches the stand-in's counterparty, payment detail and transfer (201 each). One spec input (statements) given a contact.
 - 23 Oct 2026 · FIX-97 · Built (Sonnet builder, T2; backend `wmt/FIX-97` `7f9a172` on `origin/main` `62876ea6`, mobile `wmt/FIX-97` from `wmt/NUV-KEYS`; status verifying): the three Nuvion payout bugs the dev-key run found. The name check sends `issuer: {code}` and reads `data.details.name` (a made-up number is `error_resource_not_found`, now "not found"); a counterparty carries the sending side's own email and address from its Nuvion entity, and a send without either stops before any counterparty. New spec red on main (10 of 10), green built; on dev the name check answers "Forrest Green" through the Hub and a bank send reaches counterparty 201 and payment detail 201 and stops at insufficient funds. The local stack's stand-in (`scripts/dev/nuvion-standin.cjs`) still has the old shapes: for the lead.
 - 22 Oct 2026 · FLIX-01 · Built (Sonnet builder, T2; backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`) on `origin/main` `1955fd1`, mobile `wmt/FLIX-01`; status verifying): the Hub serves the Flixora catalog and a signed-in watch link through one seam (`MOVIE_PARTNER`: `off` default, `standin`; `flixora` is FLIX-02). Six routes under `/movies` read the Hub's own catalog copy (a sync job: `updatedSince`, a daily full pass); the first "Watch on Flixora" opens the person's partner account (R-75: agreement by `FLIXORA_TERMS_FROM` or `agreeToTerms`, a fresh link per tap never stored or logged, only sub, email, names and verified flag sent); four additive tables with a refusing rollback; the purge marks the link row. Protected routes 253/253; gates 0 fail. Real partner NOT RUN (FLIX-02). Records: SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, G-FLIX-1 to 3.
-- 22 Oct 2026 · FLIX-03 round 3 · The verifier's FIX built (Sonnet builder; mobile `wmt/FLIX-03`; status verifying): MV7 wraps "Most watched", MV12 is centred with the primary Try again, a title that has not premiered never offers Watch on Flixora (hero or page), MV11 draws search, MV9 pill stretches, a 409 draws the consent box, the hero Trailer needs a trailer. Three optional shared props (SHARED-CHANGES FLIX-03 #5 to #7), a test each; the changed pairs re-captured.

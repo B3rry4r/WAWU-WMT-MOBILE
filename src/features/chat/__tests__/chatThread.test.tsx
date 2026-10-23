@@ -75,6 +75,16 @@ describe('I12: the chat', () => {
     expect(rtl.screen.getByTestId('chat-composer-input')).toBeTruthy();
   });
 
+  // FIX-101 F1: the Hub's chat view gives `name: ""` for a person with no name and no handle; the chat (a paid question's thread too) must open.
+  it('a chat with a person who has no name opens and names them "Someone", as a piece\'s page names a creator with none', async () => {
+    hub.unnamedOther = true;
+    hub.messages = [textMessage('Thanks for the photos', false, '2026-10-16T17:52:00.000Z')];
+    await boot();
+    expect(rtl.screen.getByTestId('chat-name').props.children).toBe('Someone');
+    expect(rtl.screen.getByText('Thanks for the photos')).toBeTruthy();
+    expect(rtl.screen.getByTestId('chat-composer-input')).toBeTruthy();
+  });
+
   it('the support thread (SUPPORT-01) is "Who Made This?" with the app\'s own mark, no "on Who Made This?" line and no + for money', async () => {
     hub.supportThread = true;
     hub.messages = [textMessage('We can see it. Looking now.', false, '2026-10-16T17:52:00.000Z'), textMessage('Help with a payment: Tip · ₦2,000.00 · Reference WAW-T1P9-7ZQA', true, '2026-10-16T17:40:00.000Z')];

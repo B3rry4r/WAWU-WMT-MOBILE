@@ -340,6 +340,16 @@ describe('W7 · find who to send to', () => {
     expect(screen.getByTestId('send-payee-name').props.children).toBe('Chidi Eze');
   });
 
+  // FIX-101 F2: one person with a wallet and no name used to fail the whole list ("Your recipients could not be read").
+  it('a recent person with no name is listed as "Someone" and the rest of the list is read as usual', async () => {
+    const NONAME = { wawuUserId: '44444444-4444-4444-8444-444444444444', displayName: '', handle: null, avatarUrl: null, tick: null };
+    hub.recent = [AMAKA, NONAME];
+    await renderRouter(routes, { initialUrl: '/send' });
+    expect(await screen.findByRole('button', { name: 'Send to Amaka Nwosu' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send to Someone' })).toBeTruthy();
+    expect(screen.queryByText(/could not be read/)).toBeNull();
+  });
+
   it('one typed character is not searched; a search with nobody says so', async () => {
     await renderRouter(routes, { initialUrl: '/send' });
     await typeIn('send-search', 'a');

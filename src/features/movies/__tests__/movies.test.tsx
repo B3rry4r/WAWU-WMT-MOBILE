@@ -103,17 +103,21 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
   const props = { onBack: jest.fn(), onSearch: jest.fn(), onOpenMovie: jest.fn(), onWatch: jest.fn(), onTrailer: jest.fn(), onBrowse: jest.fn(), onOpenTab: jest.fn() };
 
   it('MV11 while loading, then the Hub hero and rails; See all browses that rail', async () => {
+    // The catalog read is held until the loading state has been asserted (an instantly resolved mock can be flushed before it), then released.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     mockGet.mockImplementation((path: string) =>
-      Promise.resolve(
-        path.endsWith('/filters')
-          ? ok({ genres: ['Drama', 'Comedy'], languages: ['English'] })
-          : path === '/api/hub/movies/{movieId}'
-            ? ok(detail('m1'))
-            : home(true, [{ key: 'top_rated', title: 'Top rated', movies: [card('m3')] }]),
-      ),
+      path === '/api/hub/movies'
+        ? held.then(() => home(true, [{ key: 'top_rated', title: 'Top rated', movies: [card('m3')] }]))
+        : Promise.resolve(path.endsWith('/filters') ? ok({ genres: ['Drama', 'Comedy'], languages: ['English'] }) : path === '/api/hub/movies/{movieId}' ? ok(detail('m1')) : home(true)),
     );
     await render(wrap(<MoviesScreen {...props} />));
     expect(screen.getByTestId('movies-loading')).toBeTruthy();
+    await act(async () => {
+      release();
+    });
     expect(await screen.findByTestId('flix-hero')).toBeTruthy();
     expect(screen.getByText('Drama · 2024 · 1h 40m · PG-13')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('movies-rail-top_rated-see-all'));
@@ -196,11 +200,21 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
   });
 
   it('Search appears once the Hub has said movies are on', async () => {
-    mockGet.mockImplementation((path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: [], languages: [] }) : home(true)));
+    // The catalog read is held until the assertion has been made (an instantly resolved mock can be flushed before it), then released.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mockGet.mockImplementation((path: string) => (path.endsWith('/filters') ? Promise.resolve(ok({ genres: [], languages: [] })) : held.then(() => home(true))));
     await render(wrap(<MoviesScreen {...props} />));
+    expect(screen.getByTestId('movies-loading')).toBeTruthy();
     expect(screen.queryByTestId('movies-search')).toBeNull();
+    await act(async () => {
+      release();
+    });
     expect(await screen.findByTestId('movies-search')).toBeTruthy();
     expect(await screen.findByTestId('flix-hero')).toBeTruthy();
+    expect(screen.queryByTestId('movies-loading')).toBeNull();
   });
 
   it('MV12 draws its message in the middle with the primary Try again (M2)', async () => {
