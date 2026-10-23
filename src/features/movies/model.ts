@@ -20,21 +20,40 @@ export function runtimeText(minutes: number | null | undefined): string | null {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/**
+ * The genres a person can choose from, one chip each. Flixora writes some titles' genres as one compound word ("Comedy | Thriller"),
+ * and the Hub serves them as written (R-74), so each is split at "|", trimmed and made unique, in the Hub's own order (plain
+ * alphabetical), and an empty piece is dropped. "Comedy" and "Comedy | Thriller" give "Comedy" and "Thriller", once each.
+ */
+export function genreChoices(genres: readonly string[] | null | undefined): string[] {
+  const seen = new Set<string>();
+  for (const g of genres ?? []) {
+    for (const part of g.split('|')) {
+      const name = part.trim();
+      if (name !== '') seen.add(name);
+    }
+  }
+  return [...seen].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/** The one genre a line names: the first, with a compound one cut at its first "|" ("Comedy | Thriller" is "Comedy"). */
+const firstGenre = (genre: readonly string[]): string | undefined => genre[0]?.split('|')[0]?.trim() || undefined;
+
 const joined = (parts: (string | number | null | undefined)[]) => parts.filter((p) => p !== null && p !== undefined && p !== '').join(' · ');
 
 /** A card's line under the title: "Drama · 2024" (the first genre, then the year). */
 export function cardLine(movie: Pick<MovieCard, 'genre' | 'year'>): string {
-  return joined([movie.genre[0], movie.year]);
+  return joined([firstGenre(movie.genre), movie.year]);
 }
 
 /** The hero's line: "Drama · 2024 · 1h 40m · PG-13". */
 export function heroLine(movie: MovieCard): string {
-  return joined([movie.genre[0], movie.year, runtimeText(movie.runtimeMinutes), movie.ageRating]);
+  return joined([firstGenre(movie.genre), movie.year, runtimeText(movie.runtimeMinutes), movie.ageRating]);
 }
 
 /** The movie page's line under the title: "Drama · 2024 · 1h 40m". */
 export function pageLine(movie: Pick<MovieCard, 'genre' | 'year' | 'runtimeMinutes'>): string {
-  return joined([movie.genre[0], movie.year, runtimeText(movie.runtimeMinutes)]);
+  return joined([firstGenre(movie.genre), movie.year, runtimeText(movie.runtimeMinutes)]);
 }
 
 /** "4.5", one decimal, as the poster's badge draws it. */

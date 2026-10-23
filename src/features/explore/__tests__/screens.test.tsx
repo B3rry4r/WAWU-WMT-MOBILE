@@ -73,12 +73,14 @@ function card(wawuId: string, handle: string, field: string, over: Record<string
 }
 
 /**
- * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. Featured creators
- * and Upcoming events are left out when the Hub has none (FIX-68 F-6), so their headings are not in this list.
+ * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. Upcoming events is
+ * left out when the Hub has none (FIX-68 F-6). "Who Made This?" stays drawn with its designed empty state, as Home's does
+ * (R-47, FIX-100 #6: the line that used to leave it out pinned the defect, so its three words are in this list now).
  */
 const WORDS_BEFORE_TILES = [tgifDayLabel(localDay()), 'Sons, not slaves', '5 cards', 'All'];
 const WORDS_AFTER_TILES = [
   'More',
+  'Who Made This?', 'No creators to suggest yet', 'New creators show up here as they join and publish.',
   'Find a professional', 'Accountants, lawyers, designers',
   'Find a school', 'Courses from schools and academies',
   'List your services', 'Get paid to answer questions',
@@ -342,24 +344,20 @@ describe('X1 · Explore', () => {
     },
   );
 
-  it('with nobody featured, Featured creators is left out, heading and all: the board draws no empty state for it (FIX-68 F-6)', async () => {
+  // FIX-100 #6 (U1, R-47): this test used to say the section is left out when nobody is featured (FIX-68 F-6). It pinned the defect:
+  // a built section stays drawn with its designed empty state, as Home's "Who Made This?" is.
+  it('with nobody featured, Who Made This? stays drawn with its designed empty state, as Home does (R-47)', async () => {
     answers[featured] = [ok({ items: [] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-tiles');
     await settle();
-    expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-featured-empty')).toBeNull();
-    expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
+    expect(rtl.screen.getByText('Who Made This?')).toBeTruthy();
+    const section = rtl.screen.getByTestId('explore-featured');
+    expect(rtl.within(section).getByTestId('explore-featured-empty')).toBeTruthy();
+    expect(rtl.within(section).getByText('No creators to suggest yet')).toBeTruthy();
+    expect(rtl.within(section).getByText('New creators show up here as they join and publish.')).toBeTruthy();
     expect(rtl.screen.queryByText(/@/)).toBeNull();
     expect(rtl.screen.queryByText('Follow')).toBeNull();
-  });
-
-  it('with creators featured, the row is back with its heading and a card each (FIX-68 F-6)', async () => {
-    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
-    expect(rtl.screen.getByTestId('explore-featured-c1')).toBeTruthy();
   });
 
   it('with no advert and no event, a user sees no slider and no empty frame for it, and no Upcoming events row (R-59, FIX-68 F-6)', async () => {
@@ -527,7 +525,8 @@ describe('X1 · Explore', () => {
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByTestId('explore-tiles');
-    expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+    // The section is drawn with its empty state (FIX-100 #6), no card in it.
+    expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'Find a professional, Accountants, lawyers, designers',
@@ -598,10 +597,15 @@ describe('X1 · Explore', () => {
       // The sections, as when nothing is served.
       expect(rtl.screen.getByTestId('explore-tgif')).toBeTruthy();
       expect(rtl.within(rtl.screen.getByTestId('explore-tiles')).getAllByRole('button').length).toBeGreaterThanOrEqual(2);
-      // Nothing was served for the two rails, and the board draws no empty state for them: they are left out (FIX-68 F-6).
-      expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
-      expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
-      expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+      // Upcoming events served nothing and is left out (FIX-68 F-6). Who Made This? draws its empty state when its read worked and
+      // served nobody (the categories case), and is left out under the banner when its own read is the one that failed.
+      if (failing === featured) {
+        expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
+        expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
+        expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+      } else {
+        expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
+      }
       expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
       expect(rtl.screen.queryByRole('button', { name: 'See all events' })).toBeNull();
       for (const door of ['find-professional', 'find-school', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 
 import { ApiError } from '@/api/errors';
@@ -189,6 +189,30 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     await render(wrap(<MoviesScreen {...props} />));
     expect(await screen.findByText("Couldn't load movies")).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+});
+
+// FIX-100 #5 (L6): Flixora writes some titles' genres as one compound word, and each compound word became its own chip.
+describe('FIX-100 · the genre chips never repeat a compound genre', () => {
+  const COMPOUND = ['Comedy', 'Comedy | Thriller', 'Drama', 'Drama | Music | Thriller'];
+  const chipsAnswer = (path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: COMPOUND, languages: ['English'] }) : path === '/api/hub/movies/{movieId}' ? ok(detail('m1')) : home(true));
+
+  it('MV1: one chip each for Comedy, Drama, Music and Thriller, none with a bar in it', async () => {
+    mockGet.mockImplementation(chipsAnswer);
+    await render(
+      wrap(<MoviesScreen onBack={jest.fn()} onSearch={jest.fn()} onOpenMovie={jest.fn()} onWatch={jest.fn()} onTrailer={jest.fn()} onBrowse={jest.fn()} onOpenTab={jest.fn()} />),
+    );
+    const row = await screen.findByTestId('movies-genre');
+    expect(within(row).getAllByText(/^(All|Comedy|Drama|Music|Thriller)$/).map((n) => n.props.children)).toEqual(['All', 'Comedy', 'Drama', 'Music', 'Thriller']);
+    expect(screen.queryByText(/\|/)).toBeNull();
+  });
+
+  it('MV6: the browse page draws the same chips', async () => {
+    mockGet.mockImplementation((path: string) => (path.endsWith('/filters') ? chipsAnswer(path) : Promise.resolve(page([card('a')], 1))));
+    await render(wrap(<AllMoviesScreen onBack={jest.fn()} onSearch={jest.fn()} onOpenMovie={jest.fn()} initial={{}} />));
+    const row = await screen.findByTestId('movies-all-genre');
+    expect(within(row).getAllByText(/^(All|Comedy|Drama|Music|Thriller)$/).map((n) => n.props.children)).toEqual(['All', 'Comedy', 'Drama', 'Music', 'Thriller']);
+    expect(screen.queryByText(/\|/)).toBeNull();
   });
 });
 

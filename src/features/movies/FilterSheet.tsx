@@ -13,7 +13,7 @@ import { font, space } from '@/theme';
 
 import { fetchBrowse, type BrowseFilter, type MovieFilters } from './api';
 import { sheetMetrics } from './look';
-import { SORTS, totalText } from './model';
+import { genreChoices, SORTS, totalText } from './model';
 
 export type FilterSheetProps = {
   visible: boolean;
@@ -71,7 +71,7 @@ function FilterBody({ filter, options, onApply }: Pick<FilterSheetProps, 'filter
         <Text variant="label">Sort</Text>
         <SegmentedTabs label="Sort movies" wrapLabels testID="movies-sort" items={SORTS.map((s) => ({ value: s.value, label: s.label }))} value={draft.sort} onChange={(sort) => setDraft((d) => ({ ...d, sort }))} />
       </View>
-      <OptionGroup title="Genre" testID="movies-genres" items={options?.genres ?? []} value={draft.genre} onChange={(genre) => setDraft((d) => ({ ...d, genre }))} />
+      <OptionGroup title="Genre" testID="movies-genres" items={genreChoices(options?.genres)} value={draft.genre} onChange={(genre) => setDraft((d) => ({ ...d, genre }))} />
       <OptionGroup title="Language" testID="movies-languages" items={options?.languages ?? []} value={draft.language} onChange={(language) => setDraft((d) => ({ ...d, language }))} />
       <SwitchRow
         testID="movies-premiering"

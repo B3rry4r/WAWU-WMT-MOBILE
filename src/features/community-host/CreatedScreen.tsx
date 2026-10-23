@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
-import { Button } from '@/components/Button';
+import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
@@ -20,19 +20,33 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 
 /** design/_gen/inbox.js line 88, `created`: the result mark, the title, the line, the link card (12 by 14 inside, 10 between) and a muted line; the foot has Share link and Open room side by side. */
 const metrics = { mark: 88, top: 80, between: 20, copyPadH: 12, copyHeight: 40, copyFont: 14, link: 14, foot: 10 } as const;
+/** The shared bar's own height (`ScreenFrame`'s nav, kit.js line 34): the back button sits in a bar this high, and the page below it starts that much higher, so the mark is still 80 from the top as the board draws it. */
+const NAV_HEIGHT = 56;
 const COPIED_MS = 2000;
 
 export type CreatedScreenProps = {
   id: string;
   onOpenRoom: () => void;
+  /** Leave the screen without opening the room. The board draws no bar here, so the shared back button (`ScreenFrame`'s) is the way out (FIX-100 #4). */
+  onBack?: () => void;
 };
+
+/** The shared back button on its own bar, as `ScreenFrame` draws it. Nothing is drawn when the route gave no way back. */
+function BackBar({ onBack }: { onBack?: () => void }) {
+  if (!onBack) return null;
+  return (
+    <View style={styles.bar}>
+      <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="created-back" />
+    </View>
+  );
+}
 
 /**
  * I33 · Created (INBOX-14). "<name> is live", what kind of room it is and that the person hosts it, the room's share link `wawu/c/<slug>`
  * as the Hub made it, Copy, Share link and Open room. The name, the kind and the link are the Hub's own, read from the room. The board's
  * "Members pay 1 credit a message" is left out: the figure is not served here (G-INBOX-14-1).
  */
-export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
+export function CreatedScreen({ id, onOpenRoom, onBack }: CreatedScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const room = useQuery({ queryKey: roomKey(id), queryFn: () => fetchRoom(id) }, queryClient);
@@ -50,6 +64,7 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
   if (room.isError && !room.data) {
     return (
       <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="created-screen">
+        <BackBar onBack={onBack} />
         <View style={styles.center}>
           <ErrorState
             testID="created-error"
@@ -65,6 +80,7 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
   if (!room.data) {
     return (
       <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="created-screen">
+        <BackBar onBack={onBack} />
         <LoadingView testID="created-loading" label="Opening your community">
           <View style={styles.loading}>
             <Skeleton width={metrics.mark} height={metrics.mark} radius={metrics.mark / 2} />
@@ -89,6 +105,7 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="created-screen">
+      <BackBar onBack={onBack} />
       <View style={styles.body}>
         <View style={styles.result}>
           <IconTile icon="Check" tone="in" size={metrics.mark} />
@@ -143,8 +160,9 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter },
-  loading: { alignItems: 'center', gap: space.md, paddingTop: metrics.top },
-  body: { flex: 1, paddingHorizontal: layout.gutter, paddingTop: metrics.top, gap: metrics.between },
+  bar: { height: NAV_HEIGHT, justifyContent: 'center', paddingHorizontal: layout.gutter, alignItems: 'flex-start' },
+  loading: { alignItems: 'center', gap: space.md, paddingTop: metrics.top - NAV_HEIGHT },
+  body: { flex: 1, paddingHorizontal: layout.gutter, paddingTop: metrics.top - NAV_HEIGHT, gap: metrics.between },
   result: { alignItems: 'center', gap: space.sm },
   centred: { textAlign: 'center' },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },

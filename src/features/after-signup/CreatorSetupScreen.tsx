@@ -27,11 +27,22 @@ const SETUP = { icon: 40, between: 8, topPadV: 14, topPadH: 16 } as const;
 export type SetupTarget = 'paid' | 'profile' | 'publish' | 'community' | 'wallet';
 type Row = { target: SetupTarget; icon: 'MessageCircle' | 'UserRound' | 'Upload' | 'Users' | 'IdCard'; title: string; line: string; done: boolean | undefined };
 
+/** What each of the Hub's `profileCompletenessMissing` words is called on the row. A word the app does not know is named as the Hub spelled it. */
+const MISSING_WORDS: Record<string, string> = { cover: 'cover photo', avatar: 'photo', bio: 'bio', handle: 'handle', links: 'socials' };
+
+/** "Finish your profile" says what is missing when the Hub says: "Still to add: cover photo", "Still to add: photo and bio". Its usual line otherwise. */
+export function profileLine(missing: readonly string[] | undefined): string {
+  const named = (missing ?? []).map((m) => MISSING_WORDS[m] ?? m);
+  if (named.length === 0) return 'Photo, bio, socials';
+  const list = named.length === 1 ? named[0] : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+  return `Still to add: ${list}`;
+}
+
 /** The line under each row. A figure the system does not back ("Free to list") is not written here (BACKEND_GAPS G-171). */
 function rowsOf(state: SetupState | undefined): Row[] {
   return [
     { target: 'paid', icon: 'MessageCircle', title: 'Price your paid messages', line: 'Fans pay to ask you', done: state?.priced },
-    { target: 'profile', icon: 'UserRound', title: 'Finish your profile', line: 'Photo, bio, socials', done: state?.profile },
+    { target: 'profile', icon: 'UserRound', title: 'Finish your profile', line: state?.profile === false ? profileLine(state.profileMissing) : 'Photo, bio, socials', done: state?.profile },
     {
       target: 'publish',
       icon: 'Upload',

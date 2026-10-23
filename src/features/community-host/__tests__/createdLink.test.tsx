@@ -55,3 +55,20 @@ describe('I33 · the community link a person sends', () => {
     share.mockRestore();
   });
 });
+
+// FIX-100 #4 (L3): the "created" screen had only Copy, Share link and Open room, so on the web there was no way out but the room.
+describe('I33 · leaving the created screen', () => {
+  it('a host can go back from it with the shared back button, without opening the room', async () => {
+    const onBack = jest.fn();
+    const onOpenRoom = jest.fn();
+    await rtl.render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+        <CreatedScreen id="room-1" onOpenRoom={onOpenRoom} onBack={onBack} />
+      </SafeAreaProvider>,
+    );
+    await rtl.screen.findByTestId('created-title');
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(onOpenRoom).not.toHaveBeenCalled();
+  });
+});

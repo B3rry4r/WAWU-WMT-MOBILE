@@ -60,7 +60,16 @@ export async function fetchSuggested(picks: readonly string[]): Promise<ExploreC
 }
 
 /** What A11's rows show as done. `undefined` is "could not be read", never "not done". */
-export type SetupState = { priced?: boolean; profile?: boolean; published?: boolean; community?: boolean; wallet?: boolean; failed: boolean };
+export type SetupState = {
+  priced?: boolean;
+  profile?: boolean;
+  /** What the Hub says the profile still lacks (`profileCompletenessMissing`: cover, handle, bio, avatar, links). Empty when it is complete; undefined when it could not be read. */
+  profileMissing?: string[];
+  published?: boolean;
+  community?: boolean;
+  wallet?: boolean;
+  failed: boolean;
+};
 
 /** The most pages of the person's rooms looked through for one they host (twenty a page); a host past them is shown as not started, so the row can still be tapped. */
 const HOSTED_PAGES = 5;
@@ -88,6 +97,7 @@ export async function fetchSetupState(): Promise<SetupState> {
   return {
     priced: price.status === 'fulfilled' ? price.value.priceKobo !== null : undefined,
     profile: readStats ? (s!.profileCompletenessMissing as unknown[]).length === 0 : undefined,
+    profileMissing: readStats ? (s!.profileCompletenessMissing as unknown[]).filter((m): m is string => typeof m === 'string') : undefined,
     published: readStats ? (s!.postCount as number) >= 1 : undefined,
     community: community.status === 'fulfilled' ? community.value : undefined,
     wallet: wallet.status === 'fulfilled' ? wallet.value.state === 'open' : undefined,

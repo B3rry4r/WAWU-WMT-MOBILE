@@ -26,7 +26,7 @@ const POLL_MS = 4000;
 export type EnrolPayArgs = {
   /** The enrolment being paid: `reserved`. */
   enrolment: Enrolment;
-  /** The pay sheet was dismissed with nothing paid: leave the screen (the place stays held for a while). */
+  /** The pay sheet was dismissed with nothing paid: leave the screen (the place stays held for a while). A price that could not be worked out does not leave: the page says so and offers Try again. */
   onLeave: () => void;
   /** No wallet yet (R-6): Open your wallet. */
   onOpenWallet: () => void;
@@ -82,6 +82,10 @@ export function useEnrolPay(args: EnrolPayArgs) {
   const [shortOf, setShortOf] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
+  // The first quote for the held place could not be asked for (the Hub's word, or ours when it gave none): the page stays, with the
+  // place still held, and says so with Try again (the tier checkout's, the tip sheet's and Buy points' own state, FIX-100 #2).
+  const [quoteProblem, setQuoteProblem] = useState<string | null>(null);
+  const lastProblem = useRef<string | null>(null);
   // A payment of this person's that the Hub has not finished and this phone did not start (a second phone): the Hub named it when it
   // refused the quote. Never kept: asking for the quote again names it again.
   const [openId, setOpenId] = useState<string | null>(null);
@@ -189,7 +193,10 @@ export function useEnrolPay(args: EnrolPayArgs) {
         setOpenId(error.paymentId);
         return undefined;
       }
-      if (!leadToWallet(error)) setNotice(isApiError(error) && error.message ? error.message : PRICE_UNREADABLE);
+      if (!leadToWallet(error)) {
+        lastProblem.current = isApiError(error) && error.message ? error.message : PRICE_UNREADABLE;
+        setNotice(lastProblem.current);
+      }
       return undefined;
     }
   };
@@ -208,6 +215,27 @@ export function useEnrolPay(args: EnrolPayArgs) {
     }, []),
   );
 
+  // The quote for a held place, asked as the screen opens and again by Try again. A quote the Hub could not give keeps the page (the
+  // place is still held) and says what went wrong; only a wallet that has to be opened, or a payment already being confirmed, is
+  // answered by something other than this page.
+  const firstQuote = () => {
+    setQuoteProblem(null);
+    setLoadingQuote(true);
+    void askQuote()
+      .then((quote) => {
+        if (quote) {
+          setNotice(null);
+          setFresh(quote);
+          setStatus({ kind: 'review' });
+          setPayOpen(true);
+        } else if (!walletLed.current && !waiting.current) {
+          setNotice(null);
+          setQuoteProblem(lastProblem.current ?? PRICE_UNREADABLE);
+        }
+      })
+      .finally(() => setLoadingQuote(false));
+  };
+
   // When the screen opens: a payment kept from before is reviewed again (or only waited for); otherwise the quote is asked for.
   useEffect(() => {
     if (intent === undefined || startedFor.current === enrolment.id) return;
@@ -219,20 +247,7 @@ export function useEnrolPay(args: EnrolPayArgs) {
       return;
     }
     // Started as a callback after this render: asking for the quote is not part of drawing the screen.
-    queueMicrotask(() => {
-      setLoadingQuote(true);
-      void askQuote()
-        .then((quote) => {
-          if (quote) {
-            setFresh(quote);
-            setStatus({ kind: 'review' });
-            setPayOpen(true);
-          } else if (!walletLed.current && !waiting.current) {
-            args.onLeave();
-          }
-        })
-        .finally(() => setLoadingQuote(false));
-    });
+    queueMicrotask(firstQuote);
     // The quote is asked for once per opening of the screen; later taps ask again from `pay`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intent, enrolment.id, shown]);
@@ -430,6 +445,10 @@ export function useEnrolPay(args: EnrolPayArgs) {
     sheet,
     /** The quote is being asked for as the screen opens. */
     loadingQuote,
+    /** The quote for the held place could not be asked for: what the Hub (or the app) says went wrong. Null otherwise. */
+    quoteProblem,
+    /** Try again on that state: the quote is asked for once more. */
+    retryQuote: firstQuote,
     /** The Hub has the payment and has not finished: the enrolment is read until it is decided. */
     confirming,
     refreshing: polled.isFetching || paymentRead.isFetching,

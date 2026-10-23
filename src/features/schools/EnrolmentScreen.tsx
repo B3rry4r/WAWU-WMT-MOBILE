@@ -23,7 +23,7 @@ import { useSignedIn } from '@/features/settings/sessionGuard';
 import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
 
 import { enrolKeys, fetchEnrolment, type Enrolment } from './enrolApi';
-import { classRow, CLOSED_LINE, CLOSED_TITLE, CONFIRMING_LINE, CONFIRMING_TITLE, enrolledLine, REFUNDED_TITLE, shareText, shortDay } from './enrolModel';
+import { classRow, CLOSED_LINE, CLOSED_TITLE, CONFIRMING_LINE, CONFIRMING_TITLE, enrolledLine, heldLine, NO_PRICE_TITLE, REFUNDED_TITLE, shareText, shortDay } from './enrolModel';
 import { DetailRow, DetailsCard, EnrolBar, enrolMetrics } from './enrolParts';
 import { SchoolLogo } from './parts';
 import { useEnrolPay } from './useEnrolPay';
@@ -173,6 +173,16 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
               <DetailRow label="Name" value={name} />
             </DetailsCard>
           )}
+          {pay.quoteProblem !== null ? (
+            <>
+              <ErrorState testID="enrolment-quote-error" icon="TriangleAlert" title={NO_PRICE_TITLE} message={pay.quoteProblem} onRetry={pay.retryQuote} />
+              {heldLine(enrolment.reservedUntil) !== null ? (
+                <Text variant="meta" tone="textMuted" testID="enrolment-held" style={styles.held}>
+                  {heldLine(enrolment.reservedUntil)}
+                </Text>
+              ) : null}
+            </>
+          ) : null}
           {pay.notice ? (
             <Text variant="errorLine" testID="enrolment-notice" accessibilityRole="alert" onPress={pay.clearNotice}>
               {pay.notice}
@@ -291,6 +301,7 @@ const styles = StyleSheet.create({
   frameBody: { flex: 1 },
   skeleton: { paddingHorizontal: layout.gutter, paddingTop: enrolMetrics.bodyTop, gap: enrolMetrics.partGap },
   payBody: { flex: 1, paddingTop: enrolMetrics.bodyTop, paddingHorizontal: layout.gutter, gap: space.md },
+  held: { textAlign: 'center' },
   receipt: { gap: RECEIPT.partGap },
   head: { alignItems: 'center', gap: RECEIPT.headGap, paddingTop: RECEIPT.headTop - 56 },
   title: { ...font(700), fontSize: RECEIPT.title, lineHeight: RECEIPT.title * 1.15, letterSpacing: RECEIPT.titleTracking * RECEIPT.title, marginTop: space.sm, textAlign: 'center' },

@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
+import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
-import { useOpenWalletEntry } from '@/features/open-wallet/entry';
+import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, radius, useWawu } from '@/theme';
 
@@ -92,6 +93,9 @@ export function WalletScreen() {
 
   const actions = builtActions(router);
   const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
+  // The account opened and no PIN is set (it landed while the tab said "Your account is opening", or while the app was closed): the
+  // board's step after the account is "Create your transaction PIN", so the person is led there once, never left on W1 unasked (U3b).
+  useLeadToCreatePin(owner, open && wallet.data?.pinIsSet === false, focused, () => router.push(OPEN_WALLET_ACCOUNT_PATH));
 
   const onRefresh = useCallback(async () => {
     setPulled(true);
@@ -294,6 +298,27 @@ export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, openFlo
     if (noWallet && !led.current) open();
   }, [focused, noWallet, open]);
   return open;
+}
+
+/** Whose wallets the tab has already led to A8 in this session: one nudge each, so Back from A8 stays on the tab and never loops. */
+const ledToPin = new Set<string>();
+onSessionEnd(() => ledToPin.clear());
+
+/**
+ * With an open wallet and no PIN, being on the tab opens A8 (Your wallet is open, whose button is "Create your transaction PIN", A9 and
+ * A10), once per session for each account. A person who goes back from it is on the tab as before: Settings (W36) still creates the PIN
+ * and every payment sheet still leads to it.
+ */
+export function useLeadToCreatePin(owner: string | null, noPin: boolean, focused: boolean, lead: () => void): void {
+  const leadRef = useRef(lead);
+  useEffect(() => {
+    leadRef.current = lead;
+  });
+  useEffect(() => {
+    if (!owner || !noPin || !focused || ledToPin.has(owner)) return;
+    ledToPin.add(owner);
+    leadRef.current();
+  }, [owner, noPin, focused]);
 }
 
 const styles = StyleSheet.create({

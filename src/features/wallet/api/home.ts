@@ -34,6 +34,8 @@ export const RECENT_ROWS = 3;
 export type WalletHome = {
   state: WalletState;
   account: Pick<WalletAccount, 'accountNumber' | 'accountName' | 'bankName'> | null;
+  /** Whether the transaction PIN is set, as the Hub says; undefined when the answer carries none (no nudge then). */
+  pinIsSet?: boolean;
 };
 
 const states: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
@@ -57,7 +59,8 @@ export async function fetchWalletHome(): Promise<WalletHome> {
   if (!view || typeof view !== 'object' || !states.includes(view.state)) throw unreadable('wallet');
   const account = readAccount(view.account);
   if ((view.state === 'open' || view.state === 'frozen') && account === null) throw unreadable('wallet');
-  return { state: view.state, account };
+  const pin = view.pin as { isSet?: unknown } | undefined;
+  return { state: view.state, account, ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}) };
 }
 
 const directions: readonly WalletTransaction['direction'][] = ['in', 'out'];

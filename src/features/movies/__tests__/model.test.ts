@@ -1,4 +1,4 @@
-import { cardLine, countText, premiereAhead, premiereText, ratingText, runtimeText, totalText } from '../model';
+import { cardLine, countText, genreChoices, premiereAhead, premiereText, ratingText, runtimeText, totalText } from '../model';
 
 describe('FLIX-03 · the words a movie is drawn with', () => {
   it('writes a length as hours and minutes', () => {
@@ -26,5 +26,13 @@ describe('FLIX-03 · the words a movie is drawn with', () => {
     expect(premiereAhead({ premiering: true, premierDate: null }, now)).toBe(false);
     expect(premiereText('2026-10-24T09:00:00Z', now)).toBe('Premieres Sat 24 Oct');
     expect(premiereText('not a date', now)).toBeNull();
+  });
+
+  // FIX-100 #5 (L6)
+  it('splits compound genres into single ones, trimmed, once each, in the Hub order', () => {
+    expect(genreChoices(['Comedy', 'Comedy | Thriller', 'Drama', 'Drama | Music |Thriller', ' | '])).toEqual(['Comedy', 'Drama', 'Music', 'Thriller']);
+    expect(genreChoices([])).toEqual([]);
+    expect(genreChoices(null)).toEqual([]);
+    expect(cardLine({ genre: ['Comedy | Thriller'], year: 2024 })).toBe('Comedy · 2024');
   });
 });

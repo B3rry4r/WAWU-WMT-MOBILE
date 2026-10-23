@@ -6,12 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Avatar } from '@/components/Avatar';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Icon, VerifiedTick } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { hueFor } from '@/features/feed/model';
+import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
+import { AskSheets } from '@/features/paid-ask/AskSheets';
+import { askButtonLabel, firstName, windowWords } from '@/features/paid-ask/model';
+import { useAsk } from '@/features/paid-ask/useAsk';
+import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { canvasNormalLineHeight, font, layout, radius, space, type, useWawu } from '@/theme';
 
 import { fetchProfile, prosKeys, type DirectoryProfile } from './api';
@@ -63,13 +70,33 @@ export const profileMetrics = {
 export type ProfileScreenProps = {
   id: string;
   onBack: () => void;
+  /** Where the question's wallet steps lead (Open your wallet, a PIN to set, Forgot PIN, add money). "Ask a question" is drawn only when given (R-47). */
+  pay?: FlowHandlers;
+  /** A question was paid: the thread (I4) opens. "Ask a question" is drawn only when this and `pay` are given. */
+  onOpenPaidThread?: (wawuId: string) => void;
+  /** False while another screen (Add money) is on top of this one, true when it is in front. The ask sheet asks its quote again on return (I6). */
+  focused?: boolean;
 };
 
+const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () => undefined, onForgotPin: () => undefined, onAddMoney: () => undefined };
+
 /** P2 and P3: one professional's profile. P3 when they are not taking messages. */
-export function ProfileScreen({ id, onBack }: ProfileScreenProps) {
+export function ProfileScreen({ id, onBack, pay, onOpenPaidThread, focused = true }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const profile = useQuery({ queryKey: prosKeys.profile(id), queryFn: () => fetchProfile(id) }, queryClient);
+  const asking = Boolean(pay && onOpenPaidThread);
+  const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who), focused);
+  // The price is the Hub's, in kobo; the shared terms read naira (a creator's `dmPrice`), so it is turned back into naira once, here.
+  const listed = profile.data ?? null;
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMe, enabled: asking && listed !== null, retry: false }, queryClient);
+  const own = listed !== null && me.data?.wawuUserId === listed.wawuId;
+  const terms = useAskTerms(
+    asking && listed && !own ? listed.wawuId : null,
+    asking && listed && !own
+      ? { dmEnabled: listed.dmEnabled, dmPrice: typeof listed.messagePriceKobo === 'number' ? listed.messagePriceKobo / 100 : null, dmResponseHours: listed.dmResponseHours }
+      : null,
+  );
   const [pulled, setPulled] = useState(false);
   const { refetch } = profile;
 
@@ -112,10 +139,36 @@ export function ProfileScreen({ id, onBack }: ProfileScreenProps) {
       );
     }
   } else {
+    const data = profile.data;
     body = (
       <>
         {profile.isRefetchError ? <RefreshFailed onRetry={() => void refetch()} testID="pro-refresh-failed" /> : null}
-        <ProfileBody profile={profile.data} />
+        <ProfileBody
+          profile={data}
+          ask={
+            !asking || own
+              ? { kind: 'unwired', closed: false }
+              : terms === null || me.isPending
+                ? { kind: 'waiting' }
+                : terms.kind === 'off'
+                  ? { kind: 'unwired', closed: true }
+                  : {
+                      kind: 'on',
+                      priceKobo: terms.priceKobo,
+                      windowHours: terms.windowHours,
+                      onPress: () =>
+                        ask.begin({
+                          wawuId: data.wawuId,
+                          name: data.name,
+                          avatarUrl: data.avatarUrl,
+                          hue: hueFor(data.wawuId),
+                          tick: hasProTick(data) ? 'pro' : undefined,
+                          priceKobo: terms.priceKobo,
+                          windowHours: terms.windowHours,
+                        }),
+                    }
+          }
+        />
       </>
     );
   }
@@ -131,11 +184,19 @@ export function ProfileScreen({ id, onBack }: ProfileScreenProps) {
       >
         {body}
       </ScrollView>
+      {pay && asking ? <AskSheets ask={ask} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} /> : null}
     </View>
   );
 }
 
-function ProfileBody({ profile }: { profile: DirectoryProfile }) {
+/**
+ * What the head of the page offers. `on`: the Hub says they take paid questions (P2's button). `waiting`: the Hub has not said yet,
+ * so neither button is drawn (no flash of one then the other). `unwired`: the route did not wire the ask sheet, or the person is
+ * looking at their own listing; the page says only what the listing says (P3 when the listing is off, nothing when it is on).
+ */
+type AskState = { kind: 'on'; priceKobo: number; windowHours: number | null; onPress: () => void } | { kind: 'waiting' } | { kind: 'unwired'; closed: boolean };
+
+function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskState }) {
   const { colors } = useWawu();
   const credential = credentialTitle(profile.credentialKind);
   const services = profile.services.filter((s) => s.trim() !== '');
@@ -158,8 +219,14 @@ function ProfileBody({ profile }: { profile: DirectoryProfile }) {
           </Text>
         </View>
       </View>
-      {/* P2's "Ask a question · price" and the reply promise under it are INBOX-10's (the paid message they open); P3's closed state is this task's. */}
-      {takesMessages(profile) ? null : (
+      {ask.kind === 'on' ? (
+        <View style={styles.stack} testID="pro-ask-block">
+          <Button testID="pro-ask" label={askButtonLabel(ask.priceKobo, 'Ask a question')} icon="MessageCircle" size="lg" full onPress={ask.onPress} />
+          <Text variant="body" tone="textMuted" style={styles.note} testID="pro-ask-promise">
+            {replyPromise(profile.name, ask.windowHours)}
+          </Text>
+        </View>
+      ) : ask.kind === 'waiting' || (ask.kind === 'unwired' && !ask.closed && takesMessages(profile)) ? null : (
         <View style={styles.stack} testID="pro-closed">
           <View
             accessible
@@ -222,6 +289,12 @@ function ProfileBody({ profile }: { profile: DirectoryProfile }) {
       </Card>
     </>
   );
+}
+
+/** P2's line under the button: "Funmi replies within 24 hours, or you're refunded automatically." The window is the Hub's. */
+function replyPromise(name: string, windowHours: number | null): string {
+  const who = firstName(name) || 'They';
+  return windowHours === null ? `If ${who === 'They' ? 'they do' : `${who} does`} not reply in time, you're refunded automatically.` : `${who} ${who === 'They' ? 'reply' : 'replies'} within ${windowWords(windowHours)}, or you're refunded automatically.`;
 }
 
 function ProfileSkeleton() {
