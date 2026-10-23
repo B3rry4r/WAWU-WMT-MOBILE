@@ -8,13 +8,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 11 | 0 | 0 | 0 |
+| review | 12 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
 - [SWEEP-VOICE](../tasks/SWEEP-VOICE.md) Voice sweep: the low findings of the Voice Intro (VOICE-01, VERIFY-02, VERIFY-03, FIX-95) (You)
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
@@ -192,7 +193,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -389,6 +389,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · BRAND-MAIL fix round · The verifier's FIX built (Sonnet builder, T1; WAWU ID `wmt/BRAND-MAIL` `603f09b`, backend `07a0ba7`, this record on mobile `wmt/BRAND-MAIL`; status review): the local script's login-alert pattern escapes the question mark again (`Who Made This\?`), the campaign logo alt says "Who Made This?", a stale comment fixed, the paid-consultation legal prompt names the assistant "Who Made This? Legal assistant" like the chat line (lead ruling; no spec pins it); the task file says four em-dashes and lists where.
 - 23 Oct 2026 · BRAND-MAIL · Built (Sonnet builder, T1, copy only; WAWU ID `wmt/BRAND-MAIL` `0a23dce` on `origin/main` `cdfa442`, backend `wmt/BRAND-MAIL` `ffe53ab` on `origin/main` `13e2753`, this record on mobile `wmt/BRAND-MAIL`; status verifying): every email a person receives names the product "Who Made This?" instead of WAWUAfrica (subjects, preheaders, text, page title, footer, header image alt) and the default sender is `Who Made This? <noreply@wawuafrica.com>`; no address, domain or link changed; DECISIONS R-76 added; five specs updated to the new words, one new `mail-brand.spec.ts`. Left: the CEO signature, "WAWU" alone, a dormant text message (see the task file).
 - 22 Oct 2026 · FLIX-01 · Built (Sonnet builder, T2; backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`) on `origin/main` `1955fd1`, mobile `wmt/FLIX-01`; status verifying): the Hub serves the Flixora catalog and a signed-in watch link through one seam (`MOVIE_PARTNER`: `off` default, `standin`; `flixora` is FLIX-02). Six routes under `/movies` read the Hub's own catalog copy (a sync job: `updatedSince`, a daily full pass); the first "Watch on Flixora" opens the person's partner account (R-75: agreement by `FLIXORA_TERMS_FROM` or `agreeToTerms`, a fresh link per tap never stored or logged, only sub, email, names and verified flag sent); four additive tables with a refusing rollback; the purge marks the link row. Protected routes 253/253; gates 0 fail. Real partner NOT RUN (FLIX-02). Records: SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, G-FLIX-1 to 3.
 - 22 Oct 2026 · FLIX-03 round 3 · The verifier's FIX built (Sonnet builder; mobile `wmt/FLIX-03`; status verifying): MV7 wraps "Most watched", MV12 is centred with the primary Try again, a title that has not premiered never offers Watch on Flixora (hero or page), MV11 draws search, MV9 pill stretches, a 409 draws the consent box, the hero Trailer needs a trailer. Three optional shared props (SHARED-CHANGES FLIX-03 #5 to #7), a test each; the changed pairs re-captured.
@@ -403,4 +404,3 @@ From `docs/LOG.md`, newest first.
 - 21 Oct 2026 · VERIFY-03 round 2 · The app shows `consent.line` exactly as the Hub serves it and sends it back, and reads the recording's shortest and longest seconds from the Hub (`sample.minSeconds`, `sample.maxSeconds`); contract regenerated from backend `wmt/FIX-95` `699b783` (SHARED-CHANGES VERIFY-03 #3); G-VERIFY-03-1 and -2 closed; `DATA-SAFETY.md` and `DATA-INVENTORY.md` declare the voice recording (OWNER SIGN-OFF on each line). Tests: verify, me and route suites 28 suites, 576 tests.
 - 21 Oct 2026 · VERIFY-03 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-03` on `origin/wmt/VERIFY-02` `97177664`, app only; status verifying): VF8 (`/voice-consent`, the board's consent line with the person's name, the Hub's line stored), VF9, VF9a, VF9b, VF9c (record up to 30 s with `expo-audio`, a take under 15 s refused, upload through presign and confirm, then the keyed try), VF10, VF10a (a turning ring, the Hub's own "No points were taken") and VF11 (the shared player with Bio and AI voice, Use this, Edit text, Re-record); VF7's Record my voice drawn; the microphone text and RECORD_AUDIO in `app.json`. Live on a local stack (consent, take, upload, try, poll, a real provider failure, the Hub's 402, a denied microphone). NOT RUN: a real phone and a real provider (V10); the profile header player (M1 and the others have none yet). Gaps G-VERIFY-03-1 to 5; SHARED-CHANGES VERIFY-03 #1, #2.
 - 20 Oct 2026 · VERIFY-02 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-02` on `origin/main` `025d8d58`, app only, no backend change; status verifying): VF3, VF3a, VF3b (`/hear-name`: the name said in the studio voice as it opens, "Not quite right?" opens the spelling, Play again, Save) and VF4, VF4a, VF4b (`/voice-intro`: the words with a count against the Hub's limit, off while empty or too long). "Hear it in my voice" goes to VF5 (no tier), Your tier (ended) or VF8 `/voice-consent` (VERIFY-03 registers it; merges together with VERIFY-03). Entries: Me's Voice Intro prompt, Your shop's Hear your name row. Gaps G-VERIFY-02-1 and -2; SHARED-CHANGES VERIFY-02 #1, #2, R1.
-- 21 Oct 2026 · FIX-95 · Built (Sonnet builder, T1; backend `wmt/FIX-95` `699b783` on `origin/main` `bb21578`; this record on mobile `wmt/FIX-95` from `origin/main` `025d8d58`; status verifying): the Hub serves `consent.line` as "I am {name}. I agree that Who Made This? may create an AI version of my voice for my intros." (the name from its record of the person), stores exactly that line and takes back only the line it served for that person; the Voice Intro view serves `sample.minSeconds` and `sample.maxSeconds` from two PROVISIONAL plan settings (`voice_intro.sample_min_seconds` 15, `voice_intro.sample_max_seconds` 30). Additive. Protected suite 253 tests, voice and plan-settings specs 73 tests, gates EXIT 0.
