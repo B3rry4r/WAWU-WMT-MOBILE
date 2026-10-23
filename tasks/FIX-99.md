@@ -7,7 +7,7 @@ order: -99
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -18,9 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 23 Oct 2026, fix round built (Sonnet builder, T2; status verifying): backend `wmt/FIX-99` has two new commits on `8d6d702`. (1) The verifier's high finding: `src/admin/auth/tests/admin-auth.contract.spec.ts` had one test that pinned the H3 defect ("that same WAWU ID REFRESH token still satisfies USER auth", expecting 403). It now expects 401 and its comment and title say the hole is closed (lead ruling; nothing else in that spec changed); the spec passes in band. (2) The prettier reflow of the `jwksUri` lines in `wawu-jwt.strategy.ts` is undone, so the fenced-file diff holds only the token-kind check (SHARED-CHANGES FIX-99 #1). (3) New `src/flixora/tests/flixora-genre-filter.contract.spec.ts`: a made-up title with Flixora's real genre value "Drama | Music | Thriller" goes through the adapter and the sync, is stored as Drama, Music, Thriller, and is listed by `GET /movies/browse?genre=Music` (the genre filter is on `/movies/browse`, not `GET /movies`); 5 of its tests fail on main, the admin-auth assertion fails on main. Checks (EXIT 0): tsc; the admin-auth, token-kind, live, movies, flixora genres, genre-filter and flixora adapter specs in band (7 suites, 121 tests); gates 0 fail; check_baseline. eslint (no fix) is clean on the new spec; the admin-auth spec and the strategy keep the 70 and 1 prettier errors they had on main. Earlier text, before the fix round:
-
-As of 23 Oct 2026, FIX (verifier, Sonnet, T2): one high finding, so back to building. Backend `wmt/FIX-99` `8d6d702` is right on H3, L5 and the Flix genres; WAWU ID `wmt/FIX-99` `3cd7256` is right on L2. The one thing to fix: `src/admin/auth/tests/admin-auth.contract.spec.ts` line 451 still pins the H3 hole ("that same WAWU ID REFRESH token still satisfies USER auth", expects 403) and now gets 401, so the full backend suite goes red in CI. Per the sweep rule, change that one assertion to 401 and reword its comment. U2 is not changed (lead ruling). Next: a builder fixes that assertion, then a quick re-check of that one spec.
+As of 23 Oct 2026, PASS (verifier re-check, Sonnet, T2): status review. Backend `wmt/FIX-99` `4bcacc3` (on `8d6d702`) and WAWU ID `wmt/FIX-99` `3cd7256` are ready to merge; the high finding of the first check is fixed and the strategy reflow is undone. U2 stays unchanged by the lead's ruling. Next: the lead merges; backend CI on `wmt/FIX-99` runs the full suite.
 
 ## Goal
 
@@ -69,4 +67,15 @@ Findings:
 4. **low, recorded.** GET /search's community rows (and search history) still count members other than the host (G-FIX-99-1), so one room can read one fewer in search than in its room view.
 
 Not findings: U2 is untouched (no voice file in the diff) as ruled; `GEMINI_MODEL` stays a server setting; a ten-digit number starting 7, 8 or 9 typed with no `+` (for example a foreign one) now reads as Nigerian, which is what L2 asks for.
+
+### Re-check of the fix round (backend `4bcacc3`, mobile `8696160e`)
+
+**Verdict: PASS** (no findings; the first check's high and low 2 and 3 are closed, low 4 stays the recorded G-FIX-99-1).
+
+| Check | Result | Evidence |
+|---|---|---|
+| Admin auth spec | passed | `git diff 8d6d702 4bcacc3` on the spec is 7 lines in one test: `it('refuses that same WAWU ID REFRESH token on USER auth too (FIX-99, H3: the hole is closed)')` now expects 401 and its comment says the hole is closed; no other test in the spec changed. Copied onto `origin/main` it fails (the refresh token is not refused there); on the branch the whole spec passes. |
+| Strategy diff | passed | Against `origin/main` the fenced file differs only by the `UnauthorizedException` import, `isAccessToken` and the `validate` check; the `jwksUri` lines are as on main. This matches SHARED-CHANGES FIX-99 #1 (unchanged by the round). eslint counts equal main's: strategy 1 error 0 warnings, admin auth spec 70 errors 1 warning on both (all existing prettier and no-unsafe findings). |
+| Genre filter | passed | `flixora-genre-filter.contract.spec.ts` runs the real Flixora adapter on a stand-in fetch, the sync into the test database, and the real `MoviesController`: "Drama \| Music \| Thriller" is stored as Drama, Music, Thriller; `GET /movies/browse?genre=Music` (and Drama, Thriller) lists it; `/movies/filters` lists single genres. On main 5 of 5 tests fail. |
+| Runs | passed | Backend `tsc --noEmit` EXIT 0. Specs in band (admin auth, token-kind, live x4, movies x2, flixora x3): 11 suites, 163 passed, 1 skipped (existing), EXIT 0. Gates 0 fail, 133 warn, 88 accepted, `check_baseline` EXIT 0. Mobile gates EXIT 0 (0 fail, 18 warn) and `check_tasks` EXIT 0. |
 
