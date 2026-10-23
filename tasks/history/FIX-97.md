@@ -50,3 +50,32 @@ Findings (none blocks the merge):
 - **Low (test gap)** `readSenderContact`: no spec pins the email pattern (`EMAIL`): an entity email such as `not-an-email` is refused today, but removing the test would not fail any spec.
 - **Not findings**: `createCounterparty` still gives a one-word holder name the same first and last name (unchanged from main, dev needs both); the DEV-RESULTS counts line still says "2 failed" (the two rows say PASSED after FIX-97).
 - **Owner/lead question, not ours**: dev takes no card in NGN (`error_acquiring_currency_not_supported`); funding a dev wallet needs Nuvion to enable it, or to name another way. Until then NUV-04 inflow, NUV-05, NUV-07 and NUV-08 stay NOT RUN.
+
+## Verifier report (second round: the funded dev run)
+
+Verifier: the same Sonnet agent that checked Part A (it built none of it), asked by the lead to run Part B with a new funding route. Backend `origin/main` `412bba2` (FIX-97 merged), a local Hub (`WALLET_PROVIDER=nuvion`, a network guard allowing only this machine and api.nuvion.dev, the mock WAWU ID), Nuvion DEV only. The Hub's fee settings were the verifier's own local values (`NUVION_FEE_BOOK_TRANSFER` 0, `NUVION_FEE_INFLOW` 0, `NUVION_FEE_BANK_PAYOUT` 2,500, then 50,000 once Nuvion's fee was read). Nuvion's webhook endpoint cannot reach this machine, so `entities.updated`, `accounts.created` and one `outflows.completed` were signed locally with a local secret (the Hub re-reads the real record from Nuvion each time).
+
+**Part A verdict changes to FIX: one high finding, found only because the wallet was funded.**
+
+| Step | Result | Evidence |
+|------|--------|----------|
+| Wallet opened through the Hub | passed | sign-up, `POST /money/wallet/open`, two uploads, the two signed deliveries; wallet `open` |
+| EUR account on the same entity | passed | 201, 01M5MHTEWQ9C61R42VZZ7JBJBY |
+| Open-banking funding session, EUR 1,000 cents, checkout opened in Chromium | passed | 201 01M5MHTRS76131PBFBYVX0Q7WY; Plaid Link sandbox (ING DE, "Go to your bank website", "Confirm payment"); `settled`, rail sepa; inflow fee 500 EUR cents |
+| FX quote EUR to NGN, then a book transfer to the wallet's `nuvion_ban` with `fx_quote_id` | passed: naira landed | quote 01M5MJ8JNB35HASD1QWZVM3KXJ (rate 1468.217951), transfer 01M5MJ8MFS7CG08D6NJHK5A98J `successful`, fee 0; wallet 587,287 kobo, the Hub's balance route read the same |
+| Fee quote through the Hub | passed | 50,000 Nuvion + 2,500 WAWU = 52,500 on a 100,000 kobo send (local config) |
+| Name check, bank 044, number ending 0031 | passed | 200 "Forrest Green" |
+| Bank send through the Hub, first try (config 2,500) | **FAILED** | 201 `failed`, "No money left your wallet"; Nuvion 422 on `POST /transfers`: `counterparty.address.state` and `counterparty.address.postal_code` required (01M5MJABG4WBBV51HMQC8YZ52C); balance unchanged |
+| Same send after the counterparty got a state and a postal code (PATCH, the only change) | passed | 201 `pending`, same key returned the same transfer, Nuvion transfer 01M5MJQE3QZJYHYPPMJQXY9SC7 `successful`, fee 50,000, Hub view `completed` after the locally signed `outflows.completed`, balance fell by 152,500 |
+| Move into WAWU's operational account as a paid DM holds money (R-19) | passed | `POST /money/payments` credit pack, 201 `completed`, same key same payment, Nuvion book transfer 01M5MJF73CR7AR9VQHWXKXPFPV fee 0 |
+| Book transfer to another person | passed, direct only | the Hub cannot record a second wallet on dev (one account number for all); direct by `nuvion_ban`, 10,000 kobo, `successful`, fee 0 (01M5MJN0Z5YHXXTF89Z5WVHDPM) |
+| Limit refusal | NOT RUN | none reachable: 1,000,000,000 and 100,000,000,000 kobo both answer `error_transfer_insufficient_funds` first |
+| Month's statement against the transfers | passed | five lines, amounts, fee and running balance equal the transfers; `transaction_id` is the transfer id on all five |
+| `npm run money:check` | differences, 2 mismatches | explained in DEV-RESULTS (NUV-08): the FX inflow and the direct book transfer are not in the ledger; and finding 2 below |
+| Dev fees in kobo | read | bank payout 50,000 (flat); book transfer 0; naira inflow by FX book transfer 0; EUR open-banking inflow 500 EUR cents on 1,000; NGN card inflow not measured |
+
+Findings:
+- **High (defect, in FIX-97's code)** `src/nuvion/areas/payouts.ts` `createCounterparty` and `readSenderContact`: the counterparty's address is `{line1, city, country}`; `POST /transfers` needs the counterparty's `state_or_province` and `postal_code` as well, so every bank send from a funded dev wallet fails. Repro: fund a wallet, `POST /money/transfers/bank` to bank 044 and the account ending 0031: the send comes back `failed`. Fix: read `address.state` and `address.postal_code` from the sender's entity (dev holds both), stop the send before any counterparty when either is missing, as for the email, and make both stand-ins (`test/nuvion/payouts-standin.ts`, `scripts/dev/nuvion-standin.cjs`) refuse a transfer whose counterparty lacks them (they answer 201 today, which is why every spec and the stack walk passed).
+- **Medium (outside FIX-97's diff, lead to rule: NUV-05/06 fee give-back against the NUV-08 sweep)** after a refused bank send the Hub marks WAWU's fee-collect ledger row `reversed` when it gives the fee back, while Nuvion shows that fee transfer `successful` (the give-back is a separate book transfer); the sweep then writes `webhook sighting: status reversed vs completed` on row dd9b8c36, and `money:check` reports 2,500 kobo as a mismatch until someone settles it. The money itself is right (balance unchanged).
+- **Low** the stack's default `STACK_NUVION_FEE_BANK` is 2,500 kobo; Nuvion's dev fee is 50,000. The production `NUVION_FEE_BANK_PAYOUT` is the owner's setting: a quote that understates Nuvion's fee makes the Hub's totals disagree with Nuvion's record.
+- **Not findings**: Nuvion dev has no NGN card route (`error_acquiring_currency_not_supported`, recorded last round); funding works by EUR session plus FX (written into DEV-RESULTS facts for the next run).

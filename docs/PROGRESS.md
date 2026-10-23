@@ -8,15 +8,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 12 | 0 | 0 | 0 |
+| review | 11 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [SWEEP-VOICE](../tasks/SWEEP-VOICE.md) Voice sweep: the low findings of the Voice Intro (VOICE-01, VERIFY-02, VERIFY-03, FIX-95) (You)
-- [FIX-97](../tasks/FIX-97.md) The Nuvion name check and bank-send set-up use the shapes Nuvion DEV answers (You)
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
@@ -193,6 +192,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [FIX-97](../tasks/FIX-97.md) The Nuvion name check and bank-send set-up use the shapes Nuvion DEV answers (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
