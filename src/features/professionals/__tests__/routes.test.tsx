@@ -45,6 +45,7 @@ const answers: Record<string, { status: number; body: unknown }> = {
   'GET /api/hub/users/me': ok({ wawuUserId: 'me', accountType: 'user' }),
   'GET /api/hub/paid-dm/creators/w1/availability': ok({ paused: false, pausedUntil: null }),
 };
+const original = { ...answers };
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
@@ -79,6 +80,7 @@ beforeEach(() => {
   mockRouter.canGoBack.mockReturnValue(true);
   mockParams = {};
   queryClient.clear();
+  Object.assign(answers, original);
 });
 
 afterEach(async () => {
@@ -169,6 +171,24 @@ describe('the professionals routes', () => {
     await rtl.act(async () => rtl.fireEvent.press(button));
     expect(await rtl.screen.findByTestId('ask-sheet')).toBeTruthy();
     expect(rtl.screen.getByTestId('ask-title')).toHaveTextContent('Ask Funmi');
+  });
+
+  // FIX-101 (FIX-100 L-3): a listing whose category is outside the taxonomy comes with no field, and the page crashed reading its label.
+  it('P2: a listing whose category is outside the taxonomy opens, with the category as the Hub gives it', async () => {
+    const outside = { ...FUNMI, category: 'accounting', field: null };
+    answers['GET /api/hub/professionals/directory/p1'] = ok({ ...outside, about: 'I help creators file taxes.', issuingBody: 'ICAN', credentialKind: 'licence' });
+    mockParams = { id: 'p1' };
+    await rtl.render(wrap(<ProfileRoute />));
+    expect(await rtl.screen.findByTestId('pro-field')).toHaveTextContent('accounting');
+    expect(rtl.screen.getByTestId('pro-name')).toHaveTextContent('Funmi Adeyemi');
+  });
+
+  it('P1: a row whose category is outside the taxonomy is drawn with the category as the Hub gives it', async () => {
+    const outside = { ...FUNMI, category: 'accounting', field: null };
+    answers['GET /api/hub/professionals/directory?page=1&perPage=20'] = { status: 200, body: { statusCode: 200, message: 'OK', data: [outside], pagination: { currentPage: 1, nextPage: null, perPage: 20, total: 1 } } };
+    await rtl.render(wrap(<DirectoryRoute />));
+    expect(await rtl.screen.findByText('Funmi Adeyemi')).toBeTruthy();
+    expect(rtl.screen.getByText('accounting')).toBeTruthy();
   });
 
   it('P3: a professional the Hub has paused shows Not taking messages, with no Ask a question', async () => {

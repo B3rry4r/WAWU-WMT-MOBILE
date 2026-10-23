@@ -156,10 +156,20 @@ export function minutesAdjective(label: string | null | undefined): string | nul
 }
 
 /** The name on a post: the person's name from WAWU ID, else their handle. */
-export function creatorName(creator: FeedCreator | null | undefined): string | null {
+export function creatorName(creator: Pick<FeedCreator, 'displayName' | 'handle'> | null | undefined): string | null {
   if (!creator) return null;
   return creator.displayName?.trim() || creator.handle?.trim() || null;
 }
+
+/** What a piece's page calls a creator who has neither a name nor a handle (every new creator starts with no name). */
+export const UNNAMED_CREATOR = 'Someone';
+
+/**
+ * A person the Hub names with a plain name and handle (a chat's other person, a recipient): the name, else the handle, else
+ * "Someone", as the feed and a piece's page name a creator. A person with no name is a valid person, never an unreadable one.
+ */
+export const nameOrSomeone = (name: string | null | undefined, handle: string | null | undefined): string =>
+  creatorName({ displayName: name ?? null, handle: handle ?? null }) ?? UNNAMED_CREATOR;
 
 /** Which tick follows the name: a creator tick (purple), else a professional tick (blue). */
 export function tickKind(creator: FeedCreator | null | undefined): 'creator' | 'pro' | null {

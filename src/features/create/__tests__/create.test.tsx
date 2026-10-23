@@ -158,12 +158,24 @@ describe('M19 · Create', () => {
       expect(calls.event).toHaveBeenCalledTimes(1);
     });
 
-    it('says "Needs an active tier" under Event, as drawn, and leaves the old words out', async () => {
-      hub.answers[`GET ${TIER}`] = ok(running('active'));
-      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+    it('says "Needs an active tier" under Event only for a person with none, and leaves the old words out', async () => {
+      hub.answers[`GET ${TIER}`] = ok(none);
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, false));
       await open();
       expect(await screen.findByText('Needs an active tier')).toBeTruthy();
       expect(screen.queryByText(/verified tick/)).toBeNull();
+    });
+
+    // FIX-101 L-A: the test that stood here pinned "Needs an active tier" under Event for a person who holds a tier; it is this one now.
+    it.each(['active', 'ending'] as const)('leaves "Needs an active tier" off the Event tile while a %s tier is held, and the tile still opens the host form', async (state) => {
+      hub.answers[`GET ${TIER}`] = ok(running(state));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
+      const calls = await open();
+      expect(await screen.findByTestId('create-products')).toBeTruthy();
+      expect(screen.queryByText('Needs an active tier')).toBeNull();
+      expect(screen.getByTestId('create-tile-event').props.accessibilityLabel).toBe('Event');
+      await fireEvent.press(screen.getByTestId('create-tile-event'));
+      expect(calls.event).toHaveBeenCalledTimes(1);
     });
   });
 

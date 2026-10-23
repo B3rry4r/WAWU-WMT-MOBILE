@@ -229,7 +229,7 @@ export function AskSheets({
         <PinSheet
           visible={flow.pinOpen}
           onClose={flow.closePin}
-          approval={{ totalKobo: quote.payment.totalKobo, payee: target.name ?? 'this creator' }}
+          approval={{ totalKobo: quote.payment.totalKobo, payee: target.name?.trim() || 'this creator' }}
           onSubmit={flow.submitPin}
           onForgotPin={() => {
             flow.closePin();

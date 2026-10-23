@@ -11,7 +11,7 @@ import { formatNaira } from '@/components/pay-sheet';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
-import { compactCount } from '@/features/feed/model';
+import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, type Thread } from './model';
@@ -83,7 +83,7 @@ export function MakerRow({
       <View style={styles.makerWords}>
         <View style={styles.nameLine}>
           <Text variant="body" numberOfLines={1} style={[font(600), styles.makerName]}>
-            {name ?? 'Someone'}
+            {name ?? UNNAMED_CREATOR}
           </Text>
           {tick ? <VerifiedTick kind={tick} size={m.tick} /> : null}
         </View>

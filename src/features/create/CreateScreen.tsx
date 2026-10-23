@@ -22,7 +22,7 @@ const tileMetrics = { corner: radius.card, pad: space.lg, gap: space.md, icon: 4
 /** M27 draws the list it disables at 45% opacity. */
 const FULL_FADE = 0.45;
 
-type Tile = { id: string; icon: IconName; title: string; sub: string; onPress: () => void; disabled?: boolean };
+type Tile = { id: string; icon: IconName; title: string; /** Left out when the tile has nothing to add to its name. */ sub?: string; onPress: () => void; disabled?: boolean };
 
 export type CreateScreenProps = {
   onClose: () => void;
@@ -58,7 +58,8 @@ export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onServi
   const atLimit = Boolean(onProductsFull) && running && tier.data !== undefined && tier.data.productsAllowed > 0 && tier.data.productsUsed >= tier.data.productsAllowed;
   const tiles: Tile[] = [
     { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: atLimit && onProductsFull ? onProductsFull : onContent, disabled: full && !atLimit },
-    { id: 'event', icon: 'CalendarDays', title: 'Event', sub: 'Needs an active tier', onPress: onEvent },
+    // "Needs an active tier" is M19's note for a person with none: once a tier is held (the state the meter below reads) the note is gone.
+    { id: 'event', icon: 'CalendarDays', title: 'Event', sub: running ? undefined : 'Needs an active tier', onPress: onEvent },
     ...(onCommunity ? [{ id: 'community', icon: 'Users' as const, title: 'Community', sub: 'A room your people talk in', onPress: onCommunity }] : []),
     { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
   ];
@@ -112,7 +113,7 @@ function HubTile({ tile }: { tile: Tile }) {
     <Pressable
       testID={`create-tile-${tile.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`${tile.title}, ${tile.sub}`}
+      accessibilityLabel={tile.sub ? `${tile.title}, ${tile.sub}` : tile.title}
       accessibilityState={{ disabled: tile.disabled ?? false }}
       disabled={tile.disabled}
       onPress={tile.onPress}
@@ -132,9 +133,11 @@ function HubTile({ tile }: { tile: Tile }) {
         <Text variant="body" style={[font(600), styles.tileTitle]}>
           {tile.title}
         </Text>
-        <Text variant="body" tone="textMuted" style={styles.tileSub}>
-          {tile.sub}
-        </Text>
+        {tile.sub ? (
+          <Text variant="body" tone="textMuted" style={styles.tileSub}>
+            {tile.sub}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );

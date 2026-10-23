@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { queryClient } from '@/api/query';
 import { Button, IconButton } from '@/components/Button';
 import { FilterChips, type ChipItem } from '@/components/FilterChips';
 import { Icon } from '@/components/icon';
 import { ScreenFrame } from '@/components/ScreenFrame';
-import { Skeleton } from '@/components/Skeleton';
+import { LoadingView } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
@@ -31,7 +31,7 @@ export type MoviesScreenProps = {
   onTrailer: (id: string) => void;
   /** A genre chip or a rail's See all: MV6 with that browse. */
   onBrowse: (filter: Partial<BrowseFilter>) => void;
-  /** A tab in the bar under the screen (MV1, MV11 and MV12 draw it, Explore lit): leaves for that tab by its route name. */
+  /** A tab in the bar under the screen (MV1, the wait and MV12 draw it, Explore lit): leaves for that tab by its route name. */
   onOpenTab: (route: string) => void;
   /** The time "not premiered yet" is told against. Left out, now. */
   now?: Date;
@@ -87,28 +87,24 @@ function Hero({ movie, now, onWatch, onTrailer }: { movie: MovieCard; now: Date;
   );
 }
 
-/** MV11: the shapes of MV1 while the Hub answers. */
+/**
+ * The wait on a cold open: the title and a spinner, and nothing else. MV11's catalog shapes (a hero, chips, three posters) and the
+ * Search button promise a catalog the Hub may not be serving (movies off, or not live yet), so they are not drawn until the Hub has
+ * said movies are on.
+ */
 export function MoviesLoading() {
+  const { colors } = useWawu();
   return (
-    <View testID="movies-loading" accessibilityLabel="Loading" style={styles.loading}>
-      <Skeleton height={h.height} radius={h.radius} />
-      <View style={styles.loadingChips}>
-        <Skeleton width={64} height={36} radius={radius.chip} />
-        <Skeleton width={80} height={36} radius={radius.chip} />
-        <Skeleton width={72} height={36} radius={radius.chip} />
+    <LoadingView testID="movies-loading" label="Loading movies">
+      <View style={styles.waiting}>
+        <ActivityIndicator color={colors.accentFg} />
       </View>
-      <Skeleton width={140} height={16} radius={6} />
-      <View style={styles.loadingRow}>
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} width={posterMetrics.mvRailWidth} height={Math.round(posterMetrics.mvRailWidth * posterMetrics.ratio)} radius={posterMetrics.radius} />
-        ))}
-      </View>
-    </View>
+    </LoadingView>
   );
 }
 
 /**
- * MV1 · Flix movies, with MV11 while it loads and MV12 when the Hub cannot answer. The hero, a genre row and the Hub's rails
+ * MV1 · Flix movies, with a plain wait while it loads and MV12 when the Hub cannot answer. The hero, a genre row and the Hub's rails
  * (New on Flixora, Most watched, Top rated, Premiering soon: only the ones that hold titles), all from `GET /movies`; the genres
  * from `GET /movies/filters`. Nothing here is a sample: a title, poster, rating or date comes from Flixora through the Hub.
  */
@@ -169,7 +165,7 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
         title="Flix movies"
         gap={h.sectionGap}
         onBack={onBack}
-        right={data || home.isPending ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
+        right={data ? <IconButton icon="Search" label="Search movies" onPress={onSearch} testID="movies-search" /> : undefined}
       >
         {body}
       </ScreenFrame>
@@ -211,7 +207,5 @@ const styles = StyleSheet.create({
   heroButtons: { flexDirection: 'row', gap: h.buttonsGap },
   bleed: { marginHorizontal: -layout.gutter },
   section: { gap: space.md },
-  loading: { gap: h.sectionGap },
-  loadingChips: { flexDirection: 'row', gap: space.sm },
-  loadingRow: { flexDirection: 'row', gap: posterMetrics.railGap },
+  waiting: { paddingVertical: space.xl, alignItems: 'center' },
 });

@@ -22,7 +22,7 @@ import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { canvasNormalLineHeight, font, layout, radius, space, type, useWawu } from '@/theme';
 
 import { fetchProfile, prosKeys, type DirectoryProfile } from './api';
-import { credentialLine, credentialTitle, hasProTick, takesMessages } from './model';
+import { credentialLine, credentialTitle, fieldLabelOf, hasProTick, takesMessages } from './model';
 import { ProsNav, RefreshFailed } from './parts';
 
 /**
@@ -215,7 +215,7 @@ function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskStat
             {profile.headline}
           </Text>
           <Text variant="body" tone="accentFg" style={styles.field} testID="pro-field">
-            {profile.field.label}
+            {fieldLabelOf(profile)}
           </Text>
         </View>
       </View>

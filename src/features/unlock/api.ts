@@ -19,10 +19,13 @@ const STATUSES: readonly Unlock['status'][] = ['pending', 'failed', 'reversed', 
 
 export const unlockKey = (contentId: string, paymentId: string) => ['money', 'unlock', 'wallet', contentId, paymentId] as const;
 
-/** A quote the sheet can draw and the payment can carry: the piece, its creator and a readable payment quote. */
+/**
+ * A quote the sheet can draw and the payment can carry: the piece, its creator and a readable payment quote. A creator with no display
+ * name is still a valid quote (every new creator starts without one): `unlockPayee` gives the name the sheet draws.
+ */
 export function readUnlockQuote(value: unknown): UnlockQuote {
   const q = value as Partial<UnlockQuote> | null;
-  if (!q || typeof q !== 'object' || !filled(q.contentId) || !filled(q.title) || !q.creator || !filled(q.creator.displayName) || !isKobo(q.priceKobo)) {
+  if (!q || typeof q !== 'object' || !filled(q.contentId) || !filled(q.title) || !q.creator || typeof q.creator !== 'object' || !isKobo(q.priceKobo)) {
     throw unreadable('price');
   }
   return { contentId: q.contentId, title: q.title, creator: q.creator, priceKobo: q.priceKobo, payment: readPaymentQuote(q.payment) };

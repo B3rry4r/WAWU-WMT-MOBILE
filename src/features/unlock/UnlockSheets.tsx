@@ -16,7 +16,7 @@ import { paymentReference } from '@/features/support/api';
 import { font, layout, space, text } from '@/theme';
 import { ICON_STROKE } from '@/components/icon';
 
-import { openIcon, openingLine, openLabel, PRICE_MOVED_TITLE, sheetSubtitle, tickOf, unlockedLine, WALLET_NAME } from './model';
+import { openIcon, openingLine, openLabel, PRICE_MOVED_TITLE, sheetSubtitle, tickOf, unlockedLine, unlockPayee, WALLET_NAME } from './model';
 import type { UnlockState } from './useUnlock';
 
 /** H16's and H18's round mark: 72 across, its glyph stroked at 2.4 (design/_gen/home.js lines 138 and 140). */
@@ -113,7 +113,7 @@ export function UnlockSheets({
           tryAgain: true,
         } as const)
       : flow.status;
-  const payee = quote.creator.displayName;
+  const payee = unlockPayee(quote.creator);
   return (
     <>
       <PaySheet

@@ -70,6 +70,8 @@ const hub = {
   payments: 0,
   wrongFirst: false,
   quoteNoWallet: false,
+  /** FIX-101 H-A: the creator has no display name (every new creator starts without one) and no handle. */
+  nameless: false as false | 'none' | 'handle',
   reads: 0,
   /** What POST /support/thread was sent (SUPPORT-01), and whether the Hub refuses it. */
   support: [] as Record<string, unknown>[],
@@ -82,7 +84,7 @@ const hub = {
 const quoteView = () => ({
   contentId: PIECE,
   title: 'How I built a ₦2M a month agency',
-  creator: { wawuUserId: CREATOR, displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, tick: 'creator' },
+  creator: { wawuUserId: CREATOR, displayName: hub.nameless ? '' : 'Chidi Eze', handle: hub.nameless === 'none' ? null : 'chidi', avatarUrl: null, tick: 'creator' },
   priceKobo: PRICE,
   payment: {
     kind: 'content_unlock',
@@ -237,7 +239,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { kind: 'video', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
+  Object.assign(hub, { kind: 'video', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
   mockPush.mockClear();
 });
 
@@ -282,6 +284,28 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(screen.getByLabelText('2,523 naira 25 kobo')).toBeTruthy();
     expect(screen.getByText('Pay from wallet')).toBeTruthy();
     expect(screen.queryByText(/Fintava|Forever/)).toBeNull();
+  });
+
+  it('FIX-101 H-A: a creator with no display name still gets the sheet, the PIN and the unlock: the Hub\'s quote is never refused for a name', async () => {
+    hub.nameless = 'none';
+    const screen = await openSheet();
+    expect(hub.quotes).toBe(1);
+    expect(screen.getByLabelText('2,523 naira 25 kobo')).toBeTruthy();
+    // The name the piece's page gives a creator with neither a name nor a handle.
+    expect(screen.getByText('Someone')).toBeTruthy();
+    await rtl.fireEvent.press(await unlockButton());
+    expect(await screen.findByText('Approve ₦2,523.25 to Someone')).toBeTruthy();
+    await enterPin('1234');
+    expect(await screen.findByText('Unlocked')).toBeTruthy();
+    expect(hub.payments).toBe(1);
+  });
+
+  it('FIX-101 H-A: a creator with no display name but a handle is named by the handle, as the feed names them', async () => {
+    hub.nameless = 'handle';
+    const screen = await openSheet();
+    expect(screen.getByText('chidi')).toBeTruthy();
+    await rtl.fireEvent.press(await unlockButton());
+    expect(await screen.findByText('Approve ₦2,523.25 to chidi')).toBeTruthy();
   });
 
   it('the offer bar starts nothing when the feed has nowhere to lead (R-47)', async () => {

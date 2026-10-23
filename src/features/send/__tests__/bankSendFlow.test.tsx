@@ -51,6 +51,8 @@ const hub = {
   stored: null as null | TransferShape,
   reversalReady: true,
   savedPosts: [] as Record<string, unknown>[],
+  /** FIX-101 M-A: while set, POST /money/transfers/bank waits for it before answering (a Hub that takes its time). */
+  hold: null as null | Promise<void>,
 };
 
 const FEE_PROVIDER = 4000;
@@ -123,6 +125,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const pin = request.headers.get('x-transaction-pin');
     const key = request.headers.get('idempotency-key') ?? '';
     hub.sends.push({ pin, key, body });
+    if (hub.hold) await hub.hold;
     if (hub.created[key]) return json(201, { statusCode: 201, message: 'Created', data: hub.created[key] });
     if (hub.wrongFirst && hub.sends.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
     if (hub.mode === 'no_answer' && hub.sends.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
@@ -246,6 +249,7 @@ beforeEach(() => {
     stored: null,
     reversalReady: true,
     savedPosts: [],
+    hold: null,
   });
   (require('../intent') as { forgetIntentsInMemory: () => void }).forgetIntentsInMemory();
   queryClient.clear();
@@ -469,6 +473,40 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     expect(hub.sends).toHaveLength(2);
     expect(hub.sends[0].key).toBe(hub.sends[1].key);
     expect(hub.payments).toBe(1);
+  });
+
+  it('FIX-101 M-A: while the Hub is still working on the send, the review says nothing about "no answer" and the PIN sheet keeps its checking state; the money is one payment', async () => {
+    let release: () => void = () => undefined;
+    hub.hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await toReview();
+    await pay();
+    await waitFor(() => expect(hub.sends).toHaveLength(1));
+    // The clock is the router library's fake one: move it well past the time an unanswered request would take to show its line.
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect(screen.queryByTestId('send-review-retry')).toBeNull();
+    expect(screen.queryByText(/Your last try got no answer/)).toBeNull();
+    expect(screen.queryByText('Still confirming')).toBeNull();
+    expect(screen.getByLabelText('Checking your PIN')).toBeTruthy();
+    await act(async () => {
+      hub.hold = null;
+      release();
+    });
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+    expect(hub.payments).toBe(1);
+  });
+
+  it('FIX-101 M-A: a request the Hub truly did not answer says so, and only then', async () => {
+    hub.mode = 'no_answer';
+    await toReview();
+    await pay();
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+    expect(screen.getByTestId('send-review-retry')).toBeTruthy();
+    expect(screen.getByText(/Your last try got no answer/)).toBeTruthy();
   });
 
   it('an answer lost on the way, then a retry, sends the SAME request: one debit and one receipt', async () => {
