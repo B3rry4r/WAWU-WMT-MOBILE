@@ -7,7 +7,7 @@ order: -113
 priority: launch
 repo: all
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: [R-37, R-69, R-72, R-76]
 passes: [V1, V3]
@@ -17,13 +17,17 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, verifying: built by a Sonnet builder (T1, copy only). No PR.
-- **Branches:** WAWU ID `wmt/BRAND-MAIL` `0a23dce` on `origin/main` `cdfa442`; backend `wmt/BRAND-MAIL` `ffe53ab` on `origin/main` `13e2753`; mobile `wmt/BRAND-MAIL` (this file, DECISIONS R-76, the records) on `origin/main` `b1a460f3`.
-- **Rows:** 12 below, each with its before and after. Only the product name changed: no address, domain or link moved (the sender stays `noreply@wawuafrica.com`, the header image and the links stay on `wawuafrica.com`).
-- **Specs updated to the new words (the ruling):** WAWU ID `src/auth/data-export-email.spec.ts` (1 subject), `src/auth/pin-reset-code-email.spec.ts` (2 subjects), `test/phone-signup.local.mjs` (1 subject pattern); backend `src/admin/notifications/email/tests/email-parts.spec.ts` and `email-campaign.contract.spec.ts` (the default sender). New: WAWU ID `src/mail/mail-brand.spec.ts` (3 cases; fails 2 of 3 on the old `mail.service.ts`).
-- **Left, with the reason:** see "Left as they are" below.
-- **Live value:** WAWU ID's `MAIL_FROM` and the Hub's `EMAIL_CAMPAIGN_FROM` on the servers are settings the lead changes with the owner; the code defaults and `.env.example` now say `Who Made This? <noreply@wawuafrica.com>`.
-- **Next:** the lead merges the three branches together; a verifier reads the diff and runs the mail specs.
+As of 23 Oct 2026, building: a Sonnet verifier (T1) checked all three branches and found one medium; the verdict is FIX. No PR.
+- **Branches checked:** WAWU ID `wmt/BRAND-MAIL` `0a23dce` on `origin/main` `cdfa442`; backend `wmt/BRAND-MAIL` `ffe53ab` on `13e2753` (its own diff only); mobile `wmt/BRAND-MAIL` (this file and the records).
+- **Passed:** only names changed (no address, domain, link, template variable or setting moved; the one sender change is the display name); all 13 WAWU ID emails and the Hub's campaign email say "Who Made This?" with the question mark, no em-dash, escapes correct; `Who Made This? <noreply@wawuafrica.com>` and the old `WAWUAfrica <noreply@wawuafrica.com>` both give a valid From with that exact address; `mail-brand.spec.ts` fails 2 of 3 on `origin/main`'s `mail.service.ts` and passes as built; protected routes 253/253 (the base lock); gates 0 fail.
+- **FIX, medium (1):** WAWU ID `test/phone-signup.local.mjs:448`. The new pattern `/subject="(?!Your Who Made This? verification)/` leaves the `?` as a regex quantifier, so the lookahead never matches the real subject "Your Who Made This? verification code" and the assertion "and still gets its login alert" passes on the verification-code line alone (the old pattern excluded it). That weakens an assertion the ruling allowed to change by words only. Repro: `/subject="(?!Your Who Made This? verification)/.test('[mail skipped] to=x subject="Your Who Made This? verification code" code=1')` is true; with `\?` it is false and the login-alert line still passes. Fix: escape the `?`; nothing else.
+- **Low (for SWEEP-VOICE or the lead, not another round):**
+  - Backend `src/admin/notifications/email/email-render.ts:187`: the campaign logo alt is "Who Made This" without the question mark (R-69); it was not touched by this task.
+  - Rows and report: the task says "the five" em-dashes became punctuation; the diff has four (Ditto invite once, Set your password three times), and the Set your password and Ditto rows do not list those four sentence edits.
+  - WAWU ID `src/mail/mail.service.ts:374`: a comment still reads "Welcome to WAWUAfrica" (a comment only).
+  - Backend `src/legal-intake/assistant/legal-assistant-prompt.ts:66` still says "the WAWU Legal assistant in the Who Made This app" (bare WAWU, ruled to stay) while the paid-consultation chat now says "Who Made This? Legal assistant": unclear whether the lead wants one name.
+- **For the lead at release:** the campaign relay always sends from WAWU ID's `MAIL_FROM` (the Hub's `EMAIL_CAMPAIGN_FROM` only applies to a Hub with its own `RESEND_API_KEY`), so the live setting to change is WAWU ID's `MAIL_FROM`. NOT RUN: a real send (Resend's own acceptance of a "?" in the display name), forbidden here.
+- **Next:** a builder fixes the one regex (WAWU ID `wmt/BRAND-MAIL`); the verifier then re-checks that line, reruns the local test file's assertion and the mail specs, and sets `review`.
 
 ## Read first
 
@@ -71,16 +75,9 @@ WAWU ID's mail (`src/mail/mail.service.ts`: the shared layout and every template
 - **Comments and internal text:** code comments, the admin guard's `WAWUAfrica-Dashboard` (a repo name), `wawuafricaAppUserId` and `WAWUAFRICA_API_URL` (field and setting names), the lawyers' brief instruction "lawyers at WAWUAfrica, a Nigerian legal service" (the company, read by no person), `prisma/seed.ts` sample copy and the old catalogue migrations (never edited), and test fixtures that use "WAWU Africa" as an employer.
 - **The header image** (`email-header.png`, served from `wawuafrica.com`): a picture, not copy. Replacing it is the owner's artwork and a deploy; its alt text now says Who Made This?.
 
-## Builder report
+## History
 
-- **WAWU ID:** `src/mail/mail.service.ts`, `src/mail/mail-brand.spec.ts` (new), `src/auth/data-export-email.spec.ts`, `src/auth/pin-reset-code-email.spec.ts`, `test/phone-signup.local.mjs`, `.env.example`.
-- **Backend:** `src/admin/notifications/email/email-config.ts`, `src/legal-intake/legal-chat.service.ts`, two email specs, `.env.example`. No schema, migration, route or protected route changed.
-- **Mobile:** this file, `DECISIONS.md` (R-76), `tasks/INDEX.md` and `docs/PROGRESS.md` (check_tasks --write), `docs/LOG.md`.
-- **Test setup:** database `brandmail_hub_test` (migrated and seeded, dropped at the end); no server was started and no port used; the mail specs run against a local stand-in for Resend on a random local port.
-
-## Verifier report
-
-_Not yet verified._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/BRAND-MAIL.md](history/BRAND-MAIL.md).
 
 ## Owner sign-off
 
