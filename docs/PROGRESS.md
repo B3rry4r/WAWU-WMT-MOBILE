@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 11 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 12 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -20,6 +20,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
 - [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
+- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 - [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
@@ -83,7 +84,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-13](../tasks/HOME-13.md) Tip a creator (You)
 - [LEGAL-06](../tasks/LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price (You)
 - [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
-- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
 - [HOME-12](../tasks/HOME-12.md) Unlock from the feed (You)
 - [FIX-54](../tasks/FIX-54.md) A bank send on Nuvion shows its true outcome (You)
 - [SCHOOLS-06](../tasks/SCHOOLS-06.md) Enrol and pay, class full (You)
