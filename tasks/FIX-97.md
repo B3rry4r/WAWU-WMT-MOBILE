@@ -7,7 +7,7 @@ order: -97
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: review
 depends_on: []
 decisions: [R-39]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 23 Oct 2026, building (a fix round): FIX-97 is merged (backend `origin/main` `412bba2`), and the verifier's funded dev run found a high defect in it. Round 1 and 2 reports and both verifier reports: [history/FIX-97.md](history/FIX-97.md).
+As of 23 Oct 2026, review (the transfer's state and postal code gap is FIX-98): FIX-97 is merged (backend `origin/main` `412bba2`), and the verifier's funded dev run found a high defect in it. Round 1 and 2 reports and both verifier reports: [history/FIX-97.md](history/FIX-97.md).
 
 - **Open, high (the fix round):** a bank send from a funded dev wallet fails. The counterparty's address is `{line1, city, country}`, and Nuvion's `POST /transfers` needs `state_or_province` and `postal_code` on it as well: 422 `counterparty.address.state` and `counterparty.address.postal_code` required (request 01M5MJABG4WBBV51HMQC8YZ52C). The sender's entity holds both (`address.state`, `address.postal_code`). Fix in `src/nuvion/areas/payouts.ts` (`createCounterparty`, `readSenderContact`): read both, stop the send before any counterparty when either is missing (as for the email), and make `test/nuvion/payouts-standin.ts` and `scripts/dev/nuvion-standin.cjs` refuse a transfer whose counterparty lacks them, with a spec that is red before. Proven the only gap: after a PATCH adding the two fields to the Hub's counterparty, the Hub's send ran end to end (201 pending, Nuvion transfer `successful`, fee 50,000, Hub `completed`, balance fell by 152,500).
 - **Open, medium, to rule (not FIX-97's diff):** after a refused bank send the fee give-back leaves WAWU's fee-collect ledger row `reversed` while Nuvion shows that transfer `successful`; the NUV-08 sweep flags it and `money:check` stays at `differences` (2,500 kobo, row dd9b8c36).
@@ -47,7 +47,7 @@ A person sees the holder's name for a Nigerian account, and a bank send gets as 
 - [x] A counterparty carries the sending side's own email and address, never made up; either missing stops the send before any counterparty or transfer (spec; dev: counterparty 201, payment detail 201, insufficient funds).
 - [x] `tsc`, eslint, the nuvion and contract specs, `test:protected` (base lock), the gates and the baseline check pass.
 - [x] The local stack's stand-in and the lookup check script answer and send as dev does (stack walk above).
-- [ ] The counterparty also carries the sender's state and postal code, and a bank send from a funded dev wallet reaches Nuvion's transfer (spec red before; the stand-ins refuse a transfer without them).
+- [ ] (moved to FIX-98) The counterparty also carries the sender's state and postal code, and a bank send from a funded dev wallet reaches Nuvion's transfer (spec red before; the stand-ins refuse a transfer without them).
 - [ ] The full backend run (CI) is green on the head.
 
 ## History
