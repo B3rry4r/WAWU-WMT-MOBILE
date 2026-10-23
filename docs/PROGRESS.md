@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 12 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -30,6 +30,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-98](../tasks/FIX-98.md) A bank send reaches Nuvion's transfer, and a refused send leaves the ledger agreeing with Nuvion (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -193,7 +194,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-98](../tasks/FIX-98.md) A bank send reaches Nuvion's transfer, and a refused send leaves the ledger agreeing with Nuvion (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -390,6 +390,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · FIX-98 round 2 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `29f3cf6`, mobile `wmt/FIX-98`; status verifying): the FIX-85 path (a send reversed before its fee-back lands) leaves no ledger discrepancy (the sender's fee row is paired with Nuvion's successful fee transfer), a kept payee without a state or postal code is not used, and the history names the fee rows "WAWU's fee" and "WAWU's fee given back".
 - 23 Oct 2026 · FIX-98 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `a0426ac` on `origin/main` `dd00e85`, mobile `wmt/FIX-98` from `wmt/FIX-97`; status verifying): the counterparty carries the sender's state and postal code (a Hub bank send on a funded Nuvion DEV wallet runs end to end), and a refused send keeps the fee-collect row `completed` with the give-back as its own rows (no `ledger_discrepancy`). Gaps G-FIX-98-1 and G-FIX-98-2. FIX-97 back to review.
 - 23 Oct 2026 · FIX-97 round 2 · Lead ruling built (Sonnet builder, T2; backend `wmt/FIX-97` `e678f35`, mobile `wmt/FIX-97`; status verifying): the local stack's Nuvion stand-in (`scripts/dev/nuvion-standin.cjs`) and `scripts/nuvion/counterparty-lookup-check.ts` match dev: the lookup takes `issuer.code` and answers `details.name`, an unknown number is 404 `error_resource_not_found`, a counterparty without email and address is dev's 422, the entity read carries the address. On a local stack a name check answers "Forrest Green" and a bank send reaches the stand-in's counterparty, payment detail and transfer (201 each). One spec input (statements) given a contact.
 - 23 Oct 2026 · FIX-97 · Built (Sonnet builder, T2; backend `wmt/FIX-97` `7f9a172` on `origin/main` `62876ea6`, mobile `wmt/FIX-97` from `wmt/NUV-KEYS`; status verifying): the three Nuvion payout bugs the dev-key run found. The name check sends `issuer: {code}` and reads `data.details.name` (a made-up number is `error_resource_not_found`, now "not found"); a counterparty carries the sending side's own email and address from its Nuvion entity, and a send without either stops before any counterparty. New spec red on main (10 of 10), green built; on dev the name check answers "Forrest Green" through the Hub and a bank send reaches counterparty 201 and payment detail 201 and stops at insufficient funds. The local stack's stand-in (`scripts/dev/nuvion-standin.cjs`) still has the old shapes: for the lead.
@@ -404,4 +405,3 @@ From `docs/LOG.md`, newest first.
 - 21 Oct 2026 · FIX-96 · Verified (Sonnet verifier, T1): PASS, status review. All 24 backend `rollback.sql` begin with exactly `\set ON_ERROR_STOP on` and nothing else changed; no script, gate, workflow or doc runs a rollback, and the two specs that do skip backslash lines (assertions untouched, 37 tests pass in band); with one first line removed the new spec fails and names the file; on a test database the referral-codes rollback (not Fintava) stops at its raise with the table and rows intact (old file dropped them), and runs to the end with no rows; tsc, eslint, gates and baseline EXIT 0, `test:protected` 253 passed on the base lock. No finding above low.
 - 21 Oct 2026 · VERIFY-03 round 3 · The verifier's FIX: Redo while recording stops and releases the recorder before the screen says ready (a test red before, green after); the microphone text names no length; VF7's way out is the shared header back (the board draws no second button); VF10a's title width and position tidied (not checked by picture); SHARED-CHANGES VERIFY-03 #1 confirmed by the lead. Verify, me and route suites 28 suites, 577 tests.
 - 21 Oct 2026 · VERIFY-03 round 2 · The app shows `consent.line` exactly as the Hub serves it and sends it back, and reads the recording's shortest and longest seconds from the Hub (`sample.minSeconds`, `sample.maxSeconds`); contract regenerated from backend `wmt/FIX-95` `699b783` (SHARED-CHANGES VERIFY-03 #3); G-VERIFY-03-1 and -2 closed; `DATA-SAFETY.md` and `DATA-INVENTORY.md` declare the voice recording (OWNER SIGN-OFF on each line). Tests: verify, me and route suites 28 suites, 576 tests.
-- 21 Oct 2026 · VERIFY-03 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-03` on `origin/wmt/VERIFY-02` `97177664`, app only; status verifying): VF8 (`/voice-consent`, the board's consent line with the person's name, the Hub's line stored), VF9, VF9a, VF9b, VF9c (record up to 30 s with `expo-audio`, a take under 15 s refused, upload through presign and confirm, then the keyed try), VF10, VF10a (a turning ring, the Hub's own "No points were taken") and VF11 (the shared player with Bio and AI voice, Use this, Edit text, Re-record); VF7's Record my voice drawn; the microphone text and RECORD_AUDIO in `app.json`. Live on a local stack (consent, take, upload, try, poll, a real provider failure, the Hub's 402, a denied microphone). NOT RUN: a real phone and a real provider (V10); the profile header player (M1 and the others have none yet). Gaps G-VERIFY-03-1 to 5; SHARED-CHANGES VERIFY-03 #1, #2.

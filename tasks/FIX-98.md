@@ -7,7 +7,7 @@ order: -98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: verifying
 depends_on: []
 decisions: [R-39]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,14 +18,18 @@ tier: T2
 
 ## Current state
 
-As of 23 Oct 2026, building (a fix round): the verifier checked backend `wmt/FIX-98` `a0426ac3` (on `origin/main` `dd00e85`) and found one medium. Full reports: [history/FIX-98.md](history/FIX-98.md). Mobile record head before this commit `372b0617`.
+As of 23 Oct 2026, built again, verifying (fix round 2: backend `wmt/FIX-98` `29f3cf6` on `a0426ac3`, mobile `wmt/FIX-98`). Verifier reports and the round reports: [history/FIX-98.md](history/FIX-98.md).
 
-- **Passed:** the counterparty carries the sender's state and postal code and either missing stops the send with a plain sentence (new spec 9 of 9 red on main); both stand-ins refuse the transfer with dev's 422; on Nuvion DEV a bank send through the Hub's own route on a funded wallet completed on the first try (Nuvion fee 50,000, Hub `completed`, balance down 152,500); a send Nuvion refused (dev's `limit_error` on a 100 kobo send) left every ledger row without a discrepancy, the fee collected and given back as its own pair of refund rows; tsc, eslint, 98 of 99 money and nuvion suites (the 99th, `receipt-units`, fails the same on main), `test:protected` (253), gates, baseline all EXIT 0.
-- **Open, medium (the fix round):** a failed send that later turns `reversed` (FIX-85) still turns WAWU's fee row `reversed` while Nuvion shows the fee transfer `successful`, so the fee transfer's own delivery writes `webhook sighting: status reversed vs completed` and `money:check` reports it (`wallet-transfer.service.ts` `recordFeeOwed` and `recordFeeBackToSender`). Reproduced on both credit variants of the existing FIX-85 test with the book-handler deliveries added. Fix: keep that fee row `completed`, or do not flag a `reversed` fee row whose fee-back landed, and add the delivery to the FIX-85 test.
-- **Low:** payee ids kept from an earlier send are reused without the state and postal code check (none exist on dev); a refused send adds a "Transfer" out and a "Refund" in of 2,500 to the person's history.
-- **G-FIX-98-1 answered:** WAWU's own entity on dev has `business.email`, `address.state`, `address.postal_code` and every other field (top-level and both `addresses`); nothing stops. The only Hub path that sends from the operational account to a bank is school settlement (`school-settlement.service.ts` line 643); it would stop with `validation` if production's own entity lacked a state or postal code.
-- **`money:check`:** its remaining differences are the FX inflow (the Hub credits only bank-transfer inflows, G-FIX-98-2: provider 434,420 = 586,920 inflow - 152,500, the ledger's own side) and the earlier runs' movements on the shared dev operational account.
-- **Open:** CI on the merged head.
+| Item | Before (`a0426ac3`) | After (`29f3cf6`) |
+|------|---------------------|-------------------|
+| Medium: FIX-85 path, the send reversed first, the fee-back after | the fee row turned `reversed`; the fee transfer's own delivery wrote "webhook sighting: status reversed vs completed" | the ledger pairs them: a `completed` sighting on the sender's fee row is not a disagreement; no row holds a discrepancy (4 specs, both credit variants and both orders) |
+| Low: kept payee ids skipped the state and postal code check | a kept counterparty without them was reused and Nuvion refused every send | a kept payee is used only when its counterparty (read from Nuvion) carries both; else a complete one is made |
+| Low: the history showed a bare "Transfer" and "Refund" of 2,500 | counterparty name `WAWU` on both | "WAWU's fee" (out) and "WAWU's fee given back" (in) |
+
+- **What differs from the plain refused send:** when the send is reversed before the fee-back lands, the reversed send's own row carries the fee (FIX-85), so the fee row cannot stay `completed` without counting the fee twice until the fee-back lands (the specs hold the sender's ledger equal to Nuvion at every step). That fee row is turned `reversed` as before and Nuvion's `successful` fee transfer is paired with it. When the fee-back lands first, the fee row stays `completed` and the give-back is its own refund pair, as on the plain path.
+- **Specs, red on `a0426ac3`, green built:** `wallet-transfer-bank-nuvion.contract.spec.ts` (4 new FIX-98 cases; 2 fail before, the order with the fee-back first passes on both), `nuvion-payouts-state-postal.spec.ts` (the kept-payee case), `wallet-transfer-fee-back-failed-nuvion.contract.spec.ts` (the naming assertions): 4 fail on `a0426ac3` in all.
+- **Checks:** tsc, eslint, 14 nuvion and money suites (322 tests) in band, `test:protected` (253 tests), gates, baseline: all EXIT 0. The stack's `nuvion-standin.cjs` gained `GET /counterparties/{id}` (syntax checked, not walked).
+- **Not run:** the stack walk of the changed stand-in; a dev re-run (the paths changed here are ledger and kept-payee paths the dev run did not reach). Open: CI on the head.
 
 ## Read first
 
@@ -46,7 +50,8 @@ A person's bank send reaches Nuvion's transfer on a funded wallet; when Nuvion r
 - [x] Both stand-ins refuse a transfer whose counterparty lacks either field, with dev's 422.
 - [x] A refused send leaves the fee-collect row `completed` and the give-back as its own rows; no `ledger_discrepancy` (spec red on main, green built; dev: `money:check` has none).
 - [x] `tsc`, eslint, the nuvion and money specs in band, `test:protected` (base lock), gates, baseline pass.
-- [ ] A failed send that later turns `reversed` (FIX-85) leaves no `discrepancy` on the fee row once the fee transfer's own delivery arrives (the FIX-85 test with the book-handler deliveries is red before).
+- [x] A failed send that later turns `reversed` (FIX-85) leaves no `discrepancy` on the fee row once the fee transfer's own delivery arrives (the FIX-85 sequences with the book-handler deliveries are red before, green built).
+- [x] A kept payee whose counterparty lacks a state or postal code is not used; the fee row and its give-back carry names the history can show.
 - [ ] The full backend run (CI) is green on the head.
 
 ## History
