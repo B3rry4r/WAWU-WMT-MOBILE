@@ -273,6 +273,18 @@ describe('H33 · the sponsored card in the reader', () => {
     expect(reported().filter((t) => t === 'skip')).toHaveLength(0);
   });
 
+  it('a tap on the card\'s left edge goes back to the card before it, and counts no skip (FIX-102)', async () => {
+    await boot();
+    await rtl.waitFor(() => expect(segments().max).toBe(6));
+    await toSponsored();
+    expect(segments()).toMatchObject({ now: 5, max: 6 });
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-back-zone'), { nativeEvent: { pageX: 20 } });
+    expect(rtl.screen.queryByTestId('sponsored-step')).toBeNull();
+    expect(rtl.screen.getByTestId('tgif-label')).toHaveTextContent('PRAYER');
+    expect(segments()).toMatchObject({ now: 4, max: 6 });
+    expect(reported().filter((t) => t === 'skip')).toHaveLength(0);
+  });
+
   it('closes from the card, and counts nothing but the view', async () => {
     const { onClose } = await boot();
     await rtl.waitFor(() => expect(segments().max).toBe(6));

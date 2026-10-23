@@ -111,12 +111,6 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
     read.mutate(item.id);
   };
 
-  const open = (item: FeedItem) => {
-    readOnce(item);
-    const href = routeOf(item);
-    if (href) onOpen(href);
-  };
-
   // A button under a row opens the screen it names (Reply goes to the asker's conversation, which the row itself does not).
   const openAction = (item: FeedItem, href: Href) => {
     if (!item.read) read.mutate(item.id);
@@ -126,6 +120,17 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
   const raiseTopUp = (item: FeedItem) => {
     readOnce(item);
     setTopUp(true);
+  };
+
+  const open = (item: FeedItem) => {
+    // Low credits are bought in a sheet (the row's Top up button): a tap on the row opens the same sheet.
+    if (actionOf(item)?.kind === 'top-up') {
+      raiseTopUp(item);
+      return;
+    }
+    readOnce(item);
+    const href = routeOf(item);
+    if (href) onOpen(href);
   };
 
   return (

@@ -27,6 +27,14 @@ export function readerSteps(sponsored = false): ReaderStep[] {
   });
 }
 
+/** How much of the card, from its left edge, is the back tap (FIX-102): the way stories readers split a card, a left third back and the rest forward. */
+export const backZone = 0.3;
+
+/** Whether a tap at `x` (the screen's own x, from the left edge) on a card `width` wide goes back. A tap with no place (a button, a key) goes forward. */
+export function tapGoesBack(x: number | undefined, width: number): boolean {
+  return typeof x === 'number' && Number.isFinite(x) && width > 0 && x < width * backZone;
+}
+
 /** Where the sponsored card sits: the place the takeaway has when there is none. A person already there or past it is never sent back to it. */
 export const sponsoredSlot = cardOrder.indexOf('takeaway');
 

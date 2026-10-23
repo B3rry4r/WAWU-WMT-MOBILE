@@ -62,6 +62,8 @@ export function SponsoredStep({ ad, onOpen, onSkip, bottomInset }: SponsoredStep
   return (
     <View
       testID="sponsored-step"
+      // Its empty parts pass a touch to what is behind the card (the reader's back edge, FIX-102); its button and Skip keep theirs.
+      pointerEvents="box-none"
       style={[styles.step, { paddingBottom: Math.max(adMetrics.stepPadBottom, bottomInset + space.lg) }]}
     >
       <View style={styles.chip}>
