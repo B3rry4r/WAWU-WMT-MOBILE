@@ -170,12 +170,12 @@ describe('Z9 · About', () => {
     }
   });
 
-  it('without a support address the row says it is not available and opens nothing', async () => {
+  it('a signed-out visitor with no support address sees no Contact support row: no "Not available yet", no dead row (R-47, SWEEP-FLOWS B8)', async () => {
     answers['/about'] = [ok({ ...about, supportEmail: null })];
     await bootAbout();
     await rtl.screen.findByText('Banking by Test Bank');
-    expect(rtl.screen.getByText('Not available yet')).toBeTruthy();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('about-support'));
+    expect(rtl.screen.queryByText('Not available yet')).toBeNull();
+    expect(rtl.screen.queryByTestId('about-support')).toBeNull();
     expect(mockOpen).not.toHaveBeenCalled();
   });
 

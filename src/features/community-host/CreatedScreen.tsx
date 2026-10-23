@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fetchRoom, roomKey } from '@/features/communities/api';
 import { copyText } from '@/features/open-wallet/copy';
+import { readableLink, sendableRoomLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 /** design/_gen/inbox.js line 88, `created`: the result mark, the title, the line, the link card (12 by 14 inside, 10 between) and a muted line; the foot has Share link and Open room side by side. */
@@ -75,9 +76,11 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
   }
 
   const data = room.data;
+  // The Hub's link has no scheme (`wawu/c/<slug>`); what is copied and shared is the full address a person can send (SWEEP-FLOWS B12), shown without its scheme like the invite card's.
+  const link = sendableRoomLink(data.link);
   const kindLine = `${data.kind === 'private' ? 'Private' : 'Open'} · you’re the host`;
   const copy = async () => {
-    const ok = await copyText(data.link);
+    const ok = await copyText(link);
     setCopyFailed(!ok);
     setCopied(ok);
     if (timer.current) clearTimeout(timer.current);
@@ -99,7 +102,7 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
         <Card padded testID="created-link-card">
           <View style={styles.linkRow}>
             <Text variant="body" tone="textSecondary" numberOfLines={1} style={[styles.link, { fontSize: metrics.link }]} testID="created-link">
-              {data.link}
+              {readableLink(link)}
             </Text>
             <Pressable
               testID="created-copy"
@@ -127,7 +130,7 @@ export function CreatedScreen({ id, onOpenRoom }: CreatedScreenProps) {
       </View>
       <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
         <View style={styles.flex}>
-          <Button label="Share link" variant="secondary" icon="Share" full onPress={() => void Share.share({ message: data.link }).catch(() => undefined)} testID="created-share" />
+          <Button label="Share link" variant="secondary" icon="Share" full onPress={() => void Share.share({ message: link }).catch(() => undefined)} testID="created-share" />
         </View>
         <View style={styles.flex}>
           <Button label="Open room" full onPress={onOpenRoom} testID="created-open" />

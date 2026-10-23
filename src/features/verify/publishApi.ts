@@ -1,5 +1,6 @@
 import { api } from '@/api/client';
 import type { components } from '@/api/schema.generated';
+import { contentLink } from '@/features/content-detail/model';
 
 /**
  * Publishing a draft (VERIFY-04, VF12): `POST /product-drafts/{id}/publish` takes the two files that went up under the draft's format
@@ -67,8 +68,8 @@ export async function publishDraft(id: string, files: { previewAsset: string; fu
   return { kind: 'refused', message: messageOf(error, 'We could not publish this. Try again.') };
 }
 
-/** The link a published product is shared by: `wawu/<creator>/<slug>` (the Hub's own two fields). Null when either is missing. */
-export const productLink = (piece: Pick<Published, 'slug' | 'creatorWawuId'>): string | null => (piece.slug && piece.creatorWawuId ? `wawu/${piece.creatorWawuId}/${piece.slug}` : null);
+/** The link a published product is shared by: the piece's own page, `https://wawuafrica.com/content/<id>`, a full address a person can send and the app opens (SWEEP-FLOWS B12). Null when the Hub gave no id. */
+export const productLink = (piece: Pick<Published, 'id'>): string | null => (piece.id ? contentLink(piece.id) : null);
 
 /** The names of the Hub's product categories (`CreateContentDto.category`), for the picker that asks before the first publish. */
 export const CATEGORIES: readonly { id: components['schemas']['UpdateProductDraftDto']['category'] & string; label: string }[] = [

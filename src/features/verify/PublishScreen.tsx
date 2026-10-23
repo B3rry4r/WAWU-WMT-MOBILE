@@ -34,6 +34,8 @@ import { fetchDraft, draftKey, updateDraft, type ProductDraft } from './api';
 import { IdentityCheck } from './IdentityCheck';
 import { identityStateOf } from './identityModel';
 import { ProductsFullSheet, type ProductsFullSheetProps } from './ProductsFullSheet';
+import { readableLink } from '@/lib/appLinks';
+
 import { CATEGORIES, productLink, publishDraft, type Published } from './publishApi';
 
 const BODY_GAP = 12;
@@ -350,7 +352,7 @@ export function PublishScreen(props: PublishScreenProps) {
         ) : null}
         {link ? (
           <Text variant="meta" tone="textMuted" testID="publish-link" selectable style={styles.centre}>
-            {link}
+            {readableLink(link)}
           </Text>
         ) : null}
       </>

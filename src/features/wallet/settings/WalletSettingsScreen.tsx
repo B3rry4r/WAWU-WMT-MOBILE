@@ -22,7 +22,7 @@ import { ROW_TILE } from '@/features/settings/metrics';
 import { walletSettingsQuery, type WalletSettings } from '../api/settings';
 import { useStatementSent } from '../statements/notice';
 import { AccountDetailsSheet } from './AccountDetailsSheet';
-import { accountLine, limitsLine, pinLine, savedLine } from './model';
+import { accountLine, limitsLine, pinLine } from './model';
 
 /** design/_gen/wallet.js line 143 (W35): the parts of the page stand 14 apart. */
 const BODY_GAP = 14;
@@ -54,8 +54,8 @@ export type WalletSettingsScreenProps = {
  * drawn by the task that builds where it leads: Fingerprint or face for payments (WALLET-06 itself, but it needs a signing
  * package and a PIN sheet without an amount, SHARED-CHANGES WALLET-06 #1) and Cards (WALLET-22). Help with a payment, the
  * last row, opens the support chat (I12) with nothing attached, since no one payment is being asked about (SUPPORT-01, R-30; the
- * chat's own entries from H18 and W27 attach theirs). Beneficiaries shows the count and, until the list screen (WALLET-03) can be opened
- * from here, has no chevron and opens nothing.
+ * chat's own entries from H18 and W27 attach theirs). Beneficiaries is not drawn: no screen lists the saved recipients yet (a person
+ * saves one from a receipt, W12), and a row that opens nothing is not shown (R-47, SWEEP-FLOWS B9). The screen that builds the list adds it.
  */
 export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -156,7 +156,6 @@ function Settings({ data, onOpenPin, onCreatePin, onOpenAccount, onOpenStatement
           subtitle={pinLine(data.pin, new Date())}
           onPress={data.pin.isSet ? onOpenPin : onCreatePin}
         />
-        <ListRow testID="wallet-settings-beneficiaries" lead={<IconTile icon="Users" size={ROW_TILE} />} title="Beneficiaries" subtitle={savedLine(data.beneficiaryCount)} />
       </GroupedList>
       <GroupedList testID="wallet-settings-account">
         {onOpenStatements ? (

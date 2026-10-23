@@ -9,6 +9,7 @@ import { signOutOfThisPhone } from '@/features/settings/signOutFlow';
 import { STORE_REFUSED } from '@/features/settings/SettingsScreen';
 import { canvasNormalLineHeight, space } from '@/theme';
 
+import { markLeavingForDeletion } from './cancelNotice';
 import { scheduledLine } from './model';
 
 /**
@@ -41,6 +42,7 @@ export function ScheduledScreen({ at, onSignedOut, now = new Date() }: Scheduled
     setLeaving(true);
     setProblem(null);
     try {
+      await markLeavingForDeletion();
       const { storeCleared } = await signOutOfThisPhone();
       if (storeCleared) onSignedOut();
       else setProblem(STORE_REFUSED);

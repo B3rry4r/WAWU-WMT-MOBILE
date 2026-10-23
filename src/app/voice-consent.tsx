@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { useSignupGate } from '@/features/auth/signupGate';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { VoiceConsentScreen } from '@/features/verify/VoiceConsentScreen';
 
@@ -14,6 +15,8 @@ export default function VoiceConsentRoute() {
   const router = useRouter();
   const { status } = useSession();
   const gate = useCreatorGate(status === 'signedIn');
+  // Inside sign-up setup the tabs are not there to land on (SWEEP-FLOWS B4): Use this goes back to where the flow began.
+  const inSetup = useSignupGate().setupStep !== null;
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
   if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
@@ -22,7 +25,7 @@ export default function VoiceConsentRoute() {
     <VoiceConsentScreen
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       onWriteText={() => router.push('/voice-intro')}
-      onUse={() => router.dismissTo('/me')}
+      onUse={() => (inSetup ? router.dismissTo('/creator-setup') : router.dismissTo('/me'))}
     />
   );
 }

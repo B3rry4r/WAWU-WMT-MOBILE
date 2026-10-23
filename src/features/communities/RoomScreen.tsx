@@ -27,6 +27,7 @@ import { fetchRequestsCount, requestsCountKey } from '@/features/community-host/
 import { fetchHostHandle, fetchPass, hostKey, passKey } from '@/features/community-pass/api';
 import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
 import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
+import { sendableRoomLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
@@ -160,7 +161,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
           credits.data?.creditBalance !== undefined ? (
             <CreditPill credits={credits.data.creditBalance} />
           ) : (
-            <CoverShare onPress={() => void Share.share({ message: room.data?.link ?? '' }).catch(() => undefined)} />
+            <CoverShare onPress={() => void Share.share({ message: sendableRoomLink(room.data?.link ?? '') }).catch(() => undefined)} />
           )
         }
         testID="room-cover"

@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { walletBalanceQuery } from '@/api/money';
-import type { FeedItem } from '@/features/feed/api';
+import { detailKey, type FeedItem } from '@/features/feed/api';
 import { feeLines } from '@/features/events/buyModel';
 import { usePaymentFlow, type Engine, type FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 
@@ -45,15 +45,34 @@ export function useUnlock(handlers: FlowHandlers) {
     [openFlow],
   );
 
-  /** H16's button, or the scrim: the post stops being locked in every feed the app holds, and the sheet is done. */
-  const done = () => {
-    const view = flow.view;
-    if (item && view && view.status === 'paid') {
-      applyUnlock(client, item.id, { fullAssetUrl: view.fullAssetUrl });
-      void fetchMedia(item.id).then((media) => {
-        if (media) applyUnlock(client, item.id, { fullAssetUrl: view.fullAssetUrl, media });
-      });
+  /**
+   * The moment the Hub says the unlock is paid (not when H16 is closed), the post stops being locked in every feed the app holds, and the
+   * same reads a reload makes are asked again: the feeds, the piece's page and the wallet's balance (SWEEP-FLOWS B2). One run per paid
+   * unlock; the Hub's own answers are the source, never anything made up here.
+   */
+  const paidView = flow.view && flow.view.status === 'paid' ? flow.view : null;
+  const paidFor = useRef<string | null>(null);
+  const itemId = item?.id ?? null;
+  useEffect(() => {
+    if (!itemId || !paidView) {
+      if (!paidView) paidFor.current = null;
+      return;
     }
+    const mark = `${itemId}:${paidView.id}`;
+    if (paidFor.current === mark) return;
+    paidFor.current = mark;
+    const fullAssetUrl = paidView.fullAssetUrl;
+    applyUnlock(client, itemId, { fullAssetUrl });
+    void fetchMedia(itemId).then((media) => {
+      if (media) applyUnlock(client, itemId, { fullAssetUrl, media });
+    });
+    void client.invalidateQueries({ queryKey: ['feed'] });
+    void client.invalidateQueries({ queryKey: detailKey(itemId) });
+    void client.invalidateQueries({ queryKey: walletBalanceQuery.queryKey });
+  }, [client, itemId, paidView]);
+
+  /** H16's button, or the scrim: the sheet is done (the post was already opened up when the payment was paid). */
+  const done = () => {
     flow.finish();
   };
 

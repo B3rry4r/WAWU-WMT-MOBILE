@@ -63,6 +63,17 @@ export function roomLink(slug: string): string {
   return `${LINK_ORIGIN}${ROOM_PATH_PREFIX}${encodeURIComponent(slug.trim().toLowerCase())}`;
 }
 
+/**
+ * The link the Hub made for a room (`wawu/c/<slug>`, no scheme) as a person can send it: `https://wawuafrica.com/c/<slug>`. A link that is
+ * already a full address, or one that names no room, is returned as it came (SWEEP-FLOWS B12).
+ */
+export function sendableRoomLink(hubLink: string): string {
+  const link = hubLink.trim();
+  if (/^https?:\/\//i.test(link)) return link;
+  const slug = /(?:^|\/)c\/([^/?#\s]+)\/?$/i.exec(link)?.[1];
+  return slug ? roomLink(decodeURIComponent(slug)) : link;
+}
+
 /** A link as a person reads it on a card: no scheme (`wawuafrica.com/r/lennox`). */
 export function readableLink(link: string): string {
   return link.replace(/^https?:\/\//i, '');

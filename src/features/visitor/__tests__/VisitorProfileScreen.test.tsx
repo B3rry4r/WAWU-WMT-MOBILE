@@ -392,3 +392,52 @@ describe('I2 and I8 · Message with its price, and Messages off (INBOX-10)', () 
     expect(screen.queryByTestId('visitor-message-off')).toBeNull();
   });
 });
+
+describe('SWEEP-FLOWS B3 · a free chat can always be started from a profile (R-13)', () => {
+  const CHATS = '/api/hub/chats';
+  const chat = { id: 'chat-77', kind: 'direct', participants: [], lastMessage: null, unreadCount: 0 };
+
+  async function bootChat() {
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    const handlers = { onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() };
+    const onOpenChat = jest.fn();
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} pay={handlers} onOpenPaidThread={jest.fn()} onOpenChat={onOpenChat} />));
+    return { onOpenChat };
+  }
+
+  it('with paid messages off, "Message Lennox" opens the free chat the Hub finds or makes, and "Messages off" still only means paid messages are off', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })), [`POST ${CHATS}`]: ok(chat) });
+    const { onOpenChat } = await bootChat();
+    expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
+    expect(screen.getByText("Lennox isn't taking paid messages right now")).toBeTruthy();
+    await fireEvent.press(await screen.findByTestId('visitor-message-free'));
+    await waitFor(() => expect(onOpenChat).toHaveBeenCalledWith('chat-77'));
+    expect(asked.filter((line) => line === `POST ${CHATS}`)).toHaveLength(1);
+  });
+
+  it('a chat the Hub refuses stays on the profile and says why in the Hub\'s words', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })), [`POST ${CHATS}`]: refusal(403, 'You cannot message this person.') });
+    const { onOpenChat } = await bootChat();
+    await fireEvent.press(await screen.findByTestId('visitor-message-free'));
+    expect(await screen.findByText('You cannot message this person.')).toBeTruthy();
+    expect(onOpenChat).not.toHaveBeenCalled();
+  });
+
+  it('with paid messages on, the paid button stays and the More menu holds the free chat', async () => {
+    answers = page({ [`GET /api/hub/paid-dm/creators/u2/availability`]: ok({ creatorWawuId: 'u2', paused: false, pausedUntil: null }), [`POST ${CHATS}`]: ok(chat) });
+    const { onOpenChat } = await bootChat();
+    expect(await screen.findByTestId('visitor-message')).toBeTruthy();
+    expect(screen.queryByTestId('visitor-message-free')).toBeNull();
+    await fireEvent.press(screen.getByTestId('visitor-menu-button'));
+    await fireEvent.press(await screen.findByTestId('visitor-menu-message'));
+    await waitFor(() => expect(onOpenChat).toHaveBeenCalledWith('chat-77'));
+  });
+
+  it('draws no free Message when the route cannot open a chat (R-47)', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })) });
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} pay={{ onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() }} onOpenPaidThread={jest.fn()} />));
+    await screen.findByTestId('visitor-message-off');
+    expect(screen.queryByTestId('visitor-message-free')).toBeNull();
+  });
+});

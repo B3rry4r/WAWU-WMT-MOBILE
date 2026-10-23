@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 342.**
+**Launch tasks done: 176 of 343.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 11 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -105,6 +105,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-05](../tasks/WALLET-05.md) Add money and withdraw (You)
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
+- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
 - [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
@@ -388,6 +389,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · SWEEP-FLOWS · Built (Sonnet builder, T1; mobile `wmt/SWEEP-FLOWS` on `origin/main` `b1a460f3`, backend `wmt/SWEEP-FLOWS` on `13e27536`, `scripts/dev/stack.sh` only): the audit's broken flows B1 to B9, B12 and B14 fixed with tests that fail without the fix, B10 ruled no (identity numbers live in memory only), B11, B13, B15, B16 not this sweep; one check_tasks run (see tasks/SWEEP-FLOWS.md).
 - 22 Oct 2026 · FLIX-01 · Built (Sonnet builder, T2; backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`) on `origin/main` `1955fd1`, mobile `wmt/FLIX-01`; status verifying): the Hub serves the Flixora catalog and a signed-in watch link through one seam (`MOVIE_PARTNER`: `off` default, `standin`; `flixora` is FLIX-02). Six routes under `/movies` read the Hub's own catalog copy (a sync job: `updatedSince`, a daily full pass); the first "Watch on Flixora" opens the person's partner account (R-75: agreement by `FLIXORA_TERMS_FROM` or `agreeToTerms`, a fresh link per tap never stored or logged, only sub, email, names and verified flag sent); four additive tables with a refusing rollback; the purge marks the link row. Protected routes 253/253; gates 0 fail. Real partner NOT RUN (FLIX-02). Records: SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, G-FLIX-1 to 3.
 - 22 Oct 2026 · FLIX-03 round 3 · The verifier's FIX built (Sonnet builder; mobile `wmt/FLIX-03`; status verifying): MV7 wraps "Most watched", MV12 is centred with the primary Try again, a title that has not premiered never offers Watch on Flixora (hero or page), MV11 draws search, MV9 pill stretches, a 409 draws the consent box, the hero Trailer needs a trailer. Three optional shared props (SHARED-CHANGES FLIX-03 #5 to #7), a test each; the changed pairs re-captured.
 - 22 Oct 2026 · FLIX-03 round 2 · Lead rulings built (Sonnet builder; mobile `wmt/FLIX-03`): the route-graph lines applied (route-guard passes), the app tab bar under MV1, MV11 and MV12, every built screen pictured beside its board light and dark over backend `b5913a1` with the stand-in partner; MV8 field fixed (it filled the screen on the web). No share button (G-FLIX-4) and no full-screen icon (SHARED-CHANGES FLIX-03 #4): neither is served or supported yet.
@@ -402,4 +404,3 @@ From `docs/LOG.md`, newest first.
 - 21 Oct 2026 · VERIFY-03 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-03` on `origin/wmt/VERIFY-02` `97177664`, app only; status verifying): VF8 (`/voice-consent`, the board's consent line with the person's name, the Hub's line stored), VF9, VF9a, VF9b, VF9c (record up to 30 s with `expo-audio`, a take under 15 s refused, upload through presign and confirm, then the keyed try), VF10, VF10a (a turning ring, the Hub's own "No points were taken") and VF11 (the shared player with Bio and AI voice, Use this, Edit text, Re-record); VF7's Record my voice drawn; the microphone text and RECORD_AUDIO in `app.json`. Live on a local stack (consent, take, upload, try, poll, a real provider failure, the Hub's 402, a denied microphone). NOT RUN: a real phone and a real provider (V10); the profile header player (M1 and the others have none yet). Gaps G-VERIFY-03-1 to 5; SHARED-CHANGES VERIFY-03 #1, #2.
 - 20 Oct 2026 · VERIFY-02 · Built (Sonnet builder, T1; mobile `wmt/VERIFY-02` on `origin/main` `025d8d58`, app only, no backend change; status verifying): VF3, VF3a, VF3b (`/hear-name`: the name said in the studio voice as it opens, "Not quite right?" opens the spelling, Play again, Save) and VF4, VF4a, VF4b (`/voice-intro`: the words with a count against the Hub's limit, off while empty or too long). "Hear it in my voice" goes to VF5 (no tier), Your tier (ended) or VF8 `/voice-consent` (VERIFY-03 registers it; merges together with VERIFY-03). Entries: Me's Voice Intro prompt, Your shop's Hear your name row. Gaps G-VERIFY-02-1 and -2; SHARED-CHANGES VERIFY-02 #1, #2, R1.
 - 21 Oct 2026 · FIX-95 · Built (Sonnet builder, T1; backend `wmt/FIX-95` `699b783` on `origin/main` `bb21578`; this record on mobile `wmt/FIX-95` from `origin/main` `025d8d58`; status verifying): the Hub serves `consent.line` as "I am {name}. I agree that Who Made This? may create an AI version of my voice for my intros." (the name from its record of the person), stores exactly that line and takes back only the line it served for that person; the Voice Intro view serves `sample.minSeconds` and `sample.maxSeconds` from two PROVISIONAL plan settings (`voice_intro.sample_min_seconds` 15, `voice_intro.sample_max_seconds` 30). Additive. Protected suite 253 tests, voice and plan-settings specs 73 tests, gates EXIT 0.
-- 19 Oct 2026 · FIX-90 · Built (Sonnet builder, T0, test files only; backend `wmt/FIX-90` `c115ab2` on `origin/main` `3acc044`, mobile `wmt/FIX-90` on `origin/wmt/MERGE-26` `9ca3e6a4`; status verifying): the four specs that failed the batch 26 whole-suite run (`event-host-wizard`, `event-door-scan`, `learn-entitlement`, `course-lesson`) stop reading the seeded plain user's rows, which `search-popular-privacy` (scheduled deletion left behind) and `account-deletion-identity` (sweep with a clock 30 days ahead, first in batch 12) purge; `fintava-stall` (R-70) allows the total time the loop was blocked, not the worst stall. Red then green on one fresh database. Gap G-FIX-90-1 (low).
