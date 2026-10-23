@@ -9,7 +9,7 @@ repo: wawu-backend
 type: third-party
 status: todo
 depends_on: []
-decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
+decisions: [R-79, R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -19,7 +19,7 @@ artboards: []
 
 As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 60 minutes of building; if it runs past that, push what is done and hand back what remains.
 - **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
-- **Why first:** the other four backend tasks add one tool each to the pipeline this task opens up. Quick voice rides with it because it is the smallest tool (the same speech call as VoiceOver on a faster model) and proves the pipeline end to end.
+- **Why first:** the other four backend tasks add one tool each to the pipeline this task opens up. Quick voice rides with it because it is the smallest tool (a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute, R-79) and proves the pipeline end to end.
 - **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
 - **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-02`; then a verifier.
 
@@ -30,7 +30,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands (its additive-only and protected-route rules apply).
 - `docs/elevenlabs/API-FACTS.md` (the provider's routes, limits and what the free read calls showed: every provider fact in this task comes from it or from a real response)
-- `DECISIONS.md`: R-78, R-43, R-61, R-65, R-68, R-47 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
+- `DECISIONS.md`: R-79 (what Quick voice is), R-78, R-43, R-61, R-65, R-68, R-47 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
 - `tasks/AITOOLS-01.md` (the job and points flow this task reuses) and `tasks/POINTS-03.md` (hold, commit, release, caps)
 - Backend `src/ai-tools/` (`ai-job.service.ts`, `voice/ai-voice-provider.ts`, `voice/http-voice-provider.ts`, `tests/ai-tools.contract.spec.ts`) and `scripts/dev/voice-standin.cjs`
 - `design/Points Flow.dc.html` boards PT1, PT2, PT2a, PT2b, PT2c (render with `python3 scripts/design/render_design.py PT1 PT2 PT2a PT2b PT2c` and look at each: the tile "Quick voice, 125 a minute", the text box, the cost line, the working, done and failed states)
@@ -39,7 +39,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 
 ## Goal
 
-Every tool Studio lists runs through one job pipeline, so the next tools are a tool file each, not a copy of VoiceOver. Quick voice is the first tool added through it: a person types text, picks a voice, and gets audio for 125 points a minute (the board's figure, PROVISIONAL).
+Every tool Studio lists runs through one job pipeline, so the next tools are a tool file each, not a copy of VoiceOver. Quick voice is the first tool added through it: a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute (R-79, owner, 23 Oct 2026; the board's figure, PROVISIONAL under R-65). A person types text, picks a voice, and gets audio.
 
 ## Scope
 
@@ -57,7 +57,7 @@ Every tool Studio lists runs through one job pipeline, so the next tools are a t
 
 - `ai.quick_voice_chars_per_minute`: 900, the same as VoiceOver's `ai.voiceover_chars_per_minute` (PROVISIONAL `AITOOLS-CHARS-PER-MINUTE`; no board gives it).
 - `points.action.quick_voice_per_min`: 125 a minute, the PT1 tile's figure (exists; PROVISIONAL `DV2-BOARD-FIGURE`).
-- Owner question for the report: what "Quick voice" means. The board names no definition; this task builds the faster, cheaper reading (G-AITOOLS-02-1). The other reading is a person's own voice from a short recording, which already exists as "Your voice" on PT2 (VOICE-01).
+- Ruled, no owner question (R-79, owner, 23 Oct 2026): Quick voice is a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute. G-AITOOLS-02-1 is closed. A person's own voice from a short recording is "Your voice" on PT2 (VOICE-01), a different thing.
 
 ## Capability checks
 

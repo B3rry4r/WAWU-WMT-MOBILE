@@ -3,13 +3,13 @@ id: POINTS-12
 title: Studio: Receptionist
 owner: YOU
 area: POINTS
-order: -117
-priority: launch
+order: 357
+priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
 status: todo
 depends_on: [AITOOLS-06, POINTS-11]
-decisions: [R-78, R-43, R-61, R-68, R-47, R-27]
+decisions: [R-79, R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: []
 ---
@@ -18,11 +18,12 @@ artboards: []
 ## Current state
 
 As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T1. About 45 to 60 minutes of building.
-- **Real prerequisites (not in `depends_on`):** POINTS-07 and POINTS-08 (Studio and the VoiceOver screens) are on mobile main and AITOOLS-01 is on backend main. They sit at orders 277, 278 and 267, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order and `depends_on` lists only the tasks cut with it.
+- **After launch (owner, 23 Oct 2026, R-79):** the Receptionist is left out for now and built after launch. Priority after-launch, order 357 (after RELEASE-02, as every after-launch task); status todo. The tile is not drawn until this task and AITOOLS-06 are built (R-47). No builder starts before the owner brings it back.
+- **Real prerequisites (not in `depends_on`):** POINTS-07 and POINTS-08 (Studio and the VoiceOver screens) are on mobile main and AITOOLS-01 is on backend main. They sit at orders 277, 278 and 267, and `depends_on` lists only the tasks cut with it; this task's order sits after RELEASE-02 because it is after launch (R-79).
 - **Boards:** none draws this tool's own screen. The boards it follows are PT1 (the tile), PT2, PT2a, PT2b, PT2c (the pattern), PT3, PT3a, PT3b, PT7 (the sheets, built). They belong to POINTS-07 and POINTS-08 (a board is in exactly one screen task), so `artboards` is empty here. Where this tool needs a part no board draws, the part is built from the app's existing shared parts only, nothing new in look, and filed as G-POINTS-09-1 for the designer (R-29).
 - **Starts only when its fact is known:** G-AITOOLS-06-1. No board shows what the Receptionist does or what its screen looks like. The lead starts this task after the owner either names a board for it or rules that the pattern in Scope is the screen. Until then it stays todo, and the tile is not drawn (R-47).
 - **Backend it needs:** AITOOLS-06 (the agent upkeep and the message route).
-- **Next:** a builder session (Sonnet) on branch `wmt/POINTS-12`, with the backend task's branch contract synced (`npm run api -- --backend <backend worktree>`); then a lean verifier.
+- **Next:** after launch, when the owner brings the Receptionist back: a builder session (Sonnet) on branch `wmt/POINTS-12`, with the backend task's branch contract synced (`npm run api -- --backend <backend worktree>`); then a lean verifier.
 
 ## Read first
 
@@ -31,7 +32,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - `docs/people/YOU.md` (what you own)
 - `design/CLAUDE.md` and `docs/designer/BRIEF.md` (R-29: where the brief changes a board, build the brief's version); the rulings below outrank both where they differ
 - Render PT1, PT2, PT2a, PT2b, PT2c, PT3, PT3a, PT3b and PT7 with `python3 scripts/design/render_design.py <IDs>` and LOOK at each, light and dark (V5). Board ids come from this file and `design/canvas-inventory.json`, never from a code comment.
-- `DECISIONS.md`: R-78, R-43, R-61, R-68, R-47, R-27 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
+- `DECISIONS.md`: R-79 (after launch), R-78, R-43, R-61, R-68, R-47, R-27 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
 - `tasks/POINTS-07.md` (Studio, `useJobCheck`: PT3, PT3a, PT3b, PT7) and `tasks/POINTS-08.md` (the entry-driven tool screen `src/features/points/ToolScreen.tsx`, `voiceoverIntent.ts`, `ResultPlayer.tsx`, `studioModel.ts`)
 - `tasks/AITOOLS-06.md` (what the engine does and does not do)
 - `BACKEND_GAPS.md` the G-AITOOLS-06 row

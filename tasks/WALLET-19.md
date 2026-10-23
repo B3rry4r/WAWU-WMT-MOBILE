@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-23, WALLET-24]
-decisions: [R-67]
+decisions: [R-67, R-79]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [A17, A18, A19, A20]
 ---
@@ -21,6 +21,7 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): WALLET-23, WALLET-24.
 - **History:** none yet. Reports go to tasks/history/WALLET-19.md.
+- **After launch (owner, 23 Oct 2026, R-79):** Account limits is on the designer's extra list and waits until after launch. Priority after-launch (already so), status todo; nothing of it is built or drawn for launch (R-47).
 - **Design v2 (16 Oct 2026, DESIGN-V2-CUT):** A17 and A19: "Limits set by the CBN" and the provider name in the footnote stay hidden until the owner confirms the words (R-67).
 
 ## Design v2 update (16 Oct 2026)

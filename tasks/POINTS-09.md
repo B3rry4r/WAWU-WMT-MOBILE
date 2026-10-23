@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: flow
 status: todo
 depends_on: [AITOOLS-02, AITOOLS-03]
-decisions: [R-78, R-43, R-61, R-68, R-47, R-27]
+decisions: [R-79, R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: []
 ---
@@ -21,6 +21,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - **Real prerequisites (not in `depends_on`):** POINTS-07 and POINTS-08 (Studio and the VoiceOver screens) are on mobile main and AITOOLS-01 is on backend main. They sit at orders 277, 278 and 267, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order and `depends_on` lists only the tasks cut with it.
 - **Boards:** none draws this tool's own screen. The boards it follows are PT1 (the tile), PT2, PT2a, PT2b, PT2c (the pattern), PT3, PT3a, PT3b, PT7 (the sheets, built). They belong to POINTS-07 and POINTS-08 (a board is in exactly one screen task), so `artboards` is empty here. Where this tool needs a part no board draws, the part is built from the app's existing shared parts only, nothing new in look, and filed as G-POINTS-09-1 for the designer (R-29).
 - **Backend it needs:** AITOOLS-02 (Quick voice, the catalogue shape and the job list) and AITOOLS-03 (Sound effect and Music track). Until each is on the Hub, its tile is not drawn.
+- **Quick voice ruled (R-79, owner, 23 Oct 2026):** a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute. The tile and the cost line read that figure from the Hub.
 - **Next:** a builder session (Sonnet) on branch `wmt/POINTS-09`, with the backend task's branch contract synced (`npm run api -- --backend <backend worktree>`); then a lean verifier.
 
 ## Read first
@@ -30,7 +31,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - `docs/people/YOU.md` (what you own)
 - `design/CLAUDE.md` and `docs/designer/BRIEF.md` (R-29: where the brief changes a board, build the brief's version); the rulings below outrank both where they differ
 - Render PT1, PT2, PT2a, PT2b, PT2c, PT3, PT3a, PT3b and PT7 with `python3 scripts/design/render_design.py <IDs>` and LOOK at each, light and dark (V5). Board ids come from this file and `design/canvas-inventory.json`, never from a code comment.
-- `DECISIONS.md`: R-78, R-43, R-61, R-68, R-47, R-27 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
+- `DECISIONS.md`: R-79 (what Quick voice is), R-78, R-43, R-61, R-68, R-47, R-27 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
 - `tasks/POINTS-07.md` (Studio, `useJobCheck`: PT3, PT3a, PT3b, PT7) and `tasks/POINTS-08.md` (the entry-driven tool screen `src/features/points/ToolScreen.tsx`, `voiceoverIntent.ts`, `ResultPlayer.tsx`, `studioModel.ts`)
 - `tasks/AITOOLS-02.md` and `tasks/AITOOLS-03.md` (the routes, the entry shape, the limits)
 - `BACKEND_GAPS.md` G-POINTS-07-3, G-POINTS-08-1, G-POINTS-08-2, G-POINTS-08-3
@@ -45,7 +46,7 @@ A person opens Quick voice, Sound effect or Music track from Studio, sees what i
 - **Run is the same path as VoiceOver:** `useJobCheck` (quote, then PT7, or PT3, PT3a, PT3b), then the tool's job route with one `Idempotency-Key` kept on the phone (the same key on a retry, a new one on "Try again"), working read every 2 seconds, done, or failed with the Hub's own sentence ("No points were taken").
 - **Every value on screen is the Hub's or the person's:** names, costs, units, limits and languages come from `GET /ai-tools` and the quote, never a literal. No provider name anywhere (R-68), no em-dash (R-5).
 - **Tests** are written "a person can ..." and cover the tool's states through their real cause (a refused file, a failed job, a cap, a short balance).
-- **Quick voice** (`input.kind: text`): PT2 exactly, titled from the entry ("Quick voice"): the text box with its counter, the voice rows from the entry, "About N minutes", the cost line from the quote ("This uses 125 points" for one minute), Run.
+- **Quick voice** (`input.kind: text`; a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute, R-79): PT2 exactly, titled from the entry ("Quick voice"): the text box with its counter, the voice rows from the entry, "About N minutes", the cost line from the quote ("This uses 125 points" for one minute), Run.
 - **Sound effect and Music track** (`input.kind: prompt`): PT2's layout with the prompt box (its counter against the entry's limit) and no voice rows and no "About N minutes" line (these are flat prices: a use, a track). The cost line reads the quote ("This uses 75 points", "This uses 500 points"). PT1's tile words come from the entry's unit ("75", "500", as the board draws a flat tool without "a minute").
 - **Working, done, failed:** PT2a ("Making your Sound effect" from the entry's name), PT2b without the "Bio" tag (that tag names the Voice Intro) and without Save or "Use in a product" until those exist (G-AITOOLS-01-4, as POINTS-08), PT2c.
 - **Not drawn, filed as gaps:** a length for a sound effect or a track, an instrumental switch, the play button on a voice row, Save and Use in a product, the clock icon's history (the route `GET /ai-tools/jobs` exists after AITOOLS-02, no board draws the list: G-POINTS-09-1).

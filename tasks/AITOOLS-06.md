@@ -3,13 +3,13 @@ id: AITOOLS-06
 title: Receptionist: a person's own text agent, paid by the message (backend)
 owner: YOU
 area: POINTS
-order: -121
-priority: launch
+order: 356
+priority: after-launch
 repo: wawu-backend
 type: third-party
 status: todo
 depends_on: [AITOOLS-02]
-decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
+decisions: [R-79, R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
@@ -18,11 +18,12 @@ artboards: []
 ## Current state
 
 As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 60 minutes of building; if it runs past that, push what is done and hand back what remains.
-- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
+- **After launch (owner, 23 Oct 2026, R-79):** the Receptionist is left out for now and built after launch. Priority after-launch, order 356 (after RELEASE-02, as every after-launch task); status todo. The tile is not drawn until this task and POINTS-12 are built (R-47). No builder starts before the owner brings it back.
+- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and `depends_on` lists only the tasks cut with it; this task's order sits after RELEASE-02 because it is after launch (R-79). Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
 - **Pattern:** not a file and not one audio result: a conversation, paid a message at a time. The design draws only the tile ("Receptionist, 20 a message"); no board shows what it does for a creator (G-AITOOLS-06-1). This task builds the engine and a try-it chat, and nothing that answers a person's real messages.
 - **Owner decision needed before the app task:** what the Receptionist is for. The lead starts this task with the assumption in Scope; the report says what the owner changes.
 - **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
-- **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-06`; then a verifier.
+- **Next:** after launch, when the owner brings the Receptionist back: a builder session (Sonnet) on branch `wmt/AITOOLS-06`; then a verifier.
 
 ## Read first
 
@@ -31,7 +32,7 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - `docs/people/YOU.md` (what you own)
 - This task changes `wawu-backend`. Start the session with that repo and `wawu-wmt-mobile` both attached; follow that repo's CLAUDE.md for its commands (its additive-only and protected-route rules apply).
 - `docs/elevenlabs/API-FACTS.md` (the provider's routes, limits and what the free read calls showed: every provider fact in this task comes from it or from a real response)
-- `DECISIONS.md`: R-78, R-43, R-61, R-65, R-68, R-47 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
+- `DECISIONS.md`: R-79 (after launch), R-78, R-43, R-61, R-65, R-68, R-47 (ruled; build what they say). Rulings outrank the boards, the brief and any older task text.
 - `tasks/AITOOLS-01.md` (the job and points flow this task reuses) and `tasks/POINTS-03.md` (hold, commit, release, caps)
 - Backend `src/ai-tools/` (`ai-job.service.ts`, `voice/ai-voice-provider.ts`, `voice/http-voice-provider.ts`, `tests/ai-tools.contract.spec.ts`) and `scripts/dev/voice-standin.cjs`
 - `design/Points Flow.dc.html` board PT1 (the Receptionist tile) and PT3, PT7 (shared sheets)
