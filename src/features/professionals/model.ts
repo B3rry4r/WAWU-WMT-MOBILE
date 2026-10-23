@@ -78,3 +78,11 @@ export function credentialLine(issuingBody: string | null | undefined): string {
   const issuer = issuingBody?.trim();
   return issuer ? `Issued by ${issuer} · checked by ${APP_NAME_COPY}` : `Checked by ${APP_NAME_COPY}`;
 }
+
+/**
+ * The field a listing sits in: the taxonomy's label, else its category as the Hub gives it. A listing whose category is outside the
+ * taxonomy comes with no field at all, and must still be drawn.
+ */
+export function fieldLabelOf(entry: { field?: { label?: string | null } | null; category?: string | null }): string {
+  return entry.field?.label?.trim() || entry.category?.trim() || '';
+}

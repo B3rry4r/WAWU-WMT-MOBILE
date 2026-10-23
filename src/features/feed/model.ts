@@ -156,10 +156,13 @@ export function minutesAdjective(label: string | null | undefined): string | nul
 }
 
 /** The name on a post: the person's name from WAWU ID, else their handle. */
-export function creatorName(creator: FeedCreator | null | undefined): string | null {
+export function creatorName(creator: Pick<FeedCreator, 'displayName' | 'handle'> | null | undefined): string | null {
   if (!creator) return null;
   return creator.displayName?.trim() || creator.handle?.trim() || null;
 }
+
+/** What a piece's page calls a creator who has neither a name nor a handle (every new creator starts with no name). */
+export const UNNAMED_CREATOR = 'Someone';
 
 /** Which tick follows the name: a creator tick (purple), else a professional tick (blue). */
 export function tickKind(creator: FeedCreator | null | undefined): 'creator' | 'pro' | null {

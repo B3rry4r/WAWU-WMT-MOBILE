@@ -19,7 +19,7 @@ import { useSystemBack } from '@/features/professionals/parts';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, space, type, useWawu } from '@/theme';
 
-import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type FeeQuote, type SendKind, type Transfer } from './api';
+import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type FeeQuote, type SendKind, type SendOutcome, type Transfer } from './api';
 import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
 import {
   BANK_CHARGE,
@@ -133,6 +133,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
 
   const [status, setStatus] = useState<PayStatus>({ kind: 'review' });
   const [pinOpen, setPinOpen] = useState(false);
+  // True from the moment the request leaves the phone until the Hub answers or the app's own limit ends it (`WRITE_TIMEOUT_MS`). The
+  // retry line is for a request that got no answer, never for one still being waited on.
+  const [waiting, setWaiting] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   // How an earlier send for this person and amount ended, when the Hub had decided it before this review looked (null: none).
@@ -279,18 +282,24 @@ export function ReviewScreen(props: ReviewScreenProps) {
       return { code: 'approved' };
     }
     setRequest({ ...sending, phase: 'unknown' });
-    const outcome = payee.bank
-      ? await sendToBankAccount({
-          bankCode: payee.bank.bankCode,
-          accountNumber: payee.bank.accountNumber,
-          amountKobo: sending.amountKobo,
-          quote: sending.quote,
-          nameToken: sending.nameToken ?? payee.bank.nameToken,
-          note: sending.note,
-          key: sending.key,
-          pin,
-        })
-      : await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+    setWaiting(true);
+    let outcome: SendOutcome;
+    try {
+      outcome = payee.bank
+        ? await sendToBankAccount({
+            bankCode: payee.bank.bankCode,
+            accountNumber: payee.bank.accountNumber,
+            amountKobo: sending.amountKobo,
+            quote: sending.quote,
+            nameToken: sending.nameToken ?? payee.bank.nameToken,
+            note: sending.note,
+            key: sending.key,
+            pin,
+          })
+        : await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+    } finally {
+      setWaiting(false);
+    }
     // The Hub gave an answer that proves no payment exists for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = (next: Request['phase'] = 'ready') => keep({ ...sending, phase: next });
     switch (outcome.kind) {
@@ -427,7 +436,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
   return (
     <View testID="send-review-screen" style={[styles.page, { backgroundColor: colors.surfacePage }]}>
       {nav}
-      {request?.phase === 'unknown' && status.kind === 'review' && blocked === null ? (
+      {request?.phase === 'unknown' && !waiting && status.kind === 'review' && blocked === null ? (
         <Text variant="muted" testID="send-review-retry" style={styles.line}>
           {RETRY_LINE}
         </Text>

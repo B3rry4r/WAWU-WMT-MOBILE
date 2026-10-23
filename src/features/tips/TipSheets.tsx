@@ -190,7 +190,7 @@ function SentSheet({ tip }: { tip: TipState }) {
   const view = tip.flow.view;
   if (!view) return null;
   const echo = noteEcho(view.note);
-  const name = tip.target?.name ?? view.creator.displayName;
+  const name = tip.target?.name?.trim() || view.creator.displayName;
   return (
     <StatusSheet
       visible
@@ -230,7 +230,7 @@ export function TipSheets({
 
   const short = quote !== null && tip.balanceKobo !== null && quote.payment.totalKobo > tip.balanceKobo;
   const reviewing = flow.status.kind === 'review' && !short && flow.stage === null;
-  const name = target.name ?? 'this creator';
+  const name = target.name?.trim() || 'this creator';
   return (
     <>
       {reviewing || !quote ? (

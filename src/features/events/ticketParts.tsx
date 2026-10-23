@@ -9,6 +9,7 @@ import { BrandMark } from '@/components/BrandMark';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
+import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 import { lightColors } from '@/theme/tokens.generated';
@@ -171,18 +172,21 @@ export function RefreshFailed({ message, onRetry, testID }: { message: string; o
   );
 }
 
-/** E6's row: the date, the event, "2 × VIP", and a QR mark; it opens the first ticket that can still be scanned. */
+/**
+ * E6's row: the date, the event, "2 × VIP", and a QR mark; it opens the first ticket that can still be scanned. A called-off event's row
+ * says so in the mark's place (a ticket that cannot be scanned has no use for the QR), and opens E11, which says what came back.
+ */
 export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketId: string) => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const target = ticketToOpen(group.tickets);
+  const calledOff = group.event.cancelledAt != null;
   return (
     <Pressable
       testID={`ticket-group-${group.orderId}-${group.ticketTypeId}`}
       accessibilityRole="button"
-      accessibilityLabel={`${group.event.name}, ${groupLine(group)}`}
-      accessibilityHint="Shows the ticket's QR code"
-      disabled={!target}
+      accessibilityLabel={calledOff ? `${group.event.name}, ${groupLine(group)}, called off` : `${group.event.name}, ${groupLine(group)}`}
+      accessibilityHint={calledOff ? 'Shows the ticket and what came back' : "Shows the ticket's QR code"}
       onPress={() => target && onOpen(target.id)}
       {...ring.handlers}
       style={[styles.row, { backgroundColor: colors.surfaceCard }, ring.style]}
@@ -196,7 +200,11 @@ export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketI
           {groupLine(group)}
         </Text>
       </View>
-      <Icon name="QrCode" size={listMetrics.qrIcon} color={colors.textSecondary} />
+      {calledOff ? (
+        <StatusPill label="Called off" tone="danger" testID={`ticket-group-${group.orderId}-${group.ticketTypeId}-called-off`} />
+      ) : (
+        <Icon name="QrCode" size={listMetrics.qrIcon} color={colors.textSecondary} />
+      )}
       <View pointerEvents="none" style={[styles.edge, { borderRadius: radius.media, borderColor: colors.borderHairline }]} />
     </Pressable>
   );

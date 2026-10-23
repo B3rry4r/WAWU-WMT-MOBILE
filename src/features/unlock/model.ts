@@ -1,6 +1,6 @@
 import { formatNaira } from '@/components/pay-sheet';
 import type { FeedItem } from '@/features/feed/api';
-import { durationSeconds, pillFor, postKind, type PostKind } from '@/features/feed/model';
+import { creatorName, durationSeconds, pillFor, postKind, UNNAMED_CREATOR, type PostKind } from '@/features/feed/model';
 
 /** The wallet the piece is paid from, as H14 names it. */
 export const WALLET_NAME = 'Naira wallet';
@@ -8,6 +8,12 @@ export const WALLET_NAME = 'Naira wallet';
 const SECONDS_PER_MINUTE = 60;
 
 const kindOf = (item: Pick<FeedItem, 'contentType'>): PostKind => postKind(item) ?? 'video';
+
+/**
+ * Who H14 and H15 name as the creator: the feed's own name for them (WAWU ID's name, else their handle), and a piece's page's
+ * "Someone" for a creator who has neither yet. A quote is never refused for a missing name.
+ */
+export const unlockPayee = (creator: { displayName: string | null; handle: string | null }): string => creatorName(creator) ?? UNNAMED_CREATOR;
 
 /** The line under the title on H14: "Video · 18 min", "PDF · 84 pages". The piece's own figures, left out when it has none. */
 export function sheetSubtitle(item: FeedItem): string {

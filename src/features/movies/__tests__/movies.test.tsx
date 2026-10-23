@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 
 import { ApiError } from '@/api/errors';
@@ -163,17 +163,44 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     expect(screen.queryByTestId('flix-hero-trailer')).toBeNull();
   });
 
-  it('MV11 draws the search button while it loads, MV12 none (low)', async () => {
-    mockGet.mockImplementation(() => new Promise(() => undefined));
+  // FIX-101 (FLIX-04 L1): the test that stood here pinned MV11's Search button while the Hub had not answered; a cold open of a Hub
+  // that says "soon" or "off" flashed the catalog shapes and the button before swapping them out.
+  it('a cold open draws the title and a plain wait, with no catalog shapes and no Search, until the Hub answers; MV12 has no Search either', async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    // Only the catalog read is held: a read of the genres (asked for while the Hub has not said "soon") answers at once.
+    mockGet.mockImplementation((path: string) =>
+      path === '/api/hub/movies'
+        ? new Promise((resolve) => {
+            answer = resolve;
+          })
+        : Promise.resolve(ok({ genres: [], languages: [] })),
+    );
     const { unmount } = await render(wrap(<MoviesScreen {...props} />));
     expect(screen.getByTestId('movies-loading')).toBeTruthy();
-    expect(screen.getByTestId('movies-search')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
+    expect(screen.queryByTestId('movies-search')).toBeNull();
+    expect(screen.queryByTestId('flix-hero')).toBeNull();
+    expect(screen.queryByTestId('movies-genre')).toBeNull();
+    await act(async () => {
+      answer(ok({ enabled: false, soon: true, hero: null, rails: [] }));
+    });
+    expect(await screen.findByTestId('movies-soon')).toBeTruthy();
+    expect(screen.queryByTestId('movies-loading')).toBeNull();
+    expect(screen.queryByTestId('movies-search')).toBeNull();
     await unmount();
     queryClient.clear();
     mockGet.mockRejectedValue(new ApiError('network', 0, 'No connection'));
     await render(wrap(<MoviesScreen {...props} />));
     await screen.findByText("Couldn't load movies");
     expect(screen.queryByTestId('movies-search')).toBeNull();
+  });
+
+  it('Search appears once the Hub has said movies are on', async () => {
+    mockGet.mockImplementation((path: string) => Promise.resolve(path.endsWith('/filters') ? ok({ genres: [], languages: [] }) : home(true)));
+    await render(wrap(<MoviesScreen {...props} />));
+    expect(screen.queryByTestId('movies-search')).toBeNull();
+    expect(await screen.findByTestId('movies-search')).toBeTruthy();
+    expect(await screen.findByTestId('flix-hero')).toBeTruthy();
   });
 
   it('MV12 draws its message in the middle with the primary Try again (M2)', async () => {
