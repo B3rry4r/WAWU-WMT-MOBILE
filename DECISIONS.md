@@ -593,3 +593,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-76 · Emails say Who Made This?
 *Owner, 23 Oct 2026 ("who made this please").* Emails a person receives name the product "Who Made This?" (with the question mark, R-69), not "WAWUAfrica" or "WAWU Africa" (R-37). Only the name changes: the sender address, every domain and every link stay as they are.
 **Carried out by:** BRAND-MAIL.
+
+### R-77 · Flix movies show "not live yet"
+*Owner, 23 Oct 2026.* Until business talks with Flixora finish, Flix movies stays visible but does nothing: no titles, no Flixora calls, no accounts, no links. The rails on Home and Explore and the movies screen show S13's "not live yet" state with "Flix movies aren't switched on yet" and "You'll be able to watch movies here soon." (the rail as its title and one card that opens the screen), set by `MOVIE_PARTNER=soon`; `off` still hides everything. This sits beside R-74 and R-75, which stand for when it goes live.
+**Carried out by:** FLIX-04.

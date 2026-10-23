@@ -998,3 +998,29 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
     expect(order).toEqual(['Who Made This?', 'Upcoming events', 'List your services']);
   });
 });
+
+describe('FLIX-04 · the Flix movies rail on Explore when movies are not live yet (R-77)', () => {
+  it('a user sees the rail title and one card with the two lines, with no posters and no See all, and the card opens Flix movies', async () => {
+    answers['GET /explore/featured-creators?limit=10'] = [ok({ items: [] })];
+    answers['GET /movies'] = [ok({ enabled: false, soon: true, hero: null, rails: [] })];
+    const onSeeAllMovies = jest.fn();
+    await rtl.render(wrap(<ExploreScreen {...entries({ onSeeAllMovies, onOpenMovie: jest.fn() })} />));
+    expect(await rtl.screen.findByTestId('explore-flix-soon')).toBeTruthy();
+    expect(rtl.screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
+    expect(rtl.screen.getByText("Flix movies aren't switched on yet")).toBeTruthy();
+    expect(rtl.screen.getByText("You'll be able to watch movies here soon.")).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-flix-see-all')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-flix-list')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-flix-soon'));
+    expect(onSeeAllMovies).toHaveBeenCalledTimes(1);
+  });
+
+  it('a user sees no rail when the Hub says movies are off without soon', async () => {
+    answers['GET /explore/featured-creators?limit=10'] = [ok({ items: [] })];
+    answers['GET /movies'] = [ok({ enabled: false, hero: null, rails: [] })];
+    await rtl.render(wrap(<ExploreScreen {...entries({ onSeeAllMovies: jest.fn(), onOpenMovie: jest.fn() })} />));
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    expect(rtl.screen.queryByTestId('explore-flix')).toBeNull();
+    expect(rtl.screen.queryByText("Flix movies aren't switched on yet")).toBeNull();
+  });
+});

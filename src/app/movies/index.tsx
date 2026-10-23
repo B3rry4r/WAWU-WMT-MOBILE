@@ -6,7 +6,7 @@ import { MoviesGate } from '@/features/movies/MoviesGate';
 import { MoviesScreen } from '@/features/movies/MoviesScreen';
 import { browseParams, useLeave } from '@/features/movies/routes';
 
-/** MV1 · Flix movies (`/movies`), opened from the rail's See all on Home and Explore. Signed in only; drawn only when the Hub says movies are on. */
+/** MV1 · Flix movies (`/movies`), opened from the rail's See all on Home and Explore. Signed in only; drawn only when the Hub says movies are on, or soon ("not live yet", R-77). */
 export default function MoviesRoute() {
   const router = useRouter();
   const { status } = useSession();
@@ -15,7 +15,7 @@ export default function MoviesRoute() {
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
   return (
-    <MoviesGate onOff={off} showWhilePending>
+    <MoviesGate onOff={off} showWhilePending allowSoon>
       <MoviesScreen
         onBack={leave}
         onSearch={() => router.push('/movies/search')}
