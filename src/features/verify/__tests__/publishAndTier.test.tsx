@@ -251,9 +251,9 @@ describe('VF12 · publish your first product', () => {
     expect(hub.publishes).toHaveLength(1);
     expect(hub.publishes[0]).toEqual({ previewAsset: expect.stringContaining('content/preview'), fullAsset: expect.stringContaining('content/full') });
     expect(screen.getByTestId('publish-published-line')).toHaveTextContent(/with our team for review/);
-    expect(screen.getByTestId('publish-link')).toHaveTextContent('wawu/lennox/brand-deck');
+    expect(screen.getByTestId('publish-link')).toHaveTextContent('wawuafrica.com/content/c1');
     await fireEvent.press(screen.getByTestId('publish-share'));
-    expect(share).toHaveBeenCalledWith({ message: 'wawu/lennox/brand-deck' }, expect.anything());
+    expect(share).toHaveBeenCalledWith({ message: 'https://wawuafrica.com/content/c1' }, expect.anything());
     share.mockRestore();
   });
 

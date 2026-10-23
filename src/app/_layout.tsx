@@ -77,6 +77,9 @@ function useStoredTheme(): boolean {
  * (`/r`, `/selfie`, `/activate`, `/receipt`, `/u`, `/c`, `/content`, which each send a signed-out visitor on themselves),
  * `/claim-code` (sends a signed-out visitor to sign-in and brings the sign-in back) and the development-only screens. That test
  * fails when a route file is neither.
+ * The Voice Intro's writing and recording screens (`/voice-intro`, `/voice-consent`) sit with the creator's setup checklist, so VF7's
+ * "Record my voice" works for a creator who bought a tier while still inside sign-up setup (SWEEP-FLOWS B4); there, Use this
+ * goes back to the checklist, since the tabs are not open yet.
  * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
  * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
@@ -129,11 +132,11 @@ export default function RootLayout() {
           <Stack.Screen name="shop" />
           <Stack.Screen name="shop-product" />
           <Stack.Screen name="hear-name" />
-          <Stack.Screen name="voice-intro" />
-          <Stack.Screen name="voice-consent" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
           <Stack.Screen name="creator-setup" />
+          <Stack.Screen name="voice-intro" />
+          <Stack.Screen name="voice-consent" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
           <Stack.Screen name="categories" />

@@ -281,3 +281,40 @@ describe('P10 Become a creator', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 });
+
+describe('SWEEP-FLOWS B6 · the checklist says what is true of the person\'s tier (R-43)', () => {
+  const tier = (state: 'none' | 'active' | 'ending' | 'ended') =>
+    ok({ state, tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
+  const rest = () => {
+    answers['GET /api/hub/paid-dm/settings'] = ok({ enabled: true, priceKobo: 50000, responseHours: 24, creatorSharePct: 85, earnPerMessageKobo: 42500, raiseToKobo: null, options: { minPriceKobo: 1, maxPriceKobo: 2, pricePresets: [], responseWindowHours: [24] }, standing: { paused: false } });
+    answers['GET /api/hub/users/me/profile-stats'] = ok({ postCount: 0, followerCount: 0, followingCount: 0, profileCompletenessPct: 40, profileCompletenessMissing: ['bio'] });
+    answers['GET /api/hub/communities/mine'] = { status: 200, body: { statusCode: 200, message: 'OK', data: [], pagination: { nextPage: null, total: 0 } } };
+    answers['GET /api/hub/money/wallet'] = ok({ state: 'not_open', account: null, limits: null, pin: { isSet: false } });
+  };
+
+  it.each(['active', 'ending'] as const)('with a %s tier, uploading is open and earnings wait for the wallet', async (state) => {
+    rest();
+    answers['GET /api/hub/me/tier'] = tier(state);
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    expect(await screen.findByText('Uploading is open')).toBeTruthy();
+    expect(screen.getByText('Your earnings wait until you open your wallet')).toBeTruthy();
+  });
+
+  it.each(['none', 'ended'] as const)('with %s as the tier, it says uploading needs a tier and never "open"', async (state) => {
+    rest();
+    answers['GET /api/hub/me/tier'] = tier(state);
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    expect(await screen.findByText('Uploading needs a tier')).toBeTruthy();
+    expect(screen.getByText('Drafts are free. Pick a tier when you are ready to publish.')).toBeTruthy();
+    expect(screen.queryByText('Uploading is open')).toBeNull();
+  });
+
+  it('with a tier that cannot be read, it claims nothing about uploading', async () => {
+    rest();
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    await screen.findByTestId('setup-count');
+    expect(screen.queryByText('Uploading is open')).toBeNull();
+    expect(screen.queryByText('Uploading needs a tier')).toBeNull();
+    expect(screen.getByText('Your earnings wait until you open your wallet')).toBeTruthy();
+  });
+});

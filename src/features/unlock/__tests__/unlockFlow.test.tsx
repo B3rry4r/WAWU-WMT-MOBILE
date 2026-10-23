@@ -142,7 +142,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
   if (path === '/feed/entries') {
-    return ok([{ kind: 'content', content: lockedItem() }], { pagination: { currentPage: 1, nextPage: null, perPage: 10, total: 1 } });
+    // The Hub's own feed opens the piece once the unlock is paid, which is what the app's refresh after a payment reads (SWEEP-FLOWS B2).
+    const item = lockedItem();
+    const opened = hub.mode === 'paid' && hub.pays.length > 0;
+    return ok([{ kind: 'content', content: opened ? { ...item, fullAssetLocked: false, fullAssetUrl: 'https://cdn.test/full.webm' } : item }], { pagination: { currentPage: 1, nextPage: null, perPage: 10, total: 1 } });
   }
   if (path === '/users/me') return ok({ wawuUserId: ME });
   if (path.endsWith('/view')) return ok({ views: 1, counted: true });
@@ -328,8 +331,8 @@ describe('HOME-07: a course or a template unlocked from the feed', () => {
     const done = screen.getByTestId('unlock-open');
     expect(rtl.within(done).getByText('Done')).toBeTruthy();
     expect(screen.queryByText('Watch now')).toBeNull();
-    // Until Done the post is locked; after it the sheet is gone and the post is the person's, with nothing opened.
-    expect(screen.queryByTestId(`offer-${PIECE}`)).toBeTruthy();
+    // SWEEP-FLOWS B2: the post is the person's the moment it is paid, behind the sheet; Done only closes the sheet, with nothing opened.
+    await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
     await rtl.fireEvent.press(done);
     await rtl.waitFor(() => expect(screen.queryByText('Unlocked')).toBeNull());
     await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
@@ -354,8 +357,8 @@ describe('H14 to H18: paying', () => {
     expect(hub.pays[0].pin).toBe('4829');
     expect(hub.pays[0].key).toMatch(/[0-9a-f-]{36}/);
     expect(hub.pays[0].body).toEqual({ expectedTotalKobo: PRICE + FEE, quoteToken: `tok-${FEE}` });
-    // The post is locked until Watch now; then it is not, in the feed's own data.
-    expect(screen.queryByTestId('offer-piece-1')).toBeTruthy();
+    // SWEEP-FLOWS B2: the post is open the moment the payment is paid, behind H16, with no reload and no need to close the sheet.
+    await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
     await rtl.fireEvent.press(screen.getByTestId('unlock-open'));
     await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
     expect(screen.queryByText('Unlocked')).toBeNull();

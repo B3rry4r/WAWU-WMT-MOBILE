@@ -21,13 +21,14 @@ import { hueFor } from '@/features/feed/model';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 import { fetchGridPage, gridKey } from '@/features/me/api';
 import { ContentGrid, GridSkeleton } from '@/features/me/ContentGrid';
-import { countsOf, roleLinesOf, socialLinksOf, tileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
+import { countsOf, roleLinesOf, socialLinksOf, visitorTileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
 import { Counts, HeaderSkeleton, NameBlock, SocialChips, bodyTop } from '@/features/me/ProfileHeader';
 import { ProfileTabs } from '@/features/me/ProfileTabs';
 import { AskSheets } from '@/features/paid-ask/AskSheets';
 import { askButtonLabel, offBody, offTitle } from '@/features/paid-ask/model';
 import { useAsk } from '@/features/paid-ask/useAsk';
 import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { openFreeChat } from '@/features/paid-answers/api';
 import { tickOf } from '@/features/chat/api';
 import { ServicesTab } from '@/features/me/ServicesTab';
 import { readFailure } from '@/features/profile-edit/failure';
@@ -88,6 +89,11 @@ export type VisitorProfileScreenProps = {
   pay?: FlowHandlers;
   /** A question was paid: the thread (I4) opens. Message and its price are drawn only when this and `pay` are given (R-47). */
   onOpenPaidThread?: (wawuId: string) => void;
+  /**
+   * The free chat with this person (R-13) is open: its id goes here and the chat (I12) opens. Message (free) is drawn only when this is
+   * given, and whether or not the person takes paid messages: "Messages off" only means paid messages are off (SWEEP-FLOWS B3).
+   */
+  onOpenChat?: (chatId: string) => void;
   /** False while another screen (Add money) is on top of this one, true when it is in front. The route says; the ask sheet asks its quote again on return (I6). */
   focused?: boolean;
 };
@@ -106,7 +112,7 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  * creator takes paid questions; when it does not, "Messages off" and the note under it (I8). Not drawn yet (the task that builds the
  * screen adds it, R-47): the Bio voice player (VOICE-01).
  */
-export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, focused = true }: VisitorProfileScreenProps) {
+export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -178,6 +184,24 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
     },
     cache,
   );
+
+  // One free chat opened at a time: a second tap while the first is on its way opens nothing more (the Hub finds the same chat anyway).
+  const chatting = useRef(false);
+  const [openingChat, setOpeningChat] = useState(false);
+  const message = async () => {
+    if (!person || !onOpenChat || chatting.current) return;
+    chatting.current = true;
+    setOpeningChat(true);
+    setNotice(null);
+    try {
+      onOpenChat(await openFreeChat(person));
+    } catch (error) {
+      setNotice(isApiError(error) && error.message ? error.message : 'The chat could not be opened. Try again.');
+    } finally {
+      chatting.current = false;
+      setOpeningChat(false);
+    }
+  };
 
   const share = async () => {
     if (!view) return;
@@ -267,6 +291,17 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
             </View>
           ) : (
             <GroupedList testID="visitor-menu-list">
+              {onOpenChat ? (
+                <ListRow
+                  testID="visitor-menu-message"
+                  lead={<IconTile icon="MessageCircle" />}
+                  title={`Message ${name}`}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    void message();
+                  }}
+                />
+              ) : null}
               <ListRow testID="visitor-menu-block" lead={<IconTile icon="Ban" />} title={`Block ${name}`} onPress={() => setConfirmBlock(true)} />
             </GroupedList>
           )}
@@ -348,6 +383,9 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
               <Counts counts={countsOf({ followerCount: view.profile.followerCount, followingCount: view.profile.followingCount, postCount: view.profile.contentCount })} />
               <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />
               {terms?.kind === 'off' ? <Banner tone="info" icon="Info" title={offTitle(name)} body={offBody(name)} testID="visitor-messages-off" /> : null}
+              {terms?.kind === 'off' && onOpenChat ? (
+                <Button testID="visitor-message-free" label={`Message ${name}`} icon="MessageCircle" variant="secondary" size="md" loading={openingChat} onPress={() => void message()} full />
+              ) : null}
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} /> : null}
               {tab === 'services' ? <ServicesBody view={view} onOpenListing={onOpenListing} /> : null}
@@ -374,7 +412,7 @@ function ContentBody({ query }: { query: GridQuery }) {
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(tileOf);
+  const tiles = query.data.pages.flatMap((page) => page.pieces).map(visitorTileOf);
   if (tiles.length === 0) {
     return <EmptyState testID="visitor-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What they publish shows here." />;
   }

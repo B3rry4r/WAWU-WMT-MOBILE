@@ -12,6 +12,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
+import { fetchMyTier, tierKey } from '@/features/me/api';
 import { font, space, useWawu } from '@/theme';
 
 import { fetchSetupState, setupKey, type SetupState } from './api';
@@ -57,11 +58,19 @@ export type CreatorSetupScreenProps = {
   onOpen: (target: SetupTarget) => void;
 };
 
+/** The first card's words for what the person's tier lets them do (R-43). `undefined`: the tier is not known, so uploading is not mentioned. */
+export function uploadingCard(state: 'none' | 'active' | 'ending' | 'ended' | undefined): { title: string; line?: string } {
+  if (state === 'active' || state === 'ending') return { title: 'Uploading is open', line: 'Your earnings wait until you open your wallet' };
+  if (state === 'none' || state === 'ended') return { title: 'Uploading needs a tier', line: 'Drafts are free. Pick a tier when you are ready to publish.' };
+  return { title: 'Your earnings wait until you open your wallet' };
+}
+
 /**
  * A11 · Set up your account. The checklist of what a new earning account does next, each row opening the screen that does it. A row is
  * ticked when the Hub says it is done; the count is the rows ticked of the rows drawn. "Start your first community" (I32, INBOX-14) is the
  * fourth row, ticked when the person is the host of a room, so the count is of five; the board's "Free to host" under it is not backed
- * (G-INBOX-14-1) and is not written. Uploading is open: the first line says earnings wait for the wallet (R-11, BRIEF A11).
+ * (G-INBOX-14-1) and is not written. The first card says what is true of the person's tier (SWEEP-FLOWS B6, R-43): uploading is open with one,
+ * needs one without, and earnings wait for the wallet (R-11, BRIEF A11).
  */
 export function CreatorSetupScreen({ onLater, laterBusy, laterFailed, onOpen }: CreatorSetupScreenProps) {
   const { colors } = useWawu();
@@ -73,6 +82,15 @@ export function CreatorSetupScreen({ onLater, laterBusy, laterFailed, onOpen }: 
       void refetch();
     }, [refetch]),
   );
+  // What the first card says about uploading is the tier's (R-43): open with one, needing one without. Not read yet or not readable, it claims nothing.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
+  const refetchTier = tier.refetch;
+  useFocusEffect(
+    useCallback(() => {
+      void refetchTier();
+    }, [refetchTier]),
+  );
+  const top = uploadingCard(tier.data?.state);
   const rows = rowsOf(state.data);
   const known = state.data !== undefined && !state.data.failed;
   const doneCount = rows.filter((r) => r.done === true).length;
@@ -94,12 +112,14 @@ export function CreatorSetupScreen({ onLater, laterBusy, laterFailed, onOpen }: 
         <Card padded>
           <View style={styles.top}>
             <View style={styles.topWords}>
-              <Text variant="body" style={font(600)}>
-                Uploading is open
+              <Text variant="body" style={font(600)} testID="setup-top-title">
+                {top.title}
               </Text>
-              <Text variant="secondary" tone="textMuted">
-                Your earnings wait until you open your wallet
-              </Text>
+              {top.line ? (
+                <Text variant="secondary" tone="textMuted" testID="setup-top-line">
+                  {top.line}
+                </Text>
+              ) : null}
             </View>
             {known ? <StatusPill tone="accent" label={`${doneCount} of ${rows.length}`} testID="setup-count" /> : null}
           </View>

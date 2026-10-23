@@ -2,6 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Appearance, Platform } from 'react-native';
 import { useSyncExternalStore } from 'react';
 
+import { setThemePick } from '@/theme/override';
+
 /**
  * Z2's Theme and Sound rows are choices about this phone, not about the account, so they are
  * kept on the phone and never sent anywhere: Theme is System, Light or Dark, and Sound is the
@@ -49,9 +51,11 @@ export async function loadPrefs(): Promise<DevicePrefs> {
 
 /**
  * Makes the app follow `choice`: `light` or `dark` pins it, `system` hands it back to the phone.
- * The browser build cannot pin a scheme, so there it does nothing.
+ * The browser build cannot pin a scheme through `Appearance`, so the pick is also kept in `theme/override.ts`, which `useWawu` reads.
  */
 export function applyTheme(choice: ThemeChoice): void {
+  // The app's own pick first: every screen draws it at once and after a reload, in the browser build too (SWEEP-FLOWS B7).
+  setThemePick(choice);
   if (typeof Appearance.setColorScheme !== 'function') return;
   Appearance.setColorScheme(choice === 'system' ? 'unspecified' : choice);
 }

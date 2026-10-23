@@ -37,6 +37,7 @@ export default function ProfileRoute() {
         onAddMoney: (short) => router.push(addMoneyHref(short)),
       }}
       onOpenPaidThread={(who) => router.push(paidThreadHref(who))}
+      onOpenChat={(chatId) => router.push({ pathname: '/chat/[id]', params: { id: chatId } })}
       focused={focused}
     />
   );

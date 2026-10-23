@@ -128,14 +128,14 @@ afterAll(() => {
 });
 
 describe('W35 · Wallet settings', () => {
-  it('a user sees Transaction PIN with its age, Beneficiaries with the server count, and Account details with the bank and the number, all from the wallet read', async () => {
+  it('a user sees Transaction PIN with its age and Account details with the bank and the number, all from the wallet read (no Beneficiaries row, SWEEP-FLOWS B9)', async () => {
     await boot();
     expect(await rtl.screen.findByTestId('wallet-settings-pin')).toBeTruthy();
     expect(rtl.screen.getByRole('header', { name: 'Wallet settings' })).toBeTruthy();
     expect(rtl.screen.getByText('Transaction PIN')).toBeTruthy();
     expect(rtl.screen.getByText('Changed 3 months ago')).toBeTruthy();
-    expect(rtl.screen.getByText('Beneficiaries')).toBeTruthy();
-    expect(rtl.screen.getByText('6 saved')).toBeTruthy();
+    expect(rtl.screen.queryByText('Beneficiaries')).toBeNull();
+    expect(rtl.screen.queryByText('6 saved')).toBeNull();
     expect(rtl.screen.getByText('Account details')).toBeTruthy();
     expect(rtl.screen.getByText('Ekiti Trial MFB · 810 000 0417')).toBeTruthy();
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual(['GET /api/hub/money/wallet']);
@@ -208,17 +208,19 @@ describe('W35 · Wallet settings', () => {
     expect(props.onOpenPin).not.toHaveBeenCalled();
   });
 
-  it('a user sees Beneficiaries, and it is no button: the list screen cannot be opened from here yet, so it opens nothing', async () => {
+  it('Beneficiaries is not drawn: no screen lists the saved recipients, so a row that opens nothing is left out (R-47, SWEEP-FLOWS B9)', async () => {
     await boot();
-    await rtl.screen.findByTestId('wallet-settings-beneficiaries');
-    expect(rtl.screen.queryByRole('button', { name: /Beneficiaries/ })).toBeNull();
-    expect(rtl.screen.getByLabelText('Beneficiaries, 6 saved')).toBeTruthy();
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.queryByTestId('wallet-settings-beneficiaries')).toBeNull();
+    expect(rtl.screen.queryByText('Beneficiaries')).toBeNull();
+    expect(rtl.screen.queryByLabelText('Beneficiaries, 6 saved')).toBeNull();
   });
 
-  it('with none saved Beneficiaries says "None saved"', async () => {
+  it('with none saved there is still no Beneficiaries row and no "None saved"', async () => {
     fallback['GET /money/wallet'] = view({ beneficiaryCount: 0 });
     await boot();
-    expect(await rtl.screen.findByText('None saved')).toBeTruthy();
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.queryByText('None saved')).toBeNull();
   });
 
   it('a user can open Account details and read the holder, the number and the bank, and copy the number as sent', async () => {

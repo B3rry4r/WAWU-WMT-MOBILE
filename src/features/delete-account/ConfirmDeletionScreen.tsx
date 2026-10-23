@@ -8,6 +8,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { space, useWawu } from '@/theme';
 
 import { requestDeletion, type LeavingReason } from './api';
+import { markDeletionScheduled } from './cancelNotice';
 import { CONFIRM_WORD, isConfirmed, problemOf, reasonLabel } from './model';
 import { ReasonSheet } from './ReasonSheet';
 import { WalletNotice } from './WalletNotice';
@@ -51,7 +52,10 @@ export function ConfirmDeletionScreen({ onBack, onScheduled, onWithdraw }: Confi
     setProblem(null);
     try {
       const answer = await requestDeletion(reason);
-      if (answer.kind === 'scheduled') onScheduled(answer.at);
+      if (answer.kind === 'scheduled') {
+        await markDeletionScheduled();
+        onScheduled(answer.at);
+      }
       else setRefusal({ message: answer.message, withdraw: answer.withdraw });
     } catch (error) {
       setProblem(problemOf(error));

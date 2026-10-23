@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
+import { useSession } from '@/api/session';
 import { BrandMark } from '@/components/BrandMark';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
@@ -11,6 +12,7 @@ import { ScreenFrame } from '@/components/ScreenFrame';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { useOpenSupport } from '@/features/support/useOpenSupport';
 import { useWawu } from '@/theme';
 
 import { aboutKey, fetchAbout, type About } from './api';
@@ -21,7 +23,6 @@ const aboutMetrics = { between: 16, mark: 64, stack: 10, markPadV: 20, version: 
 
 export const COULD_NOT_OPEN_MAIL = 'No email app opened. Write to the address shown.';
 export const COULD_NOT_OPEN_STORE = 'The store could not be opened. Try again later.';
-export const NOT_FILLED_IN = 'Not available yet';
 
 export type AboutScreenProps = {
   onBack: () => void;
@@ -84,8 +85,14 @@ type RowsProps = { about: About; onOpenTerms: () => void; onOpenPrivacy: () => v
 
 function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
   const [problem, setProblem] = useState<string | null>(null);
+  // Signed in, Contact support opens the support chat (R-30), as Wallet settings' "Help with a payment" does. About is also public: a visitor
+  // has no chat to open, so for them the row is the support address when the owner has set one, and is not drawn when not (R-47).
+  const { status } = useSession();
+  const support = useOpenSupport();
+  const chat = status === 'signedIn';
+  const address = about.supportEmail?.trim() || undefined;
   const bank = about.bankName.trim();
-  const mail = mailtoUrl(about.supportEmail);
+  const mail = mailtoUrl(address ?? null);
   const rate = rateUrl();
 
   const open = async (url: string, failure: string) => {
@@ -110,24 +117,26 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
             subtitleTestID="about-licence"
           />
         ) : null}
-        <ListRow
-          testID="about-support"
-          lead={<IconTile icon="Mail" size={aboutMetrics.tile} />}
-          title="Contact support"
-          titleLines={0}
-          subtitle={about.supportEmail ?? NOT_FILLED_IN}
-          subtitleLines={0}
-          subtitleSelectable
-          subtitleTestID="about-support-address"
-          onPress={mail ? () => void open(mail, COULD_NOT_OPEN_MAIL) : undefined}
-        />
+        {chat || address ? (
+          <ListRow
+            testID="about-support"
+            lead={<IconTile icon={chat ? 'MessageCircle' : 'Mail'} size={aboutMetrics.tile} />}
+            title="Contact support"
+            titleLines={0}
+            subtitle={address}
+            subtitleLines={0}
+            subtitleSelectable
+            subtitleTestID="about-support-address"
+            onPress={chat ? () => void support.open() : mail ? () => void open(mail, COULD_NOT_OPEN_MAIL) : undefined}
+          />
+        ) : null}
         {rate ? (
           <ListRow testID="about-rate" lead={<IconTile icon="Star" size={aboutMetrics.tile} />} title="Rate the app" titleLines={0} onPress={() => void open(rate, COULD_NOT_OPEN_STORE)} />
         ) : null}
       </GroupedList>
-      {problem ? (
+      {problem || support.error ? (
         <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="about-problem">
-          {problem}
+          {problem ?? support.error}
         </Text>
       ) : null}
       <GroupedList testID="about-legal">

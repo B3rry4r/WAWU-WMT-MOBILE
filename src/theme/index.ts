@@ -1,4 +1,6 @@
 import { useColorScheme } from 'react-native';
+
+import { isDarkFor, useThemePick } from './override';
 import type { TextStyle } from 'react-native';
 
 import {
@@ -132,12 +134,12 @@ export const text = {
 } satisfies Record<string, TextStyle>;
 
 /**
- * The current theme's tokens. Dark is the design's default theme, so an unknown
- * system preference resolves to dark. Screens read every colour from here;
+ * The current theme's tokens: Settings' Theme when it pins one (Light or Dark, `override.ts`), the phone's scheme otherwise. Dark is the design's
+ * default theme, so an unknown system preference resolves to dark. Screens read every colour from here;
  * a colour literal in a screen fails the gates.
  */
 export function useWawu() {
-  const dark = useColorScheme() !== 'light';
+  const dark = isDarkFor(useColorScheme(), useThemePick());
   return {
     dark,
     colors: dark ? darkColors : lightColors,
