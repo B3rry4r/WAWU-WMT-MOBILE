@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 14 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -32,6 +32,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-99](../tasks/FIX-99.md) The server findings of the pre-build re-walk (refresh token as a session, host not counted, ten-digit phone, Flix genres) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -195,7 +196,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-99](../tasks/FIX-99.md) The server findings of the pre-build re-walk (refresh token as a session, host not counted, ten-digit phone, Flix genres) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -392,6 +392,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · FIX-99 fix round · The verifier's FIX built (Sonnet builder, T2; backend `wmt/FIX-99` on `8d6d702`, this record on mobile `wmt/FIX-99`; status verifying): the admin auth spec's test that pinned the refresh-token hole now expects 401, the strategy's prettier reflow is undone, and a spec shows `GET /movies/browse?genre=Music` finds a title Flixora served as "Drama | Music | Thriller".
 - 23 Oct 2026 · FIX-99 · Built (Sonnet builder, T2; backend `wmt/FIX-99` `8d6d702` on `origin/main` `dd00e85`, WAWU ID `wmt/FIX-99` `3cd7256` on `9596928`, this record on mobile `wmt/FIX-99`; status verifying): a WAWU ID refresh token is no longer a Hub session (strategy and live socket), the app's room routes count the host, a ten-digit Nigerian number signs up, Flix genres are single words; the legal assistant answered two real turns in 5.0 s and 3.8 s on gemini-3.5-flash; U2 (name preview tier check) stopped because the app calls it before a tier.
 - 23 Oct 2026 · FLIX-02 · Built (Sonnet builder, T2; backend `wmt/FLIX-02` `ebf9fc5` on `origin/main` `13e27536`, mobile `wmt/FLIX-02`; status verifying): `MOVIE_PARTNER=flixora` works. `src/flixora/` reads Flixora's catalog (paged, `updatedSince`, region NG by default, one title by id) and signs the HS256 link (new `jti` each tap, `exp` 60 s, token after `#`); six `FLIXORA_*` settings, a missing one stops the server at boot naming it; 401, 403, 404, 429 become plain answers; no key, token or link is logged. `POST /movies/{id}/watch` now refuses a title that has not premiered (409 `movie_not_premiered`). Real TEST environment: 29 titles synced, second sync changed nothing, one title by id (facts in `docs/flixora/TEST-RESPONSES.md`). The real sign-in check is NOT RUN: it waits for the test sign-in secret and the partner slug. Protected routes 253/253; gates 0 fail.
 - 23 Oct 2026 · SWEEP-FLOWS · Built (Sonnet builder, T1; mobile `wmt/SWEEP-FLOWS` on `origin/main` `b1a460f3`, backend `wmt/SWEEP-FLOWS` on `13e27536`, `scripts/dev/stack.sh` only): the audit's broken flows B1 to B9, B12 and B14 fixed with tests that fail without the fix, B10 ruled no (identity numbers live in memory only), B11, B13, B15, B16 not this sweep; one check_tasks run (see tasks/SWEEP-FLOWS.md).
@@ -406,4 +407,3 @@ From `docs/LOG.md`, newest first.
 - 21 Oct 2026 · SWEEP-VOICE · Built (Sonnet builder, T1, the consent-record row at T2; backend `wmt/SWEEP-VOICE` `1daf6be` on `origin/main` `d7dbf9e`, mobile `wmt/SWEEP-VOICE`; status verifying): the Voice Intro lows. Backend: the public intro route answers null for an account with no public profile (V1); `rollback.sql` refuses while a consent or an intro is stored (V2); a name preview the provider failed on does not count toward the hour (V3); a failed run shows 0 points taken (V4); no consent line without a name, the Hub asks for it and refuses the consent (V5); the contract spec makes its own profile rows (V7); the `voice_intro.*` settings keep their names, ruled no (V6). App: `EntryRow` is `ListRow` in a card with one new optional prop `padV` (A2, SHARED-CHANGES SWEEP-VOICE #1); the name limits stay literals marked PROVISIONAL and filed as BACKEND_GAPS G-SWEEP-VOICE-1 (A1). One existing assertion flipped (check 4's owner is a creator). tasks/SWEEP-VOICE.md has each row.
 - 21 Oct 2026 · FIX-96 · Built (Sonnet builder, T1; backend `wmt/FIX-96` `d6dd667` on `origin/main` `56e6ec0`; this record on mobile `wmt/FIX-96` from `origin/main` `905e391f`; status verifying): the first line of all 24 backend `rollback.sql` files is `\set ON_ERROR_STOP on`, so a bare `psql -f` stops where a guard raises and the drops never run (shown on a test database: the old file lost the row, the new one stops with the row and tables still there, exit 3); a new spec fails any rollback without the line; the two specs that run a whole rollback through pg or Prisma leave out backslash lines. No schema change, `test:protected` 253 passed on the base lock.
 - 21 Oct 2026 · FIX-96 · Verified (Sonnet verifier, T1): PASS, status review. All 24 backend `rollback.sql` begin with exactly `\set ON_ERROR_STOP on` and nothing else changed; no script, gate, workflow or doc runs a rollback, and the two specs that do skip backslash lines (assertions untouched, 37 tests pass in band); with one first line removed the new spec fails and names the file; on a test database the referral-codes rollback (not Fintava) stops at its raise with the table and rows intact (old file dropped them), and runs to the end with no rows; tsc, eslint, gates and baseline EXIT 0, `test:protected` 253 passed on the base lock. No finding above low.
-- 21 Oct 2026 · VERIFY-03 round 3 · The verifier's FIX: Redo while recording stops and releases the recorder before the screen says ready (a test red before, green after); the microphone text names no length; VF7's way out is the shared header back (the board draws no second button); VF10a's title width and position tidied (not checked by picture); SHARED-CHANGES VERIFY-03 #1 confirmed by the lead. Verify, me and route suites 28 suites, 577 tests.

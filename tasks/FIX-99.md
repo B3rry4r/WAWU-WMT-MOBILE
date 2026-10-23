@@ -7,7 +7,7 @@ order: -99
 priority: launch
 repo: wawu-backend
 type: setup
-status: building
+status: verifying
 depends_on: []
 decisions: []
 passes: [V1, V3]
@@ -17,6 +17,8 @@ tier: T2
 # FIX-99 · The server findings of the pre-build re-walk
 
 ## Current state
+
+As of 23 Oct 2026, fix round built (Sonnet builder, T2; status verifying): backend `wmt/FIX-99` has two new commits on `8d6d702`. (1) The verifier's high finding: `src/admin/auth/tests/admin-auth.contract.spec.ts` had one test that pinned the H3 defect ("that same WAWU ID REFRESH token still satisfies USER auth", expecting 403). It now expects 401 and its comment and title say the hole is closed (lead ruling; nothing else in that spec changed); the spec passes in band. (2) The prettier reflow of the `jwksUri` lines in `wawu-jwt.strategy.ts` is undone, so the fenced-file diff holds only the token-kind check (SHARED-CHANGES FIX-99 #1). (3) New `src/flixora/tests/flixora-genre-filter.contract.spec.ts`: a made-up title with Flixora's real genre value "Drama | Music | Thriller" goes through the adapter and the sync, is stored as Drama, Music, Thriller, and is listed by `GET /movies/browse?genre=Music` (the genre filter is on `/movies/browse`, not `GET /movies`); 5 of its tests fail on main, the admin-auth assertion fails on main. Checks (EXIT 0): tsc; the admin-auth, token-kind, live, movies, flixora genres, genre-filter and flixora adapter specs in band (7 suites, 121 tests); gates 0 fail; check_baseline. eslint (no fix) is clean on the new spec; the admin-auth spec and the strategy keep the 70 and 1 prettier errors they had on main. Earlier text, before the fix round:
 
 As of 23 Oct 2026, FIX (verifier, Sonnet, T2): one high finding, so back to building. Backend `wmt/FIX-99` `8d6d702` is right on H3, L5 and the Flix genres; WAWU ID `wmt/FIX-99` `3cd7256` is right on L2. The one thing to fix: `src/admin/auth/tests/admin-auth.contract.spec.ts` line 451 still pins the H3 hole ("that same WAWU ID REFRESH token still satisfies USER auth", expects 403) and now gets 401, so the full backend suite goes red in CI. Per the sweep rule, change that one assertion to 401 and reword its comment. U2 is not changed (lead ruling). Next: a builder fixes that assertion, then a quick re-check of that one spec.
 
