@@ -36,3 +36,20 @@ Verifier: a Sonnet agent (T1), 23 Oct 2026; it built none of this. Heads: WAWU I
 4. **low, test-gap note.** WAWU ID `src/mail/mail.service.ts:374` comment "[WELCOME] You are In. Welcome to WAWUAfrica" is stale (comment only).
 5. **unclear.** Backend `src/legal-intake/assistant/legal-assistant-prompt.ts:66` still names itself "the WAWU Legal assistant in the Who Made This app" while `legal-chat.service.ts` now says "Who Made This? Legal assistant". Bare WAWU is ruled to stay and the prompt is not an email; the lead decides whether the two should match.
 
+
+## Verifier report
+
+Re-check, 23 Oct 2026, a Sonnet verifier (T1) that built none of this. Heads: WAWU ID `603f09b` (from `0a23dce`), backend `07a0ba7` (from `ffe53ab`), mobile `1cb6d8f8` (from `3a4de4d4`). Verdict: **PASS**, no findings. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/brand-mail-v/` (`logs2/logs/`, `be-after2/campaign.html`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | WAWU ID `tsc --noEmit` EXIT 0; eslint (no --fix) `mail.service.ts` EXIT 0; `mail-brand`, `mail.service`, `data-export-email`, `pin-reset-code-email`: 4 suites, 75 tests EXIT 0. Backend `tsc --noEmit` EXIT 0; eslint (no --fix) on `email-render.ts` and `legal-assistant-prompt.ts` EXIT 0; `email-parts`, `email-campaign.contract`, `legal-assistant-prompt` in band: 3 suites, 43 tests EXIT 0; gates EXIT 0 (9 run, 1731 files, 0 fail, 133 warn, 88 accepted). Mobile `check_tasks.py` EXIT 0 (397 tasks); `npm run gates` EXIT 0 (1203 files, 0 fail). |
+| V3 | passed (carried) | The fix round touches one HTML attribute in `email-render.ts` and one prompt string; no route, schema, contract or registry file is in the diff, so the 253/253 protected run of the first round stands. |
+
+1. Regex at `test/phone-signup.local.mjs:448` is `/subject="(?!Your Who Made This\? verification)/`: false for `[mail skipped] to=x@example.test subject="Your Who Made This? verification code"`, true for `subject="Was This You?"` and for the welcome subject. Run with `node -e` only.
+2. The Hub's real `renderEmail` output carries `alt="Who Made This?"`; the sender is unchanged.
+3. `src/mail/mail.service.ts:374` comment now "[WELCOME] You are In. Welcome to Who Made This?".
+4. `legal-assistant-prompt.ts:66` reads "You are the Who Made This? Legal assistant. A client has come to you..."; it is the only changed line in that file; `legal-chat.service.ts` says the same; no "WAWU Legal assistant" is left in a prompt.
+5. The task file lists four em-dashes (one Ditto invite, three Set your password) in the capability check and the rows, plus the two new rows; no em-dash character in the file.
+Nothing else is in either fix diff (WAWU ID: 2 files, 2 lines; backend: 2 files, 2 lines). The builder's files for the fix round on mobile: `tasks/BRAND-MAIL.md`, `docs/LOG.md`, `docs/PROGRESS.md`.
+
