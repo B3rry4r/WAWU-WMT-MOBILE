@@ -14831,6 +14831,7 @@ export interface components {
         };
         MoviesHomeView: {
             enabled: boolean;
+            soon?: boolean | null;
             hero: components["schemas"]["MovieCardView"];
             rails: components["schemas"]["MovieRailView"][];
         };

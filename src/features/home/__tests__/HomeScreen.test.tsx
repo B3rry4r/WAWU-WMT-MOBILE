@@ -677,3 +677,26 @@ describe('H1 · three spacings the board draws (HOME-18)', () => {
     expect(bottom.paddingBottom).toBe(32);
   });
 });
+
+describe('FLIX-04 · the Flix movies rail on Today when movies are not live yet (R-77)', () => {
+  it('a user sees the rail title and one card with the two lines, with no posters and no See all, and the card opens Flix movies', async () => {
+    answers['GET /movies'] = [ok({ enabled: false, soon: true, hero: null, rails: [] })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-flix-soon')).toBeTruthy());
+    expect(screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
+    expect(screen.getByText("Flix movies aren't switched on yet")).toBeTruthy();
+    expect(screen.getByText("You'll be able to watch movies here soon.")).toBeTruthy();
+    expect(screen.queryByTestId('today-flix-see-all')).toBeNull();
+    expect(screen.queryByTestId('today-flix-list')).toBeNull();
+    await rtl.fireEvent.press(screen.getByTestId('today-flix-soon'));
+    expect(mockPush).toHaveBeenCalledWith('/movies');
+  });
+
+  it('a user sees no rail when the Hub says movies are off without soon', async () => {
+    answers['GET /movies'] = [ok({ enabled: false, hero: null, rails: [] })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    expect(screen.queryByTestId('today-flix')).toBeNull();
+    expect(screen.queryByText("Flix movies aren't switched on yet")).toBeNull();
+  });
+});

@@ -54913,6 +54913,10 @@
      "enabled": {
       "type": "boolean"
      },
+     "soon": {
+      "type": "boolean",
+      "nullable": true
+     },
      "hero": {
       "$ref": "#/components/schemas/MovieCardView",
       "nullable": true
