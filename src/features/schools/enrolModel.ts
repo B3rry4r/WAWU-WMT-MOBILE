@@ -12,6 +12,15 @@ export const FAILED_LINE = 'The payment didn’t go through.';
 export const MONEY_BACK_LINE = 'Your money is back in your wallet.';
 export const NOT_HELD_LINE = 'Check your connection and try again.';
 export const PRICE_UNREADABLE = 'The price could not be read. Try again.';
+export const NO_PRICE_TITLE = "We couldn't work out the price";
+
+/** "Your place is held until 14:35.": when the Hub's hold on the seat ends (`reservedUntil`), on the phone's clock. Null when the Hub gave no time. */
+export function heldLine(reservedUntil: string | null | undefined): string | null {
+  const at = reservedUntil ? new Date(reservedUntil) : null;
+  if (!at || Number.isNaN(at.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `Your place is held until ${pad(at.getHours())}:${pad(at.getMinutes())}.`;
+}
 
 /** What the pay sheet says when a payment the Hub was still confirming then failed: the Hub's reason alone when it gave one (it already says what happened to the money); the app's own two lines only when it gave none. */
 export function failedLine(reason: string | null | undefined): string {

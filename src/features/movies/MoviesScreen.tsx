@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/
 
 import { detailKey, fetchDetail, fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
 import { heroMetrics as h, posterMetrics } from './look';
-import { heroLine, premiereAhead, premiereText } from './model';
+import { genreChoices, heroLine, premiereAhead, premiereText } from './model';
 import { FlixTabBar } from './FlixTabBar';
 import { PosterCard, RailScroller, Scrim, SeeAll } from './parts';
 
@@ -115,7 +115,7 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
   const home = useMoviesHome(queryClient);
   const filters = useQuery({ queryKey: filtersKey, queryFn: fetchFilters }, queryClient);
   const data = home.data?.enabled ? home.data : null;
-  const genres: ChipItem<string>[] = [{ value: 'All', label: 'All' }, ...(filters.data?.genres ?? []).map((g) => ({ value: g, label: g }))];
+  const genres: ChipItem<string>[] = [{ value: 'All', label: 'All' }, ...genreChoices(filters.data?.genres).map((g) => ({ value: g, label: g }))];
   const rails = (data?.rails ?? []).filter((r) => r.movies.length > 0);
 
   let body;

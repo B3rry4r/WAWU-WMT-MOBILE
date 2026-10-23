@@ -54,6 +54,10 @@ export type CreatorRailProps = {
   onOpenCreator?: (wawuId: string) => void;
 };
 
+/** The words of the rail's designed empty state, on Home and on Explore (R-47: a built section stays drawn with its empty state). */
+export const NO_CREATORS_TITLE = 'No creators to suggest yet';
+export const NO_CREATORS_LINE = 'New creators show up here as they join and publish.';
+
 /**
  * "Who Made This?" (H1, R-69): a sideways rail of creators, each with Follow in place. The
  * Hub's answer is changed at once and put right by its reply; a refused follow goes back and
@@ -97,8 +101,8 @@ export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowCha
       <EmptyState
         testID="today-creators-empty"
         icon="Users"
-        title="No creators to suggest yet"
-        message="New creators show up here as they join and publish."
+        title={NO_CREATORS_TITLE}
+        message={NO_CREATORS_LINE}
       />
     );
   } else {

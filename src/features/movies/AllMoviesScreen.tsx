@@ -15,7 +15,7 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 import { fetchFilters, filtersKey, noFilter, useBrowse, type BrowseFilter } from './api';
 import { FilterSheet } from './FilterSheet';
 import { posterMetrics as p, searchMetrics as s } from './look';
-import { activeFilters, SORTS, totalText } from './model';
+import { activeFilters, genreChoices, SORTS, totalText } from './model';
 import { PosterCard } from './parts';
 
 export type AllMoviesScreenProps = {
@@ -60,7 +60,7 @@ export function AllMoviesScreen({ initial, onBack, onSearch, onOpenMovie }: AllM
   const items = browse.data?.pages.flatMap((page) => page.items) ?? [];
   const total = browse.data?.pages[0]?.total ?? 0;
   const cardWidth = Math.floor((width - 2 * layout.gutter - p.gridColGap) / 2);
-  const genres = [{ value: 'All', label: 'All' }, ...(filters.data?.genres ?? []).map((g) => ({ value: g, label: g }))];
+  const genres = [{ value: 'All', label: 'All' }, ...genreChoices(filters.data?.genres).map((g) => ({ value: g, label: g }))];
   const sortLabel = SORTS.find((x) => x.value === filter.sort)?.label ?? 'Newest';
 
   let body;

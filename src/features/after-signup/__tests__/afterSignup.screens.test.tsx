@@ -232,6 +232,28 @@ describe('A11 Set up your account', () => {
     expect(onLater).toHaveBeenCalledTimes(1);
   });
 
+  // FIX-100 #3 (L1): the row stayed open after the photo, bio and socials were saved, and did not say the cover was what the Hub wanted.
+  it('Finish your profile names what the Hub says is still missing', async () => {
+    answers['GET /api/hub/paid-dm/settings'] = ok(priced);
+    answers['GET /api/hub/users/me/profile-stats'] = stats({ profileCompletenessMissing: ['cover'] });
+    answers['GET /api/hub/communities/mine'] = rooms([]);
+    answers['GET /api/hub/money/wallet'] = ok({ state: 'not_open', account: null, limits: null, pin: { isSet: false } });
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    await screen.findByTestId('setup-count');
+    expect(screen.getByText('Still to add: cover photo')).toBeTruthy();
+    expect(screen.queryByText('Photo, bio, socials')).toBeNull();
+  });
+
+  it('Finish your profile lists several missing parts in words', async () => {
+    answers['GET /api/hub/paid-dm/settings'] = ok(priced);
+    answers['GET /api/hub/users/me/profile-stats'] = stats({ profileCompletenessMissing: ['avatar', 'bio', 'links'] });
+    answers['GET /api/hub/communities/mine'] = rooms([]);
+    answers['GET /api/hub/money/wallet'] = ok({ state: 'not_open', account: null, limits: null, pin: { isSet: false } });
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    await screen.findByTestId('setup-count');
+    expect(screen.getByText('Still to add: photo, bio and socials')).toBeTruthy();
+  });
+
   it('counts every finished step', async () => {
     answers['GET /api/hub/paid-dm/settings'] = ok(priced);
     answers['GET /api/hub/users/me/profile-stats'] = stats({ postCount: 2, profileCompletenessMissing: [] });

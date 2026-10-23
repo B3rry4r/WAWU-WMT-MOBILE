@@ -107,6 +107,8 @@ const hub = {
   // A payment of this person's for the order that this phone did not start: the quote is refused and names it.
   openPayment: false,
   wrongFirst: false,
+  // The Hub cannot give a quote (fees are not set yet): `POST /money/payments/quote` answers 503 `fees_not_set`.
+  quoteFails: false,
   list: { current: [] as unknown[], finished: [] as unknown[] },
   listFails: false,
   clicks: 0,
@@ -136,6 +138,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (path === `/schools/enrolments/${ENR}` && method === 'GET') return ok(enrolmentView(hub.status));
   if (path === '/money/payments/quote') {
     if (hub.openPayment) return refuse(409, { code: 'payment_in_progress', message: 'Your payment is still being confirmed.', paymentId: 'pay-1' });
+    if (hub.quoteFails) return refuse(503, { code: 'fees_not_set', message: 'Payments are not switched on yet. Try again later.' });
     hub.quotes += 1;
     return ok(quoteView());
   }
@@ -207,6 +210,7 @@ beforeEach(() => {
     paymentReads: 0,
     openPayment: false,
     wrongFirst: false,
+    quoteFails: false,
     list: { current: [], finished: [] },
     listFails: false,
     clicks: 0,
@@ -360,6 +364,26 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     expect(rtl.screen.getByTestId('enrolment-school-logo')).toHaveTextContent('GT');
     expect(rtl.screen.getByRole('button', { name: 'Pay · ₦150,015.75' })).toBeTruthy();
     expect(rtl.within(rtl.screen.getByTestId('enrolment-name-card')).getByText('Lennox Emmanuel')).toBeTruthy();
+  });
+
+  // FIX-100 #2 (M1): Continue held the seat, the quote failed, and the app dropped back to the course page with no word.
+  it('a price the Hub cannot give keeps the held place on SC5 with the price problem and Try again, then the sheet opens when it can', async () => {
+    hub.quoteFails = true;
+    const h = handlers();
+    await render(<EnrolmentScreen id={ENR} {...h} />);
+    expect(await rtl.screen.findByTestId('enrolment-quote-error')).toBeTruthy();
+    expect(rtl.screen.getByText("We couldn't work out the price")).toBeTruthy();
+    expect(rtl.screen.getByText('Payments are not switched on yet. Try again later.')).toBeTruthy();
+    // Still the Enroll page with the name card and the held place, not the course page.
+    expect(h.onBack).not.toHaveBeenCalled();
+    expect(rtl.within(rtl.screen.getByTestId('enrolment-name-card')).getByText('Lennox Emmanuel')).toBeTruthy();
+    expect(rtl.screen.getByTestId('enrolment-held').props.children).toMatch(/^Your place is held until \d\d:\d\d\.$/);
+    expect(rtl.screen.queryByTestId('enrolment-notice')).toBeNull();
+    hub.quoteFails = false;
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Try again' }));
+    await payButton();
+    expect(rtl.screen.queryByTestId('enrolment-quote-error')).toBeNull();
+    expect(h.onBack).not.toHaveBeenCalled();
   });
 
   it('SC6 and SC7: the PIN approves the total to the school, one payment is made with the PIN in its header, and the receipt follows', async () => {

@@ -7,12 +7,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Skeleton } from '@/components/Skeleton';
+import { EmptyState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { CreateEntry } from '@/features/create/CreateEntry';
 import { useAdList } from '@/features/ads/useAd';
 import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
 import { FlixRail } from '@/features/movies/FlixRail';
+import { NO_CREATORS_LINE, NO_CREATORS_TITLE } from '@/features/home/CreatorRail';
 import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
 import { todayMetrics } from '@/features/home/look';
 import { countsKey, fetchCounts } from '@/features/me/counts';
@@ -203,6 +205,15 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
                 />
               ))}
             </ScrollView>
+          </View>
+        ) : featured.data !== undefined ? (
+          // The creators read worked and served nobody: the section stays drawn with its designed empty state, as Home's does (R-47, FIX-100 #6).
+          <View testID="explore-featured" style={styles.section}>
+            <SectionHeading
+              title="Who Made This?"
+              action={onSeeAllCreators ? <SeeAllCreators onPress={onSeeAllCreators} testID="explore-featured-see-all" /> : undefined}
+            />
+            <EmptyState testID="explore-featured-empty" icon="Users" title={NO_CREATORS_TITLE} message={NO_CREATORS_LINE} />
           </View>
         ) : null}
         {onSeeAllMovies && onOpenMovie ? <FlixRail client={queryClient} testID="explore-flix" onSeeAll={onSeeAllMovies} onOpenMovie={onOpenMovie} /> : null}

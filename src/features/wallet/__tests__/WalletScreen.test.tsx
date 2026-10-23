@@ -769,3 +769,44 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expectNothingUnbuilt(app);
   });
 });
+
+// FIX-100 #7 (U3b): the account landed while the tab said "Your account is opening", W1 drew with no PIN set, and nothing asked for one.
+describe('W1 · an open wallet with no PIN leads to Create your transaction PIN', () => {
+  const noPin = (state = 'open') =>
+    ok({ state, account: ACCOUNT, limits: null, pin: { ...pin, isSet: false, changedAt: null }, bankTransfers: { allowed: true, blockedBy: null }, beneficiaryCount: 0 });
+
+  it('the tab opens A8 (the open account, with "Create your transaction PIN") once, and Back from it stays on the tab', async () => {
+    mockVault.set('wawu.session.access', tokenFor('pin-nudge-owner-1'));
+    fallback['GET /money/wallet'] = noPin();
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await app.waitFor(() => expect(mockPushed).toEqual(['/open-wallet-account']));
+    // Back from A8 (the tab goes out of view and comes back) does not lead there again.
+    await app.act(async () => setFocused(false));
+    await app.act(async () => setFocused(true));
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(mockPushed).toEqual(['/open-wallet-account']);
+  });
+
+  it('an account still opening is not led anywhere, and the PIN step comes when it lands', async () => {
+    mockVault.set('wawu.session.access', tokenFor('pin-nudge-owner-2'));
+    routes['GET /money/wallet'] = [wallet('opening', null), noPin()];
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-opening')).toBeTruthy();
+    expect(mockPushed).toEqual([]);
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Check again' }));
+    await app.waitFor(() => expect(mockPushed).toEqual(['/open-wallet-account']));
+  });
+
+  it('a wallet with its PIN set is not led anywhere', async () => {
+    mockVault.set('wawu.session.access', tokenFor('pin-nudge-owner-3'));
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await app.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(mockPushed).toEqual([]);
+  });
+});
