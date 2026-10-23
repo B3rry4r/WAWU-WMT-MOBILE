@@ -54,8 +54,8 @@ never a sum of our rows.
 - [ ] A delivery whose re-fetched transfer is not `successful` credits nothing; `inflows.failed` credits nothing.
 - [ ] `GET /money/wallet/balance` shows Nuvion's `available` balance and never `current` as spendable; a spec fails if the balance is computed from ledger rows.
 - [ ] Another person's account number or balance is never returned (404).
-- [ ] (key) A sandbox NGN account's details go from `pending` to `active`; the time is in the report.
-- [ ] (key) A sandbox naira inflow, once Nuvion says how to make one (SANDBOX-FINDINGS item 8), credits once.
+- [x] (key) A sandbox NGN account's details go from `pending` to `active`; the time is in the report. PASSED 23 Oct 2026 (NUV-KEYS): no pending phase, `active` when created (POST answered in 2.7 to 3.5 s). Dev gave the same number to 3 of 3 accounts, so a second wallet cannot be recorded on dev keys (row FAILED, not our code).
+- [ ] (key) A sandbox naira inflow, once Nuvion says how to make one (SANDBOX-FINDINGS item 8), credits once. NOT RUN 23 Oct 2026 (NUV-KEYS): no way found to put naira in a dev account (NGN funding session 503; card route needs the dashboard's encryption key).
 
 ## Builder report
 

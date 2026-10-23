@@ -218,7 +218,7 @@ imports MoneyLimitsModule), #3 (contract, additive); BACKEND_GAPS G-410 (what ea
 **NOT RUN**
 - (key) A real Nuvion limit refusal reaching the app as `limit_reached`, and Nuvion's own fee for a book transfer and a
   payout against the settings (`POST /fee-simulations`, NUV-08): unblocked when `GET https://api.nuvion.dev/bank-codes/NG`
-  answers 200 with the key in the local `.env`, a lead brief allows that host, and G-411 is applied.
+  answers 200 with the key in the local `.env`, a lead brief allows that host, and G-411 is applied. NOT RUN 23 Oct 2026 (NUV-KEYS): no dev account holds naira, so no limit was reached and no fee read (docs/nuvion/DEV-RESULTS.md).
 - The live seam under `WALLET_PROVIDER=nuvion` (the built server answering `fees_not_set`, then quoting from the
   settings): the server cannot boot under nuvion until NUV-01 merges (checked above). Unblocked when
   `WALLET_PROVIDER=nuvion` boots on backend main.

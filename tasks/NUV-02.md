@@ -56,8 +56,8 @@ reaches them: approved opens their naira account, rejected says why in plain wor
 - [x] A `rejected` result tells the person the reason in plain words and what to fix, and they can submit again; `failed` and `suspended` stop money routes with the existing no-wallet answer.
 - [x] No BVN or NIN appears in the clear in a log line, a response or a stored column (the spec scans logs and rows).
 - [x] Under `fintava` the opening behaves exactly as before (existing opening specs pass unchanged).
-- [ ] (key) A sandbox entity with the docs' example identity numbers reaches a decision; the time it took is in the report.
-- [ ] (key) The full `GET /entities/{id}` body after review is in the report (identity numbers masked), saying whether any field reports the BVN's phone.
+- [x] (key) A sandbox entity with the docs' example identity numbers reaches a decision; the time it took is in the report. PASSED 23 Oct 2026 (NUV-KEYS): approved 6.4 s and 3.5 s after the submission; dev approved all 10 entities sent (docs/nuvion/DEV-RESULTS.md).
+- [x] (key) The full `GET /entities/{id}` body after review is in the report (identity numbers masked), saying whether any field reports the BVN's phone. PASSED 23 Oct 2026 (NUV-KEYS): no field reports the BVN's phone; body keys and notes in docs/nuvion/DEV-RESULTS.md.
 
 ## Builder report
 

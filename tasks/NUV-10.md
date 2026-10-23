@@ -50,7 +50,7 @@ fees and limits.
 
 ## Capability checks
 
-- [ ] Every (key) check in NUV-01 to NUV-09 has been run against the sandbox and recorded in its task file.
+- [ ] Every (key) check in NUV-01 to NUV-09 has been run against the sandbox and recorded in its task file. Partial, 23 Oct 2026 (NUV-KEYS): 13 passed, 4 failed, 2 need the server on dev keys, 13 not run (docs/nuvion/DEV-RESULTS.md); the dev webhook endpoint is `blacklisted` and the live server answered 401. Not ticked.
 - [ ] Every fee and limit setting is filled from Nuvion's written answer, cited in this file.
 - [ ] The production webhook is registered, and a `POST /webhook-tests` delivery is stored once on the droplet.
 - [ ] Rollback rehearsed on the droplet: `WALLET_PROVIDER=fintava` and a restart boots, health 200, and no Nuvion row is touched.
