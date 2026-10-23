@@ -9,7 +9,7 @@ repo: wawu-backend
 type: third-party
 status: todo
 depends_on: [MONEY-06]
-decisions: [R-10]
+decisions: [R-10, R-79]
 passes: [V1, V2, V3, V6, V8, V9]
 artboards: []
 ---
@@ -21,6 +21,7 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/WALLET-25.md.
+- **After launch (owner, 23 Oct 2026, R-79):** Adding money by debit card is on the designer's extra list and waits until after launch. Priority after-launch (already so), status todo; nothing of it is built or drawn for launch (R-47).
 
 ## Read first
 
