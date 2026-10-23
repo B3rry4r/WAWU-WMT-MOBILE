@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 350.**
+**Launch tasks done: 176 of 359.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 43 | 0 | 0 | 0 |
+| todo | 52 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
 | review | 20 | 0 | 0 | 0 |
@@ -388,7 +388,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
+- **You:** [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked
@@ -397,6 +397,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 23 Oct 2026 · AITOOLS-CUT · Records and plan, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT` on `origin/main` `573bb62a`; no PR): R-78 (every Studio tool the design draws is built for launch). `docs/elevenlabs/API-FACTS.md` (the provider's route, request, answer, async or not, limits and file types for each tool, read from its public documentation, with what free read calls showed: the key lacks `user_read` so the plan name is not known; models, voices, agents, dubbing, audio isolation and music finetunes read fine). Nine tasks at negative orders (no launch order below CHECK-3 was free): AITOOLS-02 (one job pipeline, job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, a person's file in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist), POINTS-09 to POINTS-12 (the app side). Every tool the design draws can be served by the provider. Gaps G-813 and G-POINTS-07-3 point at the tasks; new rows G-AITOOLS-02-1, -03-1, -05-1, -05-2, -06-1 and G-POINTS-09-1. Checks: `check_tasks.py --write` EXIT 0 (413 tasks), gates EXIT 0 (10 run, 1213 files, 0 fail, 18 warn as before).
 - 23 Oct 2026 · FIX-101 round 2 · The verifier's FIX built (Sonnet builder, T1; mobile `wmt/FIX-101` on `9eaf3c0f`; status verifying): a chat with a person who has no name opens (named as the feed names them, else "Someone"), a recipient with no name no longer fails the whole recipients list, and the racy movies loading tests hold the catalog read instead of racing it. App only.
 - 23 Oct 2026 · FIX-101 · Built (Sonnet builder, T1; mobile `wmt/FIX-101` on `origin/main` `0352cc11`; status verifying): the last app items before the Android test build. A piece whose creator has no display name unlocks (the quote is never refused for a name; the sheet names them as the feed does, else "Someone"); a bank send the Hub is still working on no longer says "Your last try got no answer" (timeout `WRITE_TIMEOUT_MS` 30 s, unchanged); Create's Event tile drops "Needs an active tier" while a tier is held; a called-off event's ticket under Past says "Called off"; a listing outside the taxonomy opens with its category; a cold open of Flix movies shows a plain wait. App only, no backend, no shared change.
 - 23 Oct 2026 · FIX-100 · Built (Sonnet builder, T1; mobile `wmt/FIX-100` on `origin/main` `89669d9f`; status verifying): the app findings of the pre-build re-walk. P2 draws "Ask a question · price" and opens the paid question (H2); a failed enrolment quote keeps SC5 with the price problem, Try again and the held place (M1); "Finish your profile" names what the Hub says is missing (L1); the community "created" screen has a back button (L3); Flix genre chips split compound genres (L6); Explore draws "Who Made This?" with its empty state (U1); an open wallet with no PIN leads the tab to create one (U3b). One test per item fails on `origin/main`.
@@ -411,4 +412,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · FIX-98 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `a0426ac` on `origin/main` `dd00e85`, mobile `wmt/FIX-98` from `wmt/FIX-97`; status verifying): the counterparty carries the sender's state and postal code (a Hub bank send on a funded Nuvion DEV wallet runs end to end), and a refused send keeps the fee-collect row `completed` with the give-back as its own rows (no `ledger_discrepancy`). Gaps G-FIX-98-1 and G-FIX-98-2. FIX-97 back to review.
 - 23 Oct 2026 · FIX-97 round 2 · Lead ruling built (Sonnet builder, T2; backend `wmt/FIX-97` `e678f35`, mobile `wmt/FIX-97`; status verifying): the local stack's Nuvion stand-in (`scripts/dev/nuvion-standin.cjs`) and `scripts/nuvion/counterparty-lookup-check.ts` match dev: the lookup takes `issuer.code` and answers `details.name`, an unknown number is 404 `error_resource_not_found`, a counterparty without email and address is dev's 422, the entity read carries the address. On a local stack a name check answers "Forrest Green" and a bank send reaches the stand-in's counterparty, payment detail and transfer (201 each). One spec input (statements) given a contact.
 - 23 Oct 2026 · FIX-97 · Built (Sonnet builder, T2; backend `wmt/FIX-97` `7f9a172` on `origin/main` `62876ea6`, mobile `wmt/FIX-97` from `wmt/NUV-KEYS`; status verifying): the three Nuvion payout bugs the dev-key run found. The name check sends `issuer: {code}` and reads `data.details.name` (a made-up number is `error_resource_not_found`, now "not found"); a counterparty carries the sending side's own email and address from its Nuvion entity, and a send without either stops before any counterparty. New spec red on main (10 of 10), green built; on dev the name check answers "Forrest Green" through the Hub and a bank send reaches counterparty 201 and payment detail 201 and stops at insufficient funds. The local stack's stand-in (`scripts/dev/nuvion-standin.cjs`) still has the old shapes: for the lead.
-- 22 Oct 2026 · FLIX-01 · Built (Sonnet builder, T2; backend `wmt/FLIX-01` `b5913a1` (contract commit `312f16c`) on `origin/main` `1955fd1`, mobile `wmt/FLIX-01`; status verifying): the Hub serves the Flixora catalog and a signed-in watch link through one seam (`MOVIE_PARTNER`: `off` default, `standin`; `flixora` is FLIX-02). Six routes under `/movies` read the Hub's own catalog copy (a sync job: `updatedSince`, a daily full pass); the first "Watch on Flixora" opens the person's partner account (R-75: agreement by `FLIXORA_TERMS_FROM` or `agreeToTerms`, a fresh link per tap never stored or logged, only sub, email, names and verified flag sent); four additive tables with a refusing rollback; the purge marks the link row. Protected routes 253/253; gates 0 fail. Real partner NOT RUN (FLIX-02). Records: SHARED-CHANGES FLIX-01 #1 to #3, DATA-INVENTORY I-418, DATA-SAFETY HK-09, G-FLIX-1 to 3.
