@@ -7,7 +7,7 @@ order: -98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-39]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,18 +18,10 @@ tier: T2
 
 ## Current state
 
-As of 23 Oct 2026, built again, verifying (fix round 2: backend `wmt/FIX-98` `29f3cf6` on `a0426ac3`, mobile `wmt/FIX-98`). Verifier reports and the round reports: [history/FIX-98.md](history/FIX-98.md).
+As of 23 Oct 2026, review: the verifier re-checked backend `wmt/FIX-98` `29f3cf6` (on `a0426ac3`, `origin/main` `dd00e85`) and passed it. Full reports: [history/FIX-98.md](history/FIX-98.md).
 
-| Item | Before (`a0426ac3`) | After (`29f3cf6`) |
-|------|---------------------|-------------------|
-| Medium: FIX-85 path, the send reversed first, the fee-back after | the fee row turned `reversed`; the fee transfer's own delivery wrote "webhook sighting: status reversed vs completed" | the ledger pairs them: a `completed` sighting on the sender's fee row is not a disagreement; no row holds a discrepancy (4 specs, both credit variants and both orders) |
-| Low: kept payee ids skipped the state and postal code check | a kept counterparty without them was reused and Nuvion refused every send | a kept payee is used only when its counterparty (read from Nuvion) carries both; else a complete one is made |
-| Low: the history showed a bare "Transfer" and "Refund" of 2,500 | counterparty name `WAWU` on both | "WAWU's fee" (out) and "WAWU's fee given back" (in) |
-
-- **What differs from the plain refused send:** when the send is reversed before the fee-back lands, the reversed send's own row carries the fee (FIX-85), so the fee row cannot stay `completed` without counting the fee twice until the fee-back lands (the specs hold the sender's ledger equal to Nuvion at every step). That fee row is turned `reversed` as before and Nuvion's `successful` fee transfer is paired with it. When the fee-back lands first, the fee row stays `completed` and the give-back is its own refund pair, as on the plain path.
-- **Specs, red on `a0426ac3`, green built:** `wallet-transfer-bank-nuvion.contract.spec.ts` (4 new FIX-98 cases; 2 fail before, the order with the fee-back first passes on both), `nuvion-payouts-state-postal.spec.ts` (the kept-payee case), `wallet-transfer-fee-back-failed-nuvion.contract.spec.ts` (the naming assertions): 4 fail on `a0426ac3` in all.
-- **Checks:** tsc, eslint, 14 nuvion and money suites (322 tests) in band, `test:protected` (253 tests), gates, baseline: all EXIT 0. The stack's `nuvion-standin.cjs` gained `GET /counterparties/{id}` (syntax checked, not walked).
-- **Not run:** the stack walk of the changed stand-in; a dev re-run (the paths changed here are ledger and kept-payee paths the dev run did not reach). Open: CI on the head.
+- **Passed:** the four FIX-98 cases in `wallet-transfer-bank-nuvion.contract.spec.ts` (the two reversal-first ones fail on `a0426ac3`); the real money check on the FIX-85 end states, both orders and both credits: no finding, no discrepancy, ledger net equal to Nuvion's; the fee-leg pairing is narrow and a reversed fee row with a completed fee transfer and no give-back is still reported; a kept counterparty without state or postal code is replaced; the history names "WAWU's fee" and "WAWU's fee given back"; a live bank send through the Hub on dev completed (Nuvion fee 50,000, balance down 152,500) and a Nuvion-refused send (`limit_error`) left no discrepancy; tsc, eslint, 12 suites (317 tests), `test:protected` (253), gates, baseline all EXIT 0.
+- **Open:** CI on the merged head. Notes, not findings: the stack's `nuvion-standin.cjs` `GET /counterparties/{id}` was syntax-checked only; an owed fee in the no-give-back state sits in the books and nothing asks a person to look.
 
 ## Read first
 
@@ -57,4 +49,5 @@ A person's bank send reaches Nuvion's transfer on a funded wallet; when Nuvion r
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-98.md](history/FIX-98.md).
+
 
