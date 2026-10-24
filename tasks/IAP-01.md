@@ -7,7 +7,7 @@ order: -1270
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-86, R-5, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` `6e92cd2` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status verifying (verifier round 1 was FIX; builder fix round 1 pushed, see the Round 1 rows). Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` `6e92cd2` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status review (verifier round 1 was FIX; builder fix round 1; verifier round 2 PASS on `6e92cd2`, three lows for the sweep, see history). Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|

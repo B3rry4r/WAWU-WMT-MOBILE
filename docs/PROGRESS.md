@@ -9,13 +9,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 46 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 45 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 46 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [DEPS-SDK](../tasks/DEPS-SDK.md) The app's packages match the installed Expo SDK, so CI's Expo SDK health step passes (You)
+- [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
@@ -63,7 +64,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
