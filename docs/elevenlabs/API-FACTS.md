@@ -16,6 +16,7 @@ Run once, 23 Oct 2026, read calls only. Nothing about the account other than wha
 | `GET /v1/history` | 401, the key lacks `speech_history_read` | The key has scoped permissions. Each tool's own permission is only proven by its own call. |
 | `GET /v1/models` | 200, 11 models | Text to speech models listed (below). The list holds no speech to text, music, sound effect or dubbing model. |
 | `GET /v1/voices` | 200 | Voices of three kinds are listed (`premade`, `cloned`, `professional`): the account can hold cloned voices. |
+| `GET /v1/voices?page_size=100` (24 Oct 2026, AITOOLS-07, read only) | 200, 24 voices | Each voice holds `voice_id`, `name`, `category` and `preview_url`, an https link to a short sample of that voice. The Hub reads the list once an hour and serves the sample itself (`GET /ai-tools/voices/{id}/sample`), so the provider's address never leaves the adapter; a voice with no https `preview_url` has no sample. Voice making, speech and delete were NOT RUN on the real key. |
 | `GET /v1/convai/agents`, `/convai/settings`, `/convai/phone-numbers` | 200, no agents yet | The key can read and (by scope name) use the agents platform. |
 | `GET /v1/dubbing/project`, `/v1/audio-isolation/history`, `/v1/music/finetunes`, `/v1/workspace/webhooks` | 200 | The key can read these areas. |
 | `GET /v1/speech-to-text/transcripts` | 422 | Not a permission failure (a validation answer). The documented read is `GET /v1/speech-to-text/transcripts/{id}`; it was not called (no id). |

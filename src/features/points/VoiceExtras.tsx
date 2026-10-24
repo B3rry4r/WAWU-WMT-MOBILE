@@ -27,7 +27,7 @@ const PLAY = { size: 32, icon: 13, stroke: 2.4, slop: 6 } as const;
 const ACTION = { mark: 44 } as const;
 
 /** PT2's play button on a voice row: plays the voice's sample from the Hub, and again to stop. Drawn only for a voice the Hub gives a sample for. */
-export function SamplePlay({ sampleUrl, name }: { sampleUrl: string; name: string }) {
+export function PreviewPlay({ sampleUrl, name }: { sampleUrl: string; name: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const [playing, setPlaying] = useState(false);
@@ -177,7 +177,7 @@ export function DraftPicker({ jobId, onAttached, onCancel, onStartDraft }: { job
 
 const styles = StyleSheet.create({
   play: { width: PLAY.size, height: PLAY.size, borderRadius: PLAY.size / 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  consent: { gap: 12, padding: 16, borderRadius: radius.card, borderWidth: 1 },
+  consent: { gap: space.md, padding: space.lg, borderRadius: radius.card, borderWidth: 1 },
   consentLabel: { fontSize: 11, letterSpacing: 0.88, textTransform: 'uppercase' },
   consentLine: { fontSize: 18, lineHeight: 18 * 1.45 },
   consentNote: { fontSize: 13.5, lineHeight: canvasNormalLineHeight(13.5) },

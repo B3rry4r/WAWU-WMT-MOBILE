@@ -32,7 +32,7 @@ import { aiToolsQuery, fetchJobQuote, type AiTool, type JobAction } from './stud
 import { giveOwnVoiceConsent, OWN_VOICE_ID, ownVoiceKey, ownVoiceQuery, removeOwnVoice } from './ownVoiceApi';
 import { capTitle } from './studioModel';
 import { canShareSubtitles, shareSubtitles } from './subtitleFile';
-import { DraftPicker, OwnVoiceConsent, ResultActions, SamplePlay } from './VoiceExtras';
+import { DraftPicker, OwnVoiceConsent, ResultActions, PreviewPlay } from './VoiceExtras';
 import { charactersOf, clampText, countLine, EXTRAS_WORDS, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent } from './voiceoverIntent';
 import { hasResult, JOB_POLL_MS, outputText, startJob, voiceJobQuery, type VoiceJob } from './voiceoverApi';
@@ -145,6 +145,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const [picking, setPicking] = useState(false);
   const offersOwn = kind === 'text' && own.data?.available === true && own.data.hasRecording === true;
   const ownReady = offersOwn && own.data?.ready === true;
+  // PT2b's Save and Use in a product rows are VoiceOver's (AITOOLS-07). Quick voice, Sound effect and Music track keep their done view without them until a task adds them: their tests pin that.
+  const savable = tool.id === 'voiceover';
   // PT2 draws a play button on "Your voice" too. The Hub serves no sample of the recording itself (`sample.recorded` is a flag); what it does
   // serve is the person's own Voice Intro, read by their voice, and that plays here. Not drawn while there is none (R-47).
   const intro = useQuery({ queryKey: voiceIntroKey, queryFn: fetchVoiceIntro, enabled: offersOwn }, queryClient);
@@ -511,7 +513,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
           ) : (
             <TranscriptCard text={outputText(job.data, 'text') ?? ''} onShare={canShare && outputText(job.data, 'subtitles') ? () => shareFile(outputText(job.data as VoiceJob, 'subtitles') ?? '') : undefined} />
           )}
-          {job.data.audioUrl && picking ? (
+          {savable && job.data.audioUrl && picking ? (
             <DraftPicker
               jobId={job.data.id}
               onCancel={() => setPicking(false)}
@@ -521,7 +523,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
               }}
               onStartDraft={() => router.push('/shop')}
             />
-          ) : job.data.audioUrl ? (
+          ) : savable && job.data.audioUrl ? (
             <ResultActions owner={owner} job={job.data} onUse={() => setPicking(true)} />
           ) : null}
           <View style={styles.usedRow} testID="tool-used">
@@ -610,7 +612,7 @@ function VoiceRow({ voice, on, onPress }: { voice: AiTool['voices'][number]; on:
         ring.style,
       ]}
     >
-      {voice.sampleUrl ? <SamplePlay sampleUrl={voice.sampleUrl} name={voice.name} /> : null}
+      {voice.sampleUrl ? <PreviewPlay sampleUrl={voice.sampleUrl} name={voice.name} /> : null}
       <View style={styles.voiceText}>
         <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: VOICE.name, lineHeight: canvasNormalLineHeight(VOICE.name) }]}>
           {voice.name}

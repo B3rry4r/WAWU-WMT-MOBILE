@@ -4,7 +4,7 @@ import { queryClient } from '@/api/query';
 import { ApiError } from '@/api/errors';
 
 import { sampleAddress, setJobSaved, type SavedJob } from '../ownVoiceApi';
-import { DraftPicker, OwnVoiceConsent, ResultActions, SamplePlay } from '../VoiceExtras';
+import { DraftPicker, OwnVoiceConsent, ResultActions, PreviewPlay } from '../VoiceExtras';
 import { EXTRAS_WORDS } from '../voiceoverModel';
 
 /*
@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe('a person plays a voice before choosing it', () => {
   it('taps play and the Hub\'s sample plays from the app\'s API address, taps again and it stops', async () => {
-    await render(<SamplePlay sampleUrl="/api/hub/ai-tools/voices/ada/sample" name="Ada" />);
+    await render(<PreviewPlay sampleUrl="/api/hub/ai-tools/voices/ada/sample" name="Ada" />);
     expect(lastAudio().playing).toBe(false);
     await fireEvent.press(screen.getByLabelText(EXTRAS_WORDS.playSample('Ada')));
     expect(lastAudio().playing).toBe(true);
