@@ -40,6 +40,7 @@ const ICONS: Record<string, IconName> = {
   wallet_ready: 'Wallet',
   community_join_approved: 'Users',
   community_join_declined: 'Users',
+  community_messages: 'MessageCircle',
 };
 
 export const iconOf = (kind: string): IconName => ICONS[kind] ?? 'Bell';
