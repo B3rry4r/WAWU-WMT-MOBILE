@@ -22,6 +22,7 @@ import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 import { fetchGridPage, gridKey } from '@/features/me/api';
 import { ContentGrid, GridSkeleton } from '@/features/me/ContentGrid';
 import { countsOf, roleLinesOf, socialLinksOf, visitorTileOf, type ProfileTab, type SocialLink } from '@/features/me/model';
+import { BioPlayer } from '@/features/me/BioPlayer';
 import { Counts, HeaderSkeleton, NameBlock, SocialChips, bodyTop } from '@/features/me/ProfileHeader';
 import { ProfileTabs } from '@/features/me/ProfileTabs';
 import { AskSheets } from '@/features/paid-ask/AskSheets';
@@ -32,6 +33,7 @@ import { openFreeChat } from '@/features/paid-answers/api';
 import { tickOf } from '@/features/chat/api';
 import { ServicesTab } from '@/features/me/ServicesTab';
 import { readFailure } from '@/features/profile-edit/failure';
+import { fetchPublicVoiceIntro, publicVoiceIntroKey } from '@/features/verify/voiceApi';
 import { TipSheets } from '@/features/tips/TipSheets';
 import { useTip } from '@/features/tips/useTip';
 import { WorksFrame } from '@/features/works/WorksFrame';
@@ -110,7 +112,8 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  * no public profile) shows the Hub's answer and nothing else, never a half-drawn profile. Follow and Following write once per tap
  * with what the Hub answers; the counts are re-read after. Message with its price (I2) opens the ask sheet (I3) when the Hub says the
  * creator takes paid questions; when it does not, "Messages off" and the note under it (I8). Not drawn yet (the task that builds the
- * screen adds it, R-47): the Bio voice player (VOICE-01).
+ * screen adds it, R-47): nothing. A person with a Voice Intro has the Bio player under the bio (M5, R-66, FIX-103), read from
+ * `GET /users/{wawuId}/voice-intro` after the profile loads; a person with none, or a read that fails or is still on its way, draws no player.
  */
 export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
@@ -129,6 +132,8 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const person = view?.profile.wawuUserId ?? null;
   const name = view ? visitorName(view) : '';
   const terms = useAskTerms(asking && view && !view.own ? person : null, asking && view && !view.own ? view.profile : null);
+  // The Bio player: what a listener hears, read once the profile is in (the route takes the person's id, not a handle).
+  const voiceIntro = useQuery({ queryKey: publicVoiceIntroKey(person ?? ''), queryFn: () => fetchPublicVoiceIntro(person as string), enabled: person !== null && !view?.own }, cache);
 
   useEffect(() => {
     if (view?.own) onOwn();
@@ -379,6 +384,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
                 badge={visitorBadge(view.fields)}
                 bio={view.profile.bio}
               />
+              {voiceIntro.data ? <BioPlayer url={voiceIntro.data.url} aiVoice={voiceIntro.data.aiVoice} active={focused} testID="visitor-bio-player" /> : null}
               <SocialChips links={socialLinksOf(view.profile, view.fields)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf({ followerCount: view.profile.followerCount, followingCount: view.profile.followingCount, postCount: view.profile.contentCount })} />
               <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />

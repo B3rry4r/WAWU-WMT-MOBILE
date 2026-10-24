@@ -9,7 +9,7 @@ jest.mock('expo-secure-store', () => ({
 
 const mockRouter = { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() };
 let mockParams: { from?: string } = { from: 'me' };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useLocalSearchParams: () => mockParams, Redirect: () => null }));
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useLocalSearchParams: () => mockParams, useIsFocused: () => true, Redirect: () => null }));
 jest.mock('@/api/session', () => ({ ...jest.requireActual('@/api/session'), useSession: () => ({ status: 'signedIn' }) }));
 
 type Props = { onBack: () => void; onOpenSocial: () => void; onSaved: () => void; ownNotice?: boolean };

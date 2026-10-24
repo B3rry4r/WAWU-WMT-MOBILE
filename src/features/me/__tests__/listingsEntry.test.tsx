@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServicesTab } from '../ServicesTab';
 
 const mockRouter = { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter, Redirect: () => null }));
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useIsFocused: () => true, Redirect: () => null }));
 
 let mockProps: { onOpenListings?: () => void } | null = null;
 jest.mock('@/features/me/MeScreen', () => ({

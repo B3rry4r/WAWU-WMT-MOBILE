@@ -13,8 +13,8 @@ import type { components } from '@/api/schema.generated';
  *
  * VERIFY-03 adds the rest of VOICE-01's routes: `POST /me/voice-intro/consent` (the Hub's own line, sent back unchanged),
  * `POST /uploads/presign` (folder `voice/sample`) and `/confirm` for the recording, `POST /me/voice-intro/sample` (keeps the landed file),
- * `POST /me/voice-intro/generate` (keyed, `202`, then `GET /me/voice-intro` is polled). `GET /users/{wawuId}/voice-intro` (what a listener hears) is
- * read by the profile headers once they draw the player (BACKEND_GAPS G-VERIFY-03-5), not here.
+ * `POST /me/voice-intro/generate` (keyed, `202`, then `GET /me/voice-intro` is polled). `GET /users/{wawuId}/voice-intro` (what a listener hears)
+ * is read by a visitor's profile (M5, FIX-103) for the Bio player; the owner's own profile (M1) plays `audioUrl` from `GET /me/voice-intro`.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11), so each call
  * reads `data` itself and refuses an answer that is not the view it expects. Nothing here names or calls a voice provider.
@@ -25,8 +25,12 @@ export type MyVoice = components['schemas']['MyVoiceView'];
 export type NamePreview = components['schemas']['NamePreviewView'];
 export type VoiceIntro = components['schemas']['VoiceIntroView'];
 
+/** What a listener hears on someone's profile (`GET /users/{wawuId}/voice-intro`): the audio's link, or null for a person with none. */
+export type PublicVoiceIntro = NonNullable<components['schemas']['PublicVoiceIntroView']['voiceIntro']>;
+
 export const voiceKey = ['voice', 'name'] as const;
 export const voiceIntroKey = ['voice', 'intro'] as const;
+export const publicVoiceIntroKey = (wawuUserId: string) => ['voice', 'public-intro', wawuUserId] as const;
 
 /**
  * The name field's limits as the contract states them (`NamePreviewDto.name` 60, `phonetic` 80); the Hub refuses anything longer. The Hub
@@ -74,6 +78,23 @@ export async function fetchVoiceIntro(): Promise<VoiceIntro> {
   const body = (await unwrap(api.GET('/api/hub/me/voice-intro'))) as unknown as Envelope<VoiceIntro>;
   if (!isIntro(body?.data)) throw unreadable('Voice Intro');
   return body.data;
+}
+
+/**
+ * Another person's Voice Intro, as a listener on their profile gets it: `null` when they have none (a plain account, or no intro made yet).
+ * The Hub answers `404` for a person who does not exist or who blocked the viewer. `wawuUserId` is the person's id from their profile,
+ * never a handle (the route takes a UUID). An answer that is neither `{ voiceIntro: null }` nor one with a link is refused, never drawn as "none".
+ */
+export async function fetchPublicVoiceIntro(wawuUserId: string): Promise<PublicVoiceIntro | null> {
+  const body = (await unwrap(
+    api.GET('/api/hub/users/{wawuId}/voice-intro', { params: { path: { wawuId: wawuUserId } } }),
+  )) as unknown as Envelope<{ voiceIntro?: PublicVoiceIntro | null }>;
+  const data = body?.data;
+  if (!data || typeof data !== 'object' || !('voiceIntro' in data)) throw unreadable('Voice Intro');
+  const intro = data.voiceIntro;
+  if (intro === null) return null;
+  if (!intro || typeof intro.url !== 'string' || intro.url.length === 0) throw unreadable('Voice Intro');
+  return intro;
 }
 
 /** Keeps the Voice Intro's words. */
