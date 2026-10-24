@@ -101,7 +101,7 @@ export async function createContent(body: CreateContentBody): Promise<{ title: s
 export type SaleTerms = {
   creatorSharePct: number;
   listingFeeKobo: number;
-  presetsKobo: number[];
+  presets: { priceKobo: number }[];
   reviewHours: number;
   priceKobo: number | null;
   earnPerSaleKobo: number | null;
@@ -114,8 +114,8 @@ export async function fetchSaleTerms(priceKobo: number | null): Promise<SaleTerm
   if (
     typeof out.creatorSharePct !== 'number' ||
     typeof out.listingFeeKobo !== 'number' ||
-    !Array.isArray(out.presetsKobo) ||
-    !out.presetsKobo.every((q) => typeof q === 'number') ||
+    !Array.isArray(out.presets) ||
+    !out.presets.every((q) => typeof q?.priceKobo === 'number') ||
     typeof out.reviewHours !== 'number'
   ) {
     throw unreadable('terms');
@@ -123,7 +123,7 @@ export async function fetchSaleTerms(priceKobo: number | null): Promise<SaleTerm
   return {
     creatorSharePct: out.creatorSharePct,
     listingFeeKobo: out.listingFeeKobo,
-    presetsKobo: out.presetsKobo,
+    presets: out.presets.map((q) => ({ priceKobo: q.priceKobo })),
     reviewHours: out.reviewHours,
     priceKobo: typeof out.priceKobo === 'number' ? out.priceKobo : null,
     earnPerSaleKobo: typeof out.earnPerSaleKobo === 'number' ? out.earnPerSaleKobo : null,

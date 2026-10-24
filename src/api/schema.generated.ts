@@ -11371,10 +11371,13 @@ export interface components {
                 publicKey: string;
             };
         };
+        ContentSalePreset: {
+            priceKobo: number;
+        };
         ContentSaleTerms: {
             creatorSharePct: number;
             listingFeeKobo: number;
-            presetsKobo: number[];
+            presets: components["schemas"]["ContentSalePreset"][];
             reviewHours: number;
             priceKobo: number | null;
             earnPerSaleKobo: number | null;

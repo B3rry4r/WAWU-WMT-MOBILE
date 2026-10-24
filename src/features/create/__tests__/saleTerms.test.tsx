@@ -24,7 +24,7 @@ const TERMS = '/api/hub/content/sale-terms';
 const terms = (priceKobo: number | null, over: Record<string, unknown> = {}) => ({
   creatorSharePct: 85,
   listingFeeKobo: 0,
-  presetsKobo: [100000, 250000, 300000, 500000],
+  presets: [100000, 250000, 300000, 500000].map((priceKobo) => ({ priceKobo })),
   reviewHours: 4,
   priceKobo,
   earnPerSaleKobo: priceKobo === null ? null : Math.floor((priceKobo * 85) / 100),
@@ -85,7 +85,7 @@ describe('M24 · the Hub\'s terms on the price step', () => {
   });
 
   it('shows a listing fee in naira when the Hub says there is one, and leaves a fractional preset out', async () => {
-    hub.answers[`GET ${TERMS}`] = ok(terms(null, { listingFeeKobo: 50000, presetsKobo: [100050, 250000] }));
+    hub.answers[`GET ${TERMS}`] = ok(terms(null, { listingFeeKobo: 50000, presets: [100050, 250000].map((priceKobo) => ({ priceKobo })) }));
     await open();
     expect(await screen.findByText('₦500')).toBeTruthy();
     expect(screen.getByText('₦2,500')).toBeTruthy();

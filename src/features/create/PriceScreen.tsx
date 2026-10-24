@@ -147,7 +147,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
 
 /** M24's quick prices: the Hub's, in whole naira, with the one that equals the price on. */
 export function Presets({ terms, price, onPick }: { terms: SaleTerms; price: string; onPick: (digits: string) => void }) {
-  const digits = presetDigits(terms.presetsKobo);
+  const digits = presetDigits(terms.presets.map((p) => p.priceKobo));
   if (digits.length === 0) return null;
   return (
     <FilterChips
