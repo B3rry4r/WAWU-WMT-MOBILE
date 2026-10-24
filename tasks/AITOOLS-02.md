@@ -82,10 +82,6 @@ Every tool Studio lists runs through one job pipeline, so the next tools are a t
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/AITOOLS-02.md](history/AITOOLS-02.md).
 
-## History
-
-Round reports, verifier reports and lead notes, word for word, oldest first: [history/AITOOLS-02.md](history/AITOOLS-02.md).
-
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
