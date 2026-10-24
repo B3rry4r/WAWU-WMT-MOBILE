@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 365.**
+**Launch tasks done: 176 of 368.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 163 | 0 | 0 | 0 |
 | review | 33 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -51,6 +51,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [OPS-25](../tasks/OPS-25.md) Admin dashboard: money oversight (older unpaid sales, identity holds), read and act on what the Hub offers (You)
+- [OPS-24](../tasks/OPS-24.md) Admin dashboard: /join registrations and referral codes (list, make, turn off) (You)
+- [OPS-23](../tasks/OPS-23.md) Admin dashboard: support threads (staff read and answer people's support threads) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
