@@ -51,6 +51,8 @@ Removed in the app: the wallet routes for packs, shortfall, credits, tiers and p
 
 tsc EXIT 0; eslint on changed files EXIT 0; gates 0 fail; check_baseline EXIT 0; check_tasks EXIT 0; `npx expo-doctor` 21 of 21; `expo-updates fingerprint:generate` for android and ios EXIT 0. Jest: `src/features/store` (orchestration against the module's own boundary), the five screen suites, and every other suite in the folders touched, listed in the hand-back. NOT RUN: a phone, a real store sheet, the full suites, the live Hub (IAP-01 is not deployed), a real purchase in Play's licence-test or Apple's sandbox.
 
+Pictures (390 px, light and dark, from a web export, 24 Oct 2026): Buy points, the Studio shortfall sheet, the Credits packs sheet, the tiers sheet, the checkout, the community pass and "Buying is not open yet", in the bundle's scratchpad folder `iap-02-b/shots/`. The store sheet itself cannot render on the web, and the web has no store, so the web build shows "Buy in the app"; these pictures come from a picture-only web build whose store stand-in (never committed) prices the Hub's products and is read by the same screens, over a stand-in Hub on 8570. A real store sheet: NOT RUN.
+
 Open low: (a) the product ids the Hub holds must exist in Play Console and App Store Connect with the same ids and prices set there; nothing here creates them. (b) The App Store and Play review need a Restore purchases control and the terms of a subscription near the buy button; Restore is drawn, the terms are not (G-IAP-02-4). (c) A store transaction the Hub keeps refusing as `store_purchase_taken` replays at every launch on iOS (the brief finishes only on 201).
 
 ## Read first
