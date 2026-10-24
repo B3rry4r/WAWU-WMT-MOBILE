@@ -19,3 +19,21 @@ Backend `wmt/AITOOLS-04` `d571fbd`. No migration.
 
 None yet. Reports go to tasks/history/AITOOLS-04.md.
 
+
+## Verifier report
+
+Backend `d571fbd` against `origin/main` `0cd8f8e`, 24 Oct 2026, a Sonnet verifier (built none of it). Verdict: **FIX** (3 high, 1 medium, 4 low).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | tsc, eslint (32 files), gates 0 fail, 133 warn, 88 accepted (main the same), check_baseline: all `EXIT 0` |
+| V2 Contract | failed | live HTTP on the stand-in: all capability checks pass; findings 1 (crafted ASF file stops the Hub) and 4 (QuickTime refused) |
+| V3 Regression | passed | `test:protected` 253/253 on the branch and on main; `POST /uploads/presign` is registered and unchanged for the web's folders; contract:build no diff |
+| V4 Field trace | passed | the file key (presign, confirm, `StorageObject`) is read by the job and the quote only for its owner; the words and SRT go to the job row and come back from `GET /ai-tools/jobs/:id` and the list; the input key is removed when the job ends |
+| V6 States | passed | every provider failure (500, 422, 402, web page, unserved type, over-reported length, unreadable at run time) gave every point back and removed the input |
+| V8 Money | passed | same key once (8 at once), 5 jobs on a balance for 3, late finish after the stale sweep (job failed, words cleared, points back once, input removed), refusals hold nothing |
+| V9 Live seam | failed | real provider: both calls work, but the provider's copies are not deleted (findings 2 and 3) |
+
+Real provider (key `elevenlabs.env`, a pass-through logger between the Hub and the provider, one job each, 5 s clips made with ffmpeg): Captions `POST /v1/speech-to-text` 200 in 702 ms, `audio_duration_secs` 5.095, text "Hello, this is a short test of the caption tool. One, two, three, four, five, six, seven.", SRT 3 cues, language `eng`; the Hub's DELETE answered 404 and the transcript stayed readable. Clean audio `POST /v1/audio-isolation` 200 in 664 ms, `audio/mpeg`, 205,888 bytes, 5.12 s; headers carry `audio-isolation-id` and no `history-item-id`; the history item stayed. I deleted both copies by hand after checking (transcript 200, item 204).
+
+Findings 1 to 8 are listed under Open findings in Current state. Test gaps (not defects): the builder's specs keep the person's files in memory (`MemoryInputFiles`), so the real storage path (`StorageAiInputFiles`) is covered only by my live run; no spec covers a QuickTime or crafted file.
