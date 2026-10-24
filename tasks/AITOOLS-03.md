@@ -7,7 +7,7 @@ order: -124
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,21 +17,26 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, verifying (builder fix round 2 done). Tier T2. Builder report and verifier report: [history/AITOOLS-03.md](history/AITOOLS-03.md).
-- **Heads:** backend `wmt/AITOOLS-03` `207fabf` (merged `wmt/AITOOLS-02` `79435c2`, new commits only). Mobile `wmt/AITOOLS-03` carries this file. No migration. Files on the task vs `wmt/AITOOLS-02`: 35, of which 30 are .ts (round 2 touched 14, 11 of them .ts).
+As of 24 Oct 2026, building (verifier FIX on round 2: 1 medium, 3 lows). Tier T2. Builder and verifier reports of every round: [history/AITOOLS-03.md](history/AITOOLS-03.md).
+- **Heads:** backend `wmt/AITOOLS-03` `207fabf` (merged `wmt/AITOOLS-02` `79435c2`, new commits only). Mobile `wmt/AITOOLS-03` carries this file. No migration. Nothing was changed on the backend by the verifier.
+- **Round 2 checked (verifier, own worktree and database `ait03v2_test`, stand-in only, nothing Fintava, no live host):**
 
-| r2 row | Fix | Proof |
-|--------|-----|-------|
-| 1 medium | Music call over `node:http(s)`: `AI_VOICE_MUSIC_TIMEOUT_MS` is the real wait, headers and body (Node's `fetch` ended a call with no answer at 300 s) | spec scales fetch's own limit to 2 s through its global dispatcher: the fetch-made sound call is cut, the track call with a 6 s timeout finishes, with a 2 s timeout fails; a mutant (track back on `fetch`) fails the spec. A job-level case: timeout too short gives `provider_unavailable`, hold released |
-| 2 low | `durationSeconds` / `lengthSeconds` "abc" say "must be a number of seconds" (whole number for a track); a 20,001-character prompt says "That description is too long."; over 3600 says "That length is too long." | `round 2: a length that is not a number ...` (both routes) |
-| 3 low | The provider's HTTP status stays on the failed job (`providerRef` = `http_402`, `failureCode` unchanged) and in a log line (`ai job <id> (...) answered 402`); the person still reads "No points were taken" and never sees the status | stand-in `[[status:402]]` and `[[status:401]]` on both tools; a failure with no HTTP answer keeps `providerRef` empty |
-| 4 low | Sound effect and Music are listed with a host and a key set and `AI_VOICE_VOICES` empty (`promptToolsConfigured`); VoiceOver and Quick voice still need voices | provider spec and the check-1 contract case. Two pins of the old behaviour were updated: the check-1 mock now switches off `promptToolsConfigured`, and the AITOOLS-02 "no voice provider" case filters to the two voice tools |
-| 5 low | "up to 1 minutes" now "up to 1 minute" (the tools' cap message and the shared points cap message); file count above | contract case with the cap set to 1 |
+| r2 row | Result |
+|--------|--------|
+| 1 Music wait | passed. Real 330 s case on the stand-in: default 600000 ms gives `done` in 330.7 s (hold committed, balance 0, one file); `AI_VOICE_MUSIC_TIMEOUT_MS=300000` gives `failed provider_unavailable` in 300.5 s, hold released, 500 points back, no file. Wire compared with the `fetch` call: same method, path, query, body bytes, `content-type`, `accept`, `xi-api-key`, `host`, `content-length`; every status, empty, not-audio, cut-off and refused answer maps the same; a silent server and a body that never stops both end at the timeout (1.50 s for 1.5 s), sockets closed, an abort sends nothing. Local TLS (SNI and Host right, an untrusted certificate refused) |
+| 2 providerRef | **medium finding F1 below** |
+| 3 two old assertions | passed. Both pin the new rule honestly; the real off state (no host or key) is still asserted |
+| 4 texts and the shared cap text | passed. Only a cap of 1 changes ("1 minute") for every caller; no em-dash, price, provider or model name in the new texts |
+| 5 listing without voices | passed (provider spec on real config; contract case) |
 
-- **Checks (backend, own worktree and database `ait03r2_test`):** tsc `EXIT 0`; eslint (no --fix) on the 11 changed .ts files `EXIT 0`; 8 ai-tools and points-rules suites in band, 122/122, `EXIT 0` (no spec importing the Fintava double); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base); check_baseline `EXIT 0`.
-- **Not done:** the real 330 s wait (`[[slow:330000]]`) was not run end to end; the verifier re-runs it on the stand-in. A long real track is still unmeasured. One thing seen and left alone: a poll that lands between a failed job's give-back and its mark can read `timed_out` (from AITOOLS-01, a few milliseconds wide); the new specs wait for the run to end first.
+- **Checks (EXIT 0 each):** tsc; eslint (no --fix) on the 11 round-2 .ts files; 11 suites of `src/ai-tools` and `src/points`, 194/194 in band (six `src/points` specs that use the Fintava double or a Fintava table were NOT RUN, by rule); `test:protected` 253/253 after `db:seed`; contract:build, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base); check_baseline (124 entries).
+- **Open findings (fix round 3):**
+  - **F1 medium.** `providerRef` holds `http_<status>` on a failed job. A failed job now stops the AITOOLS-02 rollback (`rollback.sql` refuses on any `providerRef`), and `fail()` writes `providerRef` (null or `http_<n>`) on every failure, which wipes the provider ids AITOOLS-05 keeps there while a dub works. Round 1 asked only for a log line, which is in. Fix: do not write the status to `providerRef`; leave `providerRef` untouched in `fail()`.
+  - **F2 low.** The Music call sends no `User-Agent` or `Accept-Encoding` (the `fetch` call sent `user-agent: node`). Unproven against a real host.
+  - **F3 low.** The Music call does not follow a redirect (the `fetch` call did); a 3xx fails the job, points back.
+  - **F4 low, before this round.** The shared cap text reads "up to 1 minute. This one is 2." with no unit for the second number.
 - **Owner question G-AITOOLS-03-1** (Music terms, per plan) stays open for the owner.
-- **Next:** a verifier re-checks the Music wait with the stand-in (`[[slow:330000]]`) and the five rows above.
+- **Next:** a builder fixes F1 (F2 to F4 go to the POINTS sweep); a verifier re-runs the rollback case from the report.
 
 ## Read first
 
@@ -79,3 +84,4 @@ A person describes a sound or a track in words and gets audio back: a sound effe
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+

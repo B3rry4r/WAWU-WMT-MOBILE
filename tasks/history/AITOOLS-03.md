@@ -61,3 +61,36 @@ Cleaned up: stack down, voice, storage and pass-through stand-ins stopped, extra
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/AITOOLS-03.md](history/AITOOLS-03.md).
 
+
+## Verifier report
+
+Backend `wmt/AITOOLS-03` `207fabf`, round 2 only (`e5dc886..207fabf`; the merge of `wmt/AITOOLS-02` `79435c2` is on main as `fefc1ec` and was not re-checked). Own worktree `ait03v2-be` and databases `ait03v2*_test`; the voice stand-in only; nothing Fintava; no live host or key. **Verdict: FIX** (1 medium, 3 lows).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | tsc EXIT 0; eslint (no --fix) on the 11 changed .ts files EXIT 0; gates 0 fail, 133 warn, 88 accepted, 1,759 files (same as the base); check_baseline EXIT 0 (124 entries); contract:build EXIT 0, `git status` clean (no diff) |
+| V2 Contract | passed | 11 suites of `src/ai-tools` and `src/points`, 194/194 in band, EXIT 0. NOT RUN: six `src/points` specs that use the Fintava double or a Fintava table (cash-out-crash, conversion-db, convert-nuvion, convert-nuvion-adapter, convert.contract, spend.contract), by rule; `points-spend-rules.spec.ts` (the shared cap text) ran |
+| V3 Regression | passed | `test:protected` 253/253 after `db:seed`, EXIT 0 |
+| V6 States | passed | the 330 s case both ways (below); failed-job status cases in the contract suite |
+| V8 Money | passed | the 300 s failure gave every point back (hold `released`, balance 500, no audio, no storage row); the 330 s success committed once |
+
+**1. Music wait (medium fix): holds.** My own spec (removed after the run), job level through the real controller and job service, `[[slow:330000]]` on the stand-in: default timeout (600000): `done` after 330.7 s, hold `committed`, balance 0, one audio file, one stand-in call. `AI_VOICE_MUSIC_TIMEOUT_MS=300000`: `failed`, `provider_unavailable`, 300.5 s, hold `released`, balance 500, no file. Same request as the `fetch` call, compared on a capture server: method, path and query `?output_format=mp3_44100_128`, body bytes, `content-type`, `accept`, `xi-api-key`, `host`, `content-length` equal. Only the `fetch` call adds `user-agent: node`, `accept-language`, `sec-fetch-mode`, `accept-encoding` and keep-alive (F2). Answers, `fetch` against the new call, same kind and status for: 200 audio, 200 html, 200 empty, 400, 401, 402, 404, 422, 429, 500, 503, a cut-off body, a 70 MB body (size cap), a refused connection. Different: 302 and 307 (F3). Deadline: a server that never answers and one that sends a body for ever both end at 1.50 s for a 1.5 s timeout (the `fetch` call: 1.50 s); the server sees the socket closed; an abort at 0.4 s ends the call; an already aborted signal sends nothing. TLS to a local server with a trusted test CA: handshake, SNI `localhost` and Host right; an untrusted certificate is refused as `unavailable`. TLS to a real host: NOT RUN (no live host by rule).
+
+**2. providerRef `http_<status>`: medium.** Not a collision with a provider job id today (nothing writes `providerRef` before `done`), but:
+- It blocks the AITOOLS-02 rollback. Repro: a failed job with `providerRef = 'http_402'`, then `psql -1 -f prisma/migrations/20261101100000_ai_tool_job_outputs/rollback.sql` answers "ERROR: AITOOLS-02 rollback: a job keeps an output, a provider id or an uploaded input only these columns hold. Nothing was changed." The same script passes with `providerRef` null. A provider key or plan refusal (the case the status is for) is exactly when a rollback is wanted, and the message is wrong for it.
+- `fail()` (`ai-job.service.ts` 441 to 461) now writes `providerRef` on every failure: null when no status. AITOOLS-05 (`tasks/AITOOLS-05.md`, "Following the job") keeps the provider's project and language ids in `providerRef` while a dub works; a failure through this `fail()` would erase them, or replace them with `http_<n>`.
+- Round 1's finding asked for "a log line with the number (no body)"; that line is in and is enough.
+
+**3. The two changed assertions: honest.** `ai-tools-sound.contract.spec.ts` check 1: the old "neither tool is listed, job refused 503, nothing held" is kept for the real off state (`promptToolsConfigured` false) and a new positive assertion covers the no-voices state; `ai-sound-provider.spec.ts` covers the same on real config (host and key set, voices empty; no key). The case title still says "with no voice provider set up neither tool is listed" (stale words only). `ai-tools-pipeline.contract.spec.ts` AITOOLS-02 case: filters to the two voice tools and still asserts VoiceOver is listed disabled and Quick voice refused 503; the new tools are asserted in the sound spec. No hidden defect.
+
+**4. Texts and the shared change: passed.** `capStop` (`src/points/spend/points-spend-rules.ts` 145) is used by every tool's spend path; its text differs only when the cap is 1 ("1 minute"); `unit`, `limit` and `cap` are unchanged; no spec pins "1 minutes". The new DTO texts ("must be a number of seconds", "That description is too long.", "That length is too long.") are in the contract cases and in the diff: no em-dash, no price, no provider or model name. The log line names the status and the job id, never a body or a key.
+
+Findings:
+- **medium, defect (F1).** `src/ai-tools/ai-job.service.ts` (the provider catch, about line 384 to 400, and `fail()` 441 to 461): the status in `providerRef`. Repro above.
+- **low, unclear (F2).** `src/ai-tools/voice/http-voice-provider.ts` `postForAudioLong` (headers): no `User-Agent`, no `Accept-Encoding`, `Connection: close`. A host that refuses an empty User-Agent would fail every track. Cannot be shown without a live host; the first real track run is the proof, or add the header.
+- **low, defect (F3).** Same function: a 3xx answer is not followed (the `fetch` call followed 302 and 307 on the stand-in); the job fails `rejected` with `http_302` and the points go back. Fail-safe; the real host is not known to redirect.
+- **low, defect, before this round (F4).** `points-spend-rules.ts` 145 and `prompt-limits.ts`: the shared cap text ends "This one is ${minutes}." with no unit ("One job can run up to 1 minute. This one is 2.").
+- **test-gap note.** Nothing pins that `fail()` leaves `providerRef` alone; a spec that sets `providerRef` on a working job, fails it, and reads it back would kill the mutant.
+
+Cleaned up: worktrees `ait03v2-be` and `ait03v2-mobile`, databases `ait03v2*_test` dropped, scratch specs and certificates removed, nothing listening on 7860 to 7867 or 7920 to 7927.
+
