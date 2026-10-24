@@ -18,5 +18,12 @@ export default function AddMoneyRoute() {
   useSystemBack(leave);
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
-  return <AddMoneyScreen shortfallKobo={shortfallOf(short)} onBack={leave} onDone={leave} />;
+  return (
+    <AddMoneyScreen
+      shortfallKobo={shortfallOf(short)}
+      onBack={leave}
+      onDone={leave}
+      onOpenWay={(rail) => router.push({ pathname: '/add-money/way', params: { rail } })}
+    />
+  );
 }
