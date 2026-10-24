@@ -7,7 +7,7 @@ order: -124
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: verifying
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,14 +17,21 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, building (verifier FIX, round 1). Tier T2. Builder report and verifier report: [history/AITOOLS-03.md](history/AITOOLS-03.md).
-- **Heads:** backend `wmt/AITOOLS-03` `542bc86` on `wmt/AITOOLS-02` `5d36fea` (verified base). That base branch has since moved to `79435c2`: when the pipeline reaches origin/main, merge origin/main into this branch, never rebase. Mobile `wmt/AITOOLS-03` carries this file.
-- **Open (1 medium):** the Music call cannot run past 300 s whatever `AI_VOICE_MUSIC_TIMEOUT_MS` says (Node's built-in fetch ends a call that has sent no answer in 300 s). The README and `docs/contract/PLANS.md` say 600000. Fix: give the provider call its own connection settings with header and body waits at least as long as its timeout (or say plainly that 300 s is the limit and lower the default), then add a spec that waits past it against the stand-in.
-- **Lows (4):** in the verifier report in history; the lead routes them to the sweep.
-- **Everything else passed**, live over HTTP on the stand-in (58/58 checks), 102/102 ai-tools specs, 90/90 plan-settings, key-folder and purge specs, protected routes 253/253, tsc, eslint, contract:build with no diff, gates 0 fail and the same 133 warn list as the base, check_baseline.
-- **Real provider (ElevenLabs), one job each through the Hub's routes:** Sound effect 0.5 s: provider 200, audio/mpeg, 8,820 bytes, 0.52 s long, call 1.6 s. Music 3 s, instrumental: provider 200, audio/mpeg, 48,945 bytes, 3.06 s long, call 3.6 s. The key and plan accept both tools. The time of a long track is still unmeasured (only the shortest was run).
+As of 24 Oct 2026, verifying (builder fix round 2 done). Tier T2. Builder report and verifier report: [history/AITOOLS-03.md](history/AITOOLS-03.md).
+- **Heads:** backend `wmt/AITOOLS-03` `207fabf` (merged `wmt/AITOOLS-02` `79435c2`, new commits only). Mobile `wmt/AITOOLS-03` carries this file. No migration. Files on the task vs `wmt/AITOOLS-02`: 35, of which 30 are .ts (round 2 touched 14, 11 of them .ts).
+
+| r2 row | Fix | Proof |
+|--------|-----|-------|
+| 1 medium | Music call over `node:http(s)`: `AI_VOICE_MUSIC_TIMEOUT_MS` is the real wait, headers and body (Node's `fetch` ended a call with no answer at 300 s) | spec scales fetch's own limit to 2 s through its global dispatcher: the fetch-made sound call is cut, the track call with a 6 s timeout finishes, with a 2 s timeout fails; a mutant (track back on `fetch`) fails the spec. A job-level case: timeout too short gives `provider_unavailable`, hold released |
+| 2 low | `durationSeconds` / `lengthSeconds` "abc" say "must be a number of seconds" (whole number for a track); a 20,001-character prompt says "That description is too long."; over 3600 says "That length is too long." | `round 2: a length that is not a number ...` (both routes) |
+| 3 low | The provider's HTTP status stays on the failed job (`providerRef` = `http_402`, `failureCode` unchanged) and in a log line (`ai job <id> (...) answered 402`); the person still reads "No points were taken" and never sees the status | stand-in `[[status:402]]` and `[[status:401]]` on both tools; a failure with no HTTP answer keeps `providerRef` empty |
+| 4 low | Sound effect and Music are listed with a host and a key set and `AI_VOICE_VOICES` empty (`promptToolsConfigured`); VoiceOver and Quick voice still need voices | provider spec and the check-1 contract case. Two pins of the old behaviour were updated: the check-1 mock now switches off `promptToolsConfigured`, and the AITOOLS-02 "no voice provider" case filters to the two voice tools |
+| 5 low | "up to 1 minutes" now "up to 1 minute" (the tools' cap message and the shared points cap message); file count above | contract case with the cap set to 1 |
+
+- **Checks (backend, own worktree and database `ait03r2_test`):** tsc `EXIT 0`; eslint (no --fix) on the 11 changed .ts files `EXIT 0`; 8 ai-tools and points-rules suites in band, 122/122, `EXIT 0` (no spec importing the Fintava double); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base); check_baseline `EXIT 0`.
+- **Not done:** the real 330 s wait (`[[slow:330000]]`) was not run end to end; the verifier re-runs it on the stand-in. A long real track is still unmeasured. One thing seen and left alone: a poll that lands between a failed job's give-back and its mark can read `timed_out` (from AITOOLS-01, a few milliseconds wide); the new specs wait for the run to end first.
 - **Owner question G-AITOOLS-03-1** (Music terms, per plan) stays open for the owner.
-- **Next:** a builder fixes the medium; a verifier re-checks the Music wait with the stand-in (`[[slow:330000]]`).
+- **Next:** a verifier re-checks the Music wait with the stand-in (`[[slow:330000]]`) and the five rows above.
 
 ## Read first
 
