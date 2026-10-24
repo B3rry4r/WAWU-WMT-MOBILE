@@ -3,7 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useSession } from '@/api/session';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { DetailsScreen } from '@/features/create/DetailsScreen';
-import { useDraft } from '@/features/create/draft';
+import { fullFileOf, useDraft, useLessons } from '@/features/create/draft';
 
 /**
  * M23 · Details (`/create-details`), step 4 of 5. Opened without a format and both files it goes back to the step it is missing.
@@ -12,7 +12,10 @@ import { useDraft } from '@/features/create/draft';
 export default function CreateDetailsRoute() {
   const router = useRouter();
   const { status } = useSession();
-  const { format, full, preview } = useDraft();
+  const draft = useDraft();
+  const { format, preview } = draft;
+  const lessons = useLessons();
+  const full = fullFileOf(draft, lessons);
   const gate = useCreatorGate(status === 'signedIn');
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;

@@ -49,10 +49,10 @@ const pieces = (): Record<string, Hold> => ({
   },
   [VIDEO]: {
     piece: { ...base, id: VIDEO, title: 'Orbit shot in one take', creatorWawuId: TIFE, contentType: 'video', accessType: 'free', price: 0, durationLabel: '1:50', pageCount: null, previewAssetUrl: 'https://cdn.test/v.webm', views: 12400, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), fullAssetUrl: 'https://cdn.test/v.webm', fullAssetLocked: false, commentCount: 340 },
-    detail: { contentId: VIDEO, contentType: 'video', updatedAt: '2026-10-10T10:00:00Z', purchasedAt: null, buyerCount: 0, studentCount: null, freePreview: { pages: null, seconds: null, lessons: null }, lessons: [], creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
+    detail: { contentId: VIDEO, contentType: 'video', updatedAt: '2026-10-10T10:00:00Z', purchasedAt: null, buyerCount: 0, studentCount: null, freePreview: { pages: null, seconds: null, lessons: null }, lessons: [], parentCourse: hub.parentCourse, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
   [COURSE]: {
-    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: !hub.bought, commentCount: 0 },
+    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: hub.ownCourse ? ME : TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: !hub.bought, commentCount: 0 },
     detail: { contentId: COURSE, contentType: 'course', updatedAt: '2026-10-01T10:00:00Z', purchasedAt: hub.bought ? '2026-09-26T08:00:00Z' : null, buyerCount: 1280, studentCount: 1280, freePreview: { pages: null, seconds: null, lessons: 1 }, lessons, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
 });
@@ -90,6 +90,10 @@ const hub = {
   noWallet: false,
   played: [] as string[],
   lessonRefusal: 0,
+  /** H24's "From the course" row (FIX-111): what the Hub names on the free video, or null. */
+  parentCourse: null as null | { id: string; title: string; lessonCount: number; price: number; previewAssetUrl: string | null },
+  /** The viewer made the course (H25 then offers Edit lessons). */
+  ownCourse: false,
 };
 
 const FEE = 2325;
@@ -255,7 +259,7 @@ jest.mock('@/features/open-wallet/copy', () => ({ copyText: jest.fn(async () => 
 const clients: QueryClient[] = [];
 const wired = () => ({ onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
 
-async function boot(id: string, ready = true) {
+async function boot(id: string, ready = true, extra: { onOpenCourse?: (id: string) => void; onEditLessons?: (id: string) => void } = {}) {
   const { ContentDetailScreen } = require('@/features/content-detail/ContentDetailScreen') as typeof import('@/features/content-detail/ContentDetailScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
@@ -263,7 +267,7 @@ async function boot(id: string, ready = true) {
   const screen = await rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <ContentDetailScreen id={id} onBack={onBack} pay={wired()} />
+        <ContentDetailScreen id={id} onBack={onBack} pay={wired()} {...extra} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -299,6 +303,8 @@ beforeEach(() => {
     noWallet: false,
     played: [],
     lessonRefusal: 0,
+    parentCourse: null,
+    ownCourse: false,
   });
   mockPlayers.length = 0;
 });
@@ -564,6 +570,66 @@ describe('H24: a free video', () => {
   });
 });
 
+describe('H24: the course a piece comes from (FIX-111, G-HOME-08-1)', () => {
+  const parent = { id: COURSE, title: 'VFX for Beginners', lessonCount: 12, price: 8000, previewAssetUrl: null };
+
+  it('a user sees "From the course <title>", its lesson count and its price, and a tap opens the course', async () => {
+    hub.parentCourse = parent;
+    const onOpenCourse = jest.fn();
+    const { screen } = await boot(VIDEO, true, { onOpenCourse });
+    const row = screen.getByTestId('detail-parent-course');
+    expect(rtl.within(row).getByText('From the course VFX for Beginners')).toBeTruthy();
+    expect(rtl.within(row).getByText('12 lessons')).toBeTruthy();
+    expect(rtl.within(row).getByText('₦8,000')).toBeTruthy();
+    expect(row.props.accessibilityLabel).toBe('From the course VFX for Beginners, 12 lessons, ₦8,000');
+    // It sits between who made it and the Tip, as drawn.
+    expect(screen.getByRole('button', { name: 'Tip Tife' })).toBeTruthy();
+    await rtl.fireEvent.press(row);
+    expect(onOpenCourse).toHaveBeenCalledWith(COURSE);
+  });
+
+  it('says Free for a free course and "1 lesson" for one lesson', async () => {
+    hub.parentCourse = { ...parent, lessonCount: 1, price: 0 };
+    const { screen } = await boot(VIDEO, true, { onOpenCourse: jest.fn() });
+    const row = screen.getByTestId('detail-parent-course');
+    expect(rtl.within(row).getByText('1 lesson')).toBeTruthy();
+    expect(rtl.within(row).getByText('Free')).toBeTruthy();
+    expect(rtl.within(row).queryByText(/₦/)).toBeNull();
+  });
+
+  it('draws no row when the Hub names no course', async () => {
+    const { screen } = await boot(VIDEO, true, { onOpenCourse: jest.fn() });
+    expect(screen.queryByTestId('detail-parent-course')).toBeNull();
+  });
+
+  it('draws no row when nothing can open the course', async () => {
+    hub.parentCourse = parent;
+    const { screen } = await boot(VIDEO);
+    expect(screen.queryByTestId('detail-parent-course')).toBeNull();
+  });
+});
+
+describe('H25: the creator edits their own course (FIX-111)', () => {
+  it('offers Edit lessons on the creator\'s own course, even before it has a lesson, and a tap opens the editor', async () => {
+    hub.ownCourse = true;
+    const onEditLessons = jest.fn();
+    const { screen } = await boot(COURSE, true, { onEditLessons });
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Edit lessons' }));
+    expect(onEditLessons).toHaveBeenCalledWith(COURSE);
+  });
+
+  it('offers it to nobody else', async () => {
+    const { screen } = await boot(COURSE, true, { onEditLessons: jest.fn() });
+    expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+
+  it('offers it to the creator only when there is a screen to open', async () => {
+    hub.ownCourse = true;
+    const { screen } = await boot(COURSE);
+    expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+});
+
 describe('H25: a course', () => {
   it('shows the lessons with the first Free and the rest locked, See all, and the unlock at the foot', async () => {
     const { screen } = await boot(COURSE);
@@ -649,6 +715,20 @@ describe('H25: playing a lesson (FIX-107)', () => {
     await rtl.act(async () => playing().listeners.playToEnd());
     expect(screen.getByRole('button', { name: 'Play Lesson 1' })).toBeTruthy();
     expect(hub.writes.filter((w) => w.includes('/done'))).toEqual([]);
+  });
+
+  it('playing free lesson 1 of a locked course to its end sends no PUT /me/lessons/:id/done, even after the writes have had time to land', async () => {
+    const { screen } = await boot(COURSE);
+    expect(hub.bought).toBe(false);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByTestId('detail-media-lesson');
+    await rtl.act(async () => playing().listeners.playToEnd());
+    // A write the page made on the end of the lesson would be on its way by now: give it the time a request takes here.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(hub.writes).not.toContain('PUT /me/lessons/l1/done');
+    expect(hub.writes.filter((w) => w.startsWith('PUT /me/lessons/'))).toEqual([]);
   });
 
   it('a user taps a locked lesson and is asked to unlock the course, with no link asked of the Hub', async () => {

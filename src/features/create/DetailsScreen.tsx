@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FlatList, useWindowDimensions, View } from 'react-native';
 
@@ -9,6 +10,7 @@ import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { useWawu } from '@/theme';
 
+import { fetchOwnCourses, myCoursesKey, type OwnCourse } from './api';
 import { CreateFrame } from './CreateFrame';
 import { categoryLabel, CONTENT_CATEGORIES, detailsReady, limits, setDetails, useDetails } from './details';
 import { labelOf, type FormatId } from './model';
@@ -34,6 +36,10 @@ export type DetailsScreenProps = {
 export function DetailsScreen({ format, onBack, onContinue }: DetailsScreenProps) {
   const details = useDetails();
   const [picking, setPicking] = useState(false);
+  const [pickingCourse, setPickingCourse] = useState(false);
+  // "From a course" (FIX-111, H24): offered for a piece that is not a course, and only when the creator has a course to name.
+  const courses = useQuery({ queryKey: myCoursesKey, queryFn: fetchOwnCourses, enabled: format !== 'course' });
+  const offered = format !== 'course' && (courses.data?.length ?? 0) > 0;
 
   return (
     <CreateFrame
@@ -70,6 +76,27 @@ export function DetailsScreen({ format, onBack, onContinue }: DetailsScreenProps
         value={categoryLabel(details.category)}
         trailingIcon="ChevronDown"
         onPress={() => setPicking(true)}
+      />
+      {offered ? (
+        <TextField
+          testID="details-course"
+          label="From a course"
+          placeholder="None"
+          hint="Shown on the piece as the course it comes from"
+          value={details.parentCourse?.title ?? ''}
+          trailingIcon="ChevronDown"
+          onPress={() => setPickingCourse(true)}
+        />
+      ) : null}
+      <CourseSheet
+        visible={pickingCourse}
+        onClose={() => setPickingCourse(false)}
+        courses={courses.data ?? []}
+        selected={details.parentCourse?.id ?? null}
+        onPick={(course) => {
+          setDetails({ parentCourse: course ? { id: course.id, title: course.title } : null });
+          setPickingCourse(false);
+        }}
       />
       <CategorySheet
         visible={picking}
@@ -112,6 +139,45 @@ export function CategorySheet({ visible, onClose, selected, onPick }: CategorySh
             accessibilityLabel={item.id === selected ? `${item.label}, chosen` : item.label}
             trailing={item.id === selected ? <Icon name="Check" size={pickedMetrics.icon} color={colors.accentFg} strokeWidth={pickedMetrics.stroke} /> : <View />}
             onPress={() => onPick(item.id)}
+          />
+        )}
+      />
+    </BottomSheet>
+  );
+}
+
+type CourseSheetProps = {
+  visible: boolean;
+  onClose: () => void;
+  courses: OwnCourse[];
+  selected: string | null;
+  onPick: (course: OwnCourse | null) => void;
+};
+
+/** The list behind "From a course": none, then the creator's own courses (live or in review), the chosen one ticked. */
+export function CourseSheet({ visible, onClose, courses, selected, onPick }: CourseSheetProps) {
+  const { colors } = useWawu();
+  const { height } = useWindowDimensions();
+  const tick = <Icon name="Check" size={pickedMetrics.icon} color={colors.accentFg} strokeWidth={pickedMetrics.stroke} />;
+  return (
+    <BottomSheet visible={visible} onClose={onClose} label="From a course" testID="course-sheet">
+      <Text variant="sheetTitleSm" accessibilityRole="header">
+        From a course
+      </Text>
+      <FlatList
+        testID="course-list"
+        data={courses}
+        keyExtractor={(course) => course.id}
+        style={{ maxHeight: height * LIST_SHARE }}
+        ListHeaderComponent={<ListRow testID="course-none" title="None" accessibilityLabel={selected === null ? 'None, chosen' : 'None'} trailing={selected === null ? tick : <View />} onPress={() => onPick(null)} />}
+        renderItem={({ item }) => (
+          <ListRow
+            testID={`course-${item.id}`}
+            title={item.title}
+            subtitle={item.status === 'pending' ? 'In review' : undefined}
+            accessibilityLabel={item.id === selected ? `${item.title}, chosen` : item.title}
+            trailing={item.id === selected ? tick : <View />}
+            onPress={() => onPick(item)}
           />
         )}
       />

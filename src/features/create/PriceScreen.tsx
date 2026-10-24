@@ -17,9 +17,9 @@ import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
 import { font, space, text, useWawu } from '@/theme';
 
-import { allowanceKey, createContent } from './api';
+import { allowanceKey, createContent, saveLessons, type LessonInput } from './api';
 import { CreateFrame } from './CreateFrame';
-import { resetDraft, useDraft, type UploadedFile } from './draft';
+import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
 import { cleanPrice, groupDigits, priceOf, priceReady, setDetails, setSent, useDetails, type AccessType, type Details } from './details';
 import { formatBytes, iconOf, labelOf, type FormatId } from './model';
 import { Stepper } from './parts';
@@ -48,6 +48,17 @@ export function pieceMeta(format: FormatId, full: UploadedFile, preview: Uploade
 /** The sentence under a refused send: the Hub's own words when it gave them, else one the person can act on. */
 export const sendFailure = (error: unknown): string => (error instanceof ApiError && error.message ? error.message : 'We could not send it. Check your connection and try again.');
 
+/** The Hub's list of a course's lessons, from what the lessons step collected: every lesson has a title and a file by now. */
+export function lessonInputs(lessons: readonly DraftLesson[]): LessonInput[] {
+  return lessons.flatMap((l) =>
+    l.file ? [{ title: l.title.trim(), ...(l.duration.trim() ? { durationLabel: l.duration.trim() } : {}), assetKey: l.file.key }] : [],
+  );
+}
+
+/** The sentence under a course that was taken for review while its lessons were not saved. */
+export const lessonsFailure = (error: unknown): string =>
+  `Your course is in review, but its lessons did not save. ${error instanceof ApiError && error.message ? error.message : 'Check your connection and try again.'}`;
+
 export type PriceScreenProps = {
   format: FormatId;
   onBack: () => void;
@@ -63,7 +74,11 @@ export type PriceScreenProps = {
  */
 export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   const details = useDetails();
-  const { full, preview } = useDraft();
+  const draft = useDraft();
+  const lessons = useLessons();
+  const { preview } = draft;
+  const full = fullFileOf(draft, lessons);
+  const made = useMade();
   const queryClient = useQueryClient();
   const sending = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -77,18 +92,37 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
     setBusy(true);
     setFailure(null);
     try {
-      const sent = await createContent({
-        contentType: format,
-        title: details.title.trim(),
-        description: details.description.trim(),
-        category: details.category,
-        accessType: details.accessType,
-        price,
-        previewAsset: preview.fileUrl,
-        fullAsset: full.fileUrl,
-      });
+      let taken = made;
+      if (!taken) {
+        const sent = await createContent({
+          contentType: format,
+          title: details.title.trim(),
+          description: details.description.trim(),
+          category: details.category,
+          accessType: details.accessType,
+          price,
+          previewAsset: preview.fileUrl,
+          fullAsset: full.fileUrl,
+          ...(details.parentCourse ? { parentCourseId: details.parentCourse.id } : {}),
+        });
+        // A course is made first and its lessons follow. The Hub's answer carries the piece's id; without one the piece is in review
+        // already, so it goes on to M25 (its lessons can be added from the course itself) rather than being made a second time.
+        taken = sent.id && format === 'course' ? { id: sent.id, title: sent.title } : null;
+        if (taken) setMade(taken);
+        else setSent({ title: sent.title });
+      }
+      if (taken) {
+        try {
+          await saveLessons(taken.id, lessonInputs(lessons));
+        } catch (error) {
+          setFailure(lessonsFailure(error));
+          sending.current = false;
+          setBusy(false);
+          return;
+        }
+        setSent({ title: taken.title });
+      }
       resetDraft();
-      setSent({ title: sent.title });
       void queryClient.invalidateQueries({ queryKey: allowanceKey });
       onSent();
     } catch (error) {
@@ -100,9 +134,9 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
 
   const foot = (
     <>
-      {failure ? <Banner testID="price-failure" tone="danger" title="Not sent" body={failure} /> : null}
+      {failure ? <Banner testID="price-failure" tone="danger" title={made ? 'Lessons not saved' : 'Not sent'} body={failure} /> : null}
       {free ? null : <NoteLine />}
-      <Button testID="create-send" label="Send for review" full loading={busy} disabled={!priceReady(details)} onPress={() => void send()} />
+      <Button testID="create-send" label={made ? 'Save the lessons' : 'Send for review'} full loading={busy} disabled={!priceReady(details)} onPress={() => void send()} />
     </>
   );
 

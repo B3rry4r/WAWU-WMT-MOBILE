@@ -29,6 +29,36 @@ export type UploadedFile = {
  */
 export type Draft = { format: FormatId | null; full: UploadedFile | null; preview: UploadedFile | null };
 
+/**
+ * One lesson of a course being made (FIX-111): the title, the length as typed (`4:12`), and the file that went up for it, which is a
+ * `content/full` upload like a piece's own. `key` is the screen's own handle for the card (a lesson has no id until the Hub saves it).
+ */
+export type DraftLesson = { key: string; title: string; duration: string; file: UploadedFile | null };
+
+/**
+ * A course the Hub has taken whose lessons are not saved yet (FIX-111): the piece is made first and its lessons follow
+ * (`PUT /content/{id}/lessons`), so a failure between the two leaves a course in review with no lessons. This keeps what the price
+ * step needs to save them again without making a second piece. Emptied once the lessons are saved or the draft is reset.
+ */
+export type MadeCourse = { id: string; title: string };
+let made: MadeCourse | null = null;
+const madeListeners = new Set<() => void>();
+export const getMade = (): MadeCourse | null => made;
+export function setMade(next: MadeCourse | null): void {
+  made = next;
+  madeListeners.forEach((l) => l());
+}
+export function useMade(): MadeCourse | null {
+  return useSyncExternalStore(
+    (listener) => {
+      madeListeners.add(listener);
+      return () => madeListeners.delete(listener);
+    },
+    getMade,
+    getMade,
+  );
+}
+
 const empty: Draft = { format: null, full: null, preview: null };
 let draft: Draft = empty;
 const listeners = new Set<() => void>();
@@ -71,11 +101,26 @@ function giveBack(file: UploadedFile | null): void {
   if (file) void release(file.key);
 }
 
+/**
+ * A course's lessons, in the order they will be taken (FIX-111). They are kept apart from the draft's own three fields so a piece that
+ * is not a course reads exactly as before; every reset above empties both.
+ */
+let lessons: DraftLesson[] = [];
+const lessonListeners = new Set<() => void>();
+function setLessons(next: DraftLesson[]): void {
+  lessons = next;
+  lessonListeners.forEach((l) => l());
+}
+export const getLessons = (): DraftLesson[] => lessons;
+
 /** A different format starts the piece again: the files that went up for the old one are not this one's, so they are given back. */
 export function setFormat(format: FormatId): void {
   if (draft.format === format) return;
   giveBack(draft.full);
   giveBack(draft.preview);
+  if (!made) lessons.forEach((l) => giveBack(l.file));
+  setMade(null);
+  setLessons([]);
   resetDetails();
   publish({ format, full: null, preview: null });
 }
@@ -97,16 +142,73 @@ export function setPreview(preview: UploadedFile | null): void {
 export function abandonDraft(): void {
   giveBack(draft.full);
   giveBack(draft.preview);
+  // The files of a course the Hub has already taken belong to it, whether or not its lessons were saved.
+  if (!made) lessons.forEach((l) => giveBack(l.file));
+  setMade(null);
+  setLessons([]);
   resetDetails();
   setSent(null);
   publish(empty);
 }
+
+let lessonCounter = 0;
+const newLesson = (): DraftLesson => ({ key: `lesson-${(lessonCounter += 1)}`, title: '', duration: '', file: null });
+
+export function useLessons(): DraftLesson[] {
+  return useSyncExternalStore(
+    (listener) => {
+      lessonListeners.add(listener);
+      return () => lessonListeners.delete(listener);
+    },
+    getLessons,
+    getLessons,
+  );
+}
+
+/** A blank lesson is added at the end. */
+export function addLesson(): void {
+  setLessons([...lessons, newLesson()]);
+}
+
+/** Changes what the person typed for a lesson. */
+export function setLessonText(key: string, patch: Partial<Pick<DraftLesson, 'title' | 'duration'>>): void {
+  setLessons(lessons.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+}
+
+/** Puts a file on a lesson (or takes it off): a file it had is given back to the Hub. */
+export function setLessonFile(key: string, file: UploadedFile | null): void {
+  const had = lessons.find((l) => l.key === key)?.file ?? null;
+  if (had && had.key !== file?.key) giveBack(had);
+  setLessons(lessons.map((l) => (l.key === key ? { ...l, file } : l)));
+}
+
+/** Takes a lesson out; its file is given back to the Hub. */
+export function removeLesson(key: string): void {
+  giveBack(lessons.find((l) => l.key === key)?.file ?? null);
+  setLessons(lessons.filter((l) => l.key !== key));
+}
+
+/** Moves a lesson one place earlier (-1) or later (1). */
+export function moveLesson(key: string, by: -1 | 1): void {
+  const from = lessons.findIndex((l) => l.key === key);
+  const to = from + by;
+  if (from < 0 || to < 0 || to >= lessons.length) return;
+  const next = [...lessons];
+  [next[from], next[to]] = [next[to], next[from]];
+  setLessons(next);
+}
+
+/** The file that stands for a piece's full file: a course's first lesson (the Hub's create call wants one), else the full file. */
+export const fullFileOf = (d: Pick<Draft, 'format' | 'full'>, lessonList: readonly DraftLesson[]): UploadedFile | null =>
+  d.format === 'course' ? (lessonList[0]?.file ?? null) : d.full;
 
 /**
  * Empties the draft without giving anything back: for when the files now belong to something else (the create call, ME-08) or
  * the session has ended and there is no one to ask on behalf of.
  */
 export function resetDraft(): void {
+  setMade(null);
+  setLessons([]);
   resetDetails();
   publish(empty);
 }

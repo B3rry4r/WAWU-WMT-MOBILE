@@ -87,9 +87,46 @@ export type CreateContentBody = components['schemas']['CreateContentDto'];
  * arrives as an `ApiError` carrying the Hub's own sentence and `code`. The call never fails once the Hub has said yes: a
  * piece that was taken but whose answer cannot be read still goes to M25, because sending it again would make a second one.
  * The Hub's success body is `{ statusCode, message, data }` and the contract types the piece itself, so both are read.
+ * `id` is the piece's own id when the answer carries one (a course needs it to save its lessons, FIX-111).
  */
-export async function createContent(body: CreateContentBody): Promise<{ title: string }> {
+export async function createContent(body: CreateContentBody): Promise<{ title: string; id: string | null }> {
   const raw = (await unwrap(api.POST('/api/hub/content', { body }))) as unknown;
-  const piece = ((raw as { data?: unknown } | undefined)?.data ?? raw ?? {}) as { title?: unknown };
-  return { title: typeof piece.title === 'string' && piece.title !== '' ? piece.title : body.title };
+  const piece = ((raw as { data?: unknown } | undefined)?.data ?? raw ?? {}) as { title?: unknown; id?: unknown };
+  return {
+    title: typeof piece.title === 'string' && piece.title !== '' ? piece.title : body.title,
+    id: typeof piece.id === 'string' && piece.id !== '' ? piece.id : null,
+  };
+}
+
+export type LessonInput = components['schemas']['LessonInputDto'];
+export type SavedLesson = { id: string; title: string; order: number; durationLabel: string | null; hasFile: boolean };
+
+/**
+ * Sets a course's whole list of lessons (`PUT /content/{id}/lessons`, FIX-107): the order sent is the order taken. A lesson sent
+ * with its `id` is kept (and keeps its file unless a new `assetKey` is sent); one without is new. The Hub answers the list as saved.
+ * A refusal (a file that is not the person's, a lesson taken out of a course people have bought) arrives in the Hub's own words.
+ */
+export async function saveLessons(contentId: string, lessons: LessonInput[]): Promise<SavedLesson[]> {
+  const out = dataOf<{ lessons?: unknown }>(await unwrap(api.PUT('/api/hub/content/{id}/lessons', { params: { path: { id: contentId } }, body: { lessons } })), 'lessons');
+  if (!Array.isArray(out.lessons)) throw unreadable('lessons');
+  return out.lessons as SavedLesson[];
+}
+
+export const myCoursesKey = ['library', 'courses'] as const;
+
+/** One of the person's own courses, for "From a course" (M23). */
+export type OwnCourse = { id: string; title: string; status: string };
+
+/**
+ * The creator's own courses that a piece may come from: live or in review (a turned-down course is not offered). `GET
+ * /content/mine/library?contentType=course` lists them, newest first; a creator holds few, so one page of the Hub's largest size is all.
+ */
+export async function fetchOwnCourses(): Promise<OwnCourse[]> {
+  const body = (await unwrap(api.GET('/api/hub/content/mine/library', { params: { query: { page: 1, contentType: 'course', perPage: 100 } } }))) as unknown as {
+    data?: { id?: unknown; title?: unknown; status?: unknown }[] | null;
+  };
+  if (!Array.isArray(body?.data)) throw unreadable('courses');
+  return body.data
+    .filter((c): c is OwnCourse => typeof c.id === 'string' && typeof c.title === 'string' && typeof c.status === 'string')
+    .filter((c) => c.status === 'live' || c.status === 'pending');
 }

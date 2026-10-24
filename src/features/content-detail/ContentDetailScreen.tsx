@@ -26,6 +26,7 @@ import {
   Header,
   LessonList,
   MakerRow,
+  ParentCourseRow,
   PriceCard,
   SectionHead,
   ThreadList,
@@ -71,6 +72,10 @@ export type ContentDetailScreenProps = {
   onBack: () => void;
   /** Where the page's wallet payments (an unlock, a tip) lead when they need somewhere else: Open your wallet, a PIN to set, Forgot PIN, add money. */
   pay: FlowHandlers;
+  /** The "From the course" row (H24) opens the course's own page. The row is not drawn without it. */
+  onOpenCourse?: (courseId: string) => void;
+  /** The creator's own course opens the screen that edits its lessons. The button is not drawn without it. */
+  onEditLessons?: (courseId: string) => void;
 };
 
 type Notice = { text: string; tone: ToastTone } | null;
@@ -81,7 +86,7 @@ type Notice = { text: string; tone: ToastTone } | null;
  * price, the counts, the dates, the lessons, who made it and what the viewer has bought. A mark the Hub does not take is put back
  * and said so; a part that cannot be read says so on its own.
  */
-export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProps) {
+export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLessons }: ContentDetailScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [notice, setNotice] = useState<Notice>(null);
@@ -240,6 +245,8 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
           onToggleFollow={() => page.followMaker.mutate(!e.followsCreator)}
         />
 
+        {d.parentCourse && onOpenCourse ? <ParentCourseRow course={d.parentCourse} onPress={() => onOpenCourse(d.parentCourse!.id)} /> : null}
+
         {locked && !course ? <PriceCard label={unlockLabel(kind)} priceKobo={priceKobo(p)} balanceKobo={balanceKobo} loading={unlock.asking} onUnlock={startUnlock} /> : null}
 
         {course && lessons.length > 0 ? (
@@ -256,6 +263,10 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
               />
             ) : null}
           </>
+        ) : null}
+
+        {course && own && onEditLessons ? (
+          <Button testID="detail-edit-lessons" label="Edit lessons" icon="PenLine" variant="secondary" size="sm" onPress={() => onEditLessons(p.id)} style={styles.center} />
         ) : null}
 
         {canOpen ? (

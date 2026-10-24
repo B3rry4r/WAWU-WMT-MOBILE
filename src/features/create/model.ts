@@ -79,7 +79,7 @@ export function previewHint(rule: PreviewRule | undefined): string {
     case 'clip':
       return rule.seconds ? `${lead} Upload a ${secondsLine(rule.seconds)} second clip.` : `${lead} Upload the clip you want to give away.`;
     case 'lesson':
-      return `${lead} Upload the first lesson as the preview.`;
+      return `${lead} Upload what you want them to see of the course.`;
     case 'cover':
       return `${lead} Upload the cover they should see.`;
     default:
