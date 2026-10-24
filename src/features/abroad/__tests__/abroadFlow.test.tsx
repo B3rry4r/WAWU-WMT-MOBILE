@@ -50,7 +50,12 @@ const GHANA = {
           id: null,
           label: 'Bank account',
           speed: 'Same day',
-          fields: [field('bank', 'Bank', 'bank'), field('account_number', 'Account number', 'digits', { pattern: '^[0-9A-Za-z -]{4,34}$' })],
+          fields: [
+            field('bank', 'Bank', 'bank'),
+            field('account_number', 'Account number', 'digits', {
+              pattern: '^[0-9A-Za-z -]{4,34}$',
+            }),
+          ],
         },
       ],
     },
@@ -65,19 +70,34 @@ const GHANA = {
           id: 'mtn',
           label: 'MTN',
           speed: 'Instant',
-          fields: [field('phone_number', 'Mobile money number', 'phone', { pattern: '^\\+[1-9][0-9]{7,14}$' })],
+          fields: [
+            field('phone_number', 'Mobile money number', 'phone', {
+              pattern: '^\\+[1-9][0-9]{7,14}$',
+            }),
+          ],
         },
         {
           id: 'vodafone',
           label: 'Vodafone',
           speed: 'Instant',
-          fields: [field('phone_number', 'Mobile money number', 'phone', { pattern: '^\\+[1-9][0-9]{7,14}$' })],
+          fields: [
+            field('phone_number', 'Mobile money number', 'phone', {
+              pattern: '^\\+[1-9][0-9]{7,14}$',
+            }),
+          ],
         },
       ],
     },
   ],
 };
-const UGANDA = { ...GHANA, country: 'UG', name: 'Uganda', currency: 'UGX', available: false, unavailableNote: 'We cannot send here yet.' };
+const UGANDA = {
+  ...GHANA,
+  country: 'UG',
+  name: 'Uganda',
+  currency: 'UGX',
+  available: false,
+  unavailableNote: 'We cannot send here yet.',
+};
 const RECIPIENT = {
   id: '11111111-1111-4111-8111-111111111111',
   country: 'GH',
@@ -93,10 +113,19 @@ const RECIPIENT = {
 };
 const SEND_ID = '22222222-2222-4222-8222-222222222222';
 
-const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+const json = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 const ok = (data: unknown, status = 200) => json(status, { statusCode: status, message: 'OK', data });
 const refuse = (status: number, reason: Record<string, unknown>) =>
-  json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
+  json(status, {
+    data: null,
+    statusCode: status,
+    message: String(reason.message ?? ''),
+    reason,
+  });
 
 type Mode = 'ok' | 'expired' | 'short' | 'no_answer';
 const hub = {
@@ -105,11 +134,21 @@ const hub = {
   rate: 'ready' as 'ready' | 'unavailable',
   /** The partner fee the Hub shows on a quote (R-10), in the sending currency's smallest unit; null: none configured. */
   partnerFee: 150 as number | null,
+  /** WAWU's fee taken from the foreign account the money leaves (WALLET-42), in the sending currency's smallest unit. */
+  feeMinor: 0,
+  /** The accounts the Hub lists to send from; null: a naira account and a dollar account. */
+  sources: null as unknown[] | null,
+  /** What the Hub does with the accounts request: answers, never answers (still loading) or fails. */
+  sourcesMode: 'ok' as 'ok' | 'hang' | 'fail',
   wrongFirst: false,
   recipients: [] as unknown[],
   saves: [] as Record<string, unknown>[],
   quotes: [] as Record<string, unknown>[],
-  sends: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
+  sends: [] as {
+    pin: string | null;
+    key: string | null;
+    body: Record<string, unknown>;
+  }[],
   status: 'pending',
 };
 
@@ -129,6 +168,7 @@ function quoteFor(body: { fromCurrency: string; amountMinor: number; side?: stri
     rate: '10.036105',
     providerFeeMinor: hub.partnerFee,
     wawuFeeKobo: 0,
+    wawuFeeMinor: hub.feeMinor,
     speed: 'Instant',
     expiresAt: new Date(Date.now() + 179_000).toISOString(),
     validForSeconds: 179,
@@ -138,7 +178,7 @@ const sendView = (status: string) => ({
   id: SEND_ID,
   status,
   recipient: RECIPIENT,
-  fromCurrency: 'USD',
+  fromCurrency: (hub.quotes.at(-1) as { fromCurrency?: string } | undefined)?.fromCurrency ?? 'USD',
   toCurrency: 'GHS',
   fromDecimals: 2,
   toDecimals: 2,
@@ -147,6 +187,7 @@ const sendView = (status: string) => ({
   rate: '10.036105',
   providerFeeMinor: null,
   wawuFeeKobo: 0,
+  wawuFeeMinor: hub.feeMinor,
   narration: null,
   failureReason: null,
   speed: 'Instant',
@@ -160,15 +201,46 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
   if (path === '/money/recipients/recent') return ok([]);
-  if (path === '/money/wallet/balance') return ok({ availableKobo: 48_525_075, asOf: '2026-10-24T09:00:00.000Z' });
-  if (path === '/money/abroad/corridors') return ok({ enabled: hub.enabled, minReceiveMinor: 100, wawuFeeKobo: 0, countries: [GHANA, UGANDA] });
+  if (path === '/money/wallet/balance')
+    return ok({
+      availableKobo: 48_525_075,
+      asOf: '2026-10-24T09:00:00.000Z',
+    });
+  if (path === '/money/abroad/corridors')
+    return ok({
+      enabled: hub.enabled,
+      minReceiveMinor: 100,
+      wawuFeeKobo: 0,
+      countries: [GHANA, UGANDA],
+    });
   if (path === '/money/abroad/banks/GH')
-    return ok({ country: 'GH', banks: [{ code: '030100', name: 'ABSA BANK OF GHANA LIMITED', swiftBic: null }] });
+    return ok({
+      country: 'GH',
+      banks: [
+        {
+          code: '030100',
+          name: 'ABSA BANK OF GHANA LIMITED',
+          swiftBic: null,
+        },
+      ],
+    });
+  if (path === '/money/abroad/sources' && hub.sourcesMode === 'hang') return new Promise<Response>(() => {});
+  if (path === '/money/abroad/sources' && hub.sourcesMode === 'fail') return json(500, { statusCode: 500, message: 'down' });
   if (path === '/money/abroad/sources')
     return ok({
-      sources: [
-        { currency: 'NGN', name: 'Naira account', decimals: 2, availableMinor: 5_000_000 },
-        { currency: 'USD', name: 'US dollar account', decimals: 2, availableMinor: 100_000 },
+      sources: hub.sources ?? [
+        {
+          currency: 'NGN',
+          name: 'Naira account',
+          decimals: 2,
+          availableMinor: 5_000_000,
+        },
+        {
+          currency: 'USD',
+          name: 'US dollar account',
+          decimals: 2,
+          availableMinor: 100_000,
+        },
       ],
     });
   if (path === '/money/abroad/recipients' && method === 'GET') return ok({ items: hub.recipients });
@@ -178,7 +250,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return ok(RECIPIENT, 201);
   }
   if (path === '/money/abroad/quotes' && method === 'POST') {
-    const body = (await request.json()) as { fromCurrency: string; amountMinor: number; side?: string };
+    const body = (await request.json()) as {
+      fromCurrency: string;
+      amountMinor: number;
+      side?: string;
+    };
     hub.quotes.push(body);
     if (hub.rate === 'unavailable')
       return refuse(409, {
@@ -189,15 +265,35 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/money/abroad/sends' && method === 'POST') {
     const body = (await request.json()) as Record<string, unknown>;
-    hub.sends.push({ pin: request.headers.get('x-transaction-pin'), key: request.headers.get('idempotency-key'), body });
-    if (hub.wrongFirst && hub.sends.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
-    if (hub.mode === 'expired') return refuse(409, { code: 'quote_expired', message: 'This quote has run out. Get a new one and try again.' });
-    if (hub.mode === 'short') return refuse(409, { code: 'insufficient_funds', message: 'There is not enough money in that account for this send.' });
+    hub.sends.push({
+      pin: request.headers.get('x-transaction-pin'),
+      key: request.headers.get('idempotency-key'),
+      body,
+    });
+    if (hub.wrongFirst && hub.sends.length === 1)
+      return refuse(403, {
+        code: 'pin_incorrect',
+        message: 'Wrong PIN. 4 tries left.',
+        triesLeft: 4,
+      });
+    if (hub.mode === 'expired')
+      return refuse(409, {
+        code: 'quote_expired',
+        message: 'This quote has run out. Get a new one and try again.',
+      });
+    if (hub.mode === 'short')
+      return refuse(409, {
+        code: 'insufficient_funds',
+        message: 'There is not enough money in that account for this send.',
+      });
     if (hub.mode === 'no_answer') return json(503, { statusCode: 503, message: 'down' });
     return ok(sendView('pending'), 201);
   }
   if (path === `/money/abroad/sends/${SEND_ID}`) return ok(sendView(hub.status));
-  return json(404, { statusCode: 404, message: `Not here: ${method} ${path}` });
+  return json(404, {
+    statusCode: 404,
+    message: `Not here: ${method} ${path}`,
+  });
 }) as typeof fetch;
 
 const page = (path: string) => (require(path) as { default: ComponentType }).default;
@@ -229,7 +325,16 @@ function WalletStandIn() {
   return (
     <View>
       <Text accessibilityRole="header">Wallet tab</Text>
-      <WalletActions actions={[{ key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') }]} />
+      <WalletActions
+        actions={[
+          {
+            key: 'send',
+            icon: 'ArrowUpRight',
+            label: 'Send',
+            onPress: () => router.push('/send'),
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -266,6 +371,9 @@ beforeEach(() => {
     mode: 'ok',
     rate: 'ready',
     partnerFee: 150,
+    feeMinor: 0,
+    sources: null,
+    sourcesMode: 'ok',
     wrongFirst: false,
     recipients: [],
     saves: [],
@@ -274,7 +382,9 @@ beforeEach(() => {
     status: 'pending',
   });
   queryClient.clear();
-  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
+  queryClient.setDefaultOptions({
+    queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 },
+  });
   mockVault.clear();
   mockVault.set('wawu.session.access', tokenFor('00000000-0000-4000-8000-0000000000f3'));
   mockVault.set('wawu.session.refresh', 'refresh-1');
@@ -353,14 +463,27 @@ describe('send abroad', () => {
     await fireEvent.press(screen.getByTestId('abroad-save'));
     await screen.findByTestId('abroad-amount-screen');
     expect(hub.saves).toEqual([
-      { country: 'GH', method: 'mobile_money', holderName: 'Ama Mensah', scheme: 'mtn', fields: { phone_number: '+233 24 123 4567' } },
+      {
+        country: 'GH',
+        method: 'mobile_money',
+        holderName: 'Ama Mensah',
+        scheme: 'mtn',
+        fields: { phone_number: '+233 24 123 4567' },
+      },
     ]);
     expect(pathname()).toBe('/send/abroad/amount');
   });
 
   it("a user types an amount and sees what the recipient gets from the Hub's quote, then reviews, pays with the PIN and reads the receipt", async () => {
     await toReview();
-    expect(hub.quotes).toEqual([{ recipientId: RECIPIENT.id, fromCurrency: 'USD', amountMinor: 10_000, side: 'send' }]);
+    expect(hub.quotes).toEqual([
+      {
+        recipientId: RECIPIENT.id,
+        fromCurrency: 'USD',
+        amountMinor: 10_000,
+        side: 'send',
+      },
+    ]);
     expect(screen.getByTestId('abroad-review-get').props.children).toBe('GH₵1,003.61');
     expect(screen.getByTestId('abroad-review-partner-fee')).toBeTruthy();
     await pay();
@@ -368,7 +491,9 @@ describe('send abroad', () => {
     expect(hub.sends).toHaveLength(1);
     expect(hub.sends[0].pin).toBe('1234');
     expect(hub.sends[0].key).toBeTruthy();
-    expect(hub.sends[0].body).toEqual({ quoteId: '33333333-3333-4333-8333-333333333333' });
+    expect(hub.sends[0].body).toEqual({
+      quoteId: '33333333-3333-4333-8333-333333333333',
+    });
     expect(Object.values(hub.sends[0].body)).not.toContain('1234');
     expect((await screen.findByTestId('abroad-status')).props.children ?? true).toBeTruthy();
     expect(await screen.findByText('On its way')).toBeTruthy();
@@ -434,5 +559,112 @@ describe('send abroad', () => {
     expect(await screen.findByText('There is not enough money in that account for this send.')).toBeTruthy();
     expect(hub.sends.length).toBe(2);
     expect(hub.sends[1].key).not.toBe(hub.sends[0].key);
+  });
+});
+
+/*
+ * Send abroad from a foreign account (WALLET-42, R-87): a person with a world wallet has no naira account. The Hub lists only the
+ * accounts they hold, with its own balance; the quote is asked in the account's currency; WAWU's fee is the foreign account's, shown
+ * in that currency and counted in the total; and no naira figure is drawn for them.
+ */
+describe('send abroad from a foreign account', () => {
+  const GBP_ONLY = [
+    {
+      currency: 'GBP',
+      name: 'British pound account',
+      decimals: 2,
+      availableMinor: 729,
+    },
+  ];
+
+  async function toWorldAmount() {
+    hub.recipients = [RECIPIENT];
+    hub.sources = GBP_ONLY;
+    await renderRouter(routes, { initialUrl: '/send/abroad' });
+    await fireEvent.press(await screen.findByTestId(`abroad-recipient-${RECIPIENT.id}`));
+    await screen.findByTestId('abroad-amount-screen');
+    await screen.findByTestId('abroad-sources');
+  }
+
+  it('offers only the accounts the person holds, with the Hub balance, and quotes in the account currency', async () => {
+    await toWorldAmount();
+    expect(screen.getByTestId('abroad-sources-GBP')).toBeTruthy();
+    expect(screen.queryByTestId('abroad-sources-NGN')).toBeNull();
+    expect(screen.queryByTestId('abroad-sources-USD')).toBeNull();
+    expect(screen.getByTestId('abroad-source-balance').props.children).toBe('British pound account: £7.29 available');
+    for (const k of '3') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('abroad-quote');
+    expect(hub.quotes.at(-1)).toMatchObject({
+      fromCurrency: 'GBP',
+      amountMinor: 300,
+    });
+  });
+
+  it("shows WAWU's fee in pounds and counts it in the total from the pound account, then sends once on one key", async () => {
+    hub.feeMinor = 175;
+    await toWorldAmount();
+    for (const k of '3') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('abroad-quote');
+    await fireEvent.press(screen.getByTestId('abroad-continue'));
+    await screen.findByTestId('abroad-review-screen');
+    const rows = within(screen.getByTestId('abroad-review-rows'));
+    expect(rows.getByText('£1.75')).toBeTruthy();
+    expect(rows.queryByText(/₦/)).toBeNull();
+    // £3.00 + the partner's £1.50 + WAWU's £1.50.
+    expect(within(screen.getByTestId('abroad-review-total')).getByText('£6.25')).toBeTruthy();
+    expect(screen.getByText('Total from your GBP account')).toBeTruthy();
+    await fireEvent.press(await screen.findByRole('button', { name: /^Send £/ }));
+    await screen.findByText(/to Ama Mensah in Ghana/);
+    await tap('1234');
+    expect(await screen.findByTestId('abroad-receipt-screen')).toBeTruthy();
+    expect(hub.sends).toHaveLength(1);
+    expect(hub.sends[0].body).toMatchObject({
+      quoteId: '33333333-3333-4333-8333-333333333333',
+    });
+    expect(within(await screen.findByTestId('abroad-receipt-rows')).getByText('£1.75')).toBeTruthy();
+  });
+
+  it('draws no naira figure for a person with no naira wallet when WAWU takes no fee', async () => {
+    await toWorldAmount();
+    for (const k of '3') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('abroad-quote');
+    await fireEvent.press(screen.getByTestId('abroad-continue'));
+    await screen.findByTestId('abroad-review-screen');
+    const rows = within(screen.getByTestId('abroad-review-rows'));
+    expect(rows.queryByText(/₦/)).toBeNull();
+    expect(rows.getByText('£0.00')).toBeTruthy();
+  });
+
+  async function toAmountScreenWith(mode: 'ok' | 'hang' | 'fail', sources: unknown[] | null) {
+    hub.recipients = [RECIPIENT];
+    hub.sourcesMode = mode;
+    hub.sources = sources;
+    await renderRouter(routes, { initialUrl: '/send/abroad' });
+    await fireEvent.press(await screen.findByTestId(`abroad-recipient-${RECIPIENT.id}`));
+    await screen.findByTestId('abroad-amount-screen');
+  }
+  function expectNoAmountAndNoNaira() {
+    expect(screen.queryByTestId('abroad-amount')).toBeNull();
+    expect(screen.queryByTestId('amount-key-1')).toBeNull();
+    expect(screen.queryByText(/₦/)).toBeNull();
+    expect(hub.quotes).toEqual([]);
+  }
+
+  it('draws no amount and no naira figure while the accounts load', async () => {
+    await toAmountScreenWith('hang', null);
+    expect(await screen.findByTestId('abroad-sources-loading')).toBeTruthy();
+    expectNoAmountAndNoNaira();
+  });
+
+  it('draws no amount and no naira figure when the accounts cannot be read', async () => {
+    await toAmountScreenWith('fail', null);
+    expect(await screen.findByTestId('abroad-sources-error', {}, { timeout: 8000 })).toBeTruthy();
+    expectNoAmountAndNoNaira();
+  });
+
+  it('says so when the person holds no account to send from, and draws no amount', async () => {
+    await toAmountScreenWith('ok', []);
+    expect(await screen.findByTestId('abroad-no-source')).toBeTruthy();
+    expectNoAmountAndNoNaira();
   });
 });

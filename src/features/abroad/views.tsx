@@ -25,6 +25,7 @@ import {
   speedLine,
   statusLook,
   totalFromAccount,
+  wawuFeeText,
   type AbroadSend,
   type Quote,
   type Recipient,
@@ -115,7 +116,8 @@ export type QuoteRead =
 export type AbroadAmountViewProps = {
   recipient: Recipient;
   sources: Read<Source[]>;
-  fromCurrency: string;
+  /** Null until the Hub has listed the accounts to send from (nothing is typed, quoted or shown in a currency before then). */
+  fromCurrency: string | null;
   onFromCurrency: (currency: string) => void;
   side: 'send' | 'receive';
   onSide: (side: 'send' | 'receive') => void;
@@ -150,7 +152,7 @@ function refusalLine(r: Refusal, fallback: string): string {
  */
 export function AbroadAmountView(p: AbroadAmountViewProps) {
   const sendCurrency = p.fromCurrency;
-  const typedCurrency = p.side === 'send' ? sendCurrency : p.recipient.currency;
+  const typedCurrency = p.side === 'send' && sendCurrency !== null ? sendCurrency : p.recipient.currency;
   const shown = `${formatMinor(0, typedCurrency).replace(/[0-9.,]+$/, '')}${p.text === '' ? '0' : p.text}`;
   const q = p.quote.state === 'ready' ? p.quote.quote : null;
   const chosen = p.sources.data?.find((s) => s.currency === sendCurrency);
@@ -249,7 +251,7 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
                 value: s.currency,
                 label: s.currency,
               }))}
-              value={sendCurrency}
+              value={sendCurrency ?? ''}
               onChange={p.onFromCurrency}
             />
             {chosen ? (
@@ -261,12 +263,23 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
             ) : null}
           </View>
         )}
-        <SegmentedTabs<'send' | 'receive'> testID="abroad-side" label="Which amount" items={SIDE_ITEMS} value={p.side} onChange={p.onSide} />
-        <Text variant="display" testID="abroad-amount" accessibilityLiveRegion="polite" style={styles.amount}>
-          {shown}
-        </Text>
-        {quoteBlock}
-        <AmountKeypad onKey={p.onKey} onDelete={p.onDelete} onClear={p.onClear} />
+        {sendCurrency === null ? (
+          // No account is listed yet (loading or failed above), or the person holds none to send from: no amount is drawn in a guessed currency.
+          !p.sources.loading && !p.sources.failed ? (
+            <Text variant="secondary" tone="textMuted" testID="abroad-no-source">
+              You have no account to send from yet.
+            </Text>
+          ) : null
+        ) : (
+          <>
+            <SegmentedTabs<'send' | 'receive'> testID="abroad-side" label="Which amount" items={SIDE_ITEMS} value={p.side} onChange={p.onSide} />
+            <Text variant="display" testID="abroad-amount" accessibilityLiveRegion="polite" style={styles.amount}>
+              {shown}
+            </Text>
+            {quoteBlock}
+            <AmountKeypad onKey={p.onKey} onDelete={p.onDelete} onClear={p.onClear} />
+          </>
+        )}
       </View>
     </AuthFrame>
   );
@@ -330,7 +343,7 @@ export function AbroadReviewView(p: AbroadReviewViewProps) {
               value={<Text variant="kvValue">{formatMinor(q.providerFeeMinor, q.fromCurrency, q.fromDecimals)}</Text>}
             />
           )}
-          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{formatMinor(q.wawuFeeKobo, 'NGN')}</Text>} />
+          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{wawuFeeText(q)}</Text>} />
           {total === null ? null : (
             <KeyValueRow
               testID="abroad-review-total"
@@ -442,7 +455,7 @@ export function AbroadReceiptView({ send, loading, failed, retry, onDone, onAgai
               </Text>
             }
           />
-          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{formatMinor(send.wawuFeeKobo, 'NGN')}</Text>} />
+          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{wawuFeeText(send)}</Text>} />
           <KeyValueRow label="Arrives" value={<Text variant="kvValue">{send.speed}</Text>} />
         </GroupedList>
       </View>

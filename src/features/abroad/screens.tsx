@@ -104,7 +104,13 @@ export function NewRecipientScreen(props: { onBack: () => void; onSaved: (r: Rec
 /** How long the typing rests before the Hub is asked for a quote. */
 const QUOTE_SETTLE_MS = 500;
 
-export function AbroadAmountScreen(props: { recipientId: string; onBack: () => void; onContinue: (quote: Quote) => void }) {
+export function AbroadAmountScreen(props: {
+  recipientId: string;
+  /** The account chosen on the Wallet tab (WALLET-42); used only while the Hub lists an account in that currency. */
+  initialFrom?: string | null;
+  onBack: () => void;
+  onContinue: (quote: Quote) => void;
+}) {
   const owner = useSessionAccount(undefined);
   const recipients = useQuery(recipientsQuery(owner), queryClient);
   const sourcesQ = useQuery(sourcesQuery(owner), queryClient);
@@ -117,13 +123,17 @@ export function AbroadAmountScreen(props: { recipientId: string; onBack: () => v
   const [held, setHeld] = useState<{ key: string; result: QuoteRead } | null>(null);
   const asked = useRef(0);
 
-  const fromCurrency = from ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? 'NGN';
+  const preferred = props.initialFrom && sources.data?.some((s) => s.currency === props.initialFrom) ? props.initialFrom : null;
+  // Null until the Hub has listed the accounts: no currency (and no naira zero) is drawn before then, and none is guessed for a person
+  // with no naira account (WALLET-42).
+  const fromCurrency: string | null =
+    from ?? preferred ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? null;
   const amountMinor = koboOfText(text);
   const key = `${fromCurrency}|${side}|${amountMinor}`;
   const quote: QuoteRead = amountMinor <= 0 ? { state: 'idle' } : held?.key === key ? held.result : { state: 'loading' };
 
   useEffect(() => {
-    if (!recipient || !sources.data || amountMinor <= 0) return;
+    if (!recipient || !sources.data || fromCurrency === null || amountMinor <= 0) return;
     const mine = ++asked.current;
     const timer = setTimeout(() => {
       void requestQuote({ recipientId: recipient.id, fromCurrency, amountMinor, side }).then((r) => {
