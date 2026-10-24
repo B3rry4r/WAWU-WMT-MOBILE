@@ -7,7 +7,7 @@ order: -174
 priority: launch
 repo: wawu-backend
 type: mobile-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-84, R-83, R-39, R-10, R-20, R-29, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V8, V9]
@@ -93,6 +93,31 @@ Backend `src/money/abroad/`, `src/nuvion/areas/abroad.ts`, `src/nuvion/handlers/
 ## Verifier report
 
 _Rounds 0 and 1 (FIX, F1 to F8, then R1-1 to R1-5) are in [history/NUV-11.md](history/NUV-11.md); round 2 is checked against them. Filled in by the verifier (docs/roles/VERIFIER.md): one row per pass, then findings._
+
+### Round 2 (24 Oct 2026, Sonnet verifier, T2; built none of it). Verdict: PASS (two low notes)
+
+Backend `d0cf9aa` (round 2 `22a2100`, `f4a9e5f`, export `d0cf9aa`; origin/main `53819c2` merged), mobile `eaf769e1` against my round 1 head `4987a3e6`. Own DB `vn11r2_test`; nothing that imports the Fintava double was run here (`wallet-gate.contract.spec`, changed by `f4a9e5f`, is one: its proof is the Branch checks run `40119976735`, all six jobs green on `d0cf9aa`).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Backend types, lint, contract | passed | tsc EXIT 0; eslint (no --fix) on the 13 changed ts files EXIT 0; `contract:build` EXIT 0 and `contract/openapi.json` unchanged; the app's copy is byte-identical; `sync_contract.py` leaves `openapi.mobile.json` and `schema.generated.ts` unchanged |
+| Backend specs | passed | 12 suites 208 tests EXIT 0: abroad service, admin roles (now six routes), settings, `money-contract`, `money-moving-coverage`, `wallet-gate-coverage`, `account-data-map`, `data-export-map`, `data-export-abroad-sections`, `nuvion-abroad`, `publishing-gate-coverage`, `hub-rate-limits` |
+| Gates | passed | backend 0 fail (135 warn, 88 accepted) and baseline EXIT 0; app 0 fail (18 warn, 0 accepted) and baseline EXIT 0; `check_tasks` EXIT 0 |
+| App | passed | tsc EXIT 0; jest abroad and send 8 suites 122 tests EXIT 0 (`--maxWorkers=2`); only the contract and generated client changed since round 1 |
+| R1-1 | closed | `POST /money/abroad/quotes` carries 402 in `contract/openapi.json` again (201, 400, 402, 403, 404, 409, 422, 423, 503); the allowance `BALANCE_READING_QUOTES` is keyed to that one route and to `insufficient_funds` only (the PIN codes, the PIN guard and every other debit code still make a route money-moving), and a test holds it to mounted, no PIN guard, `FeesSetGuard`, both codes documented, moves no money |
+| R1-2 | closed | my race probe (a cancel committed between `apply`'s read and its write, by spying the first `updateMany`): the row stays `cancelled`, the provider's transfer id is kept beside it |
+| R1-3 | closed | my probe of round 1 (fee leg pending when the send fails, then completes at the provider), four sweeps later: `wawuFeeTaken` true, exactly one `-fee-back` reference, given back; the builder's specs add a leg that never completed (closed quietly) and a pending one held after a day; `takeFee` skips a reversed send |
+| R1-4 | closed | specs: a fee not taken after the last try is written off with a `fee_not_taken` row by `system` and the deletion is let go; a held give-back writes `fee_held` and no longer holds the deletion; `settle-fee` is superadmin and finance only (support and reviewer 403 over HTTP, the service never called), needs a reason, writes one audit row, is idempotent, and answers 409 when the partner shows the fee taken, a give-back is on its way, the send is not decided or nothing is owed. Admin routes document only 200 in the contract, as `cancel` and `freeze` do |
+| Export | passed | `abroadRecipients`, `abroadQuotes`, `abroadSends`: my probe with a second person's recipient, quote and send in the same database: counts 1, 1, 1 for the asker, none of the other person's name, account digits, id or send in the output; no provider transfer id, reference or account ref; the account is `accountEnd`, the last four; no `feeDiffers`, hold or settled field; `AbroadFreeze` stays excluded; `data-export-map` green |
+| Merge | passed | one rule per column in the account data map (the two `FxQuote` and two `FxOperation` rows are different columns), no duplicate `Fx*` rows, the `Fx*` export exclusions gone (FX-A exports them) |
+| Break money | held | probes on the spec's fake provider: five concurrent `giveBack` calls, two concurrent `apply` and a sweep: one `-fee-back` reference, given back; concurrent sweeps and `takeFee` calls: one `-fee` reference; failed (fee given back) then reversed, then a sweep: no second give-back; completed then reversed twice: one give-back |
+
+Findings (new):
+
+- **R2-1 low, hardening (older than round 2).** `apply` accepts any provider state over a decided row except completed to pending. Probe: after a send failed or was reversed and its fee was given back, a later provider word `completed` turns the row `completed` with the fee still given back (WAWU loses its fee; the sender sees a delivered send). The webhook handler re-reads the transfer from the provider, so it takes the provider contradicting itself, not an out-of-order delivery; no real case is known. Fix when convenient: a decided `failed` or `reversed` row is not taken to `completed` without a person.
+- **R2-2 low, rare.** `settle-fee` `paid_back` with no give-back leg at the provider marks the fee given back (paid outside). If the automatic give-back is creating its leg at that moment, the person could be paid twice (outside and by the leg). It needs finance to settle a row the sweep is working on in the same seconds; the reason field is the only guard.
+
+Not run: a real failed or reversed transfer, a fee leg really left pending by Nuvion, the fingerprint path, a phone, mobile CI.
 
 ## History
 
