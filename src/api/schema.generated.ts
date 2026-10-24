@@ -8373,6 +8373,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/store/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The products on sale in one store, from the product map an admin keeps.
+         *     `available` is false (with a `reason`) when the Hub has no credentials for
+         *     that store yet or an admin has switched it off, and then no product is
+         *     listed. A price is never here: the app shows the store's own, in the
+         *     person's own currency.
+         */
+        get: operations["StoreController_products"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/store/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hands the Hub a purchase the store has just completed. The Hub asks the
+         *     store's own server about it (the app's word is never taken), then gives
+         *     what was bought, once per store transaction: the same call again, a
+         *     restore, or the store's own notice arriving first all answer the same
+         *     purchase with `alreadyGranted: true`. Send `purchaseToken` on `android`,
+         *     `transactionId` on `ios`, and `communityId` for a pass.
+         *
+         *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
+         *     `store_product_unknown` (404), `store_receipt_missing` (400),
+         *     `store_purchase_invalid` (422), `store_purchase_pending`,
+         *     `store_purchase_taken` (the transaction belongs to another account),
+         *     `store_pass_not_available` and `store_unreachable` (503, safe to repeat).
+         */
+        post: operations["StoreController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10726,6 +10779,67 @@ export interface components {
         RecordAdEventDto: {
             /** @enum {string} */
             type: "view" | "tap" | "skip";
+        };
+        StorePurchaseDto: {
+            /**
+             * @description The store the purchase was made in.
+             * @enum {string}
+             */
+            platform: "android" | "ios";
+            /** @description The id the store sold it under (`storeProductId` from `GET /store/products`). */
+            productId: string;
+            /** @description Google Play: the purchase token the billing library returned. Required on `android`. */
+            purchaseToken?: string;
+            /** @description App Store: the StoreKit transaction id. Required on `ios`. */
+            transactionId?: string;
+            /**
+             * Format: uuid
+             * @description The room a community pass is bought for. Required for a pass product, refused for any other.
+             */
+            communityId?: string;
+        };
+        StoreProductGrantsDto: {
+            /** @description points: a pack of the live plan, by id. */
+            packId?: string;
+            /**
+             * @description credits: starter, popular or pro.
+             * @enum {string}
+             */
+            pack?: "starter" | "popular" | "pro";
+            /** @description tier: a tier of the live plan, by id. */
+            tierId?: string;
+            /** @description pass: the days one period runs. */
+            days?: number;
+        };
+        CreateStoreProductDto: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            /** @description The id the store sells it under. Fixed once created. */
+            storeProductId: string;
+            /**
+             * @description Fixed once created.
+             * @enum {string}
+             */
+            kind: "points" | "credits" | "tier" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsDto"];
+            /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStoreProductDto: {
+            title?: string;
+            grants?: components["schemas"]["StoreProductGrantsDto"];
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStorePlatformDto: {
+            /** @description Switch purchases from this store on or off. */
+            enabled?: boolean;
+            /** @description The store's cut in basis points (1500 = 15%), 0 to 10000. Send `-1` to go back to the config's. */
+            storeFeeBps?: number;
         };
         FintavaWebhookAck: {
             /** @enum {string} */
@@ -15926,6 +16040,126 @@ export interface components {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
             event: string | null;
+        };
+        StoreProductGrantsConfig: {
+            packId: string | null;
+            /** @enum {string|null} */
+            pack: "starter" | "popular" | "pro" | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        StoreGrantsView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        AdminStoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsConfig"];
+            resolved: components["schemas"]["StoreGrantsView"];
+            referenceKobo: number | null;
+            active: boolean;
+            sortOrder: number;
+            updatedBy: string | null;
+            updatedAt: string;
+        };
+        AdminStoreProductListView: {
+            items: components["schemas"]["AdminStoreProductView"][];
+        };
+        AdminStorePlatformView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            enabled: boolean;
+            configured: boolean;
+            storeFeeBps: number;
+            storeFeeOverridden: boolean;
+            updatedAt: string | null;
+        };
+        AdminStorePlatformListView: {
+            items: components["schemas"]["AdminStorePlatformView"][];
+        };
+        AdminStorePurchaseView: {
+            id: string;
+            wawuUserId: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            environment: string;
+            storeTransactionId: string;
+            communityId: string | null;
+            currency: string | null;
+            priceMicros: string | null;
+            referenceKobo: number | null;
+            storeFeeBps: number;
+            netKobo: number | null;
+            creatorWawuUserId: string | null;
+            creatorShareKobo: number | null;
+            purchasedAt: string;
+            expiresAt: string | null;
+            endedAt: string | null;
+            endReason: string | null;
+            takenBack: {
+                [key: string]: unknown;
+            } | null;
+        };
+        AdminStorePurchasePageView: {
+            items: components["schemas"]["AdminStorePurchaseView"][];
+            nextCursor: string | null;
+        };
+        StoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            subscription: boolean;
+            grants: components["schemas"]["StoreGrantsView"];
+        };
+        StoreProductListView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            available: boolean;
+            /** @enum {string|null} */
+            reason: "store_not_configured" | "store_disabled" | null;
+            products: components["schemas"]["StoreProductView"][];
+        };
+        StoreGrantedView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            until: string | null;
+            communityId: string | null;
+        };
+        StorePurchaseView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            alreadyGranted: boolean;
+            grant: components["schemas"]["StoreGrantedView"];
+            purchasedAt: string;
+            expiresAt: string | null;
+        };
+        StoreWebhookAck: {
+            received: boolean;
+            outcome: string;
         };
         AdCreativeView: {
             headline: string;
@@ -31955,6 +32189,51 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    StoreController_products: {
+        parameters: {
+            query: {
+                /** @description The store the app runs on: `android` (Google Play) or `ios` (App Store). */
+                platform: "android" | "ios";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreProductListView"];
+                };
+            };
+        };
+    };
+    StoreController_buy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorePurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorePurchaseView"];
                 };
             };
         };

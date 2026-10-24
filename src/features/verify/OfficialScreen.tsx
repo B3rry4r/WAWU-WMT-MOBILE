@@ -16,15 +16,15 @@ import { PointsFrame } from '@/features/points/PointsFrame';
 import { radius, space, useWawu } from '@/theme';
 
 import { Confetti } from './planParts';
-import { purchaseQuery } from './purchaseApi';
+import { plansQuery } from './purchaseApi';
 import { grantRows, TIER_WORDS } from './purchaseModel';
 
 const MARK = { circle: 88, icon: 40 } as const;
 const HEAD = { title: 30, tracking: -0.035 } as const;
 
 export type OfficialScreenProps = {
-  /** The purchase the Hub granted (`GET /plans/purchases/{id}`). */
-  purchaseId: string;
+  /** The tier the Hub granted (the store purchase's `grant.tierId`). */
+  tierId: string;
   /** The way out: back to where the person started choosing a tier. It is the header's back (the board draws no second button), so a person who does not record can leave. */
   onDone: () => void;
   /** The way into recording a Voice Intro (VF8). Left out until VERIFY-03 builds it: the button is then not drawn (R-47). */
@@ -32,16 +32,17 @@ export type OfficialScreenProps = {
 };
 
 /**
- * VF7 · You're official, and VF7a for the Founding Maker. What the person sees is what the Hub granted, read by the purchase's id so
- * it is the same after a restart or a repeated confirmation: the tier's badge, the points added (the tier's and the offer's), the
- * products to publish and the event pass. The numbered Founding badge draws its number once the Hub serves it (G-421): until then
+ * VF7 · You're official, and VF7a for the Founding Maker. What the person sees is what the tier gives, read from the plan by the tier the
+ * Hub granted, so it is the same after a restart or a restore: the tier's badge, the points added, the products to publish and the event
+ * pass. The numbered Founding badge draws its number once the Hub serves it (G-421): until then
  * it is the tier's name. The board's "Record my voice" opens VF8 and is drawn only when VERIFY-03 has built it.
  */
-export function OfficialScreen({ purchaseId, onDone, onRecordVoice }: OfficialScreenProps) {
+export function OfficialScreen({ tierId, onDone, onRecordVoice }: OfficialScreenProps) {
   const { colors } = useWawu();
   const owner = useSessionAccount(undefined);
-  const read = useQuery(purchaseQuery(owner, purchaseId), queryClient);
-  const grant = read.data?.status === 'paid' ? read.data.grant : null;
+  const read = useQuery({ ...plansQuery(owner), retry: false }, queryClient);
+  const tier = read.data?.tiers.find((t) => t.id === tierId) ?? null;
+  const grant = tier ? { tierName: tier.name, bonusPoints: tier.bonusPoints, bumpPoints: 0, productsAllowed: tier.products, eventPass: tier.eventPass ?? null } : null;
 
   let body;
   if (read.isError && !read.data) {
@@ -69,7 +70,7 @@ export function OfficialScreen({ purchaseId, onDone, onRecordVoice }: OfficialSc
         testID="official-not-yet"
         icon="Clock"
         title="Your tier is not ready yet"
-        message="We are still finishing your payment. Check again in a minute."
+        message="We could not find this tier yet. Check again in a minute."
         onRetry={() => void read.refetch()}
       />
     );

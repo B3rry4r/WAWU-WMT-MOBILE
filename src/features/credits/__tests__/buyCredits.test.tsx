@@ -1,449 +1,124 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
-import { userEvent } from '@testing-library/react-native';
-import type { ReactElement } from 'react';
-import { Animated, Image, Modal, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
+
+import { hub, installHub, type HubProduct } from '@/features/store/testing/fakeHub';
+import { fakeStore } from '@/features/store/testing/fakeIap';
+import { renderSignedIn, resetApp } from '@/features/store/testing/screen';
 
 /*
- * Buy WAWU Credits (INBOX-13): I28 (the packs, the breakdown, the PIN), I29 (credits added), and what happens when the money does not
- * go as drawn. The Hub is a stand-in `fetch` installed before the app's modules load. It answers in the Hub's shapes, records every
- * quote and purchase (headers and body) and answers an Idempotency-Key it knows with the first purchase, as the Hub does.
+ * Buy WAWU Credits (I28, I29) in the store sheet (IAP-02, R-86): credits are an in-app currency, so the packs are bought with Google Play
+ * Billing or Apple In-App Purchase at the store's price, never from the wallet. The Hub is a stand-in `fetch`; `expo-iap` is replaced at its
+ * own boundary.
  */
-const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
-const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
+const mockVault = new Map<string, string>();
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
+  setItemAsync: jest.fn(async (key: string, value: string) => void mockVault.set(key, value)),
+  deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
+}));
+jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMock);
 
-const PACKS = [
-  { pack: 'starter', credits: 50, priceKobo: 50_000, badge: null },
-  { pack: 'popular', credits: 120, priceKobo: 100_000, badge: 'popular' },
-  { pack: 'pro', credits: 300, priceKobo: 200_000, badge: 'best_value' },
-];
-const BANK_CHARGE = 2325;
-
-type Mode = 'paid' | 'pending' | 'failed' | 'lost_after' | 'lost_before' | 'short_on_pay' | 'changed' | 'no_wallet_on_pay' | 'in_progress';
-const hub = {
-  mode: 'paid' as Mode,
-  balanceKobo: 48_525_075,
-  credits: 48,
-  quoteWallet: 'open' as 'open' | 'none',
-  quotes: [] as string[],
-  quotePrice: null as null | number,
-  buys: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
-  paidKeys: new Map<string, string>(),
-  payments: 0,
-  wrongFirst: false,
-  purchaseReads: 0,
-  pendingReadsLeft: 1,
-  holdQuote: null as null | Promise<void>,
-};
-
-function quoteFor(pack: string, over: Record<string, unknown> = {}) {
-  const row = PACKS.find((p) => p.pack === pack) ?? PACKS[1];
-  const price = hub.quotePrice ?? row.priceKobo;
-  const total = price + BANK_CHARGE;
-  return {
-    pack,
-    credits: row.credits,
-    priceKobo: price,
-    badge: row.badge,
-    payment: {
-      kind: 'credit_pack',
-      targetId: pack,
-      title: `${row.credits} credits`,
-      payee: null,
-      priceKobo: price,
-      fee: { providerFeeKobo: BANK_CHARGE, wawuFeeKobo: 0, totalFeeKobo: BANK_CHARGE },
-      totalKobo: total,
-      balanceKobo: hub.balanceKobo,
-      shortfallKobo: hub.balanceKobo < total ? total - hub.balanceKobo : null,
-      willBeHeld: false,
-      withinDailyLimit: true,
-      remainingTodayKobo: null,
-      quoteToken: `tok-${pack}-${price}`,
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      ...over,
-    },
-  };
-}
-
-function purchaseView(status: 'paid' | 'pending' | 'failed', pack = 'popular') {
-  const row = PACKS.find((p) => p.pack === pack) ?? PACKS[1];
-  const total = row.priceKobo + BANK_CHARGE;
-  return {
-    id: 'cp-1',
-    method: 'wallet',
-    status,
-    statusMessage: status === 'pending' ? 'Paid, finishing it.' : status === 'failed' ? 'The bank did not take it.' : null,
-    payment: {
-      id: 'pay-1',
-      kind: 'credit_pack',
-      targetId: pack,
-      title: `${row.credits} credits`,
-      status: status === 'paid' ? 'completed' : status === 'pending' ? 'pending' : 'failed',
-      priceKobo: row.priceKobo,
-      fee: { providerFeeKobo: BANK_CHARGE, wawuFeeKobo: 0, totalFeeKobo: BANK_CHARGE },
-      totalKobo: total,
-      reference: 'WAW-CRD-1',
-      hold: null,
-      failureReason: status === 'failed' ? 'The bank did not take it.' : null,
-      delivered: status === 'paid',
-      statusMessage: null,
-      createdAt: '2026-10-17T10:00:00.000Z',
-      completedAt: status === 'paid' ? '2026-10-17T10:00:03.000Z' : null,
-    },
-    creditBalance: status === 'paid' ? hub.credits + row.credits : null,
-    createdAt: '2026-10-17T10:00:00.000Z',
-    paidAt: status === 'paid' ? '2026-10-17T10:00:03.000Z' : null,
-    pack,
-    credits: row.credits,
-    priceKobo: row.priceKobo,
-    badge: row.badge,
-  };
-}
-
-globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-  const request = input instanceof Request ? input : new Request(String(input), init);
-  const url = new URL(request.url);
-  const path = url.pathname.replace(/^\/api\/hub/, '');
-  const method = request.method;
-  if (path === '/credits/packs') return ok({ packs: PACKS });
-  if (path === '/credits' && method === 'GET') return ok({ creditBalance: hub.credits });
-  if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
-  if (path === '/credits/purchase/wallet/quote') {
-    const pack = url.searchParams.get('pack') ?? '';
-    hub.quotes.push(pack);
-    if (hub.holdQuote) await hub.holdQuote;
-    if (hub.quoteWallet === 'none') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
-    return ok(quoteFor(pack));
-  }
-  if (path === '/credits/purchase/wallet' && method === 'POST') {
-    const body = (await request.json()) as Record<string, unknown>;
-    const key = request.headers.get('idempotency-key') ?? '';
-    hub.buys.push({ pin: request.headers.get('x-transaction-pin'), key, body });
-    // The Hub answers a key it knows with the first purchase, before it looks at the PIN or the quote.
-    if (hub.paidKeys.has(key)) return json(201, { statusCode: 201, message: 'Created', data: purchaseView(hub.paidKeys.get(key) as 'paid') });
-    if (hub.mode === 'no_wallet_on_pay') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
-    if (hub.wrongFirst && hub.buys.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
-    if (hub.mode === 'short_on_pay') return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 50_000, totalKobo: Number(body.expectedTotalKobo), shortfallKobo: Number(body.expectedTotalKobo) - 50_000 });
-    if (hub.mode === 'changed') return refuse(409, { code: 'quote_changed', message: 'The price changed.', paymentQuote: quoteFor('popular').payment });
-    if (hub.mode === 'in_progress') return refuse(409, { code: 'payment_in_progress', message: 'Still confirming.' });
-    if (hub.mode === 'lost_before' && hub.buys.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
-    if (hub.mode === 'lost_after' && hub.paidKeys.size === 0) {
-      hub.paidKeys.set(key, 'paid');
-      hub.payments += 1;
-      return json(500, { statusCode: 500, message: 'Something went wrong' });
-    }
-    const status = hub.mode === 'pending' ? 'pending' : hub.mode === 'failed' ? 'failed' : 'paid';
-    hub.paidKeys.set(key, status);
-    hub.payments += 1;
-    return json(201, { statusCode: 201, message: 'Created', data: purchaseView(status) });
-  }
-  if (path === '/credits/purchase/wallet/cp-1' && method === 'GET') {
-    hub.purchaseReads += 1;
-    if (hub.pendingReadsLeft > 0) {
-      hub.pendingReadsLeft -= 1;
-      return ok(purchaseView('pending'));
-    }
-    return ok(purchaseView('paid'));
-  }
-  throw new Error(`no answer for ${method} ${path}`);
-}) as typeof fetch;
-
-const { BuyCreditsSheet } = require('../BuyCreditsSheet') as typeof import('../BuyCreditsSheet');
-const { forgetAttempts } = require('@/features/money-attempt/attempts') as typeof import('@/features/money-attempt/attempts');
-void [Animated, Image, Modal, Pressable, ScrollView, NativeText, TextInput, View];
-
-rtl.configure({ asyncUtilTimeout: 5000 });
-
-beforeAll(async () => {
-  const warm = await rtl.render(<View />);
-  warm.unmount();
+const pack = (n: number, credits: number): HubProduct => ({
+  id: `credits-${n}`,
+  platform: 'android',
+  storeProductId: `africa.wawu.credits.${credits}`,
+  kind: 'credits',
+  title: `${credits} credits`,
+  subscription: false,
+  grants: { points: null, credits, tierId: null, days: null },
 });
+const PACKS = [pack(1, 50), pack(2, 120), pack(3, 300)];
+const PRICES = ['KSh 99', 'KSh 199', 'KSh 399'];
+
+function serve(over: { available?: boolean; reason?: 'store_not_configured' | 'store_disabled' } = {}) {
+  hub.reset();
+  fakeStore.reset();
+  installHub();
+  hub.products = PACKS;
+  hub.open = over.available ?? true;
+  hub.reason = over.reason ?? null;
+  fakeStore.products = PACKS.map((p, i) => ({ id: p.storeProductId, displayPrice: PRICES[i], type: 'in-app' as const }));
+  hub.routes['GET /credits'] = { userWawuId: 'me', creditBalance: 170, trialEndsAt: null };
+}
+
+async function boot(over: Parameters<typeof serve>[0] = {}) {
+  serve(over);
+  const { BuyCreditsSheet } = require('../BuyCreditsSheet') as typeof import('../BuyCreditsSheet');
+  const props = { visible: true, onClose: jest.fn(), onAdded: jest.fn(), doneLabel: 'Back to chat' };
+  await renderSignedIn(<BuyCreditsSheet {...props} />);
+  return props;
+}
 
 beforeEach(() => {
-  forgetAttempts();
-  Object.assign(hub, {
-    mode: 'paid',
-    balanceKobo: 48_525_075,
-    credits: 48,
-    quoteWallet: 'open',
-    quotes: [],
-    quotePrice: null,
-    buys: [],
-    paidKeys: new Map<string, string>(),
-    payments: 0,
-    wrongFirst: false,
-    purchaseReads: 0,
-    pendingReadsLeft: 1,
-    holdQuote: null,
-  });
+  jest.replaceProperty(Platform, 'OS', 'android');
+  (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
+});
+const tap = (id: string) => rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId(id)));
+afterEach(async () => {
+  await rtl.act(async () => new Promise((r) => setTimeout(r, 0)));
+  rtl.cleanup();
+  resetApp();
+  jest.restoreAllMocks();
 });
 
-const clients: QueryClient[] = [];
-afterEach(() => {
-  clients.splice(0).forEach((c) => c.clear());
-});
-
-function handlers() {
-  return { onClose: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn(), onOpenWallet: jest.fn(), onAdded: jest.fn() };
-}
-
-async function render(child: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
-  clients.push(client);
-  return rtl.render(
-    <QueryClientProvider client={client}>
-      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        {child}
-      </SafeAreaProvider>
-    </QueryClientProvider>,
-  );
-}
-
-async function boot(h = handlers()) {
-  await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
-  await rtl.screen.findByTestId('credits-total');
-  return h;
-}
-
-async function enterPin(pin: string) {
-  const user = userEvent.setup();
-  for (const d of pin) await user.press(await rtl.screen.findByRole('button', { name: d }));
-}
-
-const buyButton = () => rtl.screen.findByTestId('credits-buy');
-
-async function reachPin() {
-  await rtl.fireEvent.press(await buyButton());
-  await rtl.screen.findByText(/ for 120 credits$/);
-}
-
-describe('I28: the packs sheet', () => {
-  it('a user sees the packs, the bank charge and the total, and the button carries the total', async () => {
+describe('I28 · Buy WAWU Credits in the store sheet', () => {
+  it('a person sees the Hub’s packs at the store’s own price, and no wallet, PIN, bank charge or naira', async () => {
     await boot();
-    expect(rtl.screen.getByText('Buy WAWU Credits')).toBeTruthy();
-    expect(rtl.screen.getByText('Popular')).toBeTruthy();
-    expect(rtl.screen.getByText('Best value')).toBeTruthy();
-    // The popular pack is drawn chosen, as the board draws it.
-    expect(rtl.screen.getByTestId('credits-pack-popular').props.accessibilityState.selected).toBe(true);
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
-    expect(rtl.screen.getByLabelText('23 naira 25 kobo')).toBeTruthy();
-    expect(rtl.screen.getByLabelText('1,023 naira 25 kobo')).toBeTruthy();
-    expect((await buyButton()).props.accessibilityLabel).toContain('Buy 120 credits · ₦1,023.25');
-    // The old wording is not on the sheet.
-    expect(rtl.screen.queryByText(/Fintava/)).toBeNull();
+    expect(await rtl.screen.findByTestId('credits-packs')).toBeTruthy();
+    expect(rtl.screen.getByTestId('credits-price-credits-1').props.children).toBe('KSh 99');
+    expect(rtl.screen.getByTestId('credits-price-credits-3').props.children).toBe('KSh 399');
+    expect(rtl.screen.getByText('Buy 120 credits · KSh 199')).toBeTruthy();
+    for (const gone of ['credits-total', 'credits-short', 'credits-add']) expect(rtl.screen.queryByTestId(gone)).toBeNull();
+    expect(rtl.screen.queryByText(/wallet|PIN|Bank charge|₦|Total/i)).toBeNull();
   });
 
-  it('picking another pack asks for its quote and puts its total on the button', async () => {
+  it('a person buys a pack: the Hub is given the Google Play token, grants it, and the pack is consumed after; I29 shows what they have', async () => {
+    const props = await boot();
+    await rtl.screen.findByTestId('credits-packs');
+    await tap('credits-pack-credits-3');
+    await tap('credits-buy');
+    expect(await rtl.screen.findByTestId('credits-added-title')).toBeTruthy();
+    expect(rtl.screen.getByTestId('credits-added-title').props.children).toBe('300 credits added');
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: 'africa.wawu.credits.300', purchaseToken: 'token-1' }]);
+    expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.credits.300', isConsumable: true }]);
+    expect(await rtl.screen.findByText('You have 170 credits.')).toBeTruthy();
+    await tap('credits-added-done');
+    expect(props.onClose).toHaveBeenCalled();
+    expect(props.onAdded).toHaveBeenCalled();
+  });
+
+  it('cancelled, pending, no connection to the store and a store that is unavailable are each said by their real cause', async () => {
     await boot();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-pro'));
-    await rtl.waitFor(() => expect(hub.quotes).toContain('pro'));
-    await rtl.waitFor(async () => expect((await buyButton()).props.accessibilityLabel).toContain('Buy 300 credits · ₦2,023.25'));
-  });
-
-  it('a user buys 120 credits with the PIN: one purchase, then I29 says what was paid and what they have', async () => {
-    const h = await boot();
-    await reachPin();
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(rtl.screen.getByText('120 credits added')).toBeTruthy();
-    expect(rtl.screen.getByTestId('credits-added-line').props.children).toBe('Paid ₦1,023.25 from your Naira wallet. You have 168 credits.');
-    expect(hub.buys).toHaveLength(1);
-    expect(hub.buys[0].pin).toBe('4829');
-    expect(hub.buys[0].body).toEqual({ pack: 'popular', expectedTotalKobo: 102_325, quoteToken: 'tok-popular-100000' });
-    expect(hub.buys[0].key).toBeTruthy();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-added-done'));
-    expect(h.onClose).toHaveBeenCalledTimes(1);
-    expect(h.onAdded).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('I28: a short wallet keeps the packs', () => {
-  const packButtons = () => ['starter', 'popular', 'pro'].map((id) => rtl.screen.queryByTestId(`credits-pack-${id}`));
-
-  it('a ₦600 wallet still shows the packs, opens on the largest one it can pay for, and buys that one once', async () => {
-    hub.balanceKobo = 60_000;
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
-    // The popular pack costs ₦1,023.25 and is out of reach; the 50 pack (₦523.25) is not.
-    await rtl.waitFor(() => expect(rtl.screen.getByTestId('credits-pack-starter').props.accessibilityState.selected).toBe(true));
-    await rtl.screen.findByTestId('credits-total');
-    expect(packButtons().every((button) => button !== null)).toBe(true);
-    expect(rtl.screen.queryByText(/Not enough in your Naira wallet/)).toBeNull();
-    expect((await buyButton()).props.accessibilityLabel).toContain('Buy 50 credits · ₦523.25');
-    await rtl.fireEvent.press(await buyButton());
-    await rtl.screen.findByText(/ for 50 credits$/);
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys).toHaveLength(1);
-    expect(hub.buys[0].body).toMatchObject({ pack: 'starter', expectedTotalKobo: 52_325 });
-  });
-
-  it('the Not enough note and Add money are for the chosen pack only: another pack brings the Buy button back', async () => {
-    hub.balanceKobo = 60_000;
-    const h = handlers();
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
-    await rtl.waitFor(() => expect(rtl.screen.getByTestId('credits-pack-starter').props.accessibilityState.selected).toBe(true));
-    await rtl.screen.findByTestId('credits-total');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-pro'));
-    await rtl.screen.findByText(/Not enough in your Naira wallet/);
-    expect(rtl.screen.getByText(/This costs ₦2,023\.25\. You have ₦600\.00\./)).toBeTruthy();
-    expect(packButtons().every((button) => button !== null)).toBe(true);
-    expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
-    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
-    expect(h.onAddMoney).toHaveBeenCalledWith(202_325 - 60_000);
-    await rtl.fireEvent.press(rtl.screen.getByTestId('credits-pack-starter'));
-    await rtl.waitFor(async () => expect((await buyButton()).props.accessibilityLabel).toContain('Buy 50 credits · ₦523.25'));
-    expect(rtl.screen.queryByText(/Not enough in your Naira wallet/)).toBeNull();
-    expect(hub.buys).toHaveLength(0);
-  });
-
-  it('a wallet that covers no pack stays on the popular pack with the note, Add money and every pack drawn', async () => {
-    hub.balanceKobo = 10_000;
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
-    await rtl.screen.findByText(/Not enough in your Naira wallet/);
-    expect(rtl.screen.getByTestId('credits-pack-popular').props.accessibilityState.selected).toBe(true);
-    expect(packButtons().every((button) => button !== null)).toBe(true);
-  });
-});
-
-describe('the attacks I28 survives', () => {
-  it('a double tap on Buy asks for one quote and opens one PIN sheet, and one purchase follows', async () => {
-    await boot();
-    const before = hub.quotes.length;
-    let release: () => void = () => undefined;
-    hub.holdQuote = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const button = await buyButton();
-    await rtl.fireEvent.press(button);
-    await rtl.fireEvent.press(button);
-    release();
-    await rtl.screen.findByText(/ for 120 credits$/);
-    expect(hub.quotes.length - before).toBe(1);
-    expect(rtl.screen.getAllByText(/ for 120 credits$/)).toHaveLength(1);
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys).toHaveLength(1);
-  });
-
-  it('a wrong PIN says so, moves nothing, and the right PIN then buys once', async () => {
-    hub.wrongFirst = true;
-    await boot();
-    await reachPin();
-    await enterPin('1111');
-    await rtl.screen.findByText(/Wrong PIN/);
-    expect(hub.payments).toBe(0);
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys).toHaveLength(2);
-  });
-
-  it('a wallet too short is told so before any PIN, with Add money, and nothing is bought', async () => {
-    hub.balanceKobo = 50_000;
-    const h = handlers();
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
-    await rtl.screen.findByText(/Not enough in your Naira wallet/);
-    expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
-    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
-    expect(h.onAddMoney).toHaveBeenCalledWith(52_325);
-    expect(hub.buys).toHaveLength(0);
-  });
-
-  it('a purchase the Hub refuses for a short wallet after the PIN shows the bank balance and keeps the key free', async () => {
-    hub.mode = 'short_on_pay';
-    const h = await boot();
-    await reachPin();
-    await enterPin('4829');
-    await rtl.screen.findByText(/Not enough in your Naira wallet/);
-    expect(hub.payments).toBe(0);
-    expect(h.onAddMoney).not.toHaveBeenCalled();
-    // The bank's own figure is what the sheet now reads, and Add money asks for exactly the shortfall.
-    await rtl.fireEvent.press(rtl.screen.getByText(/^Add /));
-    expect(h.onAddMoney).toHaveBeenCalledWith(52_325);
-  });
-
-  it('an answer that never comes is followed by the SAME request, and the wallet is charged once', async () => {
-    hub.mode = 'lost_after';
-    await boot();
-    await reachPin();
-    await enterPin('4829');
-    // The Hub took the payment and its answer was lost: the sheet asks for the PIN again, it does not say the purchase failed.
-    await rtl.screen.findByText(/ for 120 credits$/);
-    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
-    expect(await rtl.screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
-    expect(hub.payments).toBe(1);
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys).toHaveLength(2);
-    expect(hub.buys[1].key).toBe(hub.buys[0].key);
-    expect(hub.buys[1].body).toEqual(hub.buys[0].body);
-  });
-
-  it('a lost answer, then the sheet closed and opened again, sends the same key and the same quote', async () => {
-    hub.mode = 'lost_before';
-    const first = await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
-    await rtl.screen.findByTestId('credits-total');
-    await reachPin();
-    await enterPin('4829');
-    await rtl.screen.findByText(/ for 120 credits$/);
-    await first.unmount();
-    const quotesBefore = hub.quotes.length;
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...handlers()} />);
-    await rtl.screen.findByTestId('credits-total');
-    await rtl.fireEvent.press(await buyButton());
-    await rtl.screen.findByText(/ for 120 credits$/);
-    // A purchase already sent is asked again as it was: no new quote is made for it.
-    expect(hub.quotes.length).toBe(quotesBefore);
-    await enterPin('4829');
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys[1].key).toBe(hub.buys[0].key);
-  });
-
-  it('a price that moved between the sheet and the tap is shown first and nothing is paid', async () => {
-    await boot();
-    hub.quotePrice = 120_000;
-    await rtl.fireEvent.press(await buyButton());
-    await rtl.screen.findByTestId('credits-notice');
-    expect(rtl.screen.getByTestId('credits-notice').props.children).toBe('The price changed. Check the new total before you buy.');
-    expect(hub.buys).toHaveLength(0);
-    expect((await buyButton()).props.accessibilityLabel).toContain('Buy 120 credits · ₦1,223.25');
-  });
-
-  it('a purchase the Hub took and has not finished is read, never bought again, and I29 follows when it is paid', async () => {
-    hub.mode = 'pending';
-    await boot();
-    await reachPin();
-    await enterPin('4829');
-    await rtl.screen.findByText('Still confirming');
-    expect(hub.payments).toBe(1);
-    await rtl.fireEvent.press(await rtl.screen.findByText('Refresh'));
-    await rtl.screen.findByTestId('credits-added');
-    expect(hub.payments).toBe(1);
-    expect(hub.buys).toHaveLength(1);
-  });
-
-  it('a purchase that fails says why and buys nothing', async () => {
-    hub.mode = 'failed';
-    await boot();
-    await reachPin();
-    await enterPin('4829');
-    await rtl.screen.findByText('The bank did not take it.');
+    await rtl.screen.findByTestId('credits-packs');
+    const press = () => tap('credits-buy');
+    fakeStore.next = { kind: 'error', code: 'user-cancelled' };
+    await press();
+    expect(await rtl.screen.findByText('Cancelled. You were not charged.')).toBeTruthy();
+    fakeStore.next = { kind: 'pending' };
+    await press();
+    expect(await rtl.screen.findByText(/waiting for the store to finish/)).toBeTruthy();
+    fakeStore.next = { kind: 'error', code: 'network-error' };
+    await press();
+    expect(await rtl.screen.findByText(/could not reach the store/)).toBeTruthy();
+    fakeStore.next = { kind: 'error', code: 'billing-unavailable' };
+    await press();
+    expect(await rtl.screen.findByText(/Google Play is not available on this phone/)).toBeTruthy();
+    expect(hub.bodies).toEqual([]);
     expect(rtl.screen.queryByTestId('credits-added')).toBeNull();
   });
 
-  it('a person with no wallet is led to Open your wallet and the sheet closes', async () => {
-    hub.quoteWallet = 'none';
-    const h = handlers();
-    await render(<BuyCreditsSheet visible doneLabel="Back to chat" {...h} />);
-    await rtl.waitFor(() => expect(h.onOpenWallet).toHaveBeenCalledTimes(1));
-    expect(h.onClose).toHaveBeenCalled();
-    expect(hub.buys).toHaveLength(0);
+  it('a pack the store still holds from before is handed to the Hub and finished, and says so if it can not be', async () => {
+    await boot();
+    await rtl.screen.findByTestId('credits-packs');
+    fakeStore.next = { kind: 'error', code: 'already-owned' };
+    await tap('credits-buy');
+    expect(await rtl.screen.findByText(/still has an earlier purchase of this to finish/)).toBeTruthy();
+  });
+
+  it('the Hub not open for Google Play yet says plainly that buying is not open yet, and the sheet offers no Buy', async () => {
+    await boot({ available: false, reason: 'store_not_configured' });
+    expect(await rtl.screen.findByText('Buying is not open yet')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('credits-buy')).toBeNull();
   });
 });

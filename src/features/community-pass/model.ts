@@ -1,20 +1,14 @@
-import { formatMoney } from '@/components/Money';
-
 /**
- * The words and figures of I30 and I31 (INBOX-14, R-63). Every price, total and date is the Hub's: nothing here is a literal of the
- * board's. R-63 says a pass is paid for by the person each time and nothing is debited by itself, so no line says it "renews" on its own.
+ * The words of I30 and I31 (INBOX-14, R-86). A pass is bought in the store sheet and renews through the store until the person cancels there,
+ * so no line speaks of the wallet or of naira: the price is the store's own, in the person's own currency. The days, the end date and the
+ * member count are the Hub's.
  */
 
-export const PRICE_CHANGED_LINE = 'The price changed. Check the new total before you pay.';
-export const STILL_CONFIRMING_LINE = 'We’re still confirming this pass. Don’t pay again. You’re in the moment it is done.';
 /** What I30 says about the room: that members pay the host to join and that reading is free. The credits by kind (R-62, `GET /communities/message-cost`) are shown in the room's own strip (I24), not here, so this line says only what is always true (R-47). */
 export const GATE_LINE = 'Members pay the host to join. Reading inside is free.';
 
-/** "₦2,000", with kobo only when there are some. */
-export const naira = (kobo: number): string => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
-
-/** "₦2,000 a month": the host's price for one pass (30 days, R-63). */
-export const priceLine = (priceKobo: number): string => `${naira(priceKobo)} a month`;
+/** The same sentence the Hub gives when a member the host removed tries to buy a pass (`store_pass_not_available`). */
+export const BLOCKED_LINE = 'The host has removed you from this room. Ask the host to let you back in.';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
 
@@ -27,31 +21,20 @@ export function endDay(iso: string | null, now: Date = new Date()): string {
   return at.getFullYear() === now.getFullYear() ? day : `${day} ${at.getFullYear()}`;
 }
 
-/** I31's line after paying: what was paid, from the wallet, and the day the pass ends. The total is the Hub's, fees included (BRIEF rule 5). */
-export function joinedLine(totalKobo: number, passUntil: string | null): string {
-  const paid = `Paid ${naira(totalKobo)} from your wallet.`;
+/** I31's line after buying: the day the pass runs to, and that the store renews it until it is cancelled there. */
+export function joinedLine(passUntil: string | null): string {
   const day = endDay(passUntil);
-  return day ? `${paid} Your pass ends on ${day}.` : paid;
+  return day ? `Your pass runs to ${day}. The store renews it until you cancel there.` : 'The store renews it until you cancel there.';
 }
 
-/** I31 for a member who opens the room's pass page with time left: the end day and that renewing is a tap, never automatic. */
+/** I31 for a member who opens the room's pass page with time left: the end day and that the store keeps it going. */
 export function runningLine(passUntil: string | null): string {
   const day = endDay(passUntil);
-  return day ? `Your pass ends on ${day}. Renew any time to add 30 days.` : 'Renew any time to add 30 days.';
+  return day ? `Your pass runs to ${day}. The store renews it until you cancel there.` : 'The store renews your pass until you cancel there.';
 }
 
 /** I30 for a member whose pass ended. */
 export function endedLine(passUntil: string | null): string {
   const day = endDay(passUntil);
-  return day ? `Your pass ended on ${day}. Renew to come back in.` : 'Your pass ended. Renew to come back in.';
-}
-
-/** The pay button: "Join · ₦2,030" or "Renew · ₦2,030", the total the payer pays, fees included (BRIEF rule 5). */
-export function payLabel(verb: 'Join' | 'Renew', totalKobo: number | null): string {
-  return totalKobo === null ? verb : `${verb} · ${naira(totalKobo)}`;
-}
-
-/** What a refunded pass says: it names the price that comes back and no more (BRIEF rule 6). */
-export function refundedLine(priceKobo: number): string {
-  return `This pass could not be given. Your ${naira(priceKobo)} is on its way back to your wallet.`;
+  return day ? `Your pass ended on ${day}. Join again to come back in.` : 'Your pass ended. Join again to come back in.';
 }

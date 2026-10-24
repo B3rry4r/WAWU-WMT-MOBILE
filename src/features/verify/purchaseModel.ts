@@ -89,7 +89,7 @@ export const failedLine = (p: Pick<Purchase, 'statusMessage' | 'status'>): strin
 /** VF7's three rows, from what the Hub granted: the points (the tier's and the offer's, "600 + 1,000"), the products, the event pass. A row the grant does not carry is not drawn. */
 export type GrantRow = { id: 'points' | 'products' | 'pass'; label: string; value: string };
 
-export function grantRows(grant: PurchaseGrant): GrantRow[] {
+export function grantRows(grant: Pick<PurchaseGrant, 'bonusPoints' | 'bumpPoints' | 'productsAllowed' | 'eventPass'>): GrantRow[] {
   const rows: GrantRow[] = [];
   const plain = (n: number) => new Intl.NumberFormat('en-US').format(n);
   if (grant.bonusPoints > 0 || grant.bumpPoints > 0) {

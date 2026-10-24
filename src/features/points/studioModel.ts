@@ -1,5 +1,4 @@
 import type { IconName } from '@/components/icon';
-import { formatMoney } from '@/components/Money';
 import { formatPointsCount } from '@/components/PointsFigure';
 
 import type { AiTool, JobCap, JobQuote } from './studioApi';
@@ -28,18 +27,8 @@ export const SHEET_WORDS = {
   have: 'You have',
   short: 'Short by',
   buyPoints: 'Buy points',
-  buyInstead: 'Buy points instead',
   notNow: 'Not now',
-  addMoney: 'Add money',
-  walletLowTitle: 'Your wallet is too low too',
-  walletLowBody: 'Add money, then try again.',
-  /** The note under the offer when the Hub charges nothing on top: nothing is taken before the PIN. */
-  beforePin: 'Nothing is taken until you enter your PIN.',
-  paying: 'Paying...',
-  changed: 'The price changed. Check the new total before you confirm.',
-  notReady: 'We could not get this payment ready. Try again.',
   checkFailed: 'We could not check the cost. Try again.',
-  notShort: 'You have enough points now.',
 } as const;
 
 export const CAP_WORDS = {
@@ -81,9 +70,6 @@ export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'> & { id
   return tool.id === 'dubbing' ? `From ${line}` : line;
 }
 
-/** "₦2,500", or "₦2,523.25" when kobo are in it: money is whole kobo on the wire, never a float. */
-export const naira = (kobo: number): string => formatMoney(kobo, { decimals: kobo % 100 !== 0 });
-
 /** The sheet the quote asks for: points short, no cap in the way. A cap wins over a shortfall (buying points would not let the job run). */
 export type JobVerdict = 'ready' | 'short' | 'cap' | 'unclear';
 export function verdictOf(quote: Pick<JobQuote, 'canRun' | 'shortfallPoints' | 'cap'>): JobVerdict {
@@ -92,32 +78,6 @@ export function verdictOf(quote: Pick<JobQuote, 'canRun' | 'shortfallPoints' | '
   // A quote that says the job cannot run and names neither a cap nor a shortfall proves nothing: it is not drawn as either.
   return quote.canRun ? 'ready' : 'unclear';
 }
-
-/** Which of the sheet's three drawn states the quote is: PT3 (the wallet pays the shortfall), PT3b (the wallet is too low for it) or PT3a (Use wallet is off). */
-export type SheetState = 'wallet' | 'wallet_low' | 'buy';
-export function sheetState(quote: Pick<JobQuote, 'useWallet' | 'wallet'>): SheetState {
-  if (!quote.useWallet || !quote.wallet) return 'buy';
-  const short = quote.wallet.payment.shortfallKobo;
-  return short !== null && short !== undefined && short > 0 ? 'wallet_low' : 'wallet';
-}
-
-/** What the person pays from the wallet for the missing points: the total, the Bank charge in it (BRIEF rule 5). */
-export const walletTotal = (quote: Pick<JobQuote, 'wallet'>): number => quote.wallet?.payment.totalKobo ?? 0;
-
-/** "₦80 + ₦0.50 Bank charge" when the Hub charges a fee on top, else the line about the PIN. */
-export function offerNote(quote: Pick<JobQuote, 'wallet'>): string {
-  const pay = quote.wallet?.payment;
-  if (!pay || pay.fee.totalFeeKobo <= 0) return SHEET_WORDS.beforePin;
-  return `${naira(pay.priceKobo)} + ${naira(pay.fee.totalFeeKobo)} Bank charge`;
-}
-
-/** When the figures the person was shown are not the figures the Hub has now. */
-export function quoteMoved(a: JobQuote, b: JobQuote): boolean {
-  return a.costPoints !== b.costPoints || a.shortfallPoints !== b.shortfallPoints || walletTotal(a) !== walletTotal(b) || a.balancePoints !== b.balancePoints;
-}
-
-/** The PIN sheet's line: "Approve ₦80 for buying 160 points". */
-export const pinPurpose = (quote: Pick<JobQuote, 'shortfallPoints'>): string => `buying ${formatPointsCount(quote.shortfallPoints)} points`;
 
 /** The cap's own words: the Hub names the cap and when it resets. The title says which kind it is. */
 export const capTitle = (cap: Pick<JobCap, 'cap'>): string => (cap.cap === 'daily' ? CAP_WORDS.dailyTitle : CAP_WORDS.jobTitle);
