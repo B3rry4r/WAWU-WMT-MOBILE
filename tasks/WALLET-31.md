@@ -7,7 +7,7 @@ order: -3131
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-16, R-84, R-20, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,7 +30,7 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B20), backend `wmt/WALL
 
 Default (lead), owner may override: block and delete are one action (Nuvion has only delete), so one route and one word, Block; freeze and block need no PIN, unfreeze and details do; the limits (5 held, 10 a day) are not Nuvion's and not ruled; a WAWU fee above 0 is refused with `fees_not_set` until a fee-only charge exists (G-WALLET-31-1).
 
-- **Next:** a second verifier (round 1 is built, see its row below); the live Nuvion dev pass (M2) is still to do.
+- **Next:** the owner's review. The round 1 re-check passed (see "Verifier re-check of round 1" below), live Nuvion dev pass included.
 - **History:** none yet. Reports go to tasks/history/WALLET-31.md.
 
 ## Read first
@@ -128,6 +128,28 @@ Not run by this verifier, on purpose: Fintava specs (`webhook-retention`, and `w
 Branch checks on `bf9f85b` (run 40105092641): everything green except `webhook-retention.contract.spec` (FIX-20, Nuvion repeat case). That red was this branch's: the spec registered its own handler for `cards.deleted` and sent it for a wallet with no row, and the card handler, which now claims `cards.deleted`, answered `wait`, so the delivery read `waiting`. Lead ruling (same kind as H1d): in `src/webhook-retention/tests/webhook-retention.contract.spec.ts` only the sample event moved, `cards.deleted` to `payment_dispute.created`, in four places (the `nuvionBody` default, the stored row's `event`, the F20-SPEC handler's `events`, the other-body delivery); no assertion, title or intent changed. `payment_dispute.*` is listed in `nuvion.interface.ts` and no handler claims it on `origin/wmt/WALLET-21-HUB`, `WALLET-25`, `NUV-11`, `NUV-12`, `IAP-01`, `WALLET-41`, `GEO-02` or this branch (searched `src`). Backend head `169de6d`. That spec imports the Fintava double (`test/fintava/fintava-double`), so by the owner rule it was NOT run locally (the lead's "check first" found the import); tsc, eslint (no fix) and the gates are EXIT 0, and CI's Branch checks prove it.
 
 Not done: M2 (the live Nuvion dev pass through the app, a funded dev wallet); pictures of round 1; the full app check. `plan-settings-round2` and `-readers` (14 tests) fail on a clean `origin/main` too. Five app wallet tests (W1, W35 x2, W26, W36) time out at 20 s on a cold, loaded machine and pass with `--testTimeout=120000`; three of them fail the same on the untouched checkout.
+
+### Verifier re-check of round 1 (24 Oct 2026, a Sonnet agent that built none of it; backend `169de6d`, mobile `49cec3e1`) -- verdict PASS
+
+Worktrees at the two heads, hardlinked modules, test database `vw31r_hub_test`. Specs that import the Fintava double were not run (`wallet-gate.contract`, `webhook-retention.contract`): CI Branch checks run 40106892994 on `169de6d` is green and covers them.
+
+| Finding | Repro | Result |
+|---|---|---|
+| M1 WAWU fee above 0 | Spec: fee moves once under `<card>-fee`, ledger row once, a wallet short of both fees is 402 with the key free. **Live on Nuvion DEV through the Hub** (config 65,772 + 5,000): wallet 80,000 to 9,228 kobo exactly, Hub equal to Nuvion, WAWU's operational account +5,000; fee marked unpaid and the card read again: nothing moved a second time; the same Idempotency-Key again: same card, no second fee. A second card with 9,228 left: 402 `insufficient_funds` before anything was sent, wallet 9,228 before and after, one card row | closed. There is no refund step: the fee is only taken once the card exists, so a failed creation takes nothing |
+| L1 reveal limit | Live: five reveals 200, sixth 429 `card_reveal_rate_limited` (retry in 54 s), a seventh with a wrong PIN also 429 (the count runs before the PIN); spec: another person unaffected | closed |
+| L2 used single-use card | Spec: Nuvion blocks a single-use card, row reads `used`, freeze, unfreeze and reveal each 409 `card_blocked`, payments still listed, not counted as held. App model test: "Used" art, pill and banner | closed (a real single-use payment cannot be made on dev) |
+| L3 webhook bodies | Spec; and live: a signed `cards.created` carrying `number`, `cvv`, `expiration_*` and a nested `cvc` was stored with none of them in `payload` or `rawBody`. The revealed number is in no row of the whole database dump and not in the Hub log | closed |
+| L4 W1 row, every card blocked | App model test: "Get a new card" (row and list button) | closed |
+| L5 cards off | Spec: list still answers while off; app model test: row and list stay while a live card is held, hidden when none is | closed |
+| L6 admin repeats | Spec: three audit rows for three changes, a repeated cancel writes none | closed |
+| H1 and the inventories | `payment_dispute.created` and `payment_dispute.completed` replace the card events in the webhook specs and in `webhook-retention` (four places); each test keeps its intent (read in the diff; nothing else in an assertion changed). Inventories pass | closed |
+| M2 live dev pass | See the log `wallet-31r-v/live-pass.log` in the scratchpad. Wallet opened through the Hub on dev keys, funded 80,000 kobo by a book transfer from the dev operational account (it held 157,233; no EUR session needed), virtual card made through `POST /money/cards` (201 in 30.6 s), reveal (16 digits, 3 CVV, expiry), freeze (Nuvion lists it `blocked`), unfreeze (`active`), block (Nuvion deletes it: list empty, card-details 404; unfreeze after block 409 `card_blocked`). Every dev card for the entity deleted (0 left), the wallet's last 9,228 kobo returned to the operational account (157,233 to 91,461: Nuvion's 65,772 fee is the only loss) | closed |
+
+Checks (EXIT 0 each): backend tsc; eslint (no fix) on the 22 changed files; 10 specs, 380 tests (card contract and `nuvion-cards`, `money-contract`, `publishing-gate-coverage`, `money-moving-coverage`, `hub-rate-limits`, `account-data-map`, `data-export-map`, `nuvion-client`, `nuvion-webhook.contract`); `contract:build` leaves `contract/` unchanged; app tsc; jest `src/features/cards wallet settings` 32 suites, 517 tests (`--maxWorkers=2 --testTimeout=120000`, because five wallet tests time out at 20 s on a loaded machine); app gates 10 gates, 0 fail, 18 warn; `check_baseline`; `check_tasks` 432 tasks.
+
+Low notes for the sweep: (1) the round 1 migration stamp `20261114093000` is earlier than stamps on `wmt/GEO-02` (`20261120093000`), `wmt/IAP-01` (`20261121090000`), `wmt/WALLET-25` (`20261122090000`) and `wmt/NUV-11` (`20261123090000`), whose stamp commits came before or soon after this one; Prisma applies it in name order either way, but the merge agent should look at its registry. (2) On dev the create answer's `last4` came back null; the list was not read for it. (3) Card creation took 30.6 s through the Hub (the builder saw 19 s); the create call worked end to end. (4) The Hub reads Nuvion's dev webhook log itself and processed other people's dev events during the run; harmless on a fresh database.
+
+Not done: pictures of W29, W31, W32 and W1's row (the disk had 2.3 GB free, the brief asks for 4 GB); a card payment on dev (no way to make one); real `cards.*` webhooks from dev (the endpoint is blacklisted). Nothing of mine is left listening (ports 8720 to 8727 checked), test databases dropped, worktrees removed.
 
 ## Owner sign-off
 

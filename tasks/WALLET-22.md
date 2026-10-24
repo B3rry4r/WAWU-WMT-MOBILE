@@ -7,7 +7,7 @@ order: -3122
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [WALLET-31]
 decisions: [R-16, R-37, R-84, R-47, R-29]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -143,6 +143,10 @@ App findings (all low, see WALLET-31 for repro): L2 (a used single-use card read
 ### Round 1 (24 Oct 2026, a Sonnet builder, T2; mobile `wmt/WALLET-31` on the verifier's `5aef0ac6`, contract synced from backend `c2cc38f`; status verifying)
 
 L2: a used single-use card shows "Used" (art, pill, banner, no actions, payments listed). L4: W1's row and the list say "Get a new card" when no card is left to use. L5: W1's row, W35's Cards row and the list stay while cards are off and the person holds a live card (freeze and block still work). L7: W29's fee card uses `Card padded`. Checks: `src/features/cards` suites, `route-guard` and `route-graph`, tsc, eslint, gates 0 fail and 18 warn; the wallet tests that timed out at 20 s on a loaded machine pass with a long timeout. NOT RUN: pictures of round 1, the stack walk.
+
+### Verifier re-check of round 1 (24 Oct 2026, mobile `49cec3e1`) -- PASS
+
+L2, L4, L5 and L7 are closed: the app model tests (used card, "Get a new card", row and list while cards are off with a live card) and jest `src/features/cards wallet settings` pass (32 suites, 517 tests, EXIT 0), app tsc, gates (0 fail, 18 warn) and `check_tasks` EXIT 0. The Hub half ran live on Nuvion dev from the Hub's own routes (see `tasks/WALLET-31.md`). Pictures were not made: the disk had 2.3 GB free, the brief asks for 4 GB.
 
 ## Owner sign-off
 
