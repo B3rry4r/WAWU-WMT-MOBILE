@@ -14994,6 +14994,93 @@
         ]
       }
     },
+    "/api/hub/admin/identity-holds": {
+      "get": {
+        "operationId": "AdminIdentityHoldsListController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page, 1 to 100 (20 when absent, CONVENTIONS section 6).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before; opaque, sent back as given.",
+            "schema": {
+              "maxLength": 300,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityHoldsPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "AdminIdentityHoldsList"
+        ]
+      }
+    },
+    "/api/hub/admin/wallet-openings/stuck": {
+      "get": {
+        "operationId": "AdminWalletOpeningsController_stuck",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page, 1 to 100 (20 when absent, CONVENTIONS section 6).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before; opaque, sent back as given.",
+            "schema": {
+              "maxLength": 300,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StuckOpeningsPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openings with no wallet that are waiting on the provider or on a person, oldest first.",
+        "tags": [
+          "AdminWalletOpenings"
+        ]
+      }
+    },
     "/api/hub/money/pin": {
       "get": {
         "operationId": "MoneyPinController_state",
@@ -18267,6 +18354,50 @@
           }
         },
         "summary": "Finished sales with a payee made before the sweep's start, oldest first.",
+        "tags": [
+          "AdminEarnings"
+        ]
+      }
+    },
+    "/api/hub/admin/money/earnings/in-review": {
+      "get": {
+        "operationId": "AdminEarningsController_inReview",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page, 1 to 100 (20 when absent, CONVENTIONS section 6).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before; opaque, sent back as given.",
+            "schema": {
+              "maxLength": 300,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarningsInReviewPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Moves and earnings a person has to look at, oldest first, a cursor page.",
         "tags": [
           "AdminEarnings"
         ]
@@ -30468,6 +30599,63 @@
         ]
       }
     },
+    "/api/hub/admin/featured-creators": {
+      "get": {
+        "operationId": "AdminFeaturedCreatorsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeaturedCreatorAdminView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "The rail in the order Explore shows it, hidden creators included.",
+        "tags": [
+          "AdminFeaturedCreators"
+        ]
+      }
+    },
+    "/api/hub/admin/featured-creators/order": {
+      "post": {
+        "operationId": "AdminFeaturedCreatorsController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderFeaturedCreatorsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedOrderView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Saves the rail order. The body must name every creator who is featured\nnow, once each: a list that misses someone, or names someone who is not\nfeatured, is refused so a screen that is out of date cannot quietly drop\nor re-add anyone. The places become 0, 1, 2 and so on in one save.",
+        "tags": [
+          "AdminFeaturedCreators"
+        ]
+      }
+    },
     "/api/hub/admin/featured-creators/{wawuId}": {
       "put": {
         "operationId": "AdminFeaturedCreatorsController_put",
@@ -35848,6 +36036,15 @@
               "default": 20,
               "type": "integer"
             }
+          },
+          {
+            "name": "saved",
+            "required": false,
+            "in": "query",
+            "description": "AITOOLS-07: `true` lists only the results the person saved to their library; `false` lists only the ones not saved. Absent: every job, as before.",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -35909,6 +36106,202 @@
           "AiTools"
         ],
         "x-wawu-built-by": "AITOOLS-01"
+      }
+    },
+    "/api/hub/ai-tools/jobs/{id}/save": {
+      "post": {
+        "operationId": "AiToolsController_saveJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Saves a finished result to the person's library (PT2b \"Save\", AITOOLS-07).\nOnly the person's own finished job: another person's job and one that is\nnot there are the same `404 not_found`, one still working or failed is\n`409 job_not_ready`. Saving twice keeps the first time and answers the job\nagain. The job reads `saved: true`; `GET /ai-tools/jobs?saved=true` lists\nthe saved results.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
+      },
+      "delete": {
+        "operationId": "AiToolsController_unsaveJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Takes a result out of the library again (`saved: false`). The result itself stays on the job.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
+      }
+    },
+    "/api/hub/ai-tools/own-voice": {
+      "get": {
+        "operationId": "AiToolsController_ownVoice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnVoiceView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "\"Your voice\" on PT2 (AITOOLS-07): whether the person's own voice can read\ntheir VoiceOver, and the words they agree to first. It is made from the\nrecording of their Voice Intro and nothing else. `ready` is true when the\ntools are on, the recording is there and they agreed; then a VoiceOver job\nmay name the voice `own`.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
+      },
+      "delete": {
+        "operationId": "AiToolsController_removeOwnVoice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnVoiceRemovedView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Takes the agreement back and has the provider drop every copy of the\nperson's voice it still holds. The answer says whether the provider holds\nnone (`gone`) or the Hub is still removing one (`pending`, it keeps trying).\nThe Voice Intro and its recording stay. Nothing is charged.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
+      }
+    },
+    "/api/hub/ai-tools/own-voice/consent": {
+      "post": {
+        "operationId": "AiToolsController_giveOwnVoiceConsent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnVoiceConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnVoiceView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The person agrees to the words the Hub served in `consent.line`, sent back\nunchanged. Stored exactly, with the time. `409 own_voice_consent_line_changed`\nfor any other words, `409 own_voice_recording_required` before the Voice\nIntro recording, `409 own_voice_name_required` with no name on the account.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
+      }
+    },
+    "/api/hub/ai-tools/voices/{voiceId}/sample": {
+      "get": {
+        "operationId": "AiVoiceSamplesController_sample",
+        "parameters": [
+          {
+            "name": "voiceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sample, as audio.",
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "AiVoiceSamples"
+        ],
+        "x-wawu-built-by": "AITOOLS-07"
       }
     },
     "/api/hub/me/voice": {
@@ -39066,6 +39459,12 @@
             "type": "number",
             "minimum": 0,
             "maximum": 10000000
+          },
+          "mediaJobId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The AI tool job whose audio this product uses (AITOOLS-07): one of the\ncaller's own finished jobs, or `null` to detach it. Optional; a draft\nwithout it behaves exactly as before.",
+            "format": "uuid"
           }
         },
         "required": [
@@ -39150,6 +39549,12 @@
             "type": "number",
             "minimum": 0,
             "maximum": 10000000
+          },
+          "mediaJobId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The AI tool job whose audio this product uses (AITOOLS-07): one of the\ncaller's own finished jobs, or `null` to detach it. Optional; a draft\nwithout it behaves exactly as before.",
+            "format": "uuid"
           }
         }
       },
@@ -42878,6 +43283,24 @@
           "settings"
         ]
       },
+      "ReorderFeaturedCreatorsDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        },
+        "required": [
+          "order"
+        ]
+      },
       "PutFeaturedCreatorDto": {
         "type": "object",
         "properties": {
@@ -43701,6 +44124,19 @@
           "fileKey",
           "targetLanguage",
           "quoteToken"
+        ]
+      },
+      "OwnVoiceConsentDto": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "line"
         ]
       },
       "NamePreviewDto": {
@@ -45699,6 +46135,88 @@
         "required": [
           "startsAt",
           "source",
+          "count",
+          "items",
+          "nextCursor"
+        ]
+      },
+      "EarningInReviewView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "earning",
+              "daily_move"
+            ]
+          },
+          "payeeWawuUserId": {
+            "type": "string"
+          },
+          "amountKobo": {
+            "type": "integer"
+          },
+          "earnings": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "dayKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "provider": {
+            "type": "string"
+          },
+          "firstRefusedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewSince": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "payeeWawuUserId",
+          "amountKobo",
+          "earnings",
+          "title",
+          "dayKey",
+          "provider",
+          "firstRefusedAt",
+          "reviewSince",
+          "reason"
+        ]
+      },
+      "EarningsInReviewPage": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EarningInReviewView"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
           "count",
           "items",
           "nextCursor"
@@ -50129,6 +50647,10 @@
               "type": "string"
             }
           },
+          "mediaJobId": {
+            "type": "string",
+            "nullable": true
+          },
           "createdAt": {
             "type": "string"
           },
@@ -50147,6 +50669,7 @@
           "accessType",
           "price",
           "missing",
+          "mediaJobId",
           "createdAt",
           "updatedAt"
         ]
@@ -54683,6 +55206,154 @@
           "state"
         ]
       },
+      "IdentityHoldView": {
+        "type": "object",
+        "properties": {
+          "wawuUserId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "review",
+              "stopped"
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "needs_documents",
+              "checking",
+              "approved",
+              "rejected",
+              "stopped"
+            ],
+            "nullable": true
+          },
+          "failureCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "provider": {
+            "type": "string"
+          },
+          "heldSince": {
+            "type": "string"
+          },
+          "changedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "wawuUserId",
+          "state",
+          "stage",
+          "failureCode",
+          "provider",
+          "heldSince",
+          "changedAt"
+        ]
+      },
+      "IdentityHoldsPage": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentityHoldView"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "count",
+          "items",
+          "nextCursor"
+        ]
+      },
+      "StuckOpeningView": {
+        "type": "object",
+        "properties": {
+          "wawuUserId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "opening",
+              "open",
+              "unknown",
+              "conflict"
+            ]
+          },
+          "failureCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "provider": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "number"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "needs_documents",
+              "checking",
+              "approved",
+              "rejected",
+              "stopped"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "wawuUserId",
+          "state",
+          "failureCode",
+          "provider",
+          "attempts",
+          "startedAt",
+          "stage"
+        ]
+      },
+      "StuckOpeningsPage": {
+        "type": "object",
+        "properties": {
+          "stuckAfterMinutes": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StuckOpeningView"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "stuckAfterMinutes",
+          "count",
+          "items",
+          "nextCursor"
+        ]
+      },
       "ChatPerson": {
         "type": "object",
         "properties": {
@@ -56242,6 +56913,66 @@
           "status",
           "error",
           "sentAt"
+        ]
+      },
+      "FeaturedCreatorAdminView": {
+        "type": "object",
+        "properties": {
+          "wawuId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "featuredAt": {
+            "type": "string"
+          },
+          "pieceCount": {
+            "type": "number"
+          },
+          "shownInExplore": {
+            "type": "boolean"
+          },
+          "hiddenReason": {
+            "type": "string",
+            "enum": [
+              "no_live_content",
+              "hidden_from_member_lists",
+              "not_a_creator"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "wawuId",
+          "name",
+          "handle",
+          "position",
+          "featuredAt",
+          "pieceCount",
+          "shownInExplore",
+          "hiddenReason"
+        ]
+      },
+      "FeaturedOrderView": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedCreatorAdminView"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "ExploreCreatorCard": {
@@ -64920,6 +65651,10 @@
           },
           "description": {
             "type": "string"
+          },
+          "sampleUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -65134,6 +65869,9 @@
             "type": "string",
             "nullable": true
           },
+          "saved": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string"
           },
@@ -65154,6 +65892,7 @@
           "audioUrl",
           "outputs",
           "message",
+          "saved",
           "createdAt",
           "finishedAt"
         ]
@@ -65268,6 +66007,60 @@
         "required": [
           "items",
           "nextCursor"
+        ]
+      },
+      "OwnVoiceView": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "hasRecording": {
+            "type": "boolean"
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "string"
+              },
+              "given": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "line",
+              "given"
+            ]
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available",
+          "hasRecording",
+          "consent",
+          "ready"
+        ]
+      },
+      "OwnVoiceRemovedView": {
+        "type": "object",
+        "properties": {
+          "own": {
+            "$ref": "#/components/schemas/OwnVoiceView"
+          },
+          "atProvider": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "gone"
+            ]
+          }
+        },
+        "required": [
+          "own",
+          "atProvider"
         ]
       },
       "MovieCardView": {

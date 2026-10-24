@@ -50,7 +50,23 @@ const hub = {
   reads: 0,
   /** The key whose job the Hub could not write (mode 'settled'): its points went back, so the same key now meets a spent hold. */
   spent: null as string | null,
+  /** AITOOLS-07: the voices carry a sample address. */
+  samples: false,
+  /** AITOOLS-07: "Your voice". Null is a Hub with no recording of the person's (the route answers 404 for the older Hub). */
+  own: null as null | { hasRecording: boolean; given: boolean },
+  /** The person's Voice Intro audio, which is what "Your voice" plays. */
+  introAudio: null as string | null,
+  introReads: 0,
+  /** A sentence the Hub refuses the agreement with (the words it served are no longer the words it holds). */
+  consentRefusal: null as string | null,
+  consents: [] as string[],
+  removals: 0,
+  saves: [] as { id: string; saved: boolean }[],
+  drafts: [] as { id: string; title: string; mediaJobId: string | null }[],
+  attached: [] as { id: string; body: Record<string, unknown> }[],
 };
+const OWN_LINE = 'I am Ada Obi. I agree that Who Made This? may create an AI version of my voice for my VoiceOver.';
+const ownView = () => ({ available: true, hasRecording: hub.own?.hasRecording ?? false, ready: Boolean(hub.own?.hasRecording && hub.own.given), consent: { line: OWN_LINE, given: Boolean(hub.own?.given) } });
 
 function quote(body: Record<string, unknown>) {
   const units = Number(body.units ?? 1);
@@ -99,8 +115,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
           input: { maxCharacters: 5000, charactersPerUnit: 900 },
           voices: hub.voices
             ? [
-                { id: 'ada', name: 'Ada', description: 'Warm, Nigerian English' },
-                { id: 'tunde', name: 'Tunde', description: 'Calm, steady' },
+                { id: 'ada', name: 'Ada', description: 'Warm, Nigerian English', ...(hub.samples ? { sampleUrl: '/api/hub/ai-tools/voices/ada/sample' } : {}) },
+                { id: 'tunde', name: 'Tunde', description: 'Calm, steady', ...(hub.samples ? { sampleUrl: '/api/hub/ai-tools/voices/tunde/sample' } : {}) },
               ]
             : [],
         },
@@ -139,6 +155,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       units: Math.max(1, Math.ceil(characters / 900)),
       costPoints: hub.perMinute,
       audioUrl: null,
+      saved: false,
       message: null,
       createdAt: '2026-10-17T09:42:00.000Z',
       finishedAt: null,
@@ -148,6 +165,40 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.points -= hub.perMinute;
     if (hub.mode === 'lost' && hub.made === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
     return json(202, { statusCode: 202, message: 'Accepted', data: jobView(job) });
+  }
+  if (path === '/ai-tools/own-voice' && method === 'GET') return hub.own ? ok(ownView()) : refuse(404, { code: 'not_found', message: 'Not found.' });
+  if (path === '/ai-tools/own-voice' && method === 'DELETE' && hub.own) {
+    hub.removals += 1;
+    hub.own.given = false;
+    return ok({ own: ownView(), atProvider: 'gone' });
+  }
+  if (path === '/ai-tools/own-voice/consent' && method === 'POST' && hub.own) {
+    const { line } = (await request.json()) as { line: string };
+    hub.consents.push(line);
+    if (hub.consentRefusal || line !== OWN_LINE) return refuse(400, { code: 'own_voice_consent_line', message: hub.consentRefusal ?? 'Those are not the words we showed you.' });
+    hub.own.given = true;
+    return ok(ownView());
+  }
+  if (path === '/me/voice-intro' && method === 'GET') {
+    hub.introReads += 1;
+    return ok({ aiVoice: null, text: '', textMaxChars: 600, consent: { line: 'x', given: true }, sample: { recorded: true, minSeconds: 20, maxSeconds: 60 }, audioUrl: hub.introAudio, next: null, canGenerate: false, run: null });
+  }
+  const save = /^\/ai-tools\/jobs\/(.+)\/save$/.exec(path);
+  if (save && (method === 'POST' || method === 'DELETE') && hub.jobs[save[1]]) {
+    const job = hub.jobs[save[1]];
+    job.saved = method === 'POST';
+    hub.saves.push({ id: save[1], saved: method === 'POST' });
+    return ok(jobView(job));
+  }
+  if (path === '/product-drafts' && method === 'GET') return ok(hub.drafts);
+  const patch = /^\/product-drafts\/(.+)$/.exec(path);
+  if (patch && method === 'PATCH') {
+    const body = (await request.json()) as Record<string, unknown>;
+    hub.attached.push({ id: patch[1], body });
+    const draft = hub.drafts.find((d) => d.id === patch[1]);
+    if (!draft) return refuse(404, { code: 'not_found', message: 'Not found.' });
+    draft.mediaJobId = String(body.mediaJobId);
+    return ok(draft);
   }
   const read = /^\/ai-tools\/jobs\/(.+)$/.exec(path);
   if (read && method === 'GET') {
@@ -211,7 +262,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', points: 1250, perMinute: 250, enabled: true, voices: true, cap: null, toolsFail: 0, quoteDrift: 0, workReads: 1, quotes: [], posts: [], jobs: {}, made: 0, reads: 0, spent: null });
+  Object.assign(hub, { mode: 'ok', points: 1250, perMinute: 250, enabled: true, voices: true, cap: null, toolsFail: 0, quoteDrift: 0, workReads: 1, quotes: [], posts: [], jobs: {}, made: 0, reads: 0, spent: null, samples: false, own: null, introAudio: null, introReads: 0, consentRefusal: null, consents: [], removals: 0, saves: [], drafts: [], attached: [] });
   (require('../voiceoverIntent') as { forgetJobIntentInMemory: () => void }).forgetJobIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -334,7 +385,9 @@ describe('PT2a and PT2b · running a job', () => {
     expect(screen.queryByText(/Bio/)).toBeNull();
     await waitFor(() => expect(screen.getByTestId('tool-used')).toHaveTextContent('250 points used · 1,000 left'));
     await waitFor(() => expect(screen.getByTestId('points-subtitle')).toHaveTextContent('Points: 1,000'));
-    expect(screen.queryByText(/Save|Use in a product/)).toBeNull();
+    // AITOOLS-07 builds PT2b's Save and Use in a product rows (G-AITOOLS-01-4, G-POINTS-08-2): this line pinned the gap that task closes.
+    expect(screen.getByTestId('result-save')).toBeTruthy();
+    expect(screen.getByTestId('result-use')).toBeTruthy();
     expect(hub.made).toBe(1);
   });
 
@@ -568,5 +621,127 @@ describe('V8 and V6 · answers that do not arrive, and refusals', () => {
     await fireEvent.press(screen.getByTestId('tool-run'));
     await screen.findByTestId('cap-reached');
     expect(hub.posts).toHaveLength(0);
+  });
+});
+
+describe('AITOOLS-07 · a sample before choosing, Your voice, Save, Use in a product', () => {
+  it('a voice the Hub gives a sample for has a play button that plays and stops it, and tapping it does not choose the voice', async () => {
+    hub.samples = true;
+    await toTool();
+    const play = screen.getByTestId('sample-play-Tunde');
+    expect(play).toHaveAccessibleName('Play a sample of Tunde');
+    await fireEvent.press(play);
+    expect(screen.getByTestId('sample-play-Tunde')).toHaveAccessibleName('Stop the sample of Tunde');
+    expect(screen.getByTestId('tool-voice-ada').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('tool-voice-tunde').props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(screen.getByTestId('sample-play-Tunde'));
+    expect(screen.getByTestId('sample-play-Tunde')).toHaveAccessibleName('Play a sample of Tunde');
+  });
+
+  it('a voice with no sample has no play button, and a person with no Voice Intro recording is not offered Your voice', async () => {
+    hub.own = { hasRecording: false, given: false };
+    await toTool();
+    await waitFor(() => expect(screen.getByTestId('tool-voice-ada')).toBeTruthy());
+    expect(screen.queryByTestId('sample-play-Ada')).toBeNull();
+    expect(screen.queryByTestId('tool-voice-own')).toBeNull();
+    expect(screen.queryByText('Your voice')).toBeNull();
+  });
+
+  it('Your voice leads the list when there is a recording, plays the Voice Intro, and asks for the Hub\'s words before it is chosen', async () => {
+    hub.own = { hasRecording: true, given: false };
+    hub.introAudio = 'https://audio.test/intro.mp3';
+    await toTool();
+    const own = await screen.findByTestId('tool-voice-own');
+    expect(screen.getByTestId('tool-voices').children[0]).toBe(own);
+    expect(own).toHaveAccessibleName('Your voice, From your Voice Intro');
+    await waitFor(() => expect(screen.getByTestId('sample-play-Your voice')).toHaveAccessibleName('Play a sample of Your voice'));
+    expect(screen.getByTestId('tool-voice-ada').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(own);
+    expect(screen.getByTestId('own-voice-consent-line').props.children).toBe(OWN_LINE);
+    expect(hub.consents).toEqual([]);
+    await fireEvent.press(screen.getByTestId('own-voice-cancel'));
+    expect(screen.queryByTestId('own-voice-consent')).toBeNull();
+    expect(hub.consents).toEqual([]);
+    expect(screen.getByTestId('tool-voice-ada').props.accessibilityState.checked).toBe(true);
+  });
+
+  it('with no Voice Intro audio Your voice has no play button', async () => {
+    hub.own = { hasRecording: true, given: false };
+    await toTool();
+    await screen.findByTestId('tool-voice-own');
+    await waitFor(() => expect(hub.introReads).toBeGreaterThan(0));
+    await sleep(50);
+    expect(screen.queryByTestId('sample-play-Your voice')).toBeNull();
+  });
+
+  it('agreeing sends the Hub\'s own words back, chooses Your voice, and the VoiceOver is made with voice "own"; taking it off puts the first voice back', async () => {
+    hub.own = { hasRecording: true, given: false };
+    await toTool();
+    await fireEvent.press(await screen.findByTestId('tool-voice-own'));
+    await fireEvent.press(screen.getByTestId('own-voice-agree'));
+    await waitFor(() => expect(screen.getByTestId('tool-voice-own').props.accessibilityState.checked).toBe(true));
+    expect(hub.consents).toEqual([OWN_LINE]);
+    expect(screen.queryByTestId('own-voice-consent')).toBeNull();
+    await typeWords();
+    await run();
+    expect(hub.posts[0].body).toEqual({ text: WORDS, voiceId: 'own', quoteToken: 'job-250' });
+    await untilDone();
+    await fireEvent.changeText(screen.getByTestId('tool-text'), `${WORDS} Thank you.`);
+    await screen.findByTestId('own-voice-remove');
+    await fireEvent.press(screen.getByTestId('own-voice-remove'));
+    await waitFor(() => expect(hub.removals).toBe(1));
+    await waitFor(() => expect(screen.getByTestId('tool-voice-ada').props.accessibilityState.checked).toBe(true));
+    expect(screen.queryByTestId('own-voice-remove')).toBeNull();
+    expect(screen.getByTestId('tool-voice-own').props.accessibilityState.checked).toBe(false);
+    expect(await screen.findByText('Your voice is off VoiceOver.')).toBeTruthy();
+    expect(screen.getByTestId('tool-notice-ok')).toBeTruthy();
+  });
+
+  it('a Hub that refuses the agreement says why, and the voice stays off', async () => {
+    hub.own = { hasRecording: true, given: false };
+    hub.consentRefusal = 'Those are not the words we showed you.';
+    await toTool();
+    await fireEvent.press(await screen.findByTestId('tool-voice-own'));
+    await fireEvent.press(screen.getByTestId('own-voice-agree'));
+    await screen.findByTestId('own-voice-consent-failure');
+    expect(screen.getByText('Those are not the words we showed you.')).toBeTruthy();
+    expect(screen.getByTestId('tool-voice-ada').props.accessibilityState.checked).toBe(true);
+    expect(hub.own.given).toBe(false);
+  });
+
+  it('a finished result is saved to the library with one tap and taken out with another; the Hub is told each time', async () => {
+    await toTool();
+    await typeWords();
+    await run();
+    await untilDone();
+    expect(screen.getByTestId('result-save')).toHaveTextContent(/^SaveTo your library$/);
+    await fireEvent.press(screen.getByTestId('result-save'));
+    await waitFor(() => expect(screen.getByTestId('result-save')).toHaveTextContent(/^SavedIn your library/));
+    expect(hub.saves).toEqual([{ id: 'job-1', saved: true }]);
+    await fireEvent.press(screen.getByTestId('result-save'));
+    await waitFor(() => expect(screen.getByTestId('result-save')).toHaveTextContent(/^SaveTo your library$/));
+    expect(hub.saves).toEqual([
+      { id: 'job-1', saved: true },
+      { id: 'job-1', saved: false },
+    ]);
+  });
+
+  it('Use in a product lists the person\'s drafts and one tap attaches this result to it', async () => {
+    hub.drafts = [
+      { id: 'd1', title: 'Pricing course', mediaJobId: null },
+      { id: 'd2', title: 'Brand deck', mediaJobId: null },
+    ];
+    await toTool();
+    await typeWords();
+    await run();
+    await untilDone();
+    await fireEvent.press(screen.getByTestId('result-use'));
+    await fireEvent.press(await screen.findByTestId('draft-pick-d2'));
+    await screen.findByText('Attached to Brand deck');
+    // A thing that went well wears the tick, not the danger mark.
+    expect(screen.getByTestId('tool-notice-ok')).toBeTruthy();
+    expect(screen.queryByTestId('tool-notice')).toBeNull();
+    expect(hub.attached).toEqual([{ id: 'd2', body: { mediaJobId: 'job-1' } }]);
+    expect(screen.queryByTestId('draft-picker')).toBeNull();
   });
 });

@@ -75,6 +75,7 @@ describe('draftTileOf', () => {
     accessType: 'paid',
     price: 4500,
     missing: ['file'],
+    mediaJobId: null,
     createdAt: '2026-10-10T09:00:00.000Z',
     updatedAt: '2026-10-10T09:00:00.000Z',
     ...over,

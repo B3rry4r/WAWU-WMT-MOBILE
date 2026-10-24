@@ -12,6 +12,7 @@ const draft = (over: Partial<ProductDraft> = {}): ProductDraft => ({
   accessType: null,
   price: null,
   missing: [],
+  mediaJobId: null,
   createdAt: '2026-10-17T10:00:00.000Z',
   updatedAt: '2026-10-17T10:00:00.000Z',
   ...over,

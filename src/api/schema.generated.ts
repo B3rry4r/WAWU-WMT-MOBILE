@@ -7733,6 +7733,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/jobs/{id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Saves a finished result to the person's library (PT2b "Save", AITOOLS-07).
+         *     Only the person's own finished job: another person's job and one that is
+         *     not there are the same `404 not_found`, one still working or failed is
+         *     `409 job_not_ready`. Saving twice keeps the first time and answers the job
+         *     again. The job reads `saved: true`; `GET /ai-tools/jobs?saved=true` lists
+         *     the saved results.
+         */
+        post: operations["AiToolsController_saveJob"];
+        /** Takes a result out of the library again (`saved: false`). The result itself stays on the job. */
+        delete: operations["AiToolsController_unsaveJob"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/own-voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * "Your voice" on PT2 (AITOOLS-07): whether the person's own voice can read
+         *     their VoiceOver, and the words they agree to first. It is made from the
+         *     recording of their Voice Intro and nothing else. `ready` is true when the
+         *     tools are on, the recording is there and they agreed; then a VoiceOver job
+         *     may name the voice `own`.
+         */
+        get: operations["AiToolsController_ownVoice"];
+        put?: never;
+        post?: never;
+        /**
+         * Takes the agreement back and has the provider drop every copy of the
+         *     person's voice it still holds. The answer says whether the provider holds
+         *     none (`gone`) or the Hub is still removing one (`pending`, it keeps trying).
+         *     The Voice Intro and its recording stay. Nothing is charged.
+         */
+        delete: operations["AiToolsController_removeOwnVoice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/own-voice/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The person agrees to the words the Hub served in `consent.line`, sent back
+         *     unchanged. Stored exactly, with the time. `409 own_voice_consent_line_changed`
+         *     for any other words, `409 own_voice_recording_required` before the Voice
+         *     Intro recording, `409 own_voice_name_required` with no name on the account.
+         */
+        post: operations["AiToolsController_giveOwnVoiceConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/voices/{voiceId}/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AiVoiceSamplesController_sample"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/voice": {
         parameters: {
             query?: never;
@@ -8769,6 +8861,13 @@ export interface components {
             /** @enum {string} */
             accessType?: "free" | "paid";
             price?: number;
+            /**
+             * Format: uuid
+             * @description The AI tool job whose audio this product uses (AITOOLS-07): one of the
+             *     caller's own finished jobs, or `null` to detach it. Optional; a draft
+             *     without it behaves exactly as before.
+             */
+            mediaJobId?: string | null;
         };
         UpdateProductDraftDto: {
             title?: string;
@@ -8782,6 +8881,13 @@ export interface components {
             /** @enum {string} */
             accessType?: "free" | "paid";
             price?: number;
+            /**
+             * Format: uuid
+             * @description The AI tool job whose audio this product uses (AITOOLS-07): one of the
+             *     caller's own finished jobs, or `null` to detach it. Optional; a draft
+             *     without it behaves exactly as before.
+             */
+            mediaJobId?: string | null;
         };
         PublishProductDraftDto: {
             /** Format: uri */
@@ -10191,6 +10297,9 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ReorderFeaturedCreatorsDto: {
+            order: string[];
+        };
         PutFeaturedCreatorDto: {
             /** @description Rail order, lowest first. Default 0. */
             position?: number;
@@ -10453,6 +10562,9 @@ export interface components {
             sourceLanguage?: string;
             /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
             quoteToken: string;
+        };
+        OwnVoiceConsentDto: {
+            line: string;
         };
         NamePreviewDto: {
             /** @description The name to say. */
@@ -10976,6 +11088,25 @@ export interface components {
             source: "config" | "first_run";
             count: number;
             items: components["schemas"]["UnsweptSaleView"][];
+            nextCursor: string | null;
+        };
+        EarningInReviewView: {
+            id: string;
+            /** @enum {string} */
+            kind: "earning" | "daily_move";
+            payeeWawuUserId: string;
+            amountKobo: number;
+            earnings: number;
+            title: string | null;
+            dayKey: string | null;
+            provider: string;
+            firstRefusedAt: string | null;
+            reviewSince: string;
+            reason: string | null;
+        };
+        EarningsInReviewPage: {
+            count: number;
+            items: components["schemas"]["EarningInReviewView"][];
             nextCursor: string | null;
         };
         EarningStreamView: {
@@ -11998,6 +12129,7 @@ export interface components {
             accessType: "free" | "paid" | null;
             price: number | null;
             missing: string[];
+            mediaJobId: string | null;
             createdAt: string;
             updatedAt: string;
         };
@@ -13034,6 +13166,39 @@ export interface components {
             /** @enum {string} */
             state: "expired" | "unchanged";
         };
+        IdentityHoldView: {
+            wawuUserId: string;
+            /** @enum {string} */
+            state: "review" | "stopped";
+            /** @enum {string|null} */
+            stage: "needs_documents" | "checking" | "approved" | "rejected" | "stopped" | null;
+            failureCode: string | null;
+            provider: string;
+            heldSince: string;
+            changedAt: string;
+        };
+        IdentityHoldsPage: {
+            count: number;
+            items: components["schemas"]["IdentityHoldView"][];
+            nextCursor: string | null;
+        };
+        StuckOpeningView: {
+            wawuUserId: string;
+            /** @enum {string} */
+            state: "opening" | "open" | "unknown" | "conflict";
+            failureCode: string | null;
+            provider: string;
+            attempts: number;
+            startedAt: string;
+            /** @enum {string|null} */
+            stage: "needs_documents" | "checking" | "approved" | "rejected" | "stopped" | null;
+        };
+        StuckOpeningsPage: {
+            stuckAfterMinutes: number;
+            count: number;
+            items: components["schemas"]["StuckOpeningView"][];
+            nextCursor: string | null;
+        };
         ChatPerson: {
             wawuId: string;
             name: string;
@@ -13402,6 +13567,20 @@ export interface components {
             error: string | null;
             /** Format: date-time */
             sentAt: string | null;
+        };
+        FeaturedCreatorAdminView: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+            position: number;
+            featuredAt: string;
+            pieceCount: number;
+            shownInExplore: boolean;
+            /** @enum {string|null} */
+            hiddenReason: "no_live_content" | "hidden_from_member_lists" | "not_a_creator" | null;
+        };
+        FeaturedOrderView: {
+            items: components["schemas"]["FeaturedCreatorAdminView"][];
         };
         ExploreCreatorCard: {
             wawuId: string;
@@ -15405,6 +15584,7 @@ export interface components {
             id: string;
             name: string;
             description: string;
+            sampleUrl?: string | null;
         };
         AiToolView: {
             /** @enum {string} */
@@ -15455,6 +15635,7 @@ export interface components {
             audioUrl: string | null;
             outputs: components["schemas"]["AiJobOutputView"][];
             message: string | null;
+            saved: boolean;
             createdAt: string;
             finishedAt: string | null;
         };
@@ -15483,6 +15664,20 @@ export interface components {
         AiJobPage: {
             items: components["schemas"]["AiJobView"][];
             nextCursor: string | null;
+        };
+        OwnVoiceView: {
+            available: boolean;
+            hasRecording: boolean;
+            consent: {
+                line: string;
+                given: boolean;
+            };
+            ready: boolean;
+        };
+        OwnVoiceRemovedView: {
+            own: components["schemas"]["OwnVoiceView"];
+            /** @enum {string} */
+            atProvider: "pending" | "gone";
         };
         MovieCardView: {
             id: string;
@@ -30851,6 +31046,8 @@ export interface operations {
                 cursor?: string;
                 /** @description Jobs per page, 1 to 100. */
                 limit?: number;
+                /** @description AITOOLS-07: `true` lists only the results the person saved to their library; `false` lists only the ones not saved. Absent: every job, as before. */
+                saved?: boolean;
             };
             header?: never;
             path?: never;
@@ -30885,6 +31082,131 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_saveJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_unsaveJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_ownVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnVoiceView"];
+                };
+            };
+        };
+    };
+    AiToolsController_removeOwnVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnVoiceRemovedView"];
+                };
+            };
+        };
+    };
+    AiToolsController_giveOwnVoiceConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnVoiceConsentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnVoiceView"];
+                };
+            };
+        };
+    };
+    AiVoiceSamplesController_sample: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                voiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sample, as audio. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": string;
                 };
             };
         };
