@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B24): WAWU ID `wmt/GEO-01` `1e0faf1` on `origin/main` `1bbad17` (code, migration, contract); mobile `wmt/GEO-01` on `origin/main` `546db77e` (these records only). No app code. Status verifying. WAWU ID had no CI result when this was written: the lead watches the run.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B24): WAWU ID `wmt/GEO-01` `1e0faf1` on `origin/main` `1bbad17` (code, migration, contract); mobile `wmt/GEO-01` on `origin/main` `546db77e` (these records only). No app code. Status verifying. CI on `1e0faf1`: Branch checks run 40104274398 and Gates run 40104274389, both success.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -68,4 +68,4 @@ A person signs up with a phone from any country and has a country of residence; 
 - [x] A number no country has is refused (`PHONE_INVALID`); a country not on the list is refused (`COUNTRY_INVALID`); neither writes or sends anything.
 - [x] The Hub can read `countryCode` from the token and from the lookup.
 - [x] The migration applies to live-shaped rows, and its rollback refuses to lose a chosen country.
-- [ ] CI on `wmt/GEO-01`: not read when this was written.
+- [x] CI on WAWU ID `wmt/GEO-01` `1e0faf1`: Branch checks 40104274398 and Gates 40104274389, success.
