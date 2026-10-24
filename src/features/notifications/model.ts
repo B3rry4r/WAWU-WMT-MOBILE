@@ -56,19 +56,33 @@ export function whenOf(createdAt: string, now: Date): string {
   return when === 'Yesterday' ? 'Yest.' : when;
 }
 
-/** What opening a row opens: a screen of the app, or nothing when none is built for what it is about. */
-export function routeOf(item: Pick<FeedItem, 'kind' | 'target'>): Href | null {
+const NOTIFICATION_LIST = '/notifications';
+
+/** For a kind the Hub adds after this build: the built screen that shows what its category is about. */
+const CATEGORY_SCREEN: Record<string, Href> = { money: '/transactions', messages: '/inbox', content: '/library' };
+
+/**
+ * What opening a row opens (FIX-102): the screen the notification is about, from the same map a pushed one uses
+ * (`routeForPush`). A paid question opens the asker's conversation (I10) when the Hub names who asked; a push carries no
+ * asker, so it opens the Inbox. A row that has nothing to open (an announcement with no button, or a kind this build has
+ * not met whose category and target name no screen) is `null`: it is already on the list that holds it.
+ */
+export function routeOf(item: Pick<FeedItem, 'kind' | 'target'> & { actionHref?: string | null; category?: string; actor?: Pick<NonNullable<FeedItem['actor']>, 'wawuId'> | null }): Href | null {
   const target = item.target;
-  if (item.kind === 'content_rejected' && target?.kind === 'content') return { pathname: '/library/[id]', params: { id: target.id } };
-  if ((item.kind === 'money_in' || item.kind === 'money_in_reversed') && target?.kind === 'transaction') return { pathname: '/transactions/[id]', params: { id: target.id } };
-  return routeForPush({ kind: item.kind, target: target ? { kind: target.kind, id: target.id } : undefined });
+  if ((item.kind === 'dm_received' || item.kind === 'dm_deadline') && item.actor?.wawuId) {
+    return paidThreadHref(item.actor.wawuId, target?.kind === 'paid_question' ? target.id : undefined);
+  }
+  const href = routeForPush({ kind: item.kind, actionHref: item.actionHref ?? undefined, target: target ? { kind: target.kind, id: target.id } : undefined });
+  if (href !== NOTIFICATION_LIST) return href;
+  // The push map's last resort is this very list. A row that reaches it by kind opens the closest screen for its category.
+  return item.category ? (CATEGORY_SCREEN[item.category] ?? null) : null;
 }
 
 /** The button M31 draws under a row, for the rows whose screen is built: "See why" on a piece sent back, "Top up" on low credits, "Reply" on a paid question. */
 export type RowAction = { label: string; kind: 'route'; href: Href } | { label: string; kind: 'top-up' };
 
 export function actionOf(item: Pick<FeedItem, 'kind' | 'target'> & { actor?: Pick<NonNullable<FeedItem['actor']>, 'wawuId'> | null }): RowAction | null {
-  if (item.kind === 'content_rejected') {
+  if (item.kind === 'content_rejected' && item.target?.kind === 'content') {
     const href = routeOf(item);
     return href ? { label: 'See why', kind: 'route', href } : null;
   }

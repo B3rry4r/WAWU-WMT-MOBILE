@@ -18,41 +18,52 @@ describe('where a tap on a notification goes (INBOX-21)', () => {
       pathname: '/community/pass/[id]',
       params: { id: room.id },
     });
-    expect(routeForPush({ notificationId: 'n2', kind: 'community_pass_ending' })).toBeNull();
-    expect(routeForPush({ kind: 'community_pass_ending', target: { kind: 'community', id: '../wallet' } })).toBeNull();
+    // FIX-102: a reminder with no room (or an unsafe id) opens the Inbox, where the rooms are, not the path.
+    expect(routeForPush({ notificationId: 'n2', kind: 'community_pass_ending' })).toBe('/inbox');
+    expect(routeForPush({ kind: 'community_pass_ending', target: { kind: 'community', id: '../wallet' } })).toBe('/inbox');
   });
 
-  it('opens nothing for a declined join: the Hub names no room in that push (backend community.service.ts)', () => {
-    expect(routeForPush({ notificationId: 'n1', kind: 'community_join_declined' })).toBeNull();
-  });
-
-  it('opens the wallet for money in and a refund', () => {
-    for (const kind of ['sale', 'tip_received', 'dm_refunded']) expect(routeForPush({ kind })).toBe('/wallet');
+  it('opens the earnings for a sale and a tip, and the wallet for a refund (FIX-102: a sale and a tip opened the wallet)', () => {
+    for (const kind of ['sale', 'tip_received']) expect(routeForPush({ kind })).toBe('/earnings');
+    expect(routeForPush({ kind: 'dm_refunded' })).toBe('/wallet');
   });
 
   it('opens the Inbox for a paid question and its deadline', () => {
     for (const kind of ['dm_received', 'dm_deadline']) expect(routeForPush({ kind, target: { kind: 'paid_question', id: 'q1' } })).toBe('/inbox');
   });
 
-  it('opens nothing for a kind whose screen is not built yet', () => {
-    for (const kind of ['new_follower', 'content_published', 'content_rejected', 'review_received', 'campaign', 'something_new']) {
-      expect(routeForPush({ kind, target: { kind: 'profile', id: 'p1' } })).toBeNull();
-    }
+  it('opens a screen for the kinds that opened nothing (FIX-102)', () => {
+    expect(routeForPush({ kind: 'new_follower', target: { kind: 'profile', id: 'p1' } })).toEqual({ pathname: '/profile/[wawuId]', params: { wawuId: 'p1' } });
+    expect(routeForPush({ kind: 'content_published', target: { kind: 'content', id: 'c1' } })).toEqual({ pathname: '/content/[id]', params: { id: 'c1' } });
+    expect(routeForPush({ kind: 'review_received', target: { kind: 'content', id: 'c1' } })).toEqual({ pathname: '/content/[id]', params: { id: 'c1' } });
+    expect(routeForPush({ kind: 'content_rejected', target: { kind: 'content', id: 'c1' } })).toEqual({ pathname: '/library/[id]', params: { id: 'c1' } });
+    expect(routeForPush({ kind: 'campaign', actionHref: '/events' })).toBe('/events');
+    expect(routeForPush({ kind: 'campaign' })).toBe('/notifications');
+    expect(routeForPush({ kind: 'something_new', target: { kind: 'profile', id: 'p1' } })).toEqual({ pathname: '/profile/[wawuId]', params: { wawuId: 'p1' } });
+    expect(routeForPush({ kind: 'something_new' })).toBe('/notifications');
   });
 
-  it('opens nothing when the room is missing, is not a room, or has an id that is not safe in a path', () => {
+  it('opens the rooms\' place for a declined join (the Hub names no room in that push, backend community.service.ts)', () => {
+    expect(routeForPush({ notificationId: 'n1', kind: 'community_join_declined' })).toBe('/inbox');
+  });
+
+  it('opens the Inbox, not a room, when the room is missing, is not a room, or has an id that is not safe in a path', () => {
     const join = 'community_join_approved';
-    expect(routeForPush({ kind: join })).toBeNull();
-    expect(routeForPush({ kind: join, target: { kind: 'profile', id: 'p1' } })).toBeNull();
-    expect(routeForPush({ kind: join, target: { kind: 'community', id: '../wallet' } })).toBeNull();
-    expect(routeForPush({ kind: join, target: { kind: 'community', id: 'a'.repeat(65) } })).toBeNull();
-    expect(routeForPush({ kind: join, target: { kind: 'community', id: 12 } })).toBeNull();
-    expect(routeForPush({ kind: join, target: 'community' })).toBeNull();
+    expect(routeForPush({ kind: join })).toBe('/inbox');
+    expect(routeForPush({ kind: join, target: { kind: 'profile', id: 'p1' } })).toBe('/inbox');
+    expect(routeForPush({ kind: join, target: { kind: 'community', id: '../wallet' } })).toBe('/inbox');
+    expect(routeForPush({ kind: join, target: { kind: 'community', id: 'a'.repeat(65) } })).toBe('/inbox');
+    expect(routeForPush({ kind: join, target: { kind: 'community', id: 12 } })).toBe('/inbox');
+    expect(routeForPush({ kind: join, target: 'community' })).toBe('/inbox');
   });
 
-  it('never follows the web path the push carries', () => {
-    expect(routeForPush({ kind: 'new_follower', actionHref: '/profile/verification' })).toBeNull();
-    expect(routeForPush({ kind: 'campaign', actionHref: 'https://evil.example/login' })).toBeNull();
+  it('never follows the web path the push carries: only the fixed table of paths the Hub can send is read, and the route built is the app\'s own', () => {
+    expect(routeForPush({ kind: 'new_follower', actionHref: '/profile/verification' })).toBe('/me');
+    expect(routeForPush({ kind: 'campaign', actionHref: 'https://evil.example/login' })).toBe('/notifications');
+    expect(routeForPush({ kind: 'campaign', actionHref: '/wallet' })).toBe('/notifications');
+    expect(routeForPush({ kind: 'campaign', actionHref: '/profile/verification' })).toBe('/tiers');
+    expect(routeForPush({ kind: 'legal_delivered', actionHref: '/legal/requests/r-1' })).toEqual({ pathname: '/legal-matter', params: { id: 'r-1' } });
+    expect(routeForPush({ kind: 'legal_delivered', actionHref: '/legal/requests/../wallet' })).toBe('/legal');
     expect(routeForPush({ actionHref: '/wallet' })).toBeNull();
   });
 

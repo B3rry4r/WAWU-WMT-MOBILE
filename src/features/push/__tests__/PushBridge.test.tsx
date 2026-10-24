@@ -83,7 +83,8 @@ describe('a tap on a notification', () => {
   it('opens the screen when the app is running and the tap arrives', async () => {
     await render(<PushBridge live />);
     await act(async () => mockListener?.(tap({ kind: 'sale' })));
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/wallet'));
+    // FIX-102: a sale opens the earnings (it opened the wallet).
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/earnings'));
     await act(async () => mockListener?.(tap({ kind: 'dm_received' })));
     await waitFor(() => expect(mockNavigate).toHaveBeenLastCalledWith('/inbox'));
   });
@@ -112,8 +113,8 @@ describe('a tap on a notification', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('leaves the app where it is for a kind with no screen, an action button, or a broken notification', async () => {
-    mockLast = tap({ kind: 'new_follower', target: { kind: 'profile', id: 'p1' } });
+  it('leaves the app where it is for a push with no kind (every kind the Hub writes has a screen now, FIX-102), an action button, or a broken notification', async () => {
+    mockLast = tap({ notificationId: 'n9', target: { kind: 'profile', id: 'p1' } });
     const view = await render(<PushBridge live />);
     await act(async () => mockListener?.(tap(room, 'some-action')));
     await act(async () => mockListener?.({ actionIdentifier: DEFAULT }));

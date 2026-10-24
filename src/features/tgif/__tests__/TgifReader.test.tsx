@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text as NativeText, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text as NativeText, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { darkColors } from '@/theme/tokens.generated';
@@ -294,16 +294,63 @@ describe('H30 to H34 · tap to continue', () => {
 
   it('a tap on the words, or on "Tap to continue", moves on too, and a tap on the last card does not leave it', async () => {
     const { onClose } = await boot();
-    await rtl.fireEvent.press(await rtl.screen.findByTestId('tgif-card-verse'));
+    // FIX-102: where the card is tapped now matters (the left goes back), so these taps are on its right; the test's own default tap is at x 0, the left edge.
+    const right = { nativeEvent: { pageX: 0.8 * Dimensions.get('window').width } };
+    await rtl.screen.findByTestId('tgif-card-verse');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-verse'), right);
     expect(label()).toBe('THE REALITY');
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-hint'));
     expect(label()).toBe('REMEMBER');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-remember'));
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-prayer'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-remember'), right);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-prayer'), right);
     expect(label()).toBe('TAKEAWAY');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-takeaway'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-takeaway'), right);
     expect(label()).toBe('TAKEAWAY');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // FIX-102: the way stories readers work. The left 30% of the screen is back, the rest is forward; a tap is placed by its share of the width.
+  const LEFT = 0.1;
+  const RIGHT = 0.8;
+  const tapAt = async (testID: string, share: number) =>
+    rtl.fireEvent.press(rtl.screen.getByTestId(testID), { nativeEvent: { pageX: share * Dimensions.get('window').width } });
+
+  it('a tap on the left of the card goes back to the previous card, and a tap on the right goes forward', async () => {
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await tapAt('tgif-card-verse', RIGHT);
+    await tapAt('tgif-card-reality', RIGHT);
+    expect(label()).toBe('REMEMBER');
+    await tapAt('tgif-card-remember', LEFT);
+    expect(label()).toBe('THE REALITY');
+    expect(rtl.screen.getByLabelText('Card 2 of 5')).toBeTruthy();
+    await tapAt('tgif-card-reality', LEFT);
+    expect(label()).toBe("TODAY'S VERSE");
+    await tapAt('tgif-card-verse', RIGHT);
+    expect(label()).toBe('THE REALITY');
+  });
+
+  it('a tap on the left of the first card does nothing', async () => {
+    const { onClose } = await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await tapAt('tgif-card-verse', LEFT);
+    expect(label()).toBe("TODAY'S VERSE");
+    expect(rtl.screen.getByLabelText('Card 1 of 5')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the buttons on the card working: Amen on the prayer says Amen and does not turn the card', async () => {
+    answers[`POST /tgif/${DATE}/amen`] = [ok({ card: 'prayer', amen: 1, amenByMe: true })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    for (let i = 0; i < 3; i += 1) await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    expect(label()).toBe('PRAYER');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-amen-inline'), { nativeEvent: { pageX: 5 } });
+    expect(label()).toBe('PRAYER');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    expect(label()).toBe('TAKEAWAY');
+    await tapAt('tgif-card-takeaway', LEFT);
+    expect(label()).toBe('PRAYER');
   });
 
   it('fills the progress bar up to the card on screen', async () => {

@@ -112,8 +112,8 @@ describe('M31 · Notifications', () => {
     await waitFor(() => expect(screen.queryByTestId('notification-dot-n3')).toBeNull());
     await waitFor(() => expect(staleCounts(queryClient)).toBe(true));
     expect(calls('POST', '/api/hub/notifications/n3/read')).toHaveLength(1);
-    // A sale opens the wallet where the money lands.
-    expect(opened).toHaveBeenCalledWith('/wallet');
+    // A sale opens the earnings (FIX-102: it opened the wallet).
+    expect(opened).toHaveBeenCalledWith('/earnings');
     // The others are untouched.
     expect(screen.getByTestId('notification-dot-n1')).toBeTruthy();
   });
@@ -122,7 +122,8 @@ describe('M31 · Notifications', () => {
     await open();
     await screen.findByText('A kind the app has not met');
     expect(screen.queryByRole('button', { name: /A kind the app has not met/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Zainab Bello followed you/ })).toBeNull();
+    // FIX-102: a follower opens the follower's profile, or the Me tab when the Hub names none, so its row is pressed (it was not).
+    expect(screen.queryByRole('button', { name: /Zainab Bello followed you/ })).not.toBeNull();
   });
 
   it('a double tap on a new row with nothing to open sends the read once, and a refused read can be sent again', async () => {

@@ -594,7 +594,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 *Owner, 23 Oct 2026 ("who made this please").* Emails a person receives name the product "Who Made This?" (with the question mark, R-69), not "WAWUAfrica" or "WAWU Africa" (R-37). Only the name changes: the sender address, every domain and every link stay as they are.
 **Carried out by:** BRAND-MAIL.
 
-### R-77 · Flix movies show "not live yet"
+### R-77 · Flix movies show "not live yet" (replaced by R-80)
 *Owner, 23 Oct 2026.* Until business talks with Flixora finish, Flix movies stays visible but does nothing: no titles, no Flixora calls, no accounts, no links. The rails on Home and Explore and the movies screen show S13's "not live yet" state with "Flix movies aren't switched on yet" and "You'll be able to watch movies here soon." (the rail as its title and one card that opens the screen), set by `MOVIE_PARTNER=soon`; `off` still hides everything. This sits beside R-74 and R-75, which stand for when it goes live.
 **Carried out by:** FLIX-04.
 
@@ -610,3 +610,8 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 **(c) Editing an event after it is sent: the edit goes back to review, and ticket price and places cannot change once a ticket is sold.** This is today's Hub behaviour, confirmed: `PATCH /events/{id}` puts every edit back to `pending`, so the event leaves the calendar until a person approves it again, and `PUT /events/{id}/tickets` is refused with 409 as soon as any tier has sold. Closes G-833 as ruled. A creator cannot edit a sent event in the app today (E18's "Edit event" and "Ticket types" rows are not drawn, R-47), so one task builds them on these two rules.
 **(d) The designer's extra list waits until after launch:** Scan to pay and My QR (W24, W25), Account limits (A17 to A20), adding money by debit card and by USSD.
 **Carried out by:** (a) AITOOLS-06 and POINTS-12 (priority after-launch); (b) AITOOLS-02 and POINTS-09 (their text says exactly this); (c) EVENTS-14 (new: the Hub keeps both rules, the app's E18 rows open the wizard's steps in edit mode); (d) WALLET-20, WALLET-19, WALLET-25 and WALLET-26 (priority after-launch).
+
+### R-80 · Flix movies is hidden until it goes live
+*Owner, 24 Oct 2026 ("that's not the language in our docs ... if you cant find hide flix movies on those screens").* R-77's two lines ("Flix movies aren't switched on yet", "You'll be able to watch movies here soon.") are not in the docs or the design: S13 draws that "not live yet" state for Bill payments only, and the Flix lines were made up by analogy. So Flix movies is not drawn at all until it goes live: no rail on Home or Explore, no Flix screen, no Flixora call. This is `MOVIE_PARTNER=off`, whose answer the app already hides everything on (`FlixRail`, `MoviesGate`). The `soon` setting stays in the code and is not used. R-74 and R-75 still stand for when it goes live.
+**Carried out by:** the server setting `MOVIE_PARTNER=off` (console step 5, owner, 24 Oct 2026); no code change.
+*Replaces R-77.*
