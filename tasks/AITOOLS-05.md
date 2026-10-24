@@ -7,7 +7,7 @@ order: -122
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [AITOOLS-04]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, **verifying (built by a Sonnet builder, T2; a fresh Sonnet verifier next)**. Backend only, no migration.
+As of 24 Oct 2026, **building (verifier said FIX: 1 medium, 4 low; a Sonnet builder continues backend `wmt/AITOOLS-05`)**. Backend only, no migration. Verifier (Sonnet, built none of it) checked backend `4aeff65`; report in "Verifier report" below. Everything it ran on the stack passed except the two items under Findings 1 and 2.
 - **Heads:** backend `wmt/AITOOLS-05` `4aeff65` (commit `fc2e066` on `origin/wmt/AITOOLS-04` `4dac644`, then `origin/main` `c3a2c7a` merged: AITOOLS-04 is in main); mobile `wmt/AITOOLS-05` carries these records.
 - **Built vs before (`origin/main` has no Dubbing):**
 
@@ -81,6 +81,42 @@ A person picks a recording and a language and gets it back dubbed into that lang
 - [x] A language outside the list, a length over the minute cap and another person's `fileKey` are refused with nothing held.
 - [x] The uploaded file and the provider's project are deleted when the job ends.
 - [x] Every earlier tool still passes its specs untouched.
+
+## Verifier report
+
+Backend `wmt/AITOOLS-05` `4aeff65` against `origin/main` `c3a2c7a`, 24 Oct 2026, a Sonnet verifier (built none of it). Local stack on the voice stand-in (a pass-through in front of it swapped the signed links), own database, the Hub killed and restarted by the verifier. Verdict: **FIX** (0 high, 1 medium, 4 low).
+
+| Check | Result | Evidence |
+|---|---|---|
+| tsc (3072 MB) | passed | `EXIT 0` |
+| eslint, no --fix, 30 changed .ts | passed | `EXIT 0` |
+| 50 suites, 694 tests in band (all of src/ai-tools/tests, src/storage/tests, src/account-purge/tests, src/voice-intro/tests, 4 of the 6 plan-settings specs, points-spend-rules; not the three Fintava-double specs) | passed | `EXIT 0` |
+| `publishing-gate-coverage.spec.ts` | **FAILED** | `EXIT 1`, 1 test fails (Finding 1; the other 41 of 42 tests across it and the rate-limits spec passed) |
+| `hub-rate-limits.contract.spec.ts` | passed | `EXIT 0`, 24 tests |
+| `test:protected` (db:seed first) | passed | 253/253 `EXIT 0` |
+| contract:build | passed | `EXIT 0`, `git status` clean (no diff) |
+| gates | passed | 9 gates, 1797 files, 0 fail, 134 warn, 88 accepted, `EXIT 0` |
+| check_baseline | passed | `EXIT 0`, 124 entries |
+
+**1. Points (all passed).** Quote then job: a 40 s file quotes 1 minute = 1,500, a 90 s file 2 minutes = 3,000. The job answers `working` at once with the hold `held`. Success commits (done, audio FLAC served with `fLaC`, WebVTT text, input file deleted, project deleted). Released with the points back and the job `failed`: provider failed (`dub-failed`), stale, start answers 500 and 422, no language id, no audio link, audio link answers 500 (3 tries, 41 s), not a FLAC (37 s), a store that is down (`store_failed`, storage process killed mid-dub). Bad subtitles or none: done with audio only, committed. The sweep: with `points.job_max_run_minutes` at 1, a dub with `[[dub-delay:200000]]` stayed `held` for 215 s and committed (not released early); a `[[dub-stuck]]` dub stayed `held` past the 1 minute mark, and was released at 307 s with `timed_out` when `ai.dubbing_max_run_minutes` was 5. Restart: the Hub killed 25 s into a dub and back 13 s later, the dub finished (done, committed once). Same Idempotency-Key twice: 202 then 200 replay, one provider project, one hold. Three jobs of 1,500 at once on 3,000: 202, 202, 503 busy, balance 0, never below. A language off the list or the same as the source: 422 `ai_language_unsupported`, nothing held.
+
+**2. Hostile input and memory (passed).** Crafted ASF (as WAV and MP4) and an MP4 with a size-0 `stsd` entry: 422 "We couldn't read that file" in 53 to 659 ms, nothing held, `/health` max 307 ms. 8 jobs at once from one account on a 100 MB file: 2 served, 6 refused busy in 0.13 to 0.53 s, 2 holds, RSS 290 to 427 MB, `/health` max 131 ms. 20 accounts x 100 MB hostile MP4 at once: 4 read (422), 16 refused busy (0.28 to 0.7 s), RSS 327 to 523 MB, `/health` max 112 ms (457 probes, 0 over 500 ms). The Dubbing routes add no read of their own: they use the AITOOLS-04 `input.open` and `openForRun`.
+
+**3. Signed output links.** Refused before any fetch (no attempt in the Hub log, nothing stored, hold released): `http://` to another port, `http://169.254.169.254`, `https://127.0.0.1`, `https://[::1]`, decimal IP `https://2130706433`, `https://user:pw@host`, `file:///etc/passwd`. A 302 from an https host is not followed (the "secret" listener was never hit). A `Content-Length` of 5 GB is refused, an endless chunked body is cut at the cap, an HTML body fails (not FLAC): each job fails `output_fetch_failed`, hold released. No fetch carried the provider key (stand-in `dubKeyLeaks` 0, the https listeners saw no key or authorization header). Gap: Finding 2.
+
+**4. Provider copy (passed, one gap).** The project is deleted when the job ends: counting the stand-in's projects `dub-1` to `dub-20`, only `dub-16` was left (Finding 3), and the failed-store project `dub-38` answered 404 afterwards. Later runs were not counted again. With the two settings at 1 and 1 minute, a stand-in that hides the project after a delete and shows it again: the first 404 was taken back when the copy showed again (200), the delete went through, and the note cleared only after two clean 404 reads. With nothing hiding it, notes cleared on their own. Account deletion mid-dub (G-AITOOLS-05-4): Finding 4, rated low.
+
+**5. Changed assertions (honest, none hides a defect).** Tool count 6 to 7 (`ai-tools.contract.spec.ts:130`), id lists in `ai-tools-pipeline.contract.spec.ts` (two, now name `dubbing`), the unbuilt action `dub_standard_per_min_lang` swapped for `dub_premium_per_min_lang` (really unbuilt), the `/dub|receptionist/` check narrowed to `/receptionist/` (Dubbing is built; the Receptionist is still checked), the folder list gains `ai/dubbing`, and the harness maps `audio/flac` to `flac`. Each carries a comment and each still fails on a real regression.
+
+### Findings
+
+1. **MEDIUM (CI fails): the publishing-gate coverage spec does not list the two Dubbing routes.** `src/plans/tests/publishing-gate-coverage.spec.ts` (`NOT_GATED`, next to the Captions and Clean audio entries at about lines 163 to 177) has no `POST ai-tools/dubbing/quote` and `POST ai-tools/dubbing/jobs`, so `expect(ungated).toEqual([])` at line 543 fails with exactly those two. Repro: `npm run test:contract -- src/plans/tests/publishing-gate-coverage.spec.ts` (`EXIT 1`). Fix: two entries with `files: ['fileKey']` and a reason, as AITOOLS-04 did (`d57780e`).
+2. **LOW: the link guard blocks IP literals and `localhost` but not names that reach this machine.** `src/ai-tools/voice/http-voice-provider.ts` `download()` (`named`): `https://localhost.:8044/...` and `https://foo.localhost:8044/...` pass the check (the fetch was attempted; it did not connect on this box), and `https://int.v05.test:8044/audio.flac` (a name the verifier's resolver sent to 127.0.0.1) was fetched, stored and committed. Reach: only a provider answer naming such a link, https only, blind GET with no key and no redirect, and the body must start `fLaC`. Fix: refuse a trailing dot, `.localhost`, `.local`, `.internal`, or resolve the name and refuse private and loopback addresses (or keep a list of allowed link hosts as a setting).
+3. **LOW (G-AITOOLS-05-4 part 1, agree with the builder): a Hub restart while the file is still going up to the provider.** Repro: `[[slow:30000]]` file, kill the Hub at 6 s, restart: the job stays `working` with no project id for the dub's whole longest run (`ai.dubbing_max_run_minutes`, 60 in production), then `timed_out`, points back. The project the in-flight call made (`dub-16`) was never deleted. Every Hub deploy during an upload can do this.
+4. **LOW (G-AITOOLS-05-4 part 2, rated low, agree): account deletion while a dub works.** `src/account-purge/account-data-map.ts:495` removes `AiToolJob` rows (OWNED) and the deletion sweep (`account-deletion-sweep.service.ts`, step 3) releases AI-job holds first, so the follower never sees the job again and the project, which holds the person's recording, stays at the provider. The window is the dub's run (60 minutes at most) at the instant a due purge runs, after a 30 day grace. Read from code, not run live. Fix: in step 3, delete the project named by each working `dubrun:` row before the rows go.
+5. **LOW (test-gap note, not a defect): fixed ports in two specs** (`R4_SINK_PORT` 7921, `R4_STORE_PORT` 7922, carried from AITOOLS-04 round 4 low (a)). The verifier set them to 8046 and 8047 for the run.
+
+Not run: a real provider call (no key), `plans.contract`, `plan-settings-readers`, `plan-settings-round2`, `points-spend.contract` (they reach the Fintava double; CI runs them). Rig: a pass-through in front of the stand-in swapped the links; a copy of `block-net.cjs` and a DNS shim lived in the verifier's scratch folder only; the repo files are untouched.
 
 ## History
 
