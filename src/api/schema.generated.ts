@@ -4267,6 +4267,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/world/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The countries a person can say they live in, with English names. Nigeria
+         *     is among them. Until GEO-02's list lands this is the app's picker.
+         */
+        get: operations["WorldController_countries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/world/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a person living in a country is offered before they open: whether a
+         *     wallet can be opened from there now, the currency their country is
+         *     first offered, every currency the first account can be in, and what
+         *     WAWU charges to open (default 0). Reads config and the admin switches
+         *     only; the provider is not called.
+         */
+        get: operations["WorldController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/world/first-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Opens the first account of a person Nuvion approved, when its own
+         *     notice has not (yet). Safe to repeat: one first account per person.
+         *     `currency` changes the first currency while no account is open (the
+         *     provider may decline a country's own, with its reason in `message`).
+         *     Answers the wallet as `GET /money/wallet` does; `world.state` `open`
+         *     says it is done, `opening` that Nuvion has not approved yet or has not
+         *     answered. A refusal in the provider's own words is `provider_declined`.
+         */
+        post: operations["WorldController_firstAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/money/world/openings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** World openings and wallets, newest first; filters `country` and `stage`; a cursor page. */
+        get: operations["WorldAdminController_openings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/money/world/openings/{wawuUserId}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Freezes a person's world wallet: their foreign accounts stop paying out
+         *     (money can still arrive) and no new account is opened for them. Freezing
+         *     a frozen wallet changes nothing and writes no second audit row.
+         */
+        post: operations["WorldAdminController_freeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/money/world/openings/{wawuUserId}/unfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lets go of a frozen world wallet (only the accounts this freeze froze). */
+        post: operations["WorldAdminController_unfreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/money/world/openings/{wawuUserId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels an opening that is not open yet: the review is stopped on WAWU's
+         *     side and the identity claim is let go (nothing is deleted at the provider).
+         *     Refused for a wallet that is already open (freeze it instead).
+         */
+        post: operations["WorldAdminController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/identity/documents": {
         parameters: {
             query?: never;
@@ -10278,7 +10422,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10303,7 +10447,13 @@ export interface components {
             currency?: string;
             minimumMinor?: number;
             maximumMinor?: number;
-            /** @description The fields a provider refused, by key (`recipient_details_invalid`). */
+            /**
+             * @description The fields a provider refused, by key (`recipient_details_invalid`).
+             *     Also, on `account_not_opened` for a world opening (WALLET-41): the names
+             *     of the fields the provider's own refusal pointed at (for example
+             *     `person.ssn`), never a value. The app asks for them; the list is the
+             *     provider's, not a fixed one of ours.
+             */
             fields?: string[];
             /** @description amount_out_of_range: the smallest amount accepted. */
             minimumKobo?: number;
@@ -10486,6 +10636,19 @@ export interface components {
             idIssueDate?: string;
             /** @description When it expires, `YYYY-MM-DD`, when it says; not already passed. */
             idExpiryDate?: string;
+            countryCode?: string;
+            /**
+             * @description Nationality, ISO 3166-1 alpha-2, for a world opening when it is not the
+             *     country they live in. Omitted: the country of residence.
+             */
+            nationality?: string;
+            /**
+             * @description The currency of the first account, when the person picks one (GET
+             *     /money/world/options names the country's own and what else is on).
+             *     Omitted: the country's own by the table in config.
+             * @enum {string}
+             */
+            firstCurrency?: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
             /**
              * @description The proof of address the person will upload (NUV-03).
              * @enum {string}
@@ -10783,6 +10946,16 @@ export interface components {
         };
         AdminFxFreezeDto: {
             /** @description Why, in a few plain words; kept on the audit row. */
+            reason: string;
+        };
+        WorldFirstAccountDto: {
+            /**
+             * @description Change the currency of the first account before it is open (for example after the provider declined the first one).
+             * @enum {string}
+             */
+            currency?: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
+        };
+        AdminWorldActDto: {
             reason: string;
         };
         DocumentErrorEnvelope: {
@@ -12406,6 +12579,14 @@ export interface components {
             feeKobo?: number | null;
             arrivalMinutes?: number | null;
         };
+        WorldWalletView: {
+            country: string;
+            /** @enum {string|null} */
+            firstCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | null;
+            /** @enum {string} */
+            state: "opening" | "open" | "frozen" | "cancelled";
+            accountOpenedAt: string | null;
+        };
         WalletView: {
             /** @enum {string} */
             state: "not_open" | "opening" | "open" | "frozen";
@@ -12420,6 +12601,7 @@ export interface components {
             openingFlow?: "check" | "review" | null;
             review?: components["schemas"]["WalletReviewView"] | null;
             transferIn?: components["schemas"]["TransferInView"] | null;
+            world?: components["schemas"]["WorldWalletView"] | null;
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -12773,7 +12955,7 @@ export interface components {
             /** @enum {string} */
             rail: "card" | "apple_pay" | "ussd" | "open_banking";
             /** @enum {string} */
-            status: "failed" | "expired" | "created" | "awaiting_user" | "processing" | "settled" | "cancelled";
+            status: "failed" | "expired" | "cancelled" | "created" | "awaiting_user" | "processing" | "settled";
             /** @enum {string} */
             currency: "NGN";
             amountKobo: number;
@@ -12827,7 +13009,7 @@ export interface components {
             /** @enum {string} */
             rail: "card" | "apple_pay" | "ussd" | "open_banking";
             /** @enum {string} */
-            status: "failed" | "expired" | "created" | "awaiting_user" | "processing" | "settled" | "cancelled";
+            status: "failed" | "expired" | "cancelled" | "created" | "awaiting_user" | "processing" | "settled";
             /** @enum {string} */
             currency: "NGN";
             amountKobo: number;
@@ -13065,9 +13247,9 @@ export interface components {
             status: "pending" | "completed" | "failed";
             wawuUserId: string;
             /** @enum {string} */
-            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string|null} */
-            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | null;
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD" | null;
             amountFromMinor: number;
             amountToMinor: number | null;
             providerFeeMinor: number | null;
@@ -13142,9 +13324,9 @@ export interface components {
         };
         FxConversionView: {
             /** @enum {string} */
-            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             rate: string;
             fromMinor: number;
             toMinor: number;
@@ -13174,9 +13356,9 @@ export interface components {
         FxQuoteView: {
             id: string;
             /** @enum {string} */
-            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -13195,9 +13377,9 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "completed" | "failed";
             /** @enum {string} */
-            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -13240,6 +13422,61 @@ export interface components {
             failureReason: string | null;
             createdAt: string;
             completedAt: string | null;
+        };
+        AdminWorldOpeningView: {
+            wawuUserId: string;
+            country: string;
+            /** @enum {string|null} */
+            firstCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | null;
+            stage: string;
+            reviewStatus: string | null;
+            frozenAt: string | null;
+            frozenReason: string | null;
+            cancelledAt: string | null;
+            accountOpenedAt: string | null;
+            createdAt: string;
+        };
+        AdminWorldOpeningPage: {
+            items: components["schemas"]["AdminWorldOpeningView"][];
+            nextCursor: string | null;
+        };
+        AdminWorldActView: {
+            wawuUserId: string;
+            /** @enum {string} */
+            action: "freeze" | "unfreeze" | "cancel";
+            changed: boolean;
+            stageBefore: string;
+            stageAfter: string;
+            accountsChanged: number;
+        };
+        WorldCountryView: {
+            code: string;
+            name: string;
+        };
+        WorldCountriesView: {
+            countries: components["schemas"]["WorldCountryView"][];
+        };
+        WorldCurrencyChoiceView: {
+            /** @enum {string} */
+            code: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
+            name: string;
+            decimals: number;
+            enabled: boolean;
+        };
+        WorldOptionsView: {
+            country: string;
+            abroad: boolean;
+            available: boolean;
+            /** @enum {string|null} */
+            unavailableReason: "switched_off" | "country_blocked" | "limit_reached" | "nigeria" | null;
+            /** @enum {string} */
+            suggested: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
+            choices: components["schemas"]["WorldCurrencyChoiceView"][];
+            openFee: {
+                /** @enum {string} */
+                currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
+                amountMinor: number;
+            };
         };
         AdminCardView: {
             id: string;
@@ -13417,7 +13654,7 @@ export interface components {
         };
         PlansView: {
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             currencyFixed: boolean;
             tiers: components["schemas"]["PlanTierView"][];
             extraProducts: components["schemas"]["PlanExtraProductsView"];
@@ -14443,7 +14680,7 @@ export interface components {
         ShopOrderView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "failed" | "refunded" | "cancelled" | "paid";
+            status: "pending" | "failed" | "cancelled" | "refunded" | "paid";
             subtotalNaira: number;
             deliveryNaira: number;
             totalNaira: number;
@@ -15120,7 +15357,7 @@ export interface components {
             wawuShareKobo: number;
             creatorShareKobo: number;
             /** @enum {string} */
-            status: "pending" | "failed" | "refunded" | "settled" | "cancelled";
+            status: "pending" | "failed" | "cancelled" | "refunded" | "settled";
             sourceStatus: string;
             flutterwaveTxRef: string | null;
             flutterwaveTxId: string | null;
@@ -17132,7 +17369,7 @@ export interface components {
             fromTierId: string | null;
             bump: boolean;
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             planMinor: number;
             bumpMinor: number;
             bumpPoints: number;
@@ -17145,7 +17382,7 @@ export interface components {
             kind: "points_pack";
             packId: string;
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             packMinor: number;
             points: number;
             bonusPercent: number;
@@ -17160,7 +17397,7 @@ export interface components {
             /** @enum {string} */
             kind: "extra_products";
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             extraMinor: number;
             products: number;
             productsAllowed: number;
@@ -17191,7 +17428,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             amountMinor: number;
             /** @enum {string} */
             status: "pending" | "failed" | "reversed" | "refunded" | "paid";
@@ -17223,7 +17460,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer";
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             amountMinor: number;
             /** @enum {string} */
             status: "pending" | "failed" | "expired" | "awaiting_transfer";
@@ -17248,7 +17485,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             amountMinor: number;
             points: number;
             bonusPoints: number;
@@ -17273,7 +17510,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "NGN" | "USD";
+            currency: "USD" | "NGN";
             amountMinor: number;
             products: number;
             /** @enum {string} */
@@ -18022,7 +18259,7 @@ export interface components {
             kind: "fixed_return" | "share_offering";
             state: string;
             /** @enum {string} */
-            status: "failed" | "review" | "rejected" | "expired" | "confirming" | "cancelled" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
+            status: "failed" | "review" | "rejected" | "expired" | "cancelled" | "confirming" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
             lifecycle: string | null;
             amountKobo: number;
             totalKobo: number;
@@ -18175,7 +18412,7 @@ export interface components {
         CapitalOrderView: {
             id: string;
             /** @enum {string} */
-            status: "failed" | "review" | "rejected" | "expired" | "confirming" | "cancelled" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
+            status: "failed" | "review" | "rejected" | "expired" | "cancelled" | "confirming" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
             productId: string;
             productName: string;
             /** @enum {string} */
@@ -23645,7 +23882,16 @@ export interface operations {
                     "application/json": components["schemas"]["WalletView"];
                 };
             };
-            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review */
+            /** @description reason.code: passport_country_required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review, residence_not_set, residence_mismatch */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -27092,7 +27338,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_frozen */
+            /** @description reason.code: wallet_frozen, account_frozen */
             423: {
                 headers: {
                     [name: string]: unknown;
@@ -27763,6 +28009,187 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminFxFreezeView"];
+                };
+            };
+        };
+    };
+    WorldController_countries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldCountriesView"];
+                };
+            };
+        };
+    };
+    WorldController_options: {
+        parameters: {
+            query: {
+                /** @description The country the person lives in, ISO 3166-1 alpha-2. */
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorldOptionsView"];
+                };
+            };
+        };
+    };
+    WorldController_firstAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorldFirstAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletView"];
+                };
+            };
+            /** @description reason.code: currency_not_supported, fx_switched_off, provider_declined */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    WorldAdminController_openings: {
+        parameters: {
+            query?: {
+                country?: string;
+                stage?: "started" | "needs_documents" | "checking" | "rejected" | "approved" | "open" | "stopped" | "expired" | "frozen" | "cancelled";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorldOpeningPage"];
+                };
+            };
+        };
+    };
+    WorldAdminController_freeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuUserId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWorldActDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorldActView"];
+                };
+            };
+        };
+    };
+    WorldAdminController_unfreeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuUserId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWorldActDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorldActView"];
+                };
+            };
+        };
+    };
+    WorldAdminController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                wawuUserId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWorldActDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWorldActView"];
                 };
             };
         };
