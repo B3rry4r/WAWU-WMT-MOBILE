@@ -7,7 +7,7 @@ order: -3122
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [WALLET-31]
 decisions: [R-16, R-37, R-84, R-47, R-29]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -28,7 +28,7 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B20), mobile `wmt/WALLE
 
 - **W30, W33, W34, the Physical tab:** not built, Nuvion has no physical card, card PIN, channel switches or limits to set. W31's Card PIN and Limits tiles and ATM spending are not drawn.
 - **Built from existing parts with a gap row (R-29):** the list of several cards (no board draws it; `G-WALLET-22-1`), the W1 row's no-card line "Get your card", the Block confirm sheet, the status banners for pending and blocked.
-- **Next:** a verifier; a stack walk and the pictures (390 px, light and dark, of W29, the list, W31 active, W32 frozen, details shown, the block sheet) beside `render_design.py W29 W31 W32`.
+- **Next:** the backend fix round (WALLET-31), then a verifier again. Done by the verifier: the stack walk and the pictures (390 px, light and dark, of W29, the list, W31 active, W32 frozen, details shown, the block sheet) beside `render_design.py W29 W31 W32`.
 - **History:** none yet. Reports go to tasks/history/WALLET-22.md.
 
 ## Read first
@@ -127,7 +127,18 @@ Gap rows: G-WALLET-22-1 (the card list has no board), -2 (W29's "Pay from wallet
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier: the same Sonnet agent as WALLET-31's (it built none of either). Mobile `origin/wmt/WALLET-31` `061b0546`. The app side was walked on the stack in `tasks/WALLET-31.md` (same run, same pictures, `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wallet-31-v/sheet-*.png`); the full table and the findings are there. App results: tsc EXIT 0; jest `src/features/wallet src/features/settings src/features/cards src/app` 32 suites, 514 tests, EXIT 0; app gates 0 fail (1315 files), `check_tasks` EXIT 0.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V4 Gates | passed | as above |
+| V5 Picture | passed | W29, W31, W32, W1 row, W35 row, list, details, block sheet, light and dark beside the boards |
+| V6 States | partly run | wrong PIN, frozen, blocked, details hidden after 30 s, cards off; NOT RUN on screen: not enough money, limit reached, pending, network cut |
+| V7 Flow walk | passed | sign in to both kinds made, details, freeze, unfreeze, list, block |
+| V8 Money | passed | one fee per card, Hub balance equals the stand-in's after every step |
+| V9 Live seam | partly run | real sign-in on the stack; NOT RUN against Nuvion dev |
+
+App findings (all low, see WALLET-31 for repro): L2 (a used single-use card reads "Frozen, Unfreeze card"), L4 (W1's row after every card is blocked), L5 (entries hidden while cards are off), L7 (W29 fee surface spacing). No picture or flow defect above low. Status stays `building` only because the bundle's one branch needs the backend fix round (WALLET-31 H1); the app code needs no change for H1.
 
 ## Owner sign-off
 
