@@ -25,6 +25,7 @@ import {
   speedLine,
   statusLook,
   totalFromAccount,
+  wawuFeeText,
   type AbroadSend,
   type Quote,
   type Recipient,
@@ -330,7 +331,7 @@ export function AbroadReviewView(p: AbroadReviewViewProps) {
               value={<Text variant="kvValue">{formatMinor(q.providerFeeMinor, q.fromCurrency, q.fromDecimals)}</Text>}
             />
           )}
-          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{formatMinor(q.wawuFeeKobo, 'NGN')}</Text>} />
+          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{wawuFeeText(q)}</Text>} />
           {total === null ? null : (
             <KeyValueRow
               testID="abroad-review-total"
@@ -442,7 +443,7 @@ export function AbroadReceiptView({ send, loading, failed, retry, onDone, onAgai
               </Text>
             }
           />
-          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{formatMinor(send.wawuFeeKobo, 'NGN')}</Text>} />
+          <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{wawuFeeText(send)}</Text>} />
           <KeyValueRow label="Arrives" value={<Text variant="kvValue">{send.speed}</Text>} />
         </GroupedList>
       </View>

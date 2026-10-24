@@ -46,13 +46,28 @@ export function formatMinor(minor: number, currency: string, decimals = 2): stri
 }
 
 /**
- * What leaves the account the money is sent from (R-10: the person pays the partner's fee and WAWU's on top). The amount and the
- * partner's fee are in the sending currency; WAWU's fee is naira, so it joins the total only when the money comes from the naira
- * wallet, and is its own row otherwise. Null when the Hub names no partner fee for the route: no total is drawn from a guess.
+ * What leaves the account the money is sent from (R-10: the person pays the partner's fee and WAWU's on top). The amount, the partner's
+ * fee and, for a person with no naira wallet (WALLET-42), WAWU's fee are in the sending currency; the naira fee joins the total only
+ * when the money comes from the naira wallet, and is its own row otherwise. Null when the Hub names no partner fee for the route: no
+ * total is drawn from a guess.
  */
-export function totalFromAccount(quote: Pick<Quote, 'amountFromMinor' | 'providerFeeMinor' | 'wawuFeeKobo' | 'fromCurrency'>): number | null {
+export function totalFromAccount(
+  quote: Pick<Quote, 'amountFromMinor' | 'providerFeeMinor' | 'wawuFeeKobo' | 'fromCurrency'> & { wawuFeeMinor?: number },
+): number | null {
   if (quote.providerFeeMinor === null) return null;
-  return quote.amountFromMinor + quote.providerFeeMinor + (quote.fromCurrency === 'NGN' ? quote.wawuFeeKobo : 0);
+  return quote.amountFromMinor + quote.providerFeeMinor + (quote.fromCurrency === 'NGN' ? quote.wawuFeeKobo : 0) + (quote.wawuFeeMinor ?? 0);
+}
+
+/**
+ * WAWU's fee as the review and the receipt say it, in the currency it is taken in: the sending currency when the Hub took it from the
+ * foreign account (`wawuFeeMinor`, WALLET-42), naira when it comes from the naira wallet, and a zero in the account the money leaves
+ * when there is none (a person with no naira wallet is never shown a naira figure).
+ */
+export function wawuFeeText(fee: { wawuFeeKobo: number; wawuFeeMinor?: number; fromCurrency: string; fromDecimals: number }): string {
+  const minor = fee.wawuFeeMinor ?? 0;
+  if (minor > 0) return formatMinor(minor, fee.fromCurrency, fee.fromDecimals);
+  if (fee.wawuFeeKobo > 0) return formatMinor(fee.wawuFeeKobo, 'NGN');
+  return fee.fromCurrency === 'NGN' ? formatMinor(0, 'NGN') : formatMinor(0, fee.fromCurrency, fee.fromDecimals);
 }
 
 /** The kobo parser of the keypad reads two decimals; so does every currency Nuvion pays (`decimals` 2). */
@@ -175,6 +190,7 @@ export function readHeldQuote(raw: unknown): Quote | null {
     !whole(q.fromDecimals) ||
     !whole(q.toDecimals) ||
     !whole(q.wawuFeeKobo) ||
+    !(q.wawuFeeMinor === undefined || whole(q.wawuFeeMinor)) ||
     !(q.providerFeeMinor === null || whole(q.providerFeeMinor)) ||
     typeof q.expiresAt !== 'string' ||
     typeof q.speed !== 'string' ||

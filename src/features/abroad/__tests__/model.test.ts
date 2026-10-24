@@ -8,6 +8,7 @@ import {
   speedLine,
   statusLook,
   totalFromAccount,
+  wawuFeeText,
   type Field,
   type Rail,
 } from '../model';
@@ -56,8 +57,18 @@ describe('send abroad · what the screens say', () => {
       minReceiveMinor: null,
       maxReceiveMinor: null,
       schemes: [
-        { id: 'eft', label: 'EFT', speed: 'Same day', fields: [digits('a', null)] },
-        { id: 'interac_email', label: 'Interac', speed: 'Instant', fields: [digits('email', null)] },
+        {
+          id: 'eft',
+          label: 'EFT',
+          speed: 'Same day',
+          fields: [digits('a', null)],
+        },
+        {
+          id: 'interac_email',
+          label: 'Interac',
+          speed: 'Instant',
+          fields: [digits('email', null)],
+        },
       ],
     } as Rail;
     expect(fieldsOf(rail, 'interac_email').map((f) => f.key)).toEqual(['email']);
@@ -113,9 +124,65 @@ describe('send abroad · what the screens say', () => {
   });
 
   it("the total that leaves the account: the amount and the partner's fee, WAWU's naira fee only from the naira wallet, nothing when no fee is named (R-10)", () => {
-    const usd = { fromCurrency: 'USD', amountFromMinor: 10_000, providerFeeMinor: 150, wawuFeeKobo: 2_500 };
+    const usd = {
+      fromCurrency: 'USD',
+      amountFromMinor: 10_000,
+      providerFeeMinor: 150,
+      wawuFeeKobo: 2_500,
+    };
     expect(totalFromAccount(usd)).toBe(10_150);
-    expect(totalFromAccount({ ...usd, fromCurrency: 'NGN', amountFromMinor: 1_000_000, providerFeeMinor: 0 })).toBe(1_002_500);
+    expect(
+      totalFromAccount({
+        ...usd,
+        fromCurrency: 'NGN',
+        amountFromMinor: 1_000_000,
+        providerFeeMinor: 0,
+      }),
+    ).toBe(1_002_500);
     expect(totalFromAccount({ ...usd, providerFeeMinor: null })).toBeNull();
+  });
+});
+
+describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
+  const base = {
+    amountFromMinor: 300,
+    providerFeeMinor: 112,
+    wawuFeeKobo: 0,
+    fromCurrency: 'GBP',
+    fromDecimals: 2,
+  };
+  it('counts WAWU fee taken from the sending account in the total, and the naira fee only from the naira wallet', () => {
+    expect(totalFromAccount({ ...base, wawuFeeMinor: 150 })).toBe(562);
+    expect(totalFromAccount(base)).toBe(412);
+    expect(totalFromAccount({ ...base, fromCurrency: 'NGN', wawuFeeKobo: 2500 })).toBe(2912);
+    expect(totalFromAccount({ ...base, providerFeeMinor: null, wawuFeeMinor: 150 })).toBeNull();
+  });
+
+  it('says the fee in the currency it is taken in, and never a naira figure for a foreign account with no fee', () => {
+    expect(wawuFeeText({ ...base, wawuFeeMinor: 150 })).toBe('£1.50');
+    expect(wawuFeeText({ ...base, wawuFeeKobo: 2500, fromCurrency: 'USD' })).toBe('₦25.00');
+    expect(wawuFeeText(base)).toBe('£0.00');
+    expect(wawuFeeText({ ...base, fromCurrency: 'NGN' })).toBe('₦0.00');
+  });
+
+  it('reads a held quote with or without the foreign fee, and refuses one that is not a whole number', () => {
+    const quote = {
+      id: 'q',
+      recipientId: 'r',
+      fromCurrency: 'GBP',
+      toCurrency: 'GHS',
+      amountFromMinor: 300,
+      amountToMinor: 4026,
+      fromDecimals: 2,
+      toDecimals: 2,
+      wawuFeeKobo: 0,
+      providerFeeMinor: null,
+      expiresAt: '2026-10-24T10:00:00.000Z',
+      speed: 'Instant',
+      converted: true,
+    };
+    expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 150 }))?.wawuFeeMinor).toBe(150);
+    expect(readHeldQuote(JSON.stringify(quote))).not.toBeNull();
+    expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 1.5 }))).toBeNull();
   });
 });
