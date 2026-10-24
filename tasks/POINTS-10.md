@@ -7,7 +7,7 @@ order: -119
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [AITOOLS-04, POINTS-09]
 decisions: [R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B2), mobile `wmt/POINTS-10` on `origin/main` `2847eb32`, status verifying (a separate Sonnet verifier next). App only: no backend change. The Hub routes are on backend `wmt/AITOOLS-04` `4dac644` (not merged; it holds `origin/main` `0e87d06`): the app's contract is copied from that commit (`contract/SOURCE_COMMIT` says so), SHARED-CHANGES POINTS-10 #3. Sync again from backend main once AITOOLS-04 merges; the file should not change.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B2), mobile `wmt/POINTS-10` on `origin/main` `2847eb32`, status review (a separate Sonnet verifier said PASS, 24 Oct 2026; report below, moved to tasks/history/POINTS-10.md). App only: no backend change. The Hub routes are on backend `wmt/AITOOLS-04` `4dac644` (not merged; it holds `origin/main` `0e87d06`): the app's contract is copied from that commit (`contract/SOURCE_COMMIT` says so), SHARED-CHANGES POINTS-10 #3. Sync again from backend main once AITOOLS-04 merges; the file should not change.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -80,6 +80,10 @@ A person picks a recording from the phone, sees what it costs for its length, an
 ## History
 
 None yet. Reports go to tasks/history/POINTS-10.md.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-10.md](history/POINTS-10.md).
 
 ## Owner sign-off
 
