@@ -3,6 +3,7 @@ import { ApiError, isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { components } from '@/api/schema.generated';
 import { arrivalMinutesOf } from '@/features/wallet/arrival';
+import { readWorld, type WorldProgress } from '@/features/open-wallet/api/world';
 
 /**
  * The three reads behind the Wallet tab (W1, W4, W5, W6):
@@ -37,6 +38,8 @@ export type WalletHome = {
   account: Pick<WalletAccount, 'accountNumber' | 'accountName' | 'bankName'> | null;
   /** Whether the transaction PIN is set, as the Hub says; undefined when the answer carries none (no nudge then). */
   pinIsSet?: boolean;
+  /** WALLET-41: set for a person who opened from outside Nigeria; their wallet has no naira account. */
+  world?: WorldProgress;
   /** What the Hub says of a bank transfer into the wallet account (FIX-109): `feeKobo` 0 is free; each is left out when the Hub sent none. */
   transferIn?: { feeKobo?: number; arrivalMinutes?: number };
 };
@@ -72,10 +75,18 @@ export async function fetchWalletHome(): Promise<WalletHome> {
   const view = body?.data;
   if (!view || typeof view !== 'object' || !states.includes(view.state)) throw unreadable('wallet');
   const account = readAccount(view.account);
-  if ((view.state === 'open' || view.state === 'frozen') && account === null) throw unreadable('wallet');
+  const world = readWorld((view as { world?: unknown }).world);
+  // A person who opened from outside Nigeria has a wallet with no naira account (WALLET-41); everyone else is refused without one.
+  if ((view.state === 'open' || view.state === 'frozen') && account === null && world === null) throw unreadable('wallet');
   const pin = view.pin as { isSet?: unknown } | undefined;
   const transferIn = readTransferIn((view as { transferIn?: unknown }).transferIn);
-  return { state: view.state, account, ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}), ...(transferIn ? { transferIn } : {}) };
+  return {
+    state: view.state,
+    account,
+    ...(world ? { world } : {}),
+    ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}),
+    ...(transferIn ? { transferIn } : {}),
+  };
 }
 
 const directions: readonly WalletTransaction['direction'][] = ['in', 'out'];

@@ -116,6 +116,22 @@ export function WalletOpenScreen({ onCreatePin, onDone, onNoWallet }: WalletOpen
 function AccountOpened({ wallet, onCreatePin, onDone }: { wallet: OpenedWallet; onCreatePin: () => void; onDone: () => void }) {
   const { colors } = useWawu();
   const account = wallet.account;
+  if (!account && wallet.world) {
+    // WALLET-41: a person outside Nigeria has no account number to show; their first account is open.
+    return (
+      <OpenWalletEnd
+        testID="open-wallet-account"
+        tone="in"
+        icon="Check"
+        title={TITLE}
+        message={wallet.world.firstCurrency ? `Your ${wallet.world.firstCurrency} account is open. You can add other currencies from your wallet.` : 'Your first account is open.'}
+        actionLabel={wallet.pinIsSet ? 'Done' : 'Create your transaction PIN'}
+        onAction={wallet.pinIsSet ? onDone : onCreatePin}
+        top={A8.top}
+        between={A8.between}
+      />
+    );
+  }
   if (!account) return null;
   const limit = wallet.limits;
   return (

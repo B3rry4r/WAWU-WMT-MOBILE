@@ -75,6 +75,8 @@ export function suggestionLine(item: CreatorSuggestion): string | null {
 export type MoneyCardState =
   | { kind: 'loading' }
   | { kind: 'figure'; kobo: number }
+  /** WALLET-41: a person who opened a wallet from outside Nigeria has no naira balance; the card is not drawn (R-47). */
+  | { kind: 'none' }
   | {
       kind: 'notice';
       state: 'no_wallet' | 'opening' | 'unreachable' | 'frozen' | 'wallet_error' | 'balance_error';
@@ -95,6 +97,7 @@ const actions = {
 export function moneyCard(view: WalletHomeView): MoneyCardState {
   if (view.kind === 'loading') return { kind: 'loading' };
   if (view.kind === 'ready') return { kind: 'figure', kobo: view.availableKobo };
+  if (view.kind === 'world') return { kind: 'none' };
   return { kind: 'notice', state: view.kind, ...stateWords(view), action: actions[view.kind] };
 }
 

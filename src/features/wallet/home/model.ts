@@ -30,7 +30,9 @@ export type HomeView =
   | { kind: 'unreachable'; message: string }
   | { kind: 'frozen'; message: string }
   | { kind: 'balance_error'; error: unknown }
-  | { kind: 'ready'; account: NonNullable<WalletHome['account']>; availableKobo: number };
+  | { kind: 'ready'; account: NonNullable<WalletHome['account']>; availableKobo: number }
+  /** WALLET-41: a person who opened from outside Nigeria; the tab lists their foreign accounts (no naira balance). */
+  | { kind: 'world' };
 
 type Read<T> = { data: T | undefined; error: unknown; isPending: boolean };
 
@@ -47,6 +49,7 @@ export function homeView(wallet: Read<WalletHome>, balance: Read<{ availableKobo
   const { state, account } = wallet.data;
   if (state === 'not_open') return { kind: 'no_wallet' };
   if (state === 'opening') return { kind: 'opening' };
+  if (!account && wallet.data.world) return { kind: 'world' };
   if (!account) return { kind: 'wallet_error', error: wallet.error };
   if (balance.data !== undefined) return { kind: 'ready', account, availableKobo: balance.data.availableKobo };
   if (!balance.error) return { kind: 'loading' };
@@ -68,7 +71,7 @@ export function homeView(wallet: Read<WalletHome>, balance: Read<{ availableKobo
  * The words for each state without a balance, one set for the Wallet tab (W1, W6) and Home's balance card
  * (H1, HOME-01), so the two never say different things about the same answer.
  */
-export function stateWords(view: Exclude<HomeView, { kind: 'loading' } | { kind: 'ready' }>): { title: string; message: string } {
+export function stateWords(view: Exclude<HomeView, { kind: 'loading' } | { kind: 'ready' } | { kind: 'world' }>): { title: string; message: string } {
   switch (view.kind) {
     case 'wallet_error':
       return { title: "We couldn't load your wallet", message: serverSentence(view.error, 'Something went wrong. Try again.') };

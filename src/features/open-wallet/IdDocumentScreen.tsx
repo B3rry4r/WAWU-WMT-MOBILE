@@ -19,11 +19,13 @@ import { openingProgressQuery } from './api/review';
 import { ChoiceField, ChoiceSheet } from './ChoiceField';
 import { DetailsNeeded } from './DetailsNeeded';
 import { pickFailure, sendFailure, type Failure } from './documentCopy';
-import { ID_NUMBER_NEEDS, ID_TYPE_NEEDS, ID_TYPES, idNumberProblem, isOneSided, labelOf } from './documentFields';
+import { ID_NUMBER_NEEDS, ID_TYPE_NEEDS, ID_TYPES, idNumberProblem, isOneSided, labelOf, WORLD_ID_TYPES } from './documentFields';
 import { UploadTile } from './DocumentParts';
 import { pickIdPhoto } from './documents/pick';
-import { setIdNumber, setIdSide, setIdType, useDraft, useDraftLifetime } from './draft';
+import { setIdNumber, setIdSide, setIdType, setPassportCountry, useDraft, useDraftLifetime } from './draft';
 import { OpenWalletEnd } from './OpenWalletEnd';
+import { PASSPORT_COUNTRY_NEEDS, PassportCountryField } from './PassportCountryField';
+import { useHeldReview } from './keptCheck';
 import { useSessionAccount } from './sessionAccount';
 import { needsOpening, useKeptDetailsHeld } from './submit';
 
@@ -68,6 +70,10 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
   const detailsHeld = useKeptDetailsHeld(owner);
   const scrollRef = useRef<ScrollView>(null);
   const progress = useQuery(openingProgressQuery(owner));
+  // WALLET-41: a person outside Nigeria is asked for their own country's ID, and a national ID is not a NIN slip.
+  const heldWorld = useHeldReview(owner)?.world ?? null;
+  const abroad = heldWorld !== null || (progress.data?.world ?? null) !== null;
+  const idTypes = abroad ? WORLD_ID_TYPES : ID_TYPES;
   // The Hub answers 409 `wallet_not_open` until the details were sent: it has no limits to name yet, and the step still shows with its
   // defaults. Where the progress already says no opening exists (the review opening, no review yet) the documents are not asked for at
   // all, so a pass through this step does not log a refusal (G-SWEEP-APP-6-1).
@@ -155,10 +161,15 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
   const sendsDetails = needsOpening(progress.data);
   const typeProblem = sendsDetails && draft.idType === null ? ID_TYPE_NEEDS : null;
   const numberProblem = sendsDetails ? idNumberProblem(draft.idNumber) : null;
+  // WALLET-41 round 3: a passport names the country that issued it; it starts as the country the person lives in.
+  const residence = heldWorld?.country ?? progress.data?.world?.country ?? null;
+  const asksPassportCountry = abroad && sendsDetails && draft.idType === 'international_passport';
+  const passportCountry = draft.passportCountry ?? residence;
+  const passportProblem = asksPassportCountry && passportCountry === null ? PASSPORT_COUNTRY_NEEDS : null;
   const photosIn = frontIn && (oneSided || backIn);
 
   const goOn = () => {
-    if (typeProblem || numberProblem) {
+    if (typeProblem || numberProblem || passportProblem) {
       setAttempted(true);
       return;
     }
@@ -199,15 +210,22 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
       <View style={styles.body}>
         {failure ? <Banner tone="danger" title={failure.title} body={failure.body} testID="open-wallet-id-banner" /> : null}
         <Text variant="muted">
-          NIN slip, passport or driver&apos;s licence. Both sides if it has two.
+          {abroad ? "Passport, national ID or driver's licence from your country. Both sides if it has two." : "NIN slip, passport or driver's licence. Both sides if it has two."}
         </Text>
         <ChoiceField
           label="ID type"
-          value={labelOf(ID_TYPES, draft.idType)}
+          value={labelOf(idTypes, draft.idType)}
           onPress={() => setChoosing(true)}
           error={attempted && typeProblem ? typeProblem : undefined}
           testID="open-wallet-id-type"
         />
+        {asksPassportCountry ? (
+          <PassportCountryField
+            code={passportCountry}
+            error={attempted && passportProblem ? passportProblem : undefined}
+            onPick={(code) => owner && setPassportCountry(owner, code)}
+          />
+        ) : null}
         {sendsDetails ? (
           <AuthField
             scrollRef={scrollRef}
@@ -245,7 +263,7 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
         visible={choosing}
         onClose={() => setChoosing(false)}
         title="Choose your ID type"
-        options={ID_TYPES}
+        options={idTypes}
         selected={draft.idType}
         onPick={(value) => {
           if (owner) setIdType(owner, value);

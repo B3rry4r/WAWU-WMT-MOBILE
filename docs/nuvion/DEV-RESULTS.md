@@ -88,6 +88,21 @@ Run 24 Oct 2026 by the WALLET-21 builder (Sonnet, T2, bundle B18). Nuvion DEV on
 
 Facts other tasks lean on, from this run: dev opens an account in all nine currencies for a Nigerian individual; the naira account id of a dev entity is found in `GET /accounts?entity_id=`; `GET /transfers?account_id=` lists a swap on the receiving account too.
 
+
+## WALLET-41 (24 Oct 2026): a person outside Nigeria opens a wallet without a BVN, on Nuvion DEV
+
+Run 24 Oct 2026 by the WALLET-41 builder (Sonnet, T2, bundle B29). Nuvion DEV only (`https://api.nuvion.dev`), the dev key. First by hand against the raw routes, then through the Hub's own areas (`scripts/nuvion/world-dev-check.ts` on backend `wmt/WALLET-41`: the opening area with the review details the Hub builds for a world opening, the documents area, the foreign account area). Made-up residents, a 1x1 image for both documents. Production, Fintava and wawuafrica.com were not touched.
+
+| Task | Check | Result | Evidence |
+| --- | --- | --- | --- |
+| WALLET-41 | Individual entity with no BVN, no NIN and no SSN, with the country's ID (US passport, GB driver's licence, GH and KE national ID, DE national ID, CA licence, AE passport) | PASSED | `POST /individual-entities` 201 for all seven, `status` `incomplete`, `person.status` `approved`, `identification.verification_status` `pending`. Nuvion's docs say an SSN is required for US nationals: **dev does not ask for one** (G-WALLET-41-1). A wrong phone length is the only refusal seen (`error_validation_invalid_length`, `person.phonenumber`). |
+| WALLET-41 | Two documents, submit, decision | PASSED | `POST /documents` 201 twice, `POST /onboarding-submissions` 200, `approved` on the first read about 5 s later, for all seven countries. Dev never refuses (as NUV-02). |
+| WALLET-41 | First account in the table's currency | PASSED, with refusals | `POST /accounts` 201 in USD (US, KE), GBP (GB), GHS (GH), EUR (DE), CAD (CA), AED (AE). |
+| WALLET-41 | Receiving details | PARTLY | GBP `pending` then `active` (no number on the first read), GHS `active` with `account_number`, EUR `active` with `iban`. USD for the US person: details answered nothing the adapter could use (null, the account is open). **CAD: 503 `error_system_dependency_unavailable`** (as WALLET-21). **AED: 422 `error_account_type_unavailable`, "The AED account type isn't available for your profile"** (the UAE person). **USD for Kenya: 422 `error_validation_customer_location_restricted`**, "your location isn't supported" (G-WALLET-41-2). The account is made first; the adapter raises the refusal, so the Hub answers `provider_declined` with those words and the person picks another currency. |
+| WALLET-41 | Hosted selfie for a world entity | PASSED (start only) | `POST /kyc/liveness/sessions` 200 for an approved GB entity, `data.url` an https page, with `NUVION_HOSTED_LIVENESS=on`. The selfie itself was not taken (no camera). |
+| WALLET-41 | The Hub on the stack (Nuvion stand-in) end to end | PASSED | Sign-up in the mock WAWU ID with `+44...`, `POST /money/wallet/open` with `countryCode` GB and no numbers (200, `review.stage` `needs_documents`, `world.state` `opening`), two uploads, approved, the stand-in's `entities.updated` delivery made the GBP account, `GET /money/wallet` `state` `open` with `world.state` `open`, `GET /money/fx/accounts` one GBP account with active details, `GET /money/wallet/balance` `409 wallet_not_open`. |
+
+Facts other tasks lean on: dev needs no SSN and no BVN for any country tried; the first-currency table is ours (config), Nuvion has no region rule of its own; a Kenyan or Emirati person gets a refusal at the details step, not at the account.
 ### WALLET-21 fix round 1 (24 Oct 2026): WAWU's fee on a swap out of naira, on Nuvion DEV
 
 | Task | Check | Result | Evidence |
