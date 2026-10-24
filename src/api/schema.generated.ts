@@ -8349,6 +8349,192 @@ export interface paths {
         patch: operations["ReferralAdminController_update"];
         trace?: never;
     };
+    "/api/hub/capital/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether Capital is on (the admin's plan setting) and the running wallet
+         *     provider serves it. The Wallet tab shows its row only when this is true.
+         *     Needs no wallet and moves no money.
+         */
+        get: operations["CapitalController_availability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The products the provider offers this person in naira, with their terms. */
+        get: operations["CapitalController_products"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/products/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One product with its documents (every one is agreed to when ordering) and WAWU's limits and fee. */
+        get: operations["CapitalController_product"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the person has invested, and the return so far, as the provider totals it. */
+        get: operations["CapitalController_portfolio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The person's orders, newest first; `show=holding` or `show=ended` narrows them. */
+        get: operations["CapitalController_orders"];
+        put?: never;
+        /**
+         * Reserves a product for the person for a few minutes at the provider's
+         *     quote. NO money moves and no PIN is asked. The `Idempotency-Key` makes a
+         *     double tap reserve once: the same key and body answer the same order;
+         *     another body is `409 idempotency_key_reused`. The body must say the
+         *     person opened and agreed to the product's documents. Answers 201.
+         */
+        post: operations["CapitalController_reserve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/orders/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirms a reservation: the one step that takes the money. Before the
+         *     PIN, and with no PIN try used: an order that is not the caller's, one that
+         *     ran out (`409 reservation_expired`), one an admin holds (`409
+         *     capital_unavailable`), the daily limit and a short balance (`402
+         *     insufficient_funds`). The same Idempotency-Key answers the first result
+         *     again without asking the PIN. Answers 201 with the order: `invested`, or
+         *     `confirming` when the provider has not finished (read it again; it is
+         *     never charged twice).
+         */
+        post: operations["CapitalController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One order as it stands, the holding read from the provider now. */
+        get: operations["CapitalController_order"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/orders/{id}/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The holding's own movements: the purchase, each day's interest, the payout. */
+        get: operations["CapitalController_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/capital/orders/{id}/withdrawal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What leaving now would pay, as the provider works it out (read only, no
+         *     side effects): the interest so far, the penalty on an early exit, the
+         *     deductions and the net payout. `409 withdrawal_not_available` when the
+         *     provider has nothing to preview.
+         */
+        get: operations["CapitalController_preview"];
+        put?: never;
+        /**
+         * Starts the payout of a fixed-return holding: the early exit (the penalty
+         *     on interest the preview showed) or, once matured, the full payout; the
+         *     provider picks from its own state. Asks the PIN. Before it, with no try
+         *     used: a holding that cannot be withdrawn (`409 withdrawal_not_available`)
+         *     or that an admin holds (`409 capital_unavailable`). Answers 201 with the
+         *     order, `paying_out` until the provider settles it.
+         */
+        post: operations["CapitalController_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ads/{id}/events": {
         parameters: {
             query?: never;
@@ -9095,7 +9281,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10671,6 +10857,20 @@ export interface components {
             limit?: number | null;
             community?: string;
             active?: boolean;
+        };
+        CapitalReserveDto: {
+            /** @description The product's id, from the product list. */
+            productId: string;
+            /** @description Kobo to invest: the principal of a fixed return, or the spend on a share offering. */
+            amountKobo: number;
+            /** @description Fixed return only: true locks the money for the whole term (no early exit). Omitted is false. */
+            lockInvestment?: boolean;
+            /** @description The person has opened and agreed to every document of the product. Must be true. */
+            agreedToDocuments: boolean;
+        };
+        CapitalAdminActDto: {
+            /** @description Why, in the admin's words. Kept with the audit row. */
+            note?: string;
         };
         CreateAdCreativeDto: {
             headline: string;
@@ -15926,6 +16126,211 @@ export interface components {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
             event: string | null;
+        };
+        AdminCapitalOrderView: {
+            id: string;
+            wawuUserId: string;
+            productName: string;
+            /** @enum {string} */
+            kind: "fixed_return" | "share_offering";
+            state: string;
+            /** @enum {string} */
+            status: "failed" | "review" | "rejected" | "expired" | "confirming" | "cancelled" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
+            lifecycle: string | null;
+            amountKobo: number;
+            totalKobo: number;
+            feeKobo: number;
+            feeState: string;
+            frozen: boolean;
+            frozenReason: string | null;
+            createdAt: string;
+            confirmedAt: string | null;
+            expiresAt: string | null;
+            lastAct: {
+                action: string;
+                actedAt: string;
+                adminEmail: string;
+            } | null;
+        };
+        AdminCapitalPage: {
+            items: components["schemas"]["AdminCapitalOrderView"][];
+            nextCursor: string | null;
+        };
+        CapitalAvailabilityView: {
+            available: boolean;
+        };
+        CapitalRateBandView: {
+            name: string;
+            rate: number;
+            minKobo: number | null;
+            maxKobo: number | null;
+        };
+        CapitalDeductibleView: {
+            name: string;
+            value: number;
+            /** @enum {string} */
+            valueType: "flat" | "percentage";
+            /** @enum {string} */
+            appliesTo: "principal" | "interest";
+        };
+        CapitalDocumentView: {
+            name: string;
+            url: string;
+        };
+        CapitalProductView: {
+            id: string;
+            /** @enum {string} */
+            kind: "fixed_return" | "share_offering";
+            name: string;
+            description: string;
+            minKobo: number | null;
+            maxKobo: number | null;
+            tenorDays: number | null;
+            annualRate: number | null;
+            rateBands: components["schemas"]["CapitalRateBandView"][];
+            allowEarlyWithdrawal: boolean | null;
+            earliestWithdrawalDays: number | null;
+            deductibles: components["schemas"]["CapitalDeductibleView"][];
+            opensAt: string | null;
+            closesAt: string | null;
+            issuerName: string | null;
+            offerPriceKobo: number | null;
+            lockPeriodDays: number | null;
+            orderable: boolean;
+            /** @enum {string|null} */
+            notOrderableReason: "sold_out" | "sale_closed" | "not_open_yet" | "unavailable" | null;
+            documents: components["schemas"]["CapitalDocumentView"][];
+        };
+        CapitalProductPageView: {
+            items: components["schemas"]["CapitalProductView"][];
+            nextCursor: string | null;
+        };
+        CapitalTermsView: {
+            wawuMinKobo: number | null;
+            wawuMaxKobo: number | null;
+            wawuFeeFlatKobo: number;
+            wawuFeeBasisPoints: number;
+        };
+        CapitalProductDetailView: {
+            terms: components["schemas"]["CapitalTermsView"];
+            id: string;
+            /** @enum {string} */
+            kind: "fixed_return" | "share_offering";
+            name: string;
+            description: string;
+            minKobo: number | null;
+            maxKobo: number | null;
+            tenorDays: number | null;
+            annualRate: number | null;
+            rateBands: components["schemas"]["CapitalRateBandView"][];
+            allowEarlyWithdrawal: boolean | null;
+            earliestWithdrawalDays: number | null;
+            deductibles: components["schemas"]["CapitalDeductibleView"][];
+            opensAt: string | null;
+            closesAt: string | null;
+            issuerName: string | null;
+            offerPriceKobo: number | null;
+            lockPeriodDays: number | null;
+            orderable: boolean;
+            /** @enum {string|null} */
+            notOrderableReason: "sold_out" | "sale_closed" | "not_open_yet" | "unavailable" | null;
+            documents: components["schemas"]["CapitalDocumentView"][];
+        };
+        CapitalPortfolioView: {
+            investedKobo: number;
+            returnKobo: number | null;
+            valueKobo: number | null;
+            holdings: number;
+            otherCurrencies: number;
+        };
+        CapitalQuoteView: {
+            totalDebitKobo: number;
+            principalKobo: number | null;
+            tenorDays: number | null;
+            lockedRate: number | null;
+            locked: boolean | null;
+            allowEarlyWithdrawal: boolean | null;
+            earliestWithdrawalDays: number | null;
+            penaltyRate: number | null;
+            deductibles: components["schemas"]["CapitalDeductibleView"][];
+            requestedShares: number | null;
+            allocatedShares: number | null;
+            unallocatedKobo: number | null;
+            offerPriceKobo: number | null;
+            baseCostKobo: number | null;
+            brokerageFeeKobo: number | null;
+            crossDealFeeKobo: number | null;
+            lockPeriodDays: number | null;
+        };
+        CapitalHoldingView: {
+            numberLast4: string | null;
+            lifecycle: string | null;
+            /** @enum {string|null} */
+            payoutStatus: "pending" | "completed" | "failed" | null;
+            principalKobo: number | null;
+            lockedRate: number | null;
+            tenorDays: number | null;
+            startedAt: string | null;
+            maturesAt: string | null;
+            earlyExitFrom: string | null;
+            accruedKobo: number | null;
+            expectedGrossInterestKobo: number | null;
+            expectedDeductionsKobo: number | null;
+            expectedPayoutKobo: number | null;
+            payoutKobo: number | null;
+            settlesAt: string | null;
+            sharesPurchased: number | null;
+            unitsHeld: number | null;
+            costKobo: number | null;
+            lockEndsAt: string | null;
+            currentValueKobo: number | null;
+            pendingRefundKobo: number | null;
+        };
+        CapitalOrderView: {
+            id: string;
+            /** @enum {string} */
+            status: "failed" | "review" | "rejected" | "expired" | "confirming" | "cancelled" | "reserved" | "invested" | "matured" | "paying_out" | "paid_out";
+            productId: string;
+            productName: string;
+            /** @enum {string} */
+            kind: "fixed_return" | "share_offering";
+            amountKobo: number;
+            quote: components["schemas"]["CapitalQuoteView"];
+            feeKobo: number;
+            totalKobo: number;
+            expiresAt: string | null;
+            confirmedAt: string | null;
+            createdAt: string;
+            frozen: boolean;
+            holding: components["schemas"]["CapitalHoldingView"];
+            canWithdraw: boolean;
+            /** @enum {string|null} */
+            withdrawBlockedBy: "frozen" | "in_progress" | "too_early" | "locked" | "not_allowed" | "not_invested" | "not_for_this_product" | null;
+            note: string | null;
+        };
+        CapitalOrderPageView: {
+            items: components["schemas"]["CapitalOrderView"][];
+            nextCursor: string | null;
+        };
+        CapitalTransactionView: {
+            id: string;
+            event: string;
+            amountKobo: number;
+            accruedOn: string | null;
+            occurredAt: string | null;
+        };
+        CapitalTransactionPageView: {
+            items: components["schemas"]["CapitalTransactionView"][];
+            nextCursor: string | null;
+        };
+        CapitalWithdrawalPreviewView: {
+            early: boolean;
+            grossInterestKobo: number;
+            penaltyRate: number;
+            penaltyKobo: number;
+            deductionsKobo: number;
+            netPayoutKobo: number;
+            daysHeld: number;
         };
         AdCreativeView: {
             headline: string;
@@ -31928,6 +32333,640 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminReferralCodeView"];
+                };
+            };
+        };
+    };
+    CapitalController_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalAvailabilityView"];
+                };
+            };
+        };
+    };
+    CapitalController_products: {
+        parameters: {
+            query?: {
+                /** @description `fixed_return` or `share_offering`; omitted lists both. */
+                kind?: "fixed_return" | "share_offering";
+                /** @description The `nextCursor` of the last page. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalProductPageView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalProductDetailView"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_portfolio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalPortfolioView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_orders: {
+        parameters: {
+            query?: {
+                /** @description `open` lists reserved and confirming orders and holdings; `done` the ones that ended. Omitted lists all. */
+                show?: "holding" | "ended";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalOrderPageView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_reserve: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapitalReserveDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalOrderView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: limit_reached */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: target_not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable, idempotency_key_reused, idempotency_in_progress, target_not_payable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_confirm: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalOrderView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, capital_unavailable, reservation_expired */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalOrderView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_transactions: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalTransactionPageView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalWithdrawalPreviewView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, capital_unavailable, withdrawal_not_available */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    CapitalController_withdraw: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapitalOrderView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, capital_unavailable, withdrawal_not_available */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
         };

@@ -14,6 +14,8 @@ import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wa
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, radius, useWawu } from '@/theme';
 
+import { availabilityQuery } from '@/features/capital/api';
+import { CapitalWalletRow } from '@/features/capital/WalletRow';
 import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
@@ -73,6 +75,8 @@ export function WalletScreen() {
   const pass = useQuery(myPassQuery(owner), queryClient);
   // The Points card: the Hub's balance as a count. Nothing is drawn for a read that failed (never a 0 the Hub did not say).
   const points = useQuery(myPointsQuery(owner), queryClient);
+  // The Capital row: drawn only when the Hub says Capital is on and the wallet provider serves it (NUV-12). A failed read draws nothing.
+  const capital = useQuery({ ...availabilityQuery(owner), enabled: Boolean(owner) && open }, queryClient);
 
   const view = homeView(wallet, balance);
   const [hidden, setHidden] = useState(false);
@@ -130,6 +134,8 @@ export function WalletScreen() {
             onOpenPoints={() => router.push('/points')}
             pass={pass.data ?? null}
             onOpenPass={() => router.push('/pass')}
+            capital={capital.data === true}
+            onOpenCapital={() => router.push('/capital')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -161,12 +167,15 @@ type BodyProps = {
   /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
   pass: MyPass | null;
   onOpenPass: () => void;
+  /** Capital is on and served: its row is drawn (NUV-12). */
+  capital: boolean;
+  onOpenCapital: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
@@ -247,6 +256,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
               {(points !== null ? 1 : 0) + (pass ? 1 : 0) === 1 ? <View style={styles.half} /> : null}
             </View>
           ) : null}
+          {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>

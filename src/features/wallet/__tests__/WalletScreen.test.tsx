@@ -367,6 +367,21 @@ describe('W1 · Wallet · Naira', () => {
     expect(second.screen.queryByTestId('wallet-points')).toBeNull();
   });
 
+  it('the Capital row is drawn only when the Hub says Capital is on and served, and opens Capital (NUV-12)', async () => {
+    const off = await boot();
+    expect(await off.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await off.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(0));
+    expect(off.screen.queryByTestId('wallet-capital')).toBeNull();
+    await off.cleanup();
+    fallback['GET /capital/availability'] = ok({ available: true });
+    const on = await boot();
+    const row = await on.screen.findByTestId('wallet-capital');
+    expect(row).toBeTruthy();
+    mockPushed.length = 0;
+    rtl.fireEvent.press(row);
+    expect(mockPushed).toEqual(['/capital']);
+  });
+
   it('a transaction row says who, what, how much and when, and a user can tap it to open that transaction (W27)', async () => {
     const app = await boot();
     const row = await app.screen.findByTestId('wallet-row-r2');
