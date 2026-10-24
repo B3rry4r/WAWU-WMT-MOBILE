@@ -20,6 +20,8 @@ tier: T1
 
 **Verifier (24 Oct 2026): FIX.** Backend `f702669` is red on GitHub (`fx-contract.spec.ts`, finding 1); the dashboard `19f0fcc` checks are green. Status back to building; findings in the Verifier report below.
 
+**Fix round 1 (24 Oct 2026, same builder).** Heads: backend `wmt/OPS-27` `627a942` (origin/main `4e21f52` merged --no-ff; `contract/openapi.json` rebuilt, `contract:build` no diff); dashboard `wmt/OPS-27` `1293c85`, contract regenerated at `627a942`. Findings 3 and 4 fixed in `WawuCards.tsx`: Block is not offered on a used card (the Hub changes nothing there yet writes an audit row); the let-go dialog says who held the card by the Hub's `frozenBy` ("Support held this card." or "The person froze this card themselves."), and the list says "Held by support" or "Held by the person". Block stays offered on a card in `creating` or `unknown` (the Hub's route accepts it; default unchanged).
+
 As of 24 Oct 2026, built by the OPS-27 builder (T1, bundle B30). Dashboard `wmt/OPS-27` `19f0fcc`; backend `wmt/OPS-27` `f702669` (one read route); mobile records `wmt/OPS-27`. Status verifying. The Hub routes are those of `admin-cards.controller.ts` (WALLET-31) on `origin/main`: list, freeze, unfreeze, cancel; none takes a reason.
 
 | # | Before | After |
