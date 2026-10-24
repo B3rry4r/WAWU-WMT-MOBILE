@@ -7,7 +7,7 @@ order: -122
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: verifying
 depends_on: [AITOOLS-04]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,25 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 60 minutes of building; if it runs past that, push what is done and hand back what remains.
-- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
-- **Pattern:** the one long, asynchronous tool. A file goes in, the provider makes a project and a language target, and the Hub follows it until it completes. Reuses AITOOLS-04's file intake.
-- **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
-- **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-05`; then a verifier.
+As of 24 Oct 2026, **verifying (built by a Sonnet builder, T2; a fresh Sonnet verifier next)**. Backend only, no migration.
+- **Heads:** backend `wmt/AITOOLS-05` `4aeff65` (commit `fc2e066` on `origin/wmt/AITOOLS-04` `4dac644`, then `origin/main` `c3a2c7a` merged: AITOOLS-04 is in main); mobile `wmt/AITOOLS-05` carries these records.
+- **Built vs before (`origin/main` has no Dubbing):**
+
+| # | Before | After |
+|---|---|---|
+| 1 | no Dubbing tool, six tools listed | `dubbing` is the seventh: `POST /ai-tools/dubbing/quote` and `/dubbing/jobs` (`fileKey`, `targetLanguage`, `sourceLanguage?`, `quoteToken`, `Idempotency-Key`), 1,500 a minute for one language (the Hub's own reading of the file), `GET /ai-tools` lists it with `input.file.dubbing.languages` |
+| 2 | every job is one provider call | a followed job: the provider takes the file, the job stays `working` with the project and language ids on its row (`dubrun:`); `AiDubService` reads each working dub every 15 s and ends it; a restart picks every row up again |
+| 3 | one stale-hold limit (`points.job_max_run_minutes`, 30) | a dub has its own, `ai.dubbing_max_run_minutes` 60 (PROVISIONAL `AITOOLS-DUB-RUN`); the points sweep leaves a working dub's hold alone until then |
+| 4 | `ai.dubbing_languages` did not exist | the setting holds the provider's Dubbing v2 list, 94 base languages, read 24 Oct 2026 (PROVISIONAL `AITOOLS-DUB-LANGUAGES`); a language off it, or the source language again, is `422 ai_language_unsupported` with nothing held |
+| 5 | the Hub stored four audio types | `audio/flac` is served (additive); the dub's FLAC and WebVTT subtitles are kept as `outputs` (`audio`, `subtitles`); no dubbed video |
+| 6 | a provider copy was a transcript or a cleaned item | the project is a third copy: deleted when the job ends, the row notes `dub:<id>` and clears it only after two clean reads of 404, 10 and then 5 minutes on (AITOOLS-04 round 4) |
+
+- **AITOOLS-04 findings applied:** the file goes in behind the same sniff, read gate and streaming (the run opens it streamed, one place per account); provider copies cleared by two clean 404 reads 5 minutes apart (spec: a provider that hides and shows the project); the provider's status goes to the log only and no line a person reads names a price or the provider (spec). The signed links the provider names are not trusted: https to a name (or the configured host), no key sent, no redirect, a size bound from the priced minutes, FLAC and WEBVTT markers checked, one fetch at a time.
+- **Checks (backend, own database `b1dub_wawu_hub_test`):** 44 suites, 570 tests in band (src/ai-tools 18 suites incl. the new `ai-dubbing.contract.spec.ts` with 17 tests and `ai-dub-provider.spec.ts` with 8, src/storage 19, plan-settings 4, account-purge 2, voice-intro 1; none imports the Fintava double) `EXIT 0`; on the merged tree the five dub-related suites again 74 tests `EXIT 0`; tsc `EXIT 0`; eslint (no --fix, 30 .ts) `EXIT 0`; `test:protected` 253/253 `EXIT 0` (db:seed first); contract:build `EXIT 0` (additive diff: two operations, `CreateDubbingJobDto`, `dubbing` in two enums, `targetLanguage`); gates 0 fail, 134 warn, 88 accepted (133 before the merge) `EXIT 0`; check_baseline `EXIT 0`. Mutation checks: the sweep without the dub's limit, and the confirm rule without the 10 minute window, each fail their spec. NOT run: `plans.contract`, `plan-settings-readers`, `plan-settings-round2` and `points-spend.contract` (they reach the Fintava double; CI runs them). Four assertions that pinned the six tools or Dubbing as unbuilt were changed with a comment each (see SHARED-CHANGES AITOOLS-05 #2).
+- **NOT RUN against the real provider** (no key on a build machine): `ai.dubbing_max_run_minutes` is the lead's pick (60), not measured (G-AITOOLS-05-3). Built and tested against `scripts/dev/voice-standin.cjs`.
+- **Defaults (lead), owner may override:** the subtitles are kept in the job as text (like Captions' SRT), not as a separate file; a project with no language id ends the job and is deleted; a missing or non-WebVTT subtitle file drops the subtitles and keeps the dub; the Hub does not compare the provider's length with the priced one (the provider's project reports `media.duration_s` only on a separate read).
+- **Owner questions for the report:** what premium dubbing is and whether to offer it (the 6,500 figure is in the plan file only, G-AITOOLS-05-2); a dub of a video returns audio and subtitles, not a video (G-AITOOLS-05-1); the app must play FLAC (POINTS-11 checks it).
+- **Next:** a fresh verifier re-runs the stack check (a dub through the stand-in with a restart in the middle) and, when the owner's key is on a test Hub, one real short dub.
 
 ## Read first
 
@@ -60,13 +74,13 @@ A person picks a recording and a language and gets it back dubbed into that lang
 
 ## Capability checks
 
-- [ ] `GET /ai-tools` lists Dubbing at "from 1,500 points a minute" and its languages before anyone runs it (only when the provider is configured).
-- [ ] A person starts a dub: points are held, the job answers `working` at once, and the finished audio and subtitles are readable on the job after the stand-in completes it.
-- [ ] A failed dub, a dub the provider never finishes, and a failed store each release everything; a Hub restart mid-dub still ends the job (done or failed) and settles the hold once (V8).
-- [ ] The same `Idempotency-Key` twice starts one provider project and holds once; two dubs at once never take points below zero.
-- [ ] A language outside the list, a length over the minute cap and another person's `fileKey` are refused with nothing held.
-- [ ] The uploaded file and the provider's project are deleted when the job ends.
-- [ ] Every earlier tool still passes its specs untouched.
+- [x] `GET /ai-tools` lists Dubbing at "from 1,500 points a minute" and its languages before anyone runs it (only when the provider is configured).
+- [x] A person starts a dub: points are held, the job answers `working` at once, and the finished audio and subtitles are readable on the job after the stand-in completes it.
+- [x] A failed dub, a dub the provider never finishes, and a failed store each release everything; a Hub restart mid-dub still ends the job (done or failed) and settles the hold once (V8).
+- [x] The same `Idempotency-Key` twice starts one provider project and holds once; two dubs at once never take points below zero.
+- [x] A language outside the list, a length over the minute cap and another person's `fileKey` are refused with nothing held.
+- [x] The uploaded file and the provider's project are deleted when the job ends.
+- [x] Every earlier tool still passes its specs untouched.
 
 ## History
 
