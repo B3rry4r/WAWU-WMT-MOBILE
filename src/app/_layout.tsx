@@ -165,6 +165,8 @@ export default function RootLayout() {
           <Stack.Screen name="settings/blocked" />
           <Stack.Screen name="settings/password" />
           <Stack.Screen name="add-money" />
+          <Stack.Screen name="add-money/status" />
+          <Stack.Screen name="add-money/way" />
           <Stack.Screen name="bills/electricity/[code]" />
           <Stack.Screen name="bills/electricity/index" />
           <Stack.Screen name="bills/index" />
