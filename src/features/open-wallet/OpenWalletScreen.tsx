@@ -22,7 +22,8 @@ import { identityQuery, OPEN_WALLET_KEY, ownAccountQuery, walletStateQuery, type
 import { openingProgressQuery } from './api/review';
 import { checkBvn } from '@/api/walletIdentity';
 import { checkFailure, type CheckFailure } from './checkFailure';
-import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, readNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
+import { CountryStep } from './CountryStep';
+import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, keepWorld, readNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { useSessionAccount } from './sessionAccount';
@@ -95,6 +96,8 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   const [wallet, identity, progress] = useQueries({ queries: [walletStateQuery(owner), identityQuery(owner), openingProgressQuery(owner)] });
   const account = me;
   const [ended, setEnded] = useState<Ended | null>(null);
+  // WALLET-41: the person said they live in Nigeria (or their number says so): the BVN step follows as ever.
+  const [nigeria, setNigeria] = useState(false);
   const kept = useKeptCheck(owner);
   const signedInAs = useSessionAccount(owner);
 
@@ -164,6 +167,20 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   const confirmed = kept && kept.identity.bvn && identity.data.bvn?.last4 === kept.identity.bvn.last4 ? kept : null;
   if (confirmed) return <Confirmed check={confirmed} onClose={onClose} onContinue={onContinue} />;
 
+  // WALLET-41 (R-87): an account with a number from outside Nigeria is asked where it lives first. The Hub
+  // opens a wallet without a BVN for another country only on the opening that reviews the person (Nuvion).
+  if (progress.data?.flow === 'review' && !nigeria && account.data && isAbroadNumber(account.data.phone)) {
+    return (
+      <CountryStep
+        onClose={onClose}
+        onNigeria={() => setNigeria(true)}
+        onAbroad={(choice) => {
+          if (keepWorld(ticketFor(account.data.wawuUserId), { country: choice.country, currency: choice.currency })) onContinue();
+        }}
+      />
+    );
+  }
+
   return (
     <BvnNinForm
       account={account.data}
@@ -173,6 +190,11 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
       onPassed={onContinue}
     />
   );
+}
+
+/** True for a phone with a country code that is not Nigeria's: the number says the person may live elsewhere (WALLET-41). */
+export function isAbroadNumber(phone: string): boolean {
+  return /^\+(?!234)\d/.test(phone.trim());
 }
 
 function Loading({ onClose }: { onClose: () => void }) {

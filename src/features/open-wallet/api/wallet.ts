@@ -3,6 +3,7 @@ import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 import { OPEN_WALLET_KEY, type WalletState } from './account';
+import { readWorld, type WorldProgress } from './world';
 
 /**
  * The two calls after the account opens (KYC-04): A8 reads the account
@@ -28,6 +29,8 @@ export type OpenedWallet = {
   account: Pick<WalletAccount, 'accountNumber' | 'accountName' | 'bankName'> | null;
   limits: Pick<WalletLimits, 'dailyLimitKobo'> | null;
   pinIsSet: boolean;
+  /** WALLET-41: the world part of the wallet, for a person who opened from outside Nigeria; they have no naira account. */
+  world: WorldProgress | null;
 };
 
 function unreadable(): ApiError {
@@ -60,8 +63,10 @@ export async function fetchOpenedWallet(): Promise<OpenedWallet> {
   const pin = view.pin as Partial<PinState> | undefined;
   if (!pin || typeof pin.isSet !== 'boolean') throw unreadable();
   const account = readAccount(view.account ?? null);
-  if ((view.state === 'open' || view.state === 'frozen') && account === null) throw unreadable();
-  return { state: view.state, account, limits: readLimits(view.limits), pinIsSet: pin.isSet };
+  const world = readWorld((view as { world?: unknown }).world);
+  // A person outside Nigeria has a wallet with no naira account (WALLET-41): everyone else is refused without one.
+  if ((view.state === 'open' || view.state === 'frozen') && account === null && world === null) throw unreadable();
+  return { state: view.state, account, limits: readLimits(view.limits), pinIsSet: pin.isSet, world };
 }
 
 /**

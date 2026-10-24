@@ -14,6 +14,13 @@ export const ID_TYPES: readonly ChoiceOption<IdType>[] = [
   { value: 'drivers_license', label: "Driver's licence" },
 ];
 
+/** The same three types for a person outside Nigeria: a national ID is not a NIN slip (WALLET-41). */
+export const WORLD_ID_TYPES: readonly ChoiceOption<IdType>[] = [
+  { value: 'international_passport', label: 'International passport' },
+  { value: 'national_id', label: 'National ID' },
+  { value: 'drivers_license', label: "Driver's licence" },
+];
+
 export const PROOF_TYPES: readonly ChoiceOption<ProofType>[] = [
   { value: 'utility_bill', label: 'Utility bill' },
   { value: 'bank_statement', label: 'Bank statement' },
