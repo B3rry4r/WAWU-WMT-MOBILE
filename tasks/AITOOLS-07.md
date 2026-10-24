@@ -7,7 +7,7 @@ order: -117
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [AITOOLS-02]
 decisions: [R-43, R-68, R-47, R-29, R-65]
 passes: [V1, V2, V3, V4, V5, V6, V8, V9]
@@ -19,6 +19,12 @@ tier: T2
 ## Current state
 
 As of 24 Oct 2026, round 2 (Sonnet builder, T2, bundle B10; the first round's text is in [history](history/AITOOLS-07.md)). Backend `wmt/AITOOLS-07` `7679d5d` plus one header fix (below) on `origin/main` `c3a2c7a`; mobile `wmt/AITOOLS-07` with `origin/main` `206365d8` merged in (POINTS-10 edits `ToolScreen.tsx` too; the contract was synced from the backend branch by copying its `contract/openapi.json`, since `sync_contract.py --backend` reads `origin/main`, then `python3 scripts/api/sync_contract.py`; 297 added lines, none removed). **Status verifying.**
+
+**Verifier round 1 (24 Oct 2026, full T2, report in [history](history/AITOOLS-07.md)): FIX. Status building.** Passed live and by spec: own voice from the person's own recording only and after the agreement (another person's id, a forged key and no recording refused), removed when the job ends, on failure, after a kill mid-run (swept at 15 minutes) and by DELETE; the public sample route (catalogue voices only, CORP change on that route alone); Save; Use in a product; the app on a 390 x 844 export in light and dark. Backend merges cleanly with `origin/main` `b69aa7f` and the stamp `20261105100000` is still the latest; mobile conflicts only in generated `docs/PROGRESS.md` and `tasks/INDEX.md`. Open for the fix round:
+- **medium 1:** the data export omits `ownVoiceConsentAt` and `ownVoiceConsentLine` (`data-export-sections.ts:287-300`; also `savedAt`, `mediaJobId`).
+- **medium 2:** account deletion does not remove a clone the provider still holds (no AI tools purge hook; repro: purge a person whose job notes `voice:<id>`, the stand-in keeps the voice).
+- **low (sweep list):** a clone is forgotten after 24 hours (`provider-copy.service.ts:394`); a kill mid-run leaves one for 15 to 16 minutes and the instant before it is noted leaves one unnoted; `noteCopy` answers true when the note write failed (`ai-job.service.ts:514`); `?saved=false` answers every job (`ai-job.service.ts:344`).
+- **unclear:** "Use in a product" takes any own finished job with audio, not only a saved one (`product-draft.service.ts:253`).
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -59,3 +65,4 @@ A person hears a voice before choosing it, can read a VoiceOver in their own voi
 - [x] A finished result can be saved and taken out; another person's cannot (check 9).
 - [x] A result attaches to a draft and detaches; another person's cannot (checks 10 to 12).
 - [x] The app screens match PT2 and PT2b in light and dark (pictures beside the boards, with the known differences above).
+
