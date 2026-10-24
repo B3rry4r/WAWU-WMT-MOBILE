@@ -8444,6 +8444,12 @@ export interface components {
             previewAsset: string;
             /** Format: uri */
             fullAsset: string;
+            /**
+             * Format: uuid
+             * @description FIX-111 (H24): the creator's own course this piece comes from ("From the course VFX for Beginners"). Optional, and only for a
+             *     piece that is not itself a course; the course must be the creator's, live or in review. Stored on the piece's side row.
+             */
+            parentCourseId?: string;
         };
         UpdateContentDto: {
             title?: string;
@@ -8494,8 +8500,12 @@ export interface components {
             title: string;
             /** @description The lesson's length as a player writes it: `4:12` or `1:20:05`. */
             durationLabel?: string;
-            /** @description The lesson's file: the key (or link) of an upload this person made under `content/full`. Left out, the lesson has no file yet. */
-            assetKey?: string;
+            /**
+             * @description The lesson's file: the key (or link) of an upload this person made under `content/full`. A new lesson with none has no file yet.
+             *     A lesson kept by `id` keeps the file it has when this is left out (FIX-111: the editor does not know the key of a file it did not
+             *     upload), takes a new one when a key is sent, and loses its file only when this is `null`.
+             */
+            assetKey?: string | null;
         };
         SetLessonsDto: {
             lessons: components["schemas"]["LessonInputDto"][];
@@ -11621,6 +11631,13 @@ export interface components {
             isFree: boolean;
             hasFile: boolean;
         };
+        ParentCourse: {
+            id: string;
+            title: string;
+            lessonCount: number;
+            price: number;
+            previewAssetUrl: string | null;
+        };
         RatingState: {
             average: number | null;
             count: number;
@@ -11647,6 +11664,7 @@ export interface components {
             studentCount: number | null;
             freePreview: components["schemas"]["FreePreview"];
             lessons: components["schemas"]["DetailLesson"][];
+            parentCourse: components["schemas"]["ParentCourse"];
             rating: components["schemas"]["RatingState"];
             creator: components["schemas"]["DetailCreator"];
         };
@@ -18029,6 +18047,8 @@ export interface operations {
                 page: number;
                 perPage: number;
                 status?: "live" | "pending" | "rejected";
+                /** @description Only the creator's own courses. Left out, every kind. */
+                contentType?: "course";
             };
             header?: never;
             path?: never;

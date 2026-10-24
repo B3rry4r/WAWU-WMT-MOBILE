@@ -2,7 +2,7 @@ import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
 import { useCreatorGate } from '@/features/create/CreateEntry';
-import { useDraft } from '@/features/create/draft';
+import { fullFileOf, useDraft, useLessons } from '@/features/create/draft';
 import { PreviewScreen } from '@/features/create/PreviewScreen';
 
 /**
@@ -12,7 +12,10 @@ import { PreviewScreen } from '@/features/create/PreviewScreen';
 export default function CreatePreviewRoute() {
   const router = useRouter();
   const { status } = useSession();
-  const { format, full } = useDraft();
+  const draft = useDraft();
+  const { format } = draft;
+  const lessons = useLessons();
+  const full = fullFileOf(draft, lessons);
   const gate = useCreatorGate(status === 'signedIn');
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;

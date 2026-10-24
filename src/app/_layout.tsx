@@ -205,6 +205,7 @@ export default function RootLayout() {
           <Stack.Screen name="legal-matter" />
           <Stack.Screen name="library/[id]/edit" />
           <Stack.Screen name="library/[id]/index" />
+          <Stack.Screen name="library/[id]/lessons" />
           <Stack.Screen name="library/[id]/replace" />
           <Stack.Screen name="library/index" />
           <Stack.Screen name="movies/[id]/index" />

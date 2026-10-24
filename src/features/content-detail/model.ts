@@ -43,7 +43,7 @@ export function bigCount(count: number): string {
   return n >= COMPACT_FROM ? compactCount(n) : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-const plural = (n: number, one: string, many: string) => `${bigCount(n)} ${n === 1 ? one : many}`;
+export const plural = (n: number, one: string, many: string) => `${bigCount(n)} ${n === 1 ? one : many}`;
 
 /** "Sep 2026": when the piece was last changed (H19). */
 export function monthYear(iso: string): string | null {

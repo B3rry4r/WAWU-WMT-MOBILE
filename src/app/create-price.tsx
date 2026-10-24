@@ -3,7 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useSession } from '@/api/session';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { detailsReady, useDetails, useSent } from '@/features/create/details';
-import { useDraft } from '@/features/create/draft';
+import { fullFileOf, useDraft, useLessons } from '@/features/create/draft';
 import { PriceScreen } from '@/features/create/PriceScreen';
 
 /**
@@ -14,7 +14,10 @@ import { PriceScreen } from '@/features/create/PriceScreen';
 export default function CreatePriceRoute() {
   const router = useRouter();
   const { status } = useSession();
-  const { format, full, preview } = useDraft();
+  const draft = useDraft();
+  const { format, preview } = draft;
+  const lessons = useLessons();
+  const full = fullFileOf(draft, lessons);
   const details = useDetails();
   const sent = useSent();
   const gate = useCreatorGate(status === 'signedIn');

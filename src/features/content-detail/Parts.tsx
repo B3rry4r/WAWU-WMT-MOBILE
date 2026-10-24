@@ -1,11 +1,14 @@
-import type { ReactNode } from 'react';
+import { Image } from 'expo-image';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
+import { nairaToKobo } from '@/api/kobo';
 import { Avatar, type AvatarHue } from '@/components/Avatar';
 import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
 import { Money } from '@/components/Money';
 import { formatNaira } from '@/components/pay-sheet';
 import { StatusPill } from '@/components/StatusPill';
@@ -14,7 +17,7 @@ import { font, layout, space, useWawu } from '@/theme';
 import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
 
 import type { Comment, PieceDetail } from './api';
-import { ago, commenterName, lessonLength, type Thread } from './model';
+import { ago, commenterName, lessonLength, plural, type Thread } from './model';
 
 /** design/_gen/home.js lines 61 to 75: the sizes of the piece's own page. */
 export const m = {
@@ -104,6 +107,54 @@ export function MakerRow({
         />
       )}
     </View>
+  );
+}
+
+/** design/_gen/home.js line 74: the "From the course" row is a 12 by 14 card, a 44 picture with 14 corners, 12 between, the amount at 15. */
+const courseRow = { pad: 14, picture: 44, corner: 14, title: 14.5, line: 12.5, amount: 15, between: 12 } as const;
+
+/**
+ * H24's "From the course VFX for Beginners · 12 lessons ₦8,000": a piece that comes from one of its creator's own courses names it, and
+ * a tap opens the course (H25). The picture is the course's own preview when it is a picture, else the course mark. Every figure is the
+ * Hub's (`parentCourse` on the detail); a free course says Free.
+ */
+export function ParentCourseRow({ course, onPress }: { course: NonNullable<PieceDetail['parentCourse']>; onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  const [broken, setBroken] = useState(false);
+  const amount = course.price > 0 ? formatNaira(nairaToKobo(course.price)) : 'Free';
+  const lines = plural(course.lessonCount, 'lesson', 'lessons');
+  return (
+    <Pressable
+      testID="detail-parent-course"
+      accessibilityRole="button"
+      accessibilityLabel={`From the course ${course.title}, ${lines}, ${amount}`}
+      accessibilityHint="Opens the course"
+      onPress={onPress}
+      {...ring.handlers}
+      style={ring.style}
+    >
+      <Card padded style={styles.courseCard}>
+        <View style={styles.courseRow}>
+          {course.previewAssetUrl && !broken ? (
+            <View style={[styles.coursePicture, { backgroundColor: colors.surfaceSunken }]}>
+              <Image source={{ uri: course.previewAssetUrl }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+            </View>
+          ) : (
+            <IconTile icon="GraduationCap" tone="accent" size={courseRow.picture} />
+          )}
+          <View style={styles.courseWords}>
+            <Text variant="body" numberOfLines={2} style={[font(600), { fontSize: courseRow.title }]}>
+              {`From the course ${course.title}`}
+            </Text>
+            <Text variant="meta" style={{ fontSize: courseRow.line, marginTop: m.lessonSpace }}>
+              {lines}
+            </Text>
+          </View>
+          {course.price > 0 ? <Money minorUnits={nairaToKobo(course.price)} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 
@@ -360,6 +411,10 @@ const styles = StyleSheet.create({
   makerWords: { flex: 1, minWidth: 0, gap: m.makerSpace },
   nameLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   makerName: { flexShrink: 1 },
+  courseCard: { paddingVertical: space.md, paddingHorizontal: courseRow.pad },
+  courseRow: { flexDirection: 'row', alignItems: 'center', gap: courseRow.between },
+  coursePicture: { width: courseRow.picture, height: courseRow.picture, borderRadius: courseRow.corner, overflow: 'hidden' },
+  courseWords: { flex: 1, minWidth: 0 },
   price: { gap: space.md },
   priceLabel: { marginBottom: -space.sm },
   walletLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: m.tightSpace },

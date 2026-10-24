@@ -21,6 +21,8 @@ export default function ContentRoute() {
     <ContentDetailScreen
       id={String(id)}
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+      onOpenCourse={(courseId) => router.push({ pathname: '/content/[id]', params: { id: courseId } })}
+      onEditLessons={(courseId) => router.push({ pathname: '/library/[id]/lessons', params: { id: courseId } })}
       pay={{
         onOpenWallet: entry.open,
         onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
