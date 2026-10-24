@@ -14,6 +14,7 @@ import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wa
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, radius, useWawu } from '@/theme';
 
+import { CardRow } from '@/features/cards/CardRow';
 import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
@@ -45,7 +46,7 @@ const INFO_SKELETON = 86;
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
  * drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap (WALLET-21);
- * the WAWU card row (WALLET-22). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
+ * the WAWU card row is built (WALLET-22, R-84): drawn while the Hub says cards are on. Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
  * is drawn when `GET /me/tier` has an event pass, beside the Points card (wallet.js line 47, 10 apart). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
  * money beyond the reads above.
@@ -248,6 +249,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
             </View>
           ) : null}
           <WalletActions actions={actions} />
+          <CardRow />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );

@@ -3,25 +3,33 @@ id: WALLET-22
 title: WAWU card
 owner: YOU
 area: WALLET
-order: 318
-priority: after-launch
+order: -3122
+priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
-depends_on: [WALLET-31, WALLET-01, WALLET-06]
-decisions: [R-16, R-37]
+status: verifying
+depends_on: [WALLET-31]
+decisions: [R-16, R-37, R-84, R-47, R-29]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W29, W30, W31, W32, W33, W34]
+tier: T2
 ---
-# WALLET-22 · WAWU card
+# WALLET-22 · The WAWU card on Nuvion (app side)
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-31.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B20), mobile `wmt/WALLET-22` is on branch `wmt/WALLET-31` (the bundle's one branch) from `origin/main` `7e65293b`, contract synced from backend `wmt/WALLET-31` `718d332`; status verifying; no PR. Pictures were NOT made (step budget; see the builder report). Under R-84 the card is what Nuvion serves, so W30, W33 and W34 are not drawn (R-47) and W29's Physical choice is gone.
+
+| # | Before | After |
+|---|---|---|
+| 1 | no card screen, W1 and W35 draw no card row | `/cards` (W31's entry; with no card it is W29 itself), `/cards/new` (W29: Virtual or Single-use, the fee as the quote says it, PIN or fingerprint, one Idempotency-Key per attempt), `/cards/[id]` (W31 and W32: status, Freeze, Details behind the PIN for 30 seconds, Unfreeze behind the PIN, "Card lost or stolen? Block it" with a confirm sheet, card spending in dollars) |
+| 2 | W1 and W35 have no card row | W1's card row (`CardRow`, between the actions and Transactions) and W35's Cards row, each drawn only while `GET /money/cards` says `enabled` (R-47) |
+| 3 | n/a | the card number, expiry and CVV are held in screen memory only while shown; never in a query cache, a log or storage |
+
+- **W30, W33, W34, the Physical tab:** not built, Nuvion has no physical card, card PIN, channel switches or limits to set. W31's Card PIN and Limits tiles and ATM spending are not drawn.
+- **Built from existing parts with a gap row (R-29):** the list of several cards (no board draws it; `G-WALLET-22-1`), the W1 row's no-card line "Get your card", the Block confirm sheet, the status banners for pending and blocked.
+- **Next:** a verifier; a stack walk and the pictures (390 px, light and dark, of W29, the list, W31 active, W32 frozen, details shown, the block sheet) beside `render_design.py W29 W31 W32`.
 - **History:** none yet. Reports go to tasks/history/WALLET-22.md.
-- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
 
 ## Read first
 
@@ -37,11 +45,11 @@ As of 16 Oct 2026.
 
 ## Goal
 
-You own these screens AND the backend work behind them. Build the screens as the design draws them, in light and dark, against the real API.
+The screens of the WAWU card as Nuvion issues it today, against the real API, in light and dark. Only what Nuvion serves is drawn (R-47, R-84).
 
 ## Scope
 
-New files under `src/features/` for these screens and their route files under `src/app/` (no `_layout.tsx` edits; those belong to the route-graph tasks). Shared components, theme, API client and layouts are fenced: request changes in `SHARED-CHANGES.md`.
+New files under `src/features/cards/` and `src/app/cards/`; small additive edits to W1 (`WalletScreen.tsx`: one row), W35 (`WalletSettingsScreen.tsx`: one optional prop and row, `src/app/wallet-settings.tsx`) and three `Stack.Screen` lines in `src/app/_layout.tsx` (SHARED-CHANGES WALLET-22 rows). The contract is synced from backend `wmt/WALLET-31`.
 
 ## Artboards
 
@@ -54,7 +62,7 @@ New files under `src/features/` for these screens and their route files under `s
 
 ## Fintava facts
 
-Fintava issues physical Verve, Visa and Mastercard cards tied to the wallet account number (`POST /cards/physical/request`, `cardType: STATIC_WITH_ACCOUNT`), with activate, deactivate, reissue, link, PIN change and status. Fee, delivery and card webhook payloads are not documented: get them from Fintava.
+Superseded by R-84: Nuvion issues virtual and single-use dollar cards only.
 
 ## Brief changes (build these, not the canvas)
 
@@ -112,7 +120,10 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Checks (each log EXIT line): `src/features/cards` 14 tests in 2 suites (api calls against a stood-in Hub: headers, key, body, every outcome; words and figures), EXIT 0; `route-guard` and `route-graph` 304 of 304, EXIT 0; tsc EXIT 0; eslint (no fix) on every changed file EXIT 0; gates 0 fail and 18 warn, the same as the untouched checkout (my first run had 19 literal-spacing findings, all fixed in my files, nothing baselined); `check_baseline` EXIT 0. The existing W1 and W35 tests (`WalletScreen`, `WalletSettingsScreen`, `walletStatementsRow`) fail 3 tests with or without this change (same 3 on the untouched checkout).
+NOT RUN: the pictures (no stack walk, so no real-data screens), a screen-level test of the three screens (the call and the words are tested; the flow needs the stack), the full app check (the merge agent's).
+No new native module and none needed (the PIN sheet, `PayPinSheet` and the fingerprint approval are the app's own).
+Gap rows: G-WALLET-22-1 (the card list has no board), -2 (W29's "Pay from wallet · balance" line is not drawn: the quote has no balance; the Hub's `insufficient_funds` says the fee).
 
 ## Verifier report
 
