@@ -7,7 +7,7 @@ order: -1212
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-84, R-83, R-39, R-20, R-10, R-29, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status verifying after fix round 1 (24 Oct): the verifier (24 Oct) found one high, one medium and lows, see "Verifier report"; round 1 closes them (below). No PR.
+As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status review after fix round 1 and its verifier (24 Oct, PASS, see "Verifier report, round 1"): the verifier (24 Oct) found one high, one medium and lows, see "Verifier report"; round 1 closes them (below). No PR.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -87,6 +87,27 @@ Pictures (390 px, light and dark, from the real app on a local Hub and stand-in;
 7. **low**: the PIN sheet reads "₦2,000 for Invest in 90 Days Treasury Bills" (picture `capital-pin-*`).
 8. **low** (dev, not code): the first `GET /capital-portfolio` after the wallet opened timed out at Nuvion dev and the Hub answered 503 "Payments are not available right now" (retries 200 in about 1.2 s). The app's Capital home was not seen on that path.
 9. note: `npm run money:check` on the stack reports one mismatch, `wawu-account` 100,000,000 kobo, which equals the stand-in's `STANDIN_OPERATIONAL_KOBO` opening for WAWU's operational account, not a Capital movement. The Hub's balance (which it reads from the provider) moved by exactly the amounts in the V8 row; the money check's account list was not read further.
+
+## Verifier report, round 1 (24 Oct 2026, T2 focused re-check, backend `929d711` against `26107b6`, mobile `c021a016` against `e364a8c6`): PASS
+
+| # | Finding | Closed | Evidence |
+|---|---------|--------|----------|
+| 1 | high: `money-contract.spec` red | yes | `money-contract.spec.ts` 11 of 11, EXIT 0; `contract/openapi.json` says `CapitalReserveDto.amountKobo` `type: integer`; `npm run contract:build` leaves the tree unchanged (EXIT 0); mobile contract byte-identical to the backend's, `SOURCE_COMMIT` `929d711` |
+| 2 | medium: provider text drawn | yes | `description` is gone from the provider type, the Nuvion reader, the view and the screen; `nuvion-capital.spec.ts` feeds "guaranteed ... confidence" and asserts it is not carried; the app test sends it anyway and asserts no `capital-product-about`, no "guaranteed", no "with confidence" |
+| 3 | low: stamp | yes | folder `20261113100000_capital_orders` sorts after `20261113093000_abroad_sends` and `20261112090000_fx_accounts`; `prisma migrate deploy` applies all on a fresh database; rollback refuses with a confirmed order (error raised, 4 rows still there), runs when none (both tables dropped) and the migration re-applies |
+| 4 | low: cancelled reservation said "on hold" | yes | its own line "This reservation was cancelled. Nothing was taken from your wallet.", also when the cancel lands during the confirm; spec asserts `/cancelled/` and not `/on hold/` |
+| 5 | low: off closed the exit | yes | with `capital.enabled` 0: products, reserve and confirm of a held reservation answer 409 `capital_unavailable` before the PIN; a holder reads portfolio, orders, one order, its movements, the withdrawal preview and withdraws (201, `paying_out`); `availability` answers `{ available, holding }`; the sweep keeps settling (`served()`); app: closed banner, no Invest tab, Wallet row kept for a holder and gone for a person with nothing held |
+| 6 | low: fee row named the brand | yes | ledger counterparty "WAWU's fee" (spec asserts it); review, holding and product hint read "WAWU's fee" |
+| 7 | low: "for Invest in ..." | yes | sheet purpose "investing in <product>"; test asserts "₦15,000 for investing in 90 Days Treasury Bills" |
+
+Checks (EXIT lines): backend `tsc --noEmit` 0; eslint (no --fix) on the 13 changed `.ts` files 0; `capital.contract.spec` 17 + `nuvion-capital.spec` 7 + `nuvion-capital-handler.contract.spec` 6 = 30 pass, 0; `money-contract` 11 pass, 0; plan-settings (2 specs), `publishing-gate-coverage`, `hub-rate-limits` 69 pass, 0; backend gates 9 run, 0 fail, baseline 124 entries, 0; `contract:build` unchanged, 0. App `tsc --noEmit` 0; jest `src/features/capital` (14 tests) and `WalletScreen.test.tsx` (48 tests) pass (the first run timed out once on the first Wallet test at load average 20, a 20 s cold start; the file alone: 48 of 48, EXIT 0); `npm run gates` 10 run, 0 fail, 56 unit tests, 0; `check_tasks` 433, 0. No spec that imports the Fintava double was run (`hub-rate-limits` only names Fintava's webhook in a string it scans for).
+
+Not run (as before): a live stack and a real sign-in, Nuvion dev, a phone. The round changed copy, one switch and one field, and the specs and app tests above cover each.
+
+New, all low (sweep list, none blocks):
+- N1 `holdsAny` (`capital.service.ts`) filters with `NOT: { lifecycle: { in: [...] } }`, and Prisma drops rows whose `lifecycle` is NULL. Probed on a real database: an order in `confirming` or `review` that has no lifecycle yet counts as 0, so with Capital switched off that person has no Wallet row until the sweep settles it (`confirming`, about a minute) or for as long as it stays in `review`. A confirmed holding always has a lifecycle, so every ordinary holder is covered. The same filter shape is in `portfolio` (holdings count) and `orders(show=holding)` from the first build. Fix when swept: `OR: [{ lifecycle: null }, { lifecycle: { notIn: [...] } }]`.
+- N2 stamp: `20261113100000` is the newest of the Capital branch's base, but three branches pushed later carry newer stamps (`wmt/WALLET-31` `20261114093000`, `wmt/GEO-02` `20261120093000`, `wmt/IAP-01` `20261121090000`). `migrate deploy` applies in any order; the stamp registry rules at merge.
+- N3 a deductible's `name` (for example the tax's name) still passes from the provider to the review; the Words line says only a product's name, its issuer's name and its documents' names pass. It is a term label next to its figure, not marketing.
 
 ## Read first
 
