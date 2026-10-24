@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 
 import { calls, hub, installFetch, ok, refusal, renderFrame, type Sent } from '../../library/__helpers__/hub';
 
@@ -9,9 +10,14 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
 }));
+/** The screen's focus callbacks, so a test can bring the screen back into focus. */
+const mockFocused: (() => void | (() => void))[] = [];
 jest.mock('expo-router', () => ({
-  useFocusEffect: (run: () => void) => {
-    require('react').useEffect(run, [run]);
+  useFocusEffect: (run: () => void | (() => void)) => {
+    require('react').useEffect(() => {
+      mockFocused.push(run);
+      return run();
+    }, [run]);
   },
 }));
 // I28 is the credits task's: here it only has to be raised.
@@ -74,6 +80,8 @@ const open = async () => {
 };
 
 beforeEach(() => {
+  // The test renderer's AppState hands back no subscription; the app's returns one with a `remove`.
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((() => ({ remove: () => undefined })) as never);
   installFetch();
   hub.answers[`GET ${LIST}`] = byChip;
   hub.answers['POST /api/hub/notifications/n1/read'] = ok(null);
@@ -221,5 +229,64 @@ describe('M31 · Notifications', () => {
     await screen.findByText('New sale · +₦2,550');
     await fireEvent.scroll(screen.getByTestId('notifications-screen-scroll'), { nativeEvent: { contentOffset: { y: 400 }, contentSize: { height: 900 }, layoutMeasurement: { height: 800 } } });
     expect(await screen.findByText('Older sale')).toBeTruthy();
+  });
+});
+
+describe('M31 · a notice that lands while the list is open (FIX-105 L5)', () => {
+  // A community's notice is written a few seconds after its message, so it can land with the list already drawn.
+  const landed = note('n20', 'community_messages', 'New messages in Lagos Creators', 'There are 3 new messages in “Lagos Creators”.', {
+    category: 'messages',
+    target: { kind: 'community', id: 'c1', title: null, deadlineAt: null },
+  });
+  const arrive = () => {
+    hub.answers[`GET ${LIST}`] = page([landed, ...feed]);
+  };
+
+  it('a pull on the list reads the Hub again and the new notice shows', async () => {
+    await open();
+    await screen.findByText('New sale · +₦2,550');
+    expect(screen.queryByText('New messages in Lagos Creators')).toBeNull();
+    const reads = calls('GET', LIST).length;
+    arrive();
+    const control = screen.getByTestId('notifications-screen-scroll').props.refreshControl as { props: { onRefresh: () => void } };
+    await act(async () => control.props.onRefresh());
+    expect(await screen.findByText('New messages in Lagos Creators')).toBeTruthy();
+    expect(calls('GET', LIST).length).toBeGreaterThan(reads);
+  });
+
+  it('coming back to the app with the list in front reads the Hub again, and leaving the list stops listening', async () => {
+    // Every listener the screen holds right now (one removed on cleanup is not held).
+    const held = new Set<(state: string) => void>();
+    const listen = jest.spyOn(AppState, 'addEventListener').mockImplementation(((type: string, handler: (state: string) => void) => {
+      if (type === 'change') held.add(handler);
+      return { remove: () => held.delete(handler) };
+    }) as never);
+    const { unmount } = await open();
+    await screen.findByText('New sale · +₦2,550');
+    expect(held.size).toBe(1);
+    arrive();
+    // Going to the background reads nothing; coming back does.
+    const before = calls('GET', LIST).length;
+    await act(async () => held.forEach((onChange) => onChange('background')));
+    expect(calls('GET', LIST)).toHaveLength(before);
+    await act(async () => held.forEach((onChange) => onChange('active')));
+    expect(await screen.findByText('New messages in Lagos Creators')).toBeTruthy();
+    expect(calls('GET', LIST).length).toBeGreaterThan(before);
+    await act(async () => unmount());
+    expect(held.size).toBe(0);
+    listen.mockRestore();
+  });
+
+  it('coming back into focus reads the Hub again (the first focus is the screen opening and reads once)', async () => {
+    mockFocused.length = 0;
+    await open();
+    await screen.findByText('New sale · +₦2,550');
+    const opening = calls('GET', LIST).length;
+    arrive();
+    await act(async () => {
+      mockFocused.at(-1)!();
+    });
+    expect(await screen.findByText('New messages in Lagos Creators')).toBeTruthy();
+    expect(calls('GET', LIST).length).toBeGreaterThan(opening);
   });
 });

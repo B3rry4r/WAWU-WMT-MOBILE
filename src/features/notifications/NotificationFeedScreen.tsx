@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { Button, IconButton } from '@/components/Button';
@@ -60,6 +60,7 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
   const queryClient = useQueryClient();
   const [category, setCategory] = useState<FeedCategory>('all');
   const [topUp, setTopUp] = useState(false);
+  const { colors } = useWawu();
   const list = useInfiniteQuery({
     queryKey: feedKey(category),
     queryFn: ({ pageParam }) => fetchFeedPage(category, pageParam),
@@ -67,18 +68,30 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     staleTime: 0,
   });
-  // Coming back from what a row opened shows what the Hub now holds. The first focus is the screen opening.
+  // A notice that lands while the list is open shows without reopening the app (FIX-105, R-81: a community's notice is written
+  // a few seconds after the message): the list reads the Hub again when the screen comes back into focus (from what a row
+  // opened), when the app returns to the front while the list is in front, and on a pull. The first focus is the screen opening.
   const refetch = list.refetch;
   const opened = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      if (!opened.current) {
-        opened.current = true;
-        return;
-      }
-      void refetch();
+      if (opened.current) void refetch();
+      opened.current = true;
+      const watch = AppState.addEventListener('change', (state) => {
+        if (state === 'active') void refetch();
+      });
+      return () => watch.remove();
     }, [refetch]),
   );
+  const [pulled, setPulled] = useState(false);
+  const pull = async () => {
+    setPulled(true);
+    try {
+      await refetch();
+    } finally {
+      setPulled(false);
+    }
+  };
 
   // A row's read is sent once: a second tap before the list has redrawn (item.read still false) sends nothing.
   const sentRead = useRef(new Set<string>());
@@ -141,6 +154,7 @@ export function NotificationFeedScreen({ onBack, onOpen, onOpenSettings }: Notif
         onLeave={onBack}
         gap={rowMetrics.partsBetween}
         onNearEnd={more}
+        refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void pull()} tintColor={colors.accent} />}
         trailing={<IconButton icon="Settings2" label="Notification settings" onPress={onOpenSettings} testID="notifications-settings" />}
       >
         {caughtUp ? null : <FilterChips testID="notifications-chip" label="Filter notifications" items={CHIPS} value={category} onChange={setCategory} inset={0} />}

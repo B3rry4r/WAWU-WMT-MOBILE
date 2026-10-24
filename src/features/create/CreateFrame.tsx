@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import type { ReactElement, ReactNode } from 'react';
+import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -28,6 +28,8 @@ export type CreateFrameProps = {
   gap?: number;
   /** Called while the body is scrolled to within this many points of its end, so a long list asks for its next page (M28). */
   onNearEnd?: () => void;
+  /** A pull-to-refresh on the body (M31's list reads the Hub again). */
+  refreshControl?: ReactElement<RefreshControlProps>;
   children: ReactNode;
   testID?: string;
 };
@@ -36,7 +38,7 @@ export type CreateFrameProps = {
 const MORE_WITHIN = 600;
 
 /** The Create screens' frame: safe areas, the bar (a round button, a title with a line under it), the scrolling body and a pinned foot. */
-export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, children, testID }: CreateFrameProps) {
+export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, children, testID }: CreateFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const onScroll = onNearEnd
@@ -67,6 +69,7 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
         testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        refreshControl={refreshControl}
         onScroll={onScroll}
         scrollEventThrottle={onScroll ? 100 : undefined}
         contentContainerStyle={[styles.content, gap === undefined ? null : { gap }, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right, paddingBottom: bodyMetrics.bottom }]}

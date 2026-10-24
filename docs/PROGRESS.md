@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 28 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -46,6 +46,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-105](../tasks/FIX-105.md) A person is told when a community they joined has new messages, grouped (the Z3 "Community messages" switch has a sender) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -209,7 +210,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-105](../tasks/FIX-105.md) A person is told when a community they joined has new messages, grouped (the Z3 "Community messages" switch has a sender) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -406,6 +406,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · FIX-105 round 2 · The verifier's FIX built (Sonnet builder, T1; backend `wmt/FIX-105` `f5aa816` on `origin/main` `21cba57`, mobile `wmt/FIX-105` on `origin/main` `e4d88d6`; status verifying): a notice now counts each message once whatever is replayed (a person's mark for a room is the largest `countedUpTo` of all their notices for it), and a room that fails goes on a retry list (additive migration `20261102090100`) and never holds the other rooms; a muted person's unread notice stays unread; the notification list reads the Hub again on focus, when the app returns to the front and on a pull; `stack.sh` prints the app at localhost. Live check NOT RUN.
 - 24 Oct 2026 · FIX-105 · Built (Sonnet builder, T1; backend `wmt/FIX-105` on `origin/main` `fefc1ec`, mobile `wmt/FIX-105` on `origin/main` `74a040e7`; status verifying): R-81, a person is told when a community they joined has new messages, as ONE grouped notice per room that is updated until they open it; never for their own messages; the Z3 "Community messages" switch mutes it; it is pushed once per notice. Closes G-21. A sweep folds settled messages in pages of 500 members (six statements a page), the request path writes nothing. The app maps the new kind to the room. Live-walk pictures NOT RUN.
 - 24 Oct 2026 · FIX-106 · Built (Sonnet builder, T1; mobile `wmt/FIX-106` on `origin/main` `fcbf81d4`; status verifying): Flix movies draw nothing unless the Hub answers `enabled: true`. A `soon` answer is treated exactly like off (R-80): no rail on Home or Explore, no Flix screen, and every Flix link sends the person out as off does. `FlixSoonNote`, `FlixSoonCard` and `isSoon` are deleted; "Flix movies aren't switched on yet" and "You'll be able to watch movies here soon." are not in `src/`. FLIX-04's soon cases now assert nothing is drawn; new cases for Home and Explore (3 fail against main's rail). Live look NOT RUN. No backend change. Records: tasks/FIX-106.md, tasks/history/FIX-106.md.
 - 24 Oct 2026 · POINTS-09 · Built (Sonnet builder, T1; mobile `wmt/POINTS-09` on `origin/main` `80828caf`; status verifying): a person can open Quick voice, Sound effect and Music track from Studio, see what each costs from the Hub (125 a minute, 75, 500), run it and play what comes back. The three are catalogue entries on POINTS-08's screen (`ToolScreen` branches on `input.kind`; a Sound effect and a Music track take a description and have no voices and no length line); a tile is drawn only for a tool the Hub lists and the app has a screen for (R-47). `startJob` posts to each tool's own route under one `Idempotency-Key`; the job record is one per account and tool. VoiceOver's tests pass untouched. Live on the local stack: one job of each tool, working then a player that plays; a failed job said no points were taken; too few points asked for more. Gaps G-POINTS-09-2 and -3. Records: tasks/POINTS-09.md, tasks/history/POINTS-09.md.
@@ -420,4 +421,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · FIX-101 · Built (Sonnet builder, T1; mobile `wmt/FIX-101` on `origin/main` `0352cc11`; status verifying): the last app items before the Android test build. A piece whose creator has no display name unlocks (the quote is never refused for a name; the sheet names them as the feed does, else "Someone"); a bank send the Hub is still working on no longer says "Your last try got no answer" (timeout `WRITE_TIMEOUT_MS` 30 s, unchanged); Create's Event tile drops "Needs an active tier" while a tier is held; a called-off event's ticket under Past says "Called off"; a listing outside the taxonomy opens with its category; a cold open of Flix movies shows a plain wait. App only, no backend, no shared change.
 - 23 Oct 2026 · FIX-100 · Built (Sonnet builder, T1; mobile `wmt/FIX-100` on `origin/main` `89669d9f`; status verifying): the app findings of the pre-build re-walk. P2 draws "Ask a question · price" and opens the paid question (H2); a failed enrolment quote keeps SC5 with the price problem, Try again and the held place (M1); "Finish your profile" names what the Hub says is missing (L1); the community "created" screen has a back button (L3); Flix genre chips split compound genres (L6); Explore draws "Who Made This?" with its empty state (U1); an open wallet with no PIN leads the tab to create one (U3b). One test per item fails on `origin/main`.
 - 23 Oct 2026 · FLIX-04 · Built (Sonnet builder, T1; backend `wmt/FLIX-04` `1209f3c` on `origin/main` `dd00e85`, mobile `wmt/FLIX-04` on `origin/main` `89669d9f`; status verifying): Flix movies show "not live yet" until business talks finish (R-77). New `MOVIE_PARTNER=soon`: no adapter, no sync, no call; `GET /movies` answers `{ enabled: false, soon: true, hero: null, rails: [] }`, every other movies route 404 `movies_off`. The app keeps the rails on Home and Explore (title and one card with the two lines) and the movies screen (S13's shared Banner, no catalog, search, filters or watch button); `enabled: false` without `soon` still hides everything. Tests fail on `origin/main` and pass here; V5 pictures not rendered.
-- 23 Oct 2026 · FIX-99 fix round · The verifier's FIX built (Sonnet builder, T2; backend `wmt/FIX-99` on `8d6d702`, this record on mobile `wmt/FIX-99`; status verifying): the admin auth spec's test that pinned the refresh-token hole now expects 401, the strategy's prettier reflow is undone, and a spec shows `GET /movies/browse?genre=Music` finds a title Flixora served as "Drama | Music | Thriller".
