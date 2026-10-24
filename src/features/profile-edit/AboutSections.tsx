@@ -128,7 +128,7 @@ export function SkillsSection({ skills, onChange, disabled }: SkillsSectionProps
         blurOnSubmit={false}
         error={problem}
         hint={skills.length > 0 ? 'Press return to add. Tap a skill to remove it.' : 'Press return to add a skill.'}
-        placeholder="Brand film"
+        placeholder="Add a skill"
         maxLength={limits.skill + 1}
         autoCapitalize="sentences"
         disabled={disabled}
