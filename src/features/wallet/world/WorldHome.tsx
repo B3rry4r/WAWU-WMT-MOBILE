@@ -125,13 +125,17 @@ export function WorldHome({ owner }: { owner: string }) {
   );
 }
 
-function AccountCard({ account }: { account: WorldAccount }) {
+export function AccountCard({ account }: { account: WorldAccount }) {
   const balance =
     account.availableMinor === null
       ? "Balance unavailable"
       : formatMinor(account.availableMinor, account.currency, account.decimals);
   return (
-    <Card style={styles.card} testID={`wallet-world-${account.currency}`}>
+    <Card
+      padded
+      style={styles.card}
+      testID={`wallet-world-${account.currency}`}
+    >
       <View style={styles.head}>
         <Text variant="body" style={styles.code}>
           {account.currency}
@@ -172,7 +176,8 @@ function AccountCard({ account }: { account: WorldAccount }) {
 
 const styles = StyleSheet.create({
   body: { gap: space.lg },
-  card: { gap: space.md, padding: space.lg },
+  // The padding comes from `padded` on the Card: a `padding` here loses to the Card's own `paddingVertical`, and the code sat on the top edge.
+  card: { gap: space.md },
   head: {
     flexDirection: "row",
     justifyContent: "space-between",
