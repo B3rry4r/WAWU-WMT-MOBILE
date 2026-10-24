@@ -7,7 +7,7 @@ order: -126
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: building
 depends_on: []
 decisions: [R-6, R-29, R-47, R-82]
 passes: [V1, V6, V7, V9]
@@ -17,6 +17,11 @@ tier: T2
 # SIGNUP-NAMES · Sign-up asks for a first name, a last name and a username
 
 ## Current state
+
+Verifier, 24 Oct 2026 (Sonnet, T2, heads: mobile `949ab60b`, Hub `0b9939e`, WAWU ID `00b9f8e`): **FIX**. Two medium findings and lows below; everything else passed (web replay identical, race one winner, live walk dark and light, full jest 5500 of 5501 with the one failure a load flake that passes alone). Open for the next round:
+- M1 (defect, Hub `src/user-profile/signup-identity.service.ts` lines 54 and 112): the "taken" test uses `equals` with `mode: 'insensitive'`, which Prisma sends as `ILIKE`, so an underscore in a typed name matches any one character. Repro: hold `sg_wXild`, then `GET /users/handle-available?handle=sg_wXil_` answers taken, and a second person claiming it gets 409 "That username is taken". Compare with `lower(handle) = lower($1)` (raw) or an exact lower-case match.
+- M2 (unclear, needs a lead ruling, PATCH is a protected route): `PATCH /users/me` (Edit profile) has neither the case-insensitive rule nor the reserved words. Repro: person A holds `Pat1`; person B `PATCH /users/me {handle:"pat1"}` answers 200, two holders. A reserved word such as `wawu` passes the same way (code reading: `UpdateUserProfileDto.handle` checks characters and length only).
+- Lows: see the Verifier report in `history/SIGNUP-NAMES.md`.
 
 As of 24 Oct 2026, built by a Sonnet builder (T2) on `origin/main` (mobile `fcbf81d4`, backend `0cd8f8e`, wawu-id `a642eea`), finished in round 2 (merged with `origin/main`: mobile `e4d88d68`, backend `21cba57`, wawu-id unchanged): mobile, backend and wawu-id `wmt/SIGNUP-NAMES`. Status verifying. Round 2 closed what round 1 left open (see Open); the live walk ran on a local stack (web export 390 x 844, Chromium).
 
@@ -67,3 +72,4 @@ A new person signs up with a first name, a last name and a username, and lands w
 ## History
 
 [history/SIGNUP-NAMES.md](history/SIGNUP-NAMES.md).
+
