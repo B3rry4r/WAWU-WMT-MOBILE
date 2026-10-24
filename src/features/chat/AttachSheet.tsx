@@ -13,10 +13,10 @@ export type AttachSheetProps = {
   name: string;
   onSendMoney: () => void;
   onRequestMoney: () => void;
-  /** Photo or video (FIX-104): opens the phone's library. */
-  onPickMedia: () => void;
-  /** File (FIX-104): opens the phone's files. */
-  onPickFile: () => void;
+  /** Photo or video (FIX-104): opens the phone's library. Left out, the row is not drawn (a paid thread takes words only, FIX-109). */
+  onPickMedia?: () => void;
+  /** File (FIX-104): opens the phone's files. Left out, the row is not drawn. */
+  onPickFile?: () => void;
   /** The File row's line, from the Hub's own rule ("PDF, up to 20 MB"). Left out until the Hub has answered. */
   fileLine?: string | null;
 };
@@ -51,25 +51,29 @@ export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMone
             onRequestMoney();
           }}
         />
-        <ListRow
-          testID="attach-photo-video"
-          lead={<IconTile icon="Image" />}
-          title="Photo or video"
-          onPress={() => {
-            onClose();
-            onPickMedia();
-          }}
-        />
-        <ListRow
-          testID="attach-file"
-          lead={<IconTile icon="Paperclip" />}
-          title="File"
-          subtitle={fileLine ?? undefined}
-          onPress={() => {
-            onClose();
-            onPickFile();
-          }}
-        />
+        {onPickMedia ? (
+          <ListRow
+            testID="attach-photo-video"
+            lead={<IconTile icon="Image" />}
+            title="Photo or video"
+            onPress={() => {
+              onClose();
+              onPickMedia();
+            }}
+          />
+        ) : null}
+        {onPickFile ? (
+          <ListRow
+            testID="attach-file"
+            lead={<IconTile icon="Paperclip" />}
+            title="File"
+            subtitle={fileLine ?? undefined}
+            onPress={() => {
+              onClose();
+              onPickFile();
+            }}
+          />
+        ) : null}
       </GroupedList>
     </BottomSheet>
   );

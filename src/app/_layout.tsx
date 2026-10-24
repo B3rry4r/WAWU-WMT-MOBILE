@@ -173,6 +173,7 @@ export default function RootLayout() {
           <Stack.Screen name="community/new" />
           <Stack.Screen name="community/pass/[id]" />
           <Stack.Screen name="community/requests/[id]" />
+          <Stack.Screen name="confirm-email" />
           <Stack.Screen name="create" />
           <Stack.Screen name="create-details" />
           <Stack.Screen name="create-format" />

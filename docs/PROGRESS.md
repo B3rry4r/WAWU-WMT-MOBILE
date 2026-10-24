@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 364.**
+**Launch tasks done: 176 of 365.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 30 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -48,6 +48,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-109](../tasks/FIX-109.md) The part-built Inbox and Wallet pieces are finished (paid thread "+" and "...", confirm your email, the wallet's arrival and Free lines; the Money filter is still open) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -407,6 +408,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · FIX-109 · Built in part (Sonnet builder, T1; backend `wmt/FIX-109` on `origin/main` `0e87d06`, mobile `wmt/FIX-109` on `origin/main` `2847eb32`; status verifying): the paid thread has "+" (Add to chat, through the free chat) and "..." (Report, Block), W38 can confirm the account's email (`/confirm-email`), and W15, W17, W19 and W45 say "Free" and how long a bank transfer takes only when the Hub serves it (new settings `MONEY_ARRIVAL_BANK_OUT_MINUTES` and `MONEY_ARRIVAL_BANK_IN_MINUTES`, unset today). Gap rows G-INBOX-18-2, -3, G-486, G-WALLET-05-2, -3, -5, G-FIX-68-1, -2 closed; G-FIX-109-1 added. The Money filter (G-INBOX-15-1) is NOT built.
 - 24 Oct 2026 · FIX-105 round 2 · The verifier's FIX built (Sonnet builder, T1; backend `wmt/FIX-105` `f5aa816` on `origin/main` `21cba57`, mobile `wmt/FIX-105` on `origin/main` `e4d88d6`; status verifying): a notice now counts each message once whatever is replayed (a person's mark for a room is the largest `countedUpTo` of all their notices for it), and a room that fails goes on a retry list (additive migration `20261102090100`) and never holds the other rooms; a muted person's unread notice stays unread; the notification list reads the Hub again on focus, when the app returns to the front and on a pull; `stack.sh` prints the app at localhost. Live check NOT RUN.
 - 24 Oct 2026 · FIX-105 · Built (Sonnet builder, T1; backend `wmt/FIX-105` on `origin/main` `fefc1ec`, mobile `wmt/FIX-105` on `origin/main` `74a040e7`; status verifying): R-81, a person is told when a community they joined has new messages, as ONE grouped notice per room that is updated until they open it; never for their own messages; the Z3 "Community messages" switch mutes it; it is pushed once per notice. Closes G-21. A sweep folds settled messages in pages of 500 members (six statements a page), the request path writes nothing. The app maps the new kind to the room. Live-walk pictures NOT RUN.
 - 24 Oct 2026 · FIX-106 · Built (Sonnet builder, T1; mobile `wmt/FIX-106` on `origin/main` `fcbf81d4`; status verifying): Flix movies draw nothing unless the Hub answers `enabled: true`. A `soon` answer is treated exactly like off (R-80): no rail on Home or Explore, no Flix screen, and every Flix link sends the person out as off does. `FlixSoonNote`, `FlixSoonCard` and `isSoon` are deleted; "Flix movies aren't switched on yet" and "You'll be able to watch movies here soon." are not in `src/`. FLIX-04's soon cases now assert nothing is drawn; new cases for Home and Explore (3 fail against main's rail). Live look NOT RUN. No backend change. Records: tasks/FIX-106.md, tasks/history/FIX-106.md.
@@ -421,4 +423,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · AITOOLS-CUT · Records and plan, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT` on `origin/main` `573bb62a`; no PR): R-78 (every Studio tool the design draws is built for launch). `docs/elevenlabs/API-FACTS.md` (the provider's route, request, answer, async or not, limits and file types for each tool, read from its public documentation, with what free read calls showed: the key lacks `user_read` so the plan name is not known; models, voices, agents, dubbing, audio isolation and music finetunes read fine). Nine tasks at negative orders (no launch order below CHECK-3 was free): AITOOLS-02 (one job pipeline, job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, a person's file in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist), POINTS-09 to POINTS-12 (the app side). Every tool the design draws can be served by the provider. Gaps G-813 and G-POINTS-07-3 point at the tasks; new rows G-AITOOLS-02-1, -03-1, -05-1, -05-2, -06-1 and G-POINTS-09-1. Checks: `check_tasks.py --write` EXIT 0 (413 tasks), gates EXIT 0 (10 run, 1213 files, 0 fail, 18 warn as before).
 - 23 Oct 2026 · FIX-102 · Built (Sonnet builder, T1; mobile `wmt/FIX-102` on `origin/main` `573bb62a`; status verifying): every notification kind the Hub writes (25) opens a screen of the app, from the list and from a push, through one map (`src/features/push/routes.ts`); a sale and a tip open Earnings; a kind the Hub adds later opens the screen its target or category names; a Top up row opens the sheet. The TGIF reader's left 30% goes back a card (nothing on the first), the right goes forward, buttons keep their taps, the sponsored card's left edge goes back. Tests fail on main, pass built.
 - 23 Oct 2026 · FIX-101 round 2 · The verifier's FIX built (Sonnet builder, T1; mobile `wmt/FIX-101` on `9eaf3c0f`; status verifying): a chat with a person who has no name opens (named as the feed names them, else "Someone"), a recipient with no name no longer fails the whole recipients list, and the racy movies loading tests hold the catalog read instead of racing it. App only.
-- 23 Oct 2026 · FIX-101 · Built (Sonnet builder, T1; mobile `wmt/FIX-101` on `origin/main` `0352cc11`; status verifying): the last app items before the Android test build. A piece whose creator has no display name unlocks (the quote is never refused for a name; the sheet names them as the feed does, else "Someone"); a bank send the Hub is still working on no longer says "Your last try got no answer" (timeout `WRITE_TIMEOUT_MS` 30 s, unchanged); Create's Event tile drops "Needs an active tier" while a tier is held; a called-off event's ticket under Past says "Called off"; a listing outside the taxonomy opens with its category; a cold open of Flix movies shows a plain wait. App only, no backend, no shared change.

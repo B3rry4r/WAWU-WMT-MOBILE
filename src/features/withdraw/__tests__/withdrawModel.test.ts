@@ -147,6 +147,14 @@ describe('W19', () => {
     expect(steps.map((s) => [s.key, s.state, s.time])).toEqual([['requested', 'done', '10:42'], ['sent', 'done', '10:43'], ['arrived', 'current', null]]);
   });
 
+  it('FIX-109: the last step says the Hub\'s usual time while it waits, and nothing once it is done or when the Hub sent none', () => {
+    const timeline = [{ step: 'requested', at: '2026-10-16T09:42:00.000Z' }] as unknown as Transfer['timeline'];
+    expect(timelineSteps({ ...base, status: 'pending', timeline, arrivalMinutes: 10 })[2]?.note).toBe('Usually within 10 minutes');
+    expect(timelineSteps({ ...base, status: 'pending', timeline })[2]?.note).toBeUndefined();
+    expect(timelineSteps({ ...base, status: 'pending', timeline, arrivalMinutes: 0 })[2]?.note).toBeUndefined();
+    expect(timelineSteps({ ...base, status: 'completed', completedAt: '2026-10-16T09:50:00.000Z', timeline: [], arrivalMinutes: 10 })[2]?.note).toBeUndefined();
+  });
+
   it('has every step done once the bank account has it, and says "sent"', () => {
     const steps = timelineSteps({ ...base, status: 'completed', completedAt: '2026-10-16T09:50:00.000Z', timeline: [] });
     expect(steps.every((s) => s.state === 'done')).toBe(true);

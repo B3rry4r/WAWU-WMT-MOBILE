@@ -10398,6 +10398,7 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
+            arrivalMinutes?: number | null;
         };
         CheckedBvnView: {
             last4: string;
@@ -10467,6 +10468,10 @@ export interface components {
             canResubmitAt: string | null;
             decidedAt: string | null;
         };
+        TransferInView: {
+            feeKobo?: number | null;
+            arrivalMinutes?: number | null;
+        };
         WalletView: {
             /** @enum {string} */
             state: "not_open" | "opening" | "open" | "frozen";
@@ -10480,6 +10485,7 @@ export interface components {
             /** @enum {string|null} */
             openingFlow?: "check" | "review" | null;
             review?: components["schemas"]["WalletReviewView"] | null;
+            transferIn?: components["schemas"]["TransferInView"] | null;
         };
         ApprovalDeviceView: {
             registered: boolean;
@@ -10713,6 +10719,7 @@ export interface components {
             transactionId: string | null;
             createdAt: string;
             completedAt: string | null;
+            arrivalMinutes?: number | null;
         };
         TransferQuickAmountView: {
             amountKobo: number;

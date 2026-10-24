@@ -35306,6 +35306,10 @@
      },
      "expiresAt": {
       "type": "string"
+     },
+     "arrivalMinutes": {
+      "type": "number",
+      "nullable": true
      }
     },
     "required": [
@@ -35617,6 +35621,19 @@
      "decidedAt"
     ]
    },
+   "TransferInView": {
+    "type": "object",
+    "properties": {
+     "feeKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "arrivalMinutes": {
+      "type": "number",
+      "nullable": true
+     }
+    }
+   },
    "WalletView": {
     "type": "object",
     "properties": {
@@ -35674,6 +35691,14 @@
       "allOf": [
        {
         "$ref": "#/components/schemas/WalletReviewView"
+       }
+      ],
+      "nullable": true
+     },
+     "transferIn": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/TransferInView"
        }
       ],
       "nullable": true
@@ -36727,6 +36752,10 @@
      },
      "completedAt": {
       "type": "string",
+      "nullable": true
+     },
+     "arrivalMinutes": {
+      "type": "number",
       "nullable": true
      }
     },

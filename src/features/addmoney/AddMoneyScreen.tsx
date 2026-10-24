@@ -13,6 +13,7 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow, rowMetrics } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
+import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -20,6 +21,7 @@ import { copyText } from '@/features/open-wallet/copy';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { walletHomeQuery, type WalletHome } from '@/features/wallet/api/home';
+import { FREE_PILL, sendArrivesLine, usuallyAbout } from '@/features/wallet/arrival';
 import { font, radius, space, type, useWawu } from '@/theme';
 
 import {
@@ -49,7 +51,7 @@ const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, ms: 2000 }
  * measures (SWEEP-APP-5, row SWEEP-APP-4 L2).
  * W46's head starts 120 under the status bar (the board's padding); the frame's own 8 is part of it, so headTop is 112 (SWEEP-APP-4 row 142).
  */
-const LOOK = { label: 12, dot: 10, mark: 88, figure: type.size.title, figureTracking: type.tracking.title, rowValue: 14.5, headGap: 10, titleLift: 8, titleLeading: type.leading.snug, sub: 14.5, bodyGap: space.xl, headTop: 112 } as const;
+const LOOK = { label: 12, dot: 10, mark: 88, figure: type.size.title, figureTracking: type.tracking.title, rowValue: 14.5, headGap: 10, titleLift: 8, titleLeading: type.leading.snug, sub: 14.5, bodyGap: space.xl, headTop: 112, arrivesIcon: 18 } as const;
 
 export type AddMoneyScreenProps = {
   /** What a pay sheet was short by (kobo), when it sent the person here: shown above the card. */
@@ -66,7 +68,8 @@ export type AddMoneyScreenProps = {
  *
  * Adding money is a bank transfer to the person's own wallet account, so the card draws what the Hub holds: the account name, the
  * account number and the bank's name, each with Copy, and Share details (the phone's share sheet, R-33). The board's "Free" and its
- * "arrives in a few minutes" are not drawn: the Hub serves neither an inflow fee nor an arrival time (G-WALLET-05-5, -3). After the
+ * "arrives in a few minutes" are the Hub's words (FIX-109): "Free" only when `transferIn.feeKobo` is 0, and the line from
+ * `transferIn.arrivalMinutes`, each drawn only when the Hub sent it. After the
  * person copies or shares the details the screen waits (W45): the bank's balance is asked for every few seconds, and when it changes
  * with a transfer in on the ledger, W46 shows that transfer, the new balance and its reference; when more than one landed, W46 says
  * how many and lists each. Nothing on this screen is a sum of our own records.
@@ -100,6 +103,7 @@ export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS
       <AccountCard
         account={wallet.data.account}
         waiting={landing.phase === 'waiting'}
+        transferIn={wallet.data.transferIn}
         notice={notice}
         onSent={() => setSent(true)}
         onNotice={setNotice}
@@ -153,13 +157,15 @@ export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS
 type CardProps = {
   account: NonNullable<WalletHome['account']>;
   waiting: boolean;
+  /** What the Hub says of a transfer in: the pill and the two lines are drawn only for what it sent (FIX-109). */
+  transferIn: WalletHome['transferIn'];
   notice: string | null;
   /** The details went out (copied or shared): the wait begins. */
   onSent: () => void;
   onNotice: (text: string | null) => void;
 };
 
-function AccountCard({ account, waiting, notice, onSent, onNotice }: CardProps) {
+function AccountCard({ account, waiting, transferIn, notice, onSent, onNotice }: CardProps) {
   const { colors } = useWawu();
 
   const share = async () => {
@@ -180,6 +186,7 @@ function AccountCard({ account, waiting, notice, onSent, onNotice }: CardProps) 
           <Text variant="label" style={styles.headLabel}>
             {ACCOUNT_HEAD}
           </Text>
+          {transferIn?.feeKobo === 0 ? <StatusPill testID="add-money-free" label={FREE_PILL} tone="positive" /> : null}
         </View>
         <Text variant="secondary" style={styles.line}>
           {ACCOUNT_LINE}
@@ -210,13 +217,21 @@ function AccountCard({ account, waiting, notice, onSent, onNotice }: CardProps) 
           {notice}
         </Text>
       ) : null}
-      {waiting ? <Waiting /> : null}
+      {transferIn?.arrivalMinutes !== undefined ? (
+        <View testID="add-money-arrives" style={styles.arrives}>
+          <Icon name="Clock" size={LOOK.arrivesIcon} color={colors.textMuted} />
+          <Text variant="body" tone="textSecondary" style={styles.arrivesLine}>
+            {sendArrivesLine(transferIn.arrivalMinutes)}
+          </Text>
+        </View>
+      ) : null}
+      {waiting ? <Waiting arrivalMinutes={transferIn?.arrivalMinutes} /> : null}
     </>
   );
 }
 
 /** W45: the card says the transfer is awaited. A live region, so a screen reader hears it when it appears. */
-function Waiting() {
+function Waiting({ arrivalMinutes }: { arrivalMinutes?: number }) {
   const { colors } = useWawu();
   return (
     <Card testID="add-money-waiting" style={styles.waiting}>
@@ -226,6 +241,11 @@ function Waiting() {
           {WAITING_TITLE}
         </Text>
       </View>
+      {arrivalMinutes !== undefined ? (
+        <Text variant="secondary" tone="textMuted" testID="add-money-waiting-usually" style={styles.waitingUsually}>
+          {usuallyAbout(arrivalMinutes)}
+        </Text>
+      ) : null}
     </Card>
   );
 }
@@ -368,6 +388,9 @@ const styles = StyleSheet.create({
   waitingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   dot: { width: LOOK.dot, height: LOOK.dot, borderRadius: LOOK.dot / 2 },
   waitingTitle: { flexShrink: 1 },
+  waitingUsually: { paddingTop: space.xs, paddingLeft: LOOK.dot + space.md },
+  arrives: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  arrivesLine: { flexShrink: 1 },
   receivedBody: { flex: 1, gap: LOOK.bodyGap, paddingTop: LOOK.headTop },
   receivedHead: { alignItems: 'center', gap: LOOK.headGap },
   figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, marginTop: LOOK.titleLift },

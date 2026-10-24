@@ -27,6 +27,7 @@ import { NOT_READY_LINE } from '@/features/send/model';
 import { useSettled } from '@/features/send/parts';
 import { payoutAccountQuery, type PayoutAccount } from '@/features/wallet/api/payoutAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
+import { ARRIVES_LABEL, arrivalMinutesOf, arrivesValue } from '@/features/wallet/arrival';
 import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 
 import { feeAt, withdrawQuoteQuery } from './api';
@@ -269,6 +270,8 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
   const line = block ? blockLine(block) : null;
   const over = block?.kind === 'over_balance' || block?.kind === 'short_with_fees';
   const rows = quote ? withdrawFeeRows(quote) : [];
+  // The Hub's own time for a send to a bank (FIX-109): the Arrives row is drawn only when the quote carries one.
+  const arrival = quote ? arrivalMinutesOf(quote.arrivalMinutes) : null;
 
   return (
     <AuthFrame
@@ -383,6 +386,17 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
             {rows.map((row) => (
               <KeyValueRow key={row.key} testID={`withdraw-fee-${row.key === 'fees' ? 'total' : row.key === 'Bank charge' ? 'bank' : 'wawu'}`} label={row.label} value={<Money minorUnits={row.kobo} size={14.5} weight={600} />} />
             ))}
+            {arrival !== null ? (
+              <KeyValueRow
+                testID="withdraw-arrives"
+                label={ARRIVES_LABEL}
+                value={
+                  <Text variant="body" style={font(600)} testID="withdraw-arrives-value">
+                    {arrivesValue(arrival)}
+                  </Text>
+                }
+              />
+            ) : null}
           </GroupedList>
         ) : settled > 0 && payout && amount === settled && quoted.isFetching ? (
           <Skeleton testID="withdraw-fees-loading" height={104} radius={radius.card} />

@@ -175,7 +175,7 @@ function StepRow({ step }: { step: Step }) {
   const done = step.state === 'done';
   const state = done ? 'done' : step.state === 'current' ? 'in progress' : 'waiting';
   return (
-    <View testID={`withdraw-step-${step.key}`} accessible accessibilityLabel={`${step.label}, ${state}${step.time ? `, ${step.time}` : ''}`} style={styles.step}>
+    <View testID={`withdraw-step-${step.key}`} accessible accessibilityLabel={`${step.label}, ${state}${step.time ? `, ${step.time}` : ''}${step.note ? `, ${step.note}` : ''}`} style={styles.step}>
       <View style={[styles.chip, { backgroundColor: done ? colors.positiveTint : colors.surfaceSunken }]}>
         {done ? (
           <Icon name="Check" size={14} color={colors.positive} strokeWidth={2.6} />
@@ -190,6 +190,11 @@ function StepRow({ step }: { step: Step }) {
         {step.time ? (
           <Text variant="secondary" tone="textMuted" testID={`withdraw-step-${step.key}-time`}>
             {step.time}
+          </Text>
+        ) : null}
+        {step.note ? (
+          <Text variant="secondary" tone="textMuted" testID={`withdraw-step-${step.key}-note`}>
+            {step.note}
           </Text>
         ) : null}
       </View>

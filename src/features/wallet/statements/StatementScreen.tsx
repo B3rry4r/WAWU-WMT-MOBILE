@@ -47,6 +47,8 @@ export type StatementScreenProps = {
   onSent: () => void;
   /** The account has no wallet: Open your wallet. */
   onOpenWallet: () => void;
+  /** No confirmed email (G-486): the screen that mails a code and proves the address. The card shows its button only when this is given. */
+  onConfirmEmail?: () => void;
   /** The phone's clock; a test sets it. */
   clock?: () => Date;
 };
@@ -62,7 +64,7 @@ export type StatementScreenProps = {
  *   movement and counterparty name. An account with no confirmed email says so and sends nothing.
  * - The Account field has no chevron: there is one account (Naira), so there is nothing to choose.
  */
-export function StatementScreen({ onBack, onSent, onOpenWallet, clock = () => new Date() }: StatementScreenProps) {
+export function StatementScreen({ onBack, onSent, onOpenWallet, onConfirmEmail, clock = () => new Date() }: StatementScreenProps) {
   const { colors } = useWawu();
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
@@ -272,6 +274,11 @@ export function StatementScreen({ onBack, onSent, onOpenWallet, clock = () => ne
                 Confirm your email address to get a statement by email.
               </Text>
             </View>
+            {onConfirmEmail ? (
+              <View style={styles.confirmEmail}>
+                <Button testID="statement-confirm-email" label="Confirm email" variant="secondary" full onPress={onConfirmEmail} />
+              </View>
+            ) : null}
           </Card>
         )}
       </View>
@@ -296,4 +303,5 @@ const styles = StyleSheet.create({
   footErrorText: { flexShrink: 1 },
   noEmail: { flexDirection: 'row', alignItems: 'center', gap: NO_EMAIL.gap },
   noEmailText: { flex: 1 },
+  confirmEmail: { paddingTop: space.md },
 });
