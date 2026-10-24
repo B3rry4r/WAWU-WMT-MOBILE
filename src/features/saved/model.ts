@@ -11,10 +11,11 @@ export const TABS: { value: SavedTab; label: string }[] = [
   { value: 'creators', label: 'Creators' },
 ];
 
-/** The title under a tile: a piece's title, an event's name, a creator's name (else their handle). */
+/** The title under a tile: a piece's title, an event's name, a school course's title, a creator's name (else their handle). */
 export function titleOf(entry: SavedEntry): string {
   if (entry.kind === 'content') return entry.content?.title ?? '';
   if (entry.kind === 'event') return entry.event?.name ?? '';
+  if (entry.kind === 'course') return entry.course?.title ?? '';
   const { displayName, handle } = entry.creator ?? { displayName: null, handle: null };
   return displayName?.trim() || (handle ? `@${handle.replace(/^@+/, '')}` : '');
 }
@@ -30,7 +31,7 @@ export function eventDay(iso: string, now: Date): string {
 
 /**
  * The muted line under a tile's title (M30): a piece the person already bought says "Bought", a free one "Free", a paid one its
- * price (the Hub's, in kobo); an event says its day, or that it was called off; a creator their handle.
+ * price (the Hub's, in kobo); an event says its day, or that it was called off; a school course its school and fee; a creator their handle.
  */
 export function metaOf(entry: SavedEntry, now: Date): string {
   if (entry.kind === 'content' && entry.content) {
@@ -40,6 +41,11 @@ export function metaOf(entry: SavedEntry, now: Date): string {
     return formatMoney(piece.priceKobo, { decimals: piece.priceKobo % 100 !== 0 });
   }
   if (entry.kind === 'event' && entry.event) return entry.event.status === 'cancelled' ? 'Called off' : eventDay(entry.event.startsAt, now);
+  // A school course says which school it is at and what it costs (the Hub's, in kobo).
+  if (entry.kind === 'course' && entry.course) {
+    const fee = formatMoney(entry.course.priceKobo, { decimals: entry.course.priceKobo % 100 !== 0 });
+    return `${entry.course.schoolName} · ${fee}`;
+  }
   const handle = entry.creator?.handle;
   return handle ? `@${handle.replace(/^@+/, '')}` : '';
 }

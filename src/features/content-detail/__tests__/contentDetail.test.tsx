@@ -40,7 +40,7 @@ const base = {
 };
 
 type Hold = { piece: Record<string, unknown>; detail: Record<string, unknown> };
-const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: i === 0 ? '9:00' : '14:00', isFree: i === 0 }));
+const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: i === 0 ? '9:00' : '14:00', isFree: i === 0, hasFile: i < 3 }));
 
 const pieces = (): Record<string, Hold> => ({
   [PDF]: {
@@ -52,8 +52,8 @@ const pieces = (): Record<string, Hold> => ({
     detail: { contentId: VIDEO, contentType: 'video', updatedAt: '2026-10-10T10:00:00Z', purchasedAt: null, buyerCount: 0, studentCount: null, freePreview: { pages: null, seconds: null, lessons: null }, lessons: [], creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
   [COURSE]: {
-    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: true, commentCount: 0 },
-    detail: { contentId: COURSE, contentType: 'course', updatedAt: '2026-10-01T10:00:00Z', purchasedAt: null, buyerCount: 1280, studentCount: 1280, freePreview: { pages: null, seconds: null, lessons: 1 }, lessons, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
+    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: !hub.bought, commentCount: 0 },
+    detail: { contentId: COURSE, contentType: 'course', updatedAt: '2026-10-01T10:00:00Z', purchasedAt: hub.bought ? '2026-09-26T08:00:00Z' : null, buyerCount: 1280, studentCount: 1280, freePreview: { pages: null, seconds: null, lessons: 1 }, lessons, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
 });
 
@@ -88,6 +88,8 @@ const hub = {
   gone: false,
   loadFails: false,
   noWallet: false,
+  played: [] as string[],
+  lessonRefusal: 0,
 };
 
 const FEE = 2325;
@@ -159,6 +161,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   const follows = /^\/creators\/([^/]+)\/follow$/.exec(path);
   if (follows) return json(method === 'POST' ? 201 : 200, { statusCode: 200, message: 'OK', data: { following: method === 'POST' } });
+  const done = /^\/me\/lessons\/([^/]+)\/done$/.exec(path);
+  if (done) return ok({ lessonId: done[1], contentId: COURSE, done: true, lessons: { total: 12, done: 1 } });
   const m = /^\/content\/([^/]+)(\/.*)?$/.exec(path);
   if (!m) throw new Error(`no answer for ${method} ${path}`);
   const [, id, rest = ''] = m;
@@ -171,6 +175,12 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (rest === '/engagement') return ok({ ...hub.engagement, commentCount: hold.piece.commentCount });
   if (rest === '/media') return ok({ contentId: id, contentType: hold.piece.contentType, durationLabel: hold.piece.durationLabel, pageCount: hold.piece.pageCount, frameCount: 0, frames: [] });
   if (rest === '/view') return ok({ views: 1, counted: true });
+  const play = /^\/lessons\/([^/]+)\/play$/.exec(rest);
+  if (play) {
+    hub.played.push(play[1]);
+    if (hub.lessonRefusal) return refuse(hub.lessonRefusal, 'The Hub said no.');
+    return ok({ contentId: id, lessonId: play[1], url: `https://cdn.test/lesson-${play[1]}.mp4?sig=1`, expiresAt: '2099-01-01T00:00:00.000Z', durationLabel: '9:00' });
+  }
   if (rest === '/like') {
     const on = method === 'POST';
     hub.engagement = { ...hub.engagement, likedByMe: on, likes: hub.engagement.likes + (on ? 1 : -1) };
@@ -214,6 +224,32 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 }) as typeof fetch;
 
 jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+// A player the lesson tests can read and drive: what it was given to play, and the events it was told to listen for.
+type MockPlayer = { source: unknown; listeners: Record<string, () => void>; play: jest.Mock; pause: jest.Mock };
+const mockPlayers: MockPlayer[] = [];
+jest.mock('expo-video', () => {
+  const React = require('react');
+  return {
+    useVideoPlayer: (source: unknown) =>
+      React.useMemo(() => {
+        const player: MockPlayer & Record<string, unknown> = {
+          source,
+          listeners: {},
+          play: jest.fn(),
+          pause: jest.fn(),
+          addListener: (event: string, fn: () => void) => {
+            player.listeners[event] = fn;
+            return { remove: jest.fn() };
+          },
+          currentTime: 0,
+          duration: 0,
+        };
+        mockPlayers.push(player);
+        return player;
+      }, [source]),
+    VideoView: 'VideoView',
+  };
+});
 jest.mock('@/features/open-wallet/copy', () => ({ copyText: jest.fn(async () => true) }));
 
 const clients: QueryClient[] = [];
@@ -261,7 +297,10 @@ beforeEach(() => {
     gone: false,
     loadFails: false,
     noWallet: false,
+    played: [],
+    lessonRefusal: 0,
   });
+  mockPlayers.length = 0;
 });
 
 afterEach(async () => {
@@ -595,3 +634,59 @@ describe('states', () => {
     await screen.findByTestId('detail-title');
   });
 });
+
+describe('H25: playing a lesson (FIX-107)', () => {
+  const playing = () => mockPlayers[mockPlayers.length - 1];
+
+  it('a user taps the free lesson and it plays in the picture from the Hub\'s link; a free lesson of a locked course counts nothing when it ends', async () => {
+    const { screen } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByTestId('detail-media-lesson');
+    expect(hub.played).toEqual(['l1']);
+    expect(playing().source).toBe('https://cdn.test/lesson-l1.mp4?sig=1');
+    expect(playing().play).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Pause Lesson 1' })).toBeTruthy();
+    await rtl.act(async () => playing().listeners.playToEnd());
+    expect(screen.getByRole('button', { name: 'Play Lesson 1' })).toBeTruthy();
+    expect(hub.writes.filter((w) => w.includes('/done'))).toEqual([]);
+  });
+
+  it('a user taps a locked lesson and is asked to unlock the course, with no link asked of the Hub', async () => {
+    const { screen } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Unlock to play lesson 2, Lesson 2' }));
+    await screen.findByRole('button', { name: /^Unlock · ₦3,023.25$/ });
+    expect(hub.played).toEqual([]);
+    expect(screen.queryByTestId('detail-media-lesson')).toBeNull();
+  });
+
+  it('a buyer plays any lesson that has a file, sees no locks, and a finished lesson is marked done', async () => {
+    hub.bought = true;
+    const { screen } = await boot(COURSE);
+    expect(screen.queryByTestId('detail-unlock')).toBeNull();
+    // Lesson 4 has no file: it is not a button. Lessons 1 to 3 are.
+    expect(screen.queryByRole('button', { name: /lesson 4/i })).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 2, Lesson 2' }));
+    await screen.findByTestId('detail-media-lesson');
+    expect(hub.played).toEqual(['l2']);
+    await rtl.act(async () => playing().listeners.playToEnd());
+    await rtl.waitFor(() => expect(hub.writes).toContain('PUT /me/lessons/l2/done'));
+    // The next lesson replaces the one playing.
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 3, Lesson 3' }));
+    await rtl.waitFor(() => expect(playing().source).toBe('https://cdn.test/lesson-l3.mp4?sig=1'));
+  });
+
+  it('when the Hub refuses a lesson the user is told why, in words', async () => {
+    const { screen } = await boot(COURSE);
+    hub.lessonRefusal = 403;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText('Unlock the course to watch this lesson.');
+    expect(screen.queryByTestId('detail-media-lesson')).toBeNull();
+    hub.lessonRefusal = 404;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText('This lesson has no video yet.');
+    hub.lessonRefusal = 500;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText("The lesson couldn't be opened. Try again.");
+  });
+});
+

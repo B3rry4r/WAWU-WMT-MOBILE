@@ -248,3 +248,39 @@ describe('M30 · Saved', () => {
     expect(screen.getByText('Agency breakdown')).toBeTruthy();
   });
 });
+
+describe('M30 · Saved school courses (FIX-107)', () => {
+  const course = (id: string, title: string, over: Record<string, unknown> = {}) => ({
+    id: `s-${id}`,
+    kind: 'course',
+    savedAt: '2026-10-01T07:00:00.000Z',
+    content: null,
+    event: null,
+    creator: null,
+    course: { id, title, schoolName: 'Greenfield Tech Academy', schoolLogo: null, weeks: 12, priceKobo: 15000000, ...over },
+  });
+
+  it('a saved school course shows in All with its school and fee, opens its page, and its mark takes the save back through the course route', async () => {
+    hub.answers[`GET ${LIST}`] = () => page([course('c1', 'Product Design Bootcamp'), piece('w6', 'Agency breakdown')]);
+    hub.answers['DELETE /api/hub/me/saved/courses/c1'] = ok({ courseId: 'c1', saved: false });
+    const openCourse = jest.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { retry: false } } });
+    await renderFrame(<SavedScreen onBack={jest.fn()} onOpenEvent={jest.fn()} onOpenCourse={openCourse} />, client);
+    await screen.findByText('Product Design Bootcamp');
+    expect(screen.getByText('Greenfield Tech Academy · ₦150,000')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('saved-open-s-c1'));
+    expect(openCourse).toHaveBeenCalledWith('c1');
+    await fireEvent.press(screen.getByTestId('saved-remove-s-c1'));
+    await waitFor(() => expect(calls('DELETE', '/api/hub/me/saved/courses/c1')).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByText('Product Design Bootcamp')).toBeNull());
+    expect(screen.getByText('Agency breakdown')).toBeTruthy();
+  });
+
+  it('with nowhere to lead a course tile is not pressed (R-47)', async () => {
+    hub.answers[`GET ${LIST}`] = () => page([course('c1', 'Product Design Bootcamp')]);
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { retry: false } } });
+    await renderFrame(<SavedScreen onBack={jest.fn()} onOpenEvent={jest.fn()} />, client);
+    await screen.findByText('Product Design Bootcamp');
+    expect(screen.queryByTestId('saved-open-s-c1')).toBeNull();
+  });
+});

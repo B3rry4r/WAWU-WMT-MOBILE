@@ -116,7 +116,7 @@ describe('which posts the feed draws', () => {
 });
 
 describe('H7 and H8: a course and a template', () => {
-  const detail = { lessons: Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, title: `L${i}`, order: i + 1, durationLabel: null, isFree: i === 0 })), freePreview: { pages: null, seconds: null, lessons: 1 } };
+  const detail = { lessons: Array.from({ length: 12 }, (_, i) => ({ id: `l${i}`, title: `L${i}`, order: i + 1, durationLabel: null, isFree: i === 0, hasFile: false })), freePreview: { pages: null, seconds: null, lessons: 1 } };
 
   it('a user sees how many lessons are free in the pill, and the course and its lessons in the offer bar', () => {
     const course = locked({ contentType: 'course', title: 'VFX for Beginners', price: 8000 });

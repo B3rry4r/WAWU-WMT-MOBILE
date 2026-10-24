@@ -182,15 +182,42 @@ function ActionButton({ action }: { action: Action }) {
   );
 }
 
-/** H25's lessons: number, title, length, and Free or a lock. */
-export function LessonList({ lessons }: { lessons: PieceDetail['lessons'] }) {
+/**
+ * H25's lessons: number, title, length, and Free or a lock. A lesson the person can play (`canOpen`) is a button that plays it in the
+ * picture above (FIX-107); once the course is theirs a lesson with a file shows a play mark where the lock was, and the one playing
+ * shows it in the accent.
+ */
+export function LessonList({
+  lessons,
+  unlocked = false,
+  playingId = null,
+  canOpen,
+  onOpen,
+}: {
+  lessons: PieceDetail['lessons'];
+  /** The course is the person's (bought, free or their own): no lock is drawn. */
+  unlocked?: boolean;
+  playingId?: string | null;
+  canOpen?: (lesson: PieceDetail['lessons'][number]) => boolean;
+  onOpen?: (lesson: PieceDetail['lessons'][number]) => void;
+}) {
   const { colors } = useWawu();
   return (
     <Card style={styles.lessons} testID="detail-lessons">
       {lessons.map((lesson, i) => {
         const length = lessonLength(lesson.durationLabel);
-        return (
-          <View key={lesson.id} testID={`lesson-${lesson.id}`} style={[styles.lesson, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderHairline }]}>
+        const playing = lesson.id === playingId;
+        const mark = playing ? (
+          <Icon name="Play" size={m.lessonIcon} color={colors.accentFg} fill={colors.accentFg} />
+        ) : unlocked ? (
+          lesson.hasFile ? <Icon name="Play" size={m.lessonIcon} color={colors.textMuted} /> : null
+        ) : lesson.isFree ? (
+          <StatusPill label="Free" tone="positive" />
+        ) : (
+          <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />
+        );
+        const row = (
+          <>
             <NativeText style={[font(700), styles.lessonNo, { color: colors.textMuted }]}>{String(i + 1).padStart(2, '0')}</NativeText>
             <View style={styles.lessonWords}>
               <Text variant="cardTitle" numberOfLines={2}>
@@ -202,7 +229,25 @@ export function LessonList({ lessons }: { lessons: PieceDetail['lessons'] }) {
                 </Text>
               ) : null}
             </View>
-            {lesson.isFree ? <StatusPill label="Free" tone="positive" /> : <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />}
+            {mark}
+          </>
+        );
+        const line = [styles.lesson, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderHairline }];
+        return onOpen && canOpen?.(lesson) ? (
+          <Pressable
+            key={lesson.id}
+            testID={`lesson-${lesson.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${lesson.isFree || unlocked ? 'Play' : 'Unlock to play'} lesson ${i + 1}, ${lesson.title}`}
+            accessibilityState={{ selected: playing }}
+            onPress={() => onOpen(lesson)}
+            style={line}
+          >
+            {row}
+          </Pressable>
+        ) : (
+          <View key={lesson.id} testID={`lesson-${lesson.id}`} style={line}>
+            {row}
           </View>
         );
       })}
