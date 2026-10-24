@@ -7,7 +7,7 @@ order: -125
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: verifying
 depends_on: []
 decisions: [R-79, R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,7 +17,13 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, building: verifier verdict FIX (one medium, three lows), report in tasks/history/AITOOLS-02.md. Tier T2 (third-party, spends points).
+As of 24 Oct 2026, verifying (round 2): the verifier's one medium and two of its lows are fixed; re-verify M1 only. Report in tasks/history/AITOOLS-02.md. Tier T2 (third-party, spends points).
+- **Round 2 (builder, Sonnet, 24 Oct 2026; backend `wmt/AITOOLS-02` `5d36fea` on `0a29c9a`, one new commit):**
+  - **M1 fixed:** the Quick voice catalogue text is now "A fast read of your words." No text a person reads states or implies a price a setting decides (R-65); the same "cheaper" and "at half" wording is gone from the controller and provider comments, so the contract summary is rebuilt (`contract/openapi.json`, one summary line, covered by SHARED-CHANGES AITOOLS-02 #2). Spec (`ai-tools-pipeline.contract.spec.ts`): with Quick voice set to 240 the name and description of every tool carry no price word; fails before, passes after.
+  - **L1 fixed:** `rollback.sql` now refuses when `outputs` holds anything that is not a list (an object, a text value, a JSON null), and when a list holds anything but the job's own audio (the old test let a list with no audio key and a non-output item through). Migration spec: three new refuse rows (object, text value, list of a non-output on a job with no audio key); the object and the odd list fail before, pass after.
+  - **L2 fixed, files of the task (backend, 24):** `README.md`, `contract/openapi.json`, `docs/contract/PLANS.md`, the migration `20261101100000_ai_tool_job_outputs` (`migration.sql`, `rollback.sql`), `prisma/schema.prisma`, `scripts/dev/voice-standin.cjs`, `src/ai-tools/` (`ai-job.service.ts`, `ai-tools-view.type.ts`, `ai-tools.controller.ts`, `ai-tools.dto.ts`, `ai-tools.service.ts`, `tools/ai-tool.ts`, `tools/index.ts`, `tools/quick-voice.tool.ts`, `tools/voiceover.tool.ts`, `voice/ai-voice-provider.ts`, `voice/http-voice-provider.ts`, the specs `tests/ai-tools-migration.contract.spec.ts`, `tests/ai-tools-pipeline.contract.spec.ts`, `tests/ai-tools.contract.spec.ts`), `src/plan-settings/plan-setting-registry.ts`, `src/plan-settings/plan-settings.defaults.json`, and `test/ai-tools/voice-standin-for-specs.ts` (the `models` and `lastModel` fields the first list left out).
+  - **L3 stays open:** mutation checks NOT RUN.
+  - **Checks (backend, EXIT 0 each):** tsc; eslint (no --fix) on the 5 changed `.ts` files; `src/ai-tools` specs in band 67/67 (63 before plus 1 catalogue-text and 3 rollback rows; no spec imports the Fintava double); `contract:build` (one summary line changed, committed); gates 0 fail, 133 warn, 88 accepted; `check_baseline`. Mobile: `check_tasks --write` EXIT 0 (414 tasks), gates 0 fail, 18 warn, 0 accepted, `check_baseline` EXIT 0. Own database `ait02r2_wawu_hub_test`, no live host, nothing Fintava.
 - **Verifier (24 Oct 2026, Sonnet, T2; backend `0a29c9a` on main `b2f4df6`):** every capability check passed live over HTTP and the real provider ran Quick voice twice (below). One medium to fix, then re-verify only it: **M1** `src/ai-tools/tools/quick-voice.tool.ts:22` says "at half the points" but the price is an admin setting (R-65): with Quick voice set to 240 the catalogue still says half. Say "A fast read of your words." or compute it. Lows (sweep): L1 `rollback.sql:18` treats a non-list `outputs` as empty, so such a value would be dropped by a rollback (the pipeline only writes lists); L2 the builder report omits `test/ai-tools/voice-standin-for-specs.ts`; L3 mutation checks NOT RUN.
 - **Real provider (verifier, 24 Oct 2026):** two Quick voice jobs through the Hub route with the owner's key: the Hub sent `eleven_flash_v2_5`, the provider answered 200 both times, audio/mpeg came back (62,736 bytes, about 3.9 s for 59 characters; 51,452 bytes, about 3.2 s for 45), 125 points kept each. The key's scope covers Quick voice. G-AITOOLS-01-5 is no longer NOT RUN for Quick voice. The real voice ids are still not configured anywhere (G-AITOOLS-01-2): the run used four of the provider's own premade voices.
 - **Protected suite note:** 245/253 on this machine on the branch AND on main (the same 8: verification ticks and professionals routes), so the branch changes nothing there; the builder's 253/253 did not reproduce here for either tree.
