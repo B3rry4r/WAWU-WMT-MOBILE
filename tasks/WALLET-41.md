@@ -7,7 +7,7 @@ order: -141
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-87, R-83, R-84, R-85, R-6, R-10, R-39, R-47, R-29, R-20]
 passes: [V1, V4, V5, V6, V8, V9]
@@ -35,6 +35,7 @@ Real Nuvion DEV (`docs/nuvion/DEV-RESULTS.md`, WALLET-41): US, GB, GH, DE, CA, A
 
 Checks (backend, own DB `b29world_test`): tsc EXIT 0; eslint on changed files EXIT 0; contract:build EXIT 0 (7 operations, 2 served money, 5 admin or opening); new specs `world-config` 38, `world-wallet.contract` 19, `world-opening.contract` 9; `money-contract`, `wallet-gate-coverage`, `money-moving-coverage`, `account-data-map`, `data-export-map`, `publishing-gate-coverage`, `hub-rate-limits`, `plan-settings`, `nuvion-opening.contract`, `nuvion-opening-review`, `fx-contract`, `fx-money.contract` pass; migration `20261125090000_world_wallet` (restamped in round 1) applied clean, rollback refuses with a row. Mobile: tsc EXIT 0; eslint on changed files 0 errors; 14 new tests in `worldOpening.test.tsx`; the open-wallet, wallet, home and delete-account folders 838 of 838; gates 0 fail. Driven on a local stack (Hub on the Nuvion stand-in, the web export of the app): a person in the UK signed up, opened with no BVN, uploaded the two documents, was approved, got a GBP account with active details, and the wallet read `world.state` `open`; the naira balance route answered `wallet_not_open`.
 
+- **Verifier round 2 (24 Oct 2026): PASS** (status review): the round 1 high and four mediums are closed, see Verifier report, round 2; three new lows go to the sweep.
 - **Verifier round 1 (24 Oct 2026): FIX.** Findings 1 to 13 are in the Verifier report below. The builder's round 1 answers them in the section after the Builder report; a second verifier checks again.
 - **Next (after the fix round):** a verifier checks the Hub side and the screens; the lead sets a first-account fee and the country list when GEO-02 lands (G-WALLET-41-4, -5); Nuvion switches on AED and Kenya (G-WALLET-41-2); sends abroad from a foreign account (G-WALLET-41-3, when NUV-11 merges). NOT RUN: a phone, the hosted selfie through the app (Nuvion's session start was answered on dev for a UK entity, `scripts/nuvion/world-dev-check.ts`), a first real webhook (the stack's stand-in sends one).
 - **History:** reports go to tasks/history/WALLET-41.md.
@@ -122,6 +123,34 @@ Live results (the stack with the stand-in, and a second Hub on Nuvion DEV with `
 Inventories: the new `account-data-map` and `data-export-sections` rows are right in substance (Fx tables OWNED and excluded from export as pointers, `WorldAdminAudit` AUDIT) and their specs pass, except the false R-17 comment in finding 1. They are WALLET-21's rows, not this task's, and duplicate BATCH-FX-A's.
 
 Merge: mobile merges clean onto `origin/main` (`DECISIONS.md` R-85 to R-87 text is identical on both). Backend onto `origin/main` is clean; onto `wmt/WALLET-21-HUB` `51a8aa8` only `docs/contract/CONVENTIONS.md` conflicts. Against `wmt/BATCH-FX-A` `d191e3d` these conflict: `src/account-purge/account-data-map.ts` (the same Fx rows, `FxAdminAudit` and `wawuFeeMinor` rows: keep FX-A's, keep `WorldAdminAudit`), `src/money/dto/money-enums.ts` and `src/money/money-contract.ts` (both append error codes at the end: keep both sets), `docs/contract/CONVENTIONS.md` (two new sections: renumber), `contract/openapi.json` (regenerate with `npm run contract:build`). FX-A has no Fx rows in `data-export-sections.ts`, so keep this branch's. Migration stamp `20261118090000` is later than every migration on the base and FX-A's `20261113100000`.
+
+## Verifier report, round 2
+
+Verifier (Sonnet, T2, 24 Oct 2026; built none of it, and a different pass from round 1's evidence). Backend `wmt/WALLET-41` `f815c68` (code `ff088fa`, `origin/main` merged); mobile `0e7b699e`. **Verdict: PASS** (status review). The high and the four mediums are closed with proof; no new medium. Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wallet-41-r/` (`logs/*.log` end in an EXIT line; `a-stack.out`, `c-g3.out`, `e-live.out` are the live runs).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 gates and checks | passed | backend gates 0 fail (9 gates, 1886 files), baseline 0, eslint 0, tsc 0; mobile gates 0 fail (1308 files), tsc 0, check_tasks 0 |
+| V4 seam | passed | Nuvion DEV: a UK person opened, the first-account backstop read Nuvion's decision itself and opened GBP (details active); a Ghana person got GHS; EUR added; a real GBP to EUR quote answered 201 |
+| V5 picture | NOT RUN | no export (2.0 GB free, under the 4 GB rule); round 1's pictures stand, and the screens that changed are covered by jest (20 of 20 in `worldOpening.test.tsx`) |
+| V6 states | passed | residence_not_set, residence_mismatch, switch, frozen, deletion blocked: each a plain sentence; the app names the Hub's fields (jest) |
+| V8 money | partial | a world person set a PIN; a frozen wallet refuses a quote; a deletion with USD 2,500.00 is refused; a swap EXECUTION was not driven live (see G-3 below) |
+| V9 live seam | passed | real login on the mock ID, then the routes below |
+
+Checks (EXIT lines): backend tsc 0; eslint on 42 changed files 0; migrate deploy 0; world specs 4 suites 83 tests 0; account-data-map, data-export-map, money-contract, wallet-gate-coverage, money-moving-coverage, publishing-gate-coverage, hub-rate-limits and the FX deletion spec 8 suites 151 tests 0; contract:build 0 and `contract/` unchanged; gates 0; baseline 0; test:protected all 244 passed (round 1's 8 failures are gone with `origin/main`). Mobile: tsc 0; jest open-wallet and wallet 49 suites 736 of 737 once under heavy load, and the one that failed (`worldOpening.test.tsx`, first test, a field not found in time) passed 20 of 20 alone; gates 0; check_tasks 0.
+
+Round 1 findings, each re-checked:
+1. **closed (was high): deletion with foreign money.** Live: the Ghana person holding USD 2,500.00 got `409 account_deletion_blocked`, blockers `fx_balance`, accounts left `open`; the empty-GBP person's request was accepted (200, 30 days).
+2. **closed: one Cursor.** `world-admin.service.ts` imports it from `fx-admin.service.ts`; the forks gate has 0 fail.
+3. **closed: one wallet per document.** Key `world:<residence>:<normalised number>`. Live: the same licence number as `national_id`, as a passport with nationality IE, in lower case and with dashes, each refused `identity_has_wallet` (the sentence now says "ID", not "BVN").
+4. **closed: residence decides.** GB-resident naming US: 409 `residence_mismatch`. A +234 number with residence NG naming GB: 409 `residence_mismatch`. No residence on the account (+44) naming GB: 409 `residence_not_set`. A +234 number with residence GB (a Nigerian abroad) opens GB. The NG-resident BVN path is unchanged (with or without `countryCode: NG`). A US resident opens US.
+5. **closed: the fields.** The Hub's `reason.fields` is kept on the error and marked on A27 with the Hub's sentence, the rest listed in plain words (jest: 3 tests). A refusal with fields was not seen on DEV (dev never refused a world opening); the Hub side is the opening spec.
+6. **G-3 closed in the code, execution proven by spec only.** Live on the stack as a world person: PIN set 201, verify 200, PIN reset start 201, device read 200, device challenge refused plainly (`device_approval_refused`); NGN to USD refused `fx_account_not_open` ("You have no naira account"); a send needs the device approval (403 `device_approval_refused`); a frozen wallet refuses a quote (423 `account_frozen`). Sweep of every non-admin `/money`, `/bills`, `/cards` and `/capital` route (90) and 30 more payment-like routes with empty bodies: no 5xx except the bills catalog (502 and 503, the stack has no bills provider and a Nigerian person gets the same), no money-moving 2xx, only `wallet_not_open`, `documents_closed`, `account_frozen`, `device_approval_refused` as refusals; the person has 0 naira ledger rows and 0 `FintavaWallet` rows. NOT RUN live: a funded swap and a send (the stand-in has no FX quote endpoint, `provider_declined`, and a DEV account cannot be funded from a script); the 9 cases in `world-fx.contract.spec.ts` (swap with no naira, naira side refused, send, frozen, pending swap, routes and PIN gates) pass in my run.
+7. **closed: eslint** (0 on 42 files). 8. **closed: sentence** (see 3). 9. **closed: six parallel freezes wrote 1 audit row, one `changed: true`.** 10. n/a. 12. **closed: the backstop** reads Nuvion's review itself; on DEV both people opened with no webhook. 11 and 13 **still open, low**: a world person on a naira route is told "You don't have a wallet yet"; cancelling an open wallet answers `account_frozen`; the currency code sits against the card edge on the Wallet tab.
+
+New findings (all low, to the sweep): (a) `worldOpening.test.tsx`'s first test timed out once under heavy CPU and passed alone; (b) the key carries residence, which each account declares at sign-up, so a second account declaring another country with the same number opens (live: a US-resident account with the licence number a GB-resident account used: 200) by the key's own definition; (c) the stand-in cannot quote a swap (no `fx/quotes` route), so a swap cannot be driven on the stack (G-WALLET-41-7).
+
+Not a finding, logged for the lead (G-WALLET-41-6): the deletion sentence says "Swap it to naira and withdraw it" to a person who has no naira account.
 
 ## Owner sign-off
 
