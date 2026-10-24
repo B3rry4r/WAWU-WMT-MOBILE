@@ -33,6 +33,8 @@ export type ProfileForm = {
   handles: SocialHandles;
   /** The added platforms, first to last: what M9 draws and what the profile shows. */
   order: SocialPlatform[];
+  /** Skills and expertise, in the order shown (FIX-113). Saved with the rest of the details. */
+  skills: string[];
 };
 
 /** The person's name as one line: first, middle and last, whichever they have. */
@@ -67,6 +69,7 @@ export function formFrom(me: MyProfile, fields: ProfileFields): ProfileForm {
     coverUrl: me.coverUrl,
     handles,
     order: orderOf(handles, fields.socialOrder),
+    skills: [...(fields.skills ?? [])],
   };
 }
 
@@ -139,6 +142,7 @@ export function changesOf(form: ProfileForm, base: ProfileForm): Changes {
   if (form.coverUrl !== base.coverUrl) profile.coverUrl = form.coverUrl;
 
   const fields: FieldsUpdate = {};
+  if (!sameOrder(form.skills, base.skills)) fields.skills = [...form.skills];
   if (form.location.trim() !== base.location.trim()) fields.location = form.location.trim() === '' ? null : form.location.trim();
 
   for (const platform of PLATFORMS) {
@@ -174,7 +178,7 @@ export function rebased(base: ProfileForm, form: ProfileForm, part: 'handle' | '
   if (part === 'handle') return { ...base, handle: form.handle };
   if (part === 'fields') {
     const handles = { ...base.handles, threads: form.handles.threads };
-    return { ...base, location: form.location, handles, order: form.order };
+    return { ...base, location: form.location, handles, order: form.order, skills: form.skills };
   }
   const handles = { ...form.handles, threads: base.handles.threads };
   return { ...base, name: form.name, bio: form.bio, avatarUrl: form.avatarUrl, coverUrl: form.coverUrl, handles };

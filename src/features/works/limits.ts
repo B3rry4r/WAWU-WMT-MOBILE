@@ -14,6 +14,8 @@ export const WORK_LIMITS = {
   client: 120,
   category: 40,
   link: 300,
+  /** `WORK_DESCRIPTION_MAX` (PROVISIONAL on the Hub). The contract's own 4000 is only a roomy ceiling before the Hub's rule runs. */
+  description: 1000,
 } as const;
 
-export type TextLimit = "title" | "role" | "client" | "category" | "link";
+export type TextLimit = "title" | "role" | "client" | "category" | "link" | "description";

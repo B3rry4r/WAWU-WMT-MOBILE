@@ -105,6 +105,6 @@ describe('the limits M36 says before Save', () => {
   });
 
   it('matches the Hub\'s own numbers (wawu-backend profile-works.ts)', () => {
-    expect(WORK_LIMITS).toEqual({ media: 8, works: 50, title: 120, role: 80, client: 120, category: 40, link: 300 });
+    expect(WORK_LIMITS).toEqual({ media: 8, works: 50, title: 120, role: 80, client: 120, category: 40, link: 300, description: 1000 });
   });
 });
