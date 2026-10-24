@@ -3,12 +3,12 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 385.**
+**Launch tasks done: 176 of 388.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 41 | 0 | 0 | 0 |
-| building | 3 | 0 | 0 | 0 |
+| building | 6 | 0 | 0 | 0 |
 | verifying | 162 | 0 | 0 | 0 |
 | review | 53 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -236,6 +236,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
+- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
+- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
 - [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
 - [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
