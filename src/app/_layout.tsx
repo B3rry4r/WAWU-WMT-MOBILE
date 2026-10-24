@@ -167,6 +167,11 @@ export default function RootLayout() {
           <Stack.Screen name="bills/electricity/[code]" />
           <Stack.Screen name="bills/electricity/index" />
           <Stack.Screen name="bills/index" />
+          <Stack.Screen name="capital/index" />
+          <Stack.Screen name="capital/order" />
+          <Stack.Screen name="capital/product" />
+          <Stack.Screen name="capital/review" />
+          <Stack.Screen name="capital/withdraw" />
           <Stack.Screen name="change-pin" />
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="chat/send" />
