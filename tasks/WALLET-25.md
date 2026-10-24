@@ -7,7 +7,7 @@ order: 311
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: building
+status: review
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -32,7 +32,7 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B21, T2): backend `wmt/WALL
 
 **NOT RUN:** a naira card end to end against dev (refused); a card settling to a naira balance; Apple Pay on a phone; the PIN sheet and fingerprint hand-off of the way screen under jest (a test that opened the sheet did not pass and was left out; the wiring copies Send's `ReviewScreen`); the screens on a phone; Nuvion's own `payment_intent.*` and `funding_sessions.updated` deliveries (the dev webhook endpoint is not ours). One spec file that imports a Fintava double (`plan-settings-readers.contract.spec.ts`) was run by mistake once (4 failed with 401 in its own harness) and not looked at; it is Fintava code and was left alone.
 
-- **Next:** a verifier again on round 1 (the Builder rows in the table after the Verifier report). Earlier note: a verifier (not the builder). The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
+- **Next:** round 1 verified PASS (24 Oct, section below); the merge agent takes it. The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
 - **History:** none yet. Reports go to tasks/history/WALLET-25.md.
 
 ## Read first
@@ -109,6 +109,26 @@ Status verifying. Each verifier finding, what was done, and its proof (no spec t
 Also found and fixed in this round: `src/money/tests/money-contract.spec.ts` (the served money routes list) failed for the add-money routes (round 0 did not run it); the seven `/money/add-money*` routes are now in its list and the return page carries `@BuiltBy`. The earlier `wayScreen.test.tsx` filled its card fields with `fireEvent.changeText`, which did not take, so its card-fault test saw empty fields; the new test fills them with `userEvent`. The PIN sheet and fingerprint hand-off now have a jest test (`wayRetry.test.tsx` enters the PIN twice).
 
 **Still NOT RUN:** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, and Nuvion accepting the JavaScript ciphertext with its real key.
+
+### Round 1 verifier (Sonnet, T2, 24 Oct 2026; backend `66806bd` against `e730428`, mobile `7a5164c5` against `49cf0a21`). **Verdict PASS.**
+
+| # | Closed? | Proof (repro run by the verifier) |
+|---|---|---|
+| F1 | closed | Live Hub (stack on the Nuvion stand-in, card routes added in front of it by a verifier tool that counts charges): first send 201 (1 intent, 1 charge); same key and same bytes again 201 `Idempotent-Replayed: true`, same attempt id, still 1 charge, also past the daily limit and with a wrong PIN; same key and other bytes 409 `idempotency_key_reused` and still 1 charge. App: `wayRetry.test.tsx` 2/2 (one scramble, same key and card on the retry; a 409 shows "Your payment was not confirmed", keeps the request, takes a new key only on "Start a new payment"), `sentRequest.test.ts` 3/3. The new code never takes a new key by itself. |
+| F2 | closed | add-money spec (EXIT 0) posts the signed delivery to the real receiver and runs the real dispatcher sweep: pending and noted "held", no ledger row while frozen; after unfreeze `nextAttemptAt` is null, then `processed`, one ledger row, attempt settled, `reviewNote` null. Not run on a live Hub (no admin token on the stack). |
+| F3 | closed | `rollback.sql` on a live database: one cancelled attempt refused; attempt plus audit row refused; empty tables rolled back; the migration applied again (`logs/rollback.log`). |
+| F4 | closed (lead ruling) | spec order `apple_pay, card, ussd, open_banking(off)`; `waysToDraw` only filters, so the app draws the Hub's order. |
+| F5 | closed | `20261122090000_add_money` is the newest stamp over `origin/main` and every `origin/wmt/*` (next: `20261121090000_store_purchases`); `migrate deploy` on a fresh database applied it. |
+| F6 | closed | Live: 255, 257 and 40 bytes and plain base64 of a card text are 400 with a WRONG PIN (before the PIN), no attempt, no intent; the same key with 256 bytes then went through (the 400 gave the key back). |
+| F7 | closed | Live: two parallel 400,000 taps with 1,100,000 of 1,500,000 used gave one 201 and one 403 `limit_reached`, 1 more intent. Spec: two taps give one 201 and one 403, one row. |
+
+**Nuvion DEV accepts the app's ciphertext (authorised run, `api.nuvion.dev` only).** The app's own `encryptCard.ts` (run in Node, hash and random bytes from `node:crypto`) encrypted the docs' test card under Nuvion's real dev public key: 256 bytes. A USD card payment intent (USD 10.00, the dev USD checking account) was made (201 `requires_action`) and confirmed with that ciphertext: **201, `completed`**. A control with 256 random bytes was refused 400 `error_validation_invalid_format` on `payment_type_data.data`. So the scheme (RSA-OAEP, SHA-256) and the key are right. One thing learnt: `browser_info.screen_width`, `screen_height`, `color_depth` and `timezone_offset` must be strings (numbers are 422); the Hub sends strings. Row in `docs/nuvion/DEV-RESULTS.md`.
+
+**Checks (EXIT lines in the verifier's logs).** Backend: tsc EXIT 0; eslint (no --fix, 6 changed files) EXIT 0; add-money spec and `money-contract.spec.ts` EXIT 0 (2 suites, 27 tests); `npm run contract:build` EXIT 0 and `git status` clean (contract unchanged). App: tsc EXIT 0; jest `src/features/addmoney` and `device-approval` EXIT 0 (11 suites, 98 tests); jest `src/components/pin-sheet` EXIT 0 (2 suites, 31 tests); gates EXIT 0 (0 fail, 18 warn, 0 accepted, 1316 files); check_tasks EXIT 0. No spec that imports the Fintava double was run. The money-contract rows are honest: the seven `/money/add-money*` routes are served, mounted, carry `x-wawu-built-by` WALLET-25 and no "not served" marker in `contract/openapi.json`. The three app test files the builder touched lost only an unused import or helper, no assertion.
+
+**New findings, all low (sweep list).** (1) User words: "the Hub could not match this try to it" (`WayScreen.tsx` `keyReused`) says "the Hub", which a person does not know; say "we could not match". (2) A race: if the dispatcher is mid-way through a held delivery while an admin unfreezes, its finish can set the next attempt after the unfreeze's reset, so the credit waits up to the backoff (it still credits once). (3) `creditInflow` now writes `reviewNote: null` on a settle with no fee difference, which also clears any other earlier note on that row.
+
+**Still NOT RUN (unchanged):** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, F2 on a live Hub, the card route on the stack against the real Nuvion (the stack stand-in has no payment intents).
 
 ## Owner sign-off
 

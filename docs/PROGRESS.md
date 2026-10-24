@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
-| building | 3 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 45 | 0 | 0 | 0 |
+| review | 47 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -60,6 +60,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
 - [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
+- [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
+- [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
 
 ## Being verified
 
@@ -226,8 +228,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
-- [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
