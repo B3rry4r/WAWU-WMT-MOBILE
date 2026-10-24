@@ -14,7 +14,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { approvalLine } from '@/components/pin-sheet/format';
-import { approveRequest, asBiometricResult, asPinResult, useApprovalKind, type Settled } from '@/features/device-approval';
+import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprovalKind, type Settled } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
@@ -199,6 +199,9 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
   const run = async (credential: Credential): Promise<Settled> => {
     if (!owner || !payout || !intentKey || !attempt) return { code: 'unanswered' };
     const request = { key: attempt.key, payeeId: intentKey, amountKobo: amount, note: '', quote: attempt.quote, transferId: null, at: attempt.at } as const;
+    // An earlier try under this key that the Hub may have taken: the store has it as unknown, read before this try writes its own.
+    const stored = await rereadIntent(owner, intentKey, amount);
+    const earlierTry = stored?.key === attempt.key && stored.phase === 'unknown';
     // Written before it leaves the phone, so a screen that goes away mid-request still finds it (and never pays twice).
     const kept = await putIntent(owner, { ...request, phase: 'unknown' });
     if (!kept) {
@@ -228,12 +231,12 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         return { code: 'pin_locked', lockedUntil: outcome.lockedUntil };
       case 'unanswered':
         return { code: 'unanswered' };
+      // A closed or refused fingerprint proves nothing about an earlier try under this key (a PIN whose answer was lost): the key and the
+      // stored intent stay, and only a first try lets go of the record it just wrote.
       case 'approval_cancelled':
-        nothingMoved();
-        return { code: 'cancelled' };
+        return notApproved('cancelled', earlierTry, nothingMoved);
       case 'approval_failed':
-        nothingMoved();
-        return { code: 'failed' };
+        return notApproved('failed', earlierTry, nothingMoved);
       case 'done': {
         const transfer = outcome.transfer;
         void queryClient.invalidateQueries({ queryKey: ['money'], predicate: (q) => q.queryKey[1] !== 'fee-quote' });

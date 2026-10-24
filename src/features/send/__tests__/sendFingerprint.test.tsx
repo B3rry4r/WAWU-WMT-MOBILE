@@ -22,7 +22,13 @@ const SEND_ID = '33333333-3333-4333-8333-333333333333';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
 let device: DeviceHub;
-const hub = { sends: [] as { pin: string | null; approval: string | null; key: string | null; text: string }[], locked: false };
+const hub = {
+  sends: [] as { pin: string | null; approval: string | null; key: string | null; text: string }[],
+  locked: false,
+  /** The next send is taken by the Hub and its answer is lost (a 500): money moved once. A key the Hub has taken is answered with its first send. */
+  lose: false,
+  paid: new Map<string, Record<string, unknown>>(),
+};
 
 const quote = (amountKobo: number) => ({
   kind: 'wawu_transfer',
@@ -75,10 +81,19 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (approval !== null) {
       if (hub.locked) return refuse(423, { code: 'pin_locked', message: 'Too many wrong tries.', lockedUntil: new Date(Date.now() + 25 * 60_000).toISOString() });
       if ((await checkApproval(device, request)) === 'refused') return refuse(403, { code: 'device_approval_refused', message: 'Your fingerprint or face could not approve this. Use your PIN.' });
-    } else if (pin !== device.pin) {
+    } else if (!hub.paid.has(request.headers.get('idempotency-key') ?? '') && pin !== device.pin) {
       return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
     }
-    return json(201, { statusCode: 201, message: 'Created', data: completed(JSON.parse(text) as Record<string, unknown>) });
+    const key = request.headers.get('idempotency-key') ?? '';
+    const first = hub.paid.get(key);
+    if (first) return json(201, { statusCode: 201, message: 'Created', data: first });
+    const made = completed(JSON.parse(text) as Record<string, unknown>);
+    hub.paid.set(key, made);
+    if (hub.lose) {
+      hub.lose = false;
+      return json(500, { statusCode: 500, message: 'Something went wrong' });
+    }
+    return json(201, { statusCode: 201, message: 'Created', data: made });
   }
   const answer = await deviceRoutes(device, request);
   if (answer) return answer;
@@ -134,7 +149,7 @@ function seedRegistered() {
 
 beforeEach(() => {
   device = newDeviceHub('1234');
-  Object.assign(hub, { sends: [], locked: false });
+  Object.assign(hub, { sends: [], locked: false, lose: false, paid: new Map() });
   Object.assign(phone, { prompt: 'ok', biometric: true, prompts: [], writes: [] });
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -242,5 +257,52 @@ describe('W11 · fingerprint or face on the PIN sheet', () => {
     await openSheet();
     await waitFor(() => expect(vault.has('wawu.approval.device')).toBe(false));
     expect(screen.queryByRole('button', { name: 'Use fingerprint' })).toBeNull();
+  });
+});
+
+describe('W11 · a closed or refused fingerprint after a PIN whose answer was lost (FIX-108)', () => {
+  const LOST_LINE = "We didn't get an answer. Try again: it will only happen once.";
+  const storedIntent = () => (require('@/features/send/intent') as typeof import('@/features/send/intent')).findIntent(OWNER, AMAKA.wawuUserId, 2_500_000);
+
+  it('the PIN got no answer (the Hub took the send), a fingerprint prompt the person closes, then the PIN: the SAME key, the intent kept, the receipt, one send taken', async () => {
+    seedRegistered();
+    hub.lose = true;
+    await openSheet();
+    await tap('1234');
+    expect(await screen.findByText(LOST_LINE)).toBeTruthy();
+    const firstKey = hub.sends[0].key;
+
+    phone.prompt = 'cancel';
+    await fireEvent.press(await screen.findByRole('button', { name: 'Use fingerprint' }));
+    await waitFor(() => expect(phone.prompts).toHaveLength(1));
+    expect(hub.sends).toHaveLength(1);
+    expect(await storedIntent()).toMatchObject({ key: firstKey, phase: 'unknown' });
+
+    await tap('1234');
+    await screen.findByText(/wawu-send-8f2k91qx/);
+    expect(hub.sends.map((s) => s.key)).toEqual([firstKey, firstKey]);
+    expect(hub.paid.size).toBe(1);
+  });
+
+  it('the PIN got no answer, a fingerprint the Hub refuses, then the PIN: the SAME key, the intent kept, the receipt, one send taken', async () => {
+    seedRegistered();
+    const { makeKeyPair } = require('@/features/device-approval/crypto') as typeof import('@/features/device-approval/crypto');
+    hub.lose = true;
+    await openSheet();
+    await tap('1234');
+    expect(await screen.findByText(LOST_LINE)).toBeTruthy();
+    const firstKey = hub.sends[0].key;
+
+    // The Hub now lists another key than this phone's: it refuses the signature.
+    if (device.device) device.device.publicKey = makeKeyPair().publicKey;
+    await fireEvent.press(await screen.findByRole('button', { name: 'Use fingerprint' }));
+    expect(await screen.findByText('Fingerprint failed. Use your PIN.')).toBeTruthy();
+    expect(hub.sends[1]).toMatchObject({ key: firstKey, pin: null });
+    expect(await storedIntent()).toMatchObject({ key: firstKey, phase: 'unknown' });
+
+    await tap('1234');
+    await screen.findByText(/wawu-send-8f2k91qx/);
+    expect(hub.sends.map((s) => s.key)).toEqual([firstKey, firstKey, firstKey]);
+    expect(hub.paid.size).toBe(1);
   });
 });

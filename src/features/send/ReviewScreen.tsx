@@ -10,7 +10,7 @@ import { IconButton } from '@/components/Button';
 import { PaySheet, type PayStatus, type PayWallet } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE, PinSheet, type BiometricKind } from '@/components/pin-sheet';
 import { approvalLine } from '@/components/pin-sheet/format';
-import { approveRequest, asBiometricResult, asPinResult, useApprovalKind, type Settled } from '@/features/device-approval';
+import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprovalKind, type Settled } from '@/features/device-approval';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -315,13 +315,12 @@ export function ReviewScreen(props: ReviewScreenProps) {
         return { code: 'pin_locked', lockedUntil: outcome.lockedUntil };
       case 'unanswered':
         return { code: 'unanswered' };
+      // A closed or refused fingerprint proves nothing about an earlier try under this key (a PIN whose answer was lost): the key and the
+      // stored intent stay, and only a first try lets go of the record it just wrote. The sheet is back on its keypad.
       case 'approval_cancelled':
-        // The request never left the phone: the key is free, and the sheet is back on its keypad without a word.
-        void nothingMoved();
-        return { code: 'cancelled' };
+        return notApproved('cancelled', sending.phase === 'unknown', () => void nothingMoved());
       case 'approval_failed':
-        void nothingMoved();
-        return { code: 'failed' };
+        return notApproved('failed', sending.phase === 'unknown', () => void nothingMoved());
       case 'done':
         setPinOpen(false);
         finish(outcome.transfer, sending);

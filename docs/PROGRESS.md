@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 31 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -49,6 +49,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-108](../tasks/FIX-108.md) A person can approve a payment with their fingerprint or face (W35 switch, W11 sheet) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -212,7 +213,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-108](../tasks/FIX-108.md) A person can approve a payment with their fingerprint or face (W35 switch, W11 sheet) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -409,6 +409,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · FIX-108 round 2 · The verifier's FIX built (Sonnet builder, T2; mobile `wmt/FIX-108` from `283ff898`; status verifying; no backend change): a fingerprint that was closed or refused never rotates the Idempotency-Key and never drops a stored unknown intent on the chat send, Withdraw and the review route (one function, `notApproved`); after a PIN whose answer was lost the PIN again pays once. 12 new cases and a unit test; the seven that pin the defect fail on `283ff898`.
 - 24 Oct 2026 · FIX-108 and DEPS-SDK · Built (Sonnet builder, T2; mobile `wmt/FIX-108` on `origin/main` `2847eb32`; status verifying; no backend change): a person can turn on fingerprint or face for payments in Wallet settings (W35: the PIN sheet with no amount, a P-256 key kept behind the biometric, `PUT /money/device`, one checked approval) and approve a send, a bank send, a chat send or a withdraw with it (W11: `X-Device-Approval` signed over the exact request, in place of the PIN; "Fingerprint failed. Use your PIN." and no PIN try on a refusal). Packages `@noble/curves` and `expo-crypto`; 12 SDK patch updates so `npx expo-doctor` passes 21 of 21. NOT RUN: a phone, the live Hub, pictures. Other payment sheets still PIN only (task file).
 - 24 Oct 2026 · FIX-105 round 2 · The verifier's FIX built (Sonnet builder, T1; backend `wmt/FIX-105` `f5aa816` on `origin/main` `21cba57`, mobile `wmt/FIX-105` on `origin/main` `e4d88d6`; status verifying): a notice now counts each message once whatever is replayed (a person's mark for a room is the largest `countedUpTo` of all their notices for it), and a room that fails goes on a retry list (additive migration `20261102090100`) and never holds the other rooms; a muted person's unread notice stays unread; the notification list reads the Hub again on focus, when the app returns to the front and on a pull; `stack.sh` prints the app at localhost. Live check NOT RUN.
 - 24 Oct 2026 · FIX-105 · Built (Sonnet builder, T1; backend `wmt/FIX-105` on `origin/main` `fefc1ec`, mobile `wmt/FIX-105` on `origin/main` `74a040e7`; status verifying): R-81, a person is told when a community they joined has new messages, as ONE grouped notice per room that is updated until they open it; never for their own messages; the Z3 "Community messages" switch mutes it; it is pushed once per notice. Closes G-21. A sweep folds settled messages in pages of 500 members (six statements a page), the request path writes nothing. The app maps the new kind to the room. Live-walk pictures NOT RUN.
@@ -423,4 +424,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · AITOOLS-CUT · Records, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT`, second commit): R-79 records the owner's four answers of 23 Oct 2026. (a) The Receptionist is left out for now: AITOOLS-06 (order 356) and POINTS-12 (357) are after launch, R-78's list notes it. (b) Quick voice is a fast, cheaper read-aloud, the same voices as VoiceOver on the provider's faster model, 125 points a minute: AITOOLS-02 and POINTS-09 say so, G-AITOOLS-02-1 closed. (c) Editing a sent event goes back to review and ticket price and places cannot change once a ticket is sold, today's Hub rules: G-833 closed as ruled; the app has no edit path for a sent event (the missing report's item 2), so EVENTS-14 (order -116, launch, todo, both repos) is cut to mount E18's Edit event and Ticket types rows on those rules; G-EVENTS-14-1 filed. (d) WALLET-19, WALLET-20, WALLET-25 and WALLET-26 stay after launch with a dated line each.
 - 23 Oct 2026 · AITOOLS-CUT · Records and plan, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT` on `origin/main` `573bb62a`; no PR): R-78 (every Studio tool the design draws is built for launch). `docs/elevenlabs/API-FACTS.md` (the provider's route, request, answer, async or not, limits and file types for each tool, read from its public documentation, with what free read calls showed: the key lacks `user_read` so the plan name is not known; models, voices, agents, dubbing, audio isolation and music finetunes read fine). Nine tasks at negative orders (no launch order below CHECK-3 was free): AITOOLS-02 (one job pipeline, job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, a person's file in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist), POINTS-09 to POINTS-12 (the app side). Every tool the design draws can be served by the provider. Gaps G-813 and G-POINTS-07-3 point at the tasks; new rows G-AITOOLS-02-1, -03-1, -05-1, -05-2, -06-1 and G-POINTS-09-1. Checks: `check_tasks.py --write` EXIT 0 (413 tasks), gates EXIT 0 (10 run, 1213 files, 0 fail, 18 warn as before).
 - 23 Oct 2026 · FIX-102 · Built (Sonnet builder, T1; mobile `wmt/FIX-102` on `origin/main` `573bb62a`; status verifying): every notification kind the Hub writes (25) opens a screen of the app, from the list and from a push, through one map (`src/features/push/routes.ts`); a sale and a tip open Earnings; a kind the Hub adds later opens the screen its target or category names; a Top up row opens the sheet. The TGIF reader's left 30% goes back a card (nothing on the first), the right goes forward, buttons keep their taps, the sponsored card's left edge goes back. Tests fail on main, pass built.
-- 23 Oct 2026 · FIX-101 round 2 · The verifier's FIX built (Sonnet builder, T1; mobile `wmt/FIX-101` on `9eaf3c0f`; status verifying): a chat with a person who has no name opens (named as the feed names them, else "Someone"), a recipient with no name no longer fails the whole recipients list, and the racy movies loading tests hold the catalog read instead of racing it. App only.

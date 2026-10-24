@@ -13,7 +13,7 @@ import { formatMoney, Money } from '@/components/Money';
 import { PaySheet, type PayStatus } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
 import { approvalLine } from '@/components/pin-sheet/format';
-import { approveRequest, asBiometricResult, asPinResult, useApprovalKind, type Settled } from '@/features/device-approval';
+import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprovalKind, type Settled } from '@/features/device-approval';
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -191,6 +191,8 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
   const run = async (credential: Credential): Promise<Settled> => {
     const use = (kept?.phase === 'unknown' ? kept.quote : quote) as FeeQuote | null;
     if (!use || !owner || kept === undefined) return { code: 'unanswered' };
+    // An earlier try under this key that the Hub may have taken (its answer was lost): this try repeats it.
+    const earlierTry = kept?.phase === 'unknown';
     const sending: SendIntent =
       kept?.phase === 'unknown' ? kept : { key: key.current, payeeId: payee.wawuUserId, amountKobo, note: note.trim(), quote: use, phase: 'unknown', transferId: null, at: Date.now() };
     // Written before it leaves the phone, so a screen that goes away mid-send still finds it. A first send the store cannot keep is not
@@ -210,6 +212,11 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
       setKept(null);
       setStatus({ kind: 'review' });
     };
+    // The record this try wrote itself, with the key kept: the PIN that follows is the same payment.
+    const forgetFirstTry = () => {
+      void dropIntent(owner, sending.key);
+      setKept(null);
+    };
     switch (outcome.kind) {
       case 'pin_incorrect':
         nothingMoved();
@@ -221,12 +228,14 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
       case 'unanswered':
         setStatus({ kind: 'review' });
         return { code: 'unanswered' };
+      // A closed or refused fingerprint proves nothing about an earlier try under this key (a PIN whose answer was lost): the key and the
+      // stored intent stay, and only a first try lets go of the record it just wrote.
       case 'approval_cancelled':
-        nothingMoved();
-        return { code: 'cancelled' };
+        setStatus({ kind: 'review' });
+        return notApproved('cancelled', earlierTry, forgetFirstTry);
       case 'approval_failed':
-        nothingMoved();
-        return { code: 'failed' };
+        setStatus({ kind: 'review' });
+        return notApproved('failed', earlierTry, forgetFirstTry);
       case 'done': {
         const transfer = outcome.transfer;
         setPinOpen(false);
