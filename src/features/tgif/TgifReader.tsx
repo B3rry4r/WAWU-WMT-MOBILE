@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type DimensionValue, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -16,7 +16,7 @@ import { font, layout, space, useWawu } from '@/theme';
 import type { TgifCard, TgifDay } from './api/tgif';
 import { CardBackdrop } from './CardBackdrop';
 import { ink, looks } from './look';
-import { cardLabels, cardText, compactCount, fitSize, headerLine, readerDay, readerSteps, sponsoredSlot, wordLeading, wordSize, type WordRoom } from './model';
+import { backZone, cardLabels, cardText, compactCount, fitSize, headerLine, readerDay, readerSteps, sponsoredSlot, tapGoesBack, wordLeading, wordSize, type WordRoom } from './model';
 import { partMetrics, Progress, ReadPill } from './parts';
 import { COULD_NOT_SHARE_VERSE, shareVerse } from './sharePhone';
 import { useAmen, useCountRead, useCountShare, useDay, useStats } from './useTgif';
@@ -205,6 +205,15 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
       setAt(at + 1);
     }
   };
+  // A tap on the left of the card goes back a card; on the first card it does nothing. The step is counted from the cards
+  // that are in the steps now (a sponsored card that failed to load has left them), so Back never lands where it already is.
+  const back = () => {
+    const here = Math.min(at, steps.length - 1);
+    if (here <= 0) return;
+    amen.clearFailure();
+    setAt(here - 1);
+  };
+  const tapCard = (event?: GestureResponderEvent) => (tapGoesBack(event?.nativeEvent?.pageX, width) ? back() : advance());
   const openEvent = () => {
     if (!offer || !onOpenEvent) return;
     reports.tap();
@@ -235,6 +244,8 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
       <StatusBar style="light" />
       {sponsored && offer ? <SponsoredBackdrop ad={offer} onFail={() => setUnloaded(offer.artworkUrl)} onLoad={() => setDrawn(offer.artworkUrl)} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
+      {/* The sponsored card has no tap of its own (a tap outside its button or Skip does nothing), but its left edge goes back, like every card. Behind the step, so its button and Skip keep their taps. */}
+      {sponsored && offer ? <Pressable testID="tgif-back-zone" accessible={false} onPress={back} style={styles.backZone} /> : null}
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + space.sm, paddingHorizontal: layout.gutter + insets.left }]}>
         <Progress steps={steps.length} at={at} />
         <View style={styles.header}>
@@ -266,7 +277,7 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
           <Pressable
             testID={`tgif-card-${card}`}
             accessible={false}
-            onPress={advance}
+            onPress={tapCard}
             style={styles.words}
           >
             {card === 'verse' ? (
@@ -354,6 +365,7 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  backZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: `${backZone * 100}%` as DimensionValue },
   frameBar: { alignItems: 'flex-end', paddingHorizontal: layout.gutter },
   frameBody: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter },
   loading: { gap: readerMetrics.headerGap },
