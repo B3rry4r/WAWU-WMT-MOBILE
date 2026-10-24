@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 49 | 0 | 0 | 0 |
+| todo | 48 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 26 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [AITOOLS-04](../tasks/AITOOLS-04.md) Captions and Clean audio, with the person's own audio or video going in (backend) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -394,7 +395,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-04](../tasks/AITOOLS-04.md) Captions and Clean audio, with the person's own audio or video going in (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads, [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked
@@ -403,6 +404,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · AITOOLS-04 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-04` `d571fbd` on `origin/main` `0cd8f8e`, mobile `wmt/AITOOLS-04` on `origin/main` `fcbf81d4`; status verifying): a person's own recording or video can go to Captions (words and an SRT, 15 points a minute) and Clean audio (the recording with the noise taken out, 400 a minute). The Hub takes the file through the presign flow into two private folders, reads its length itself (`music-metadata`) and prices the minutes; a refused file holds nothing; the file and the provider's copies are deleted when the job ends. Four routes (job and quote for each tool), no migration. Stand-in only: NOT RUN against the real provider (G-AITOOLS-04-1). Gaps G-AITOOLS-04-1 to -3; shared changes AITOOLS-04 #1 and #2.
 - 24 Oct 2026 · POINTS-09 · Built (Sonnet builder, T1; mobile `wmt/POINTS-09` on `origin/main` `80828caf`; status verifying): a person can open Quick voice, Sound effect and Music track from Studio, see what each costs from the Hub (125 a minute, 75, 500), run it and play what comes back. The three are catalogue entries on POINTS-08's screen (`ToolScreen` branches on `input.kind`; a Sound effect and a Music track take a description and have no voices and no length line); a tile is drawn only for a tool the Hub lists and the app has a screen for (R-47). `startJob` posts to each tool's own route under one `Idempotency-Key`; the job record is one per account and tool. VoiceOver's tests pass untouched. Live on the local stack: one job of each tool, working then a player that plays; a failed job said no points were taken; too few points asked for more. Gaps G-POINTS-09-2 and -3. Records: tasks/POINTS-09.md, tasks/history/POINTS-09.md.
 - 24 Oct 2026 · FIX-103 · Built (Sonnet builder, T1; mobile `wmt/FIX-103` on `origin/main` `c47c9c84`; status verifying): a person can hear a creator's Voice Intro on the profile. M1 and M5 draw the Bio player (Play, bars, length, "Bio", "AI voice") under the bio: M1 plays `audioUrl` from `GET /me/voice-intro`, M5 plays `url` from `GET /users/{wawuId}/voice-intro`; no intro draws no control (R-47); the clip stops when the tab is not in front. Reuses `VoicePlayer` and the feed's `AudioSource`, no native module. 18 new tests. Live look NOT RUN. No backend change.
 - 24 Oct 2026 · AITOOLS-02 · Built (Sonnet builder, T2; backend `wmt/AITOOLS-02` `0a29c9a` on `origin/main` `b2f4df6`, mobile `wmt/AITOOLS-02` on `origin/main` `dff9b30e`; status verifying; an earlier builder's uncommitted work was judged, kept and finished): every AI tool now runs through one job pipeline (`AiJobService.createJob(tool, ...)`, one file per tool under `src/ai-tools/tools/`), VoiceOver is its first entry with route and answer unchanged, and Quick voice (R-79: the same voices on the provider's faster model, 125 points a minute) is the second (`POST /ai-tools/quick-voice/jobs`, setting `ai.quick_voice_chars_per_minute` 900 PROVISIONAL). `GET /ai-tools` entries gain `input.kind`; a job gains `outputs`; `GET /ai-tools/jobs` lists the caller's own jobs in cursor pages (closes G-POINTS-08-3 on the server). Migration `20261101100000_ai_tool_job_outputs` (three nullable columns, a rollback that loses no row). NOT RUN against the real provider. Specs 63/63 and 101/101, protected 253/253, gates 0 fail.
@@ -417,4 +419,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · FLIX-04 · Built (Sonnet builder, T1; backend `wmt/FLIX-04` `1209f3c` on `origin/main` `dd00e85`, mobile `wmt/FLIX-04` on `origin/main` `89669d9f`; status verifying): Flix movies show "not live yet" until business talks finish (R-77). New `MOVIE_PARTNER=soon`: no adapter, no sync, no call; `GET /movies` answers `{ enabled: false, soon: true, hero: null, rails: [] }`, every other movies route 404 `movies_off`. The app keeps the rails on Home and Explore (title and one card with the two lines) and the movies screen (S13's shared Banner, no catalog, search, filters or watch button); `enabled: false` without `soon` still hides everything. Tests fail on `origin/main` and pass here; V5 pictures not rendered.
 - 23 Oct 2026 · FIX-99 fix round · The verifier's FIX built (Sonnet builder, T2; backend `wmt/FIX-99` on `8d6d702`, this record on mobile `wmt/FIX-99`; status verifying): the admin auth spec's test that pinned the refresh-token hole now expects 401, the strategy's prettier reflow is undone, and a spec shows `GET /movies/browse?genre=Music` finds a title Flixora served as "Drama | Music | Thriller".
 - 23 Oct 2026 · FIX-99 · Built (Sonnet builder, T2; backend `wmt/FIX-99` `8d6d702` on `origin/main` `dd00e85`, WAWU ID `wmt/FIX-99` `3cd7256` on `9596928`, this record on mobile `wmt/FIX-99`; status verifying): a WAWU ID refresh token is no longer a Hub session (strategy and live socket), the app's room routes count the host, a ten-digit Nigerian number signs up, Flix genres are single words; the legal assistant answered two real turns in 5.0 s and 3.8 s on gemini-3.5-flash; U2 (name preview tier check) stopped because the app calls it before a tier.
-- 23 Oct 2026 · FLIX-02 · Built (Sonnet builder, T2; backend `wmt/FLIX-02` `ebf9fc5` on `origin/main` `13e27536`, mobile `wmt/FLIX-02`; status verifying): `MOVIE_PARTNER=flixora` works. `src/flixora/` reads Flixora's catalog (paged, `updatedSince`, region NG by default, one title by id) and signs the HS256 link (new `jti` each tap, `exp` 60 s, token after `#`); six `FLIXORA_*` settings, a missing one stops the server at boot naming it; 401, 403, 404, 429 become plain answers; no key, token or link is logged. `POST /movies/{id}/watch` now refuses a title that has not premiered (409 `movie_not_premiered`). Real TEST environment: 29 titles synced, second sync changed nothing, one title by id (facts in `docs/flixora/TEST-RESPONSES.md`). The real sign-in check is NOT RUN: it waits for the test sign-in secret and the partner slug. Protected routes 253/253; gates 0 fail.

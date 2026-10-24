@@ -7,7 +7,7 @@ order: -123
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: verifying
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,24 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 60 minutes of building; if it runs past that, push what is done and hand back what remains.
-- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
-- **Pattern:** a file the person records or picks goes in (audio or video), one provider call, a result comes back (text and subtitles, or cleaned audio), priced by the minute of the file. This task also builds the Hub's way to take a person's file for a tool, which Dubbing (AITOOLS-05) reuses.
-- **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
-- **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-04`; then a verifier.
+As of 24 Oct 2026, verifying (builder done, backend only). Tier T2. Builder report: [history/AITOOLS-04.md](history/AITOOLS-04.md).
+- **Heads:** backend `wmt/AITOOLS-04` `d571fbd` (on `wmt/AITOOLS-03` `9d50fc6`, which is in main; `origin/main` merged). Mobile `wmt/AITOOLS-04` carries these records. No migration, no new column (`AiToolJob.inputRef` from AITOOLS-02 keeps the file's key). New dependency `music-metadata` 7.14.0 (the Hub's length reader).
+- **Routes added:** `POST /ai-tools/captions/jobs`, `POST /ai-tools/clean-audio/jobs`, `POST /ai-tools/captions/quote`, `POST /ai-tools/clean-audio/quote`; `POST /uploads/presign` gains the folders `ai/input-audio` and `ai/input-video`. Contract rebuilt (additive).
+
+| Capability check | Before | After |
+|---|---|---|
+| Catalogue lists Captions 15 and Clean audio 400 a minute before anyone runs them | not built | built, tested (`ai-tools-files.contract.spec.ts` check 1) |
+| A 90 second recording quotes 2 minutes from the Hub's own reading | not built | built, tested on WAV and MP3 (the quote route takes a file key only) |
+| Captions job: hold, run, commit, text and SRT; Clean audio: audio link; failure releases | not built | built, tested on the stand-in |
+| Unreadable length, wrong type, over the byte cap, over the minute cap, another person's key: refused, nothing held | not built | built, tested (V2 includes one wrong-format file) |
+| Uploaded file deleted when the job ends; provider copies deleted | not built | built, tested (the stand-in's delete lists) |
+| Same key once; no balance below zero; late finish after the sweep cannot commit | not built | built, tested (V8) |
+| VoiceOver, Quick voice, Sound effect, Music still pass | passing | passing (only registry counts changed) |
+
+- **Checks (backend, own worktree, database `ait04_wawu_hub_test`, stand-in only, nothing real):** tsc `EXIT 0`; eslint (no --fix) on the changed .ts files `EXIT 0`; 18 suites 226/226 in band `EXIT 0` (`src/ai-tools` 10 suites, storage, purge and plan-settings specs); `test:protected` 253/253 `EXIT 0`; contract:build `EXIT 0`, committed; gates 0 fail, 133 warn, 88 accepted (same as before) `EXIT 0`; check_baseline `EXIT 0`. Mobile: `check_tasks.py --write` and gates, see the report.
+- **Not done / NOT RUN:** the real provider (no key): the key's access, the isolator's answer type and its history id header are unknown (G-AITOOLS-04-1). MP4, AAC, QuickTime and WebM files were not run through the length reader (G-AITOOLS-04-3). An abandoned upload (refused job) is not swept (G-AITOOLS-04-2). A run of `plan-settings-readers.contract.spec.ts` was started by mistake (it imports the Fintava cash-out double) and failed on sign-in; nothing Fintava was changed.
+- **Owner questions:** the key's access to speech to text and audio isolation; Captions on an already published video (not drawn, not built).
+- **Next:** a verifier (not the builder). The app side is POINTS-10.
 
 ## Read first
 
@@ -59,17 +72,13 @@ A person picks a recording, sees the cost for its length, and gets back a transc
 
 ## Capability checks
 
-- [ ] `GET /ai-tools` lists Captions at 15 points a minute and Clean audio at 400 a minute before anyone runs them (only when the provider is configured).
-- [ ] A person uploads a 90 second recording: the quote prices 2 minutes from the Hub's own reading of the file, not from any number the phone sends.
-- [ ] A Captions job holds, runs, commits and returns the transcript text and an SRT; a Clean audio job returns an audio link; a failed or refused job releases everything.
-- [ ] A file whose length cannot be read, a type the Hub does not take, a file over the byte cap, a length over the minute cap, and another person's `fileKey` are each refused with the reason and nothing held (V2, with one wrong-format input).
-- [ ] The uploaded file is deleted when the job ends either way, and the provider's copies are deleted after a successful run (the stand-in's state shows the delete calls).
-- [ ] The same `Idempotency-Key` twice runs one job; two jobs at once never take points below zero; a late finish after the stale sweep cannot commit twice (V8).
-- [ ] VoiceOver, Quick voice, Sound effect and Music still pass their specs untouched.
-
-## History
-
-None yet. Reports go to tasks/history/AITOOLS-04.md.
+- [x] `GET /ai-tools` lists Captions at 15 points a minute and Clean audio at 400 a minute before anyone runs them (only when the provider is configured).
+- [x] A person uploads a 90 second recording: the quote prices 2 minutes from the Hub's own reading of the file, not from any number the phone sends.
+- [x] A Captions job holds, runs, commits and returns the transcript text and an SRT; a Clean audio job returns an audio link; a failed or refused job releases everything.
+- [x] A file whose length cannot be read, a type the Hub does not take, a file over the byte cap, a length over the minute cap, and another person's `fileKey` are each refused with the reason and nothing held (V2, with one wrong-format input).
+- [x] The uploaded file is deleted when the job ends either way, and the provider's copies are deleted after a successful run (the stand-in's state shows the delete calls).
+- [x] The same `Idempotency-Key` twice runs one job; two jobs at once never take points below zero; a late finish after the stale sweep cannot commit twice (V8).
+- [x] VoiceOver, Quick voice, Sound effect and Music still pass their specs untouched.
 
 ## Owner sign-off
 
