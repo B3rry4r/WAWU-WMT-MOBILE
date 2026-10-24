@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 26 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -207,7 +208,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -404,6 +404,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · FIX-104 · Round 2 built (Sonnet builder, T2; backend `wmt/FIX-104` `ad20299`; status verifying): chat files count toward storage on the chat path only (`GET /uploads/usage` and a content presign unchanged, as the lead ruled); an upload that landed and was never sent is given back (Delete on a failed bubble, `POST /uploads/release` for chat keys, the late sweep in the chat folders, and a sweep a day on); Try again after a failed upload releases the dead one first, so one message is charged once; the own file mark shows in the light theme; a refused 21,000,009 byte PDF reads 20.1 MB; contract byte-equal.
 - 24 Oct 2026 · FIX-104 · Built (Sonnet builder, T2; backend `wmt/FIX-104` `823f85a` on `origin/main` `fefc1ec`, mobile `wmt/FIX-104` on `origin/main` `74a040e7`; status verifying): a person can send a photo, a video or a PDF in a one to one chat and the other person can open it. I13 draws Photo or video and File (File's line from the Hub); a photo, video or file is a bubble with sending and failed states; a tap asks the Hub for a fresh 15 minute link that only the two people get. Chat bytes count toward the sender's storage; photo or video 100 MB, PDF 20 MB, both provisional. No migration; two additive routes. Live walk with two sign-ins 13 of 13. No virus scanning exists (G-FIX-104-1).
 - 24 Oct 2026 · POINTS-09 · Built (Sonnet builder, T1; mobile `wmt/POINTS-09` on `origin/main` `80828caf`; status verifying): a person can open Quick voice, Sound effect and Music track from Studio, see what each costs from the Hub (125 a minute, 75, 500), run it and play what comes back. The three are catalogue entries on POINTS-08's screen (`ToolScreen` branches on `input.kind`; a Sound effect and a Music track take a description and have no voices and no length line); a tile is drawn only for a tool the Hub lists and the app has a screen for (R-47). `startJob` posts to each tool's own route under one `Idempotency-Key`; the job record is one per account and tool. VoiceOver's tests pass untouched. Live on the local stack: one job of each tool, working then a player that plays; a failed job said no points were taken; too few points asked for more. Gaps G-POINTS-09-2 and -3. Records: tasks/POINTS-09.md, tasks/history/POINTS-09.md.
 - 24 Oct 2026 · FIX-103 · Built (Sonnet builder, T1; mobile `wmt/FIX-103` on `origin/main` `c47c9c84`; status verifying): a person can hear a creator's Voice Intro on the profile. M1 and M5 draw the Bio player (Play, bars, length, "Bio", "AI voice") under the bio: M1 plays `audioUrl` from `GET /me/voice-intro`, M5 plays `url` from `GET /users/{wawuId}/voice-intro`; no intro draws no control (R-47); the clip stops when the tab is not in front. Reuses `VoicePlayer` and the feed's `AudioSource`, no native module. 18 new tests. Live look NOT RUN. No backend change.
@@ -418,4 +419,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · FIX-100 · Built (Sonnet builder, T1; mobile `wmt/FIX-100` on `origin/main` `89669d9f`; status verifying): the app findings of the pre-build re-walk. P2 draws "Ask a question · price" and opens the paid question (H2); a failed enrolment quote keeps SC5 with the price problem, Try again and the held place (M1); "Finish your profile" names what the Hub says is missing (L1); the community "created" screen has a back button (L3); Flix genre chips split compound genres (L6); Explore draws "Who Made This?" with its empty state (U1); an open wallet with no PIN leads the tab to create one (U3b). One test per item fails on `origin/main`.
 - 23 Oct 2026 · FLIX-04 · Built (Sonnet builder, T1; backend `wmt/FLIX-04` `1209f3c` on `origin/main` `dd00e85`, mobile `wmt/FLIX-04` on `origin/main` `89669d9f`; status verifying): Flix movies show "not live yet" until business talks finish (R-77). New `MOVIE_PARTNER=soon`: no adapter, no sync, no call; `GET /movies` answers `{ enabled: false, soon: true, hero: null, rails: [] }`, every other movies route 404 `movies_off`. The app keeps the rails on Home and Explore (title and one card with the two lines) and the movies screen (S13's shared Banner, no catalog, search, filters or watch button); `enabled: false` without `soon` still hides everything. Tests fail on `origin/main` and pass here; V5 pictures not rendered.
 - 23 Oct 2026 · FIX-99 fix round · The verifier's FIX built (Sonnet builder, T2; backend `wmt/FIX-99` on `8d6d702`, this record on mobile `wmt/FIX-99`; status verifying): the admin auth spec's test that pinned the refresh-token hole now expects 401, the strategy's prettier reflow is undone, and a spec shows `GET /movies/browse?genre=Music` finds a title Flixora served as "Drama | Music | Thriller".
-- 23 Oct 2026 · FIX-99 · Built (Sonnet builder, T2; backend `wmt/FIX-99` `8d6d702` on `origin/main` `dd00e85`, WAWU ID `wmt/FIX-99` `3cd7256` on `9596928`, this record on mobile `wmt/FIX-99`; status verifying): a WAWU ID refresh token is no longer a Hub session (strategy and live socket), the app's room routes count the host, a ten-digit Nigerian number signs up, Flix genres are single words; the legal assistant answered two real turns in 5.0 s and 3.8 s on gemini-3.5-flash; U2 (name preview tier check) stopped because the app calls it before a tier.
