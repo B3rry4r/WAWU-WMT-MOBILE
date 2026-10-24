@@ -15,8 +15,9 @@ export function sheetAmount(kobo: number): string {
   return formatMoney(kobo, { decimals: Math.round(kobo) % KOBO_PER_NAIRA !== 0 });
 }
 
-/** The line under the title: the total the payer pays, fees included. */
+/** The line under the title: the total the payer pays, fees included; or the purpose alone when no money moves. */
 export function approvalLine(approval: PinApproval): string {
+  if (approval.totalKobo === undefined) return approval.purpose;
   const amount = sheetAmount(approval.totalKobo);
   if (approval.payee !== undefined) return `Approve ${amount} to ${approval.payee}`;
   return `${amount} for ${approval.purpose}`;

@@ -8,7 +8,9 @@ import { balanceProblem, walletBalanceQuery } from '@/api/money';
 import { queryClient } from '@/api/query';
 import { IconButton } from '@/components/Button';
 import { PaySheet, type PayStatus, type PayWallet } from '@/components/pay-sheet';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet, type BiometricKind } from '@/components/pin-sheet';
+import { approvalLine } from '@/components/pin-sheet/format';
+import { approveRequest, asBiometricResult, asPinResult, useApprovalKind, type Settled } from '@/features/device-approval';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -19,7 +21,7 @@ import { useSystemBack } from '@/features/professionals/parts';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, space, type, useWawu } from '@/theme';
 
-import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type FeeQuote, type SendKind, type SendOutcome, type Transfer } from './api';
+import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type Credential, type FeeQuote, type SendKind, type SendOutcome, type Transfer } from './api';
 import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
 import {
   BANK_CHARGE,
@@ -253,7 +255,8 @@ export function ReviewScreen(props: ReviewScreenProps) {
     return request ?? null;
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Sends the request with the PIN, or with the phone's fingerprint or face approval of exactly this request (W11, FIX-108): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!quote || !owner || request === undefined) return { code: 'unanswered' };
     const latest = await latestRequest();
     if (latest?.phase === 'pending') {
@@ -294,9 +297,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
             nameToken: sending.nameToken ?? payee.bank.nameToken,
             note: sending.note,
             key: sending.key,
-            pin,
+            ...credential,
           })
-        : await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+        : await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, ...credential });
     } finally {
       setWaiting(false);
     }
@@ -312,6 +315,13 @@ export function ReviewScreen(props: ReviewScreenProps) {
         return { code: 'pin_locked', lockedUntil: outcome.lockedUntil };
       case 'unanswered':
         return { code: 'unanswered' };
+      case 'approval_cancelled':
+        // The request never left the phone: the key is free, and the sheet is back on its keypad without a word.
+        void nothingMoved();
+        return { code: 'cancelled' };
+      case 'approval_failed':
+        void nothingMoved();
+        return { code: 'failed' };
       case 'done':
         setPinOpen(false);
         finish(outcome.transfer, sending);
@@ -348,6 +358,11 @@ export function ReviewScreen(props: ReviewScreenProps) {
         return { code: 'approved' };
     }
   };
+
+  const submitPin = async (pin: string) => asPinResult(await run({ pin }));
+  const approvalKind = useApprovalKind();
+  const prompt = quote ? approvalLine({ totalKobo: quote.totalKobo, payee: payee.name }) : 'Approve this payment';
+  const approveWithBiometric = async (_kind: BiometricKind) => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, prompt) }));
 
   const confirming = request?.phase === 'pending';
   // Back from a send that is only waiting for the provider goes to the wallet, not to the amount.
@@ -486,6 +501,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         onClose={() => setPinOpen(false)}
         approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
         onSubmit={submitPin}
+        biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={() => {
           setPinOpen(false);

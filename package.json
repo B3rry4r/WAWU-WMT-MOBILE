@@ -19,6 +19,7 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run gates && npm run tasks"
   },
   "dependencies": {
+    "@noble/curves": "^2.4.0",
     "@tanstack/react-query": "^5.104.0",
     "expo": "~57.0.31",
     "expo-asset": "~57.0.19",
@@ -28,6 +29,7 @@
     "expo-camera": "~57.0.6",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.20",
+    "expo-crypto": "~57.0.4",
     "expo-dev-client": "~57.0.20",
     "expo-document-picker": "~57.0.3",
     "expo-file-system": "~57.0.7",
@@ -87,6 +89,11 @@
       "/node_modules/",
       "/design/",
       "/build/"
+    ],
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble))",
+      "/node_modules/react-native-reanimated/plugin/",
+      "/node_modules/@react-native/babel-preset/"
     ],
     "moduleNameMapper": {
       "^lucide-react-native$": "<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js",
