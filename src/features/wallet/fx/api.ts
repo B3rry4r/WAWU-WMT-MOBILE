@@ -153,10 +153,10 @@ export async function fetchQuote(ask: QuoteAsk): Promise<FxQuote> {
   return readQuote(dataOf(await unwrap(api.POST('/api/hub/money/fx/quotes', { body }))));
 }
 
-/** GET /sends/quote: what a send costs before the PIN. */
-export async function fetchSendQuote(accountId: string, chain: FxChain, amountMinor: number): Promise<FxSendQuote> {
+/** GET /sends/quote: what a send costs before the PIN. `currency` is the coin, and must be the account's. */
+export async function fetchSendQuote(accountId: string, currency: FxCode, chain: FxChain, amountMinor: number): Promise<FxSendQuote> {
   const data = dataOf<FxSendQuote>(
-    await unwrap(api.GET('/api/hub/money/fx/sends/quote', { params: { query: { accountId, chain, amountMinor } } })),
+    await unwrap(api.GET('/api/hub/money/fx/sends/quote', { params: { query: { accountId, currency: currency as 'USDT' | 'USDC' | 'RLUSD', chain, amountMinor } } })),
   );
   if (!data || !isMinor(data.wawuFeeMinor) || !isMinor(data.availableMinor) || !isMinor(data.decimals)) throw unreadable('fees');
   return data;
@@ -324,11 +324,11 @@ export async function swapAtQuote(input: SwapInput): Promise<FxOutcome<FxSwap>> 
   return outcomeOf(result, readSwap);
 }
 
-export type SendCoinInput = { accountId: string; chain: FxChain; address: string; amountMinor: number; key: string } & Credential;
+export type SendCoinInput = { accountId: string; currency: FxCode; chain: FxChain; address: string; amountMinor: number; key: string } & Credential;
 
 /** POST /sends: a stablecoin to an outside address. Same rules as `swapAtQuote`. */
 export async function sendCoin(input: SendCoinInput): Promise<FxOutcome<FxSend>> {
-  const body = { accountId: input.accountId, chain: input.chain, address: input.address, amountMinor: input.amountMinor };
+  const body = { accountId: input.accountId, currency: input.currency as 'USDT' | 'USDC' | 'RLUSD', chain: input.chain, address: input.address, amountMinor: input.amountMinor };
   const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/money/fx/sends', body });
   if ('outcome' in headed) return headed.outcome;
   let result;

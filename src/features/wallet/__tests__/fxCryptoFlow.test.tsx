@@ -150,7 +150,7 @@ describe('W23 · Crypto · send', () => {
   it('asks for the fees of this amount on this network, adds them on top, and names the network fee only when the Hub can', async () => {
     await send();
     await fill();
-    expect(hub.sendQuotes).toEqual([`?accountId=${USDT_ID}&chain=eth&amountMinor=12000`]);
+    expect(hub.sendQuotes).toEqual([`?accountId=${USDT_ID}&currency=USDT&chain=eth&amountMinor=12000`]);
     expect(rtl.screen.getByText('No fee')).toBeTruthy();
     expect(rtl.screen.getByText('120.00 USDT + network fee')).toBeTruthy();
     expect([rtl.screen.getByTestId('crypto-send-balance').props.children].flat().join('')).toBe('Balance 320.00 USDT');
@@ -193,7 +193,7 @@ describe('W23 · Crypto · send', () => {
     expect(hub.sends).toHaveLength(2);
     expect(hub.sends[1]?.key).toBe(hub.sends[0]?.key);
     expect(hub.sends.map((s) => s.pin)).toEqual(['1111', '1234']);
-    expect(hub.sends[0]?.body).toEqual({ accountId: USDT_ID, chain: 'eth', address: OUTSIDE, amountMinor: 12_000 });
+    expect(hub.sends[0]?.body).toEqual({ accountId: USDT_ID, currency: 'USDT', chain: 'eth', address: OUTSIDE, amountMinor: 12_000 });
     expect(sent.mock.calls[0]?.[0]).toMatchObject({ id: SEND_ID, status: 'completed' });
   });
 

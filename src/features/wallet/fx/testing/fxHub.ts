@@ -170,7 +170,7 @@ export async function fxFetch(request: Request, path: string): Promise<Response 
   if (path === `/money/fx/swaps/${SWAP_ID}`) return ok(swapView(hub.quotes[0] ?? { fromCurrency: 'NGN', toCurrency: 'USD', amountFromMinor: 15_800_000, amountToMinor: 10_000, fromDecimals: 2, toDecimals: 2, rate: '0.000632911', wawuFeeMinor: 0 }, 'completed'));
   if (path === '/money/fx/sends/quote') {
     hub.sendQuotes.push(url.search);
-    return ok({ accountId: url.searchParams.get('accountId'), currency: 'USDT', chain: url.searchParams.get('chain'), decimals: 2, amountMinor: Number(url.searchParams.get('amountMinor')), providerFeeMinor: null, wawuFeeMinor: 0, availableMinor: 32_000 });
+    return ok({ accountId: url.searchParams.get('accountId'), currency: url.searchParams.get('currency'), chain: url.searchParams.get('chain'), decimals: 2, amountMinor: Number(url.searchParams.get('amountMinor')), providerFeeMinor: null, wawuFeeMinor: 0, availableMinor: 32_000 });
   }
   if (path === '/money/fx/sends' && method === 'POST') {
     const key = request.headers.get('idempotency-key');
@@ -178,7 +178,7 @@ export async function fxFetch(request: Request, path: string): Promise<Response 
     hub.sends.push({ key, pin, body });
     if (hub.wrongPinFirst && hub.pins++ === 0) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
     if (hub.sendMode === 'declined') return refuse(409, { code: 'provider_declined', message: 'Nuvion cannot send USDT on dev.' });
-    const view = { id: SEND_ID, status: hub.sendMode === 'pending' ? 'pending' : 'completed', accountId: body.accountId, currency: 'USDT', chain: body.chain, decimals: 2, address: body.address, amountMinor: body.amountMinor, providerFeeMinor: null, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null };
+    const view = { id: SEND_ID, status: hub.sendMode === 'pending' ? 'pending' : 'completed', accountId: body.accountId, currency: body.currency, chain: body.chain, decimals: 2, address: body.address, amountMinor: body.amountMinor, providerFeeMinor: null, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null };
     return ok(view, 201);
   }
   if (path === `/money/fx/sends/${SEND_ID}`) {

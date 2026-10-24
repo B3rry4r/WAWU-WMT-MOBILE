@@ -97,7 +97,8 @@ export function SwapScreen(props: SwapScreenProps) {
   );
   const quote: FxQuote | null = asking && quoted.data && quoted.data.amountFromMinor === minor ? quoted.data : null;
   const now = useNow(quote !== null);
-  const left = quote ? secondsUntil(quote.expiresAt, now) : 0;
+  // The clock may be older than the quote on the first frame, so the hold never reads more than the seconds the Hub said it had.
+  const left = quote ? Math.min(secondsUntil(quote.expiresAt, now), quote.validForSeconds) : 0;
   const expired = quote !== null && left === 0;
 
   // The hold ran out: the rate is asked for again, once for each quote, so what is on screen is never a rate the provider has dropped.
@@ -291,7 +292,7 @@ export function SwapScreen(props: SwapScreenProps) {
           quote={review}
           from={from}
           to={to}
-          secondsLeft={secondsUntil(review.expiresAt, now)}
+          secondsLeft={Math.min(secondsUntil(review.expiresAt, now), review.validForSeconds)}
           onConfirm={() => setPinOpen(true)}
           onCancel={() => setReview(null)}
         />

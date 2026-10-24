@@ -84,8 +84,8 @@ export function CryptoSendScreen(props: CryptoSendScreenProps) {
 
   const quoted = useQuery(
     {
-      queryKey: ['money', 'fx', 'send-quote', owner ?? '', account?.id ?? '', chain ?? '', settled],
-      queryFn: () => fetchSendQuote((account as FxAccount).id, chain as FxChain, settled),
+      queryKey: ['money', 'fx', 'send-quote', owner ?? '', account?.id ?? '', code ?? '', chain ?? '', settled],
+      queryFn: () => fetchSendQuote((account as FxAccount).id, code as FxCode, chain as FxChain, settled),
       enabled: Boolean(owner && account && chain) && settled > 0 && settled === amountMinor && !over,
       staleTime: 0,
       gcTime: 0,
@@ -119,9 +119,9 @@ export function CryptoSendScreen(props: CryptoSendScreenProps) {
   };
 
   const run = async (credential: Credential): Promise<Settled> => {
-    if (!account || !chain) return { code: 'unanswered' };
-    const input = { accountId: account.id, chain, address: address.trim(), amountMinor };
-    const subject = `send:${input.accountId}:${input.chain}:${input.address}:${input.amountMinor}`;
+    if (!account || !chain || !code) return { code: 'unanswered' };
+    const input = { accountId: account.id, currency: code, chain, address: address.trim(), amountMinor };
+    const subject = `send:${input.accountId}:${input.currency}:${input.chain}:${input.address}:${input.amountMinor}`;
     const held = attemptFor<typeof input>(subject);
     const attempt = held ?? { subject, key: newRequestKey(), quote: input, phase: 'sent' as const, paymentId: null };
     keepAttempt(attempt);
