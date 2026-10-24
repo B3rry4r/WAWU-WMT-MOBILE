@@ -18,6 +18,10 @@ import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
 import { myPassQuery, type MyPass } from '../api/pass';
+import { FxTabBody } from '../fx/FxTabBody';
+import { NAIRA_TAB } from '../fx/model';
+import { WalletTabs } from '../fx/parts';
+import { useFxHome } from '../fx/useFx';
 import { PassesTile } from '../pass/PassesTile';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { PointsTile } from './PointsTile';
@@ -44,8 +48,9 @@ const INFO_SKELETON = 86;
  * bills anywhere on this tab (R-52).
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
- * drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap (WALLET-21);
- * the WAWU card row (WALLET-22). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
+ * drawn: the scan icon (WALLET-20); the WAWU card row (WALLET-22). The tabs under the title (WALLET-21, R-83, R-84) are one for each
+ * currency account the Hub says exists or can be opened, and Crypto; Naira is the tab below, as it was, and a person whose wallet is
+ * not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
  * is drawn when `GET /me/tier` has an event pass, beside the Points card (wallet.js line 47, 10 apart). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
  * money beyond the reads above.
@@ -75,12 +80,15 @@ export function WalletScreen() {
   const points = useQuery(myPointsQuery(owner), queryClient);
 
   const view = homeView(wallet, balance);
+  const fx = useFxHome(owner, open && view.kind === 'ready');
+  const [tab, setTab] = useState(NAIRA_TAB);
+  const activeTab = fx.tabs.some((t) => t.key === tab) ? tab : NAIRA_TAB;
   const [hidden, setHidden] = useState(false);
   const [pulled, setPulled] = useState(false);
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];
-    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch(), points.refetch());
+    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch(), points.refetch(), queryClient.invalidateQueries({ queryKey: ['money', 'fx'] }));
     await Promise.all(asked);
   }, [wallet, balance, recent, pass, points, open]);
 
@@ -120,6 +128,21 @@ export function WalletScreen() {
         {owner === null ? (
           <WalletSkeleton tiles={actions.length} />
         ) : (
+          <>
+            {view.kind === 'ready' && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} /> : null}
+            {view.kind === 'ready' && activeTab !== NAIRA_TAB ? (
+              <FxTabBody
+                tab={activeTab}
+                owner={owner}
+                currencies={fx.currencies}
+                accounts={fx.accounts}
+                accountsError={fx.accountsError}
+                accountsPending={fx.accountsPending}
+                onRetry={() => void queryClient.invalidateQueries({ queryKey: ['money', 'fx'] })}
+                hidden={hidden}
+                onToggleHidden={() => setHidden((was) => !was)}
+              />
+            ) : (
           <Body
             view={view}
             hidden={hidden}
@@ -142,6 +165,8 @@ export function WalletScreen() {
               onOpenGroup: (key: string) => router.push({ pathname: '/transactions', params: { group: key } }),
             }}
           />
+            )}
+          </>
         )}
       </ScrollView>
     </View>

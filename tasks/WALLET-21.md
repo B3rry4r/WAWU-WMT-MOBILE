@@ -7,9 +7,9 @@ order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
-depends_on: [WALLET-01]
-decisions: [R-83, R-84, R-10, R-39, R-37]
+status: review
+depends_on: [WALLET-32, WALLET-33, WALLET-01]
+decisions: [R-83, R-84, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W2, W3, W20, W21, W22, W23]
 tier: T2
@@ -36,6 +36,46 @@ Dev (Nuvion DEV only, `docs/nuvion/DEV-RESULTS.md`, WALLET-21 section): all nine
 
 - **Next:** the app builder builds the screens (W2, W3, W20 to W23, the Dollar and Crypto tabs on W1) from the backend contract at `wmt/WALLET-21-HUB`, drawing only what `GET /money/fx/currencies` says is on (R-47), and a verifier checks the Hub side. Not done on the Hub side: a first real webhook delivery for these accounts (the dev endpoint is not reachable from a run), the nightly check against a real USD to NGN swap (G-WALLET-21-5), the dashboard screen for the admin routes (G-WALLET-21-9).
 - **History:** reports go to tasks/history/WALLET-21.md.
+
+As of 24 Oct 2026, built by a Sonnet builder (bundle B19, T2), mobile `wmt/WALLET-21` on `origin/main` `7e65293b`; contract copied from backend `wmt/WALLET-21-HUB` `e44ea4c` (B18's routes, declared and served on the Nuvion adapter by B18's later pushes). Follow-up (lead, 24 Oct): the contract is re-copied from `wmt/WALLET-21-HUB` `0008490` (routes now served), where `GET /money/fx/sends/quote` and `POST /money/fx/sends` also take `currency` (USDT, USDC or RLUSD, the account's); the app sends it on both calls (`fx/api.ts`, `CryptoSendScreen`), and the send's attempt subject names it. Also fixed: the swap's hold could read a second too long on the first frame (the clock was older than the quote); it is now capped at the quote's `validForSeconds`. Status: review (round 1 re-check, 24 Oct: PASS; the first verifier's H1, M1 and M2 are closed, three lows below go to the sweep). R-83 and R-84 replace this file's old brief (Cardex samples, 90 seconds, TRC-20 and BEP-20 are dead): the networks are Nuvion's, the hold is the quote's own `expiresAt`, the fees are the Hub's breakdown.
+
+| # | Before (`origin/main`) | After |
+|---|---|---|
+| 1 | W1 has no tabs (R-47: not built) | under the title, one tab for Naira, each currency the Hub says exists or can be opened (USD, EUR, GBP, CAD, AED, GHS), and Crypto; three tabs are the board's track, more scroll sideways. A person whose wallet is not open sees none and the existing Open your wallet path |
+| 2 | no foreign account anywhere | W2 for every currency: the account's own balance (the provider's), "USD account · issuing bank", the number masked with Copy, Add (opens Swap from naira) and the round Swap button, "Get paid from abroad" opening the details Nuvion issued (each with Copy, and Share), the account's statement, the opening and frozen states, "Open a ... account" only when the Hub allows it |
+| 3 | no crypto | W3: holdings grouped by coin (a stablecoin account is one chain's wallet), Receive, Send (only when the Hub has crypto send on and an account is open), Swap, the statement. No dollar total and no "≈ $" line: the Hub serves none (gap row) |
+| 4 | no swap | W20 and W21: from and to chosen from the accounts the person holds, keypad in the side's own decimals, the rate and the "Holds m:ss" pill counted from the quote's `expiresAt` (a new rate is asked for when it runs out), the fee as the Hub's breakdown, review sheet, PIN sheet (W11, with fingerprint or face as FIX-112), receipt |
+| 5 | no receive | W22: coins and networks from the Hub, address with QR (`events/qr`, nothing new), Copy, the undismissable warning; a network with no account is opened from here when the Hub lets it |
+| 6 | no crypto send | W23: coin, network (the account's), pasted address, amount with Max, balance, fees on top, review, PIN, receipt |
+| 7 | Idempotency | one key per swap (kept with its quote) and per send (kept with its body) in `money-attempt`, sent again unchanged on a wrong PIN and on a request that got no answer; a closed or refused fingerprint never rotates it (`notApproved`) |
+
+### Defaults (lead), owner may override
+
+- Add dollars (and the same on each currency) opens Swap from naira to that currency; the round button opens Swap from that currency to naira. W2's Send is not drawn: foreign sends are NUV-11 (R-84 item 4).
+- A swap or send the provider has not finished goes to its receipt as Pending and is read again by its id every 4 seconds; it is never done twice.
+- The review sheets (W21, W23) carry the fee rows as the Hub names them; a network fee the provider names only when it takes the send is written "Shown on your receipt".
+- Dollar value of crypto, minimum deposit per network and the send's arrival time are not drawn (the Hub serves none): see BACKEND_GAPS G-WALLET-21-A1 to A4.
+- Not built, no board: a history screen for a foreign account (the tab shows the newest 20), the scan icon (WALLET-20), W2/W3 inside Home.
+
+### Round 1 (24 Oct 2026, fix of the verifier's FIX verdict; builder B18, Sonnet)
+
+Backend `wmt/WALLET-21-HUB` `51a8aa8`, mobile `wmt/WALLET-21` (this commit); contract copied from backend `51a8aa8`.
+
+| # | Finding | Before | After | Proof |
+|---|---|---|---|---|
+| H1 | WAWU's fee out of naira shown and recorded as paid, never collected | the fee leg named the payer's own account (the area ignored the named routing number for NGN); dev refused it (`cannot_transfer_to_same_account`, a failed record kept); the retry found that record and wrote `feeLeg: done` | a naira fee is collected the way a naira send's is: `getPlatformAccount()` then `walletToWallet` to WAWU's operational account under `<ref>-fee`, with the payer's debit and WAWU's credit in the ledger; the area honours a named routing number for every currency; a leg is `done` only when the provider says it completed; refused for good it is tried again under a new reference (`-fee-2`, `-fee-3`) and given back after three (`uncollected`, the operation's fee 0, admin view `feeLeg`); lost or unfinished stays `owed` under the SAME reference | specs written first, red (6 failed: the area test and five service tests), then green: area 19, service 23 (naira collected; refused then given back; refused then collected once; lost/unfinished then done under one reference; foreign collector; wrong collector never done). **Dev**: `fx-fee-dev-check-cli` (backend), ₦200 swap with a ₦5 fee on entity "Ada VerifierA": payer 434,525 to 414,025 kobo (20,500 out), WAWU's account +500 kobo, Nuvion's record of `<ref>-fee` `successful`, `feeLeg: done`, ledger rows user out 20,000, user out 500, merchant in 500 |
+| M1 | contract not what `contract:build` produces | one summary line stale (fixed by `d39a868`) | `contract:build` re-run on `51a8aa8`: only the new `detailsStatus`, `detailsNote` and admin `feeLeg` fields changed; copied here, `npm run api` run | EXIT 0 |
+| M2 | CAD and AED card promised "on their way" | `details: null` with no reason | the Hub says why: `detailsStatus` (`ready`, `pending`, `unavailable`) and `detailsNote` (the provider's words); an account whose details were never seen is asked again on every read; the card reads "Account details are not available right now" and the Hub's words, or "Account details are pending", and never promises an arrival | backend spec (CAD with the stand-in's 503 words; next read `pending`, then `ready`), `fxTabs` test "says exactly where the details stand" |
+
+Owner-facing default (lead), owner may override: the naira fee needs no `FX_FEE_COLLECTOR_NGN_BAN` (it goes to WAWU's operational account); a fee in another currency still needs its collector account. G-WALLET-21-7 stands for those.
+
+### Round 1 re-check (verifier Sonnet, 24 Oct 2026): PASS
+
+Backend `wmt/WALLET-21-HUB` `51a8aa8`, mobile `wmt/WALLET-21` `af7b4de7`. H1, M1, M2 closed; nothing medium or worse. Open lows (to the wallet sweep): L1 `src/features/wallet/fx/ReceiveScreen.tsx:188` still says "Your address is on its way" for a stablecoin account without an address and ignores `detailsStatus` (same promise as M2; dev issues the addresses, so not seen); L2 `src/money/fx/fx-operations.service.ts` feeLeg `update` calls are not compare-and-set, so a stale caller can write an older state over a newer one (self-heals under one provider's consistent answers; seen only when my harness put two providers on one test database); L3 `fx-money.contract.spec.ts` cleans only in `beforeAll` and its `ops.sweep()` takes every owed row in the database (a stray owed row fails the refusal test; port 8311 is fixed). Also: `check_tasks` failed at `af7b4de7` ("docs/PROGRESS.md is out of date"), so the round 1 report's "check_tasks 0" did not hold until `--write`.
+
+### Checks (EXIT lines in `scratchpad/wallet-21-b/logs/`)
+
+tsc 0; eslint on changed files 0 (0 warnings); jest: `fxModel` 18, `fxTabs` 16, `fxSwapFlow` 11, `fxCryptoFlow` 14, plus the existing `WalletScreen`, `walletTabFlow`, `route-guard`, `route-graph` (356) all pass; gates 0 fail, 18 warn (all older PROVISIONAL, none new), baseline 0; check_tasks 0. Pictures: `scratchpad/wallet-21-b/` (W1 with tabs, W2, W3, W20, W21, W22, W23, 390 px, light and dark, and each beside its board), taken from the web export against a stand-in Hub (ports 8330 to 8332), not the Nuvion dev key. NOT RUN: a live swap or send on Nuvion dev (the stand-in answers the shapes B18's contract gives; dev answers `provider_declined` for stablecoin sends and 503 for CAD and AED details, which the screens draw plainly and which the tests cover as a refusal), fingerprint on a real phone, the dark W12 receipt picture.
 
 ## Read first
 
@@ -134,13 +174,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - W20: “⚠ Every rate, fee and network below is a placeholder until Fintava's FX and custody terms are confirmed.”
 - W22: “⚠ The QR is a placeholder; production renders it from src/lib/qr.ts.”
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-21.md](history/WALLET-21.md).
 
 ## Owner sign-off
 

@@ -78,3 +78,11 @@ Run 24 Oct 2026 by the WALLET-21 builder (Sonnet, T2, bundle B18). Nuvion DEV on
 | WALLET-21 | Nuvion's webhooks for these accounts | NOT RUN | The dev endpoint does not reach this run; the handler (`src/nuvion/handlers/fx.handler.ts`) is tested against signed-shape deliveries in the backend specs only. |
 
 Facts other tasks lean on, from this run: dev opens an account in all nine currencies for a Nigerian individual; the naira account id of a dev entity is found in `GET /accounts?entity_id=`; `GET /transfers?account_id=` lists a swap on the receiving account too.
+
+### WALLET-21 fix round 1 (24 Oct 2026): WAWU's fee on a swap out of naira, on Nuvion DEV
+
+| Task | Check | Result | Evidence |
+| --- | --- | --- | --- |
+| WALLET-21 | The naira fee leg reaches WAWU's account (verifier H1) | PASSED after the fix | Through the Hub's own services over the real Nuvion adapter and book area (backend `src/money/fx/fx-fee-dev-check-cli.ts`, test database, dev entity "Ada VerifierA"): config `FX_SWAP_FEE_NGN_MINOR=500`; quote NGN 20,000 kobo to USD 14 cents, total 20,500; swap `completed`; `feeLeg: done`; payer naira 434,525 to 414,025 (20,500 out); WAWU's operational account 152,433 to 152,933 (+500); `GET /transfers` record `<ref>-fee` `successful`, amount 500, fee 0. Before the fix on the same dev: the leg named the payer's own account and dev answered 400 `cannot_transfer_to_same_account` with a `failed` record (the verifier's run); the first run of this check on the earlier entity also stopped before any fee request because the book area did not know the sender (no wallet row), which the script now seeds, as the Hub has one. |
+| WALLET-21 | A refused fee is not marked paid | PASSED (stand-in, dev-shaped) | the stand-in answers a same-account fee 400 and keeps a failed record, as dev did; the leg stays `owed:2`, then `uncollected` after three, fee 0 (backend specs). |
+
