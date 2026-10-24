@@ -1,0 +1,31 @@
+# DEPLOY-FAST · round history
+
+Moved out of [tasks/DEPLOY-FAST.md](../DEPLOY-FAST.md) word for word, oldest first. The current state is in that file.
+
+## Verifier report
+
+Verifier: Sonnet agent, 24 Oct 2026, built none of it. Backend `wmt/DEPLOY-FAST` `6e29183` against `origin/main` `0cd8f8e`; this record from `7d291e77`. Logs in the scratchpad folder `deploy-fast-v/`. Verdict: FIX (one medium). Diff matches the report: 6 files (`deploy.yml`, `branch-checks.yml` comment, `check_deploy_in_sync.py`, `decide_skip_tests.py`, its test, README), no source, test, gate, baseline, schema or Fintava file; the `deploy` job's steps (SSH key, rsync, migrate/build/restart, smoke) are byte-identical to main; the new `suite` and `netns` hold every step of the old `test` job.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | `test_decide_skip_tests.py` 20 tests OK on python 3.11, 3.12 (the runner's) and 3.13 and in an empty environment, EXIT 0 (`decide-test*.log`); `check_deploy_in_sync.py` EXIT 0, 27 self-test changes, 15 steps (`sync.log`); actionlint 1.7.7 built from source (the builder used 1.7.12) EXIT 0 on both workflows, PyYAML loads both (`actionlint.log`); backend gates EXIT 0, 9 run, 1759 files scanned, 0 fail, 133 warn, 88 accepted (`gates.log`); `check_baseline.py` EXIT 0, 124 entries (`baseline.log`) |
+| V9 | NOT RUN as written | no dispatch, no live host, no key (brief). Substitute: the real `decide()` and the real GitHub API (read-only) for the last 14 merges on `origin/main`: 7 skip, 7 test (`real.log`) |
+
+| Check | Result |
+|-------|--------|
+| 1 decide never skips an untested tree | held. Throwaway copies in `deploy-fast-v/extra/` (not committed), 13 more cases, all as wanted: octopus merge (no second parent used), `-s ours` merge (tree equals the first parent only), neutral, timed_out, action_required, stale, waiting, requested at run and job level, `pull_request_target`, schedule, workflow_run, merge_group on all three workflows, Gates `pull_request`, 100 `pull_request` runs hiding the push run, repo name case mismatch, equal timestamps (id breaks the tie), a body without `workflow_runs` or with `null`, a failed duplicate `netns` job. Plus the builder's: tree differs, run missing, failed, cancelled, running, job missing or skipped, jobs unread, fork, other sha, API failure, checkout not the commit, force_tests. A shallow `--depth 2` clone of merge `90bb0ef` finds both parents and the second tree. Failed-then-passed: the newest run decides (older fail then newer pass skips; newer fail blocks) |
+| 2 deploy.yml | held. Skip path: `suite` and `netns` skipped, `deploy` runs through `!cancelled()` and the skipped-result clause, so the real deploy is not skipped forever; test path: both `success`; a failed, cancelled or missing decide never deploys; `dry_run` and any ref but main never deploy and `notify` is skipped for a dry run; a dry run has its own concurrency group (real runs keep `deploy-hub-api`, `cancel-in-progress: false`); `decide` alone has `contents: read` and `actions: read`; the token is in the env of the Decision step only |
+| 3 sync check | caught 8 of 15 throwaway drifts (jest flag on one side, node version on one netns side, `continue-on-error` on a job and on a step, Seed dropped on one side, matrix 1,2 with /3 on both, `needs` without decide, Postgres port on one side). Missed 7: see the medium and the low list |
+| 4 CI | Branch checks run 40056100590 on `6e29183`: NOT FINISHED when read (03:10 UTC): deploy-test-in-sync, contract, netns, shards 2 and 3 success, shard 1 still running at 16 minutes; job names are exactly `suite (shard N of 3)` as `decide` needs. Gates run 40056100588 and Protected routes run 40056100691 (push) on the same sha: success |
+
+### Findings
+
+1. **medium, test-gap, `scripts/ci/check_deploy_in_sync.py:230-233` and the `decide` job (`deploy.yml:51-76`).** The `deploy` `if` is checked by substrings and `decide` is not read, so a loosened condition or a decide that always skips passes. Repro on copies of `deploy.yml` (checker run with both paths, EXIT 0 each, should be 1): append `|| true` to the `deploy` `if` (line 262); change `needs.suite.result == 'skipped' && needs.netns.result == 'skipped'` to `!= 'cancelled'` (line 261); replace line 76 with `run: echo skip_tests=true >> $GITHUB_OUTPUT`. Silent too: `fetch-depth: 2` to 1 (line 66), a renamed `suite (shard N of 3)` job in `branch-checks.yml` (line 68), the decide unit-test step dropped (lines 68-69), `decide` given `actions: write` (line 58). Kills: a truth-table evaluation of the `deploy` `if` plus assertions on the `decide` steps, `fetch-depth` and `BRANCH_CHECKS_JOBS`, each as a SELF_TESTS row. Mutant files: `deploy-fast-v/mut/`.
+2. low, `scripts/ci/test_decide_skip_tests.py` runs only inside the deploy's `decide` job (`deploy.yml:69`), never on a branch, so its first CI run is the deploy after the merge; a failure there blocks the deploy (safe, loud). It passes on 3.11, 3.12 and 3.13 here. Add it to `deploy-test-in-sync` in Branch checks.
+3. low, `decide_skip_tests.py:76-77`: a Protected routes `pull_request` run counts whatever the pull request's base branch is, so a pull request stacked on another branch is checked against that base's lock, not main's. The runs I read had an empty `pull_requests` field, so the base cannot be read cheaply. Narrow: the jest suite also holds the protected routes copy and passed in Branch checks.
+4. low, `decide_skip_tests.py:132-143`: the runs list is one page of 100 and `total_count` is not compared. Fails safe (the tests run); add the check so it is explicit.
+5. low, `deploy.yml:47`: a dispatch from a non-main ref with `dry_run` off joins the real group `deploy-hub-api`, can replace a pending real deploy and then deploys nothing (the main-only guard). Same on main today. Put `github.ref` in the group for non-main refs.
+6. low, `deploy.yml` `suite`, `netns` and `deploy` have no `permissions:` (workflow default token); unchanged from main. A workflow-level `permissions: contents: read` is the least needed.
+7. nit, README says the newest push run of Branch checks; the code also accepts `workflow_dispatch`.
+
+Not run: the Actions dry run (needs the owner or the lead: Actions, Deploy Hub API, Run workflow, branch `wmt/DEPLOY-FAST`, `dry_run` on, `force_tests` on to see the shards).

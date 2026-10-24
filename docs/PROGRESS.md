@@ -3,20 +3,21 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 360.**
+**Launch tasks done: 176 of 361.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 26 | 0 | 0 | 0 |
+| review | 27 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
 - [AITOOLS-03](../tasks/AITOOLS-03.md) Sound effect and Music track (backend) (You)
+- [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [FLIX-04](../tasks/FLIX-04.md) Flix movies show "not live yet" until business talks finish (You)
