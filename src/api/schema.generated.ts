@@ -30502,7 +30502,7 @@ export interface operations {
                 cursor?: string;
                 /** @description Jobs per page, 1 to 100. */
                 limit?: number;
-                /** @description AITOOLS-07: `true` lists only the results the person saved to their library. Absent: every job, as before. */
+                /** @description AITOOLS-07: `true` lists only the results the person saved to their library; `false` lists only the ones not saved. Absent: every job, as before. */
                 saved?: boolean;
             };
             header?: never;
