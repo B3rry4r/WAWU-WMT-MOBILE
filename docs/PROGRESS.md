@@ -9,12 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 26 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 27 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
 - [AITOOLS-03](../tasks/AITOOLS-03.md) Sound effect and Music track (backend) (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
@@ -44,7 +45,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
