@@ -7,7 +7,7 @@ order: -153
 priority: launch
 repo: all
 type: backend-endpoint
-status: verifying
+status: building
 depends_on: []
 decisions: [R-1, R-6, R-11, R-47, R-55]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T2
 # OPS-26 · Money oversight lists
 
 ## Current state
+
+**Verifier (24 Oct 2026, lean T2 check, a separate Sonnet agent): FIX.** One medium: `reason` on `GET /admin/money/earnings/in-review` sends the `discrepancy` column as written, so a crafted row puts a BVN-like string, phone, hash and name on the wire (F1 below). Everything else held: read-only (no row changed across the reads, no provider call), roles, paging with ties, the dashboard gate fix (comment only), all checks green. Status back to building for F1; lows F2 to F4 go to `tasks/SWEEP-APP.md`.
 
 As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B16): backend `wmt/OPS-26` on `origin/main` `b69aa7f`, dashboard `wmt/OPS-26` on `origin/wmt/OPS-23` `ca16990` (merged in, no rebase). Status verifying. Nothing here moves a naira, calls a provider or changes a row: three `GET` routes over tables that already exist, and the dashboard sections that read them.
 
@@ -40,6 +42,30 @@ Proof (backend, `wmt/OPS-26` `b124ee6`; dashboard `62a47b3`):
 Not done, NOT RUN: the dashboard on a phone width; "Load more" clicked in a browser (the stack held 4, 4 and 3 rows against pages of 25; paging is proved in the specs and by the live `nextCursor` on `limit=2`); the backend suite on GitHub (the lead watches CI); `check:contract` and `check:ops-contract` of the dashboard (they fail on this machine before reading a line: no web checkout for the first, the second reads `main.ts` for a prefix that moved to `hub-app-config.ts`, both from before this task).
 
 Open low, for `tasks/SWEEP-APP.md`: (a) the 60 minutes is a constant, not a setting; a Nuvion review that really takes longer than an hour lists as `open` with stage "Being checked", which is accurate but not stuck; (b) `finance` reads earnings only: the opening lists follow the release route's roles; (c) the lists count and page with `NOT EXISTS` over `FintavaWallet` and no new index, fine at today's volume; (d) the dashboard's older generators (`check:contract`, `check:ops-contract`) need their own repair.
+
+## Verifier report
+
+Under check: backend `origin/wmt/OPS-26` `b124ee6` against `origin/main` `b69aa7f`; dashboard `62a47b3` against `origin/wmt/OPS-23` `ca16990`. Verdict **FIX** (one medium). The lean check ran the brief's three tests plus the listed commands; V4, V6 (browser states) and V7 (flow walk) were NOT RUN here (no pictures taken, no browser; the builder's live pictures were not re-taken).
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| 1 Read-only | passed | Code: only `findMany`, `count` and `SELECT` raw queries; no write, no provider import (`earnings-in-review.service.ts`, `admin-opening-lists.service.ts`; `reviewStageOf` is pure). Live (own stack `v26ov`, Nuvion stand-in): md5 of every row of 208 tables identical before and after 130+ reads of the three routes (`CommunityNoticeCursor` left out: it ticks every 10 s with no request at all, shown); the stand-in saw no new request. |
+| 2a Nothing personal leaks (openings) | passed | A planted `failure` holding an 11-digit BVN-like number came back as `failureCode: null`; planted phone and `bvnHash` never on the wire; a `NuvionEntity` whose refusal reasons held a BVN-like string gave only the stage word. Response keys are the typed ones only. |
+| 2b Nothing personal leaks (earnings) | **failed** | F1. |
+| 2c Roles | passed | Allowed roles 200 (`in-review`: superadmin, finance; `stuck` and `identity-holds`: superadmin, support); every other admin role 403; no token 401; junk token 401; a real user token (mock WAWU ID, RS256) 401, the same answer the existing `before-start` route gives, not 403. `Cache-Control: no-store` on all three. |
+| 2d Cursor paging | passed | Limits 1, 2, 3, 4, 7 each equal the `limit=100` list exactly (no repeat, no gap) over ties: a daily move and an earning at the same instant (move first), two moves at the same instant, openings at the same instant with ids `A_1`, `Zed-1`, `zed-1` (C collation order). 60-minute edge: 59 min not listed, 61 listed; `conflict` listed at once; wallet, `released:` hash, `failed`, `expired`, `landed` moves and a move's member earning all left out. Bad `limit` (0, 101, abc, -1, 1.5), bad cursor, other list's prefix, 301 chars and an injection-shaped cursor all 400 with the fixed sentence, nothing echoed. |
+| 3 Dashboard gate fix | passed | Diff of `finance/payouts/page.tsx` is the 2 comment lines only; `scripts/gates/**` and `baseline.json` not in the diff. OPS-23 base: gates EXIT 1 (1 fail, `deferrals`, `payouts/page.tsx:39`, 142 files, 6 accepted); OPS-26: EXIT 0 (0 fail, 6 accepted, 146 files). |
+| Backend commands | passed | `tsc --noEmit` EXIT 0; `eslint` (no `--fix`) on the 11 changed `.ts` files EXIT 0; 5 suites, 81 tests EXIT 0 (`earnings-in-review` 9, `admin-opening-lists` 18, `admin-identity-holds`, `publishing-gate-coverage`, `hub-rate-limits`; the specs named "fintava" only in table names and one source path string, no Fintava double); `test:protected` 253 tests EXIT 0 (`db:seed` first); `contract:build` EXIT 0, `git status` clean; gates EXIT 0 (1810 files, 0 fail, 135 warn, 88 accepted); `check_baseline.py` EXIT 0 (124 entries). |
+| Dashboard commands | passed | `tsc --noEmit` EXIT 0; `eslint src` EXIT 0; `check:oversight-contract` EXIT 0 (current against `origin/wmt/OPS-26`); `check:invariants` EXIT 0 (146 files); `check:contrast` EXIT 0; gates EXIT 0; baseline EXIT 0 (6 entries); `npm run build` EXIT 0. |
+
+Findings, ranked:
+
+- **F1, medium, defect.** `reason` is the raw `discrepancy` column. `src/money/earnings/earnings-in-review.service.ts:164` (daily move) and `:180` (single earning) send `clip(...)` (`:86-89`, only a 400-character cut). Repro: insert an `EarningMove` with `reviewSince` set and `discrepancy` holding a sentence with a BVN-like 11-digit number, a phone, a 32-character hash and a name (made-up test values), then `GET /api/hub/admin/money/earnings/in-review` as `finance`: the whole string comes back, and the dashboard's "Why" cell (`src/components/oversight/EarningsInReview.tsx`) prints it. Every writer today writes one of our own sentences (`earning-settlement.service.ts:463-472, 927-953, 1195-1344`), so real rows are clean; but the task says "no BVN, hash, phone, name or provider text", the opening lists already guard `failure` with a snake_case shape (`admin-opening-lists.service.ts:40, 94`), and the spec plants only our own sentences (`earnings-in-review.contract.spec.ts:224-233`). Send a reason only when it is one of the known sentences (or a reason code), else `null`, and plant a crafted `discrepancy` in the spec.
+- **F2, low.** `provider` is echoed as stored on all three lists (`earnings-in-review.service.ts:161,178`; `admin-opening-lists.service.ts:98,144,189`): a planted provider value holding an 11-digit BVN-like number came back. A single earning's `title` is echoed too (an item title, as `before-start` already does). Both are system-written columns. Sweep: map `provider` to `fintava` or `nuvion` and send nothing else.
+- **F3, low.** The holds list is not limited to the provider the server runs, but the release acts only on its own provider's rows (`reviewed-opening.ts` `releaseHold`, `isRowOf`), so "exactly what the release can act on" holds for one provider. Repro on the Nuvion stack: an opening in `review` with provider `fintava` and no wallet is listed, and `POST /admin/identity-holds/<id>/release` answers 404 "That account has no wallet opening with a hold to release." (the `nuvion` row released, 200). A Fintava row is never in `review` or `stopped` in real data. (This one release ran on my own stack after the read checks.)
+- **F4, low, note.** Cursor ids must match `^[A-Za-z0-9_-]{1,64}$` (`admin-opening-lists.service.ts:38`, `earnings-in-review.service.ts:35`); an account id with another character would make page 2 a 400. WAWU ids are UUIDs.
+
+Test-gap note: both new specs mount a small module, not `AppModule`; the live run above shows the routes mounted and the throttler (20 per second) in front of them.
 
 ## Read first
 

@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 164 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 163 | 0 | 0 | 0 |
 | review | 33 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -51,7 +51,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [OPS-26](../tasks/OPS-26.md) Money oversight lists the Hub could not serve (earnings in review, stuck wallet openings, identity holds), read-only, and the dashboard sections for them (You)
 - [OPS-25](../tasks/OPS-25.md) Admin dashboard: money oversight (older unpaid sales, identity holds), read and act on what the Hub offers (You)
 - [OPS-24](../tasks/OPS-24.md) Admin dashboard: /join registrations and referral codes (list, make, turn off) (You)
 - [OPS-23](../tasks/OPS-23.md) Admin dashboard: support threads (staff read and answer people's support threads) (You)
@@ -218,6 +217,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [OPS-26](../tasks/OPS-26.md) Money oversight lists the Hub could not serve (earnings in review, stuck wallet openings, identity holds), read-only, and the dashboard sections for them (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
