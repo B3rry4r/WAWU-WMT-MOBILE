@@ -86,3 +86,25 @@ Facts other tasks lean on, from this run: dev opens an account in all nine curre
 | WALLET-21 | The naira fee leg reaches WAWU's account (verifier H1) | PASSED after the fix | Through the Hub's own services over the real Nuvion adapter and book area (backend `src/money/fx/fx-fee-dev-check-cli.ts`, test database, dev entity "Ada VerifierA"): config `FX_SWAP_FEE_NGN_MINOR=500`; quote NGN 20,000 kobo to USD 14 cents, total 20,500; swap `completed`; `feeLeg: done`; payer naira 434,525 to 414,025 (20,500 out); WAWU's operational account 152,433 to 152,933 (+500); `GET /transfers` record `<ref>-fee` `successful`, amount 500, fee 0. Before the fix on the same dev: the leg named the payer's own account and dev answered 400 `cannot_transfer_to_same_account` with a `failed` record (the verifier's run); the first run of this check on the earlier entity also stopped before any fee request because the book area did not know the sender (no wallet row), which the script now seeds, as the Hub has one. |
 | WALLET-21 | A refused fee is not marked paid | PASSED (stand-in, dev-shaped) | the stand-in answers a same-account fee 400 and keeps a failed record, as dev did; the leg stays `owed:2`, then `uncollected` after three, fee 0 (backend specs). |
 
+## Capital (NUV-12, 24 Oct 2026)
+
+Run by the NUV-12 builder (Sonnet, T2) against Nuvion DEV only (`https://api.nuvion.dev`, the dev key, WAWU's own parent entity and its dev operational account, read and one small order of ₦50). No child entity was funded, so the person-entity path (`entity_id` on each call) was NOT RUN against dev; the area sends `entity_id` as the docs say and the Hub specs prove it on the stand-in. Production, Fintava and wawuafrica.com were not called.
+
+| Check | Result | What dev answered |
+| --- | --- | --- |
+| `GET /products` | PASSED | 200, a list of products: FIXED_RETURN in NGN, USD and GBP; SHARE_OFFERING in NGN, USD and GBP; and a third kind, `PRIVATE_EQUITY`, with an empty `config` (not in the docs; the Hub leaves it out). Descriptions are HTML. A share offering carries `availability.orderable` and `availability.reason` (`sale_window_closed`) and `config.share_offering.offer_stage`; most were closed on 24 Oct. |
+| `GET /products/{id}` | PASSED | adds `config.documents`; a document's `name` has its extension ("Terms & Conditions.pdf") and an order affirms it by that exact name. |
+| `POST /product-orders` (Fixed Return, ₦50, `lock_investment` false) | PASSED | 201 RESERVED, `expires_at` exactly 15 minutes ahead, quote `locked_rate` 0.3, `rate_source` "primary", `penalty.primary` 0.15, `earliest_withdrawal_days` null. No money moved. |
+| `GET /product-orders/{id}` | PASSED | RESERVED has `capital_account` null and the agreement snapshot. |
+| `GET .../withdrawal/preview` before confirm | REFUSED | 404 `error_resource_not_found` ("capital_account"). The Hub says "not available". |
+| `POST .../confirm` | PASSED | 200 APPROVED with `capital_account_id`, `user_capital_account_id` and `transfer_reference` `capital-fixed-return:<order id>`. The debit is a transfer `payment_type` `capital-fixed-return-purchase`, type outflow, `unique_reference` NOT the transfer_reference, counterparty the product owner's id. |
+| `POST .../confirm` again | REFUSED | 400 `error_operation_invalid_for_state` (the docs say a repeat resumes; for an APPROVED order it does not answer the first result). The Hub reads the order before it says anything. |
+| `GET /product-orders/{id}` after confirm | PASSED | `capital_account.lifecycle.status` ACTIVE; `early_action_date` is the confirmation moment (an early exit is allowed at once on this product); `due_interest` 333, `expected_net_payout` 5333 on ₦50 at 30% for 90 days. |
+| `GET /capital-portfolio` | PASSED | NGN `amount_invested` 5000, `total_return` 0, `current_value` 5000. One earlier call answered a Heroku 503 page; the next answered 200. |
+| `GET /capital-transactions?capital_id=` | PASSED | needs the capital ACCOUNT's id; the order's id answers an empty list, not an error. |
+| `GET .../withdrawal/preview` after confirm | PASSED | `penalty_rate` 0.15, `net_payout` 5000, `days_elapsed` 0. |
+| `POST .../withdrawal` | PASSED | 200, lifecycle EARLY_LIQUIDATING, `payout_status` pending, `net_payout` 5000; about 8 seconds later WITHDRAWN and `completed`. The payout is a transfer `capital-early-liquidation-withdrawal`, type inflow, whose `counterparty_id` is the holding's `user_capital_account_id`; the money came back to the funding account. |
+| `POST .../withdrawal` again | REFUSED | 400 `error_operation_invalid_for_state` (the docs say a terminal account returns its state). |
+
+Facts the Hub leans on: a Capital transfer's `unique_reference` is Nuvion's own, so a delivery is matched to its order by the holding's `user_capital_account_id` (payout) or by person, amount and the one unattached order (purchase). Webhooks `capital_orders.*` and `capital_accounts.*` were NOT RUN (the dev endpoint is blacklisted); the handler re-reads the order and acts only on what it reads.
+
