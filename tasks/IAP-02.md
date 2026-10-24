@@ -7,7 +7,7 @@ order: -10202
 priority: launch
 repo: all
 type: mobile-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-86, R-27, R-29, R-47]
 passes: [V1, V4, V5, V6, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B28, T2, a native module), mobile `wmt/IAP-02` on `origin/main` `b1e6681f`, with the Hub's contract copied from backend `wmt/IAP-01` `6e92cd2` (follow-up, 24 Oct 2026; first built on `8e7e16a`) (`GET /store/products`, `POST /store/purchases`; not merged yet, the lead merges the two together). Status verifying. This ships in the next STORE build, not over the air: `expo-iap` 6.1.1 is a new native module, so the runtime fingerprint changed (Android `2e0e4d99`, iOS `240378f1`).
+As of 24 Oct 2026, built by a Sonnet builder (bundle B28, T2, a native module), mobile `wmt/IAP-02` on `origin/main` `b1e6681f`, with the Hub's contract copied from backend `wmt/IAP-01` `6e92cd2` (follow-up, 24 Oct 2026; first built on `8e7e16a`) (`GET /store/products`, `POST /store/purchases`; not merged yet, the lead merges the two together). Status review (verifier PASS on `fa7848d0`: no medium or worse; four lows, two test-gap notes and the VF13 question for the owner, see history). This ships in the next STORE build, not over the air: `expo-iap` 6.1.1 is a new native module, so the runtime fingerprint changed (Android `2e0e4d99`, iOS `240378f1`).
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -80,3 +80,8 @@ A person buys points, WAWU Credits, a tier or a community pass in the phone's st
 - [x] A user sees "Buying is not open yet" when the Hub answers `store_not_configured`.
 - [x] No buy screen draws a wallet, PIN, Bank charge or naira (asserted in each screen's test).
 - [ ] On a phone, in a real store sheet: NOT RUN.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/IAP-02.md](history/IAP-02.md).
+
