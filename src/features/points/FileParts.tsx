@@ -8,7 +8,7 @@ import { Text } from '@/components/Text';
 import { formatBytes } from '@/features/create/model';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
-import { FILE_WORDS } from './fileToolModel';
+import { DUB_WORDS, FILE_WORDS, type Cue } from './fileToolModel';
 
 /*
  * The parts of the file step (POINTS-10). No board draws them (G-POINTS-09-1): they are PT2's own words box turned into a
@@ -17,7 +17,7 @@ import { FILE_WORDS } from './fileToolModel';
 
 /** points.js `pt2Body`: the same 20 corner box on the input colour, 14 by 16 padding; a 1.5 accent ring while nothing is chosen, a 1 hairline after. */
 const BOX = { radius: 20, padV: 14, padH: 16, ringOn: 1.5, ringOff: 1, min: 76, mark: 22, parts: 12, name: 15, line: 12.5, lineGap: 2 } as const;
-const CARD = { text: 15, leading: 1.5, label: 11, labelTracking: 0.08 } as const;
+const CARD = { text: 15, leading: 1.5, label: 11, labelTracking: 0.08, cueAt: 12.5, cueWidth: 44 } as const;
 
 /** What a chosen recording is doing: going up, being measured by the Hub, ready, or refused (the refusal is the banner under the box). */
 export type RecordingPhase = 'uploading' | 'checking' | 'ready' | 'refused';
@@ -84,7 +84,40 @@ export function TranscriptCard({ text, onShare }: { text: string; onShare?: () =
   );
 }
 
+/**
+ * Dubbing's subtitles (POINTS-11): the same card as the transcript, holding each line with where it starts, and the same share row under it
+ * where the phone has a share sheet. What is shared is the Hub's WebVTT file, untouched; this card only reads it for the person.
+ */
+export function SubtitlesCard({ cues, onShare }: { cues: Cue[]; onShare?: () => void }) {
+  return (
+    <View style={styles.transcript}>
+      <Card padded testID="tool-subtitles-card">
+        <Text variant="label" accessibilityRole="header" style={[font(700), { fontSize: CARD.label, letterSpacing: CARD.labelTracking * CARD.label, textTransform: 'uppercase' }]}>
+          {DUB_WORDS.subtitles}
+        </Text>
+        <View style={styles.cues} testID="tool-subtitles">
+          {cues.map((cue, i) => (
+            <View key={i} style={styles.cue}>
+              <Text variant="body" tone="textMuted" style={[styles.cueAt, { fontSize: CARD.cueAt }]}>
+                {cue.at}
+              </Text>
+              <Text variant="body" selectable style={[styles.cueText, { fontSize: CARD.text, lineHeight: CARD.text * CARD.leading }]}>
+                {cue.text}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+      {onShare ? <Button label={FILE_WORDS.shareSubtitles} variant="secondary" icon="Share2" full onPress={onShare} testID="tool-share-subtitles" /> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  cues: { gap: space.sm, marginTop: space.sm },
+  cue: { flexDirection: 'row', gap: space.md },
+  cueAt: { width: CARD.cueWidth, fontVariant: ['tabular-nums'] },
+  cueText: { flex: 1, minWidth: 0 },
   box: { flexDirection: 'row', alignItems: 'center', gap: BOX.parts, minHeight: BOX.min, borderRadius: BOX.radius, paddingVertical: BOX.padV, paddingHorizontal: BOX.padH },
   words: { flex: 1, minWidth: 0, gap: BOX.lineGap },
   transcript: { gap: space.md },

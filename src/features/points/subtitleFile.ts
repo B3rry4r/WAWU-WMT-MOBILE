@@ -16,10 +16,10 @@ export async function canShareSubtitles(): Promise<boolean> {
   }
 }
 
-/** Writes the subtitles to a file in the app's cache (the same name replaces the last one) and opens the share sheet; resolves when it is closed. */
-export async function shareSubtitles(srt: string, fileName: string, title: string): Promise<void> {
+/** Writes the subtitles (SRT, or WebVTT for a dub) to a file in the app's cache (the same name replaces the last one) and opens the share sheet; resolves when it is closed. */
+export async function shareSubtitles(text: string, fileName: string, title: string, mimeType: string = 'application/x-subrip'): Promise<void> {
   const file = new File(Paths.cache, fileName);
   file.create({ overwrite: true });
-  file.write(srt);
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/x-subrip', UTI: 'public.plain-text', dialogTitle: title });
+  file.write(text);
+  await Sharing.shareAsync(file.uri, { mimeType, UTI: 'public.plain-text', dialogTitle: title });
 }

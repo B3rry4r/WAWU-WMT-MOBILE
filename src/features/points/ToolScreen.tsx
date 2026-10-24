@@ -21,8 +21,8 @@ import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { fetchFileQuote, uploadRecording, type FileQuote } from './fileToolApi';
-import { FILE_WORDS, folderFor, limitsLine, refusalFor, subtitleFileName, typeOfRecording, acceptedTypes } from './fileToolModel';
-import { RecordingBox, TranscriptCard, type Recording } from './FileParts';
+import { DUB_WORDS, dubLanguages, FILE_WORDS, folderFor, isDubbing, limitsLine, readCues, refusalFor, subtitleFileName, typeOfRecording, acceptedTypes } from './fileToolModel';
+import { RecordingBox, SubtitlesCard, TranscriptCard, type Recording } from './FileParts';
 import { useJobCheck } from './JobCheck';
 import { PointsFrame } from './PointsFrame';
 import { ResultPlayer } from './ResultPlayer';
@@ -31,7 +31,7 @@ import { capTitle } from './studioModel';
 import { canShareSubtitles, shareSubtitles } from './subtitleFile';
 import { charactersOf, clampText, countLine, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent } from './voiceoverIntent';
-import { hasResult, JOB_POLL_MS, outputText, startJob, voiceJobQuery, type VoiceJob } from './voiceoverApi';
+import { hasResult, outputText, pollMsFor, startJob, voiceJobQuery, type VoiceJob } from './voiceoverApi';
 
 /** design/_gen/points.js line 90, `pt2Body`: the parts stand 14 apart; the box and its count line 8 apart. */
 const BODY_GAP = 14;
@@ -72,6 +72,9 @@ export type ToolScreenProps = {
  * A tool that takes the person's own recording (Captions, Clean audio: `input.kind` file) is PT2's frame with a choose-a-recording row where
  * the text box is: the file goes up, the Hub reads its length and quotes the minutes, and the cost line is that quote. It finishes with a
  * transcript in PT2b's card (and the subtitle file for the phone's share sheet) or with the cleaned audio in PT2b's player.
+ * Dubbing (`id` dubbing, POINTS-11) is that file tool with one more choice: the language to hear it in, in single-choice rows (PT2's voice rows) of the
+ * Hub's own list. Its job takes minutes, so the working view says so and the reads slow after the first minute; it ends in PT2b's player with the
+ * dubbed audio and a card of the subtitles under it (a video in gives audio out, and nothing says otherwise).
  */
 export function ToolScreen(props: ToolScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -136,6 +139,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const [fileQuote, setFileQuote] = useState<FileQuote | null>(null);
   const [fileRefusal, setFileRefusal] = useState<{ title: string; body: string } | null>(null);
   const [canShare, setCanShare] = useState(false);
+  // Dubbing: the language to hear it in, one of the Hub's list. Nothing is chosen until the person chooses: a dub costs points in every language.
+  const [targetLanguage, setTargetLanguage] = useState('');
   const choosing = useRef(0);
   const sending = useRef(false);
   /** The request the Hub has not answered: the same key and body go again on Try again. */
@@ -148,6 +153,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   // A recording's minutes are the Hub's own reading of its length (the file quote), never worked out on the phone.
   const units = kind === 'file' ? (fileQuote?.file.minutes ?? 0) : kind === 'prompt' ? 1 : unitsFor(characters, tool.input.charactersPerUnit);
   const fileRule = tool.input.file ?? null;
+  const dubbing = isDubbing(tool);
+  const languages = dubLanguages(tool);
 
   const job = useQuery({
     ...voiceJobQuery(owner, jobId),
@@ -155,7 +162,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       // A job the Hub does not know (404) will not appear by being asked again (SWEEP-APP-3 row 167).
       if (isApiError(query.state.error) && query.state.error.status === 404) return false;
       const data = query.state.data;
-      return data === undefined || data.state === 'working' || (data.state === 'done' && !hasResult(data)) ? JOB_POLL_MS : false;
+      return data === undefined || data.state === 'working' || (data.state === 'done' && !hasResult(data)) ? pollMsFor(tool.id, data?.createdAt) : false;
     },
   }, queryClient);
   const view: View_ = jobId ? (job.data?.state === 'done' && hasResult(job.data) ? 'done' : job.data?.state === 'failed' ? 'failed' : 'working') : unsent ? 'unsent' : 'input';
@@ -182,7 +189,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         await putJobIntent(owner, intent);
         const outcome = await startJob({
           toolId: intent.toolId,
-          request: intent.fileKey ? { kind: 'file', fileKey: intent.fileKey } : kind === 'prompt' ? { kind: 'prompt', prompt: intent.text } : { kind: 'text', text: intent.text, voiceId: intent.voiceId },
+          request: intent.fileKey ? { kind: 'file', fileKey: intent.fileKey, ...(intent.targetLanguage ? { targetLanguage: intent.targetLanguage } : {}) } : kind === 'prompt' ? { kind: 'prompt', prompt: intent.text } : { kind: 'text', text: intent.text, voiceId: intent.voiceId },
           quoteToken: intent.quoteToken,
           key: intent.key,
         });
@@ -220,6 +227,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         return;
       }
       if (kind === 'file' && !fileKey) return;
+      if (dubbing && !targetLanguage) return;
       void send({
         key: newRequestKey(),
         toolId: tool.id,
@@ -230,6 +238,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         characters: kind === 'file' ? 0 : (input.characters ?? characters),
         quoteToken: quote.quoteToken,
         ...(kind === 'file' && fileKey ? { fileKey } : {}),
+        ...(dubbing && targetLanguage ? { targetLanguage } : {}),
         jobId: null,
         at: Date.now(),
       });
@@ -250,6 +259,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       if (found.fileKey) {
         // The recording was uploaded and the job sent: only its name is kept here (the file is on the Hub, and goes when the job settles).
         setFileKey(found.fileKey);
+        if (found.targetLanguage) setTargetLanguage(found.targetLanguage);
         setRecording({ name: found.text, bytes: 0, phase: 'ready', share: 1 });
       } else setText(found.text);
       if (kind === 'text') setVoiceId(found.voiceId);
@@ -281,13 +291,14 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   }, [owner, ended, tool.id]);
 
   // The Hub lets the person's file go when its job settles, done or failed, so a settled job leaves nothing to run again: a failed job shows the empty row and asks for the recording again.
-  const fileReady = recording?.phase === 'ready' && fileKey !== null && fileQuote !== null && !ended;
+  const fileReady = recording?.phase === 'ready' && fileKey !== null && fileQuote !== null && !ended && (!dubbing || targetLanguage !== '');
   const shownRecording = kind === 'file' && jobId && job.data?.state === 'failed' ? null : recording;
   const run = () => {
     if ((kind === 'file' ? !fileReady : characters === 0) || starting || check.checking) return;
     setRefusal(null);
     // A recording is priced by the minutes the Hub read from it; the phone sends no length and no characters.
-    check.check(kind === 'file' ? { action: tool.action as JobAction, units } : { action: tool.action as JobAction, units, characters });
+    // A dub is priced for one language (a second language is a second job), so the quote says so.
+    check.check(kind === 'file' ? { action: tool.action as JobAction, units, ...(dubbing ? { languages: 1 } : {}) } : { action: tool.action as JobAction, units, characters });
   };
 
   /** The person picks a recording: it is checked against the Hub's rule, goes up, and the Hub reads its length and quotes it. A refusal is the Hub's own words and nothing is held. */
@@ -359,9 +370,12 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       alive = false;
     };
   }, [kind]);
-  const shareFile = (srt: string) => {
-    shareSubtitles(srt, subtitleFileName(recording?.name ?? ''), FILE_WORDS.shareTitle).catch(() => setNotice(FILE_WORDS.shareFailed));
+  const shareFile = (text: string, extension: 'srt' | 'vtt' = 'srt') => {
+    shareSubtitles(text, subtitleFileName(recording?.name ?? '', extension), FILE_WORDS.shareTitle, extension === 'vtt' ? 'text/vtt' : 'application/x-subrip').catch(() => setNotice(FILE_WORDS.shareFailed));
   };
+  // A dub's subtitles (WebVTT), read for the person; the Hub may send none (the dub is kept without them), and then no card is drawn.
+  const doneJob = job.data && job.data.state === 'done' ? job.data : null;
+  const subtitleCues = dubbing && doneJob ? readCues(outputText(doneJob, 'subtitles') ?? '') : [];
 
   /** The words change after a result: the page goes back to typing (the old job's record is already gone). */
   const edit = (next: string) => {
@@ -430,7 +444,20 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       {view === 'input' && fileRefusal ? <Banner tone="danger" icon="CircleX" title={fileRefusal.title} body={fileRefusal.body} testID="tool-file-refused" /> : null}
       {view === 'input' && refusal ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.refusedTitle} body={refusal} testID="tool-refused" /> : null}
       {view === 'input' && kind === 'text' ? <VoiceList voices={tool.voices} value={voiceId} onChange={setVoiceId} /> : null}
-      {view === 'working' ? <Working name={tool.name} /> : null}
+      {view === 'input' && dubbing ? (
+        <VoiceList
+          voices={languages.map((l) => ({ id: l.code, name: l.name, description: '' }))}
+          value={targetLanguage}
+          onChange={(code) => {
+            setTargetLanguage(code);
+            setRefusal(null);
+          }}
+          label={DUB_WORDS.language}
+          testID="tool-languages"
+          rowPrefix="tool-language"
+        />
+      ) : null}
+      {view === 'working' ? <Working name={tool.name} body={dubbing ? DUB_WORDS.workingBody : TOOL_WORDS.workingBody} /> : null}
       {view === 'done' && job.data && hasResult(job.data) ? (
         <View style={styles.done}>
           {job.data.audioUrl ? (
@@ -438,6 +465,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
           ) : (
             <TranscriptCard text={outputText(job.data, 'text') ?? ''} onShare={canShare && outputText(job.data, 'subtitles') ? () => shareFile(outputText(job.data as VoiceJob, 'subtitles') ?? '') : undefined} />
           )}
+          {dubbing && subtitleCues.length > 0 ? <SubtitlesCard cues={subtitleCues} onShare={canShare ? () => shareFile(outputText(job.data as VoiceJob, 'subtitles') ?? '', 'vtt') : undefined} /> : null}
           <View style={styles.usedRow} testID="tool-used">
             <Icon name="CircleCheck" size={DONE.mark} color={colors.positive} strokeWidth={2.2} />
             <Text variant="body" tone="textSecondary" style={{ fontSize: DONE.line, lineHeight: canvasNormalLineHeight(DONE.line) }}>
@@ -488,27 +516,42 @@ function WordsBox({ value, onChange, editable, tall, max, placeholder, label }: 
   );
 }
 
-function VoiceList({ voices, value, onChange }: { voices: AiTool['voices']; value: string; onChange: (id: string) => void }) {
+/** PT2's single-choice rows: the voices of a tool that reads words aloud, and (POINTS-11) the languages of Dubbing, the same row under another label. */
+function VoiceList({
+  voices,
+  value,
+  onChange,
+  label = TOOL_WORDS.voice,
+  testID = 'tool-voices',
+  rowPrefix = 'tool-voice',
+}: {
+  voices: AiTool['voices'];
+  value: string;
+  onChange: (id: string) => void;
+  label?: string;
+  testID?: string;
+  rowPrefix?: string;
+}) {
   return (
     <View style={styles.voices}>
       <Text variant="body" tone="textMuted" accessibilityRole="header" style={[font(700), styles.label]}>
-        {TOOL_WORDS.voice}
+        {label}
       </Text>
-      <View accessibilityRole="radiogroup" testID="tool-voices" style={styles.voiceList}>
+      <View accessibilityRole="radiogroup" testID={testID} style={styles.voiceList}>
         {voices.map((voice) => (
-          <VoiceRow key={voice.id} voice={voice} on={voice.id === value} onPress={() => onChange(voice.id)} />
+          <VoiceRow key={voice.id} voice={voice} on={voice.id === value} onPress={() => onChange(voice.id)} testID={`${rowPrefix}-${voice.id}`} />
         ))}
       </View>
     </View>
   );
 }
 
-function VoiceRow({ voice, on, onPress }: { voice: AiTool['voices'][number]; on: boolean; onPress: () => void }) {
+function VoiceRow({ voice, on, onPress, testID }: { voice: AiTool['voices'][number]; on: boolean; onPress: () => void; testID: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
     <Pressable
-      testID={`tool-voice-${voice.id}`}
+      testID={testID}
       accessibilityRole="radio"
       accessibilityState={{ checked: on }}
       accessibilityLabel={voice.description ? `${voice.name}, ${voice.description}` : voice.name}
@@ -542,7 +585,7 @@ function VoiceRow({ voice, on, onPress }: { voice: AiTool['voices'][number]; on:
   );
 }
 
-function Working({ name }: { name: string }) {
+function Working({ name, body }: { name: string; body: string }) {
   return (
     <View testID="tool-working" accessibilityLiveRegion="polite" style={styles.working}>
       <IconTile icon="Loader" tone="accent" size={WORKING.mark} />
@@ -550,7 +593,7 @@ function Working({ name }: { name: string }) {
         {TOOL_WORDS.workingTitle(name)}
       </Text>
       <Text variant="body" tone="textSecondary" style={[styles.workingBody, { fontSize: WORKING.body, lineHeight: WORKING.body * WORKING.bodyLeading }]}>
-        {TOOL_WORDS.workingBody}
+        {body}
       </Text>
     </View>
   );

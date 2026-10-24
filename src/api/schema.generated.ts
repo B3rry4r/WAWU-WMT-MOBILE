@@ -7634,6 +7634,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/dubbing/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The points quote for a Dubbing file (AITOOLS-05): exactly `POST
+         *     /ai-tools/captions/quote`, for the action `dub_standard_per_min_lang`. The
+         *     price is the minutes of the file the Hub reads, for one language.
+         */
+        post: operations["AiToolsController_quoteDubbing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/dubbing/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Dubbing job (PT1 "Dubbing", AITOOLS-05): the `fileKey` of a
+         *     recording or video the person uploaded, the `targetLanguage` to hear it in
+         *     (a code from `GET /ai-tools`, `input.file.dubbing.languages`), an optional
+         *     `sourceLanguage` and the `quoteToken` of the quote for the action
+         *     `dub_standard_per_min_lang`. One language a job: a second language is a second
+         *     job. The points are held and the job answers `working` at once; a dub takes
+         *     minutes, so the person may leave and the app reads `GET /ai-tools/jobs/{id}`
+         *     later. Done, `outputs` hold the dubbed audio (`audio`, FLAC) and the subtitles
+         *     (`subtitles`, WebVTT); there is no dubbed video, so a video comes back as
+         *     audio. The points are kept only on success and given back when the provider
+         *     fails the dub, it stays too long, or the result cannot be stored. The
+         *     request, the answer and the `Idempotency-Key` rule are those of `POST
+         *     /ai-tools/captions/jobs`, plus `422 ai_language_unsupported` (a language not
+         *     on the list, or the same language as the one spoken), with nothing held. The
+         *     uploaded file and the provider's project are deleted when the job ends.
+         */
+        post: operations["AiToolsController_createDubbing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ai-tools/jobs": {
         parameters: {
             query?: never;
@@ -10387,6 +10441,16 @@ export interface components {
         CreateCleanAudioJobDto: {
             /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
             fileKey: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreateDubbingJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description The language to hear the file in: a code from the list `GET /ai-tools` gives (`input.file.dubbing.languages`). Another is `422 ai_language_unsupported`. */
+            targetLanguage: string;
+            /** @description The language spoken in the file, from the same list. Left out: the language is detected. */
+            sourceLanguage?: string;
             /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
             quoteToken: string;
         };
@@ -15317,6 +15381,12 @@ export interface components {
         PointsSettingsView: {
             useWallet: boolean;
         };
+        AiToolDubbingView: {
+            languages: {
+                code: string;
+                name: string;
+            }[];
+        };
         AiToolFileView: {
             folders: {
                 audio: string;
@@ -15329,6 +15399,7 @@ export interface components {
             maxBytes: number;
             maxMinutes: number;
             languageCode: boolean;
+            dubbing?: components["schemas"]["AiToolDubbingView"];
         };
         AiVoiceView: {
             id: string;
@@ -15337,7 +15408,7 @@ export interface components {
         };
         AiToolView: {
             /** @enum {string} */
-            id: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio";
+            id: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing";
             action: string;
             name: string;
             description: string;
@@ -15373,10 +15444,11 @@ export interface components {
         AiJobView: {
             id: string;
             /** @enum {string} */
-            tool: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio";
+            tool: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing";
             /** @enum {string} */
             state: "failed" | "done" | "working";
             voiceId: string;
+            targetLanguage: string | null;
             characters: number;
             units: number;
             costPoints: number;
@@ -30710,6 +30782,55 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateCleanAudioJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteDubbing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createDubbing: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDubbingJobDto"];
             };
         };
         responses: {

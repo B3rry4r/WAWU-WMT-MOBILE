@@ -1,6 +1,6 @@
 import { formatPointsCount } from '@/components/PointsFigure';
 
-import { isBuiltTool } from './studioModel';
+import { isDrawnTool } from './studioModel';
 import type { AiTool } from './studioApi';
 import type { VoiceJob } from './voiceoverApi';
 
@@ -81,9 +81,12 @@ export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.inp
  * use, a track), with no voices and no length.
  */
 export function toolReady(tool: AiTool | undefined): tool is AiTool {
-  if (!tool || !tool.enabled || !isBuiltTool(tool)) return false;
+  if (!tool || !tool.enabled || !isDrawnTool(tool)) return false;
   // A tool that takes the person's recording has no text to limit: it needs the Hub's rule for the file (its types, bytes and minutes).
-  if (inputKindOf(tool) === 'file') return Boolean(tool.input.file && tool.input.file.maxBytes > 0 && tool.input.file.maxMinutes > 0 && (tool.input.file.accepts.audio.length > 0 || tool.input.file.accepts.video.length > 0));
+  if (inputKindOf(tool) === 'file') {
+    const rule = tool.input.file;
+    return Boolean(rule && rule.maxBytes > 0 && rule.maxMinutes > 0 && (rule.accepts.audio.length > 0 || rule.accepts.video.length > 0));
+  }
   if (!(tool.input.maxCharacters > 0)) return false;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }

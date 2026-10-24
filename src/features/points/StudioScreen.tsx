@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { aiToolsQuery, type AiTool } from './studioApi';
-import { costLine, isBuiltTool, STUDIO_WORDS, toolIcon } from './studioModel';
+import { costLine, isDrawnTool, STUDIO_WORDS, toolIcon } from './studioModel';
 import { PointsFrame } from './PointsFrame';
 import { BalanceCard } from './parts';
 
@@ -82,8 +82,8 @@ export function StudioScreen({ onBack, onHistory, onBuy, onOpenTool }: StudioScr
 
   const balance = points.data.balance;
   const none = balance === 0;
-  // A tile is drawn for a tool the Hub lists AND the app has a screen for (R-47).
-  const list = tools.data.tools.filter(isBuiltTool);
+  // A tile is drawn for a tool the Hub lists AND the app can run (R-47).
+  const list = tools.data.tools.filter(isDrawnTool);
   return (
     <PointsFrame title={STUDIO_WORDS.title} onBack={onBack} action={action} gap={BODY_GAP} testID="studio-screen">
       <Text variant="secondary" tone="textSecondary" testID="studio-line">

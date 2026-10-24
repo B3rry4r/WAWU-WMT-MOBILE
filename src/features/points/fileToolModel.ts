@@ -24,6 +24,29 @@ export const FILE_WORDS = {
   shareTitle: 'Subtitles',
 } as const;
 
+/**
+ * The copy of Dubbing's own parts (POINTS-11). No board draws the language rows or the subtitles card (G-POINTS-11-1); the words are the
+ * tool's, with no outside name and no figure of the app's own: the languages are the Hub's list, the cost is the Hub's quote.
+ */
+export const DUB_WORDS = {
+  /** The label over the rows, as "Voice" is over PT2's voice rows. */
+  language: 'Language',
+  /** The line under the label: what the choice means. */
+  languageHint: 'The language you will hear it in',
+  /** PT2a's line for a job that takes minutes: the board's "About a minute" would not be true. */
+  workingBody: 'This can take a few minutes. You can leave this screen.',
+  subtitles: 'Subtitles',
+  noLanguages: 'No languages to choose from right now.',
+} as const;
+
+/** The mark the tool is known by in the Hub's list. */
+export const DUBBING_TOOL_ID = 'dubbing';
+export const isDubbing = (tool: Pick<AiTool, 'id'>): boolean => tool.id === DUBBING_TOOL_ID;
+
+/** The languages a dub can be heard in: the Hub's own list (`input.file.dubbing.languages`), in the Hub's order. Nothing else is ever offered. */
+export const dubLanguages = (tool: Pick<AiTool, 'input'>): { code: string; name: string }[] =>
+  (tool.input.file?.dubbing?.languages ?? []).filter((l) => typeof l.code === 'string' && l.code !== '' && typeof l.name === 'string' && l.name.trim() !== '');
+
 /** The name a person knows each type by. A type the Hub adds that is not here is named by its own subtype ("OGG"). */
 const LABELS: Record<string, string> = {
   'audio/mpeg': 'MP3',
@@ -73,9 +96,49 @@ export function refusalFor(file: Pick<ChosenFile, 'name' | 'contentType'> & { bl
 /** The Hub's private folder for the file's kind: audio or video. */
 export const folderFor = (contentType: string, rule: FileRule): string => (rule.accepts.video.includes(contentType) ? rule.folders.video : rule.folders.audio);
 
-/** The subtitle file's name: the recording's name with `.srt` in place of its type. */
-export function subtitleFileName(recording: string): string {
+/** The subtitle file's name: the recording's name with `.srt` (Captions) or `.vtt` (Dubbing's WebVTT) in place of its type. */
+export function subtitleFileName(recording: string, extension: 'srt' | 'vtt' = 'srt'): string {
   const dot = recording.lastIndexOf('.');
   const stem = (dot > 0 ? recording.slice(0, dot) : recording).replace(/[^A-Za-z0-9 _-]+/g, '').trim();
-  return `${stem || 'subtitles'}.srt`;
+  return `${stem || 'subtitles'}.${extension}`;
+}
+
+/** "0:04", "1:02:03": where a subtitle starts. */
+function clockOf(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(whole / 3600);
+  const m = Math.floor((whole % 3600) / 60);
+  const s = whole % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/** `00:01:02.500` or `01:02.500` (WebVTT) or `00:01:02,500` (SRT) as seconds, or null when it is not a time. */
+function secondsOf(stamp: string): number | null {
+  const m = /^(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/.exec(stamp.trim());
+  if (!m) return null;
+  return Number(m[1] ?? 0) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+}
+
+export type Cue = { at: string; text: string };
+
+/**
+ * The lines of a WebVTT file (or an SRT) as the person reads them: where each starts and what is said. The header, notes and styles, the
+ * cue's own name and its markup are left out; a block with no time or no words is skipped. The file itself is what is shared, untouched.
+ */
+export function readCues(vtt: string): Cue[] {
+  const cues: Cue[] = [];
+  for (const block of vtt.replace(/\r\n?/g, '\n').split(/\n{2,}/)) {
+    const lines = block.split('\n').map((l) => l.trim());
+    const at = lines.findIndex((l) => l.includes('-->'));
+    if (at === -1) continue;
+    const start = secondsOf(lines[at].split('-->')[0]);
+    const text = lines
+      .slice(at + 1)
+      .map((l) => l.replace(/<[^>]*>/g, '').trim())
+      .filter((l) => l !== '')
+      .join(' ');
+    if (start === null || text === '') continue;
+    cues.push({ at: clockOf(start), text });
+  }
+  return cues;
 }
