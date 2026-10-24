@@ -7,7 +7,7 @@ order: -148
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-47]
 passes: [V1, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T1
 # OPS-22 · Featured creators
 
 ## Current state
+
+Verifier round 1, 24 Oct 2026: PASS. No defect found; one low test gap in the findings of this report (the spec cannot tell a transactional order save from separate writes). Evidence under `scratchpad/dash-b14-v/`. Backend `82bd466` and dashboard `40dff8c` unchanged.
 
 As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B14): backend `wmt/OPS-20` `82bd466` on `origin/main` `3d33a05`, dashboard `wmt/OPS-20` `40dff8c`. The Hub served only `PUT` and `DELETE /admin/featured-creators/:wawuId`, so two routes were added, additive, superadmin only like the others, with a spec. Status verifying. Default (lead), owner may override: new picks join the end of the rail; "move" saves the whole order.
 
@@ -52,3 +54,8 @@ An admin picks, orders and removes the creators in Explore's Featured creators r
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: none yet.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-22.md](history/OPS-22.md).
+

@@ -8,13 +8,15 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 163 | 0 | 0 | 0 |
-| review | 33 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 35 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [OPS-22](../tasks/OPS-22.md) Featured creators: pick, order and remove who Explore features (You)
+- [OPS-20](../tasks/OPS-20.md) Admin settings screen: points, TGIF time, thresholds and every plan figure the Hub serves (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [SIGNUP-NAMES](../tasks/SIGNUP-NAMES.md) Sign-up asks for a first name, a last name and a username (R-82) (You)
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
@@ -51,9 +53,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [OPS-22](../tasks/OPS-22.md) Featured creators: pick, order and remove who Explore features (You)
-- [OPS-21](../tasks/OPS-21.md) Terms and privacy publishing: an admin writes, previews and publishes the text the app shows (You)
-- [OPS-20](../tasks/OPS-20.md) Admin settings screen: points, TGIF time, thresholds and every plan figure the Hub serves (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -217,6 +216,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [OPS-21](../tasks/OPS-21.md) Terms and privacy publishing: an admin writes, previews and publishes the text the app shows (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done

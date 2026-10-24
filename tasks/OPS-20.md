@@ -7,7 +7,7 @@ order: -146
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-47, R-65]
 passes: [V1, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T1
 # OPS-20 · Admin settings screen
 
 ## Current state
+
+Verifier round 1, 24 Oct 2026: PASS. No defect found (one low in the findings of this report). Reviewer live check run by the verifier. Evidence under `scratchpad/dash-b14-v/`. Backend `82bd466` and dashboard `40dff8c` unchanged.
 
 As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B14 with OPS-21 and OPS-22): dashboard `wmt/OPS-20` `40dff8c` on `origin/main` `c1dfca6`. The Hub already serves `GET` and `PATCH /admin/plan-settings` (backend `origin/main` `3d33a05`), so no backend change. Status verifying. Default (lead), owner may override: the screen sits under a new "App" nav section as "Settings".
 
@@ -51,8 +53,13 @@ An admin can read every setting the Hub serves, see which are provisional, and c
 - [x] An admin can open Settings and see every group the Hub serves, with defaults and provisional marks (live, 82 settings).
 - [x] An admin can change the TGIF time, save it, and see it set; the Hub's refusal of a bad figure is shown as the Hub wrote it.
 - [x] A role that cannot save sees no save button (superadmin and finance only).
-- [ ] A reviewer role live: NOT RUN (only a superadmin was seeded); the role gate is read off the controller's `@AdminRoles`.
+- [x] A reviewer role live: run by the verifier, the Hub's 403 shows as a permission message (support read only, finance can save).
 
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: none yet.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-20.md](history/OPS-20.md).
+

@@ -7,7 +7,7 @@ order: -147
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: verifying
+status: building
 depends_on: []
 decisions: [R-47]
 passes: [V1, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T1
 # OPS-21 · Terms and privacy publishing
 
 ## Current state
+
+Verifier round 1, 24 Oct 2026: FIX. One medium defect: the preview date line says `Updated 5 Oct 2026`, the app says `Updated 5 October 2026` (`policyDraft.ts:74-96`). Everything else passed live. The fix is one table of month names, then a re-check of OPS-21 only. Evidence under `scratchpad/dash-b14-v/`. Backend `82bd466` and dashboard `40dff8c` unchanged.
 
 As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B14): dashboard `wmt/OPS-20` `40dff8c`. The Hub already serves the read (`GET /policies/:slug`, the app's own route) and the write (`PUT /admin/policies/:slug`, superadmin only, replaces the whole document), so no backend change. Status verifying. Default (lead), owner may override: nav "Terms and privacy" in the "App" section; a draft is kept in the browser only, because the Hub holds no draft.
 
@@ -55,3 +57,8 @@ An admin writes, previews and publishes the terms and the privacy policy the app
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: none yet.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-21.md](history/OPS-21.md).
+
