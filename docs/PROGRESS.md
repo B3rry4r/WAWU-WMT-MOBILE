@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 44 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 163 | 0 | 0 | 0 |
-| review | 33 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 36 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -38,7 +38,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-97](../tasks/FIX-97.md) The Nuvion name check and bank-send set-up use the shapes Nuvion DEV answers (You)
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
+- [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes (You)
 - [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
+- [ADS-02](../tasks/ADS-02.md) Admin screens: ads (You)
+- [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices (You)
 - [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
 - [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
@@ -92,10 +95,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
-- [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes (You)
-- [ADS-02](../tasks/ADS-02.md) Admin screens: ads (You)
 - [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
-- [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices (You)
 - [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 - [EXPLORE-02](../tasks/EXPLORE-02.md) All creators and search (You)
 - [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
