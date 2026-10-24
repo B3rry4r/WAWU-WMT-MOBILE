@@ -7,7 +7,7 @@ order: -123
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,19 +17,16 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, **verifying (round 2 built)**. Tier T2, backend only. A fresh Sonnet verifier checks backend `wmt/AITOOLS-04` `01a9704` against `origin/main` `0cd8f8e`. Round 1's verdict (FIX) and the builder's round 2 report are in [history/AITOOLS-04.md](history/AITOOLS-04.md), last two sections.
-- **Heads:** backend `wmt/AITOOLS-04` `01a9704` (on `d571fbd`, no migration, no route change); mobile `wmt/AITOOLS-04` carries these records.
-- **Round 2 fixes, each with its spec (backend):**
-  1. HIGH, a file freezing the Hub: the first bytes must name WAV, MP3, ADTS AAC, MP4/M4A/MOV or WebM (else `ai_file_unreadable`, nothing held, before any parser); the one parser runs in a worker thread (15 s hard limit, memory watchdog, 2 at a time). `ai-media-safety.spec.ts` (the crafted 278-byte ASF refused with no worker; the real parser looping in a worker is stopped while the main thread never lags 400 ms) and `ai-tools-files-r2.contract.spec.ts` (`GET /health` answers 10 times while a parser loops; a good quote answers).
-  2. HIGH, the transcript delete: 404 while "not stored yet" is retried (5 tries over about a minute, then a per-minute sweep; a 404 counts as gone only 10 minutes after the answer); the copy is noted on the job row. Stand-in models it (`[[store-delay:MS]]`). r2 contract spec.
-  3. HIGH, Clean audio's id: read from `audio-isolation-id`; delete answers 204. `ai-file-provider.spec.ts` and the r2 contract spec; API-FACTS corrected.
-  4. MEDIUM, QuickTime `.mov`: read as ISO BMFF. `ai-media-safety.spec.ts`, r2 contract spec (HTTP quote).
-  5. LOWS: fragmented MP4 refused (never 0 minutes); 0.5 s container padding forgiven before rounding up ("1:00" is 1 minute); a failed job keeps no words (mutation-checked). Same specs.
-- **Audit answer (`music-metadata` 7.14.0, `npm audit --omit=dev`):** one HIGH, GHSA-v6c2-xwv6-8xf7, the ASF infinite loop: it is this loop. Five moderate (an MP4 stsd loop that passes the sniff and is stopped by the worker limit; ID3v2, APEv2 and EBML memory; a `.dsf` crash, refused by the sniff). Not moved to 12.2.3: the droplet runs Node 22 (`deploy/provision.sh`, CI), which can load ESM, but 12.x is ESM-only in a CommonJS Nest and jest project and re-reads every container: gap G-AITOOLS-04-4. A worker's `resourceLimits` heap cap had no effect on this Node (`heap_size_limit` stayed 8 GB), so the limit is a main-thread watchdog.
-- **Checks:** tsc `EXIT 0`; eslint (no --fix, 18 files) `EXIT 0`; 19 suites, 250 tests in band `EXIT 0`; `test:protected` 253/253 `EXIT 0`; contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted `EXIT 0`; check_baseline `EXIT 0`; mobile check_tasks and gates: see the hand-back.
-- **Open findings:** none graded medium or worse; LOW 8 (abandoned uploads, G-AITOOLS-04-2) stays a gap.
-- **Not run:** the retry against the real provider (no key here; the verifier has one and can re-run Captions and Clean audio on a 5 s clip and look at the provider's transcript list and history); real phone MP4 and MOV files.
-- **Next:** a Sonnet verifier (not the builder) re-checks findings 1 to 7 on the live stack, then merge. Owner questions unchanged (G-AITOOLS-04-1: the key's access is answered, both routes work).
+As of 24 Oct 2026, **building (round 2 verifier said FIX)**. Tier T2, backend only. Verifier (Sonnet, not the builder) checked backend `wmt/AITOOLS-04` `01a9704` (r2 range `d571fbd..01a9704`). Full report: [history/AITOOLS-04.md](history/AITOOLS-04.md), section "Verifier report, round 2".
+- **Heads:** backend `wmt/AITOOLS-04` `01a9704` (unchanged by the verifier); mobile `wmt/AITOOLS-04` carries these records.
+- **Passed:** findings 1 to 7 of round 1 except the real-provider delete. The sniff and worker hold against every hostile file tried (278-byte ASF, ASF behind ID3, huge box and EBML sizes, 150k nested boxes, 1M WAV chunks, 4M-entry stsd, 60 MB stts, 40 MB atom flood, 8 MB of 0xFF as AAC): each is 422, `/health` answered every time, the parser never ran past its 15 s limit, worker memory was cut at the 384 MB watchdog (Hub RSS peaked at +420 MB for one hostile file). MOV (`qt  `), 60.000 s = 1 minute, 61 s = 2, 90 s = 2, fragmented MP4 refused, all live over HTTP. Restart mid-retry: the note survived, the sweep deleted the copy once. Clean audio: id from `audio-isolation-id`, 4 of 4 real history items gone with no manual delete.
+- **Checks:** tsc `EXIT 0`; eslint (no --fix, 17 changed .ts) `EXIT 0`; 32 suites, 460 tests in band (ai-tools 11, storage 17, plan-settings 4; none imports the Fintava double) `EXIT 0`; `test:protected` 253/253 `EXIT 0` (the suite's own mock-id; db:seed first); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (1772 files) `EXIT 0`; check_baseline `EXIT 0`. The two changed assertions in `ai-file-provider.spec.ts` are honest (the API changed from void to a result; the 60.01 s case pinned finding 6).
+- **Open findings (fix round):**
+  1. **HIGH, real provider keeps the transcript.** `voice/provider-copy.service.ts:106, 117, 222` treat any 2xx of the first DELETE as "gone" and clear the note. The real provider answers 200 (or 404) to a DELETE sent 0.1 to 0.3 s after its answer and the transcript still appears afterwards: 4 of 6 real Captions runs left the transcript readable (GET 200) 2 to 9 minutes later, no retry ever came. Repro: one Captions job through the Hub on the real key, then GET `/v1/speech-to-text/transcripts/<id>` (the id is in the Hub's DELETE path). Needs: keep the note until a GET of the copy says 404 (or delete again after the provider has had time to store it), in the retry and the sweep both; the stand-in needs an "acknowledged, then appears" marker.
+  2. **HIGH, the parser queue is unbounded and holds every waiting file in the Hub's memory.** `input/media-length.ts:26, 77-85` (`takeTurn`, `waiting`) and `input/ai-input-files.ts:140` (the whole file is read before it waits). 6 hostile 100 MB files in flight: Hub RSS 268 to 1821 MB and a good quote waited 29.5 s; 12 hostile 8 MB files: a good quote waited 89 s (it queues, it does not fail). The throttle is 200 requests a minute per IP, each hostile file holds a worker for 15 s. With the 500 MB cap the memory is the queued bytes. Needs: take the turn before reading the file, a bound on waiting reads (a busy answer past it), one read in flight per account.
+- **LOW:** (a) `input/media-sniff.ts:60` accepts any file that opens `FF F1` as ADTS AAC: 8 MB of 0xFF holds a worker for the full 15 s (check the next frame header too). (b) The note on a job whose copy is already gone blocks the AITOOLS-02 `rollback.sql` for up to about 11 minutes (404 inside the 10 minute window; `providerRef IS NOT NULL` refuses); a done Captions job already blocks it by its words. (c) LOW 8 (abandoned uploads, G-AITOOLS-04-2) unchanged.
+- **Real provider (one account key, through a local pass-through, 5 s clips):** Captions `POST /v1/speech-to-text` 594 to 626 ms, job done in about 1.2 s; Clean audio `POST /v1/audio-isolation` 488 to 842 ms, job done in about 1.15 s. All provider data I made was deleted by hand at the end (transcripts 200 then 404; history list empty).
+- **Next:** a Sonnet builder fixes 1 and 2 on backend `wmt/AITOOLS-04` (continue the branch), then a fresh verifier re-runs the real-provider check (8 Captions jobs, every GET 404 with no manual delete) and the flood check (bounded memory, good quote answers or is told busy).
 
 ## Read first
 

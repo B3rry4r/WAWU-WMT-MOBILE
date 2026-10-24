@@ -71,3 +71,24 @@ Backend `wmt/AITOOLS-04` `01a9704` (on `d571fbd`; `origin/main` `0cd8f8e` was al
 - **LOW 7** (`ai-job.service.ts`): `reconcile` clears the words when it ends a job as failed and the late-commit path clears them from a failed row. Spec: r2 contract (a read reconciles inside the commit window; the failed row has `outputs` null). Mutation check: with the two clears removed the spec fails.
 - **Checks:** tsc `EXIT 0`; eslint (no --fix, 18 changed files) `EXIT 0`; 19 suites, 250 tests in band (ai-tools 11, storage 4, plan-settings 4; none imports the Fintava double) `EXIT 0`; `test:protected` 253/253 `EXIT 0` (db:seed first, own mock); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (1772 files) `EXIT 0`; check_baseline `EXIT 0`.
 - **Not done:** a real-provider run of the retry (NOT RUN: no key; the stand-in copies what the verifier saw); LOW 8 (abandoned uploads, G-AITOOLS-04-2) stays a gap; a real phone MP4 or MOV file (fixtures are built in memory).
+
+## Verifier report, round 2
+
+Backend `01a9704` (r2 range `d571fbd..01a9704`), 24 Oct 2026, a Sonnet verifier (built none of it). Verdict: **FIX** (2 high, 0 medium, 3 low).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | tsc, eslint (17 files), 32 suites 460 tests, gates 0 fail 133 warn 88 accepted, check_baseline, all `EXIT 0` |
+| V2 Contract | passed | live HTTP on the stack (stand-in provider, storage stand-in): hostile files, MOV, tolerance, fragmented MP4, flood, restart mid-retry |
+| V3 Regression | passed | `test:protected` 253/253 `EXIT 0` (with the suite's own mock-id; against the stack's mock-id 8 verification and professional routes answer 502 because its service key differs, not a branch fault); contract:build no diff |
+| V6 States | passed | every hostile file 422 with nothing held; a worker over its limit or time answers unreadable |
+| V8 Money | passed | refusals hold nothing; the retry and sweep never touch points |
+| V9 Live seam | failed | real provider: Clean audio copy deleted 4 of 4; Captions copy left behind 4 of 6 (finding 1) |
+
+Hostile files (each through presign, PUT, confirm, quote on the stack; Hub RSS sampled every 40 ms; `/health` every 150 ms, 429 counted as an answer): all 422, `/health` never failed. 278-byte ASF 35 ms; ASF behind ID3 138 ms; ID3 size 0x7f7f7f7f, 0xFFFFFFFF box, 2^47 extended box, 4 GB EBML element, huge WAV fmt chunk, APEv2 footer claiming 3 GB: 100 to 240 ms; 150k nested moov 1.4 s (RSS +220 MB); 1M WAV chunks 2.6 s (+170 MB); 3M empty TrackEntry 6.9 s (+270 MB); 60 MB stts 2.0 s (RSS 323 to 742 MB, the watchdog cut it); 8 MB of 0xFF as AAC and a 40 MB atom flood ran to the 15 s limit (RSS +210 and +120 MB). The watchdog fires inside about 100 ms of passing 384 MB over the file, so one hostile read adds at most about 0.45 GB and two workers about 0.9 GB.
+
+Flood: 12 hostile 8 MB files at once (two accounts): all 422 by 90 s, a good 5 s quote answered 200 after 89 s, `/health` 570 of 570. 6 hostile 100 MB files (three accounts): Hub RSS 268 to 1821 MB, good quote 200 after 29.5 s, `/health` 294 of 294 (slowest 284 ms).
+
+Retry and sweep (stand-in, copy not deletable for 90 s): the note `transcript:tr-1` was written, tries at 0, 2 and 8 s answered 404, the Hub was killed mid-retry and restarted, the note stayed, the next per-minute sweep deleted the copy once (404, 404, 404, 200) and cleared the note; the job stayed `done`. Real provider, a first DELETE of 404 followed by the 2 s retry: gone (GET 404). A first DELETE of 200: 4 of 6 left the transcript readable.
+
+Findings 1 and 2 and the three lows are listed under Open findings in Current state. Test gaps (not defects): the stand-in models "404 until stored" but not "200, then the copy appears"; no spec bounds the parser queue; no spec checks a file waiting in the queue holds memory.
