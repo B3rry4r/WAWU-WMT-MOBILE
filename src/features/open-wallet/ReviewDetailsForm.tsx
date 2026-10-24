@@ -13,6 +13,7 @@ import { keepPerson, ticketFor, ticketIsLive, type HeldNumbers, type HeldPerson,
 import { GENDERS, groupBirth, isoToBirth, NAME_MAX, personProblems, tidyPerson, type Gender, type PersonProblems } from './reviewDetails';
 import { StateField, StateSheet } from './StatePicker';
 import { labelOf } from './documentFields';
+import { useAccountNames } from './sessionAccount';
 
 const NAV_TITLE = 'Confirm your details';
 /** design/_gen/auth.js line 57 (A5): 14 between the body's parts; A20's 10 between City and State. */
@@ -46,6 +47,15 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
   const [pickingGender, setPickingGender] = useState(false);
   const [problems, setProblems] = useState<PersonProblems & { city?: string; state?: string; agreed?: string }>({});
   const live = useRef(true);
+  // The name on the account fills the two name fields (SIGNUP-NAMES, R-82), unless the person already typed or kept a name here.
+  // They can still correct it to match the BVN.
+  const account = useAccountNames();
+  const typedName = useRef(false);
+  useEffect(() => {
+    if (!account || held.person || typedName.current) return;
+    setFirstName((now) => now || account.firstName.slice(0, NAME_MAX));
+    setLastName((now) => now || account.lastName.slice(0, NAME_MAX));
+  }, [account, held.person]);
   useEffect(() => {
     live.current = true;
     return () => {
@@ -93,7 +103,10 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
           label="First name"
           testID="open-wallet-first-name"
           value={firstName}
-          onChangeText={edit('firstName', setFirstName)}
+          onChangeText={(value) => {
+            typedName.current = true;
+            edit('firstName', setFirstName)(value);
+          }}
           error={problems.firstName}
           maxLength={NAME_MAX}
           autoComplete="given-name"
@@ -106,7 +119,10 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
           label="Last name"
           testID="open-wallet-last-name"
           value={lastName}
-          onChangeText={edit('lastName', setLastName)}
+          onChangeText={(value) => {
+            typedName.current = true;
+            edit('lastName', setLastName)(value);
+          }}
           error={problems.lastName}
           maxLength={NAME_MAX}
           autoComplete="family-name"

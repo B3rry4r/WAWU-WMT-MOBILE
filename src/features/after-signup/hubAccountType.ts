@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
+import { readMine } from '@/features/profile-edit/api';
 
 export type HubAccountType = 'user' | 'creator';
 
@@ -15,16 +16,21 @@ export async function setHubAccountType(type: HubAccountType): Promise<HubAccoun
   return held;
 }
 
-/**
- * The account type the Hub holds for this person (`GET /users/me`): null when it holds none yet. A read the Hub cannot answer throws, so the
- * caller sends nothing and looks again on the next start.
- */
-export async function readHubAccountType(): Promise<HubAccountType | null> {
-  const body = await unwrap(api.GET('/api/hub/users/me'));
-  const held = (body as { data?: { accountType?: unknown } | null } | null)?.data?.accountType;
+/** The account type a profile read carries: null when the Hub holds none yet; anything else than the two types is unreadable. */
+export function accountTypeOf(me: { accountType?: unknown } | null | undefined): HubAccountType | null {
+  const held = me?.accountType;
   if (held === null || held === undefined) return null;
   if (held !== 'user' && held !== 'creator') throw new ApiError('unknown', 200, 'The account type could not be read. Try again.');
   return held;
+}
+
+/**
+ * The account type the Hub holds for this person (`GET /users/me`): null when it holds none yet. A read the Hub cannot answer throws, so the
+ * caller sends nothing and looks again on the next start. The sign-up gate passes its one shared profile read (SIGNUP-NAMES: the name check
+ * uses the same read); on its own the profile query is asked.
+ */
+export async function readHubAccountType(read: () => Promise<{ accountType?: unknown }> = readMine): Promise<HubAccountType | null> {
+  return accountTypeOf(await read());
 }
 
 /**

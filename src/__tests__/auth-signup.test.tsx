@@ -20,6 +20,7 @@ import { apiBaseUrl } from '@/api/env';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { clearAccountType } from '@/features/auth/accountType';
+import * as identityApi from '@/features/auth/identityApi';
 import { forgetSignupChannel, knownSignupChannel, signupChannel } from '@/features/auth/signupFlow';
 import { resetSignupGate } from '@/features/auth/signupGate';
 import { clearSignup, SIGNUP_ATTEMPT_KEY, SIGNUP_PHONE_KEY } from '@/features/auth/signupStore';
@@ -35,6 +36,17 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async (key: string) => {
     mockVault.delete(key);
   }),
+}));
+
+/*
+ * SIGNUP-NAMES (R-82): A3 asks the Hub whether the username is free, and the code step claims it once the session is adopted.
+ * The Hub's client keeps the fetch it found when it was first loaded, so this suite answers those two calls at the module that
+ * makes them: the name is free, and the claim goes through. They are recorded apart from `calls`, which is only WAWU ID's.
+ */
+jest.mock('@/features/auth/identityApi', () => ({
+  ...jest.requireActual('@/features/auth/identityApi'),
+  askUsername: jest.fn(async (handle: string) => ({ handle, available: true, message: null })),
+  putIdentity: jest.fn(async (parts: { firstName?: string; lastName?: string; handle?: string }) => ({ firstName: parts.firstName ?? null, lastName: parts.lastName ?? null, handle: parts.handle ?? null })),
 }));
 
 const routes = {
@@ -180,6 +192,8 @@ beforeEach(async () => {
   await clearSignup();
   forgetSignupChannel();
   calls = [];
+  jest.mocked(identityApi.askUsername).mockClear();
+  jest.mocked(identityApi.putIdentity).mockClear();
   answers = {
     // What WAWU ID answers while SIGNUP_VERIFY_CHANNEL is unset or `phone`: the texted sign-up the suites below up to "AUTH-07" run.
     'GET /auth/signup/channel': ok({ channel: 'phone' }),
@@ -210,7 +224,15 @@ async function fourWrongCodes() {
   }
 }
 
+/** A3's three name fields (SIGNUP-NAMES, R-82): first name, last name and username, as a person types them. */
+async function fillNames(first = 'Lennox', last = 'Emmanuel', username = 'lennox_e') {
+  await fireEvent.changeText(screen.getByTestId('sign-up-first-name'), first);
+  await fireEvent.changeText(screen.getByTestId('sign-up-last-name'), last);
+  await fireEvent.changeText(screen.getByTestId('sign-up-username'), `@${username}`);
+}
+
 async function fillAndContinue(email = 'lennox@wawu.africa', phone = '0803 123 4412', password = 'hunter2hunter2') {
+  await fillNames();
   await fireEvent.changeText(screen.getByTestId('sign-up-email'), email);
   await fireEvent.changeText(screen.getByTestId('sign-up-phone'), phone);
   await fireEvent.changeText(screen.getByTestId('sign-up-password'), password);
@@ -276,7 +298,7 @@ describe('A3: email, phone and password', () => {
   it('a user can enter email, phone and password and tap Continue to reach A4; the earn pick is sent to WAWU ID as creator', async () => {
     await toA4();
     const sent = callsTo('/auth/signup')[0];
-    expect(sent.body).toEqual({ email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
+    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
     expect(screen.getByText('Verify your phone')).toBeTruthy();
     expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
     expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy();
@@ -774,6 +796,7 @@ describe('fix round 1', () => {
 
   it('F9: two quick taps on A3 Continue send one sign-up', async () => {
     await toA3();
+    await fillNames();
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
@@ -1271,6 +1294,7 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
 
   it('Continue with the terms line unticked sends nothing and says to tick it; ticking it clears the line and the sign-up goes ahead', async () => {
     await toA3();
+    await fillNames();
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
@@ -1283,7 +1307,7 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
     await press('Continue');
     await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
     // Nothing about the terms goes to WAWU ID: the line is consent to read, not a field.
-    expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'password', 'phone']);
+    expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'firstName', 'lastName', 'password', 'phone']);
   });
 
   it('the words "terms" and "privacy policy" open the Terms and the Privacy policy, and what was typed stays', async () => {
@@ -1299,5 +1323,78 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
     await fireEvent.press(screen.getByTestId('sign-up-consent-privacy'));
     await waitFor(() => expect(screen.getByText('Privacy policy page')).toBeTruthy());
     expect(sentCalls()).toEqual([]);
+  });
+});
+
+describe('SIGNUP-NAMES (R-82): A3 asks for a first name, a last name and a username', () => {
+  const asked = () => jest.mocked(identityApi.askUsername).mock.calls.map(([name]) => name);
+
+  it('draws First name, Last name and Username before Email, and sends the two names to WAWU ID', async () => {
+    await toA3();
+    const labels = ['First name', 'Last name', 'Username', 'Email', 'Phone number', 'Password'];
+    for (const label of labels) expect(screen.getByText(label)).toBeTruthy();
+    const order = labels.map((label) => screen.toJSON() && JSON.stringify(screen.toJSON()).indexOf(`"${label}"`));
+    expect([...order].sort((a, b) => (a as number) - (b as number))).toEqual(order);
+    await fillAndContinue();
+    await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
+    expect(callsTo('/auth/signup')[0].body).toMatchObject({ firstName: 'Lennox', lastName: 'Emmanuel' });
+    // The username is the Hub's handle, not WAWU ID's: it is asked of the Hub, never sent to WAWU ID.
+    expect(JSON.stringify(callsTo('/auth/signup')[0].body)).not.toContain('lennox_e');
+  });
+
+  it('Continue with the three names empty says what to fill and sends nothing', async () => {
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
+    await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
+    await fireEvent.press(screen.getByTestId('sign-up-consent'));
+    await press('Continue');
+    for (const line of ['Enter your first name.', 'Enter your last name.', 'Choose a username.']) expect(screen.getByText(line)).toBeTruthy();
+    expect(sentCalls()).toEqual([]);
+    expect(asked()).toEqual([]);
+  });
+
+  it('a username with a space or a symbol is refused on the spot, in the Hub\'s words, without asking the Hub', async () => {
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-username'), '@len nox!');
+    expect(screen.getByText('Use letters, numbers, dots and underscores.')).toBeTruthy();
+    expect(asked()).toEqual([]);
+  });
+
+  it('a username taken is refused under the field while typing, then free again when changed (case ignored by the Hub)', async () => {
+    jest.mocked(identityApi.askUsername).mockImplementation(async (handle: string) =>
+      handle.toLowerCase() === 'lennox_e' ? { handle, available: false, message: 'That username is taken. Try another.' } : { handle, available: true, message: null },
+    );
+    await toA3();
+    await fireEvent.changeText(screen.getByTestId('sign-up-username'), '@Lennox_E');
+    await act(async () => {
+      jest.advanceTimersByTime(600);
+    });
+    await waitFor(() => expect(screen.getByText('That username is taken. Try another.')).toBeTruthy());
+    await fireEvent.changeText(screen.getByTestId('sign-up-username'), '@lennox_free');
+    await act(async () => {
+      jest.advanceTimersByTime(600);
+    });
+    await waitFor(() => expect(screen.getByText('That username is free.')).toBeTruthy());
+    expect(screen.queryByText('That username is taken. Try another.')).toBeNull();
+    jest.mocked(identityApi.askUsername).mockImplementation(async (handle: string) => ({ handle, available: true, message: null }));
+  });
+
+  it('Continue asks the Hub once more: a name taken meanwhile is refused under the field and no sign-up is started', async () => {
+    jest.mocked(identityApi.askUsername).mockImplementation(async (handle: string) => ({ handle, available: false, message: 'That username is taken. Try another.' }));
+    await toA3();
+    await fillAndContinue();
+    await waitFor(() => expect(screen.getByText('That username is taken. Try another.')).toBeTruthy());
+    expect(callsTo('/auth/signup')).toEqual([]);
+    expect(screen.getByTestId('sign-up-email').props.value).toBe('lennox@wawu.africa');
+    jest.mocked(identityApi.askUsername).mockImplementation(async (handle: string) => ({ handle, available: true, message: null }));
+  });
+
+  it('once the code is right the username is claimed on the Hub, and Home opens', async () => {
+    await toA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(callsTo('/auth/phone/verify/confirm').length).toBe(1));
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(jest.mocked(identityApi.putIdentity).mock.calls).toEqual([[{ handle: 'lennox_e' }]]);
   });
 });

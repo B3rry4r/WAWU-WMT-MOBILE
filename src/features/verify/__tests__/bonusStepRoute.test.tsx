@@ -46,7 +46,7 @@ const plans = {
 const ADA = 'account-ada';
 // The Hub answers the three things the creator gate, VF1 and VF2 ask; WAWU ID and everything else cannot be reached. Installed
 // before the app is loaded: the API client keeps the fetch it finds when it is first loaded.
-const profile = (accountType: string | null) => ok({ wawuUserId: ADA, accountType });
+const profile = (accountType: string | null) => ok({ wawuUserId: ADA, accountType, firstName: 'Ada', lastName: 'Obi', handle: 'ada' });
 const hub: Record<string, unknown> = {
   'GET /api/hub/users/me': profile('creator'),
   'GET /api/hub/plans': ok(plans),

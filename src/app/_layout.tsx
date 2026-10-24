@@ -95,7 +95,7 @@ export default function RootLayout() {
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
-  const inApp = signedIn && !gate.needsEmail && !offer.visible && !bonus.visible;
+  const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !bonus.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -115,30 +115,33 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && gate.needsIdentity}>
+          <Stack.Screen name="your-details" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === null && bonus.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && bonus.visible}>
           <Stack.Screen name="verify-bonus" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'interests'}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'interests'}>
           <Stack.Screen name="interests" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === 'follows'}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'follows'}>
           <Stack.Screen name="people-to-follow" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && gate.setupStep === null && !bonus.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !bonus.visible}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="shop" />
           <Stack.Screen name="shop-product" />
           <Stack.Screen name="hear-name" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
           <Stack.Screen name="creator-setup" />
           <Stack.Screen name="voice-intro" />
           <Stack.Screen name="voice-consent" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible}>
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />

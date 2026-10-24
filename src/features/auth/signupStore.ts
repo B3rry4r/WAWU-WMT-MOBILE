@@ -13,10 +13,16 @@ import { Platform } from 'react-native';
  * Cleared when the code is confirmed, when the server says the sign-up is gone,
  * when a new sign-up starts, and when someone signs in (`clearSignup`).
  */
-export type HeldSignup = { phone: string; attempt: string };
+export type HeldSignup = {
+  phone: string;
+  attempt: string;
+  /** The username chosen on the form (SIGNUP-NAMES, R-82): kept until the code is right, then claimed on the Hub. Not a secret. */
+  username?: string;
+};
 
 export const SIGNUP_PHONE_KEY = 'wawu.signup.phone';
 export const SIGNUP_ATTEMPT_KEY = 'wawu.signup.attempt';
+export const SIGNUP_USERNAME_KEY = 'wawu.signup.username';
 
 const onWeb = Platform.OS === 'web';
 /** The browser build keeps the secret for the tab only (sessionStorage): it survives a reload, not a closed tab, and is not shared with other tabs. */
@@ -36,14 +42,18 @@ async function remove(key: string): Promise<void> {
 }
 
 export async function saveSignup(held: HeldSignup): Promise<void> {
-  await Promise.all([write(SIGNUP_PHONE_KEY, held.phone), write(SIGNUP_ATTEMPT_KEY, held.attempt)]);
+  await Promise.all([
+    write(SIGNUP_PHONE_KEY, held.phone),
+    write(SIGNUP_ATTEMPT_KEY, held.attempt),
+    held.username ? write(SIGNUP_USERNAME_KEY, held.username) : remove(SIGNUP_USERNAME_KEY),
+  ]);
   memory = held;
 }
 
 export async function loadSignup(): Promise<HeldSignup | null> {
   try {
-    const [phone, attempt] = await Promise.all([read(SIGNUP_PHONE_KEY), read(SIGNUP_ATTEMPT_KEY)]);
-    memory = phone && attempt ? { phone, attempt } : null;
+    const [phone, attempt, username] = await Promise.all([read(SIGNUP_PHONE_KEY), read(SIGNUP_ATTEMPT_KEY), read(SIGNUP_USERNAME_KEY)]);
+    memory = phone && attempt ? { phone, attempt, ...(username ? { username } : {}) } : null;
   } catch {
     memory = null;
   }
@@ -54,7 +64,7 @@ export async function clearSignup(): Promise<void> {
   memory = null;
   startedState = null;
   try {
-    await Promise.all([remove(SIGNUP_PHONE_KEY), remove(SIGNUP_ATTEMPT_KEY)]);
+    await Promise.all([remove(SIGNUP_PHONE_KEY), remove(SIGNUP_ATTEMPT_KEY), remove(SIGNUP_USERNAME_KEY)]);
   } catch {
     // The vault refused: the memory copy is already gone, and the next start's resume call ends a sign-up the server no longer holds.
   }

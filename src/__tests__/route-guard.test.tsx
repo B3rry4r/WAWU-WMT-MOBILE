@@ -70,8 +70,8 @@ function readLayout(source: string): { blocks: Block[]; loose: string[] } {
 const layout = readLayout(LAYOUT);
 const signedInBlocks = layout.blocks.filter((b) => b.guard.startsWith('signedIn'));
 const signedOutBlocks = layout.blocks.filter((b) => b.guard === "status === 'signedOut'");
-/** The group every plain signed-in screen sits in: a session, the email step done, no access-code offer on screen. */
-const GENERAL_GUARD = 'signedIn && !gate.needsEmail && !offer.visible';
+/** The group every plain signed-in screen sits in: a session, the email step done, the name and username step done, no access-code offer on screen. */
+const GENERAL_GUARD = 'signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible';
 const general = layout.blocks.filter((b) => b.guard === GENERAL_GUARD).flatMap((b) => b.screens);
 const guarded = new Set(signedInBlocks.flatMap((b) => b.screens));
 const signedOutSet = new Set(signedOutBlocks.flatMap((b) => b.screens));

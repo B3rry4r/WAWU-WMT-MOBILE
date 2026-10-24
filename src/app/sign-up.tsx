@@ -5,6 +5,7 @@ import { pickedAccountType } from '@/features/auth/accountType';
 import { SignUpScreen } from '@/features/auth/SignUpScreen';
 import { knownSignupChannel, signupChannel, startSignup } from '@/features/auth/signupFlow';
 import { heldSignup } from '@/features/auth/signupStore';
+import { askUsername } from '@/features/auth/identityApi';
 
 /**
  * A3. Only reachable signed out (the root layout's guard). Continue sends the code (texted by default, mailed when WAWU ID's
@@ -33,6 +34,7 @@ export default function SignUpRoute() {
   return (
     <SignUpScreen
       channel={channel}
+      checkUsername={askUsername}
       onContinue={async (values) => {
         try {
           await startSignup(values, pickedAccountType());

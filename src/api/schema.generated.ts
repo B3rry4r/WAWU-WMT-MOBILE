@@ -4857,6 +4857,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/users/handle-available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HandleAvailabilityController_available"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["SignupIdentityController_complete"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/users/me/handle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * The app's Edit profile changing a username it already has (round 3, M2). The same rules and lock as the route
+         *     above; `PATCH /users/me` is untouched because the web calls it (BACKEND_GAPS G-SIGNUP-NAMES-1).
+         */
+        put: operations["SignupIdentityController_changeHandle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/learn/courses/{id}/enrol": {
         parameters: {
             query?: never;
@@ -9458,6 +9510,16 @@ export interface components {
             /** @description null means still studying there. */
             endYear?: number | null;
         };
+        CompleteIdentityDto: {
+            firstName?: string;
+            lastName?: string;
+            /** @description The username, with or without a leading "@". Checked by `checkHandleShape`; its words are the server's. */
+            handle?: string;
+        };
+        ChangeHandleDto: {
+            /** @description The username, with or without a leading "@". Checked by `checkHandleShape`; its words are the server's. */
+            handle: string;
+        };
         RecordRecentSearchDto: {
             q: string;
         };
@@ -13637,6 +13699,16 @@ export interface components {
             media: components["schemas"]["ProfileWorkMediaView"][];
             position: number;
             createdAt: string;
+        };
+        HandleAvailabilityView: {
+            handle: string;
+            available: boolean;
+            message: string | null;
+        };
+        IdentityView: {
+            firstName: string | null;
+            lastName: string | null;
+            handle: string | null;
         };
         EnrolResponse: {
             externalHostUrl: string;
@@ -25385,6 +25457,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreatorProfile"];
+                };
+            };
+        };
+    };
+    HandleAvailabilityController_available: {
+        parameters: {
+            query?: {
+                handle?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandleAvailabilityView"];
+                };
+            };
+        };
+    };
+    SignupIdentityController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteIdentityDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityView"];
+                };
+            };
+        };
+    };
+    SignupIdentityController_changeHandle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeHandleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        handle: string;
+                    };
                 };
             };
         };
