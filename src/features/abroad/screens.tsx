@@ -104,7 +104,13 @@ export function NewRecipientScreen(props: { onBack: () => void; onSaved: (r: Rec
 /** How long the typing rests before the Hub is asked for a quote. */
 const QUOTE_SETTLE_MS = 500;
 
-export function AbroadAmountScreen(props: { recipientId: string; onBack: () => void; onContinue: (quote: Quote) => void }) {
+export function AbroadAmountScreen(props: {
+  recipientId: string;
+  /** The account chosen on the Wallet tab (WALLET-42); used only while the Hub lists an account in that currency. */
+  initialFrom?: string | null;
+  onBack: () => void;
+  onContinue: (quote: Quote) => void;
+}) {
   const owner = useSessionAccount(undefined);
   const recipients = useQuery(recipientsQuery(owner), queryClient);
   const sourcesQ = useQuery(sourcesQuery(owner), queryClient);
@@ -117,7 +123,8 @@ export function AbroadAmountScreen(props: { recipientId: string; onBack: () => v
   const [held, setHeld] = useState<{ key: string; result: QuoteRead } | null>(null);
   const asked = useRef(0);
 
-  const fromCurrency = from ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? 'NGN';
+  const preferred = props.initialFrom && sources.data?.some((s) => s.currency === props.initialFrom) ? props.initialFrom : null;
+  const fromCurrency = from ?? preferred ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? 'NGN';
   const amountMinor = koboOfText(text);
   const key = `${fromCurrency}|${side}|${amountMinor}`;
   const quote: QuoteRead = amountMinor <= 0 ? { state: 'idle' } : held?.key === key ? held.result : { state: 'loading' };

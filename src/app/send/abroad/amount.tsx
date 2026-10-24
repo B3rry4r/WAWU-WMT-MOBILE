@@ -8,7 +8,7 @@ import { useSystemBack } from '@/features/professionals/parts';
 export default function SendAbroadAmountRoute() {
   const router = useRouter();
   const { status } = useSession();
-  const params = useLocalSearchParams<{ recipientId?: string }>();
+  const params = useLocalSearchParams<{ recipientId?: string; from?: string }>();
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/send/abroad'));
   useSystemBack(leave);
   if (status === 'restoring') return null;
@@ -17,6 +17,7 @@ export default function SendAbroadAmountRoute() {
   return (
     <AbroadAmountScreen
       recipientId={params.recipientId}
+      initialFrom={typeof params.from === 'string' ? params.from : null}
       onBack={leave}
       onContinue={(quote) =>
         router.push({

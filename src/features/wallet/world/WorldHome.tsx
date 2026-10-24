@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -11,6 +12,8 @@ import { Skeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/StateViews";
 import { Text } from "@/components/Text";
 import { space } from "@/theme";
+
+import { corridorsQuery, sourcesQuery } from "@/features/abroad/api";
 
 import { ChoiceSheet } from "@/features/open-wallet/ChoiceField";
 
@@ -42,6 +45,14 @@ export function WorldHome({ owner }: { owner: string }) {
     queryFn: fetchAddable,
     staleTime: 0,
   });
+  // Send abroad (NUV-11, WALLET-42): offered on an account only while the Hub says sending abroad is on and lists an account to
+  // send from in that currency (R-47: nothing is drawn that does not work).
+  const corridors = useQuery(corridorsQuery(owner));
+  const sources = useQuery({
+    ...sourcesQuery(owner),
+    enabled: corridors.data?.enabled === true,
+  });
+  const sendable = new Set((sources.data ?? []).map((s) => s.currency));
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -100,7 +111,13 @@ export function WorldHome({ owner }: { owner: string }) {
         />
       ) : null}
       {accounts.data.map((account) => (
-        <AccountCard key={account.id} account={account} />
+        <AccountCard
+          key={account.id}
+          account={account}
+          canSendAbroad={
+            account.status === "open" && sendable.has(account.currency)
+          }
+        />
       ))}
       {more.length > 0 ? (
         <Button
@@ -125,7 +142,14 @@ export function WorldHome({ owner }: { owner: string }) {
   );
 }
 
-function AccountCard({ account }: { account: WorldAccount }) {
+function AccountCard({
+  account,
+  canSendAbroad,
+}: {
+  account: WorldAccount;
+  canSendAbroad: boolean;
+}) {
+  const router = useRouter();
   const balance =
     account.availableMinor === null
       ? "Balance unavailable"
@@ -165,6 +189,20 @@ function AccountCard({ account }: { account: WorldAccount }) {
             ))}
           </View>
         )
+      ) : null}
+      {canSendAbroad ? (
+        <Button
+          label="Send abroad"
+          variant="secondary"
+          full
+          onPress={() =>
+            router.push({
+              pathname: "/send/abroad",
+              params: { from: account.currency },
+            })
+          }
+          testID={`wallet-world-${account.currency}-send-abroad`}
+        />
       ) : null}
     </Card>
   );

@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
 import { AbroadHomeScreen } from '@/features/abroad/screens';
@@ -8,6 +8,9 @@ import { useSystemBack } from '@/features/professionals/parts';
 export default function SendAbroadRoute() {
   const router = useRouter();
   const { status } = useSession();
+  // The account the person chose to send from on the Wallet tab (WALLET-42), carried to the amount.
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const fromParam = typeof from === 'string' && /^[A-Z]{3}$/.test(from) ? { from } : {};
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/send'));
   useSystemBack(leave);
   if (status === 'restoring') return null;
@@ -15,11 +18,11 @@ export default function SendAbroadRoute() {
   return (
     <AbroadHomeScreen
       onBack={leave}
-      onNew={() => router.push('/send/abroad/new')}
+      onNew={() => router.push({ pathname: '/send/abroad/new', params: fromParam })}
       onPick={(r) =>
         router.push({
           pathname: '/send/abroad/amount',
-          params: { recipientId: r.id },
+          params: { recipientId: r.id, ...fromParam },
         })
       }
     />
