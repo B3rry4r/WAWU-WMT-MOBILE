@@ -678,18 +678,20 @@ describe('H1 · three spacings the board draws (HOME-18)', () => {
   });
 });
 
-describe('FLIX-04 · the Flix movies rail on Today when movies are not live yet (R-77)', () => {
-  it('a user sees the rail title and one card with the two lines, with no posters and no See all, and the card opens Flix movies', async () => {
+describe('FIX-106 · the Flix movies rail on Today when the Hub answers soon (R-80)', () => {
+  it('a user sees no rail, no title, no card and no note for a soon answer, exactly as for off', async () => {
     answers['GET /movies'] = [ok({ enabled: false, soon: true, hero: null, rails: [] })];
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-flix-soon')).toBeTruthy());
-    expect(screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
-    expect(screen.getByText("Flix movies aren't switched on yet")).toBeTruthy();
-    expect(screen.getByText("You'll be able to watch movies here soon.")).toBeTruthy();
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    // The soon answer is in the cache and Today has drawn; the Flix rail has not.
+    await rtl.waitFor(() => expect(clients.some((c) => c.getQueryData(['movies', 'home']) !== undefined)).toBe(true));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    expect(screen.queryByTestId('today-flix')).toBeNull();
+    expect(screen.queryByTestId('today-flix-soon')).toBeNull();
     expect(screen.queryByTestId('today-flix-see-all')).toBeNull();
     expect(screen.queryByTestId('today-flix-list')).toBeNull();
-    await rtl.fireEvent.press(screen.getByTestId('today-flix-soon'));
-    expect(mockPush).toHaveBeenCalledWith('/movies');
+    expect(screen.queryByText('Flix movies')).toBeNull();
+    expect(screen.queryByText(/switched on yet|movies here soon/i)).toBeNull();
   });
 
   it('a user sees no rail when the Hub says movies are off without soon', async () => {
@@ -697,6 +699,6 @@ describe('FLIX-04 · the Flix movies rail on Today when movies are not live yet 
     const screen = await boot();
     await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
     expect(screen.queryByTestId('today-flix')).toBeNull();
-    expect(screen.queryByText("Flix movies aren't switched on yet")).toBeNull();
+    expect(screen.queryByText('Flix movies')).toBeNull();
   });
 });

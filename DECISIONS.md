@@ -613,5 +613,5 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 
 ### R-80 · Flix movies is hidden until it goes live
 *Owner, 24 Oct 2026 ("that's not the language in our docs ... if you cant find hide flix movies on those screens").* R-77's two lines ("Flix movies aren't switched on yet", "You'll be able to watch movies here soon.") are not in the docs or the design: S13 draws that "not live yet" state for Bill payments only, and the Flix lines were made up by analogy. So Flix movies is not drawn at all until it goes live: no rail on Home or Explore, no Flix screen, no Flixora call. This is `MOVIE_PARTNER=off`, whose answer the app already hides everything on (`FlixRail`, `MoviesGate`). The `soon` setting stays in the code and is not used. R-74 and R-75 still stand for when it goes live.
-**Carried out by:** the server setting `MOVIE_PARTNER=off` (console step 5, owner, 24 Oct 2026); no code change.
+**Carried out by:** the server setting `MOVIE_PARTNER=off` (console step 5, owner, 24 Oct 2026); FIX-106 (the app treats a `soon` answer exactly like off, so it draws nothing even while the server still says `soon`; the note and card are removed).
 *Replaces R-77.*
