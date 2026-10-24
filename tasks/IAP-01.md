@@ -7,7 +7,7 @@ order: -1270
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: verifying
 depends_on: []
 decisions: [R-86, R-5, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status building (verifier round 1: FIX, see below). Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` `6e92cd2` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status verifying (verifier round 1 was FIX; builder fix round 1 pushed, see the Round 1 rows). Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -29,10 +29,19 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-
 | 5 | credits and passes split 85/15 on the price paid | worked on WAWU's net after the store's share: the credit lot's gross, and the pass row's `netKobo` and the host's `creatorShareKobo`, use `reference - store cut` |
 | 6 | store keys: none | every store route answers `store_not_configured` (503) until the keys are set |
 
-**Verifier round 1 (24 Oct 2026): FIX.** Backend `ec50365` against `origin/main` `38be72e`. One high, four low; everything else in the brief held. Open for the fix round:
+**Round 1 (24 Oct 2026): the verifier's FIX (one high, four low) and the lead's ruling, fixed in backend `6e92cd2`.**
 
-1. **High** (other person's subscription): a renewed order of a subscription the Hub already holds for person A is granted to person B if B presents it first (201, tier or pass), and every later renewal then goes to B while A gets `store_purchase_taken`. `store-purchase.service.ts:155` (the only once-only key is the transaction id) and `store-notification.service.ts:293` (`latestOf` follows the newest row). Needed: refuse when a purchase with the same `(platform, subscriptionKey)` belongs to someone else, and bind a first purchase to the person (Google `obfuscatedExternalAccountId`, Apple `appAccountToken`, read from the store's answer; IAP-02 sets them).
-2. Lows 2 to 5 are in the verifier report (history file); they go to `tasks/SWEEP-IAP.md` if the lead agrees.
+| # | Finding | Fix |
+|---|---|---|
+| H | B could take a renewed order of A's subscription (once-only was on the transaction id; notices followed the newest row) | a subscription is held by its first buyer (`StoreSubscription`, unique per platform and Google purchase token or Apple `originalTransactionId`): any other person gets `409 store_purchase_taken`, whatever the order id; notices follow the holder |
+| H | a token alone proves nothing | every purchase is bound to the person: **`GET /store/products` answers `accountToken`** (a stable UUID per person, not their user id); the app passes it as Google `obfuscatedAccountIdAndroid` and Apple `appAccountToken`; the Hub refuses another person's (`store_purchase_taken`) and, with none, `422 store_account_token_missing` |
+| 2 | Google productId never compared | the real adapter refuses an answer that names another product |
+| 3 | a grant that throws was a bare 500 | `500 store_grant_failed` (a plain sentence); nothing kept; the next post or the store's resent notice grants once |
+| 4 | rollback dropped the platform switch and the seen notices | refuses while either exists; the new migration's rollback refuses while holders, tokens or flagged purchases exist |
+| 5 | a pass renewal for a removed member | recorded, `flag: member_removed`, no period written (`admin/store/purchases` shows the flag); `GET /communities/{id}/pass` answers `cancelInStore: true` so the pass screen says to cancel in the store |
+
+Default (lead), owner may override: the token cutover is **25 Oct 2026** (`STORE_ACCOUNT_TOKEN_REQUIRED_FROM`): a subscription must always carry the token; a pack bought before that date may carry none, one bought on or after it must. Proof, round 1: red specs first (B steals on Google, App Store and a pass: 201 before, 409 after), `tsc`, `eslint`, gates, `check_baseline`, `contract:build` (0 removed or changed against main), and 14 suites (248 tests) of store and affected specs, protected routes (253) all EXIT 0. Not run: the Fintava-double wallet specs (GitHub), any real store.
+
 
 ### Routes (all under `/api/hub`, in `contract/openapi.json`, additive)
 
@@ -51,6 +60,7 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-
 - A subscription renewal grants the product's own days again (the tier's, or the pass's); a lapse marks the subscription ended and what was granted runs to its own end. A tier bought while a smaller tier runs adds its days to that tier; a bigger tier upgrades, as a wallet purchase does.
 - A store purchase does not fix the person's billing currency, and a store tier does not trigger the referral reward at once (the referral job reads `MakerPurchase`, which now holds store tiers).
 - Sandbox and test purchases are accepted in Production (Google licence testers, Apple App Review).
+- Owner's setup adds nothing new for the token: the app (IAP-02) passes `accountToken`; the Play Console and App Store Connect need no setting for it.
 
 ## Read first
 
@@ -73,6 +83,7 @@ A person in the app can buy points, credits, a tick or tier and a community pass
 - [x] The credit lot's gross, and a pass's net and host share, are worked on the net after the store's cut (15% default, 30% on a test of the App Store, an admin override).
 - [x] An admin can add and change products, switch a store off and set its cut, and read purchases and refunds; support and reviewer are refused.
 - [x] With no keys, every store route answers `store_not_configured`.
+- [x] Another person cannot take a subscription, a renewal of it or its notices, on Google, the App Store or a pass (specs fail before the fix); a purchase carries the buyer's `accountToken` or is refused; a grant that throws answers `store_grant_failed` and is retried; a removed member's pass renewal is flagged and gives nothing.
 - [ ] Against the real Google Play and App Store: NOT RUN (no credentials; the owner's setup list above).
 - [ ] Apple's certificate chain check on a real signed answer: NOT RUN (the library does it; the tests stand in for it).
 - [ ] The wallet specs that use the Fintava double (`credit-wallet`, `community-pass-*`): NOT RUN here by rule; GitHub runs them on the push. Their two callers now use the shared functions.
