@@ -183,9 +183,17 @@ function Address({ code, chain, account, canOpen: allowed, onChanged }: { code: 
     );
   }
   if (!address) {
+    // The Hub says where the address stands (`detailsStatus`); the card never promises one is coming (SWEEP-MONEY-6, WALLET-21 L1).
+    const unavailable = account.detailsStatus === 'unavailable';
     return (
       <Card style={styles.card}>
-        <EmptyState testID="receive-pending" icon="Clock" title="Your address is on its way" message="It takes a short while. Check again in a moment." action={{ label: 'Check again', onPress: onChanged }} />
+        <EmptyState
+          testID="receive-pending"
+          icon="Clock"
+          title={unavailable ? 'Your address is not available right now' : 'Your address is pending'}
+          message={unavailable ? account.detailsNote?.trim() || 'Try again in a few minutes.' : 'Check again in a moment.'}
+          action={{ label: 'Check again', onPress: onChanged }}
+        />
       </Card>
     );
   }

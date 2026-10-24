@@ -3,7 +3,7 @@ import * as rtl from '@testing-library/react-native';
 import { Dimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ADDRESS, fxFetch, hub, OUTSIDE, resetFxHub, SEND_ID, SWAP_ID, USDT_ID } from '../fx/testing/fxHub';
+import { ADDRESS, fxFetch, hub, OUTSIDE, resetFxHub, SEND_ID, SWAP_ID, usdcAccount, USDT_ID } from '../fx/testing/fxHub';
 
 /*
  * WALLET-21: W22 (Receive), W23 (Send) and the receipt, against the Hub's stand-in `fetch`. The coins and networks are the Hub's, the
@@ -111,6 +111,24 @@ describe('W22 · Crypto · receive', () => {
     await receive('USDC');
     await fireEvent.press(await rtl.screen.findByTestId('receive-chain-base', {}, patient));
     expect(await rtl.screen.findByTestId('receive-pending')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('receive-qr')).toBeNull();
+  });
+
+  it('L1: an address that is pending or not available says so with the Hub\u2019s words, and never promises one is coming', async () => {
+    await receive('USDC');
+    await fireEvent.press(await rtl.screen.findByTestId('receive-chain-base', {}, patient));
+    expect(await rtl.screen.findByText('Your address is pending')).toBeTruthy();
+    expect(rtl.screen.queryByText(/on its way|short while/i)).toBeNull();
+    await rtl.cleanup();
+    const note = 'One of our partner services is temporarily unavailable. Please try again in a few minutes.';
+    hub.accounts = hub.accounts.map((a) => (a.id === usdcAccount.id ? { ...a, detailsStatus: 'unavailable', detailsNote: note } : a));
+    const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+    queryClient.clear();
+    await receive('USDC');
+    await fireEvent.press(await rtl.screen.findByTestId('receive-chain-base', {}, patient));
+    expect(await rtl.screen.findByText('Your address is not available right now')).toBeTruthy();
+    expect(rtl.screen.getByText(note)).toBeTruthy();
+    expect(rtl.screen.queryByText(/on its way|short while/i)).toBeNull();
     expect(rtl.screen.queryByTestId('receive-qr')).toBeNull();
   });
 
