@@ -96,6 +96,11 @@ describe('E17 to E25 · the words come from the Hub', () => {
     expect(rowLine(event(1), undefined, now)).toBe('Mon 12 Oct');
     expect(rowLine(event(1, { status: 'pending' }), 5, now)).toBe('Mon 12 Oct');
     expect(rowLine(event(1, { status: 'removed' }), undefined, now)).toBe('Taken down');
+    // FIX-110: with the Hub's day, in Lagos time, and the year only when it is not this one.
+    expect(rowLine(event(1, { status: 'removed' }), undefined, now, '2026-09-20T09:30:00.000Z')).toBe('Taken down 20 Sep');
+    expect(rowLine(event(1, { status: 'removed' }), undefined, now, '2025-12-31T23:30:00.000Z')).toBe('Taken down 1 Jan');
+    expect(rowLine(event(1, { status: 'removed' }), undefined, now, '2025-12-30T10:00:00.000Z')).toBe('Taken down 30 Dec 2025');
+    expect(rowLine(event(1, { status: 'removed' }), undefined, now, 'not a date')).toBe('Taken down');
   });
 
   it('shared links read "3 links · 22 sales" from the Hub\'s counts, one is singular, none is said so', () => {
@@ -143,7 +148,9 @@ describe('E17 · My events', () => {
         ? ok([event(1), event(2, { status: 'pending' }), event(3, { status: 'rejected', lastDecisionReason: 'Add the street address.' }), event(4, { status: 'removed' })], { nextPage: null })
         : c.path === '/events/mine/sold'
           ? ok({ items: [{ eventId: UUID(1), ticketsSold: 64 }] })
-          : undefined;
+          : c.path === '/events/mine/decisions'
+            ? ok({ items: [{ eventId: UUID(4), decidedAt: '2026-09-20T09:30:00.000Z' }] })
+            : undefined;
   };
 
   it('a host sees every status with the Hub\'s sales and the reviewer\'s note, and opens a live or a sent-back event', async () => {
@@ -160,6 +167,8 @@ describe('E17 · My events', () => {
     expect(rtl.screen.getByTestId(`my-event-pill-${UUID(2)}`)).toHaveTextContent('In review');
     expect(rtl.screen.getByTestId(`my-event-pill-${UUID(3)}`)).toHaveTextContent('Sent back');
     expect(rtl.screen.getByTestId(`my-event-pill-${UUID(4)}`)).toHaveTextContent('Removed');
+    // FIX-110: the day the Hub says an admin took it down (E17's "Taken down 20 Sep").
+    expect(await rtl.screen.findByText('Taken down 20 Sep')).toBeTruthy();
     expect(rtl.screen.getByTestId(`my-event-note-${UUID(3)}`)).toHaveTextContent("Reviewer's note: Add the street address.");
     // In review and removed have no screen: no row to press.
     expect(rtl.screen.queryByTestId(`my-event-open-${UUID(2)}`)).toBeNull();

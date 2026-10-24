@@ -131,3 +131,15 @@ onSessionEnd(() => {
   resetDetails();
   setSent(null);
 });
+
+/** The Hub's whole-kobo quick prices that are a whole number of naira, as the digits the price field takes. */
+export const presetDigits = (presetsKobo: readonly number[]): string[] =>
+  presetsKobo.filter((kobo) => Number.isInteger(kobo) && kobo > 0 && kobo % 100 === 0 && kobo / 100 <= limits.priceMax).map((kobo) => String(kobo / 100));
+
+/** M25's "Usually takes", worded from the Hub's hours: "About an hour", "About 4 hours", "About a day", "About 3 days". */
+export function reviewWords(hours: number): string {
+  if (hours <= 1) return 'About an hour';
+  if (hours < 24) return `About ${hours} hours`;
+  const days = Math.round(hours / 24);
+  return days <= 1 ? 'About a day' : `About ${days} days`;
+}

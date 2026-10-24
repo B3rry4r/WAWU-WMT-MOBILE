@@ -1,5 +1,6 @@
 import type { PillTone } from '@/components/StatusPill';
 import type { IconName } from '@/components/icon';
+import { dateWords } from '@/features/wallet/history/lagosTime';
 
 import type { EventView } from '../api';
 import { whenLine } from '../format';
@@ -54,9 +55,12 @@ export function opensOf(event: Pick<EventView, 'status'>): 'dashboard' | 'sent-b
 
 export const soldWord = (count: number) => `${count.toLocaleString('en-US')} sold`;
 
-/** The line under a row's name: the date, then the sales while the event is live and the Hub has sent them. A removed event says so. */
-export function rowLine(event: EventView, sold: number | undefined, now: number): string {
-  if (event.status === 'removed') return 'Taken down';
+/** The line under a row's name: the date, then the sales while the event is live and the Hub has sent them. A removed event says so, with the day the Hub says it was taken down ("Taken down 20 Sep", the year when it is not this one). */
+export function rowLine(event: EventView, sold: number | undefined, now: number, takenDownAt?: string): string {
+  if (event.status === 'removed') {
+    const at = takenDownAt ? new Date(takenDownAt) : null;
+    return at && Number.isFinite(at.getTime()) ? `Taken down ${dateWords(at, new Date(now))}` : 'Taken down';
+  }
   const date = whenLine(event.startsAt, event, now).split(' · ')[0];
   return event.status === 'published' && sold !== undefined ? `${date} · ${soldWord(sold)}` : date;
 }
