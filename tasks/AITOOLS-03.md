@@ -7,7 +7,7 @@ order: -124
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: review
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,22 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 45 minutes of building; if it runs past that, push what is done and hand back what remains.
-- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
-- **Pattern:** text prompt in, one provider call, one audio file out, flat price per use or per track. Both tools are synchronous at the provider (one request, the audio in the answer).
-- **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
-- **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-03`; then a verifier.
+- **24 Oct 2026, lead: merged.** Round 3 (backend `9d50fc6`) is exactly round 2's four findings (F1 to F4); the lead accepts it on round 2's check. Backend PR #183 merged as `90bb0ef`.
+
+As of 24 Oct 2026, verifying (builder fix round 3 done). Tier T2. Builder report and verifier reports of every round: [history/AITOOLS-03.md](history/AITOOLS-03.md).
+- **Heads:** backend `wmt/AITOOLS-03` `9d50fc6` (on `207fabf`, new commit only). Mobile `wmt/AITOOLS-03` carries this file. No migration, no new column. Round 3 touched 6 .ts files and the README.
+
+| r3 row | Fix | Proof |
+|--------|-----|-------|
+| F1 medium | `fail()` no longer writes `providerRef`; the provider's status stays in the log line (`ai job <id> (...) answered 402`) only. A failed job leaves `providerRef` as it was and does not block the AITOOLS-02 rollback | `round 3: a provider refusal's HTTP status ...` (both tools, 401 and 402): the log line carries the status, every failed job has `providerRef` null, and the `DO` check of `rollback.sql`, run as written on those jobs, passes (and refuses once one has a provider id, so the check is live). `round 3: a provider id set on a working job ...` sets `providerRef` on a working job, fails it by 402 and by 500, both tools, and reads it back unchanged. A mutant (`fail()` writing `http_402`) fails both. The round 2 assertions that pinned `http_NNN` now assert the log line and null (lead ruling: they pinned the round's own defect) |
+| F2 low | The Music call sends `user-agent: node`, the value `fetch` sends (the repo has none of its own) | provider spec on a capture server: the Music call's `user-agent` equals the one a `fetch` call sends |
+| F3 low | The Music call follows up to 3 redirects (301, 302, 303, 307, 308) inside the one deadline: 307 and 308 repeat the POST with the same body and headers; 301, 302 and 303 become a GET with no body, as `fetch` does; a fourth, a redirect with no `location` or to a scheme other than http(s) fails as a 3xx answer did before (`rejected`, status kept) | provider spec on the capture server: each status compared with the `fetch` call on the same server; a chain of 3 is followed, a chain of 4 stops after 4 requests; no `location` and `ftp://` fail; two hops of 700 ms fail against a 1 s deadline and finish inside 5 s |
+| F4 low | The shared cap text reads "One job can run up to 1 minute. This one is 2 minutes." (singular for 1, "up to 0 minutes. This one is 1 minute.") | `points-spend-rules.spec.ts` `capStop` case. Callers: `capStop` is called twice in `points-spend.service.ts` (quote and hold) and nothing else builds the text; `prompt-limits.ts` already ends "seconds"; no spec or mobile file pinned the old text |
+
+- **Checks (backend, own worktree and database `ait03r3_wawu_hub_test`, mock on 7867, stand-in only, nothing Fintava):** tsc `EXIT 0`; eslint (no --fix) on the 6 changed .ts files `EXIT 0`; `src/ai-tools` 7 suites 118/118 in band `EXIT 0`; `points-spend-rules.spec.ts` with the provider spec 32/32 `EXIT 0` (the six Fintava-double `src/points` specs NOT RUN, by rule); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base) `EXIT 0`; check_baseline (124 entries) `EXIT 0`. Mobile: `check_tasks.py --write` `EXIT 0` (415 tasks); gates `EXIT 0` (10 run, 1215 files, 0 fail, 18 warn, same as before).
+- **Not done:** `test:protected` was not re-run (no route, DTO or contract change this round). TLS and a real host were not run (no live host by rule). The key header goes on every redirect hop, as `fetch` sends it.
+- **Owner question G-AITOOLS-03-1** (Music terms, per plan) stays open for the owner.
+- **Next:** a verifier re-checks the rollback case with a failed 402 job (`rollback.sql` through psql) and the three lows on a capture server.
 
 ## Read first
 
@@ -58,18 +69,15 @@ A person describes a sound or a track in words and gets audio back: a sound effe
 
 ## Capability checks
 
-- [ ] `GET /ai-tools` lists Sound effect at 75 points a use and Music track at 500 points a track before anyone runs them (only when the provider is configured).
-- [ ] A sound effect job and a music job each hold, run, commit and return an audio link; a failed or refused job releases everything and says no points were taken.
-- [ ] A length over the setting's maximum is refused naming it, with nothing held; a prompt over the character limit is refused the same way.
-- [ ] The same `Idempotency-Key` twice runs one job and holds once; two jobs at once never take points below zero; a late finish after the stale sweep cannot commit twice (V8).
-- [ ] Over a points cap the answer is `points_cap_reached` naming the cap, nothing held.
-- [ ] The stored audio is the person's: an account deletion removes it (the account-purge spec lists the new folders).
-- [ ] VoiceOver and Quick voice still pass their specs untouched.
-
-## History
-
-None yet. Reports go to tasks/history/AITOOLS-03.md.
+- [x] `GET /ai-tools` lists Sound effect at 75 points a use and Music track at 500 points a track before anyone runs them (only when the provider is configured).
+- [x] A sound effect job and a music job each hold, run, commit and return an audio link; a failed or refused job releases everything and says no points were taken.
+- [x] A length over the setting's maximum is refused naming it, with nothing held; a prompt over the character limit is refused the same way.
+- [x] The same `Idempotency-Key` twice runs one job and holds once; two jobs at once never take points below zero; a late finish after the stale sweep cannot commit twice (V8).
+- [x] Over a points cap the answer is `points_cap_reached` naming the cap, nothing held.
+- [x] The stored audio is the person's: an account deletion removes it (the account-purge spec lists the new folders).
+- [x] VoiceOver and Quick voice still pass their specs untouched.
 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+

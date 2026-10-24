@@ -93,9 +93,9 @@ export async function cancelEvent(id: string, reason: string): Promise<CancelAns
   return answer;
 }
 
-export type TierInput = { tier: TicketTier; name: string; priceNaira: number; quantity: number };
+export type TierInput = { tier: TicketTier; name: string; priceNaira: number; quantity: number; salesStartAt?: string; salesEndAt?: string };
 
-/** `PUT /events/{id}/tickets`. Without a running tier the Hub answers `403 tier_required`, which arrives as a `HostTierRefusal` (E21's reason). */
+/** `PUT /events/{id}/tickets` (the whole list; a type sent as it is stays as it is). A refusal for sold tickets is a 409 with the Hub's own sentence. Without a running tier the Hub answers `403 tier_required`, which arrives as a `HostTierRefusal` (E21's reason). */
 export async function saveTicketTypes(id: string, types: TierInput[]): Promise<void> {
   await hostUnwrap(api.PUT('/api/hub/events/{id}/tickets', { params: { path: { id } }, body: { types } }));
 }
