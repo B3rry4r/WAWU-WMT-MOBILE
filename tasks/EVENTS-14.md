@@ -7,7 +7,7 @@ order: -116
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow
-status: building
+status: verifying
 depends_on: []
 decisions: [R-79, R-47, R-27, R-29, R-5]
 passes: [V1, V2, V3, V4, V5, V6, V7, V9]
@@ -17,15 +17,15 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026. Status: building (verifier said FIX, one medium). Tier T1. Built by a Sonnet builder, verified by a different Sonnet session (report in [history/EVENTS-14.md](history/EVENTS-14.md), last section).
-- **Branches:** backend `wmt/EVENTS-14` `84181d7` (on backend main `b2f4df6`), mobile `wmt/EVENTS-14` (the verifier's commit on top of `b3b19e46`). No PR. No migration, no contract change.
-- **What is built and verified:** the Hub keeps both rules and only the sold 409's second sentence changed (`SOLD_TIER_RULE`, R-79 (c)); the 3 specs that pinned the old sentence take the ruled one. E18 passes `onEdit` and `onTickets`; Edit event is the wizard's Basics and When and where in edit mode (`host/EditEventScreen.tsx`, only changed fields go to `PATCH`), Ticket types is the Tickets step on its own (`host/TicketTypesScreen.tsx`, read-only with one line once any ticket has sold, a late 409 shown as the Hub's own message), one `ReviewSheet` before either save, both end on "Sent for review". E22 untouched. SHARED-CHANGES EVENTS-14 #1 (two `Stack.Screen` lines) is needed and nothing else in `_layout.tsx` moved. No native module: ships over the air.
-- **Verifier results:** every capability check passes live (66 of 66 walk checks, light and dark, real sign-in); backend event specs 147 of 147; protected suite 244 of 244 on main and on the branch; app full jest 320 suites 5436 tests; tsc, eslint, gates, check_tasks, contract:build all EXIT 0. The 8 protected failures the builder saw are the stack's stand-in WAWU ID (same 8 on main), not a real failure.
-- **Open finding (medium, fix round):** M1, Edit event assumes a one-day event: `hostForm.ts:251` writes the end on the start day (moving a multi-day event's start time collapses its end date) and `hostForm.ts:147` refuses an end whose clock time is not later than the start (a multi-day event cannot be saved, even a rename); an event with no end cannot be renamed until an end is invented. The web's form and the Hub allow all three. Fix: send start and end only for what the host moved, keep the original end instant, compare ends as instants, do not ask for an end the event never had; add "a host can ..." tests for each.
-- **Lows (to the EVENTS sweep):** L1 the locked step also disables the name under a line that says only price and places, and the disabled values are very dim in dark; L2 the 409 sentence names price and places while the route refuses any `PUT` after a sale; L3 the E14 board's address hint is not built (older than this task).
-- **Gaps:** G-EVENTS-14-1 (no board draws the review sheet, the locked types or the two-step edit).
-- **Pictures:** the verifier's, `events-14-v/pics/` in the session scratch (E18 beside its board, edit steps, sheet, end, E17 In review, locked types, light and dark).
-- **Next:** a builder fixes M1 (and may take L1), then a lean re-check of M1 and the unchanged capability checks.
+As of 24 Oct 2026. Status: verifying (round 2 built; a lean re-check of M1 and the lows is next). Tier T1. Round 1 built by a Sonnet builder, verified by a different Sonnet session; round 2 built by a third (report in [history/EVENTS-14.md](history/EVENTS-14.md), last section).
+- **Branches:** backend `wmt/EVENTS-14` `96530d2` (on backend main `b2f4df6`), mobile `wmt/EVENTS-14` `0809c949` plus the records commit on top. No PR. No migration, no contract change (`contract:build` leaves `contract/` as committed).
+- **What is built:** the Hub keeps both rules; only the sold 409's second sentence changed. E18 passes `onEdit` and `onTickets`; Edit event is the wizard's Basics and When and where in edit mode (`host/EditEventScreen.tsx`, only changed fields go to `PATCH`), Ticket types is the Tickets step on its own (`host/TicketTypesScreen.tsx`, read-only once any ticket has sold), one `ReviewSheet` before either save. SHARED-CHANGES EVENTS-14 #1 (two `Stack.Screen` lines) is needed. No native module: ships over the air.
+- **r2 M1 (medium) fixed, `hostForm.ts`:** Edit event no longer assumes a one-day event. The end keeps its clock time and how many days after the start it falls (a one-day event is gap 0, so it behaves as before): moving the start day moves the end with it (a 3-day event stays 3 days), moving the start time alone leaves the end where it was, a rename sends neither. Ends are compared as instants on their own day, so a 3-day event ending at 07:00 on day 3 saves; an event the Hub holds with no end is not asked for one and is never given one (a new event still must pick an end). `PATCH` carries `startsAt` and `endsAt` only for what moved. The Ends field shows the end day when it is not the start day ("Fri 5 Nov, 16:00"); a one-day event shows the clock time E14 draws. The Hub's rules are unchanged (it refuses only an end before the start).
+- **r2 L2 (lead ruling) fixed:** `PUT /events/{id}/tickets` is stricter than R-79 (c) (it refuses any change once a ticket is sold, the web calls it, it stays as it is). The 409 now reads `Tickets have already sold for "<name>". Ticket types cannot change once a ticket is sold.` The three specs that pinned the old second sentence take it, the app's mock of it and its own line ("A ticket has sold, so ticket types cannot change.") say the same.
+- **r2 L1 fixed:** the locked Ticket types step used the theme's disabled text colour (`textDisabled`, 1.8 to 1 on the sunken surface in both themes). It now reads in `textSecondary` on `surfaceSunken` (`LockedField` in `host/hostParts.tsx`): measured in the browser 6.73 to 1 dark and 5.99 to 1 light. Cause for the lead: the generated `textDisabled` token itself is under 4.5 to 1 in both themes, so any other disabled field shares it (a design-token question, not changed here, `src/theme/**` and `src/components/**` are fenced).
+- **Proof:** new tests fail before and pass after (16 failed on the round-1 source, all pass built); live on the local stack (web export 390 x 844, real sign-in): a 3-day and a no-end event created through `POST /events`, approved, edited from E18, renamed only, then the start moved (`logs/walk.log`), and the locked step in both themes (`logs/locked.log`, `pics/`).
+- **Open (lows, to the EVENTS sweep):** L3 the E14 board's address hint is not built (older than this task). G-EVENTS-14-1 (no board draws the review sheet, the locked types or the two-step edit).
+- **Next:** a lean re-check of M1 (a 3-day and a no-end event edited from E18) and the unchanged capability checks.
 
 ## Read first
 

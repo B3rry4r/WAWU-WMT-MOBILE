@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 52 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 21 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -39,6 +39,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -202,7 +203,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done

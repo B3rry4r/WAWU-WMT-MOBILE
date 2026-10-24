@@ -65,3 +65,17 @@ Verifier, 24 Oct 2026 (a Sonnet session that wrote none of this task's code and 
 NOT RUN: surviving-mutant runs (none attempted); the E16 and E17 boards were not re-rendered (Edit event's end is the wizard's own `Submitted` component, unchanged).
 
 Pictures: `events-14-v/pics/` (boards in `pics/boards/`, side by side in `pics/cmp-E18-*`, `cmp-E13-*`, `cmp-E14-*`, `cmp-E15-*`, `cmp-ends.png`, every screen light and dark as `main-*` and `sold-*`).
+
+## Builder report, round 2
+
+Builder, 24 Oct 2026 (a Sonnet session that did not write round 1). Fixed M1 and the lead's two lows; no verifier finding was edited away. Backend `96530d2`, mobile `0809c949`.
+
+Files. Backend: `src/event-ticketing/event-ticketing.service.ts` (`SOLD_TIER_RULE` now "Ticket types cannot change once a ticket is sold."), the same three specs. Mobile: `host/hostForm.ts` (`endDaysAfter` on the draft, `endOf`, `endShown`, `whenWhereErrors` and `patchBody` read the end as an instant on its own day), `host/HostScreen.tsx` (Ends shows the end day; locked Tickets use `LockedField`), `host/hostParts.tsx` (`LockedField`), `host/TicketTypesScreen.tsx` (`SOLD_LINE`), tests `editForm.test.ts` (10 new) and `editEvent.test.tsx` (7 new).
+
+Choices. M1: when the start moves the end keeps its clock time and its day gap from the start (the form's existing rule, a clock time on the start day, is gap 0), so a 3-day event moved to another day stays 3 days and a start-time change leaves the end where it was. The one assertion that pinned the defect, "a host who moves the end sends both the start and the end" in `editForm.test.ts`, now says the end alone is sent (sweep rule: a finding that names a defect is the ruling). Unchanged on purpose: the wizard's create path (`createBody`, a new event must pick an end).
+
+Route note. `PUT /events/{id}/tickets` is stricter than R-79 (c): it refuses any change once a ticket is sold (a rename, an added or a removed type too), and the web calls it, so it stays. The 409's message says so now.
+
+Checks. Backend: tsc EXIT 0, eslint (no fix) on the 4 changed files EXIT 0, event specs in band 11 suites 194 of 194 EXIT 0 (none imports the Fintava double; run on a spec database with the suite's own mock WAWU ID, the stack's mock gave 5 door-staff and held-ticket failures from its own seeded names, none touch this change), test:protected 253 of 253 EXIT 0 after `db:seed`, contract:build EXIT 0 with no diff, gates 0 fail 133 warn 88 accepted EXIT 0, check_baseline EXIT 0. App (own `npm ci` from the lockfile): tsc EXIT 0, eslint (no fix) on the 6 changed files EXIT 0, jest `src/features/events` plus `appLinkRoutes`, `route-graph` and `route-guard` 29 suites 724 tests EXIT 0, gates 0 fail 18 warn (1223 files) plus the 56 gate unit tests EXIT 0, check_tasks `--write` EXIT 0. Live: walk and contrast logs and pictures in the builder's `events-14-r2/` scratch folder.
+
+Not run. A sold event's Edit event was not walked live again (round 1 walked it; this round did not touch that path). The full mobile suite is the merge agent's.
