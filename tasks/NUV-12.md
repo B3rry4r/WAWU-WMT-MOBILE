@@ -18,13 +18,13 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status building: the verifier (24 Oct) found one high and one medium, see "Verifier report". No PR.
+As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status verifying after fix round 1 (24 Oct): the verifier (24 Oct) found one high, one medium and lows, see "Verifier report"; round 1 closes them (below). No PR.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
 | 1 | No Capital anywhere; the provider seam had no investment products | `WalletProvider.capital` (optional, `src/wallet-provider/wallet-provider-capital.ts`); the Nuvion adapter's area `src/nuvion/areas/capital.ts` makes every call; the Fintava adapter has none, so every route answers `409 capital_unavailable` there |
 | 2 | No route | `GET /capital/availability`, `products`, `products/{id}`, `portfolio`, `orders`, `orders/{id}`, `orders/{id}/transactions`, `orders/{id}/withdrawal`; `POST /capital/orders` (reserve, `Idempotency-Key`, no PIN), `POST orders/{id}/confirm` and `POST orders/{id}/withdrawal` (PIN or device approval, `Idempotency-Key`) |
-| 3 | No record of an order | tables `CapitalOrder`, `CapitalAdminAudit` (migration `20261110120000_capital_orders`, rollback refuses while a confirmed order is stored); the sweep settles an order left `confirming`, expires reservations, reads holdings and retries a fee |
+| 3 | No record of an order | tables `CapitalOrder`, `CapitalAdminAudit` (migration `20261113100000_capital_orders`, rollback refuses while a confirmed order is stored); the sweep settles an order left `confirming`, expires reservations, reads holdings and retries a fee |
 | 4 | A `capital-*` payout inflow would have been "review" in the inflow handler | `src/nuvion/handlers/capital.handler.ts` writes the payout and the purchase to the ledger once, on the order's own row; `inflows.ts` leaves `capital-*` to it |
 | 5 | No owner controls | on/off: plan setting `capital.enabled` (default 1); limits and WAWU's fee from settings (`CAPITAL_MIN_KOBO`, `CAPITAL_MAX_KOBO`, `CAPITAL_DAILY_MAX_KOBO`, `CAPITAL_WAWU_FEE_KOBO`, `CAPITAL_WAWU_FEE_BPS`, all off or 0 by default, R-10); admin `GET admin/capital/orders`, `POST .../{id}/freeze`, `unfreeze`, `cancel` for superadmin and finance, each with an audit row |
 | 6 | Wallet tab ends at the Points and Passes cards | one row, Capital, under them, drawn only when `GET /capital/availability` is true; `/capital` (portfolio, Invest and Mine), `/capital/product`, `/capital/review` (the PIN sheet over it), `/capital/order`, `/capital/withdraw` |
@@ -35,7 +35,21 @@ A reservation is 15 minutes and moves nothing. A second confirm of an APPROVED o
 
 ### Words
 
-The app says what the provider's terms say (rate, term, what leaving early costs, deductions) and promises no return: "These figures are the provider's own and are not a promise of a return." The Hub never works out a rate, a return or a payout; a figure the provider did not give is `null` and not drawn. No provider name reaches a person.
+The app says what the provider's terms say (rate, term, what leaving early costs, deductions) and promises no return: "These figures are the provider's own and are not a promise of a return." The provider's own free text is never drawn (round 1, finding 2): a product shows its terms as facts in our words, never Nuvion's description (dev's reads "guaranteed ... grow your money with confidence"); only a product's name, its issuer's name and its documents' names pass through. The Hub never works out a rate, a return or a payout; a figure the provider did not give is `null` and not drawn. No provider name reaches a person.
+
+### Round 1 (24 Oct 2026, builder, backend `wmt/NUV-12` and mobile `wmt/NUV-12`)
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | high: `money-contract.spec` red, `CapitalReserveDto.amountKobo: number` | `@ApiProperty({ type: 'integer' })` on it; `contract:build`; `money-contract.spec.ts` 11 pass, EXIT 0 |
+| 2 | medium: the provider's "guaranteed" product text drawn | `description` is dropped at the seam (type, Nuvion reader, view) and the app draws only the terms; area spec and app test prove "guaranteed" never reaches the screen |
+| 3 | low: stamp older than `20261112090000_fx_accounts` | folder `20261113100000_capital_orders` (after `fx_accounts` and `20261113093000_abroad_sends`, the newest on any branch today), rollback kept and re-run |
+| 4 | low: cancelled reservation said "on hold" | its own plain reason: "This reservation was cancelled. Nothing was taken from your wallet."; spec asserts it |
+| 5 | low: off closed the exit | off closes new orders only (list, reserve, confirm of a held reservation); portfolio, orders, movements, preview and withdraw still answer; `GET /capital/availability` gains `holding` and the Wallet row stays for a holder; the Capital screen says new investments are closed and hides Invest; spec and app tests |
+| 6 | low: fee row named the brand | counterparty "WAWU's fee"; the review and holding label "WAWU's fee" |
+| 7 | low: "for Invest in ..." | sheet purpose "investing in <product>", so it reads "₦15,000 for investing in <product>"; test asserts the line |
+
+Not changed: lows 8 and 9 (dev timeout, stand-in opening balance) are not code.
 
 ### Checks run (24 Oct 2026)
 

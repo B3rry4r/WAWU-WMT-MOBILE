@@ -8358,8 +8358,11 @@ export interface paths {
         };
         /**
          * Whether Capital is on (the admin's plan setting) and the running wallet
-         *     provider serves it. The Wallet tab shows its row only when this is true.
-         *     Needs no wallet and moves no money.
+         *     provider serves it: `available`, when new orders can be made. `holding`
+         *     says the person holds an order that is not over: switching Capital off
+         *     closes new orders only, so the Wallet tab keeps its row for a person who
+         *     holds something, and the portfolio, the orders, their movements and a
+         *     withdrawal keep answering. Needs no wallet and moves no money.
          */
         get: operations["CapitalController_availability"];
         put?: never;
@@ -10859,10 +10862,10 @@ export interface components {
             active?: boolean;
         };
         CapitalReserveDto: {
-            /** @description The product's id, from the product list. */
-            productId: string;
             /** @description Kobo to invest: the principal of a fixed return, or the spend on a share offering. */
             amountKobo: number;
+            /** @description The product's id, from the product list. */
+            productId: string;
             /** @description Fixed return only: true locks the money for the whole term (no early exit). Omitted is false. */
             lockInvestment?: boolean;
             /** @description The person has opened and agreed to every document of the product. Must be true. */
@@ -16158,6 +16161,7 @@ export interface components {
         };
         CapitalAvailabilityView: {
             available: boolean;
+            holding: boolean;
         };
         CapitalRateBandView: {
             name: string;
@@ -16182,7 +16186,6 @@ export interface components {
             /** @enum {string} */
             kind: "fixed_return" | "share_offering";
             name: string;
-            description: string;
             minKobo: number | null;
             maxKobo: number | null;
             tenorDays: number | null;
@@ -16217,7 +16220,6 @@ export interface components {
             /** @enum {string} */
             kind: "fixed_return" | "share_offering";
             name: string;
-            description: string;
             minKobo: number | null;
             maxKobo: number | null;
             tenorDays: number | null;

@@ -29187,7 +29187,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Whether Capital is on (the admin's plan setting) and the running wallet\nprovider serves it. The Wallet tab shows its row only when this is true.\nNeeds no wallet and moves no money.",
+    "summary": "Whether Capital is on (the admin's plan setting) and the running wallet\nprovider serves it: `available`, when new orders can be made. `holding`\nsays the person holds an order that is not over: switching Capital off\ncloses new orders only, so the Wallet tab keeps its row for a person who\nholds something, and the portfolio, the orders, their movements and a\nwithdrawal keep answering. Needs no wallet and moves no money.",
     "tags": [
      "Capital"
     ],
@@ -36511,15 +36511,15 @@
    "CapitalReserveDto": {
     "type": "object",
     "properties": {
-     "productId": {
-      "type": "string",
-      "description": "The product's id, from the product list."
-     },
      "amountKobo": {
-      "type": "number",
+      "type": "integer",
       "description": "Kobo to invest: the principal of a fixed return, or the spend on a share offering.",
       "minimum": 1,
       "maximum": 1000000000000
+     },
+     "productId": {
+      "type": "string",
+      "description": "The product's id, from the product list."
      },
      "lockInvestment": {
       "type": "boolean",
@@ -36531,8 +36531,8 @@
      }
     },
     "required": [
-     "productId",
      "amountKobo",
+     "productId",
      "agreedToDocuments"
     ]
    },
@@ -59379,10 +59379,14 @@
     "properties": {
      "available": {
       "type": "boolean"
+     },
+     "holding": {
+      "type": "boolean"
      }
     },
     "required": [
-     "available"
+     "available",
+     "holding"
     ]
    },
    "CapitalRateBandView": {
@@ -59472,9 +59476,6 @@
      "name": {
       "type": "string"
      },
-     "description": {
-      "type": "string"
-     },
      "minKobo": {
       "type": "integer",
       "nullable": true
@@ -59555,7 +59556,6 @@
      "id",
      "kind",
      "name",
-     "description",
      "minKobo",
      "maxKobo",
      "tenorDays",
@@ -59635,9 +59635,6 @@
       ]
      },
      "name": {
-      "type": "string"
-     },
-     "description": {
       "type": "string"
      },
      "minKobo": {
@@ -59721,7 +59718,6 @@
      "id",
      "kind",
      "name",
-     "description",
      "minKobo",
      "maxKobo",
      "tenorDays",

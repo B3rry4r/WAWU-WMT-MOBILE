@@ -367,13 +367,25 @@ describe('W1 · Wallet · Naira', () => {
     expect(second.screen.queryByTestId('wallet-points')).toBeNull();
   });
 
-  it('the Capital row is drawn only when the Hub says Capital is on and served, and opens Capital (NUV-12)', async () => {
+  it('the Capital row is drawn when the Hub says Capital is on and served, or the person holds something, and opens Capital (NUV-12)', async () => {
     const off = await boot();
     expect(await off.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     await off.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(0));
     expect(off.screen.queryByTestId('wallet-capital')).toBeNull();
     await off.cleanup();
-    fallback['GET /capital/availability'] = ok({ available: true });
+    // Switched off and nothing held: no way in.
+    fallback['GET /capital/availability'] = ok({ available: false, holding: false });
+    const none = await boot();
+    expect(await none.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await none.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(1));
+    expect(none.screen.queryByTestId('wallet-capital')).toBeNull();
+    await none.cleanup();
+    // Switched off but the person holds something: the way out stays.
+    fallback['GET /capital/availability'] = ok({ available: false, holding: true });
+    const holder = await boot();
+    expect(await holder.screen.findByTestId('wallet-capital')).toBeTruthy();
+    await holder.cleanup();
+    fallback['GET /capital/availability'] = ok({ available: true, holding: false });
     const on = await boot();
     const row = await on.screen.findByTestId('wallet-capital');
     expect(row).toBeTruthy();
