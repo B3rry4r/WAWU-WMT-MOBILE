@@ -7,7 +7,7 @@ order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: [WALLET-32, WALLET-33, WALLET-01]
 decisions: [R-83, R-84, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B19, T2), mobile `wmt/WALLET-21` on `origin/main` `7e65293b`; contract copied from backend `wmt/WALLET-21-HUB` `e44ea4c` (B18's routes, declared and served on the Nuvion adapter by B18's later pushes). Follow-up (lead, 24 Oct): the contract is re-copied from `wmt/WALLET-21-HUB` `0008490` (routes now served), where `GET /money/fx/sends/quote` and `POST /money/fx/sends` also take `currency` (USDT, USDC or RLUSD, the account's); the app sends it on both calls (`fx/api.ts`, `CryptoSendScreen`), and the send's attempt subject names it. Also fixed: the swap's hold could read a second too long on the first frame (the clock was older than the quote); it is now capped at the quote's `validForSeconds`. Status: verifying. R-83 and R-84 replace this file's old brief (Cardex samples, 90 seconds, TRC-20 and BEP-20 are dead): the networks are Nuvion's, the hold is the quote's own `expiresAt`, the fees are the Hub's breakdown.
+As of 24 Oct 2026, built by a Sonnet builder (bundle B19, T2), mobile `wmt/WALLET-21` on `origin/main` `7e65293b`; contract copied from backend `wmt/WALLET-21-HUB` `e44ea4c` (B18's routes, declared and served on the Nuvion adapter by B18's later pushes). Follow-up (lead, 24 Oct): the contract is re-copied from `wmt/WALLET-21-HUB` `0008490` (routes now served), where `GET /money/fx/sends/quote` and `POST /money/fx/sends` also take `currency` (USDT, USDC or RLUSD, the account's); the app sends it on both calls (`fx/api.ts`, `CryptoSendScreen`), and the send's attempt subject names it. Also fixed: the swap's hold could read a second too long on the first frame (the clock was older than the quote); it is now capped at the quote's `validForSeconds`. Status: building (verifier verdict FIX, 24 Oct: H1 the WAWU fee is not collected on a naira-source swap, M1 the contract is stale against contract:build, M2 CAD and AED details promise arrival; see Verifier report). R-83 and R-84 replace this file's old brief (Cardex samples, 90 seconds, TRC-20 and BEP-20 are dead): the networks are Nuvion's, the hold is the quote's own `expiresAt`, the fees are the Hub's breakdown.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -145,7 +145,39 @@ Files: `src/features/wallet/fx/` (api, amount, model, parts, FxBalanceCard, FxTa
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Verifier: Sonnet (T2 lean check, 24 Oct 2026), backend `wmt/WALLET-21-HUB` `0008490` against `origin/main` `38be72e`, mobile `wmt/WALLET-21` `980adef1`. Verdict: **FIX** (1 high, 2 medium). Live run: a local Hub on the HUB branch against Nuvion DEV only (`api.nuvion.dev`, a net guard that refuses every other host), the mobile web export at 390 x 844, signed in through the app's own sign-in (mock WAWU ID), a naira wallet already opened on dev (entity and naira account of the earlier dev runs, linked to the test person by one wallet row; the Hub's opening flow was not re-run, FIX-97 did that).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Live: USD and EUR accounts open, real receiving details | passed | USD: account and routing numbers, bank "Bank of Nowhere" (no SWIFT on dev, G-WALLET-21-8). EUR: `pending`, then `active` with an IBAN on the next read |
+| Live: USDT per chain | passed | eth and base opened as two accounts; no chain refused `chain_mismatch` 422 |
+| Live: quote, swap NGN to USD and back, PIN, one Idempotency-Key | passed | key sent twice in turn: same swap id; sent twice at once: one swap, the other answered `idempotency_in_progress`; a used quote under a new key: `quote_expired`; naira 40,921 kobo to 37,498 after one swap out (10,000) and one back in (6,577), equal to Nuvion's own balance read |
+| Live: balances read Nuvion's | passed | Hub balance and `GET /accounts` on dev agree after each swap; app showed the same figures |
+| Live: WAWU fee shown and charged once | **failed** | shown (W20 "WAWU fee ₦5.00", review "Swap ₦105", receipt) but charged zero times: finding H1 |
+| Live: stablecoin send | passed | funded USDC account: Hub answers 409 `provider_declined` with Nuvion's own sentence, the key is released, the operation is `failed` |
+| Live: CAD and AED details | failed (medium) | account opens, `details: null`, the app says "Account details are on their way": finding M2 |
+| Live: expired quote | passed | 409 `quote_expired`, "That rate is no longer held. Get a new one." |
+| Live: W1 with 8 tabs (Naira, Dollar, Euro, Pound, CAD, Dirham, Cedi, Crypto) | passed | page width 390 = window 390, tab row scrolls, first and last tab fully reachable: `pics/v-W1-light.png`, `pics/v-W2-Crypto-light.png` |
+| Money: frozen account (admin route) | passed | quote, swap on a quote taken before the freeze, send quote and send all 423 `account_frozen`; reads still work; unfreeze restores |
+| Money: on/off settings | passed | `fx.product.swap.on`, `fx.currency.USD.on`, `fx.product.open_account.on`, `fx.product.crypto_send.on` each set to 0: 409 `fx_switched_off`; `GET /currencies` shows `enabled` and `products` |
+| Money: admin roles and audit | passed | support and reviewer 403 on read and freeze, no token 401; superadmin and finance freeze and unfreeze; six `FxAdminAudit` rows with admin id, email, role and reason, none from the refused roles |
+| Money: daily limit, webhook plus sweep, lost answer | NOT RUN live | dev finishes a transfer at once and its webhook endpoint is not reachable, so a pending operation cannot be provoked; covered by `fx-money.contract.spec.ts` (limit over the Lagos day, spend-once quote, pending then settled) which passes. The code reads right for a double debit: the reference is the provider's idempotency key and a repeat finds the original |
+| Additive: protected route suite | passed (same as main) | 245 of 253, the same 8 failures on `origin/main` (verification and professionals routes, 502 in this environment), so the branch changes none |
+| Additive: route inventories | passed | `publishing-gate-coverage`, `hub-rate-limits.contract` in the 11-suite run |
+| Additive: migration | passed | `20261112090000_fx_accounts` is later than every migration on `origin/main` and all 310 `origin/wmt/*` branches; schema diff against the migrated database: none; rollback refuses with one `FxAccount` row, drops five tables with none, migration re-applies |
+| contract:build unchanged | **failed** | one summary line changes: finding M1 |
+| V5 Picture against the boards | NOT RUN | pictures taken (below), not compared element by element with `render_design` boards |
+| Other screens W22, W23, dark W1 to W3 | NOT RUN | not walked live; W22 and W23 covered by `fxCryptoFlow` jest only |
+
+Checks (EXIT lines in `scratchpad/wallet-21-v/logs/`): backend tsc 0; eslint (no --fix) on 32 changed `.ts` files 0; 11 spec files (fx-contract, fx-money.contract, nuvion-fx-area, wallet-gate-coverage, money-moving-coverage, money-contract, publishing-gate-coverage, hub-rate-limits.contract, plan-settings, plan-settings-round2, admin-plan-settings.contract) 193 tests 0; gates 0 fail, 135 warn, 88 accepted (1850 files), baseline 124 entries, both 0. App: tsc 0; eslint on 27 changed files 0; `jest src/features/wallet` 30 suites, 433 tests, 0; gates 0 fail, 18 warn, 0 accepted (1326 files), baseline 0; check_tasks 0 (432 tasks). Pictures: `scratchpad/wallet-21-v/pics/` (W1, each currency tab, W20, W21, PIN sheet, receipt in light; W20 and W21 in dark), beside the builder's in `wallet-21-b/`.
+
+### Findings
+
+- **H1, high, defect: WAWU's fee on a swap out of naira is shown and recorded as paid, and never collected.** `src/nuvion/areas/fx.ts:825` `receiver()`: for `NGN` it ignores `side.ban` and resolves the person's own naira account, so the fee leg (`src/money/fx/fx-operations.service.ts:546`, `to: { currency: 'NGN', accountId: null, ban }`) is a transfer to the same account. Nuvion dev answers 400 and keeps a `failed` record `wawu-fx-<id>-fee`, `status_reason cannot_transfer_to_same_account`. The next sweep sends the same reference, gets 409 `duplicate_reference`, `findByReference` returns the failed record, and `feeLeg()` writes `feeLeg: 'done'` (`fx-operations.service.ts:557`) without looking at the receipt's status. Repro: `FX_SWAP_FEE_NGN_MINOR=500` and `FX_FEE_COLLECTOR_NGN_BAN` set to the operational account's ban, quote and swap NGN to USD 10,000 kobo. Quote and review say total 10,500; Nuvion debits 10,000; four swaps left `feeLeg` done four times and the dev naira balance exactly 4 x 10,000 short of the quoted totals (40,921 to 7,498 with one 6,577 credit). Fix: route the fee leg to the collector's ban whatever the currency; treat a returned `failed` transfer as not paid (leave `owed`, never `done`); add a spec on the provider seam that fails when the fee leg's receiving ban is the payer's own.
+- **M1, medium, defect: `contract/openapi.json` is not what `contract:build` produces.** `src/money/fx/fx.controller.ts:235` says "the app reads it while a swap is unfinished"; `contract/openapi.json:19426` still says "what the app polls after `pending`". CI's `contract` job (`.github/workflows/branch-checks.yml:263`) fails a branch like this. Fix: `npm run contract:build`, commit, copy to the mobile `contract/` and `npm run api` (the app's copy is byte-equal to the stale one today).
+- **M2, medium, defect: CAD and AED answer a provider refusal with a promise.** Dev refuses their details (503) every time; the Hub answers `details: null` with no reason and `FxBalanceCard.tsx:73` writes "Account details are on their way". Nothing backs "on their way"; the brief wants the refusal said plainly. Fix: the Hub names the state (details unavailable, with the provider's refusal), the card says details are not available right now and when to look again, no promise of arrival.
+- Note, not this task: a wallet read answers `bankName: ""` when `NUVION_WALLET_BANK_NAME` is not configured, and the app then shows "We couldn't load your wallet" on Home and Wallet (`src/features/wallet/api/home.ts:65`). Config on the stack, not WALLET-21.
+- Note: the verifier restored `contract/openapi.json` in its own throwaway worktree with `git checkout -- <file>` after `contract:build` rewrote it (a Never; nothing of the builder's was touched, the worktree is deleted).
 
 ## Owner sign-off
 

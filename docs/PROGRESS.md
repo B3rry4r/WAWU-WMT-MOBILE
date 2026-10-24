@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 45 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -210,7 +210,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LINKS-01](../tasks/LINKS-01.md) Every link WAWU sends lands somewhere that works (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
-- [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
 - [FIX-28](../tasks/FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break (You)
 - [FIX-33](../tasks/FIX-33.md) The Nuvion opening spec draws every client address once, so it stops failing at random (You)
@@ -227,6 +226,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
