@@ -2,6 +2,7 @@ import { api, unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { components } from '@/api/schema.generated';
+import { arrivalMinutesOf } from '@/features/wallet/arrival';
 
 /**
  * The three reads behind the Wallet tab (W1, W4, W5, W6):
@@ -36,7 +37,20 @@ export type WalletHome = {
   account: Pick<WalletAccount, 'accountNumber' | 'accountName' | 'bankName'> | null;
   /** Whether the transaction PIN is set, as the Hub says; undefined when the answer carries none (no nudge then). */
   pinIsSet?: boolean;
+  /** What the Hub says of a bank transfer into the wallet account (FIX-109): `feeKobo` 0 is free; each is left out when the Hub sent none. */
+  transferIn?: { feeKobo?: number; arrivalMinutes?: number };
 };
+
+/** `transferIn` as the Hub sent it, keeping only what is a figure: a whole number of kobo and a speakable count of minutes. */
+export function readTransferIn(value: unknown): WalletHome['transferIn'] {
+  const v = value as { feeKobo?: unknown; arrivalMinutes?: unknown } | null | undefined;
+  if (!v || typeof v !== 'object') return undefined;
+  const out: NonNullable<WalletHome['transferIn']> = {};
+  if (typeof v.feeKobo === 'number' && Number.isSafeInteger(v.feeKobo) && v.feeKobo >= 0) out.feeKobo = v.feeKobo;
+  const minutes = arrivalMinutesOf(v.arrivalMinutes);
+  if (minutes !== null) out.arrivalMinutes = minutes;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 const states: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
@@ -60,7 +74,8 @@ export async function fetchWalletHome(): Promise<WalletHome> {
   const account = readAccount(view.account);
   if ((view.state === 'open' || view.state === 'frozen') && account === null) throw unreadable('wallet');
   const pin = view.pin as { isSet?: unknown } | undefined;
-  return { state: view.state, account, ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}) };
+  const transferIn = readTransferIn((view as { transferIn?: unknown }).transferIn);
+  return { state: view.state, account, ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}), ...(transferIn ? { transferIn } : {}) };
 }
 
 const directions: readonly WalletTransaction['direction'][] = ['in', 'out'];

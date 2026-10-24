@@ -7,14 +7,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Avatar } from '@/components/Avatar';
+import { BottomSheet } from '@/components/BottomSheet';
 import { Button, IconButton } from '@/components/Button';
+import { GroupedList } from '@/components/Card';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, VerifiedTick } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
 import { formatMoney } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
 import { tickOf } from '@/features/chat/api';
+import { AttachSheet } from '@/features/chat/AttachSheet';
+import { RequestSheet } from '@/features/chat/RequestSheet';
 import { DayLabel, TextBubble } from '@/features/chat/Bubbles';
 import { dayKey, dayLabel, firstName } from '@/features/communities/format';
 import { hueFor } from '@/features/feed/model';
@@ -22,7 +29,7 @@ import { inboxKey } from '@/features/inbox/api';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, radius, space, text as textStyles, useWawu } from '@/theme';
 
-import { fetchThreadPage, openFreeChat, paidKeys, postReply, type PaidQuestion, type PaidThreadDetail } from './api';
+import { blockAsker, fetchThreadPage, openFreeChat, paidKeys, postReply, reportQuestion, type PaidPerson, type PaidQuestion, type PaidThreadDetail } from './api';
 import { cardOf, stateOf, type QuestionCard } from './model';
 import { useNow } from './useNow';
 
@@ -30,7 +37,7 @@ import { useNow } from './useNow';
 const headMetrics = { height: 64, padLeft: 12, padRight: 16, between: 10, back: 40, avatar: 40, name: 16, sub: 12.5, subGap: 1, tick: 14, tickGap: 4 } as const;
 const threadMetrics = { padTop: 14, padH: 16, between: 10, dayPad: 4 } as const;
 const cardMetrics = { corner: 18, padV: 12, padH: 14, between: 11, icon: 18, iconStroke: 2.2, title: 14, body: 12.5, bodyTop: 2, bodyLine: 1.4 } as const;
-const composerMetrics = { padTop: 10, padH: 16, between: 8, field: 44, fieldCorner: 22, fieldPadV: 10, fieldPadH: 16, fieldFont: 15, fieldLine: 1.35, ringIdle: 1, ringFocus: 1.5, maxLines: 5, round: 44, arrow: 20, arrowStroke: 2.4 } as const;
+const composerMetrics = { padTop: 10, padH: 16, between: 8, field: 44, fieldCorner: 22, fieldPadV: 10, fieldPadH: 16, fieldFont: 15, fieldLine: 1.35, ringIdle: 1, ringFocus: 1.5, maxLines: 5, round: 44, arrow: 20, arrowStroke: 2.4, plus: 21, plusStroke: 2.2 } as const;
 const lineHeight = composerMetrics.fieldFont * composerMetrics.fieldLine;
 const maxField = composerMetrics.fieldPadV * 2 + lineHeight * composerMetrics.maxLines;
 /** How often the conversation is read again while a question is open or its share has not landed: a share moves in the creator's one move a day (R-55). */
@@ -45,6 +52,14 @@ export type PaidThreadScreenProps = {
   onBack: () => void;
   /** Message on an answered question: the free chat (I12), by its id. */
   onOpenChat: (chatId: string) => void;
+  /**
+   * "+" on the reply bar (G-INBOX-18-2): Add to chat with Send money and Request money. A paid thread is not a chat, so the money
+   * goes through the free chat with this person (R-13): Send money opens I14 for it, and a request is written into it. The bar draws
+   * "+" only when both this and `onOpenWallet` are given.
+   */
+  onSendMoney?: (person: PaidPerson, chatId: string) => void;
+  /** No wallet yet (R-6): Open your wallet, from the request sheet. */
+  onOpenWallet?: () => void;
 };
 
 type Pages = InfiniteData<PaidThreadDetail, string | undefined>;
@@ -56,7 +71,7 @@ type Pages = InfiniteData<PaidThreadDetail, string | undefined>;
  * Every figure is the Hub's. The composer answers the open question: one request per tap, the field kept when the Hub refuses (its own
  * words under the thread). After the answer the bar becomes Message, the way into the free chat (I12, R-13).
  */
-export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: PaidThreadScreenProps) {
+export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat, onSendMoney, onOpenWallet }: PaidThreadScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
@@ -167,6 +182,82 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: 
     }
   }, [opening, onOpenChat, wawuId]);
 
+  // "..." (G-INBOX-18-3): Report and Block. Report is for the question in hand; Block takes the person out of every list, so the screen leaves.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirm, setConfirm] = useState<'report' | 'block' | null>(null);
+  const [acting, setActing] = useState(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const acts = useRef(false);
+  const reportTarget = open ?? questions[questions.length - 1] ?? null;
+  const closeMenu = () => {
+    setMenuOpen(false);
+    setConfirm(null);
+    setMenuError(null);
+  };
+  const report = useCallback(async () => {
+    if (acts.current || !reportTarget) return;
+    acts.current = true;
+    setActing(true);
+    setMenuError(null);
+    try {
+      await reportQuestion(reportTarget.id);
+      setMenuOpen(false);
+      setConfirm(null);
+      setToast('Reported. Thank you.');
+    } catch (error) {
+      if (isApiError(error) && error.status === 409) {
+        setMenuOpen(false);
+        setConfirm(null);
+        setToast('You already reported this conversation.');
+      } else {
+        setMenuError(isApiError(error) && error.kind === 'network' ? error.message : 'Could not send the report. Try again.');
+      }
+    } finally {
+      acts.current = false;
+      setActing(false);
+    }
+  }, [reportTarget]);
+  const block = useCallback(async () => {
+    if (acts.current) return;
+    acts.current = true;
+    setActing(true);
+    setMenuError(null);
+    try {
+      await blockAsker(wawuId);
+      void queryClient.invalidateQueries({ queryKey: paidKeys.queue });
+      void queryClient.invalidateQueries({ queryKey: paidKeys.waiting });
+      void queryClient.invalidateQueries({ queryKey: inboxKey });
+      setMenuOpen(false);
+      setConfirm(null);
+      onBack();
+    } catch (error) {
+      setMenuError(isApiError(error) && error.kind === 'network' ? error.message : 'Could not block them. Try again.');
+    } finally {
+      acts.current = false;
+      setActing(false);
+    }
+  }, [wawuId, onBack]);
+
+  // "+": the sheet's two rows each need the free chat with this person, found or made first.
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [requestChat, setRequestChat] = useState<string | null>(null);
+  const money = useCallback(
+    async (then: (chatId: string) => void) => {
+      if (opening) return;
+      setOpening(true);
+      try {
+        then(await openFreeChat(wawuId));
+      } catch (error) {
+        setNotice(isApiError(error) ? error.message : 'The chat could not be opened. Try again.');
+      } finally {
+        setOpening(false);
+      }
+    },
+    [opening, wawuId],
+  );
+  const canAdd = Boolean(onSendMoney && onOpenWallet && person);
+
   const sub = subtitle(questions, open, now);
   let body;
   if (thread.isPending) {
@@ -224,6 +315,7 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: 
                 </Text>
               ) : null}
             </View>
+            <IconButton icon="Ellipsis" label="More" onPress={() => setMenuOpen(true)} size={headMetrics.back} testID="paid-thread-menu" />
           </>
         ) : null}
       </View>
@@ -235,7 +327,59 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat }: 
           </Text>
         </Pressable>
       ) : null}
-      {ready ? open ? <ReplyComposer busy={busy} onSend={send} /> : <MessageBar name={asker} busy={opening} onPress={() => void openChat()} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {ready ? open ? <ReplyComposer busy={busy} onSend={send} onPlus={canAdd ? () => setPlusOpen(true) : undefined} /> : <MessageBar name={asker} busy={opening} onPress={() => void openChat()} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {person ? (
+        <BottomSheet visible={menuOpen} onClose={closeMenu} label="More" gap={space.md} testID="paid-thread-menu-sheet">
+          {confirm === null ? (
+            <GroupedList testID="paid-thread-menu-list">
+              {reportTarget ? <ListRow testID="paid-menu-report" lead={<IconTile icon="Flag" />} title="Report this conversation" onPress={() => setConfirm('report')} /> : null}
+              <ListRow testID="paid-menu-block" lead={<IconTile icon="Ban" />} title={`Block ${asker ?? person.name}`} onPress={() => setConfirm('block')} />
+            </GroupedList>
+          ) : (
+            <View style={styles.confirm} testID={`paid-${confirm}-confirm`}>
+              <Text variant="h2" accessibilityRole="header">
+                {confirm === 'report' ? 'Report this conversation?' : `Block ${asker ?? person.name}?`}
+              </Text>
+              <Text variant="body" tone="textSecondary">
+                {confirm === 'report' ? 'Tell us if this conversation breaks the rules.' : 'You will not see each other’s profiles, and any follow between you ends.'}
+              </Text>
+              {menuError ? (
+                <Text variant="body" tone="danger" accessibilityRole="alert" testID="paid-menu-failed">
+                  {menuError}
+                </Text>
+              ) : null}
+              <Button testID={`paid-${confirm}-yes`} label={confirm === 'report' ? 'Report' : 'Block'} variant="primary" loading={acting} onPress={() => void (confirm === 'report' ? report() : block())} full />
+              <Button testID={`paid-${confirm}-no`} label="Cancel" variant="secondary" onPress={() => { setConfirm(null); setMenuError(null); }} full />
+            </View>
+          )}
+        </BottomSheet>
+      ) : null}
+      {person && canAdd ? (
+        <>
+          <AttachSheet
+            visible={plusOpen}
+            onClose={() => setPlusOpen(false)}
+            name={asker ?? person.name}
+            onSendMoney={() => void money((chatId) => onSendMoney?.(person, chatId))}
+            onRequestMoney={() => void money(setRequestChat)}
+          />
+          {requestChat ? (
+            <RequestSheet
+              chatId={requestChat}
+              name={asker ?? person.name}
+              visible
+              onClose={() => setRequestChat(null)}
+              onSent={() => {
+                const chat = requestChat;
+                setRequestChat(null);
+                onOpenChat(chat);
+              }}
+              onOpenWallet={() => onOpenWallet?.()}
+            />
+          ) : null}
+        </>
+      ) : null}
+      <Toast message={toast} tone="success" placement="bottom" offset={insets.bottom + space.xl} duration={3000} onHide={() => setToast(null)} testID="paid-thread-toast" />
     </KeyboardAvoidingView>
   );
 }
@@ -286,8 +430,9 @@ function QuestionCardView({ card, testID }: { card: QuestionCard; testID: string
 }
 
 /** I10's composer: the field and Reply. The field keeps its words when the answer is not taken. */
-function ReplyComposer({ busy, onSend }: { busy: boolean; onSend: (text: string) => Promise<boolean> }) {
+function ReplyComposer({ busy, onSend, onPlus }: { busy: boolean; onSend: (text: string) => Promise<boolean>; onPlus?: () => void }) {
   const { colors } = useWawu();
+  const ring = useFocusRing();
   const insets = useSafeAreaInsets();
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
@@ -298,6 +443,18 @@ function ReplyComposer({ busy, onSend }: { busy: boolean; onSend: (text: string)
   };
   return (
     <View testID="paid-composer" style={[styles.composer, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+      {onPlus ? (
+        <Pressable
+          testID="paid-plus"
+          accessibilityRole="button"
+          accessibilityLabel="Add to chat"
+          onPress={onPlus}
+          {...ring.handlers}
+          style={[styles.round, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: composerMetrics.ringIdle, color: colors.borderHairline, inset: true }] }, ring.style]}
+        >
+          <Icon name="Plus" size={composerMetrics.plus} color={colors.textPrimary} strokeWidth={composerMetrics.plusStroke} />
+        </Pressable>
+      ) : null}
       <TextInput
         testID="paid-composer-input"
         accessibilityLabel="Your reply"
@@ -378,6 +535,7 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'flex-start', gap: cardMetrics.between, borderRadius: cardMetrics.corner, paddingVertical: cardMetrics.padV, paddingHorizontal: cardMetrics.padH, alignSelf: 'stretch' },
   cardWords: { flex: 1, minWidth: 0 },
   notice: { paddingHorizontal: layout.gutter, paddingVertical: space.sm },
+  confirm: { gap: space.md },
   composer: { flexDirection: 'row', alignItems: 'center', gap: composerMetrics.between, paddingTop: composerMetrics.padTop, paddingHorizontal: composerMetrics.padH, borderTopWidth: StyleSheet.hairlineWidth },
   field: { flex: 1, minHeight: composerMetrics.field, maxHeight: maxField, borderRadius: composerMetrics.fieldCorner, paddingVertical: composerMetrics.fieldPadV, paddingHorizontal: composerMetrics.fieldPadH, fontSize: composerMetrics.fieldFont, lineHeight },
   messageField: { flex: 1, minHeight: composerMetrics.field, borderRadius: composerMetrics.fieldCorner, paddingVertical: composerMetrics.fieldPadV, paddingHorizontal: composerMetrics.fieldPadH, justifyContent: 'center' },

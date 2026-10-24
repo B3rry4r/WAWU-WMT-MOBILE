@@ -46,6 +46,8 @@ const hub = {
   stored: null as Stored | null,
   /** What the next reads of the send answer: the bank's decision, moved by the test. */
   decision: 'pending' as 'pending' | 'sent' | 'completed' | 'failed',
+  /** The Hub's usual time for a send to a bank (FIX-109), when it serves one: on the quote and on a pending send. */
+  arrivalMinutes: undefined as number | undefined,
 };
 
 const quote = (amountKobo: number, wawu = WAWU) => ({
@@ -62,6 +64,7 @@ const quote = (amountKobo: number, wawu = WAWU) => ({
   remainingTodayKobo: null,
   quoteToken: `tok-${amountKobo}-${wawu}`,
   expiresAt: '2099-01-01T00:00:00.000Z',
+  ...(hub.arrivalMinutes === undefined ? {} : { arrivalMinutes: hub.arrivalMinutes }),
 });
 
 function transferView(body: Record<string, unknown>): Stored {
@@ -89,6 +92,7 @@ function transferView(body: Record<string, unknown>): Stored {
     transactionId: null,
     createdAt: '2026-10-16T09:42:00.000Z',
     completedAt: decided === 'completed' ? '2026-10-16T09:50:00.000Z' : null,
+    ...(hub.arrivalMinutes !== undefined && status === 'pending' ? { arrivalMinutes: hub.arrivalMinutes } : {}),
   };
 }
 
@@ -183,7 +187,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', balanceKobo: 48_525_075, payout: PAYOUT, quotes: 0, sends: [], created: {}, debits: 0, stored: null, decision: 'pending' });
+  Object.assign(hub, { mode: 'ok', balanceKobo: 48_525_075, payout: PAYOUT, quotes: 0, sends: [], created: {}, debits: 0, stored: null, decision: 'pending', arrivalMinutes: undefined });
   (require('@/features/send/intent') as { forgetIntentsInMemory: () => void }).forgetIntentsInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0, retry: false } });
@@ -341,6 +345,33 @@ describe('Withdraw, the PIN and W19', () => {
     expect(screen.queryByText(/Usually within minutes/)).toBeNull();
     expect(screen.getByText('Total paid')).toBeTruthy();
     expect(screen.getByText('wawu-bank-7c1d4a90')).toBeTruthy();
+  });
+
+  it('FIX-109: W17 draws the Arrives row and W19 the usual time only when the Hub serves one, and the line goes once the bank has it', async () => {
+    hub.arrivalMinutes = 12;
+    await toQuoted();
+    expect(screen.getByTestId('withdraw-arrives-value').props.children).toBe('In about 12 minutes');
+    await fireEvent.press(submit());
+    await enterPin('1234');
+    await screen.findByTestId('withdraw-receipt-screen');
+    expect(screen.getByTestId('withdraw-step-arrived-note').props.children).toBe('Usually within 12 minutes');
+    hub.decision = 'completed';
+    await act(async () => {
+      jest.advanceTimersByTime(4100);
+    });
+    await waitFor(() => expect(screen.getByTestId('withdraw-receipt-word').props.children).toBe('sent'));
+    expect(screen.queryByTestId('withdraw-step-arrived-note')).toBeNull();
+  });
+
+  it('FIX-109: with no time from the Hub there is no Arrives row and no usual-time line', async () => {
+    await toQuoted();
+    expect(screen.queryByTestId('withdraw-arrives')).toBeNull();
+    expect(screen.queryByText(/Arrives/)).toBeNull();
+    await fireEvent.press(submit());
+    await enterPin('1234');
+    await screen.findByTestId('withdraw-receipt-screen');
+    expect(screen.queryByTestId('withdraw-step-arrived-note')).toBeNull();
+    expect(screen.queryByText(/Usually/)).toBeNull();
   });
 
   it('W19 fills in as the bank decides: the second step gets its time, then “sent” once the bank account has it', async () => {

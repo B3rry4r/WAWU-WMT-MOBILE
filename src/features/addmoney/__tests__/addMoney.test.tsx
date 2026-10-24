@@ -245,6 +245,34 @@ describe('Add money (W15)', () => {
   });
 });
 
+describe('what the Hub says of a transfer in (FIX-109: W15 "Free", the arrival line, W45 "Usually about")', () => {
+  it('draws Free and the arrival line from the Hub\'s figures, and the wait says the same usual time', async () => {
+    hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 0, arrivalMinutes: 7 } };
+    await toAddMoney();
+    expect(screen.getByTestId('add-money-free')).toBeTruthy();
+    expect(screen.getByText('Free')).toBeTruthy();
+    expect(screen.getByText('Money you send arrives in about 7 minutes.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
+    expect(await screen.findByTestId('add-money-waiting')).toBeTruthy();
+    expect(screen.getByTestId('add-money-waiting-usually').props.children).toBe('Usually about 7 minutes');
+  });
+
+  it('draws only the part the Hub sent: a time without a fee has no pill, a fee without a time has no line', async () => {
+    hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { arrivalMinutes: 15 } };
+    await toAddMoney();
+    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.getByText('Money you send arrives in about 15 minutes.')).toBeTruthy();
+  });
+
+  it('never calls a charge free: a fee above nothing draws no pill, and a figure that is not a time draws no line', async () => {
+    hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 2500, arrivalMinutes: 0 } };
+    await toAddMoney();
+    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.queryByText(/free/i)).toBeNull();
+    expect(screen.queryByTestId('add-money-arrives')).toBeNull();
+  });
+});
+
 describe('a transfer lands (W45 to W46)', () => {
   it('shows the amount, the sender, the new balance and the reference once, after the balance rises with a transfer on the ledger', async () => {
     await toAddMoney();

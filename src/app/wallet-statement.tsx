@@ -17,5 +17,5 @@ export default function WalletStatementRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/wallet-settings'));
-  return <StatementScreen onBack={back} onSent={back} onOpenWallet={entry.open} />;
+  return <StatementScreen onBack={back} onSent={back} onOpenWallet={entry.open} onConfirmEmail={() => router.push('/confirm-email')} />;
 }

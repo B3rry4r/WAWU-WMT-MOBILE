@@ -54,6 +54,11 @@ const hub = {
   /** How far the Hub's clock is from the device's: a reply's `createdAt` is made this many ms away from now. */
   skewMs: 0,
   chats: 0,
+  /** FIX-109: the questions reported, the people blocked, and how the Hub answers each. */
+  reports: [] as string[],
+  blocks: [] as string[],
+  reportMode: 'ok' as 'ok' | 'dup' | 'fail',
+  blockMode: 'ok' as 'ok' | 'fail',
 };
 
 const ok = (data: unknown, status = 200) => new Response(JSON.stringify({ statusCode: status, message: 'OK', data }), { status, headers: { 'content-type': 'application/json' } });
@@ -123,6 +128,19 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.chats += 1;
     return ok({ id: 'chat-9' });
   }
+  const report = /^POST \/dm\/(.+)\/report$/.exec(key);
+  if (report) {
+    hub.reports.push(report[1]);
+    if (hub.reportMode === 'dup') return refuse(409, 'You have already reported this thread');
+    if (hub.reportMode === 'fail') return refuse(500, 'Something went wrong');
+    return ok({ id: 'rep-1', createdAt: new Date().toISOString(), threadId: report[1], reporterWawuId: 'me' }, 201);
+  }
+  if (key === 'POST /settings/privacy/blocked') {
+    const body = (await request.json()) as { blockedWawuId: string };
+    hub.blocks.push(body.blockedWawuId);
+    if (hub.blockMode === 'fail') return refuse(500, 'Something went wrong');
+    return ok({ id: 'blk-1', userWawuId: 'me', blockedWawuId: body.blockedWawuId, blockedAt: new Date().toISOString(), blockedUser: null }, 201);
+  }
   throw new Error(`no answer for ${key}`);
 }) as typeof fetch;
 
@@ -158,6 +176,10 @@ beforeEach(() => {
     keys: [],
     skewMs: 0,
     chats: 0,
+    reports: [],
+    blocks: [],
+    reportMode: 'ok',
+    blockMode: 'ok',
   });
 });
 
@@ -398,6 +420,111 @@ describe('I10 · Reply and I11 · Answered', () => {
     hub.threadStatus = 404;
     await draw(open().ui);
     await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-thread-unavailable')).toBeTruthy());
+  });
+});
+
+describe('FIX-109 · "+" and "..." in a paid thread (G-INBOX-18-2, -3)', () => {
+  const open = () => {
+    const onOpenChat = jest.fn();
+    const onBack = jest.fn();
+    const onSendMoney = jest.fn();
+    const onOpenWallet = jest.fn();
+    const ui = <PaidThreadScreen wawuId="fan-bisi" onBack={onBack} onOpenChat={onOpenChat} onSendMoney={onSendMoney} onOpenWallet={onOpenWallet} />;
+    return { onOpenChat, onBack, onSendMoney, onOpenWallet, ui };
+  };
+  const waitReady = () => rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-composer')).toBeTruthy());
+
+  it('"+" opens Add to chat with Send money and Request money only, and Send money finds the free chat then opens the send for this person', async () => {
+    hub.thread.questions = [question()];
+    const { ui, onSendMoney } = open();
+    await draw(ui);
+    await waitReady();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-plus'));
+    expect(await rtl.screen.findByTestId('attach-sheet')).toBeTruthy();
+    expect(rtl.screen.getByTestId('attach-send-money')).toBeTruthy();
+    expect(rtl.screen.getByTestId('attach-request-money')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('attach-photo-video')).toBeNull();
+    expect(rtl.screen.queryByTestId('attach-file')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('attach-send-money'));
+    await rtl.waitFor(() => expect(onSendMoney).toHaveBeenCalledTimes(1));
+    expect(onSendMoney.mock.calls[0]?.[0]).toMatchObject({ wawuId: 'fan-bisi', name: 'Bisi Akande' });
+    expect(onSendMoney.mock.calls[0]?.[1]).toBe('chat-9');
+    expect(hub.chats).toBe(1);
+  });
+
+  it('Request money opens the request sheet for the free chat with this person', async () => {
+    hub.thread.questions = [question()];
+    const { ui } = open();
+    await draw(ui);
+    await waitReady();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-plus'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('attach-request-money'));
+    expect(await rtl.screen.findByText('Request from Bisi')).toBeTruthy();
+    expect(hub.chats).toBe(1);
+  });
+
+  it('draws no "+" when the screen was given no way to send or request money', async () => {
+    hub.thread.questions = [question()];
+    await draw(<PaidThreadScreen wawuId="fan-bisi" onBack={jest.fn()} onOpenChat={jest.fn()} />);
+    await waitReady();
+    expect(rtl.screen.queryByTestId('paid-plus')).toBeNull();
+    expect(rtl.screen.getByTestId('paid-thread-menu')).toBeTruthy();
+  });
+
+  it('draws no "+" on the answered bar (Message is its one button), and keeps the "..." menu', async () => {
+    hub.thread.questions = [question({ status: 'responded', respondedAt: new Date().toISOString(), replies: [{ id: 'r1', text: 'Done.', createdAt: new Date().toISOString() }], creatorEarning: { amountKobo: 127_500, sharePct: 85, state: 'in_wallet' } })];
+    await draw(open().ui);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-message-bar')).toBeTruthy());
+    expect(rtl.screen.queryByTestId('paid-plus')).toBeNull();
+    expect(rtl.screen.getByTestId('paid-thread-menu')).toBeTruthy();
+  });
+
+  it('"..." offers Report and Block; Report asks first, reports the open question once and says so', async () => {
+    hub.thread.questions = [question()];
+    await draw(open().ui);
+    await waitReady();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-thread-menu'));
+    expect(await rtl.screen.findByTestId('paid-menu-report')).toBeTruthy();
+    expect(rtl.screen.getByText('Block Bisi')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-menu-report'));
+    expect(rtl.screen.getByText('Report this conversation?')).toBeTruthy();
+    expect(hub.reports).toEqual([]);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
+    await rtl.waitFor(() => expect(hub.reports).toEqual(['q1']));
+    expect(await rtl.screen.findByText('Reported. Thank you.')).toBeTruthy();
+  });
+
+  it('a second report of the same question is the Hub\'s 409 and reads "already reported"; a failed one says so and keeps the sheet', async () => {
+    hub.thread.questions = [question()];
+    hub.reportMode = 'fail';
+    await draw(open().ui);
+    await waitReady();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-thread-menu'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('paid-menu-report'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
+    expect(await rtl.screen.findByTestId('paid-menu-failed')).toBeTruthy();
+    hub.reportMode = 'dup';
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
+    expect(await rtl.screen.findByText('You already reported this conversation.')).toBeTruthy();
+  });
+
+  it('Block asks first, blocks the asker once, refreshes the lists and leaves the thread; a failure keeps the sheet', async () => {
+    hub.thread.questions = [question()];
+    hub.blockMode = 'fail';
+    const { ui, onBack } = open();
+    await draw(ui);
+    await waitReady();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-thread-menu'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('paid-menu-block'));
+    expect(rtl.screen.getByText('Block Bisi?')).toBeTruthy();
+    expect(hub.blocks).toEqual([]);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-block-yes'));
+    expect(await rtl.screen.findByTestId('paid-menu-failed')).toBeTruthy();
+    expect(onBack).not.toHaveBeenCalled();
+    hub.blockMode = 'ok';
+    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-block-yes'));
+    await rtl.waitFor(() => expect(onBack).toHaveBeenCalledTimes(1));
+    expect(hub.blocks).toEqual(['fan-bisi', 'fan-bisi']);
   });
 });
 

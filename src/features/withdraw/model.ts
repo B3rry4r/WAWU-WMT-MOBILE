@@ -4,6 +4,7 @@ import { BANK_CHARGE, feeLinesOf } from '@/features/send/model';
 import type { FeeQuote, Transfer } from '@/features/send/api';
 import { FEE_LABELS } from '@/features/wallet/history/model';
 import { clockTime, longDateTime } from '@/features/wallet/history/lagosTime';
+import { arrivalMinutesOf, usuallyWithin } from '@/features/wallet/arrival';
 import type { PayoutAccount } from '@/features/wallet/api/payoutAccount';
 
 /**
@@ -147,7 +148,7 @@ export async function maxWithdrawKobo(balanceKobo: number, feeAt: (amountKobo: n
 /* W19 · on its way */
 
 export type StepState = 'done' | 'current' | 'upcoming';
-export type Step = { key: 'requested' | 'sent' | 'arrived'; label: string; state: StepState; time: string | null };
+export type Step = { key: 'requested' | 'sent' | 'arrived'; label: string; state: StepState; time: string | null; /** The Hub's usual time, under the last step while it waits (FIX-109). */ note?: string };
 
 type TimelineAt = { step?: string; at?: unknown };
 
@@ -159,10 +160,11 @@ function stamp(transfer: Pick<Transfer, 'timeline'>, step: string): string | nul
 
 /**
  * W19's three steps from the Hub's record alone: Requested, "Sent to <bank>" and "In your bank account". A step is done when the
- * Hub stamped it; the first step not done is the one in progress; the rest wait. Times are the Lagos clock. Nothing is promised
- * about when the last one will happen (the board's "Usually within minutes" is not a figure the Hub serves).
+ * Hub stamped it; the first step not done is the one in progress; the rest wait. Times are the Lagos clock. The last step says
+ * "Usually within N minutes" only when the Hub sent `arrivalMinutes` (it does while the send is pending and a time is set,
+ * FIX-109); otherwise nothing is promised about when it will happen.
  */
-export function timelineSteps(transfer: Pick<Transfer, 'timeline' | 'status' | 'createdAt' | 'completedAt' | 'toBankAccount'>): Step[] {
+export function timelineSteps(transfer: Pick<Transfer, 'timeline' | 'status' | 'createdAt' | 'completedAt' | 'toBankAccount' | 'arrivalMinutes'>): Step[] {
   const bank = transfer.toBankAccount?.bankName ?? 'your bank';
   const requested = stamp(transfer, 'requested') ?? transfer.createdAt;
   const sent = stamp(transfer, 'sent_to_bank');
@@ -171,10 +173,11 @@ export function timelineSteps(transfer: Pick<Transfer, 'timeline' | 'status' | '
   const firstOpen = done.findIndex((d) => !d);
   const state = (i: number): StepState => (done[i] ? 'done' : i === firstOpen ? 'current' : 'upcoming');
   const time = (at: string | null) => (at ? clockTime(at) || null : null);
+  const usual = arrivalMinutesOf(transfer.arrivalMinutes);
   return [
     { key: 'requested', label: 'Requested', state: state(0), time: time(requested) },
     { key: 'sent', label: `Sent to ${bank}`, state: state(1), time: time(sent) },
-    { key: 'arrived', label: 'In your bank account', state: state(2), time: time(arrived) },
+    { key: 'arrived', label: 'In your bank account', state: state(2), time: time(arrived), ...(usual !== null && !done[2] ? { note: usuallyWithin(usual) } : {}) },
   ];
 }
 

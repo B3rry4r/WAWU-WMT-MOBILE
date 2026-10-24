@@ -75,9 +75,9 @@ function tokenFor(sub: string) {
 }
 
 type Props = { onBack: jest.Mock; onSent: jest.Mock; onOpenWallet: jest.Mock };
-async function boot(): Promise<Props> {
+async function boot(extra: Record<string, unknown> = {}): Promise<Props> {
   const { StatementScreen } = require('../StatementScreen') as typeof import('../StatementScreen');
-  const props = { onBack: jest.fn(), onSent: jest.fn(), onOpenWallet: jest.fn() };
+  const props = { onBack: jest.fn(), onSent: jest.fn(), onOpenWallet: jest.fn(), ...extra };
   await rtl.render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <StatementScreen {...props} clock={clock} />
@@ -235,6 +235,14 @@ describe('W38 · Statement', () => {
     expect(rtl.screen.queryByTestId('statement-send-to')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send statement' }));
     expect(posts()).toHaveLength(0);
+  });
+
+  it('G-486: with a way to confirm, the no-email card has a Confirm email button that opens it; without one the card has no button', async () => {
+    answers['GET /money/statements/delivery'] = [delivery({ email: null, canEmail: false })];
+    const onConfirmEmail = jest.fn();
+    await boot({ onConfirmEmail });
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('statement-confirm-email'));
+    expect(onConfirmEmail).toHaveBeenCalledTimes(1);
   });
 
   it('a refusal shows the server\'s own sentence and the person can try again with a new key; a lost answer repeats the same key', async () => {

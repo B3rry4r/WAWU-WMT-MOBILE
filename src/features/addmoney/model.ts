@@ -14,8 +14,9 @@ export const ADD_TITLE = 'Add money';
 export const ACCOUNT_HEAD = 'Your wallet account';
 export const ACCOUNT_LINE = 'Send money here from any Nigerian bank app.';
 /*
- * Not drawn: the board's "Free" pill (the Hub serves no inflow fee, G-WALLET-05-5) and its "arrives in a few minutes" and "Usually a
- * few minutes" lines (nothing the Hub serves says how long a transfer in takes, G-WALLET-05-3). Each is drawn when the Hub serves it.
+ * The board's "Free" pill and its "arrives in a few minutes" and "Usually a few minutes" lines are the Hub's to say (FIX-109): they are
+ * drawn from `GET /money/wallet`'s `transferIn` (`feeKobo` 0 is Free, `arrivalMinutes` writes the two lines in `features/wallet/arrival`)
+ * and only when the Hub sent them. The app keeps no figure of its own.
  */
 export const WAITING_TITLE = 'Waiting for your transfer';
 export const SHARE_LABEL = 'Share details';

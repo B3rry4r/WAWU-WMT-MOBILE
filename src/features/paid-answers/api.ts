@@ -92,3 +92,16 @@ export async function openFreeChat(wawuId: string): Promise<string> {
   const chat = dataOf<components['schemas']['ChatSummary']>(await unwrap(api.POST('/api/hub/chats', { body: { wawuId } })), 'chat');
   return chat.id;
 }
+
+/**
+ * Reports the conversation (G-INBOX-18-3): `POST /dm/{messageId}/report` for the question in hand. The Hub keeps one report per
+ * person and question, so a second one is a 409 the screen reads as "already reported".
+ */
+export async function reportQuestion(questionId: string): Promise<void> {
+  await unwrap(api.POST('/api/hub/dm/{messageId}/report', { params: { path: { messageId: questionId } }, body: {} }));
+}
+
+/** Blocks the person who asked (`POST /settings/privacy/blocked`, the same call as the profile's menu). */
+export async function blockAsker(wawuId: string): Promise<void> {
+  await unwrap(api.POST('/api/hub/settings/privacy/blocked', { body: { blockedWawuId: wawuId } }));
+}
