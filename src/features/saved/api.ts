@@ -5,7 +5,7 @@ import type { components } from '@/api/schema.generated';
 /**
  * The calls behind Saved (M30), as the Hub's contract types them (ME-10 built the list, the content and event saves are older):
  * - `GET /me/saved?type=&cursor=&limit=`: content, events and creators the person kept, newest first, one list or one tab;
- * - `DELETE /content/{id}/save`, `DELETE /events/{id}/save`, `DELETE /me/saved/creators/{wawuId}`: take a save back (each is idempotent).
+ * - `DELETE /content/{id}/save`, `DELETE /events/{id}/save`, `DELETE /me/saved/creators/{wawuId}`, `DELETE /me/saved/courses/{courseId}`: take a save back (each is idempotent).
  * Putting something into Saved is done where the thing is shown (a piece, an event, a profile), not on this screen. The success body
  * is `{ statusCode, message, data }` and the contract types only `data`, so each call reads `data` itself.
  */
@@ -31,6 +31,7 @@ const isEntry = (value: unknown): value is SavedEntry => {
   if (e.kind === 'content') return typeof e.content?.id === 'string' && typeof e.content.title === 'string' && typeof e.content.contentType === 'string';
   if (e.kind === 'event') return typeof e.event?.id === 'string' && typeof e.event.name === 'string' && typeof e.event.startsAt === 'string';
   if (e.kind === 'creator') return typeof e.creator?.wawuId === 'string';
+  if (e.kind === 'course') return typeof e.course?.id === 'string' && typeof e.course.title === 'string' && typeof e.course.schoolName === 'string';
   return false;
 };
 
@@ -52,6 +53,8 @@ export async function removeSaved(entry: SavedEntry): Promise<void> {
     await unwrap(api.DELETE('/api/hub/events/{id}/save', { params: { path: { id: entry.event.id } } }));
   } else if (entry.kind === 'creator' && entry.creator) {
     await unwrap(api.DELETE('/api/hub/me/saved/creators/{wawuId}', { params: { path: { wawuId: entry.creator.wawuId } } }));
+  } else if (entry.kind === 'course' && entry.course) {
+    await unwrap(api.DELETE('/api/hub/me/saved/courses/{courseId}', { params: { path: { courseId: entry.course.id } } }));
   } else {
     throw unreadable();
   }

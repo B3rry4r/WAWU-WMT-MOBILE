@@ -18,7 +18,8 @@ import { BAR_TITLE, kindOf, type Kind } from './model';
  * The piece's picture on its own page (home.js `pdfMedia` 250 tall, the free video 220, the course 200; every one with a 20 corner
  * and the type tag 12 from the bottom left). A PDF is drawn as its book and opens its pages in the reader (the free pages while it
  * is locked, all of them once it is the viewer's); a video plays in place (the public preview while locked); a course and a
- * photo set show the picture the Hub serves.
+ * photo set show the picture the Hub serves. A course plays the lesson the page opened (`lesson`: the Hub's short-lived link for it,
+ * FIX-107) in the same frame, and says when it ends.
  */
 const metrics = {
   pdf: 250,
@@ -44,10 +45,14 @@ export type MediaProps = {
   by: string | null;
   /** A number that goes up each time the page's "Read now" or "Watch now" is pressed: the book opens, or the video starts. */
   signal?: number;
+  /** The lesson to play in a course's frame: its id, and the Hub's link for it. A new `key` starts it again. */
+  lesson?: { key: number; uri: string; title: string } | null;
+  /** The lesson played to its end. */
+  onLessonEnded?: () => void;
   testID?: string;
 };
 
-export function Media({ piece, tag, by, signal = 0, testID = 'detail-media' }: MediaProps) {
+export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded, testID = 'detail-media' }: MediaProps) {
   const { colors } = useWawu();
   const kind = kindOf(piece);
   const [reading, setReading] = useState(false);
@@ -61,6 +66,14 @@ export function Media({ piece, tag, by, signal = 0, testID = 'detail-media' }: M
     setSeen(signal);
     if (signal > 0 && kind === 'pdf') setReading(true);
     else if (signal > 0) {
+      setEnded(false);
+      setPlaying(true);
+    }
+  }
+  const [lessonSeen, setLessonSeen] = useState<number | null>(null);
+  if ((lesson?.key ?? null) !== lessonSeen) {
+    setLessonSeen(lesson?.key ?? null);
+    if (lesson) {
       setEnded(false);
       setPlaying(true);
     }
@@ -121,6 +134,34 @@ export function Media({ piece, tag, by, signal = 0, testID = 'detail-media' }: M
         ) : null}
       </Pressable>
     );
+  } else if (kind === 'course' && lesson && canPlay) {
+    body = (
+      <Pressable
+        testID={`${testID}-lesson`}
+        accessibilityRole="button"
+        accessibilityLabel={playing ? `Pause ${lesson.title}` : `Play ${lesson.title}`}
+        accessibilityState={{ selected: playing }}
+        onPress={tapToPlay}
+        {...ring.handlers}
+        style={[StyleSheet.absoluteFill, styles.center, ring.style]}
+      >
+        <VideoSurface
+          key={lesson.key}
+          uri={lesson.uri}
+          playing={playing}
+          seek={null}
+          frosted={false}
+          onTime={(position, length) => setTime({ position, length })}
+          onEnded={() => (setPlaying(false), setEnded(true), onLessonEnded?.())}
+          testID={`${testID}-lesson-video`}
+        />
+        {!playing ? (
+          <View pointerEvents="none" style={[styles.disc, { backgroundColor: media.ink }]}>
+            <Icon name="Play" size={metrics.playIcon} color={media.inkOnLight} fill={media.inkOnLight} strokeWidth={1.8} />
+          </View>
+        ) : null}
+      </Pressable>
+    );
   } else if (piece.previewAssetUrl) {
     body = <Image testID={`${testID}-image`} source={{ uri: piece.previewAssetUrl }} contentFit="cover" accessibilityLabel={piece.title} style={StyleSheet.absoluteFill} />;
   } else {
@@ -132,7 +173,7 @@ export function Media({ piece, tag, by, signal = 0, testID = 'detail-media' }: M
   }
 
   return (
-    <View testID={testID} accessibilityLabel={`${BAR_TITLE[kind]}${ended ? ', finished' : ''}`} style={[styles.frame, { height: heightOf(kind), backgroundColor: colors.surfaceSunken }]}>
+    <View testID={testID} accessibilityLabel={`${BAR_TITLE[kind]}${lesson ? `, ${lesson.title}` : ''}${ended ? ', finished' : ''}`} style={[styles.frame, { height: heightOf(kind), backgroundColor: colors.surfaceSunken }]}>
       {body}
       <View pointerEvents="none" style={styles.tag}>
         <Pill icon={tag.icon} text={tag.text} testID={`${testID}-tag`} flush />

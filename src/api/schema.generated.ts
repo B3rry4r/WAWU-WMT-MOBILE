@@ -1855,6 +1855,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/{id}/lessons/{lessonId}/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A fresh link to play one lesson: free lessons for anyone who may open the piece, the rest for buyers and the creator. */
+        get: operations["CourseLessonsController_play"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The creator states the lessons: the list, the order and each lesson's file. */
+        put: operations["CourseLessonsController_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/product-drafts": {
         parameters: {
             query?: never;
@@ -6208,6 +6242,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/saved/courses/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a school course is saved (SC3's bookmark). */
+        get: operations["MeController_courseSaved"];
+        /** Save a school course (SC3's bookmark). Idempotent. */
+        put: operations["MeController_saveCourse"];
+        post?: never;
+        /** Remove a saved school course. Idempotent. */
+        delete: operations["MeController_unsaveCourse"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/purchases": {
         parameters: {
             query?: never;
@@ -8580,6 +8633,21 @@ export interface components {
             durationLabel?: string;
             /** @description How many pages a PDF has. PDFs only. */
             pageCount?: number;
+        };
+        LessonInputDto: {
+            /**
+             * Format: uuid
+             * @description An existing lesson of this course to keep (its progress and place stay); left out, a new lesson is made.
+             */
+            id?: string;
+            title: string;
+            /** @description The lesson's length as a player writes it: `4:12` or `1:20:05`. */
+            durationLabel?: string;
+            /** @description The lesson's file: the key (or link) of an upload this person made under `content/full`. Left out, the lesson has no file yet. */
+            assetKey?: string;
+        };
+        SetLessonsDto: {
+            lessons: components["schemas"]["LessonInputDto"][];
         };
         CreateProductDraftDto: {
             title: string;
@@ -11735,6 +11803,7 @@ export interface components {
             order: number;
             durationLabel: string | null;
             isFree: boolean;
+            hasFile: boolean;
         };
         RatingState: {
             average: number | null;
@@ -11764,6 +11833,20 @@ export interface components {
             lessons: components["schemas"]["DetailLesson"][];
             rating: components["schemas"]["RatingState"];
             creator: components["schemas"]["DetailCreator"];
+        };
+        LessonPlay: {
+            contentId: string;
+            lessonId: string;
+            url: string;
+            expiresAt: string;
+            durationLabel: string | null;
+        };
+        LessonView: {
+            id: string;
+            title: string;
+            order: number;
+            durationLabel: string | null;
+            hasFile: boolean;
         };
         ProductDraftView: {
             id: string;
@@ -14485,14 +14568,23 @@ export interface components {
             /** @enum {string} */
             status: "cancelled" | "published";
         };
+        SavedCourseView: {
+            id: string;
+            title: string;
+            schoolName: string;
+            schoolLogo: string | null;
+            weeks: number;
+            priceKobo: number;
+        };
         SavedEntryView: {
             id: string;
             /** @enum {string} */
-            kind: "creator" | "event" | "content";
+            kind: "creator" | "course" | "event" | "content";
             savedAt: string;
             content: components["schemas"]["SavedContentView"] | null;
             event: components["schemas"]["SavedEventView"] | null;
             creator: components["schemas"]["FeedCreator"] | null;
+            course: components["schemas"]["SavedCourseView"] | null;
         };
         SavedPage: {
             items: components["schemas"]["SavedEntryView"][];
@@ -14500,6 +14592,10 @@ export interface components {
         };
         SavedCreatorState: {
             creatorWawuId: string;
+            saved: boolean;
+        };
+        SavedCourseState: {
+            courseId: string;
             saved: boolean;
         };
         PurchasedPieceView: {
@@ -18850,6 +18946,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MediaDetails"];
+                };
+            };
+        };
+    };
+    CourseLessonsController_play: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonPlay"];
+                };
+            };
+        };
+    };
+    CourseLessonsController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLessonsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        lessons: components["schemas"]["LessonView"][];
+                    };
                 };
             };
         };
@@ -27585,7 +27730,7 @@ export interface operations {
                 /** @description Rows per page, 1 to 100. */
                 limit?: number;
                 /** @description M30's tab: everything, or one kind. Default `all`. */
-                type?: "all" | "content" | "events" | "creators";
+                type?: "all" | "content" | "events" | "creators" | "courses";
                 /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
                 cursor?: string;
             };
@@ -27643,6 +27788,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_courseSaved: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
+                };
+            };
+        };
+    };
+    MeController_saveCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
+                };
+            };
+        };
+    };
+    MeController_unsaveCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
                 };
             };
         };

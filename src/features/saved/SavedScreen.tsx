@@ -32,6 +32,8 @@ export type SavedScreenProps = {
   onOpenEvent: (id: string) => void;
   /** A saved piece opens its own page (HOME-03, `/content/<id>`). Left out, a piece's tile is not pressed. A saved creator opens nothing until ME-02 adds their profile. */
   onOpenContent?: (id: string) => void;
+  /** A saved school course opens its page (SC3). Left out, a course's tile is not pressed. */
+  onOpenCourse?: (id: string) => void;
 };
 
 /** The cache without the save the Hub has taken back. */
@@ -43,9 +45,9 @@ function without(data: InfiniteData<SavedPage, string | null> | undefined, id: s
 /**
  * M30 · Saved. What the person kept, newest first, from `GET /me/saved`, by the chips All, Content, Events and Creators. The mark on a
  * tile takes the save back (`DELETE` on the piece, the event or the creator): the tile goes at once and comes back, in its place and with
- * a notice, if the Hub refuses (each take-back on its own, so two in flight cannot undo each other). A saved event opens E2 and a saved piece its own page (HOME-03); a creator opens nothing until ME-02 adds their profile.
+ * a notice, if the Hub refuses (each take-back on its own, so two in flight cannot undo each other). A saved event opens E2, a saved piece its own page (HOME-03) and a saved school course its page (SC3, FIX-107; All shows it, M30 draws no chip for it); a creator opens nothing until ME-02 adds their profile.
  */
-export function SavedScreen({ onBack, onOpenEvent, onOpenContent }: SavedScreenProps) {
+export function SavedScreen({ onBack, onOpenEvent, onOpenContent, onOpenCourse }: SavedScreenProps) {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<SavedTab>('all');
@@ -132,7 +134,7 @@ export function SavedScreen({ onBack, onOpenEvent, onOpenContent }: SavedScreenP
                     key={entry.id}
                     entry={entry}
                     meta={metaOf(entry, now)}
-                    onOpen={openerOf(entry, onOpenEvent, onOpenContent)}
+                    onOpen={openerOf(entry, onOpenEvent, onOpenContent, onOpenCourse)}
                     onRemove={() => remove.mutate(entry)}
                   />
                 ))}
@@ -154,7 +156,12 @@ export function SavedScreen({ onBack, onOpenEvent, onOpenContent }: SavedScreenP
 }
 
 /** What a tap on a tile does: a saved event opens its page, a saved piece its own page (when that opens somewhere), a creator nothing yet. */
-function openerOf(entry: SavedEntry, onOpenEvent: (id: string) => void, onOpenContent: ((id: string) => void) | undefined): (() => void) | undefined {
+function openerOf(
+  entry: SavedEntry,
+  onOpenEvent: (id: string) => void,
+  onOpenContent: ((id: string) => void) | undefined,
+  onOpenCourse: ((id: string) => void) | undefined,
+): (() => void) | undefined {
   if (entry.kind === 'event' && entry.event) {
     const id = entry.event.id;
     return () => onOpenEvent(id);
@@ -163,17 +170,23 @@ function openerOf(entry: SavedEntry, onOpenEvent: (id: string) => void, onOpenCo
     const id = entry.content.id;
     return () => onOpenContent(id);
   }
+  if (entry.kind === 'course' && entry.course && onOpenCourse) {
+    const id = entry.course.id;
+    return () => onOpenCourse(id);
+  }
   return undefined;
 }
 
 function pictureOf(entry: SavedEntry): string | null {
   if (entry.kind === 'content') return entry.content?.thumbnailUrl ?? null;
   if (entry.kind === 'event') return entry.event?.bannerUrl ?? null;
+  if (entry.kind === 'course') return entry.course?.schoolLogo ?? null;
   return null;
 }
 
 function glyphOf(entry: SavedEntry): IconName {
   if (entry.kind === 'content' && entry.content) return kindIcon(entry.content.contentType);
+  if (entry.kind === 'course') return 'GraduationCap';
   return entry.kind === 'event' ? 'CalendarDays' : 'UserRound';
 }
 

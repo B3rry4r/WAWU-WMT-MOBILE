@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 import { walletBalanceQuery } from '@/api/money';
 import { fetchMyId, follow, meKey, recordView, setLiked, setSaved, type FeedItem, type LikeState } from '@/features/feed/api';
+import { purchasesKey } from '@/features/purchases/api';
 import { fetchMedia } from '@/features/unlock/api';
 
 import {
@@ -12,8 +13,10 @@ import {
   engagementKey,
   fetchComments,
   fetchEngagement,
+  fetchLessonPlay,
   fetchPiece,
   fetchPieceDetail,
+  markLessonDone,
   pieceKey,
   postComment,
   putRating,
@@ -134,6 +137,13 @@ export function usePage(id: string, onFail: (line: string) => void) {
     },
   });
 
+  // H25: a lesson's own link, asked for each time one is opened; and the lesson finished, which My purchases counts ("3 of 12 done").
+  const playLesson = useMutation({ mutationFn: (lessonId: string) => fetchLessonPlay(id, lessonId) });
+  const lessonDone = useMutation({
+    mutationFn: (lessonId: string) => markLessonDone(lessonId),
+    onSuccess: () => void client.invalidateQueries({ queryKey: purchasesKey('').slice(0, 2) }),
+  });
+
   const shared = useMutation({ mutationFn: () => countShare(id) });
   const viewed = useMutation({ mutationFn: () => recordView(id) });
 
@@ -168,6 +178,8 @@ export function usePage(id: string, onFail: (line: string) => void) {
     likeComment,
     shared,
     viewed,
+    playLesson,
+    lessonDone,
     refresh,
   };
 }

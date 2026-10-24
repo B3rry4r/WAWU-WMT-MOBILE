@@ -158,11 +158,13 @@ export type IconButtonProps = {
   tone?: 'card' | 'glass' | 'lift';
   size?: number;
   disabled?: boolean;
+  /** The icon is drawn solid (a bookmark that is kept). */
+  filled?: boolean;
   testID?: string;
 };
 
 /** Round icon-only control: back, scan, settings. */
-export function IconButton({ icon, label, onPress, tone = 'card', size = 42, disabled, testID }: IconButtonProps) {
+export function IconButton({ icon, label, onPress, tone = 'card', size = 42, disabled, filled, testID }: IconButtonProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const glass = tone === 'glass' || tone === 'lift';
@@ -190,7 +192,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
         ring.style,
       ]}
     >
-      <Icon name={icon} size={Math.round(size * 0.46)} color={fg} strokeWidth={1.8} />
+      <Icon name={icon} size={Math.round(size * 0.46)} color={fg} strokeWidth={1.8} fill={filled ? fg : undefined} />
     </Pressable>
   );
 }
