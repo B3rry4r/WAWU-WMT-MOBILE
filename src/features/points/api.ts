@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind Your points (PT5, PT5a) and Convert to cash (PT6, PT6a, PT6b), as the backend contract types them.
@@ -145,6 +146,8 @@ export type ConvertOutcome =
   | { kind: 'blocked'; code: string; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -154,8 +157,7 @@ export type ConvertInput = {
   quoteToken: string;
   /** One per intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -178,11 +180,14 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
  * send again (the contract's rule, `PinSheet`'s `unanswered`).
  */
 export async function convertPoints(input: ConvertInput): Promise<ConvertOutcome> {
+  const body = { points: input.points, quoteToken: input.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/points/convert', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/points/convert', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { points: input.points, quoteToken: input.quoteToken },
+      params: { header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -198,6 +203,7 @@ export async function convertPoints(input: ConvertInput): Promise<ConvertOutcome
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { attemptFor, dropAttempt, keepAttempt } from '@/features/money-attempt/attempts';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -27,6 +26,7 @@ import {
   sheetSubtitle,
 } from './buyModel';
 import type { Basket } from './format';
+import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
 
 /**
  * How often an order the Hub has not finished is read again (`GET /events/orders/wallet/{id}`, our own records).
@@ -62,7 +62,7 @@ export type BuySheet = {
   lockedUntil: string | null;
   fees: ReturnType<typeof feeLines>;
   pay: () => Promise<void>;
-  submitPin: (pin: string) => Promise<PinCheckResult>;
+  run: (credential: Credential) => Promise<Settled>;
   cancel: () => void;
   closePin: () => void;
   forgotPin: () => void;
@@ -297,7 +297,8 @@ export function useTicketBuy(args: TicketBuyArgs) {
     setPinOpen(true);
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!payment || !quote || !owner || intent === undefined) return { code: 'unanswered' };
     // The request this payment carries: the one already sent (same key, same body) or the first one, made now from what is on screen.
     const sending: BuyIntent = intent?.phase === 'unknown' ? intent : { eventId, order: quote.order, payment, key: keyForQuote(payment.quoteToken), phase: 'unknown', at: Date.now() };
@@ -315,8 +316,11 @@ export function useTicketBuy(args: TicketBuyArgs) {
       expectedTotalKobo: sending.payment.totalKobo,
       quoteToken: sending.payment.quoteToken,
       key: sending.key,
-      pin,
+      ...credential,
     });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing moved for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = () => keep(null, sending);
     switch (outcome.kind) {
@@ -409,7 +413,7 @@ export function useTicketBuy(args: TicketBuyArgs) {
       lockedUntil,
       fees: feeLines(payment.fee),
       pay,
-      submitPin,
+      run,
       cancel,
       closePin: () => setPinOpen(false),
       forgotPin: () => {

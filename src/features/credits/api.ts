@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 import { HTTP_CREATED, filled, isKobo, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
 
 /**
@@ -91,7 +92,7 @@ export async function fetchPurchase(id: string): Promise<PackPurchase> {
 }
 
 /** What the purchase call came to. A `done` carries the purchase as the Hub holds it (paid, pending or failed). */
-export type BuyOutcome = { kind: 'done'; purchase: PackPurchase } | Refusal;
+export type BuyOutcome = { kind: 'done'; purchase: PackPurchase } | Refusal | ApprovalStopped;
 
 export type BuyInput = {
   pack: PackId;
@@ -99,16 +100,18 @@ export type BuyInput = {
   quote: PackQuote;
   /** One per attempt, kept across a wrong PIN and an answer that never came. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /** POST /credits/purchase/wallet. Never rejects: whatever came back (or did not) is a `BuyOutcome`, so the screen decides in one place. */
 export async function buyPack(input: BuyInput): Promise<BuyOutcome> {
+  const body = { pack: input.pack, expectedTotalKobo: input.quote.payment.totalKobo, quoteToken: input.quote.payment.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/credits/purchase/wallet', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/credits/purchase/wallet', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { pack: input.pack, expectedTotalKobo: input.quote.payment.totalKobo, quoteToken: input.quote.payment.quoteToken },
+      params: { header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -123,5 +126,6 @@ export async function buyPack(input: BuyInput): Promise<BuyOutcome> {
       return { kind: 'unanswered' };
     }
   }
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   return readRefusal(response.status, error, 'This purchase was not taken. Nothing left your wallet.', 'There is not enough in your wallet for this pack.');
 }

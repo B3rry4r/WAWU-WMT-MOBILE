@@ -1,5 +1,6 @@
 import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
+import { type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
 /**
@@ -65,25 +66,22 @@ export type SendTipInput = {
   expectedTotalKobo: number;
   quoteToken: string;
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /** POST /tips/wallet. Never rejects: whatever came back (or did not) is a `PayOutcome`. */
 export function sendTip(input: SendTipInput): Promise<PayOutcome<Tip>> {
   const note = input.note.trim();
+  const body = {
+    creatorWawuId: input.creatorWawuId,
+    amountKobo: input.amountKobo,
+    ...(note ? { note } : {}),
+    expectedTotalKobo: input.expectedTotalKobo,
+    quoteToken: input.quoteToken,
+  };
   return sendPayment(
-    () =>
-      api.POST('/api/hub/tips/wallet', {
-        params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-        body: {
-          creatorWawuId: input.creatorWawuId,
-          amountKobo: input.amountKobo,
-          ...(note ? { note } : {}),
-          expectedTotalKobo: input.expectedTotalKobo,
-          quoteToken: input.quoteToken,
-        },
-        fetch: resendsUnderKey,
-      }),
+    input,
+    { method: 'POST', path: '/api/hub/tips/wallet', body },
+    (header) => api.POST('/api/hub/tips/wallet', { params: { header: { ...header, 'Idempotency-Key': input.key } }, body, fetch: resendsUnderKey }),
     readTip,
     'There is not enough in your wallet for this tip.',
   );

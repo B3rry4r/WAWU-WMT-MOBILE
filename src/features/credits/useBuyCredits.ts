@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isApiError } from '@/api/errors';
 import type { PayStatus } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { creditsKey } from '@/features/communities/api';
 import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -21,6 +20,7 @@ import {
   type PackQuote,
 } from './api';
 import { affordablePack, defaultPack, PRICE_CHANGED_LINE, quoteAddsUp, quoteSpent } from './model';
+import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a purchase the Hub has not finished is read again (`GET /credits/purchase/wallet/{id}`, our own records). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -228,7 +228,8 @@ export function useBuyCredits(args: BuyCreditsArgs) {
     }
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!pack || !quote) return { code: 'unanswered' };
     // The request this purchase carries: the one already sent (same key, same quote) or the first one, made now from what is on screen.
     const sending: Attempt<PackQuote> = attemptFor<PackQuote>(subjectOf(pack)) ?? {
@@ -240,7 +241,13 @@ export function useBuyCredits(args: BuyCreditsArgs) {
     };
     keepAttempt(sending);
     setStatus({ kind: 'paying' });
-    const outcome = await buyPack({ pack, quote: sending.quote, key: sending.key, pin });
+    const outcome = await buyPack({ pack, quote: sending.quote, key: sending.key, ...credential });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) {
+      setStatus({ kind: 'review' });
+      return stopResult(outcome);
+    }
     const nothingMoved = () => {
       dropAttempt(sending.subject, sending.key);
       setStatus({ kind: 'review' });
@@ -346,7 +353,7 @@ export function useBuyCredits(args: BuyCreditsArgs) {
       tapping,
       pinOpen,
       closePin: () => setPinOpen(false),
-      submitPin,
+      run,
       forgotPin: () => {
         setPinOpen(false);
         args.onClose();

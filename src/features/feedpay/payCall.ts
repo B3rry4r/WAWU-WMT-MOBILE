@@ -1,5 +1,7 @@
 import { unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
+import type { SignedRequest } from '@/features/device-approval/approve';
+import { approvalRefused, credentialHeader, type ApprovalHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 import { readPaymentQuote, type PaymentQuote } from '@/features/events/buyApi';
 
 /**
@@ -51,6 +53,8 @@ export type PayOutcome<T> =
   | { kind: 'in_progress' }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken, and the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -80,15 +84,25 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
 type Sent = { data?: unknown; error?: unknown; response: { status: number } };
 
 /**
- * Sends the PIN-approved payment and never rejects: whatever came back (or did not) is a `PayOutcome`, so the screen decides in
- * one place. A request that got no answer is `unanswered`, and so is every 5xx: money may have moved, so only the SAME key is
- * safe to send again. `read` turns the 201 body's `data` into the view, or throws when it cannot be read (then it is
- * `unanswered` too: the Hub said created, so the payment may exist).
+ * Sends the PIN-approved (or fingerprint-approved, FIX-112) payment and never rejects: whatever came back (or did not) is a
+ * `PayOutcome`, so the screen decides in one place. `credential` is the PIN or the phone's approval, and `request` the exact
+ * method, path and body that `send` will put on the wire (the approval signs them): the header is made first, and an approval
+ * that cannot be made answers its stop without sending anything. A request that got no answer is `unanswered`, and so is every 5xx:
+ * money may have moved, so only the SAME key is safe to send again. `read` turns the 201 body's `data` into the view, or throws
+ * when it cannot be read (then it is `unanswered` too: the Hub said created, so the payment may exist).
  */
-export async function sendPayment<T>(send: () => Promise<Sent>, read: (value: unknown) => T, shortLine: string): Promise<PayOutcome<T>> {
+export async function sendPayment<T>(
+  credential: Credential,
+  request: SignedRequest,
+  send: (header: ApprovalHeader) => Promise<Sent>,
+  read: (value: unknown) => T,
+  shortLine: string,
+): Promise<PayOutcome<T>> {
+  const headed = await credentialHeader(credential, request);
+  if ('outcome' in headed) return headed.outcome;
   let result: Sent;
   try {
-    result = await send();
+    result = await send(headed.header);
   } catch {
     return { kind: 'unanswered' };
   }
@@ -101,6 +115,7 @@ export async function sendPayment<T>(send: () => Promise<Sent>, read: (value: un
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

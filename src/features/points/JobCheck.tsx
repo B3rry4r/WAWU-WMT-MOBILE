@@ -10,7 +10,8 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { isApprovalStop, PayPinSheet, stopResult, type Credential, type Settled } from '@/features/device-approval';
 import { PointsFigure } from '@/components/PointsFigure';
 import { EmptyState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -236,7 +237,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
   const [resend, setResend] = useState(false);
   const [watching, setWatching] = useState<string | null>(null);
   const attempt = useRef<Attempt | null>(null);
-  const inFlight = useRef<Promise<PinCheckResult> | null>(null);
+  const inFlight = useRef<Promise<Settled> | null>(null);
   // Set the moment Confirm is tapped and cleared when the fresh quote is in: `busy` is state and lags the tap by a render.
   const asking = useRef(false);
   const latest = useRef(props);
@@ -345,7 +346,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
     if (attempt.current && !attempt.current.sent) attempt.current = null;
   };
 
-  const submit = async (pin: string): Promise<PinCheckResult> => {
+  const submit = async (credential: Credential): Promise<Settled> => {
     const sending = attempt.current;
     if (!sending || !owner) return { code: 'unanswered' };
     const body = { ...sending.job, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken };
@@ -358,7 +359,10 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
       return { code: 'approved' };
     }
     attempt.current = { ...sending, sent: true };
-    const outcome = await buyShortfall({ ...body, key: sending.key, pin });
+    const outcome = await buyShortfall({ ...body, key: sending.key, ...credential });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing was bought for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -437,10 +441,11 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
     }
   };
 
-  // One request at a time: a second submit while one is running is that same request, never another.
-  const submitPin = (pin: string): Promise<PinCheckResult> => {
+  // One request at a time: a second submit while one is running is that same request, never another. Pays with the PIN, or with the
+  // phone's fingerprint or face approval of exactly this request (FIX-112): one path for both.
+  const run = (credential: Credential): Promise<Settled> => {
     if (inFlight.current) return inFlight.current;
-    const running = submit(pin).finally(() => {
+    const running = submit(credential).finally(() => {
       inFlight.current = null;
     });
     inFlight.current = running;
@@ -483,11 +488,11 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
         )}
       </BottomSheet>
       {pinOpen ? (
-        <PinSheet
+        <PayPinSheet
           visible={pinOpen}
           onClose={closePin}
           approval={{ totalKobo: pinTotal ?? total, purpose: pinPurpose(quote) }}
-          onSubmit={submitPin}
+          run={run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();

@@ -8,7 +8,8 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { formatNaira, PaySheet } from '@/components/pay-sheet';
-import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
@@ -63,11 +64,11 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
 
   const pin =
     quote && visible ? (
-      <PinSheet
+      <PayPinSheet
         visible={buy.pinOpen}
         onClose={buy.closePin}
         approval={{ totalKobo: quote.payment.totalKobo, purpose: `${creditCount(quote.credits)} credits` }}
-        onSubmit={buy.submitPin}
+        run={buy.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={buy.forgotPin}
         lockedUntil={buy.lockedUntil}

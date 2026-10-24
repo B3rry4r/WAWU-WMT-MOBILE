@@ -9,7 +9,8 @@ import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
 import { Icon } from '@/components/icon';
 import { Money } from '@/components/Money';
-import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -242,11 +243,11 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
         {body}
       </PointsFrame>
       {quote && tier ? (
-        <PinSheet
+        <PayPinSheet
           visible={purchase.pinOpen}
           onClose={purchase.closePin}
           approval={{ totalKobo: quote.totalKobo, purpose: pinPurposeOf(target, tier.name, null) }}
-          onSubmit={purchase.submitPin}
+          run={purchase.run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             purchase.closePin();

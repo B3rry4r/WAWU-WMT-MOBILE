@@ -9,7 +9,8 @@ import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { isApprovalStop, PayPinSheet, stopResult, type Credential, type Settled } from '@/features/device-approval';
 import { formatPoints } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -94,7 +95,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
   // The Hub's words for a conversion it has taken and the bank has not confirmed, until the first read of it by its id.
   const [watchLine, setWatchLine] = useState<string | null>(null);
   const attempt = useRef<Attempt | null>(null);
-  const inFlight = useRef<Promise<PinCheckResult> | null>(null);
+  const inFlight = useRef<Promise<Settled> | null>(null);
 
   const entering = done === null && watching === null;
 
@@ -237,7 +238,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
     if (attempt.current && !attempt.current.sent) attempt.current = null;
   };
 
-  const submit = async (pin: string): Promise<PinCheckResult> => {
+  const submit = async (credential: Credential): Promise<Settled> => {
     const sending = attempt.current;
     if (!sending || !owner) return { code: 'unanswered' };
     const kept = await putIntent(owner, { key: sending.key, points: sending.points, quoteToken: sending.quoteToken, phase: 'unknown', conversionId: null, at: Date.now() });
@@ -249,7 +250,10 @@ export function ConvertScreen(props: ConvertScreenProps) {
       return { code: 'approved' };
     }
     attempt.current = { ...sending, sent: true };
-    const outcome = await convertPoints({ points: sending.points, quoteToken: sending.quoteToken, key: sending.key, pin });
+    const outcome = await convertPoints({ points: sending.points, quoteToken: sending.quoteToken, key: sending.key, ...credential });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing was converted for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -319,10 +323,11 @@ export function ConvertScreen(props: ConvertScreenProps) {
     }
   };
 
-  // One request at a time: a second submit while one is running is that same request, never another.
-  const submitPin = (pin: string): Promise<PinCheckResult> => {
+  // One request at a time: a second submit while one is running is that same request, never another. Pays with the PIN, or with the
+  // phone's fingerprint or face approval of exactly this request (FIX-112): one path for both.
+  const run = (credential: Credential): Promise<Settled> => {
     if (inFlight.current) return inFlight.current;
-    const running = submit(pin).finally(() => {
+    const running = submit(credential).finally(() => {
       inFlight.current = null;
     });
     inFlight.current = running;
@@ -422,11 +427,11 @@ export function ConvertScreen(props: ConvertScreenProps) {
         {body}
       </PointsFrame>
       {pinQuote ? (
-        <PinSheet
+        <PayPinSheet
           visible={pinOpen}
           onClose={closePin}
           approval={{ totalKobo: pinQuote.cashKobo, purpose: pinPurpose(pinQuote.points) }}
-          onSubmit={submitPin}
+          run={run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
 import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -12,6 +11,7 @@ import { failureLine, limitLine, quoteAddsUp, quoteSpent } from '@/features/send
 
 import type { MoneyRequest } from './api';
 import { declineMoneyRequest, fetchFeeQuote, fetchMoneyRequest, payMoneyRequest, requestKey, type FeeQuote } from './requestApi';
+import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a payment the provider has not confirmed is read again (`GET .../money-requests/{id}`, which settles it first). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -193,7 +193,8 @@ export function useRequestPay(args: RequestPayArgs) {
     setPinOpen(true);
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!target || !quote) return { code: 'unanswered' };
     const sending: Attempt<FeeQuote> = attemptFor<FeeQuote>(subjectOf(target.id)) ?? {
       subject: subjectOf(target.id),
@@ -204,7 +205,13 @@ export function useRequestPay(args: RequestPayArgs) {
     };
     keepAttempt(sending);
     setStatus({ kind: 'paying' });
-    const outcome = await payMoneyRequest({ chatId, requestId: target.id, quote: sending.quote, key: sending.key, pin });
+    const outcome = await payMoneyRequest({ chatId, requestId: target.id, quote: sending.quote, key: sending.key, ...credential });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) {
+      setStatus({ kind: 'review' });
+      return stopResult(outcome);
+    }
     const nothingMoved = () => {
       dropAttempt(sending.subject, sending.key);
       setStatus({ kind: 'review' });
@@ -326,7 +333,7 @@ export function useRequestPay(args: RequestPayArgs) {
           pinOpen,
           lockedUntil,
           pay,
-          submitPin,
+          run,
           closePin: () => setPinOpen(false),
           cancel: closeAll,
           refresh: () => void polled.refetch(),

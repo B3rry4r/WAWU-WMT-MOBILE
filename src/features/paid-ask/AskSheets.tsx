@@ -12,7 +12,7 @@ import { Icon, ICON_STROKE, VerifiedTick, type IconName } from '@/components/ico
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { PaySheet, feesTotalKobo, formatNaira, shortfallKobo } from '@/components/pay-sheet';
-import { PinSheet } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 import { Text } from '@/components/Text';
 import { WALLET_NAME } from '@/features/events/buyModel';
 import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
@@ -226,11 +226,11 @@ export function AskSheets({
         />
       )}
       {quote ? (
-        <PinSheet
+        <PayPinSheet
           visible={flow.pinOpen}
           onClose={flow.closePin}
           approval={{ totalKobo: quote.payment.totalKobo, payee: target.name?.trim() || 'this creator' }}
-          onSubmit={flow.submitPin}
+          run={flow.run}
           onForgotPin={() => {
             flow.closePin();
             onForgotPin();

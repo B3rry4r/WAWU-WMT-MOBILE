@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 import { HTTP_CREATED, filled, isKobo, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
 
 /**
@@ -101,7 +102,7 @@ export async function fetchPassPurchase(id: string, paymentId: string): Promise<
 }
 
 /** What the purchase call came to. A `done` carries the purchase as the Hub holds it (paid, pending, failed or refunded). */
-export type PassOutcome = { kind: 'done'; purchase: PassPurchase } | Refusal;
+export type PassOutcome = { kind: 'done'; purchase: PassPurchase } | Refusal | ApprovalStopped;
 
 export type BuyPassInput = {
   id: string;
@@ -109,16 +110,18 @@ export type BuyPassInput = {
   quote: PassQuote;
   /** One per attempt, kept across a wrong PIN and an answer that never came. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /** POST /communities/{id}/pass. Never rejects: whatever came back (or did not) is a `PassOutcome`, so the screen decides in one place. */
 export async function buyPass(input: BuyPassInput): Promise<PassOutcome> {
+  const body = { expectedTotalKobo: input.quote.payment.totalKobo, quoteToken: input.quote.payment.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: `/api/hub/communities/${part(input.id)}/pass`, body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/communities/{id}/pass', {
-      params: { path: { id: input.id }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { expectedTotalKobo: input.quote.payment.totalKobo, quoteToken: input.quote.payment.quoteToken },
+      params: { path: { id: input.id }, header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -133,6 +136,7 @@ export async function buyPass(input: BuyPassInput): Promise<PassOutcome> {
       return { kind: 'unanswered' };
     }
   }
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   return readRefusal(response.status, error, 'This pass was not taken. Nothing left your wallet.', 'There is not enough in your wallet for this pass.');
 }
 

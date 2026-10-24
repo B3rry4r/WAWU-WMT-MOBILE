@@ -6,7 +6,6 @@ import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import { queryClient } from '@/api/query';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import type { PaymentQuote } from '@/features/events/buyApi';
 import { feeLines, limitLine, NO_TOTAL_TITLE, NOT_READY_LINE, OVER_LIMIT_TITLE, PRICE_CHANGED_LINE, quoteAddsUp } from '@/features/events/buyModel';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -15,6 +14,7 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { enrolKeys, fetchEnrolment, fetchFeeQuote, fetchPayment, OpenPaymentError, payFee, type Enrolment, type FeePayment } from './enrolApi';
 import { dropEnrolIntent, findEnrolIntent, putEnrolIntent, type EnrolIntent } from './enrolIntent';
 import { failedLine, PRICE_UNREADABLE } from './enrolModel';
+import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
 
 /**
  * How often an enrolment whose payment the Hub has not finished is read again (`GET /schools/enrolments/{id}`, our own records), and
@@ -48,7 +48,7 @@ export type EnrolSheet = {
   lockedUntil: string | null;
   fees: ReturnType<typeof feeLines>;
   pay: () => Promise<void>;
-  submitPin: (pin: string) => Promise<PinCheckResult>;
+  run: (credential: Credential) => Promise<Settled>;
   cancel: () => void;
   closePin: () => void;
   forgotPin: () => void;
@@ -306,7 +306,8 @@ export function useEnrolPay(args: EnrolPayArgs) {
     setPinOpen(true);
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!payment || !owner || intent === undefined) return { code: 'unanswered' };
     // The request this payment carries: the one already sent (same key, same body) or the first one, made now from what is on screen.
     const sending: EnrolIntent =
@@ -325,8 +326,11 @@ export function useEnrolPay(args: EnrolPayArgs) {
       expectedTotalKobo: sending.payment.totalKobo,
       quoteToken: sending.payment.quoteToken,
       key: sending.key,
-      pin,
+      ...credential,
     });
+    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
+    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
+    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing moved for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = () => keep(null, sending);
     switch (outcome.kind) {
@@ -425,7 +429,7 @@ export function useEnrolPay(args: EnrolPayArgs) {
       lockedUntil,
       fees: feeLines(payment.fee),
       pay,
-      submitPin,
+      run,
       cancel,
       closePin: () => setPinOpen(false),
       forgotPin: () => {

@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
 /**
@@ -90,17 +91,15 @@ export async function fetchQuestion(questionId: string): Promise<QuestionView> {
   return readQuestion(await readData(api.GET('/api/hub/dm/send/wallet/{questionId}', { params: { path: { questionId } } }), 'question'));
 }
 
-export type PayQuestionInput = { questionId: string; expectedTotalKobo: number; quoteToken: string; key: string; pin: string };
+export type PayQuestionInput = { questionId: string; expectedTotalKobo: number; quoteToken: string; key: string } & Credential;
 
 /** POST /dm/send/wallet/pay. Never rejects: whatever came back (or did not) is a `PayOutcome`. */
 export function payQuestion(input: PayQuestionInput): Promise<PayOutcome<QuestionView>> {
+  const body = { questionId: input.questionId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken };
   return sendPayment(
-    () =>
-      api.POST('/api/hub/dm/send/wallet/pay', {
-        params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-        body: { questionId: input.questionId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
-        fetch: resendsUnderKey,
-      }),
+    input,
+    { method: 'POST', path: '/api/hub/dm/send/wallet/pay', body },
+    (header) => api.POST('/api/hub/dm/send/wallet/pay', { params: { header: { ...header, 'Idempotency-Key': input.key } }, body, fetch: resendsUnderKey }),
     readQuestion,
     'There is not enough in your wallet for this question.',
   );
