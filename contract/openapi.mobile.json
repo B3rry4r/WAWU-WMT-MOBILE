@@ -13343,7 +13343,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "One swap as it stands now; what the app polls after `pending`. Only the owner reads it.",
+    "summary": "One swap as it stands now: the app reads it while a swap is unfinished. Only the owner reads it.",
     "tags": [
      "Fx"
     ],
@@ -39835,6 +39835,18 @@
       ],
       "nullable": true
      },
+     "detailsStatus": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "ready",
+       "unavailable"
+      ]
+     },
+     "detailsNote": {
+      "type": "string",
+      "nullable": true
+     },
      "openedAt": {
       "type": "string"
      }
@@ -39851,6 +39863,8 @@
      "status",
      "balance",
      "details",
+     "detailsStatus",
+     "detailsNote",
      "openedAt"
     ]
    },
@@ -39941,6 +39955,15 @@
      "wawuFeeMinor": {
       "type": "integer"
      },
+     "feeLeg": {
+      "type": "string",
+      "enum": [
+       "done",
+       "owed",
+       "uncollected"
+      ],
+      "nullable": true
+     },
      "chain": {
       "type": "string",
       "enum": [
@@ -39981,6 +40004,7 @@
      "amountToMinor",
      "providerFeeMinor",
      "wawuFeeMinor",
+     "feeLeg",
      "chain",
      "address",
      "reference",
@@ -40219,6 +40243,18 @@
       ],
       "nullable": true
      },
+     "detailsStatus": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "ready",
+       "unavailable"
+      ]
+     },
+     "detailsNote": {
+      "type": "string",
+      "nullable": true
+     },
      "openedAt": {
       "type": "string"
      }
@@ -40232,6 +40268,8 @@
      "status",
      "balance",
      "details",
+     "detailsStatus",
+     "detailsNote",
      "openedAt"
     ]
    },
@@ -44445,8 +44483,8 @@
       "type": "string",
       "enum": [
        "failed",
-       "not_owed",
        "owed",
+       "not_owed",
        "submitted",
        "settled"
       ]
@@ -50461,9 +50499,9 @@
      "status": {
       "type": "string",
       "enum": [
+       "ready",
        "sent",
-       "sending",
-       "ready"
+       "sending"
       ]
      },
      "totalCount": {

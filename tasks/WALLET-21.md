@@ -7,7 +7,7 @@ order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: verifying
 depends_on: [WALLET-32, WALLET-33, WALLET-01]
 decisions: [R-83, R-84, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -37,6 +37,18 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B19, T2), mobile `wmt/WALLE
 - The review sheets (W21, W23) carry the fee rows as the Hub names them; a network fee the provider names only when it takes the send is written "Shown on your receipt".
 - Dollar value of crypto, minimum deposit per network and the send's arrival time are not drawn (the Hub serves none): see BACKEND_GAPS G-WALLET-21-A1 to A4.
 - Not built, no board: a history screen for a foreign account (the tab shows the newest 20), the scan icon (WALLET-20), W2/W3 inside Home.
+
+### Round 1 (24 Oct 2026, fix of the verifier's FIX verdict; builder B18, Sonnet)
+
+Backend `wmt/WALLET-21-HUB` `51a8aa8`, mobile `wmt/WALLET-21` (this commit); contract copied from backend `51a8aa8`.
+
+| # | Finding | Before | After | Proof |
+|---|---|---|---|---|
+| H1 | WAWU's fee out of naira shown and recorded as paid, never collected | the fee leg named the payer's own account (the area ignored the named routing number for NGN); dev refused it (`cannot_transfer_to_same_account`, a failed record kept); the retry found that record and wrote `feeLeg: done` | a naira fee is collected the way a naira send's is: `getPlatformAccount()` then `walletToWallet` to WAWU's operational account under `<ref>-fee`, with the payer's debit and WAWU's credit in the ledger; the area honours a named routing number for every currency; a leg is `done` only when the provider says it completed; refused for good it is tried again under a new reference (`-fee-2`, `-fee-3`) and given back after three (`uncollected`, the operation's fee 0, admin view `feeLeg`); lost or unfinished stays `owed` under the SAME reference | specs written first, red (6 failed: the area test and five service tests), then green: area 19, service 23 (naira collected; refused then given back; refused then collected once; lost/unfinished then done under one reference; foreign collector; wrong collector never done). **Dev**: `fx-fee-dev-check-cli` (backend), ₦200 swap with a ₦5 fee on entity "Ada VerifierA": payer 434,525 to 414,025 kobo (20,500 out), WAWU's account +500 kobo, Nuvion's record of `<ref>-fee` `successful`, `feeLeg: done`, ledger rows user out 20,000, user out 500, merchant in 500 |
+| M1 | contract not what `contract:build` produces | one summary line stale (fixed by `d39a868`) | `contract:build` re-run on `51a8aa8`: only the new `detailsStatus`, `detailsNote` and admin `feeLeg` fields changed; copied here, `npm run api` run | EXIT 0 |
+| M2 | CAD and AED card promised "on their way" | `details: null` with no reason | the Hub says why: `detailsStatus` (`ready`, `pending`, `unavailable`) and `detailsNote` (the provider's words); an account whose details were never seen is asked again on every read; the card reads "Account details are not available right now" and the Hub's words, or "Account details are pending", and never promises an arrival | backend spec (CAD with the stand-in's 503 words; next read `pending`, then `ready`), `fxTabs` test "says exactly where the details stand" |
+
+Owner-facing default (lead), owner may override: the naira fee needs no `FX_FEE_COLLECTOR_NGN_BAN` (it goes to WAWU's operational account); a fee in another currency still needs its collector account. G-WALLET-21-7 stands for those.
 
 ### Checks (EXIT lines in `scratchpad/wallet-21-b/logs/`)
 

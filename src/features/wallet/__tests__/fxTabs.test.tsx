@@ -141,6 +141,22 @@ describe('W1 · the tabs', () => {
 });
 
 describe('W2 · a currency account', () => {
+  it('says exactly where the details stand when the Hub has none: the provider\'s words for a refusal, "pending" for one in progress, never a promise of arrival (verifier M2)', async () => {
+    const usdAccount = hub.accounts[0];
+    const cad = { ...usdAccount, id: 'c0000000-0000-4000-8000-0000000000c1', currency: 'CAD', details: null, detailsStatus: 'unavailable', detailsNote: 'One of our partner services is temporarily unavailable. Please try again in a few minutes.' };
+    const aed = { ...usdAccount, id: 'c0000000-0000-4000-8000-0000000000c2', currency: 'AED', details: null, detailsStatus: 'pending', detailsNote: null };
+    hub.accounts = [usdAccount, cad, aed] as never;
+    await boot();
+    await openTab('CAD');
+    expect(await rtl.screen.findByText('Account details are not available right now')).toBeTruthy();
+    expect(rtl.screen.getByTestId('fx-account-note').props.children).toBe('One of our partner services is temporarily unavailable. Please try again in a few minutes.');
+    expect(rtl.screen.queryByText(/on their way/)).toBeNull();
+    expect(rtl.screen.queryByTestId('fx-copy')).toBeNull();
+    await openTab('Dirham');
+    expect(await rtl.screen.findByText('Account details are pending')).toBeTruthy();
+    expect(rtl.screen.queryByText(/on their way|not available right now/)).toBeNull();
+  });
+
   it('shows the account\'s own balance, the issuing bank, the number masked with Copy, and no Send (it is not built)', async () => {
     await boot();
     await openTab('Dollar');

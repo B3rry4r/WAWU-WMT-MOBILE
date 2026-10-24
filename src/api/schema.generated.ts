@@ -3499,7 +3499,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One swap as it stands now; what the app polls after `pending`. Only the owner reads it. */
+        /** One swap as it stands now: the app reads it while a swap is unfinished. Only the owner reads it. */
         get: operations["FxController_swapById"];
         put?: never;
         post?: never;
@@ -11713,6 +11713,9 @@ export interface components {
             status: "opening" | "open" | "frozen";
             balance: components["schemas"]["FxBalanceView"] | null;
             details: components["schemas"]["FxReceivingDetailsView"] | null;
+            /** @enum {string} */
+            detailsStatus: "pending" | "ready" | "unavailable";
+            detailsNote: string | null;
             openedAt: string;
         };
         AdminFxAccountListView: {
@@ -11734,6 +11737,8 @@ export interface components {
             amountToMinor: number | null;
             providerFeeMinor: number | null;
             wawuFeeMinor: number;
+            /** @enum {string|null} */
+            feeLeg: "done" | "owed" | "uncollected" | null;
             /** @enum {string|null} */
             chain: "eth" | "base" | "matic" | "sol" | null;
             address: string | null;
@@ -11792,6 +11797,9 @@ export interface components {
             status: "opening" | "open" | "frozen";
             balance: components["schemas"]["FxBalanceView"] | null;
             details: components["schemas"]["FxReceivingDetailsView"] | null;
+            /** @enum {string} */
+            detailsStatus: "pending" | "ready" | "unavailable";
+            detailsNote: string | null;
             openedAt: string;
         };
         FxAccountListView: {
@@ -12775,7 +12783,7 @@ export interface components {
             flutterwaveTxRef: string;
             responseWindowHours: number;
             /** @enum {string} */
-            refundStatus: "failed" | "not_owed" | "owed" | "submitted" | "settled";
+            refundStatus: "failed" | "owed" | "not_owed" | "submitted" | "settled";
             refundReference: string | null;
             /** Format: date-time */
             refundedAt: string | null;
@@ -14149,7 +14157,7 @@ export interface components {
             audienceKind: string;
             audienceNote: string;
             /** @enum {string} */
-            status: "sent" | "sending" | "ready";
+            status: "ready" | "sent" | "sending";
             totalCount: number;
             queuedCount: number;
             sentCount: number;

@@ -28,6 +28,10 @@ export type FxBalanceCardProps = {
   maskedNumber: string | null;
   /** What Copy puts on the clipboard: the number as the Hub sent it. */
   copyValue: string | null;
+  /** Where the details stand, as the Hub says: `ready`, `pending`, or `unavailable` (the provider would not issue them just now). */
+  detailsStatus: 'ready' | 'pending' | 'unavailable';
+  /** With `unavailable`: the provider's own words, as the Hub sent them. */
+  detailsNote: string | null;
   /** The words under the figure when the balance could not be read, with its retry. */
   onRetry?: () => void;
   testID?: string;
@@ -69,14 +73,39 @@ export function FxBalanceCard(props: FxBalanceCardProps) {
               {props.maskedNumber}
             </Text>
           ) : (
-            <Text variant="body" tone="textOnAccent" numberOfLines={1} style={[styles.bank, styles.pending]} testID="fx-account-pending">
-              Account details are on their way
-            </Text>
+            <DetailsState status={props.detailsStatus} note={props.detailsNote} />
           )}
         </View>
         {props.copyValue ? <CopyPill value={props.copyValue} /> : null}
       </View>
     </View>
+  );
+}
+
+/**
+ * What the Hub says about details that are not there: pending at the provider,
+ * or not available right now with the provider's words. It promises no arrival
+ * (dev refuses CAD and AED every time): it says what is so.
+ */
+function DetailsState({ status, note }: { status: 'ready' | 'pending' | 'unavailable'; note: string | null }) {
+  if (status === 'unavailable') {
+    return (
+      <View style={styles.pending} testID="fx-account-unavailable">
+        <Text variant="body" tone="textOnAccent" numberOfLines={1} style={styles.bank}>
+          Account details are not available right now
+        </Text>
+        {note ? (
+          <Text variant="body" tone="textOnAccent" numberOfLines={2} style={styles.bank} testID="fx-account-note">
+            {note}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
+  return (
+    <Text variant="body" tone="textOnAccent" numberOfLines={1} style={[styles.bank, styles.pending]} testID="fx-account-pending">
+      Account details are pending
+    </Text>
   );
 }
 

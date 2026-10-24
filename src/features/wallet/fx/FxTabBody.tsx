@@ -130,6 +130,8 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
         line={bank ? `${code} account · ${bank}` : `${code} account`}
         maskedNumber={number ? maskedNumber(number) : null}
         copyValue={number}
+        detailsStatus={account.detailsStatus}
+        detailsNote={account.detailsNote}
         onRetry={props.onRetry}
       />
       {frozen ? <Banner tone="warning" title="This account is frozen" body="Money can arrive, but it cannot be swapped or sent until it is opened again." testID="fx-frozen" /> : null}

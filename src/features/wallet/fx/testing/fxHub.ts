@@ -35,9 +35,9 @@ export const currenciesBody = (opts: { openAccount?: boolean; off?: string[] } =
 const fiatDetails = { status: 'active', beneficiaryName: 'Ada Eze', accountNumber: '9900004410', routingNumber: '026000999', swiftCode: 'TESTUS33', iban: null, sortCode: null, bankName: 'Lead Test Bank', bankAddress: '1 Test Street, Kansas City', chain: null, address: null };
 const coinDetails = (chain: string, address: string | null) => ({ status: address ? 'active' : 'pending', beneficiaryName: null, accountNumber: null, routingNumber: null, swiftCode: null, iban: null, sortCode: null, bankName: null, bankAddress: null, chain, address });
 
-export const usdAccount = { id: USD_ID, currency: 'USD', kind: 'fiat', decimals: 2, chain: null, status: 'open', balance: { currency: 'USD', availableMinor: 124_050, bookedMinor: 124_050 }, details: fiatDetails, openedAt: '2026-10-20T09:00:00.000Z' };
-export const usdtAccount = { id: USDT_ID, currency: 'USDT', kind: 'stablecoin', decimals: 2, chain: 'eth', status: 'open', balance: { currency: 'USDT', availableMinor: 32_000, bookedMinor: 32_000 }, details: coinDetails('eth', ADDRESS), openedAt: '2026-10-20T09:05:00.000Z' };
-export const usdcAccount = { id: USDC_ID, currency: 'USDC', kind: 'stablecoin', decimals: 2, chain: 'base', status: 'opening', balance: null, details: coinDetails('base', null), openedAt: '2026-10-21T09:05:00.000Z' };
+export const usdAccount = { id: USD_ID, currency: 'USD', kind: 'fiat', decimals: 2, chain: null, status: 'open', balance: { currency: 'USD', availableMinor: 124_050, bookedMinor: 124_050 }, details: fiatDetails, detailsStatus: 'ready', detailsNote: null, openedAt: '2026-10-20T09:00:00.000Z' };
+export const usdtAccount = { id: USDT_ID, currency: 'USDT', kind: 'stablecoin', decimals: 2, chain: 'eth', status: 'open', balance: { currency: 'USDT', availableMinor: 32_000, bookedMinor: 32_000 }, details: coinDetails('eth', ADDRESS), detailsStatus: 'ready', detailsNote: null, openedAt: '2026-10-20T09:05:00.000Z' };
+export const usdcAccount = { id: USDC_ID, currency: 'USDC', kind: 'stablecoin', decimals: 2, chain: 'base', status: 'opening', balance: null, details: coinDetails('base', null), detailsStatus: 'pending', detailsNote: null, openedAt: '2026-10-21T09:05:00.000Z' };
 
 export type SwapMode = 'ok' | 'pending' | 'expired' | 'no_answer_first' | 'declined';
 export type SendMode = 'ok' | 'declined' | 'pending';
@@ -115,7 +115,7 @@ export async function fxFetch(request: Request, path: string): Promise<Response 
   }
   if (path === '/money/fx/accounts' && method === 'POST') {
     hub.opened.push(body);
-    const made = { id: `a0000000-0000-4000-8000-00000000${String(100 + hub.opened.length)}`, currency: body.currency, kind: body.chain ? 'stablecoin' : 'fiat', decimals: 2, chain: body.chain ?? null, status: 'opening', balance: null, details: null, openedAt: '2026-10-24T09:00:00.000Z' };
+    const made = { id: `a0000000-0000-4000-8000-00000000${String(100 + hub.opened.length)}`, currency: body.currency, kind: body.chain ? 'stablecoin' : 'fiat', decimals: 2, chain: body.chain ?? null, status: 'opening', balance: null, details: null, detailsStatus: 'pending', detailsNote: null, openedAt: '2026-10-24T09:00:00.000Z' };
     hub.accounts = [...hub.accounts, made];
     return ok(made, 201);
   }
