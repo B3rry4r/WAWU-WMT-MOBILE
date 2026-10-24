@@ -59,6 +59,18 @@ export const voiceJobQuery = (owner: string | null, id: string | null) =>
 /** How often a working job is read again, in ms. */
 export const JOB_POLL_MS = 2000;
 
+/**
+ * How often a working job is read again, by the tool and how long the job has been going (POINTS-11). Every tool is read each 2 seconds. A dub
+ * takes minutes, so after its first minute the reads slow: every 5 seconds until the fifth minute, then every 10. The age is the Hub's
+ * `createdAt` against the phone's clock; a time that cannot be read, or one in the future, counts as a job that has just started.
+ */
+export function pollMsFor(toolId: string, createdAt: string | null | undefined, now: number = Date.now()): number {
+  if (toolId !== 'dubbing') return JOB_POLL_MS;
+  const started = createdAt ? new Date(createdAt).getTime() : Number.NaN;
+  const age = Number.isFinite(started) ? Math.max(0, now - started) : 0;
+  return age < 60_000 ? JOB_POLL_MS : age < 300_000 ? 5000 : 10_000;
+}
+
 /** What the screen branches on after a start. Never a thrown error. */
 export type StartOutcome =
   /** The Hub has the job (new, or the first one for this key): it is `working`, `done` or `failed`. */
@@ -69,7 +81,7 @@ export type StartOutcome =
   | { kind: 'refused'; code: string | null; message: string };
 
 /** What a job carries, by the kind of input the tool takes (`GET /ai-tools`, `input.kind`). */
-export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string } | { kind: 'file'; fileKey: string };
+export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string } | { kind: 'file'; fileKey: string; targetLanguage?: string };
 
 export type StartInput = {
   /** The Hub's id for the tool (`GET /ai-tools`): it names the route. */
@@ -112,6 +124,8 @@ function post(input: StartInput) {
     const body = { fileKey: request.fileKey, quoteToken };
     if (toolId === 'captions') return api.POST('/api/hub/ai-tools/captions/jobs', { ...options, body });
     if (toolId === 'clean-audio') return api.POST('/api/hub/ai-tools/clean-audio/jobs', { ...options, body });
+    // Dubbing (AITOOLS-05): the same file and quote, and the language to hear it in, one of the Hub's own list. The language spoken is left out: the Hub detects it.
+    if (toolId === 'dubbing' && request.targetLanguage) return api.POST('/api/hub/ai-tools/dubbing/jobs', { ...options, body: { ...body, targetLanguage: request.targetLanguage } });
     return null;
   }
   const body = { prompt: request.prompt, quoteToken };

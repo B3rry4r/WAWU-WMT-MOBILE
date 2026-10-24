@@ -7,7 +7,7 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
 import { readJobQuote, type JobQuote } from './studioApi';
 
 /**
- * The calls behind a tool that takes the person's own recording (Captions, Clean audio: AITOOLS-04, POINTS-10).
+ * The calls behind a tool that takes the person's own recording (Captions, Clean audio: AITOOLS-04, POINTS-10; Dubbing: AITOOLS-05, POINTS-11).
  *
  * - `POST /uploads/presign` with one of the Hub's two private folders for an AI tool (`GET /ai-tools`, `input.file.folders`): the link the
  *   bytes go up to. The Hub refuses a type or a size it does not take, in its own sentence, and the file is never served to anyone else.
@@ -32,7 +32,7 @@ export function readFileQuote(value: unknown): FileQuote {
   return { ...quote, file: { seconds: file.seconds, minutes: file.minutes } };
 }
 
-/** POST /ai-tools/{captions|clean-audio}/quote. Rejects with the Hub's own sentence (`ai_file_too_large`, `ai_file_unreadable`, not found). */
+/** POST /ai-tools/{captions|clean-audio|dubbing}/quote. Rejects with the Hub's own sentence (`ai_file_too_large`, `ai_file_unreadable`, not found). */
 export async function fetchFileQuote(toolId: string, fileKey: string): Promise<FileQuote> {
   const body = { fileKey };
   const sent =
@@ -40,7 +40,9 @@ export async function fetchFileQuote(toolId: string, fileKey: string): Promise<F
       ? api.POST('/api/hub/ai-tools/captions/quote', { body })
       : toolId === 'clean-audio'
         ? api.POST('/api/hub/ai-tools/clean-audio/quote', { body })
-        : null;
+        : toolId === 'dubbing'
+          ? api.POST('/api/hub/ai-tools/dubbing/quote', { body })
+          : null;
   if (sent === null) throw new ApiError('unknown', 0, 'That did not work. Try again.');
   const out = (await unwrap(sent)) as unknown as Envelope<FileQuote>;
   return readFileQuote(out?.data);

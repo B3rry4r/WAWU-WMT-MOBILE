@@ -83,7 +83,12 @@ export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.inp
 export function toolReady(tool: AiTool | undefined): tool is AiTool {
   if (!tool || !tool.enabled || !isBuiltTool(tool)) return false;
   // A tool that takes the person's recording has no text to limit: it needs the Hub's rule for the file (its types, bytes and minutes).
-  if (inputKindOf(tool) === 'file') return Boolean(tool.input.file && tool.input.file.maxBytes > 0 && tool.input.file.maxMinutes > 0 && (tool.input.file.accepts.audio.length > 0 || tool.input.file.accepts.video.length > 0));
+  if (inputKindOf(tool) === 'file') {
+    const rule = tool.input.file;
+    const takes = Boolean(rule && rule.maxBytes > 0 && rule.maxMinutes > 0 && (rule.accepts.audio.length > 0 || rule.accepts.video.length > 0));
+    // Dubbing also needs the languages the Hub lists: with none to choose from, there is nothing to run (POINTS-11).
+    return tool.id === 'dubbing' ? takes && (rule?.dubbing?.languages.length ?? 0) > 0 : takes;
+  }
   if (!(tool.input.maxCharacters > 0)) return false;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }

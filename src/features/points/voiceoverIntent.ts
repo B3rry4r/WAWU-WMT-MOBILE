@@ -34,6 +34,8 @@ export type JobIntent = {
   quoteToken: string;
   /** A tool that takes the person's own recording (Captions, Clean audio): the `key` the upload gave. `text` then holds the file's name. */
   fileKey?: string;
+  /** Dubbing: the language to hear the recording in, one of the Hub's own list (`input.file.dubbing.languages`). */
+  targetLanguage?: string;
   jobId: string | null;
   /** When the request was first sent (ms). */
   at: number;
@@ -68,6 +70,7 @@ export function readJobIntent(value: unknown): JobIntent | null {
     characters: v.characters as number,
     quoteToken: v.quoteToken,
     ...(file ? { fileKey: v.fileKey as string } : {}),
+    ...(file && filled(v.targetLanguage) ? { targetLanguage: v.targetLanguage } : {}),
     jobId: filled(v.jobId) ? v.jobId : null,
     at: v.at,
   };

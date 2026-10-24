@@ -59,17 +59,20 @@ const LOOKS: Record<string, IconName> = {
   'clean-audio': 'AudioWaveform',
   music: 'Music',
   'sound-effect': 'Volume2',
+  dubbing: 'Languages',
 };
 /** True when the app has a screen for the tool. */
 export const isBuiltTool = (tool: Pick<AiTool, 'id'>): boolean => Object.prototype.hasOwnProperty.call(LOOKS, tool.id);
 export const toolIcon = (tool: Pick<AiTool, 'id'>): IconName => LOOKS[tool.id] ?? 'Sparkles';
 
 /** "250 a minute": the Hub's cost for one unit and the unit it counts in. A flat price (a use, a track) is the count alone, as PT1 draws "75" and "500". */
-export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'>): string {
+export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'> & { id?: string }): string {
   const n = formatPointsCount(tool.costPointsPerUnit);
   const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '' };
   const word = per[tool.unit as string];
-  return word ? `${n} ${word}` : n;
+  const line = word ? `${n} ${word}` : n;
+  // PT1 draws Dubbing as "From 1,500 a minute": the price is for each language, so the figure on the tile is where it starts (POINTS-11).
+  return tool.id === 'dubbing' ? `From ${line}` : line;
 }
 
 /** "₦2,500", or "₦2,523.25" when kobo are in it: money is whole kobo on the wire, never a float. */

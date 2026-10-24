@@ -104,7 +104,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const method = request.method;
   if (path === '/ai-tools') {
     const tools: Record<string, unknown>[] = hub.listed.map((id) => entry(SPECS[id as ToolId]));
-    if (hub.stranger) tools.push({ id: 'dubbing', action: 'dub_standard_per_min_lang', name: 'Dubbing', description: 'Speak it in another language.', unit: 'minute', costPointsPerUnit: 1500, enabled: true, input: { kind: 'file', maxCharacters: 0, charactersPerUnit: 0 }, voices: [] });
+    // POINTS-11 built Dubbing, so it stopped being the example of a tool the app has no screen for; Receptionist (POINTS-12) is the one that is still not built.
+    if (hub.stranger) tools.push({ id: 'receptionist', action: 'receptionist_message', name: 'Receptionist', description: 'Answer messages for you.', unit: 'message', costPointsPerUnit: 20, enabled: true, input: { kind: 'text', maxCharacters: 500, charactersPerUnit: 500 }, voices: [{ id: 'ada', name: 'Ada', description: '' }] });
     return ok({ tools, caps: { dailyPoints: 5000, maxCharactersPerJob: 5000, maxAudioMinutesPerJob: 10 } });
   }
   if (path === '/me/points') return ok({ balance: hub.points, nextExpiry: null, lots: [], lotCount: 0, movements: [] });
@@ -267,14 +268,14 @@ describe('PT1 · the tiles Studio draws', () => {
     await screen.findByTestId('studio-tool-sound-effect');
     expect(screen.queryByTestId('studio-tool-quick-voice')).toBeNull();
     expect(screen.queryByTestId('studio-tool-music')).toBeNull();
-    expect(screen.queryByTestId('studio-tool-dubbing')).toBeNull();
-    expect(screen.queryByText('Dubbing')).toBeNull();
+    expect(screen.queryByTestId('studio-tool-receptionist')).toBeNull();
+    expect(screen.queryByText('Receptionist')).toBeNull();
     expect(screen.getAllByTestId(/^studio-tool-/)).toHaveLength(1);
   });
 
   it('a tool the app has no screen for opens as unavailable, never as a tool that runs', async () => {
     hub.stranger = true;
-    await renderRouter(routes, { initialUrl: '/studio-tool?tool=dubbing' });
+    await renderRouter(routes, { initialUrl: '/studio-tool?tool=receptionist' });
     await screen.findByTestId('tool-unavailable');
     expect(screen.queryByTestId('tool-run')).toBeNull();
   });
