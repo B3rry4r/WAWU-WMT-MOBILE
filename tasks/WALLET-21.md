@@ -7,20 +7,35 @@ order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
-depends_on: [WALLET-32, WALLET-33, WALLET-01]
-decisions: [R-16, R-37]
+status: building
+depends_on: [WALLET-01]
+decisions: [R-83, R-84, R-10, R-39, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W2, W3, W20, W21, W22, W23]
+tier: T2
 ---
 # WALLET-21 · Dollar and crypto accounts, swap
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-32, WALLET-33.
-- **History:** none yet. Reports go to tasks/history/WALLET-21.md.
+As of 24 Oct 2026. Priority and order stay as they were (after-launch, 321) because no order below CHECK-3 is free (orders 156 to 298 are all taken); R-83 makes this work part of the build now, so the lead moves it when the order list is reshuffled. The Hub side is built by a Sonnet builder (T2, bundle B18), backend `wmt/WALLET-21-HUB` on `origin/main` `38be72e` (head in docs/LOG.md and the hand-back), mobile records `wmt/WALLET-21-HUB`. R-83 and R-84 replace R-16 and retire WALLET-32 and WALLET-33 (the Fintava and Cardex plans): accounts in every currency Nuvion gives details for (USD, EUR, GBP, CAD, AED, GHS) and USDT, USDC, RLUSD, on Nuvion. The boards' Cardex samples (TRC-20, BEP-20, 90 seconds, BTC) are not facts; chains are Nuvion's (eth, base, matic, sol), the hold is the quote's own `expiresAt`.
+
+| # | Before (`origin/main`) | After (backend `wmt/WALLET-21-HUB`) |
+|---|---|---|
+| 1 | no foreign account, balance, details, quote, swap or send in the Hub | sixteen routes: `/money/fx/currencies`, `accounts` (list, open, one, transactions), `quotes`, `swaps` (+ read), `sends/quote`, `sends` (+ read); `/admin/money/fx/people/{id}/accounts`, `operations` (+ one), `accounts/{id}/freeze` and `unfreeze` |
+| 2 | the provider seam held naira only | optional `fx` port on `WalletProvider`; Nuvion's area `src/nuvion/areas/fx.ts`; Fintava has none and every route answers `409 currency_not_supported` |
+| 3 | no switches | `fx.currency.<CODE>.on` for each of nine currencies and `fx.product.open_account.on`, `swap.on`, `crypto_send.on` in the plan-settings registry (on by default); an off switch is `409 fx_switched_off` |
+| 4 | no fee or limit per currency | `FX_SWAP_FEE_<CODE>_MINOR`, `FX_SEND_FEE_<CODE>_MINOR` (default 0, R-10) with `FX_FEE_COLLECTOR_<CODE>_BAN`, `FX_DAILY_LIMIT_<CODE>_MINOR`, `FX_DECIMALS_<CODE>`; the daily limit is held under a short per-person lock |
+| 5 | a lost answer could not be told from a refusal | a swap or send is a row first (`FxOperation`), `pending` until the provider's own record says, settled by a per-minute sweep and by the webhook handler (`src/nuvion/handlers/fx.handler.ts`); the naira side of a swap is written to the naira ledger |
+| 6 | admin could not see or stop a foreign account | superadmin and finance read accounts, swaps and sends and freeze one (one `FxAdminAudit` row per change) |
+| 7 | CONVENTIONS had kobo only | section 1a: a non-naira amount is an integer in a `...Minor` field beside a currency field (Default (lead), owner may override); section 27 lists the routes and errors |
+
+Checks (backend, own DB `b18fx_hub_test`): tsc EXIT 0; eslint on the changed files EXIT 0; contract:build EXIT 0 (16 new operations, none left `x-wawu-served: false`); area spec 18, service spec 17, contract spec 4 pass; `money-contract`, `wallet-gate-coverage`, `money-moving-coverage`, `publishing-gate-coverage`, `hub-rate-limits` and `plan-settings` specs pass; `test:protected` 253 of 253 on a seeded database; gates 0 fail (same 135 warnings, none from the new files); migration `20261112090000_fx_accounts` applied clean and its rollback refuses with a row and drops with none.
+
+Dev (Nuvion DEV only, `docs/nuvion/DEV-RESULTS.md`, WALLET-21 section): all nine currencies open; swaps with conversion cost 0; a quote is held 179 s (120 s for a stablecoin pair) and carries no fee; **a stablecoin send is refused by dev** (G-WALLET-21-2); CAD and AED details answered 503 (G-WALLET-21-4); Nuvion's docs and dev disagree on a stablecoin's decimals (G-WALLET-21-1, high).
+
+- **Next:** the app builder builds the screens (W2, W3, W20 to W23, the Dollar and Crypto tabs on W1) from the backend contract at `wmt/WALLET-21-HUB`, drawing only what `GET /money/fx/currencies` says is on (R-47), and a verifier checks the Hub side. Not done on the Hub side: a first real webhook delivery for these accounts (the dev endpoint is not reachable from a run), the nightly check against a real USD to NGN swap (G-WALLET-21-5), the dashboard screen for the admin routes (G-WALLET-21-9).
+- **History:** reports go to tasks/history/WALLET-21.md.
 
 ## Read first
 
