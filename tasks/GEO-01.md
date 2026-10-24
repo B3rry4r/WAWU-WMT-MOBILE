@@ -7,7 +7,7 @@ order: -190
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-6, R-36, R-85]
 passes: [V1, V2, V3, V4, V9]
@@ -18,16 +18,27 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B24): WAWU ID `wmt/GEO-01` `1e0faf1` on `origin/main` `1bbad17` (code, migration, contract); mobile `wmt/GEO-01` on `origin/main` `546db77e` (these records only). No app code. Status verifying. CI on `1e0faf1`: Branch checks run 40104274398 and Gates run 40104274389, both success.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B24): WAWU ID `wmt/GEO-01` `5a4629a` (round 1 on the verifier's `1e0faf1`) on `origin/main` `1bbad17` (code, migration, contract); mobile `wmt/GEO-01` on `origin/main` `546db77e` (these records only). No app code. Status verifying. CI on `1e0faf1`: Branch checks run 40104274398 and Gates run 40104274389, both success; round 1 CI on `5a4629a`: Gates run 40111209053 success, Branch checks run 40111209066 (running when this was written; the lead reads it).
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
-| 1 | sign-up writes a Nigerian number as `+234...` and refuses every other country (`PHONE_NOT_SUPPORTED`); a `+` number that reached `normalisePhone` passed as typed, valid or not | any country's number is written as E.164 and must be valid for its country (libphonenumber-js `1.13.15`, exact pin, MIT; max metadata). Nigerian `0803...`, `234...`, `+234...`, `8031234412` give the same `+234...` as ever, whatever country is also sent. A number with no country code is read in the country named by `countryCode`, else refused |
+| 1 | sign-up writes a Nigerian number as `+234...` and refuses every other country (`PHONE_NOT_SUPPORTED`); a `+` number that reached `normalisePhone` passed as typed, valid or not | any country's number is written as E.164 and must be valid for its country (libphonenumber-js `1.13.15`, exact pin, MIT; max metadata). Nigerian `0803...`, `234...`, `+234...`, `8031234412` give the same `+234...` as ever when Nigeria is named or no country is. A number with no country code is read in the country named by `countryCode` FIRST when that is not `NG` (round 1), and as Nigerian only if it is not valid there |
 | 2 | every lookup read a phone through `normalisePhone` | login, the duplicate and expiry checks, erased identifiers, the proof check and the G-16 script read through `comparablePhone`: the strict reading, else exactly the old one, so the same stored rows are found. Only a number being given now has to be valid |
 | 3 | the mailed sign-up code (`SIGNUP_VERIFY_CHANNEL=email`) also refused non-Nigerian numbers | the mailed code keeps any valid number (it texts nothing). The texted code still goes only under `SIGNUP_ALLOWED_PHONE_PREFIX` (`+234`; `*` is every country). Default (lead), owner may override: texting abroad stays off until the SMS provider's delivery and price are confirmed |
 | 4 | an account had only the web's free-text `country` ("Nigeria") | `POST /auth/signup` takes optional `countryCode` (ISO 3166-1 alpha-2, any case; default the phone's own country, else `NG`; not on the 249-code list is `400 COUNTRY_INVALID`, before anything is written or sent). Stored in `wawu_users.country_code`. `POST /auth/register` takes it too, and derives it from the phone when absent (the web is unchanged) |
 | 5 | the Hub could not read where a person lives | `countryCode` (string or null) is on the session `user` (login, sign-up confirm, every route that answers one), the access token claim, and every row of `POST /internal/users/lookup`. The free-text `country` is untouched |
-| 6 | existing rows have no country | migration `20261024120000_country_code`: nullable `VARCHAR(2)`, a CHECK for two capitals, and `NG` for a stored Nigerian phone in any of its three spellings; every other row stays null. `rollback.sql` refuses (changes nothing) while any account holds a country the backfill would not give again. The 30-day anonymise clears it |
+| 6 | existing rows have no country | migration `20261024120000_country_code`: nullable `VARCHAR(2)`, a CHECK for two capitals, and `NG` for any stored phone that `comparablePhone` reads as Nigerian (spaces, dashes and brackets ignored; round 1 widened it); every other row stays null. `rollback.sql` refuses (changes nothing) while any account holds a country the backfill would not give again. The 30-day anonymise clears it |
+
+### Round 1 (24 Oct 2026, Sonnet builder, T2): the verifier's FIX
+
+| # | Verifier found | Round 1 (WAWU ID `5a4629a`) |
+|---|---|---|
+| r1-1 | Medium: `normalisePhone` read the Nigerian form before the named country, so `07400123456` with `GB` was stored `+2347400123456` and `7135551234` with `US` `+2347135551234` | A number with no `+` or `00` is read in the named country first when it is not `NG`; the Nigerian reading is the fallback only when it is not valid there (a Nigerian abroad typing `08037770101` with `GB` still gets `+2348037770101`). With `NG` or no country named it reads exactly as before. Bare ten digits that are valid in the named country are read there (`8037770101` with `US` is South Carolina). Specs red first (15 failed), then green: GB `07...`, US ten digits, GH `0...`, the fallback, NG and none unchanged, `+` and `00` numbers unmoved, through `normalisePhone`, the mailed and the texted sign-up. Live: `07400123456`/GB, `7135551234`/US, `0245550114`/GH stored in E.164 in their country; `08037770105`/GB stays `+234...`; the texted code refuses the UK number |
+| r1-2 | Low: the backfill matched three exact spellings | The migration (not on `main`, not deployed, edited in place) and `rollback.sql` match what `comparablePhone` reads as Nigerian: `0803 123 4412`, `0803-123-4417`, `+234 (803) 123 4418`, `+2340803...`, `00234...`, bare `8037770303`, a trailing space. Checked on 18 live-shaped rows: the SQL and `comparablePhone` agree on every one; the rollback still refuses a chosen `GH` and runs clean otherwise |
+| r1-3 | Low: a bad `countryCode` on `/auth/register` answered 409 with a taken phone | `COUNTRY_INVALID` (400) is checked first, before the expired-sign-up sweep and the duplicate check; new `register-country.spec.ts` (free phone, taken phone, still 409 with a good code, country kept) |
+| r1-4 | Low: `+44 7911` defaulted to `GG` | Numbers the library puts in Guernsey, Jersey or the Isle of Man default to `GB` (their mobile ranges are carried between all four); every other shared calling code keeps the library's geographic reading (`+1 204` is still `CA`) |
+
+Round 1 checks: `tsc` EXIT 0; eslint on the 11 changed files EXIT 0; jest `src/common` plus the sign-up, resume, erased-identifier, proof, G-16, login and contract specs, 12 suites, 347 tests: the only failures were 5 second default timeouts at load 14 in `phone-signup.service.spec.ts` (a different test each run), which passes 75 of 75 with `--testTimeout=120000`; `contract:build` changed one description line, `contract.spec` 5 of 5; gates 0 fail, 22 warn; local tests `phone` 109, `signup-email` 55, `phone-hold` 40, `g16` 28, `erase` 27, `signup` 34, all 0 fail (the F-3 timing checks passed this time). Assertions changed: none in round 1 (one row of my own spec moved from `GG` to `GB`).
 
 ### Proof
 
@@ -46,7 +57,7 @@ Live checks added to the two local sign-up tests: a Nigerian number typed `0803 
 
 Assertions changed (R-85 is the ruling; each pinned the old behaviour): `login-phone-verified.spec.ts` and `test/phone-signup.local.mjs` list the session user's keys and now include `countryCode`; `email-signup.service.spec.ts` "refuses a number that is not Nigerian, or not a number" no longer expects `PHONE_NOT_SUPPORTED` for `+14155552671` (the mailed code keeps it) and keeps the not-a-number checks. Nothing else in a test the task did not write was touched.
 
-Open (for GEO-02, GEO-03 and the sweep): (a) the Hub's `WawuJwtClaims` and its admin screens do not read `countryCode` yet (GEO-02); the app's copy of this contract (`contract/identity/`, `identity.generated.ts`) is not synced (GEO-03: `npm run api -- --identity ../wawu-id`). (b) No route changes the country after sign-up; the internal phone-change routes still store the digits the Hub sends, not E.164 (G-GEO-01-2). (c) Accounts with a non-Nigerian phone stay null; an optional backfill script from the phone is not built (G-GEO-01-3). (d) Kosovo (`XK`) is user-assigned, not ISO, so it is refused; Ascension and Tristan da Cunha numbers count as Saint Helena; `+44 7911` is Guernsey as the library says, and the person can send another country. (e) A login typed as a national number outside Nigeria (`0241234567`) finds nothing: send E.164.
+Open (for GEO-02, GEO-03 and the sweep): (a) the Hub's `WawuJwtClaims` and its admin screens do not read `countryCode` yet (GEO-02); the app's copy of this contract (`contract/identity/`, `identity.generated.ts`) is not synced (GEO-03: `npm run api -- --identity ../wawu-id`). (b) No route changes the country after sign-up; the internal phone-change routes still store the digits the Hub sends, not E.164 (G-GEO-01-2). (c) Accounts with a non-Nigerian phone stay null; an optional backfill script from the phone is not built (G-GEO-01-3). (d) Kosovo (`XK`) is user-assigned, not ISO, so it is refused; Ascension and Tristan da Cunha numbers count as Saint Helena; Guernsey, Jersey and Isle of Man numbers (`+44 ...`) default to `GB`, and the person can send another country. (e) A login typed as a national number outside Nigeria (`0241234567`) finds nothing: send E.164.
 
 ## Read first
 
