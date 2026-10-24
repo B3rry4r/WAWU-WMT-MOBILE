@@ -7,7 +7,7 @@ order: -123
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,15 +17,14 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, **verifying (round 4 built; a fresh Sonnet verifier next)**. Tier T2, backend only. Full reports: [history/AITOOLS-04.md](history/AITOOLS-04.md), sections "Verifier report, round 3" and "Builder report, round 4".
-- **Heads:** backend `wmt/AITOOLS-04` `4dac644` (`origin/main` `0e87d06` merged first; r4 range `df00794..4dac644`); mobile `wmt/AITOOLS-04` carries these records.
-- **r4 rows (round 3 findings):**
-  1. **HIGH 1, transcript note (fixed).** Cleared only by two reads of 404, each with no delete just before it: the first 10 minutes after the job ended, the second 5 minutes after the first (PROVISIONAL settings `ai.copy_confirm_after_minutes` and `ai.copy_confirm_gap_minutes`, `AITOOLS-COPY-CONFIRM`). Deletes go on (first try, 2, 6, 15 and 40 s, then every minute). Stand-in `[[get404-after-delete:MS]]`. Spec: reads `[404, 404, 200, 404, 404, 404]`, note kept until the second clean check, cleared at +17 minutes; a first 404 is taken back when the copy shows again. The r2 "404 inside the window keeps the note" assertion for a transcript is restored.
-  2. **HIGH 2, provider-run read (fixed).** The run takes the quote's place behind the read gate (one per account, shared turns and 512 MB budget, charged the real length from the store) and streams the file (about 64 KB held a job). Measured: 8 jobs, one account: 1 at a time, 2 served, 6 refused busy at once; 20 accounts x 100 MB: **+4 MB RSS** (bound 100 MB); 4 jobs x 150 MB: **+2.9 MB**.
-  3. **MEDIUM, changed assertion (fixed).** Put back as it was; the assertions that pinned the old clearing rule are changed with a comment each (see the builder report).
-  4. **LOW (fixed):** the storage stand-in honours Range (206); the account place and the turn share one 20 s deadline (601 ms in a 600 ms spec, was 900); the turn is charged the real length. LOW (d) and LOW 8 (abandoned uploads, G-AITOOLS-04-2) unchanged.
-- **Checks:** tsc, eslint (no --fix, 15 .ts), 38 suites 503 tests in band, `test:protected` 253/253, contract:build (no diff), gates (0 fail, 133 warn, 88 accepted), check_baseline: all `EXIT 0`. `plans.contract`, `plan-settings-readers` and `plan-settings-round2` not run (they reach the Fintava double); CI runs them. NOT RUN against the real provider.
-- **Next:** a fresh verifier re-runs the real-provider check (6 Captions jobs; every transcript GET 404 after the second clean check, with no manual delete, and delete anything left) and the 8-job single-account memory test through the Hub (RSS bounded).
+As of 24 Oct 2026, **review (round 4 verifier said PASS)**. Tier T2, backend only. A fresh Sonnet verifier (built none of it) checked backend `wmt/AITOOLS-04` `4dac644` (r4 range `df00794..4dac644`). Full report: [history/AITOOLS-04.md](history/AITOOLS-04.md), section "Verifier report, round 4".
+- **Heads:** backend `wmt/AITOOLS-04` `4dac644` (unchanged by the verifier; it merged `origin/main` `0e87d06`); mobile `wmt/AITOOLS-04` carries these records.
+- **HIGH 1, transcript note: fixed, shown on the real provider.** Settings for the run only: `ai.copy_confirm_after_minutes` 2 and `ai.copy_confirm_gap_minutes` 1 (defaults 10 and 5). 6 real Captions jobs on a 3.8 s clip through the Hub (done in 0.4 to 1.3 s): the Hub cleared all 6 notes by its own schedule (5 at 277 s after the jobs started: first 404 written at 06:00:00, 155 s after they ended, second read two sweeps later), no manual delete. Every provider read of every transcript answered 404 from 6 s after the job to the end (about 14 reads each), then 404 again 17 s and 130 s after the clear (round 3: 8 of 9 transcripts answered 200 for 100 s). Nothing left at the provider; the DELETE-by-hand step had nothing to do.
+- **HIGH 2, provider-run read: fixed, shown over HTTP.** 8 jobs created one after another from one account on 100 MB files, the provider holding each 15 s: 8 running at once, Hub RSS 288 to 302 MB against a base of 292 MB (round 3: +1603 MB). 20 accounts x 100 MB at once: 5 served, 15 refused busy in 0.08 to 0.21 s, RSS +274 MB (the 5 quote reads, round 3: +339 MB), `/health` 82 of 82 (slowest 36 ms), nothing held for a refused job (3000 points each), a refused account served again 0.6 s after. Spec numbers reproduce: +9 MB for 20 x 100 MB, +0.1 MB for 4 x 150 MB.
+- **Checks:** tsc, eslint (no --fix, 15 .ts), gates (9, 1784 files, 0 fail, 133 warn, 88 accepted), check_baseline, `test:protected` 253/253, contract:build (no diff): all `EXIT 0`. 40 suites, 529 tests in band (ai-tools 16, storage 19, plan-settings 5 that do not reach Fintava) all pass; two specs need a free port (LOW a).
+- **Not run:** 2 real Clean audio jobs (the key is out of credits: 21 left, 85 needed for 9 s; a 1.75 s clip is refused 400 audio_too_short, minimum 4.6 s; the clean-audio path is unchanged since round 3, which proved one item deleted); `plans.contract`, `plan-settings-readers`, `plan-settings-round2` (they reach the Fintava double; no spec pins the settings count, see the report).
+- **Open (all LOW, go to the sweep):** (a) two r4 specs listen on fixed ports 7921 and 7922; (b) SHARED-CHANGES.md and the task's Provisional figures do not list the two new settings; (c) a run that ends `busy` also deletes the person's uploaded file; (d) the Hub does not refuse a clip under the provider's 4.6 s minimum; (e) the sweep takes 50 rows a minute, oldest first.
+- **Owner questions:** the key has run out of credits (Clean audio cannot be shown again until it is topped up); the PROVISIONAL `AITOOLS-COPY-CONFIRM` figures (10 and 5 minutes) and whether Captions is also offered on a video the person already published (not drawn, not built).
 
 ## Read first
 
