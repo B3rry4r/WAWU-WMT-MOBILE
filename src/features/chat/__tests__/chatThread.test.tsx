@@ -143,15 +143,16 @@ describe('I12: the chat', () => {
 });
 
 describe('I13: Add to chat', () => {
-  it('the + opens the sheet with Send money and Request money, and nothing the app cannot do yet', async () => {
+  // FIX-104 built Photo or video and File, so the two assertions that pinned their absence (R-47) now pin their presence.
+  it('the + opens the sheet with Send money, Request money, Photo or video and File, and not the board\'s "instant"', async () => {
     hub.messages = [textMessage('Hi', false)];
     const h = await boot();
     await rtl.fireEvent.press(rtl.screen.getByTestId('chat-plus'));
     expect(await rtl.screen.findByText('Add to chat')).toBeTruthy();
     expect(rtl.screen.getByText('From your Naira wallet')).toBeTruthy();
     expect(rtl.screen.getByText('Femi pays from their wallet')).toBeTruthy();
-    expect(rtl.screen.queryByText('Photo or video')).toBeNull();
-    expect(rtl.screen.queryByText('File')).toBeNull();
+    expect(rtl.screen.getByText('Photo or video')).toBeTruthy();
+    expect(rtl.screen.getByText('File')).toBeTruthy();
     expect(rtl.screen.queryByText(/instant/)).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('attach-send-money'));
     expect(h.onSendMoney).toHaveBeenCalledWith(expect.objectContaining({ wawuId: OTHER, name: 'Femi Bankole' }));

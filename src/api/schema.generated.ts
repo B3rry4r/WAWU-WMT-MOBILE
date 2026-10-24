@@ -7947,6 +7947,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/chats/attachment-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a chat takes: types and sizes, from the Hub's own limits. */
+        get: operations["ChatController_attachmentRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/messages/{messageId}/attachment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A fresh link to one message's photo, video or file. Only the two people in the chat get one. */
+        get: operations["ChatController_attachmentLink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15390,6 +15424,20 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        ChatAttachmentRule: {
+            contentTypes: string[];
+            maxBytes: number;
+        };
+        ChatAttachmentRules: {
+            media: components["schemas"]["ChatAttachmentRule"];
+            file: components["schemas"]["ChatAttachmentRule"];
+        };
+        ChatAttachmentLink: {
+            url: string;
+            expiresAt: string;
+            contentType: string;
+            name: string | null;
         };
     };
     responses: never;
@@ -30677,6 +30725,47 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    ChatController_attachmentRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAttachmentRules"];
+                };
+            };
+        };
+    };
+    ChatController_attachmentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAttachmentLink"];
                 };
             };
         };

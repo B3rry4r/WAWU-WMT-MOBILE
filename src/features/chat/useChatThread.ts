@@ -5,6 +5,7 @@ import { isApiError } from '@/api/errors';
 import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { refreshInbox } from '@/features/inbox/unread';
 
+import { kindOfType, sendChatFile, uploadChatFile, type ChatFile } from './attachments';
 import {
   chatKey,
   chatMessagesKey,
@@ -18,10 +19,12 @@ import {
   type MoneyRequest,
 } from './api';
 
-/** A text message of the person's own that the Hub has not confirmed yet: on its way, or refused. */
+/** A message of the person's own that the Hub has not confirmed yet: on its way, or refused. Text, or a photo, a video or a file (`file`). */
 export type OutgoingText = {
   localId: string;
   text: string;
+  /** A photo, video or file on its way (FIX-104). `key` is where it landed once uploaded, so a retry after a refused send does not upload it again. */
+  file?: ChatFile & { key?: string };
   /** The message's own id for the Hub: made when it is composed and sent again unchanged on every retry, so a lost answer never posts it twice. */
   clientMessageId: string;
   status: 'sending' | 'failed';
@@ -178,8 +181,47 @@ export function useChatThread(chatId: string, looking: boolean) {
     [take],
   );
 
+  /** The localIds of files being uploaded and sent: a file takes as long as it takes, and never holds up a text message. */
+  const filesRunning = useRef(new Set<string>());
+
+  const runFile = useCallback(
+    async (entry: OutgoingText) => {
+      const file = entry.file;
+      if (!file || filesRunning.current.has(entry.localId)) return;
+      filesRunning.current.add(entry.localId);
+      setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId ? { ...candidate, status: 'sending', error: undefined } : candidate)));
+      let uploadedKey = file.key;
+      try {
+        if (!uploadedKey) {
+          uploadedKey = await uploadChatFile(chatId, file);
+          const key = uploadedKey;
+          setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId && candidate.file ? { ...candidate, file: { ...candidate.file, key } } : candidate)));
+        }
+        const message = await sendChatFile(chatId, uploadedKey, kindOfType(file.contentType) === 'file' ? file.name : null, entry.clientMessageId);
+        file.discard?.();
+        confirm(entry.localId, message);
+      } catch (error) {
+        const refused = isApiError(error) ? error : null;
+        // A refused send (the Hub did not find the file) means the next try uploads it again.
+        const lost = refused?.status === 400;
+        setOutgoing((held) =>
+          held.map((candidate) =>
+            candidate.localId === entry.localId
+              ? { ...candidate, status: 'failed', error: refused?.message ?? 'Something went wrong. Try again.', file: lost && candidate.file ? { ...candidate.file, key: undefined } : candidate.file }
+              : candidate,
+          ),
+        );
+        if (refused?.status === 403) void client.invalidateQueries({ queryKey: chatKey(chatId) });
+      } finally {
+        filesRunning.current.delete(entry.localId);
+      }
+    },
+    [chatId, confirm, client],
+  );
+
   const run = useCallback(
     async (entry: OutgoingText) => {
+      if (entry.file) return runFile(entry);
       if (sending.current) return;
       sending.current = true;
       setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId ? { ...candidate, status: 'sending', error: undefined } : candidate)));
@@ -197,7 +239,7 @@ export function useChatThread(chatId: string, looking: boolean) {
         sending.current = false;
       }
     },
-    [chatId, confirm, client],
+    [chatId, confirm, client, runFile],
   );
 
   /** Sends what was typed. Returns false when nothing was sent (empty text, or a send is still running). */
@@ -213,6 +255,16 @@ export function useChatThread(chatId: string, looking: boolean) {
     [run],
   );
 
+  /** Sends a photo, a video or a file the person chose: a bubble at once, uploaded and sent behind it. */
+  const sendFile = useCallback(
+    (file: ChatFile) => {
+      const entry: OutgoingText = { localId: nextLocalId(), text: '', file, clientMessageId: newClientMessageId(), status: 'sending', createdAt: new Date().toISOString() };
+      setOutgoing((held) => [...held, entry]);
+      void run(entry);
+    },
+    [run],
+  );
+
   const retry = useCallback(
     (localId: string) => {
       const entry = outgoing.find((candidate) => candidate.localId === localId);
@@ -221,7 +273,13 @@ export function useChatThread(chatId: string, looking: boolean) {
     [outgoing, run],
   );
 
-  const discard = useCallback((localId: string) => setOutgoing((held) => held.filter((entry) => entry.localId !== localId)), []);
+  const discard = useCallback(
+    (localId: string) => {
+      outgoing.find((entry) => entry.localId === localId)?.file?.discard?.();
+      setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
+    },
+    [outgoing],
+  );
 
   /** A message the person's own action made (a request they sent) goes into the thread at once. */
   const add = useCallback((message: ChatMessage) => take([message]), [take]);
@@ -232,10 +290,12 @@ export function useChatThread(chatId: string, looking: boolean) {
     items,
     outgoing,
     send,
+    sendFile,
     retry,
     discard,
     add,
     patchRequest,
-    busy: outgoing.some((entry) => entry.status === 'sending'),
+    /** A text message is on its way: Send waits. A file on its way does not stop the next message. */
+    busy: outgoing.some((entry) => entry.status === 'sending' && !entry.file),
   };
 }

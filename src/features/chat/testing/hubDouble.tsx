@@ -47,6 +47,13 @@ export const hub = {
   declines: 0,
   requestReads: 0,
   holdQuote: null as null | Promise<void>,
+  /** FIX-104: what a chat takes, and how the Hub answers a photo, video or file. */
+  attachmentMode: 'ok' as 'ok' | 'bad_type' | 'too_large' | 'storage_full' | 'upload_fails' | 'send_refused_once',
+  presigns: [] as { contentType: string; contentLength: number }[],
+  puts: [] as { key: string; contentType: string; bytes: number }[],
+  sentFiles: [] as { key: string; name: string | null; clientMessageId: string | null }[],
+  linkReads: [] as string[],
+  linkMode: 'ok' as 'ok' | 'fails',
 };
 
 export function resetHub() {
@@ -74,7 +81,41 @@ export function resetHub() {
     declines: 0,
     requestReads: 0,
     holdQuote: null,
+    attachmentMode: 'ok',
+    presigns: [],
+    puts: [],
+    sentFiles: [],
+    linkReads: [],
+    linkMode: 'ok',
   });
+  uploadTypes.clear();
+}
+
+/** The type each signed key was asked for, so the message that carries it is the kind the Hub would make. */
+const uploadTypes = new Map<string, { contentType: string; bytes: number }>();
+
+export const ATTACHMENT_RULES = {
+  media: { contentTypes: ['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/quicktime'], maxBytes: 100 * 1024 * 1024 },
+  file: { contentTypes: ['application/pdf'], maxBytes: 20 * 1024 * 1024 },
+};
+
+export function fileMessage(kind: 'image' | 'video' | 'file', mine: boolean, over: Record<string, unknown> = {}, attachment: Record<string, unknown> = {}) {
+  counter += 1;
+  const contentType = kind === 'image' ? 'image/jpeg' : kind === 'video' ? 'video/mp4' : 'application/pdf';
+  return {
+    id: `m${counter}`,
+    chatId: CHAT,
+    senderWawuId: mine ? ME : OTHER,
+    mine,
+    kind,
+    text: null,
+    attachment: { url: `https://storage.test/read/${kind}-${counter}?X-Amz-Expires=900`, contentType, bytes: 2_400_000, name: kind === 'file' ? 'Invoice.pdf' : null, ...attachment },
+    moneyRequest: null,
+    clientMessageId: null,
+    createdAt: '2026-10-16T17:40:00.000Z',
+    readState: null,
+    ...over,
+  };
 }
 
 export const person = (wawuId: string, name: string, handle: string | null) => ({ wawuId, name, handle, avatarUrl: null, verification });
@@ -214,10 +255,51 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const method = request.method;
   const key = request.headers.get('idempotency-key') ?? '';
   const pin = request.headers.get('x-transaction-pin');
+  // The storage host a presigned upload goes to.
+  if (url.host === 'storage.test') {
+    const stored = decodeURIComponent(url.pathname.slice(1));
+    const sent = init?.body as { size?: number } | undefined;
+    hub.puts.push({ key: stored, contentType: request.headers.get('content-type') ?? '', bytes: sent?.size ?? 0 });
+    if (hub.attachmentMode === 'upload_fails') return new Response('no', { status: 500 });
+    return new Response(null, { status: 200 });
+  }
+  if (path === '/chats/attachment-rules' && method === 'GET') return ok(ATTACHMENT_RULES);
+  if (path === `/chats/${CHAT}/attachments` && method === 'POST') {
+    const body = (await request.json()) as { contentType: string; contentLength: number };
+    hub.presigns.push(body);
+    if (hub.attachmentMode === 'bad_type') return refuse(400, { message: 'A chat can hold a photo (PNG, JPEG or WebP), a video (MP4 or MOV) or a PDF.' });
+    if (hub.attachmentMode === 'too_large') return refuse(413, { message: 'A file in a chat can be up to 20 MB.' });
+    if (hub.attachmentMode === 'storage_full') return refuse(413, { code: 'storage_limit_reached', message: 'This file needs 3 MB, but only 1 MB of your 1 GB storage is free.' });
+    const key = `chat/${body.contentType.startsWith('application') ? 'file' : 'media'}/${ME}/key-${hub.presigns.length}`;
+    uploadTypes.set(key, { contentType: body.contentType, bytes: body.contentLength });
+    return ok({ uploadUrl: `https://storage.test/${key}?X-Amz-Signature=x`, key });
+  }
+  if (path === '/uploads/confirm' && method === 'POST') {
+    const body = (await request.json()) as { key: string };
+    return ok({ key: body.key, status: 'confirmed' });
+  }
+  if (path.startsWith(`/chats/${CHAT}/messages/`) && path.endsWith('/attachment') && method === 'GET') {
+    const id = path.split('/')[4] ?? '';
+    hub.linkReads.push(id);
+    if (hub.linkMode === 'fails') return refuse(503, { message: 'We could not open that file just now. Try again.' });
+    const found = hub.messages.find((m) => m.id === id) as { attachment?: { contentType: string; name: string | null } } | undefined;
+    return ok({ url: `https://storage.test/read/${id}?X-Amz-Expires=900`, expiresAt: '2099-01-01T00:00:00.000Z', contentType: found?.attachment?.contentType ?? 'application/pdf', name: found?.attachment?.name ?? null });
+  }
   if (path === `/chats/${CHAT}` && method === 'GET') return ok(chatSummary());
   if (path === `/chats/${CHAT}/messages` && method === 'GET') return ok({ items: hub.messages, nextCursor: null });
   if (path === `/chats/${CHAT}/messages` && method === 'POST') {
-    const body = (await request.json()) as { text: string; clientMessageId: string | null };
+    const body = (await request.json()) as { text: string; clientMessageId: string | null; attachment?: { key: string; name?: string } };
+    if (body.attachment) {
+      hub.sentFiles.push({ key: body.attachment.key, name: body.attachment.name ?? null, clientMessageId: body.clientMessageId });
+      if (hub.attachmentMode === 'send_refused_once' && hub.sentFiles.length === 1) return refuse(403, { message: 'You can no longer message this person.', code: 'chat_blocked' });
+      const knownFile = hub.messages.find((m) => m.clientMessageId === body.clientMessageId);
+      if (knownFile) return created(knownFile);
+      const stored = uploadTypes.get(body.attachment.key) ?? { contentType: 'application/pdf', bytes: 0 };
+      const kind = stored.contentType.startsWith('image/') ? 'image' : stored.contentType.startsWith('video/') ? 'video' : 'file';
+      const made = { ...fileMessage(kind, true, { clientMessageId: body.clientMessageId, createdAt: new Date().toISOString() }, { contentType: stored.contentType, bytes: stored.bytes, name: body.attachment.name ?? null }) };
+      hub.messages.unshift(made);
+      return created(made);
+    }
     hub.sentTexts.push({ text: body.text, clientMessageId: body.clientMessageId });
     const known = hub.messages.find((m) => m.clientMessageId === body.clientMessageId);
     if (hub.textMode === 'lost_before' && hub.sentTexts.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
