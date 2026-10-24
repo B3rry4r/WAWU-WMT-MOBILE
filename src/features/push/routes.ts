@@ -140,6 +140,12 @@ export function routeForPush(raw: unknown): Href | null {
     // A declined request names no room: the rooms are the Inbox's Communities chip.
     case 'community_join_declined':
       return '/inbox';
+    // FIX-105 (R-81): new messages in a room the person joined, one grouped notice per room. It opens that room; with no
+    // room named (the room was deleted) it opens the Inbox, where the rooms are the Communities chip.
+    case 'community_messages': {
+      const id = targetOf(data, 'community');
+      return id ? { pathname: '/community/[id]', params: { id } } : (routeForAction(data.actionHref) ?? '/inbox');
+    }
     case 'community_pass_ending': {
       // INBOX-14 (R-63): the reminder 3 days before a pass ends opens that room's pass, where one tap renews it.
       const id = targetOf(data, 'community');

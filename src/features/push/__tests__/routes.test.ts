@@ -67,6 +67,14 @@ describe('where a tap on a notification goes (INBOX-21)', () => {
     expect(routeForPush({ actionHref: '/wallet' })).toBeNull();
   });
 
+  it('FIX-105: a grouped "new messages" notice opens that room; with no room named it opens the Inbox, and an odd id is not followed', () => {
+    expect(routeForPush({ kind: 'community_messages', target: { kind: 'community', id: 'r-1' } })).toEqual({ pathname: '/community/[id]', params: { id: 'r-1' } });
+    expect(routeForPush({ kind: 'community_messages', actionHref: '/communities/r-2' })).toEqual({ pathname: '/community/[id]', params: { id: 'r-2' } });
+    expect(routeForPush({ kind: 'community_messages' })).toBe('/inbox');
+    expect(routeForPush({ kind: 'community_messages', target: { kind: 'community', id: '../wallet' } })).toBe('/inbox');
+    expect(routeForPush({ kind: 'community_messages', target: { kind: 'profile', id: 'u1' } })).toBe('/inbox');
+  });
+
   it('reads anything else as no tap target', () => {
     for (const data of [undefined, null, 'sale', 7, [], {}]) expect(routeForPush(data)).toBeNull();
   });

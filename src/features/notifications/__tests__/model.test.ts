@@ -15,6 +15,7 @@ describe('Notification words', () => {
     expect(iconOf('sale')).toBe('ShoppingBag');
     expect(iconOf('content_rejected')).toBe('CircleX');
     expect(iconOf('something_new')).toBe('Bell');
+    expect(iconOf('community_messages')).toBe('MessageCircle');
   });
 
   it('uses the Hub\'s tone, and the accent M31 draws on a new follower', () => {
@@ -29,6 +30,8 @@ describe('Notification words', () => {
     expect(routeOf({ kind: 'money_in', target: { kind: 'transaction', id: 't1', title: null, deadlineAt: null } })).toEqual({ pathname: '/transactions/[id]', params: { id: 't1' } });
     // FIX-102: a sale opens the earnings (it opened the wallet), a piece and a follower open their own pages (they opened nothing).
     expect(routeOf({ kind: 'sale', target: null })).toBe('/earnings');
+    expect(routeOf({ kind: 'community_messages', actionHref: '/communities/r1', target: { kind: 'community', id: 'r1', title: null, deadlineAt: null } })).toEqual({ pathname: '/community/[id]', params: { id: 'r1' } });
+    expect(routeOf({ kind: 'community_messages', target: null, category: 'messages' })).toBe('/inbox');
     expect(routeOf({ kind: 'dm_received', target: null })).toBe('/inbox');
     expect(routeOf({ kind: 'content_published', target: { kind: 'content', id: 'p1', title: null, deadlineAt: null } })).toEqual({ pathname: '/content/[id]', params: { id: 'p1' } });
     expect(routeOf({ kind: 'new_follower', target: { kind: 'profile', id: 'u1', title: null, deadlineAt: null } })).toEqual({ pathname: '/profile/[wawuId]', params: { wawuId: 'u1' } });

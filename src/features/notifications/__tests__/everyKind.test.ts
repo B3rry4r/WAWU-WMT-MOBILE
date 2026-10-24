@@ -36,6 +36,7 @@ const AS_SENT: Record<HubNotificationKind, Sample> = {
   community_join_declined: { target: null },
   community_pass_ending: { target: { kind: 'community', id: 'r1' } },
   community_pass_refunded: { target: null },
+  community_messages: { target: { kind: 'community', id: 'r1' }, actionHref: '/communities/r1' },
   legal_delivered: { target: null, actionHref: '/legal/requests/m1' },
   tgif_daily: { target: { kind: 'tgif_day', id: '2026-10-23' } },
   money_in: { target: { kind: 'transaction', id: 't1' } },
