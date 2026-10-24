@@ -173,6 +173,9 @@ export default function RootLayout() {
           <Stack.Screen name="capital/product" />
           <Stack.Screen name="capital/review" />
           <Stack.Screen name="capital/withdraw" />
+          <Stack.Screen name="cards/[id]" />
+          <Stack.Screen name="cards/index" />
+          <Stack.Screen name="cards/new" />
           <Stack.Screen name="change-pin" />
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="chat/send" />

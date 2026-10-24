@@ -44,6 +44,8 @@ export type WalletSettingsScreenProps = {
   onOpenWallet: () => void;
   /** Statements: W38. Without it the row is not drawn. */
   onOpenStatements?: () => void;
+  /** Cards (WALLET-22, R-84): the row's second line and where it leads. Without it the row is not drawn (cards are off at the Hub). */
+  cards?: { subtitle: string; onOpen: () => void };
 };
 
 /**
@@ -53,15 +55,15 @@ export type WalletSettingsScreenProps = {
  * otherwise.
  *
  * Drawn: what has a screen behind it or says something true by itself (R-47). Statements (WALLET-35) leads to W38 and
- * is drawn when the route gives it somewhere to go; W38's "Toast on W35" shows over this page. Left out, each added as
- * drawn by the task that builds where it leads: Cards (WALLET-22). Fingerprint or face for payments is drawn when this phone can keep a
+ * is drawn when the route gives it somewhere to go; W38's "Toast on W35" shows over this page. Cards (WALLET-22, R-84) is drawn
+ * while the Hub says cards are on. Fingerprint or face for payments is drawn when this phone can keep a
  * key behind a biometric (FIX-108; SHARED-CHANGES WALLET-06 #1): the switch makes the key, asks the PIN on a sheet with no amount, and
  * registers it (`PUT /money/device`); off turns it off at the Hub and drops the key. Help with a payment, the
  * last row, opens the support chat (I12) with nothing attached, since no one payment is being asked about (SUPPORT-01, R-30; the
  * chat's own entries from H18 and W27 attach theirs). Beneficiaries is not drawn: no screen lists the saved recipients yet (a person
  * saves one from a receipt, W12), and a row that opens nothing is not shown (R-47, SWEEP-FLOWS B9). The screen that builds the list adds it.
  */
-export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements }: WalletSettingsScreenProps) {
+export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
   const [showAccount, setShowAccount] = useState(false);
@@ -155,6 +157,7 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
         onCreatePin={onCreatePin}
         onOpenAccount={() => setShowAccount(true)}
         onOpenStatements={onOpenStatements}
+        cards={cards}
         onOpenHelp={() => void support.open()}
         biometric={
           approval.support !== null
@@ -194,10 +197,11 @@ type SettingsProps = {
   onCreatePin: () => void;
   onOpenAccount: () => void;
   onOpenStatements?: () => void;
+  cards?: { subtitle: string; onOpen: () => void };
   onOpenHelp: () => void;
 };
 
-function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, onOpenHelp }: SettingsProps) {
+function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenHelp }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -223,6 +227,9 @@ function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOp
           onPress={data.pin.isSet ? onOpenPin : onCreatePin}
         />
         {biometric ? <BiometricRow {...biometric} /> : null}
+        {cards ? (
+          <ListRow testID="wallet-settings-cards" lead={<IconTile icon="CreditCard" size={ROW_TILE} />} title="Cards" subtitle={cards.subtitle} onPress={cards.onOpen} />
+        ) : null}
       </GroupedList>
       <GroupedList testID="wallet-settings-account">
         {onOpenStatements ? (

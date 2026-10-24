@@ -107,4 +107,23 @@ Run by the NUV-12 builder (Sonnet, T2) against Nuvion DEV only (`https://api.nuv
 | `POST .../withdrawal` again | REFUSED | 400 `error_operation_invalid_for_state` (the docs say a terminal account returns its state). |
 
 Facts the Hub leans on: a Capital transfer's `unique_reference` is Nuvion's own, so a delivery is matched to its order by the holding's `user_capital_account_id` (payout) or by person, amount and the one unattached order (purchase). Webhooks `capital_orders.*` and `capital_accounts.*` were NOT RUN (the dev endpoint is blacklisted); the handler re-reads the order and acts only on what it reads.
+## WALLET-31 · the card (24 Oct 2026, Nuvion DEV only, `api.nuvion.dev`)
+
+Run by the WALLET-31 builder (Sonnet, T2) with the dev key, on the dev parent entity and on a finished verifier child entity. No card number or CVV is recorded here.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `POST /virtual-cards` and `/disposable-cards` | PASSED (201) | A USD card on a naira account (no USD account needed); the answer carries the number and CVV once and no `type`. Nuvion took its fee at once from the funding account: **65,772 kobo (NGN 657.72), the same for both kinds** (parent operational 382,500 to 316,728 to 250,956; child 434,525 to 368,753). Create took 19 s through the Hub's own client (request 01M5PZSB0AC91BAWRYP3JPHS5H). |
+| A funding account below the fee | PASSED | 400 `error_card_creation_fee_required`, "Card creation requires at least 657.72 NGN to be available for the card creation fee". |
+| A EUR card | PASSED | 400 `error_operation_invalid_for_state`. |
+| `GET /cards` | PASSED | `data.cards` and `data.pagination` (not `data.data`); rows carry `last4`, `expiration_month`, `expiration_year` (null on dev) beyond the docs; a frozen card is listed with `blocked`, a deleted one is not. |
+| `GET /card-details/{id}` | PASSED | The full number, expiry, CVV, holder and a Miami billing address (the same one for every card). |
+| `entity_id` placement | PASSED | A query on GETs; a **body field** on `PATCH .../freeze`, `.../unfreeze` and `DELETE /card-details/{id}` (a query there is 404, so is a card asked for without the child's entity). |
+| Freeze, unfreeze | PASSED | Both idempotent (a second call is 200). Freeze took 12 s once. |
+| Delete | PASSED | 200 `blocked`; a second delete, details, unfreeze and transactions are all 404 `error_resource_not_found` ("Card not accessible by this entity" for transactions). |
+| `GET /card-transactions/{id}` | PASSED for the shape | `data.payments`, empty: dev has no way to make a card payment (no simulate route, no merchant), so payment rows, reversals and refunds are read from the docs' shape only. |
+| The cardholder | PASSED | Read from the person's entity (`person.first_name`, `last_name`, `email`, `phonenumber`); nothing is asked of the person. |
+| Webhooks (`cards.*`) | NOT RUN | Dev's webhook endpoint cannot reach this machine; the handler is run against signed-shape deliveries in the Hub's spec. |
+
+The Hub's own cards area ran the whole cycle on dev: create, find by reference, get, reveal (16 digits, 3 CVV, `09/28`), transactions, freeze, get (`blocked`), unfreeze, get (`active`), delete, delete again (not_found), get, reveal, find (null), transactions (not_found). Cards made on dev: all deleted at the end.
 
