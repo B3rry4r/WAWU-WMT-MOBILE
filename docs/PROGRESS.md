@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
-| building | 3 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 45 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -63,6 +63,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -226,7 +227,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
@@ -424,6 +424,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · WALLET-41 round 1 · The verifier's FIX built (Sonnet builder, T2; backend `wmt/WALLET-41` `ff088fa` with `origin/main` `53819c2` merged, mobile `wmt/WALLET-41`; status verifying): residence (the account's country) decides which opening starts, one wallet per document number, a world person swaps between foreign accounts and sends coins out and sets a PIN with no naira wallet, deletion with foreign money is refused (proven live), the first-account backstop asks Nuvion, the app marks the fields the Hub names, forks and lint fixed. Migration `20261125090000_world_wallet`. Gaps G-WALLET-41-3, -5, -6 rewritten, -9 added.
 - 24 Oct 2026 · WALLET-41 · Built (Sonnet builder, T2, bundle B29; backend `wmt/WALLET-41` `84c8ecc` and mobile `wmt/WALLET-41`, both on `wmt/WALLET-21-HUB` `d39a868` and `14da2683`; status verifying; no PR): R-87. A person whose number is from outside Nigeria is asked where they live, then opens a wallet with no BVN (their country's ID, the two documents, the hosted selfie), and their first account is opened in their country's currency or their pick (US USD, GB GBP, euro countries EUR, CA CAD, AE AED, GH GHS, else USD; a config table). The Wallet tab lists their foreign accounts. Switch, fee (0) and limits from config; admin list, freeze, unfreeze and cancel with an audit row. Real Nuvion DEV: seven countries approved with no BVN or SSN; AED and Kenya USD details refused (G-WALLET-41-2). Migration `20261118090000_world_wallet`. Gaps G-WALLET-41-1 to 8.
 - 24 Oct 2026 · FIX-109 · Built in part (Sonnet builder, T1; backend `wmt/FIX-109` on `origin/main` `0e87d06`, mobile `wmt/FIX-109` on `origin/main` `2847eb32`; status verifying): the paid thread has "+" (Add to chat, through the free chat) and "..." (Report, Block), W38 can confirm the account's email (`/confirm-email`), and W15, W17, W19 and W45 say "Free" and how long a bank transfer takes only when the Hub serves it (new settings `MONEY_ARRIVAL_BANK_OUT_MINUTES` and `MONEY_ARRIVAL_BANK_IN_MINUTES`, unset today). Gap rows G-INBOX-18-2, -3, G-486, G-WALLET-05-2, -3, -5, G-FIX-68-1, -2 closed; G-FIX-109-1 added. The Money filter (G-INBOX-15-1) is NOT built.
 - 24 Oct 2026 · FIX-113 · Built (Sonnet builder, T1; mobile `wmt/FIX-113` on `origin/main` `fbf8c725`; app only, no backend change, status verifying): the Profile half FIX-110 did not reach. M8 draws an Experience section (a row per role and "Add a role"; a new role screen adds, changes and removes one: `POST`/`PATCH`/`DELETE /users/me/experience`) and a Skills and expertise box saved with M8's Save (`PATCH /users/me/profile-fields`); M4 shows both once written. M36 takes a multi-line Description (the Hub's 1000 characters); the owner can Edit a work on M35 (`PATCH /users/me/featured-works/{id}`, fields only) and Reorder their works on M34 (`PUT /users/me/featured-works/order`). Closes G-292, G-251 and G-252; G-FIX-113-1 asks the designer to draw what was built from shared parts (R-29); SHARED-CHANGES FIX-113 #1 lists `/role` under the signed-in guard. One assertion changed: `works/form.test.ts` pinned the limits object, which now carries the description's 1000.
@@ -438,4 +439,3 @@ From `docs/LOG.md`, newest first.
 - 24 Oct 2026 · AITOOLS-07 · Round 2 built (Sonnet builder, T2, bundle B10; backend `wmt/AITOOLS-07` `8f1fe8d`, mobile `wmt/AITOOLS-07` with `origin/main` `206365d8` merged; status verifying): a person can play a voice's sample, agree to and use "Your voice" (their Voice Intro recording, a clone made for one run and deleted), Save a VoiceOver result and attach it to a draft, run live on a local stack in light and dark beside PT2 and PT2b. The red `voiceExtras` test was a wrong test (the testing library's `render` and `fireEvent` are async), not the screen. Found live and fixed: the sample route's same-origin header blocked a web player; the result rows now use the shared grouped card; success notices wear the tick. `test:protected` is 253/253 on this branch and on `origin/main` with `db:seed` and the plain mock id (round 1's 5 failures were its environment). G-AITOOLS-01-1, G-AITOOLS-01-4, G-POINTS-08-1, G-POINTS-08-2 and G-VOICE-01-6 closed; G-AITOOLS-07-5 and -6 filed.
 - 24 Oct 2026 · FIX-105 round 2 · The verifier's FIX built (Sonnet builder, T1; backend `wmt/FIX-105` `f5aa816` on `origin/main` `21cba57`, mobile `wmt/FIX-105` on `origin/main` `e4d88d6`; status verifying): a notice now counts each message once whatever is replayed (a person's mark for a room is the largest `countedUpTo` of all their notices for it), and a room that fails goes on a retry list (additive migration `20261102090100`) and never holds the other rooms; a muted person's unread notice stays unread; the notification list reads the Hub again on focus, when the app returns to the front and on a pull; `stack.sh` prints the app at localhost. Live check NOT RUN.
 - 24 Oct 2026 · FIX-105 · Built (Sonnet builder, T1; backend `wmt/FIX-105` on `origin/main` `fefc1ec`, mobile `wmt/FIX-105` on `origin/main` `74a040e7`; status verifying): R-81, a person is told when a community they joined has new messages, as ONE grouped notice per room that is updated until they open it; never for their own messages; the Z3 "Community messages" switch mutes it; it is pushed once per notice. Closes G-21. A sweep folds settled messages in pages of 500 members (six statements a page), the request path writes nothing. The app maps the new kind to the room. Live-walk pictures NOT RUN.
-- 24 Oct 2026 · SIGNUP-NAMES · Round 3 built (Sonnet builder, T2; mobile and backend `wmt/SIGNUP-NAMES`, Hub `e547602`; status verifying): the username check compares `lower(handle) = lower($1)` (an underscore was a wildcard, M1); Edit profile changes the username through the new `PUT /users/me/handle` under the sign-up rules while `PATCH /users/me` stays as it was (M2, lead ruling; gap G-SIGNUP-NAMES-1: the web can still make case-variant duplicates until it follows); reserved list gains `me`, `root`, `login`, `logout`, `signup`, `settings`, `www`; a username needs a letter or number; a name with a control character is a 400, not a 502; specs for the 60 a minute limit and for underscore names. `test:protected` 253 of 253.

@@ -21,6 +21,7 @@ import { openingProgressQuery, type OpeningProgress } from './api/review';
 import { ChoiceField, ChoiceSheet } from './ChoiceField';
 import { DetailsNeeded } from './DetailsNeeded';
 import { fileLine, pickFailure, sendFailure, type Failure } from './documentCopy';
+import { markFields, type MarkedFields } from './hubFields';
 import { labelOf, POSTAL_NEEDS, PROOF_TYPE_NEEDS, PROOF_TYPES, postalProblem } from './documentFields';
 import { FileRow, UploadTile } from './DocumentParts';
 import { pickProofFile } from './documents/pick';
@@ -104,6 +105,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   });
   const scrollRef = useRef<ScrollView>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
+  // WALLET-41 round 1: the fields the Hub named when it refused the details, and its sentence for them.
+  const [hubMarks, setHubMarks] = useState<(MarkedFields & { words: string }) | null>(null);
   const [needsDetails, setNeedsDetails] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -206,6 +209,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
+    setHubMarks(null);
     setNeedsDetails(false);
     // Until the send is over and this screen has routed by the Hub's last answer, no screen under it reads the
     // half-way answers as "back to the documents" (DV2-05 round 2). A new send is a new chance for the selfie step.
@@ -241,7 +245,18 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
         void queryClient.invalidateQueries({ queryKey: [OPEN_WALLET_KEY] });
         onSubmitted();
       } else {
-        setFailure(sendFailure(error, step === 'details' ? "We couldn't send your details" : "We couldn't send your documents"));
+        const named = step === 'details' && isApiError(error) ? error.detail?.fields : undefined;
+        if (named && named.length > 0 && isApiError(error)) {
+          // The Hub says which fields: those are marked, with its words, and the others are listed (nothing else is).
+          const marks = markFields(named, ['address', 'postalCode', 'proofType']);
+          setHubMarks({ ...marks, words: error.message });
+          setFailure({
+            title: "We couldn't send your details",
+            body: marks.elsewhere.length > 0 ? `${error.message} Also: ${marks.elsewhere.join(', ')}.` : error.message,
+          });
+        } else {
+          setFailure(sendFailure(error, step === 'details' ? "We couldn't send your details" : "We couldn't send your documents"));
+        }
       }
     } finally {
       endSend();
@@ -272,7 +287,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
           testID="open-wallet-address-field"
           value={draft.address}
           onChangeText={edit}
-          error={(shows || touched) && problem ? problem : undefined}
+          error={hubMarks?.keys.includes('address') ? hubMarks.words : (shows || touched) && problem ? problem : undefined}
           onBlur={() => setTouched(true)}
           maxLength={ADDRESS_MAX}
           autoComplete="street-address"
@@ -288,7 +303,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
             testID="open-wallet-postal"
             value={draft.postalCode}
             onChangeText={(value) => owner && !busy && setPostalCode(owner, value)}
-            error={shows && postalIssue ? POSTAL_NEEDS : undefined}
+            error={hubMarks?.keys.includes('postalCode') ? hubMarks.words : shows && postalIssue ? POSTAL_NEEDS : undefined}
             maxLength={20}
             autoComplete="postal-code"
             textContentType="postalCode"
@@ -302,7 +317,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
             label="Document type"
             value={labelOf(PROOF_TYPES, draft.proofType)}
             onPress={() => setChoosing(true)}
-            error={shows && typeIssue ? typeIssue : undefined}
+            error={hubMarks?.keys.includes('proofType') ? hubMarks.words : shows && typeIssue ? typeIssue : undefined}
             disabled={busy}
             testID="open-wallet-proof-type"
           />

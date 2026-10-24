@@ -26,7 +26,7 @@ import { CountryStep } from './CountryStep';
 import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, keepWorld, readNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
-import { useSessionAccount } from './sessionAccount';
+import { useAccountCountry, useSessionAccount } from './sessionAccount';
 
 /** design/_gen/auth.js line 54 (A3 and A14): `h1` at 24 (the theme's h1), line 1.15; 6 between title and line; 14 between the parts. */
 const TITLE_LEADING = 1.15;
@@ -100,6 +100,8 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   const [nigeria, setNigeria] = useState(false);
   const kept = useKeptCheck(owner);
   const signedInAs = useSessionAccount(owner);
+  // WALLET-41 round 1: the country on the account decides which opening starts, as the Hub reads it (undefined while read).
+  const residence = useAccountCountry();
 
   // A26's reads go with it: when it closes and when the session ends.
   useEffect(() => {
@@ -145,7 +147,7 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   // Nothing is shown until the account read is known to be the signed-in one.
   // A progress read that failed leaves the older opening (the BVN check), which asks the Hub itself.
   const flowKnown = progress.data !== undefined || progress.isError;
-  if (!account.data || !wallet.data || !identity.data || !flowKnown || signedInAs !== account.data.wawuUserId) return <Loading onClose={onClose} />;
+  if (!account.data || !wallet.data || !identity.data || !flowKnown || residence === undefined || signedInAs !== account.data.wawuUserId) return <Loading onClose={onClose} />;
 
   if (wallet.data === 'open' || wallet.data === 'frozen') {
     return <Ending ended={{ end: 'wallet_open' }} onClose={onClose} />;
@@ -167,11 +169,14 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
   const confirmed = kept && kept.identity.bvn && identity.data.bvn?.last4 === kept.identity.bvn.last4 ? kept : null;
   if (confirmed) return <Confirmed check={confirmed} onClose={onClose} onContinue={onContinue} />;
 
-  // WALLET-41 (R-87): an account with a number from outside Nigeria is asked where it lives first. The Hub
-  // opens a wallet without a BVN for another country only on the opening that reviews the person (Nuvion).
-  if (progress.data?.flow === 'review' && !nigeria && account.data && isAbroadNumber(account.data.phone)) {
+  // WALLET-41 (R-87, round 1): the country on the account decides. A person who lives in Nigeria opens with their BVN
+  // and is not asked; one who lives elsewhere goes on with that country (the Hub refuses any other). An account with
+  // no country yet and a number from outside Nigeria is asked where it lives, and the Hub says plainly if that is not
+  // what the account holds. The Hub opens a wallet without a BVN only on the opening that reviews the person (Nuvion).
+  if (progress.data?.flow === 'review' && !nigeria && residence !== 'NG' && account.data && (residence !== null || isAbroadNumber(account.data.phone))) {
     return (
       <CountryStep
+        fixedCountry={residence}
         onClose={onClose}
         onNigeria={() => setNigeria(true)}
         onAbroad={(choice) => {

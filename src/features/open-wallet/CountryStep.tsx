@@ -47,6 +47,8 @@ export const UNAVAILABLE_COPY: Record<WorldUnavailable, string> = {
 export type CountryChoice = { country: string; currency: FiatCode | null };
 
 export type CountryStepProps = {
+  /** The country on the account (WAWU ID's claim): shown as it is, with no list to pick from. Null asks the person. */
+  fixedCountry?: string | null;
   onClose: () => void;
   /** Nigeria was chosen: the BVN and NIN step follows, unchanged (R-6). */
   onNigeria: () => void;
@@ -63,11 +65,12 @@ export type CountryStepProps = {
  * is switched off are the Hub's (`GET /money/world/countries` and `/options`), never the app's.
  */
 export function CountryStep({
+  fixedCountry = null,
   onClose,
   onNigeria,
   onAbroad,
 }: CountryStepProps) {
-  const [country, setCountry] = useState<{ code: string; name: string } | null>(
+  const [picked, setCountry] = useState<{ code: string; name: string } | null>(
     null,
   );
   const [pickedCurrency, setPickedCurrency] = useState<FiatCode | null>(null);
@@ -81,6 +84,15 @@ export function CountryStep({
     queryFn: fetchCountries,
     staleTime: 60 * 60_000,
   });
+  const country = fixedCountry
+    ? {
+        code: fixedCountry,
+        name:
+          countries.data?.find((c) => c.code === fixedCountry)?.name ??
+          fixedCountry,
+      }
+    : picked;
+
   const options = useQuery({
     queryKey: ["world", "options", country?.code ?? ""],
     queryFn: () => fetchWorldOptions(country!.code),
@@ -177,6 +189,7 @@ export function CountryStep({
             label="Country"
             value={country?.name ?? null}
             onPress={() => setPickingCountry(true)}
+            disabled={fixedCountry !== null}
             error={missing}
             testID="open-wallet-country-field"
           />

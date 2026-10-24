@@ -69,13 +69,15 @@ const { ReviewDetailsForm } =
   require("../ReviewDetailsForm") as typeof import("../ReviewDetailsForm");
 const kept = require("../keptCheck") as typeof import("../keptCheck");
 const submit = require("../submit") as typeof import("../submit");
-const person = require("../reviewDetails") as typeof import("../reviewDetails");
 
 const clients: QueryClient[] = [];
+/** The country on the account, as WAWU ID's `countryCode` claim carries it; none by default. */
+let residenceClaim: string | undefined;
 const tokenFor = (sub: string) => {
   const part = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
-  return `${part({ alg: "RS256" })}.${part({ sub })}.signature`;
+  const claims = residenceClaim ? { sub, countryCode: residenceClaim } : { sub };
+  return `${part({ alg: "RS256" })}.${part(claims)}.signature`;
 };
 
 const COUNTRIES = [
@@ -165,10 +167,12 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  residenceClaim = undefined;
   sent = [];
   optionsFor = null;
   mockStored.length = 0;
   mockVault.clear();
+  residenceClaim = residenceClaim ?? undefined;
   mockVault.set("wawu.session.access", tokenFor(OWNER));
   mockVault.set("wawu.session.refresh", "refresh-1");
   kept.forgetKeptCheck();
@@ -288,6 +292,71 @@ describe("A31 for a person whose number is from outside Nigeria", () => {
     );
     expect(await app.screen.findByTestId("country-GH")).toBeTruthy();
     expect(app.screen.queryByTestId("country-US")).toBeNull();
+  });
+});
+
+describe("residence decides, not the phone (round 1)", () => {
+  it("an account that lives in the United Kingdom is shown that country, not a list, and goes on with it", async () => {
+    residenceClaim = "GB";
+    mockVault.set("wawu.session.access", tokenFor(OWNER));
+    serve();
+    serveOptionsByCountry();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen onClose={onClose} onContinue={onContinue} />
+    ));
+    expect(await app.screen.findByText("United Kingdom")).toBeTruthy();
+    expect(await app.screen.findByText("British pound")).toBeTruthy();
+    await rtl.fireEvent.press(app.screen.getByTestId("open-wallet-country-continue"));
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
+    expect(kept.readWorld(OWNER)).toEqual({ country: "GB", currency: "GBP" });
+  });
+
+  it("an account that lives in Nigeria goes to the BVN even with a number from another country", async () => {
+    residenceClaim = "NG";
+    mockVault.set("wawu.session.access", tokenFor(OWNER));
+    serve();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen onClose={onClose} onContinue={onContinue} />
+    ));
+    expect(await app.screen.findByTestId("open-wallet-bvn")).toBeTruthy();
+    expect(app.screen.queryByTestId("open-wallet-country")).toBeNull();
+  });
+
+  it("the claim is read as the Hub reads it: two letters, any case, or nothing", () => {
+    const { countryCodeOfToken } = require("../sessionAccount") as typeof import("../sessionAccount");
+    const t = (claims: object) => {
+      const part = (v: object) => Buffer.from(JSON.stringify(v)).toString("base64url");
+      return `${part({ alg: "RS256" })}.${part(claims)}.x`;
+    };
+    expect(countryCodeOfToken(t({ sub: "a", countryCode: "gb" }))).toBe("GB");
+    expect(countryCodeOfToken(t({ sub: "a", countryCode: "United Kingdom" }))).toBeNull();
+    expect(countryCodeOfToken(t({ sub: "a", country: "GB" }))).toBeNull();
+    expect(countryCodeOfToken(null)).toBeNull();
+  });
+});
+
+describe("a refused opening names its fields (round 1)", () => {
+  const { markFields } = require("../hubFields") as typeof import("../hubFields");
+  const { toApiError } = require("@/api/errors") as typeof import("@/api/errors");
+  it("keeps reason.fields on the error, and only names", () => {
+    const e = toApiError(409, {
+      statusCode: 409,
+      message: "Check this and try again.",
+      reason: { code: "account_not_opened", message: "Check this and try again.", fields: ["person.ssn", "address.postal_code", 7, "bad name!"] },
+    });
+    expect(e.detail?.fields).toEqual(["person.ssn", "address.postal_code"]);
+  });
+  it("marks exactly the fields the screen has, lists the rest in plain words, drops none", () => {
+    const marks = markFields(
+      ["address.postal_code", "person.ssn", "identification.document.number", "person.date_of_birth", "address.line_1", "person.favourite_colour"],
+      ["address", "postalCode", "proofType"],
+    );
+    expect(marks.keys).toEqual(["postalCode", "address"]);
+    expect(marks.elsewhere).toEqual(["Social security number", "ID number", "Date of birth", "Favourite colour"]);
+  });
+  it("a field the app does not know is shown humanised, never hidden", () => {
+    expect(markFields(["person.tax_id"], []).elsewhere).toEqual(["Tax number"]);
+    expect(markFields(undefined, ["address"])).toEqual({ keys: [], elsewhere: [] });
   });
 });
 
