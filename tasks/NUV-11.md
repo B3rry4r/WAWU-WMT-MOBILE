@@ -7,7 +7,7 @@ order: -174
 priority: launch
 repo: wawu-backend
 type: mobile-screen
-status: verifying
+status: building
 depends_on: []
 decisions: [R-84, R-83, R-39, R-10, R-20, R-29, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V8, V9]
@@ -66,6 +66,39 @@ Backend `src/money/abroad/`, `src/nuvion/areas/abroad.ts`, `src/nuvion/handlers/
 - [x] An admin (superadmin or finance) can list sends, freeze a person and cancel a send Nuvion never received, each with an audit row.
 - [ ] A send completes, fails or is returned on a real transfer: NOT RUN (dev never settles one).
 - [ ] On a phone: NOT RUN (no device in this session).
+
+## Verifier report
+
+Verifier 24 Oct 2026 (Sonnet, T2; built none of it). Backend `b937df0` against `d39a868`, mobile `d2067eaa` against `14da2683`. **Verdict: FIX** (two medium, five low). Live: the Hub on Nuvion DEV (`api.nuvion.dev` only) with the app's web export at 390 x 844, real sign-in through the stack's identity service; one real USD to GHS send. Pictures (light and dark): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/nuv-11-v/shots/` (01 send tabs, 02 Abroad home, 03 country, 04 new recipient, 05 amount, 05b naira with no rate, 06 quote, 07 review, 08 PIN, 09 receipt), beside the builder's in `nuv-11-b/shots/`.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| Gates | passed | backend gates 0 fail (9 gates, 1865 files), baseline check EXIT 0; app gates 0 fail (10 gates, 1315 files), baseline 0, EXIT 0 |
+| Types, lint | passed | backend tsc EXIT 0; eslint (no --fix) on the 25 changed files EXIT 0; app tsc EXIT 0 |
+| Specs | passed | backend 7 suites 145 tests EXIT 0 (abroad service, Nuvion abroad area, publishing-gate-coverage, hub-rate-limits, money-contract, plan-settings, nuvion-webhook; none imports the Fintava double); app jest abroad, send and route-guard 8 suites 381 tests EXIT 0 |
+| V3 Protected | passed | `scripts/protected-routes/run.sh --fresh` on a seeded database: all 244 required tests passed, EXIT 0 |
+| Contract | passed | `contract:build` leaves `contract/openapi.json` unchanged (git diff empty) |
+| Rollback | passed | `rollback.sql` refuses with a real send row ("sends abroad are stored and would be lost"), drops all five tables with none (run inside a rolled-back transaction) |
+| V9 Live seam | passed | signed in as a seeded person through the app; the Hub on Nuvion DEV read the person's accounts (NGN 2000 kobo, USD 925 cents, GBP 0) |
+| V7 Flow | passed, fresh person only | Send shows the Abroad tab while the Hub says enabled; saved recipient; country list (Uganda, Hong Kong, Singapore, Mexico say "We cannot send here yet"); momo and bank forms; amount with source choice; quote; review; PIN sheet; receipt |
+| V6 States | partly | live: no rate from naira to cedis ("This can't be quoted", plain), a recipient with no phone (422 `recipient_details_invalid`, `fields: [phone_number]`), a corridor that is off (422), an amount above the corridor (400 with `maximumMinor`), wrong PIN (403, 4 tries left), a used quote (409 `quote_expired`). NOT RUN live: a send Nuvion refuses after the PIN, a failed and a reversed send (dev gives no way to make one) |
+| V8 Money | partly | live: one Idempotency-Key twice answered the same send id (`Idempotent-Replayed: true`), the USD account fell once (925 to 675 cents = 100 + the partner's 150). NOT RUN live: WAWU fee above 0 (see F1), a failed or reversed send, a replayed or forged webhook. Reviewed in code: the row is `sending` before the call, a lost answer is found by reference, `apply` is idempotent, the fee leg's reference is `<reference>-fee` (the provider's book store dedupes it) and goes to the operational account |
+| Corridors vs Nuvion | passed, with a limit | `dev-matrix.ts` saved a recipient on Nuvion DEV for every corridor, way and scheme the Hub draws, with only the fields the form asks: 34 accepted (GH, KE, TZ momo and bank, UG, ZA, GB, US ach/wire/rtp, CA eft/interac account/interac email, AU, AE, DE, FR, IE, ES, IT, NL, PH). 8 refused on sample data of mine that is wrong (BE, PT, AT, FI, GR, LU: no IBAN sample; CN BIC; MX CLABE length), so those 8 are inconclusive, not defects |
+| Route guard | passed | `dev/abroad` follows `dev/components` and `preview/*`: in the release export a signed-out visit goes to `/welcome` (checked live); see F5 |
+| Admin | partly | routes are `AdminAuthGuard` + `AdminRolesGuard` with superadmin and finance only; a person's token and no token get 401 live; the audit row per write is covered by the service spec. No spec signs in as support or reviewer on these routes (F4) |
+
+Findings:
+
+- **F1 medium, defect (money).** WAWU's fee is never given back when a send fails or is reversed after the fee was taken. `takeFee` (`src/money/abroad/abroad-send.service.ts:330-360`) runs while the send is `pending`, and `apply` (`:262-300`) moves it to `failed` or `reversed` with no give-back; no `-fee-back` transfer or ledger row exists anywhere under `src/money/abroad/`. The receipt promises the opposite (`SEND_FAILED_REASON`, `:43`: "Any money taken comes back to your account"), and naira Send gives its fee back on a failed send (`wallet-transfer.service.ts` `recordFeeBack`, FIX-66, FIX-98). Latent while `abroad.wawu_fee_kobo` is 0 (the default); live as soon as an admin names a fee. Repro: set the fee to 25 kobo, send, let the transfer end `failed` (webhook or sweep): the person's naira wallet stays 25 kobo short. Fix: on `failed` or `reversed` with `wawuFeeTaken`, a book transfer back under `<reference>-fee-back`, once (flag or reference), and a spec for it.
+- **F2 medium, defect (money shown).** Nuvion's own fee is real and is not shown before the PIN. Live on dev: a USD 1.00 send to Ghana took USD 2.50 (USD 1.00 and a partner fee of USD 1.50, `AbroadSend.providerFeeMinor` = 150; the receipt shows "Partner fee $1.50"), yet the review says "The payment partner's fee is shown on the receipt once it takes the send" (`src/features/abroad/views.tsx:329`) and the quote carries `providerFeeMinor: null`. Nuvion's quote has no fee field (checked on dev), so the Hub cannot read it first. The funds check (`abroad.service.ts:698-731`, `assertFunds`) leaves the fee out, so a person holding exactly USD 1.00 passes the quote and is refused only after the PIN. This also disproves G-NUV-11-4's "fee 0 on the one dev transfer" for USD to GHS. R-10 says the quote shows the total. Needs a lead ruling: a configured partner-fee estimate per currency (R-10: from config) shown on the review and counted in the funds check, or ask Nuvion for its fee table. Dev also settled the send ("Delivered") about 15 minutes later, so G-NUV-11-6's "dev never completes" is out of date (failed and reversed are still unseen).
+- **F3 low.** Admin cancel has no minimum age for a `sending` row (`abroad-admin.service.ts:221-223`). A send seconds old, whose provider call is still in flight, can be cancelled; if Nuvion then takes it, `apply` (`abroad-send.service.ts:262`) moves `cancelled` back to `pending` and the audit row still says cancelled. Fix: refuse cancel until `LOOK_AFTER_MS` has passed, and make `cancelled` not reopen.
+- **F4 low (test gap).** No spec signs in as support or reviewer on `/admin/money/abroad/*` (`abroad.contract.spec.ts` has no role case). Test that would kill a role-list mutant: each of the five routes answers 403 for support and reviewer and writes no audit row.
+- **F5 low.** `src/app/dev/abroad.tsx` is a picture gallery of canned names and amounts for a screen no board draws. It follows the precedent (`dev/components`, `preview/*`, `LeaveDevRoute`) and a release build leaves it, but its Gallery module still ships in the release bundle. Remove it once the designer's boards for Send abroad exist (G-NUV-11-1), or keep it under the preview rule.
+- **F6 low.** `WALLET_FEE_NOTE` (`src/features/abroad/model.ts:21`) is unused and names "Nuvion"; delete it so it cannot reach a screen.
+- **F7 low.** A quote taken before an admin adds a country to `abroad.corridors_off` still sends: `send()` checks the switch, the freeze, the limits and the quote, not the country list (`abroad-send.service.ts:117-175`).
+- **F8 low, record.** The app's `check_tasks` failed on the builder's head: `docs/PROGRESS.md is out of date` (EXIT 1); regenerated here with `--write`.
+
+Not run: a failed or reversed send, a replayed or forged abroad webhook, WAWU's fee above 0 against Nuvion (the test person's naira account and WAWU's operational account are on one dev entity; the fee leg is covered by the service spec only), the fingerprint path, a phone.
 
 ## History
 
