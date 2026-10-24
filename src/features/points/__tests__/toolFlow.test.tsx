@@ -334,7 +334,9 @@ describe('PT2a and PT2b · running a job', () => {
     expect(screen.queryByText(/Bio/)).toBeNull();
     await waitFor(() => expect(screen.getByTestId('tool-used')).toHaveTextContent('250 points used · 1,000 left'));
     await waitFor(() => expect(screen.getByTestId('points-subtitle')).toHaveTextContent('Points: 1,000'));
-    expect(screen.queryByText(/Save|Use in a product/)).toBeNull();
+    // AITOOLS-07 builds PT2b's Save and Use in a product rows (G-AITOOLS-01-4, G-POINTS-08-2): this line pinned the gap that task closes.
+    expect(screen.getByTestId('result-save')).toBeTruthy();
+    expect(screen.getByTestId('result-use')).toBeTruthy();
     expect(hub.made).toBe(1);
   });
 

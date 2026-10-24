@@ -15,6 +15,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { useRouter } from 'expo-router';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
@@ -23,7 +24,9 @@ import { useJobCheck } from './JobCheck';
 import { PointsFrame } from './PointsFrame';
 import { ResultPlayer } from './ResultPlayer';
 import { aiToolsQuery, fetchJobQuote, type AiTool, type JobAction } from './studioApi';
-import { charactersOf, clampText, countLine, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
+import { charactersOf, clampText, countLine, EXTRAS_WORDS, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
+import { giveOwnVoiceConsent, OWN_VOICE_ID, ownVoiceKey, ownVoiceQuery, removeOwnVoice } from './ownVoiceApi';
+import { DraftPicker, OwnVoiceConsent, ResultActions, SamplePlay } from './VoiceExtras';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent } from './voiceoverIntent';
 import { JOB_POLL_MS, startJob, voiceJobQuery, type VoiceJob } from './voiceoverApi';
 
@@ -121,6 +124,15 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const [refusal, setRefusal] = useState<string | null>(null);
   const [balanceAfter, setBalanceAfter] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const router = useRouter();
+  // AITOOLS-07: "Your voice" (VoiceOver only), its agreement, and what follows a finished result.
+  const own = useQuery(ownVoiceQuery(tool.id === 'voiceover' ? owner : null), queryClient);
+  const [consenting, setConsenting] = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
+  const [consentFailure, setConsentFailure] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const offersOwn = kind === 'text' && own.data?.available === true && own.data.hasRecording === true;
+  const ownReady = offersOwn && own.data?.ready === true;
   const sending = useRef(false);
   /** The request the Hub has not answered: the same key and body go again on Try again. */
   const pending = useRef<JobIntent | null>(null);
@@ -220,6 +232,50 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
     onLeave,
   });
 
+  // "Your voice" leads the list and is the one picked when it is ready, as PT2 draws it (the person may pick another).
+  const ownDefault = useRef(false);
+  useEffect(() => {
+    if (!ownReady || ownDefault.current || jobId) return;
+    ownDefault.current = true;
+    setVoiceId(OWN_VOICE_ID);
+  }, [ownReady, jobId]);
+
+  const pickVoice = (id: string) => {
+    if (id === OWN_VOICE_ID && !ownReady) {
+      setConsentFailure(null);
+      setConsenting(true);
+      return;
+    }
+    setConsenting(false);
+    setVoiceId(id);
+  };
+  const agree = async () => {
+    if (!own.data || consentBusy) return;
+    setConsentBusy(true);
+    setConsentFailure(null);
+    try {
+      const next = await giveOwnVoiceConsent(own.data.consent.line);
+      queryClient.setQueryData(ownVoiceKey(owner), next);
+      setConsenting(false);
+      setVoiceId(OWN_VOICE_ID);
+    } catch (error) {
+      setConsentFailure(isApiError(error) && error.message ? error.message : EXTRAS_WORDS.removeFailed);
+      void own.refetch();
+    } finally {
+      setConsentBusy(false);
+    }
+  };
+  const takeBack = async () => {
+    try {
+      const out = await removeOwnVoice();
+      queryClient.setQueryData(ownVoiceKey(owner), out.own);
+      if (voiceId === OWN_VOICE_ID) setVoiceId(tool.voices[0]?.id ?? '');
+      setNotice(out.atProvider === 'gone' ? EXTRAS_WORDS.removed : EXTRAS_WORDS.removing);
+    } catch {
+      setNotice(EXTRAS_WORDS.removeFailed);
+    }
+  };
+
   // A job the person left running (or a request the Hub never answered) is picked up where it was.
   useEffect(() => {
     if (!owner) return;
@@ -315,11 +371,34 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         </View>
       </View>
       {view === 'input' && refusal ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.refusedTitle} body={refusal} testID="tool-refused" /> : null}
-      {view === 'input' && kind === 'text' ? <VoiceList voices={tool.voices} value={voiceId} onChange={setVoiceId} /> : null}
+      {view === 'input' && kind === 'text' ? (
+        <VoiceList
+          voices={offersOwn ? [{ id: OWN_VOICE_ID, name: EXTRAS_WORDS.ownName, description: EXTRAS_WORDS.ownLine }, ...tool.voices] : tool.voices}
+          value={voiceId}
+          onChange={pickVoice}
+        />
+      ) : null}
+      {view === 'input' && consenting && own.data ? (
+        <OwnVoiceConsent line={own.data.consent.line} busy={consentBusy} failure={consentFailure} onAgree={() => void agree()} onCancel={() => setConsenting(false)} />
+      ) : null}
+      {view === 'input' && ownReady ? <Button testID="own-voice-remove" label={EXTRAS_WORDS.removeVoice} variant="secondary" full onPress={() => void takeBack()} /> : null}
       {view === 'working' ? <Working name={tool.name} /> : null}
       {view === 'done' && job.data?.audioUrl ? (
         <View style={styles.done}>
           <ResultPlayer testID="tool-player" uri={job.data.audioUrl} name={tool.name} />
+          {picking ? (
+            <DraftPicker
+              jobId={job.data.id}
+              onCancel={() => setPicking(false)}
+              onAttached={(title) => {
+                setPicking(false);
+                setNotice(EXTRAS_WORDS.attached(title));
+              }}
+              onStartDraft={() => router.push('/shop')}
+            />
+          ) : (
+            <ResultActions owner={owner} job={job.data} onUse={() => setPicking(true)} />
+          )}
           <View style={styles.usedRow} testID="tool-used">
             <Icon name="CircleCheck" size={DONE.mark} color={colors.positive} strokeWidth={2.2} />
             <Text variant="body" tone="textSecondary" style={{ fontSize: DONE.line, lineHeight: canvasNormalLineHeight(DONE.line) }}>
@@ -405,6 +484,7 @@ function VoiceRow({ voice, on, onPress }: { voice: AiTool['voices'][number]; on:
         ring.style,
       ]}
     >
+      {voice.sampleUrl ? <SamplePlay sampleUrl={voice.sampleUrl} name={voice.name} /> : null}
       <View style={styles.voiceText}>
         <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: VOICE.name, lineHeight: canvasNormalLineHeight(VOICE.name) }]}>
           {voice.name}

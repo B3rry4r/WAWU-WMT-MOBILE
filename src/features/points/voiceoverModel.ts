@@ -84,3 +84,45 @@ export function toolReady(tool: AiTool | undefined): tool is AiTool {
   if (!tool || !tool.enabled || !isBuiltTool(tool) || !(tool.input.maxCharacters > 0)) return false;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }
+
+/**
+ * The words of VoiceOver's four added parts (AITOOLS-07): "Your voice" and its agreement, the sample button, PT2b's Save and "Use in a
+ * product" rows (their titles and lines are the board's), and the draft list no board draws. No provider name (R-68), no em-dash (R-5).
+ */
+export const EXTRAS_WORDS = {
+  ownName: 'Your voice',
+  ownLine: 'From your Voice Intro',
+  playSample: (name: string) => `Play a sample of ${name}`,
+  stopSample: (name: string) => `Stop the sample of ${name}`,
+  consentLabel: 'You will read this first',
+  consentNote: 'Only your own voice, and only for your VoiceOver. We make it for each one and take it away when it is done. You can take it back any time.',
+  consentFailed: 'We could not save that',
+  agree: 'I agree',
+  notNow: 'Not now',
+  removeVoice: 'Take my voice off VoiceOver',
+  removed: 'Your voice is off VoiceOver.',
+  removing: 'Your voice is off VoiceOver. We are still clearing the last copy.',
+  removeFailed: 'We could not do that. Try again.',
+  saveTitle: 'Save',
+  saveLine: 'To your library',
+  saveLabel: 'Save to your library',
+  savedTitle: 'Saved',
+  savedLine: 'In your library. Tap to take it out.',
+  unsaveLabel: 'Saved to your library. Tap to take it out',
+  saveFailedTitle: 'We could not save it',
+  saveFailed: 'Try again in a moment.',
+  useTitle: 'Use in a product',
+  useLine: 'Attach to a draft',
+  pickDraft: 'Pick a draft',
+  loadingDrafts: 'Loading your drafts',
+  draftsFailed: 'We could not load your drafts',
+  draftsFailedBody: 'Check your connection and try again.',
+  noDrafts: 'You have no drafts yet. Start one and come back.',
+  startDraft: 'Start a draft',
+  hasAudio: 'Has audio',
+  attachTo: (title: string) => `Attach to ${title}`,
+  attachFailedTitle: 'We could not attach it',
+  attachFailed: 'Try again in a moment.',
+  attached: (title: string) => `Attached to ${title}`,
+  cancel: 'Cancel',
+} as const;
