@@ -139,7 +139,7 @@ const QUOTE: Quote = {
   amountToMinor: 100_361,
   converted: true,
   rate: '10.036105',
-  providerFeeMinor: null,
+  providerFeeMinor: 150,
   wawuFeeKobo: 0,
   speed: 'Instant',
   expiresAt: '2026-10-24T12:00:00.000Z',
@@ -156,7 +156,7 @@ const SEND: AbroadSend = {
   amountFromMinor: 10_000,
   amountToMinor: 100_361,
   rate: '10.036105',
-  providerFeeMinor: null,
+  providerFeeMinor: 150,
   wawuFeeKobo: 0,
   narration: null,
   failureReason: null,
@@ -246,6 +246,22 @@ export function AbroadGallery() {
         <AbroadReviewView
           recipient={AMA}
           quote={QUOTE}
+          narration=""
+          onNarration={nothing}
+          secondsLeft={141}
+          notice={null}
+          failure={null}
+          waiting={false}
+          onBack={nothing}
+          onSend={nothing}
+          onNewQuote={nothing}
+        />
+      );
+    case 'review-no-fee':
+      return (
+        <AbroadReviewView
+          recipient={AMA}
+          quote={{ ...QUOTE, providerFeeMinor: null }}
           narration=""
           onNarration={nothing}
           secondsLeft={141}

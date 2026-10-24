@@ -3469,7 +3469,9 @@ export interface paths {
          *     WAWU's fee from config. The quote is kept for this person and used once.
          *     `amount_out_of_range` carries the least and most the corridor takes,
          *     `rate_unavailable` says the provider cannot price the pair now,
-         *     `insufficient_funds` that the account holds less.
+         *     `402 insufficient_funds` (amount, the partner's fee and WAWU's fee) that
+         *     the account holds less. Like the other quotes it moves nothing and runs
+         *     FeesSetGuard first: `503 fees_not_set` before anything else.
          */
         post: operations["AbroadController_quote"];
         delete?: never;
@@ -11998,6 +12000,9 @@ export interface components {
             providerFeeMinor: number | null;
             wawuFeeKobo: number;
             wawuFeeOwed: boolean;
+            wawuFeeBackOwed: boolean;
+            providerFeeEstimateMinor: number | null;
+            feeDiffers: boolean;
             reference: string;
             providerStatus: string | null;
             failureReason: string | null;
@@ -12175,6 +12180,9 @@ export interface components {
             status: "opening" | "open" | "frozen";
             balance: components["schemas"]["FxBalanceView"] | null;
             details: components["schemas"]["FxReceivingDetailsView"] | null;
+            /** @enum {string} */
+            detailsStatus: "pending" | "ready" | "unavailable";
+            detailsNote: string | null;
             openedAt: string;
         };
         AdminFxAccountListView: {
@@ -12196,6 +12204,8 @@ export interface components {
             amountToMinor: number | null;
             providerFeeMinor: number | null;
             wawuFeeMinor: number;
+            /** @enum {string|null} */
+            feeLeg: "done" | "owed" | "uncollected" | null;
             /** @enum {string|null} */
             chain: "eth" | "base" | "matic" | "sol" | null;
             address: string | null;
@@ -12254,6 +12264,9 @@ export interface components {
             status: "opening" | "open" | "frozen";
             balance: components["schemas"]["FxBalanceView"] | null;
             details: components["schemas"]["FxReceivingDetailsView"] | null;
+            /** @enum {string} */
+            detailsStatus: "pending" | "ready" | "unavailable";
+            detailsNote: string | null;
             openedAt: string;
         };
         FxAccountListView: {
@@ -13237,7 +13250,7 @@ export interface components {
             flutterwaveTxRef: string;
             responseWindowHours: number;
             /** @enum {string} */
-            refundStatus: "failed" | "not_owed" | "owed" | "submitted" | "settled";
+            refundStatus: "failed" | "owed" | "not_owed" | "submitted" | "settled";
             refundReference: string | null;
             /** Format: date-time */
             refundedAt: string | null;
@@ -14611,7 +14624,7 @@ export interface components {
             audienceKind: string;
             audienceNote: string;
             /** @enum {string} */
-            status: "sending" | "sent" | "ready";
+            status: "sending" | "ready" | "sent";
             totalCount: number;
             queuedCount: number;
             sentCount: number;
@@ -24293,15 +24306,6 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: insufficient_funds */
-            402: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
-                };
-            };
             /** @description reason.code: daily_limit_exceeded */
             403: {
                 headers: {
@@ -24347,7 +24351,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: provider_unreachable */
+            /** @description reason.code: provider_unreachable, fees_not_set */
             503: {
                 headers: {
                     [name: string]: unknown;

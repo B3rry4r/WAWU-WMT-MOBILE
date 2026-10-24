@@ -24,6 +24,7 @@ import {
   SCREEN_TITLE,
   speedLine,
   statusLook,
+  totalFromAccount,
   type AbroadSend,
   type Quote,
   type Recipient,
@@ -172,6 +173,13 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
           value={<Text variant="kvValue">{formatMinor(q.amountToMinor, q.toCurrency, q.toDecimals)}</Text>}
         />
         {rate ? <KeyValueRow testID="abroad-quote-rate" label="Rate" value={<Text variant="kvValue">{rate}</Text>} /> : null}
+        {q.providerFeeMinor === null ? null : (
+          <KeyValueRow
+            testID="abroad-quote-fee"
+            label="Partner fee"
+            value={<Text variant="kvValue">{formatMinor(q.providerFeeMinor, q.fromCurrency, q.fromDecimals)}</Text>}
+          />
+        )}
         <KeyValueRow
           testID="abroad-quote-speed"
           label="Arrives"
@@ -286,6 +294,7 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
 /** Send abroad · review before the PIN (NUV-11): every figure is the quote's; the PIN or the fingerprint opens over this. */
 export function AbroadReviewView(p: AbroadReviewViewProps) {
   const q = p.quote;
+  const total = totalFromAccount(q);
   const expired = p.secondsLeft <= 0;
   return (
     <AuthFrame
@@ -314,7 +323,21 @@ export function AbroadReviewView(p: AbroadReviewViewProps) {
         <GroupedList testID="abroad-review-rows">
           <KeyValueRow label="You send" value={<Text variant="kvValue">{formatMinor(q.amountFromMinor, q.fromCurrency, q.fromDecimals)}</Text>} />
           {q.rate ? <KeyValueRow label="Rate" value={<Text variant="kvValue">{rateLine(q) ?? ''}</Text>} /> : null}
+          {q.providerFeeMinor === null ? null : (
+            <KeyValueRow
+              testID="abroad-review-partner-fee"
+              label="Partner fee"
+              value={<Text variant="kvValue">{formatMinor(q.providerFeeMinor, q.fromCurrency, q.fromDecimals)}</Text>}
+            />
+          )}
           <KeyValueRow label="WAWU fee" value={<Text variant="kvValue">{formatMinor(q.wawuFeeKobo, 'NGN')}</Text>} />
+          {total === null ? null : (
+            <KeyValueRow
+              testID="abroad-review-total"
+              label={`Total from your ${q.fromCurrency} account`}
+              value={<Text variant="kvValue">{formatMinor(total, q.fromCurrency, q.fromDecimals)}</Text>}
+            />
+          )}
           <KeyValueRow
             label="Arrives"
             value={
@@ -326,9 +349,11 @@ export function AbroadReviewView(p: AbroadReviewViewProps) {
             }
           />
         </GroupedList>
-        <Text variant="meta" tone="textMuted" testID="abroad-provider-fee">
-          {PROVIDER_FEE_LINE}
-        </Text>
+        {q.providerFeeMinor === null ? (
+          <Text variant="meta" tone="textMuted" testID="abroad-provider-fee">
+            {PROVIDER_FEE_LINE}
+          </Text>
+        ) : null}
         <TextField
           testID="abroad-narration"
           label="Note for their statement (optional)"

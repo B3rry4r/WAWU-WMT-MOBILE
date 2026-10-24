@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
@@ -103,6 +103,8 @@ const hub = {
   enabled: true,
   mode: 'ok' as Mode,
   rate: 'ready' as 'ready' | 'unavailable',
+  /** The partner fee the Hub shows on a quote (R-10), in the sending currency's smallest unit; null: none configured. */
+  partnerFee: 150 as number | null,
   wrongFirst: false,
   recipients: [] as unknown[],
   saves: [] as Record<string, unknown>[],
@@ -125,7 +127,7 @@ function quoteFor(body: { fromCurrency: string; amountMinor: number; side?: stri
     amountToMinor: toMinor,
     converted: true,
     rate: '10.036105',
-    providerFeeMinor: null,
+    providerFeeMinor: hub.partnerFee,
     wawuFeeKobo: 0,
     speed: 'Instant',
     expiresAt: new Date(Date.now() + 179_000).toISOString(),
@@ -263,6 +265,7 @@ beforeEach(() => {
     enabled: true,
     mode: 'ok',
     rate: 'ready',
+    partnerFee: 150,
     wrongFirst: false,
     recipients: [],
     saves: [],
@@ -359,7 +362,7 @@ describe('send abroad', () => {
     await toReview();
     expect(hub.quotes).toEqual([{ recipientId: RECIPIENT.id, fromCurrency: 'USD', amountMinor: 10_000, side: 'send' }]);
     expect(screen.getByTestId('abroad-review-get').props.children).toBe('GH₵1,003.61');
-    expect(screen.getByTestId('abroad-provider-fee')).toBeTruthy();
+    expect(screen.getByTestId('abroad-review-partner-fee')).toBeTruthy();
     await pay();
     expect(await screen.findByTestId('abroad-receipt-screen')).toBeTruthy();
     expect(hub.sends).toHaveLength(1);
@@ -372,6 +375,30 @@ describe('send abroad', () => {
     expect(screen.getByTestId('abroad-receipt-fee')).toHaveTextContent?.('Not named yet');
     await fireEvent.press(screen.getByTestId('abroad-done'));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
+  });
+
+  it("the partner's fee is its own row on the amount screen and on the review, before the PIN, and the total is what leaves the account (R-10)", async () => {
+    await toAmount();
+    await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
+    for (const k of '100') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('abroad-quote');
+    expect(within(screen.getByTestId('abroad-quote-fee')).getByText('$1.50')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('abroad-continue'));
+    await screen.findByTestId('abroad-review-screen');
+    expect(within(screen.getByTestId('abroad-review-partner-fee')).getByText('$1.50')).toBeTruthy();
+    expect(within(screen.getByTestId('abroad-review-total')).getByText('$101.50')).toBeTruthy();
+    expect(screen.getByText('Total from your USD account')).toBeTruthy();
+    // The fee is known, so the line that said it would come later is gone, and nothing was sent yet.
+    expect(screen.queryByTestId('abroad-provider-fee')).toBeNull();
+    expect(hub.sends).toHaveLength(0);
+  });
+
+  it('with no partner fee named for the route the review says the receipt will show it, draws no fee row and no total', async () => {
+    hub.partnerFee = null;
+    await toReview();
+    expect(screen.getByTestId('abroad-provider-fee')).toBeTruthy();
+    expect(screen.queryByTestId('abroad-review-partner-fee')).toBeNull();
+    expect(screen.queryByTestId('abroad-review-total')).toBeNull();
   });
 
   it('a wrong PIN then the right one sends once, on one key', async () => {

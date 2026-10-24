@@ -19191,16 +19191,6 @@
               }
             }
           },
-          "402": {
-            "description": "reason.code: insufficient_funds",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MoneyErrorEnvelope"
-                }
-              }
-            }
-          },
           "403": {
             "description": "reason.code: daily_limit_exceeded",
             "content": {
@@ -19252,7 +19242,7 @@
             }
           },
           "503": {
-            "description": "reason.code: provider_unreachable",
+            "description": "reason.code: provider_unreachable, fees_not_set",
             "content": {
               "application/json": {
                 "schema": {
@@ -19267,7 +19257,7 @@
             "wawu-id": []
           }
         ],
-        "summary": "What a send would deliver and cost: the provider's rate and real hold\nwhen the currencies differ (about three minutes on dev), both amounts,\nWAWU's fee from config. The quote is kept for this person and used once.\n`amount_out_of_range` carries the least and most the corridor takes,\n`rate_unavailable` says the provider cannot price the pair now,\n`insufficient_funds` that the account holds less.",
+        "summary": "What a send would deliver and cost: the provider's rate and real hold\nwhen the currencies differ (about three minutes on dev), both amounts,\nWAWU's fee from config. The quote is kept for this person and used once.\n`amount_out_of_range` carries the least and most the corridor takes,\n`rate_unavailable` says the provider cannot price the pair now,\n`402 insufficient_funds` (amount, the partner's fee and WAWU's fee) that\nthe account holds less. Like the other quotes it moves nothing and runs\nFeesSetGuard first: `503 fees_not_set` before anything else.",
         "tags": [
           "Abroad"
         ],
@@ -49681,6 +49671,16 @@
           "wawuFeeOwed": {
             "type": "boolean"
           },
+          "wawuFeeBackOwed": {
+            "type": "boolean"
+          },
+          "providerFeeEstimateMinor": {
+            "type": "integer",
+            "nullable": true
+          },
+          "feeDiffers": {
+            "type": "boolean"
+          },
           "reference": {
             "type": "string"
           },
@@ -49716,6 +49716,9 @@
           "providerFeeMinor",
           "wawuFeeKobo",
           "wawuFeeOwed",
+          "wawuFeeBackOwed",
+          "providerFeeEstimateMinor",
+          "feeDiffers",
           "reference",
           "providerStatus",
           "failureReason",
@@ -50480,6 +50483,18 @@
             ],
             "nullable": true
           },
+          "detailsStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "unavailable"
+            ]
+          },
+          "detailsNote": {
+            "type": "string",
+            "nullable": true
+          },
           "openedAt": {
             "type": "string"
           }
@@ -50496,6 +50511,8 @@
           "status",
           "balance",
           "details",
+          "detailsStatus",
+          "detailsNote",
           "openedAt"
         ]
       },
@@ -50586,6 +50603,15 @@
           "wawuFeeMinor": {
             "type": "integer"
           },
+          "feeLeg": {
+            "type": "string",
+            "enum": [
+              "done",
+              "owed",
+              "uncollected"
+            ],
+            "nullable": true
+          },
           "chain": {
             "type": "string",
             "enum": [
@@ -50626,6 +50652,7 @@
           "amountToMinor",
           "providerFeeMinor",
           "wawuFeeMinor",
+          "feeLeg",
           "chain",
           "address",
           "reference",
@@ -50864,6 +50891,18 @@
             ],
             "nullable": true
           },
+          "detailsStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "unavailable"
+            ]
+          },
+          "detailsNote": {
+            "type": "string",
+            "nullable": true
+          },
           "openedAt": {
             "type": "string"
           }
@@ -50877,6 +50916,8 @@
           "status",
           "balance",
           "details",
+          "detailsStatus",
+          "detailsNote",
           "openedAt"
         ]
       },
@@ -55090,8 +55131,8 @@
             "type": "string",
             "enum": [
               "failed",
-              "not_owed",
               "owed",
+              "not_owed",
               "submitted",
               "settled"
             ]
@@ -61107,8 +61148,8 @@
             "type": "string",
             "enum": [
               "sending",
-              "sent",
-              "ready"
+              "ready",
+              "sent"
             ]
           },
           "totalCount": {

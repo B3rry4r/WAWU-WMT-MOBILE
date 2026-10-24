@@ -18,7 +18,7 @@ export type Quote = components['schemas']['AbroadQuoteView'];
 export type AbroadSend = components['schemas']['AbroadSendView'];
 
 export const SCREEN_TITLE = 'Send abroad';
-export const WALLET_FEE_NOTE = 'Nuvion names its fee only when it takes the send, so the receipt shows what was charged.';
+/** Shown only when the Hub has no partner fee for the route (`providerFeeMinor` null); otherwise the fee is a row of its own (R-10). */
 export const PROVIDER_FEE_LINE = "The payment partner's fee is shown on the receipt once it takes the send.";
 
 const SYMBOLS: Record<string, string> = {
@@ -43,6 +43,16 @@ export function formatMinor(minor: number, currency: string, decimals = 2): stri
   const fraction = decimals > 0 ? `.${String(total % unit).padStart(decimals, '0')}` : '';
   const symbol = SYMBOLS[currency];
   return `${negative ? '-' : ''}${symbol ?? `${currency} `}${whole}${fraction}`;
+}
+
+/**
+ * What leaves the account the money is sent from (R-10: the person pays the partner's fee and WAWU's on top). The amount and the
+ * partner's fee are in the sending currency; WAWU's fee is naira, so it joins the total only when the money comes from the naira
+ * wallet, and is its own row otherwise. Null when the Hub names no partner fee for the route: no total is drawn from a guess.
+ */
+export function totalFromAccount(quote: Pick<Quote, 'amountFromMinor' | 'providerFeeMinor' | 'wawuFeeKobo' | 'fromCurrency'>): number | null {
+  if (quote.providerFeeMinor === null) return null;
+  return quote.amountFromMinor + quote.providerFeeMinor + (quote.fromCurrency === 'NGN' ? quote.wawuFeeKobo : 0);
 }
 
 /** The kobo parser of the keypad reads two decimals; so does every currency Nuvion pays (`decimals` 2). */
@@ -165,6 +175,7 @@ export function readHeldQuote(raw: unknown): Quote | null {
     !whole(q.fromDecimals) ||
     !whole(q.toDecimals) ||
     !whole(q.wawuFeeKobo) ||
+    !(q.providerFeeMinor === null || whole(q.providerFeeMinor)) ||
     typeof q.expiresAt !== 'string' ||
     typeof q.speed !== 'string' ||
     typeof q.converted !== 'boolean'

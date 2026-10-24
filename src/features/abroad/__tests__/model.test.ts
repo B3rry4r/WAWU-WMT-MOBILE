@@ -7,6 +7,7 @@ import {
   readHeldQuote,
   speedLine,
   statusLook,
+  totalFromAccount,
   type Field,
   type Rail,
 } from '../model';
@@ -104,7 +105,17 @@ describe('send abroad · what the screens say', () => {
     };
     expect(readHeldQuote(JSON.stringify(quote))?.id).toBe('q');
     expect(readHeldQuote(JSON.stringify({ ...quote, amountFromMinor: 50.5 }))).toBeNull();
+    expect(readHeldQuote(JSON.stringify({ ...quote, providerFeeMinor: 150 }))?.providerFeeMinor).toBe(150);
+    expect(readHeldQuote(JSON.stringify({ ...quote, providerFeeMinor: 1.5 }))).toBeNull();
+    expect(readHeldQuote(JSON.stringify({ ...quote, providerFeeMinor: '150' }))).toBeNull();
     expect(readHeldQuote('not json')).toBeNull();
     expect(readHeldQuote(undefined)).toBeNull();
+  });
+
+  it("the total that leaves the account: the amount and the partner's fee, WAWU's naira fee only from the naira wallet, nothing when no fee is named (R-10)", () => {
+    const usd = { fromCurrency: 'USD', amountFromMinor: 10_000, providerFeeMinor: 150, wawuFeeKobo: 2_500 };
+    expect(totalFromAccount(usd)).toBe(10_150);
+    expect(totalFromAccount({ ...usd, fromCurrency: 'NGN', amountFromMinor: 1_000_000, providerFeeMinor: 0 })).toBe(1_002_500);
+    expect(totalFromAccount({ ...usd, providerFeeMinor: null })).toBeNull();
   });
 });
