@@ -15,6 +15,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
 import { pickFile } from '@/features/create/pickFile';
 import { useRouter } from 'expo-router';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -133,6 +134,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const [refusal, setRefusal] = useState<string | null>(null);
   const [balanceAfter, setBalanceAfter] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** What went well (a voice taken off, a result attached): the tick, where `notice` carries the danger mark. */
+  const [goodNotice, setGoodNotice] = useState<string | null>(null);
   const router = useRouter();
   // AITOOLS-07: "Your voice" (VoiceOver only), its agreement, and what follows a finished result.
   const own = useQuery(ownVoiceQuery(tool.id === 'voiceover' ? owner : null), queryClient);
@@ -142,6 +145,10 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const [picking, setPicking] = useState(false);
   const offersOwn = kind === 'text' && own.data?.available === true && own.data.hasRecording === true;
   const ownReady = offersOwn && own.data?.ready === true;
+  // PT2 draws a play button on "Your voice" too. The Hub serves no sample of the recording itself (`sample.recorded` is a flag); what it does
+  // serve is the person's own Voice Intro, read by their voice, and that plays here. Not drawn while there is none (R-47).
+  const intro = useQuery({ queryKey: voiceIntroKey, queryFn: fetchVoiceIntro, enabled: offersOwn }, queryClient);
+  const ownSample = offersOwn ? intro.data?.audioUrl : null;
   // The recording of a file tool: its name and size, where it is (going up, being measured, ready), the `key` the upload gave and the Hub's quote of its length.
   const [recording, setRecording] = useState<Recording | null>(null);
   const [fileKey, setFileKey] = useState<string | null>(null);
@@ -291,7 +298,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       const out = await removeOwnVoice();
       queryClient.setQueryData(ownVoiceKey(owner), out.own);
       if (voiceId === OWN_VOICE_ID) setVoiceId(tool.voices[0]?.id ?? '');
-      setNotice(out.atProvider === 'gone' ? EXTRAS_WORDS.removed : EXTRAS_WORDS.removing);
+      setGoodNotice(out.atProvider === 'gone' ? EXTRAS_WORDS.removed : EXTRAS_WORDS.removing);
     } catch {
       setNotice(EXTRAS_WORDS.removeFailed);
     }
@@ -487,7 +494,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       {view === 'input' && refusal ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.refusedTitle} body={refusal} testID="tool-refused" /> : null}
       {view === 'input' && kind === 'text' ? (
         <VoiceList
-          voices={offersOwn ? [{ id: OWN_VOICE_ID, name: EXTRAS_WORDS.ownName, description: EXTRAS_WORDS.ownLine }, ...tool.voices] : tool.voices}
+          voices={offersOwn ? [{ id: OWN_VOICE_ID, name: EXTRAS_WORDS.ownName, description: EXTRAS_WORDS.ownLine, sampleUrl: ownSample ?? null }, ...tool.voices] : tool.voices}
           value={voiceId}
           onChange={pickVoice}
         />
@@ -510,7 +517,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
               onCancel={() => setPicking(false)}
               onAttached={(title) => {
                 setPicking(false);
-                setNotice(EXTRAS_WORDS.attached(title));
+                setGoodNotice(EXTRAS_WORDS.attached(title));
               }}
               onStartDraft={() => router.push('/shop')}
             />
@@ -532,6 +539,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       ) : null}
       {check.node}
       {notice ? <Toast message={notice} tone="alert" placement="top" lines={2} onHide={() => setNotice(null)} testID="tool-notice" /> : null}
+      {goodNotice ? <Toast message={goodNotice} tone="success" placement="top" lines={2} onHide={() => setGoodNotice(null)} testID="tool-notice-ok" /> : null}
     </PointsFrame>
   );
 }

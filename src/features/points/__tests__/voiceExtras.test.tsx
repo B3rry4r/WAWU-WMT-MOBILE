@@ -36,13 +36,13 @@ beforeEach(() => {
 });
 
 describe('a person plays a voice before choosing it', () => {
-  it('taps play and the Hub\'s sample plays from the app\'s API address, taps again and it stops', () => {
-    render(<SamplePlay sampleUrl="/api/hub/ai-tools/voices/ada/sample" name="Ada" />);
+  it('taps play and the Hub\'s sample plays from the app\'s API address, taps again and it stops', async () => {
+    await render(<SamplePlay sampleUrl="/api/hub/ai-tools/voices/ada/sample" name="Ada" />);
     expect(lastAudio().playing).toBe(false);
-    fireEvent.press(screen.getByLabelText(EXTRAS_WORDS.playSample('Ada')));
+    await fireEvent.press(screen.getByLabelText(EXTRAS_WORDS.playSample('Ada')));
     expect(lastAudio().playing).toBe(true);
     expect(lastAudio().uri).toMatch(/^https?:\/\/.+\/api\/hub\/ai-tools\/voices\/ada\/sample$/);
-    fireEvent.press(screen.getByLabelText(EXTRAS_WORDS.stopSample('Ada')));
+    await fireEvent.press(screen.getByLabelText(EXTRAS_WORDS.stopSample('Ada')));
     expect(lastAudio().playing).toBe(false);
   });
 
@@ -52,20 +52,20 @@ describe('a person plays a voice before choosing it', () => {
 });
 
 describe('a person agrees before their own voice reads a VoiceOver', () => {
-  it('reads the Hub\'s words exactly, agrees, or says not now', () => {
+  it('reads the Hub\'s words exactly, agrees, or says not now', async () => {
     const onAgree = jest.fn();
     const onCancel = jest.fn();
     const line = 'I am Ada Obi. I agree that Who Made This? may create an AI version of my voice for my VoiceOver.';
-    render(<OwnVoiceConsent line={line} busy={false} failure={null} onAgree={onAgree} onCancel={onCancel} />);
+    await render(<OwnVoiceConsent line={line} busy={false} failure={null} onAgree={onAgree} onCancel={onCancel} />);
     expect(screen.getByTestId('own-voice-consent-line').props.children).toBe(line);
-    fireEvent.press(screen.getByTestId('own-voice-agree'));
+    await fireEvent.press(screen.getByTestId('own-voice-agree'));
     expect(onAgree).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByTestId('own-voice-cancel'));
+    await fireEvent.press(screen.getByTestId('own-voice-cancel'));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('is told why when the Hub refused the agreement', () => {
-    render(<OwnVoiceConsent line="x" busy={false} failure="Those are not the words we showed you." onAgree={jest.fn()} onCancel={jest.fn()} />);
+  it('is told why when the Hub refused the agreement', async () => {
+    await render(<OwnVoiceConsent line="x" busy={false} failure="Those are not the words we showed you." onAgree={jest.fn()} onCancel={jest.fn()} />);
     expect(screen.getByTestId('own-voice-consent-failure')).toBeTruthy();
     expect(screen.getByText('Those are not the words we showed you.')).toBeTruthy();
   });
@@ -74,32 +74,32 @@ describe('a person agrees before their own voice reads a VoiceOver', () => {
 describe('a person saves a result to their library', () => {
   it('taps Save, sees it saved, taps again and takes it out', async () => {
     saved.mockResolvedValueOnce(job({ saved: true })).mockResolvedValueOnce(job({ saved: false }));
-    render(<ResultActions owner="o1" job={job()} onUse={jest.fn()} />);
+    await render(<ResultActions owner="o1" job={job()} onUse={jest.fn()} />);
     expect(screen.getByText('To your library')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('result-save'));
+    await fireEvent.press(screen.getByTestId('result-save'));
     await waitFor(() => expect(screen.getByText(EXTRAS_WORDS.savedTitle)).toBeTruthy());
     expect(saved).toHaveBeenLastCalledWith('job-1', true);
-    fireEvent.press(screen.getByTestId('result-save'));
+    await fireEvent.press(screen.getByTestId('result-save'));
     await waitFor(() => expect(screen.getByText('To your library')).toBeTruthy());
     expect(saved).toHaveBeenLastCalledWith('job-1', false);
   });
 
   it('a result already saved reads as saved, and a refused save says so and stays unsaved', async () => {
-    const { unmount } = render(<ResultActions owner="o1" job={job({ saved: true })} onUse={jest.fn()} />);
+    const { unmount } = await render(<ResultActions owner="o1" job={job({ saved: true })} onUse={jest.fn()} />);
     expect(screen.getByText(EXTRAS_WORDS.savedTitle)).toBeTruthy();
-    unmount();
+    await unmount();
     saved.mockRejectedValueOnce(new ApiError('unknown', 409, 'Only a finished result can be saved or used.'));
-    render(<ResultActions owner="o1" job={job()} onUse={jest.fn()} />);
-    fireEvent.press(screen.getByTestId('result-save'));
+    await render(<ResultActions owner="o1" job={job()} onUse={jest.fn()} />);
+    await fireEvent.press(screen.getByTestId('result-save'));
     await waitFor(() => expect(screen.getByTestId('result-save-failure')).toBeTruthy());
     expect(screen.getByText('Only a finished result can be saved or used.')).toBeTruthy();
     expect(screen.getByText('To your library')).toBeTruthy();
   });
 
-  it('taps Use in a product and is taken to the drafts', () => {
+  it('taps Use in a product and is taken to the drafts', async () => {
     const onUse = jest.fn();
-    render(<ResultActions owner="o1" job={job()} onUse={onUse} />);
-    fireEvent.press(screen.getByTestId('result-use'));
+    await render(<ResultActions owner="o1" job={job()} onUse={onUse} />);
+    await fireEvent.press(screen.getByTestId('result-use'));
     expect(onUse).toHaveBeenCalledTimes(1);
   });
 });
@@ -109,11 +109,11 @@ describe('a person attaches a result to a draft', () => {
     fetchDrafts.mockResolvedValue([draft('d1', 'Pricing course'), draft('d2', 'Brand deck', 'older-job')]);
     updateDraft.mockResolvedValue({});
     const onAttached = jest.fn();
-    render(<DraftPicker jobId="job-1" onAttached={onAttached} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
+    await render(<DraftPicker jobId="job-1" onAttached={onAttached} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
     await waitFor(() => expect(screen.getByTestId('draft-pick-d1')).toBeTruthy());
     expect(screen.getByText(EXTRAS_WORDS.hasAudio)).toBeTruthy();
     await act(async () => {
-      fireEvent.press(screen.getByTestId('draft-pick-d1'));
+      await fireEvent.press(screen.getByTestId('draft-pick-d1'));
     });
     expect(updateDraft).toHaveBeenCalledWith('d1', { mediaJobId: 'job-1' });
     expect(onAttached).toHaveBeenCalledWith('Pricing course');
@@ -123,11 +123,11 @@ describe('a person attaches a result to a draft', () => {
     fetchDrafts.mockResolvedValue([]);
     const onStart = jest.fn();
     const onCancel = jest.fn();
-    render(<DraftPicker jobId="job-1" onAttached={jest.fn()} onCancel={onCancel} onStartDraft={onStart} />);
+    await render(<DraftPicker jobId="job-1" onAttached={jest.fn()} onCancel={onCancel} onStartDraft={onStart} />);
     await waitFor(() => expect(screen.getByTestId('draft-picker-empty')).toBeTruthy());
-    fireEvent.press(screen.getByTestId('draft-picker-start'));
+    await fireEvent.press(screen.getByTestId('draft-picker-start'));
     expect(onStart).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByTestId('draft-picker-cancel'));
+    await fireEvent.press(screen.getByTestId('draft-picker-cancel'));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -135,10 +135,10 @@ describe('a person attaches a result to a draft', () => {
     fetchDrafts.mockResolvedValue([draft('d1', 'Pricing course')]);
     updateDraft.mockRejectedValue(new ApiError('unknown', 409, 'Only a finished result with audio can be used in a product.'));
     const onAttached = jest.fn();
-    render(<DraftPicker jobId="job-1" onAttached={onAttached} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
+    await render(<DraftPicker jobId="job-1" onAttached={onAttached} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
     await waitFor(() => expect(screen.getByTestId('draft-pick-d1')).toBeTruthy());
     await act(async () => {
-      fireEvent.press(screen.getByTestId('draft-pick-d1'));
+      await fireEvent.press(screen.getByTestId('draft-pick-d1'));
     });
     expect(screen.getByTestId('draft-picker-failure')).toBeTruthy();
     expect(onAttached).not.toHaveBeenCalled();
@@ -146,7 +146,8 @@ describe('a person attaches a result to a draft', () => {
 
   it('drafts that cannot be loaded say so', async () => {
     fetchDrafts.mockRejectedValue(new ApiError('network', 0, 'No connection.'));
-    render(<DraftPicker jobId="job-1" onAttached={jest.fn()} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
-    await waitFor(() => expect(screen.getByTestId('draft-picker-error')).toBeTruthy());
+    await render(<DraftPicker jobId="job-1" onAttached={jest.fn()} onCancel={jest.fn()} onStartDraft={jest.fn()} />);
+    // A lost connection is tried again twice (api/query.ts, one then two seconds) before the banner shows.
+    await waitFor(() => expect(screen.getByTestId('draft-picker-error')).toBeTruthy(), { timeout: 8000 });
   });
 });

@@ -6,6 +6,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
+import { GroupedList } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -20,10 +21,10 @@ import { sampleAddress, setJobSaved, type SavedJob } from './ownVoiceApi';
 import { voiceJobQuery } from './voiceoverApi';
 import { EXTRAS_WORDS } from './voiceoverModel';
 
-/** PT2 `voiceRow`: the round play button stands 44 across at the row's left, the words and the radio after it. */
-const PLAY = { size: 44, icon: 18 } as const;
+/** PT2 `voiceRow`: a 32 round play button on the sunken fill at the row's left, a 13 play mark in 2.4 stroke, the words and the radio after it. */
+const PLAY = { size: 32, icon: 13, stroke: 2.4, slop: 6 } as const;
 /** PT2b: the card holds two rows 64 high; each has a 44 round mark on the left. */
-const ACTION = { mark: 44, markIcon: 20, card: radius.card } as const;
+const ACTION = { mark: 44 } as const;
 
 /** PT2's play button on a voice row: plays the voice's sample from the Hub, and again to stop. Drawn only for a voice the Hub gives a sample for. */
 export function SamplePlay({ sampleUrl, name }: { sampleUrl: string; name: string }) {
@@ -40,11 +41,11 @@ export function SamplePlay({ sampleUrl, name }: { sampleUrl: string; name: strin
         accessibilityRole="button"
         accessibilityLabel={playing ? EXTRAS_WORDS.stopSample(name) : EXTRAS_WORDS.playSample(name)}
         onPress={() => setPlaying((on) => !on)}
-        hitSlop={4}
+        hitSlop={PLAY.slop}
         {...ring.handlers}
         style={[styles.play, { backgroundColor: colors.surfaceSunken }, ring.style]}
       >
-        <Icon name={playing ? 'Pause' : 'Play'} size={PLAY.icon} color={colors.textPrimary} fill={colors.textPrimary} strokeWidth={2} />
+        <Icon name={playing ? 'Pause' : 'Play'} size={PLAY.icon} color={colors.textPrimary} fill={colors.textPrimary} strokeWidth={PLAY.stroke} />
       </Pressable>
     </View>
   );
@@ -76,7 +77,6 @@ export function OwnVoiceConsent({ line, busy, failure, onAgree, onCancel }: { li
 
 /** PT2b's card under the player: "Save, To your library" and "Use in a product, Attach to a draft". */
 export function ResultActions({ owner, job, onUse }: { owner: string | null; job: SavedJob; onUse: () => void }) {
-  const { colors } = useWawu();
   const [saved, setSaved] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export function ResultActions({ owner, job, onUse }: { owner: string | null; job
   };
   return (
     <View style={styles.actions}>
-      <View testID="result-actions" style={[styles.actionCard, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+      <GroupedList testID="result-actions">
         <ListRow
           testID="result-save"
           lead={<IconTile icon={isSaved ? 'Check' : 'Download'} tone={isSaved ? 'accent' : 'neutral'} size={ACTION.mark} />}
@@ -107,9 +107,8 @@ export function ResultActions({ owner, job, onUse }: { owner: string | null; job
           accessibilityLabel={isSaved ? EXTRAS_WORDS.unsaveLabel : EXTRAS_WORDS.saveLabel}
           onPress={() => void toggle()}
         />
-        <View style={[styles.divider, { backgroundColor: colors.borderHairline }]} />
         <ListRow testID="result-use" lead={<IconTile icon="Package" tone="neutral" size={ACTION.mark} />} title={EXTRAS_WORDS.useTitle} subtitle={EXTRAS_WORDS.useLine} onPress={onUse} />
-      </View>
+      </GroupedList>
       {failure ? <Banner tone="danger" icon="CircleX" title={EXTRAS_WORDS.saveFailedTitle} body={failure} testID="result-save-failure" /> : null}
     </View>
   );
@@ -121,7 +120,6 @@ export function ResultActions({ owner, job, onUse }: { owner: string | null; job
  * starting one.
  */
 export function DraftPicker({ jobId, onAttached, onCancel, onStartDraft }: { jobId: string; onAttached: (title: string) => void; onCancel: () => void; onStartDraft: () => void }) {
-  const { colors } = useWawu();
   const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, staleTime: 0 }, queryClient);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -158,20 +156,18 @@ export function DraftPicker({ jobId, onAttached, onCancel, onStartDraft }: { job
           <Button testID="draft-picker-start" label={EXTRAS_WORDS.startDraft} full onPress={onStartDraft} />
         </View>
       ) : (
-        <View style={[styles.actionCard, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-          {drafts.data.map((draft, i) => (
-            <View key={draft.id}>
-              {i > 0 ? <View style={[styles.divider, { backgroundColor: colors.borderHairline }]} /> : null}
-              <ListRow
-                testID={`draft-pick-${draft.id}`}
-                title={draft.title}
-                subtitle={draft.mediaJobId ? EXTRAS_WORDS.hasAudio : undefined}
-                accessibilityLabel={EXTRAS_WORDS.attachTo(draft.title)}
-                onPress={() => void attach(draft.id, draft.title)}
-              />
-            </View>
+        <GroupedList>
+          {drafts.data.map((draft) => (
+            <ListRow
+              key={draft.id}
+              testID={`draft-pick-${draft.id}`}
+              title={draft.title}
+              subtitle={draft.mediaJobId ? EXTRAS_WORDS.hasAudio : undefined}
+              accessibilityLabel={EXTRAS_WORDS.attachTo(draft.title)}
+              onPress={() => void attach(draft.id, draft.title)}
+            />
           ))}
-        </View>
+        </GroupedList>
       )}
       {failure ? <Banner tone="danger" icon="CircleX" title={EXTRAS_WORDS.attachFailedTitle} body={failure} testID="draft-picker-failure" /> : null}
       <Button testID="draft-picker-cancel" label={EXTRAS_WORDS.cancel} variant="secondary" full onPress={onCancel} />
@@ -181,12 +177,10 @@ export function DraftPicker({ jobId, onAttached, onCancel, onStartDraft }: { job
 
 const styles = StyleSheet.create({
   play: { width: PLAY.size, height: PLAY.size, borderRadius: PLAY.size / 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  consent: { gap: 12, padding: 16, borderRadius: ACTION.card, borderWidth: 1 },
+  consent: { gap: 12, padding: 16, borderRadius: radius.card, borderWidth: 1 },
   consentLabel: { fontSize: 11, letterSpacing: 0.88, textTransform: 'uppercase' },
   consentLine: { fontSize: 18, lineHeight: 18 * 1.45 },
   consentNote: { fontSize: 13.5, lineHeight: canvasNormalLineHeight(13.5) },
   actions: { gap: space.md },
-  actionCard: { borderRadius: ACTION.card, borderWidth: 1, overflow: 'hidden' },
-  divider: { height: 1, marginLeft: 72 },
   none: { gap: space.md },
 });
