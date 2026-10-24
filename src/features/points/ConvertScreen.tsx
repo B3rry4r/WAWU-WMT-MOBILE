@@ -10,7 +10,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
-import { isApprovalStop, PayPinSheet, stopResult, type Credential, type Settled } from '@/features/device-approval';
+import { isApprovalStop, notApproved, PayPinSheet, stopCode, type Credential, type Settled } from '@/features/device-approval';
 import { formatPoints } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -249,11 +249,10 @@ export function ConvertScreen(props: ConvertScreenProps) {
       setNotice(NOT_READY_LINE);
       return { code: 'approved' };
     }
+    // An earlier try under this key that left the phone with no answer that proves anything: this try repeats it.
+    const earlierTry = sending.sent;
     attempt.current = { ...sending, sent: true };
     const outcome = await convertPoints({ points: sending.points, quoteToken: sending.quoteToken, key: sending.key, ...credential });
-    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
-    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
-    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing was converted for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -265,6 +264,11 @@ export function ConvertScreen(props: ConvertScreenProps) {
       setResend(false);
       setPinOpen(false);
     };
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, nothingMoved);
+    }
     switch (outcome.kind) {
       case 'pin_incorrect':
         nothingMoved();

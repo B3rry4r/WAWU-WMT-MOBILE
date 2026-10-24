@@ -10,7 +10,7 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { buy, fetchPurchase, fetchQuote, purchaseQuery, targetId, type Purchase, type PurchaseQuote, type PurchaseTarget } from './purchaseApi';
 import { dropIntent, findIntent, putIntent } from './purchaseIntent';
 import { CHANGED_LINE, failedLine, NOT_READY_LINE, quoteMoved, SHORT_LINE } from './purchaseModel';
-import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
+import { isApprovalStop, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a purchase the Hub has not finished is read again (`GET /plans/purchases/{id}`, our own record). Default (agent), owner may override. */
 export const POLL_MS = 4000;
@@ -207,11 +207,10 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
       setNotice(NOT_READY_LINE);
       return { code: 'approved' };
     }
+    // An earlier try under this key that left the phone with no answer that proves anything: this try repeats it.
+    const earlierTry = sending.sent;
     attempt.current = { ...sending, sent: true };
     const outcome = await buy({ target: sending.target, method: sending.method, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken, key: sending.key, ...credential });
-    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
-    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
-    if (isApprovalStop(outcome)) return stopResult(outcome);
     // The Hub gave an answer that proves nothing was bought for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -223,6 +222,11 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
       setResend(false);
       setPinOpen(false);
     };
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, nothingMoved);
+    }
     switch (outcome.kind) {
       case 'pin_incorrect':
         nothingMoved();

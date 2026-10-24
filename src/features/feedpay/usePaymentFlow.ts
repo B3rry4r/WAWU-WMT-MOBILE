@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { onSessionEnd } from '@/api/session';
 import type { PayStatus } from '@/components/pay-sheet';
 import type { PinCheckResult } from '@/components/pin-sheet';
-import { asPinResult, isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
+import { asPinResult, isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 import { OVER_LIMIT_TITLE, NO_TOTAL_TITLE, PRICE_CHANGED_LINE, limitLine, quoteAddsUp } from '@/features/events/buyModel';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
@@ -235,12 +235,16 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
     if (!q) return { code: 'unanswered' };
     const scope = live.current.scope;
     // The request this payment carries: the one already sent and not answered, else the first one, made now.
+    // An earlier try of this payment that the Hub may have taken (its answer was lost) is held: this try repeats it.
+    const earlierTry = attempts.has(scope);
     const attempt = (attempts.get(scope) as Attempt<Q> | undefined) ?? { key: newRequestKey(), quote: q };
     attempts.set(scope, attempt);
     const outcome = await live.current.send(attempt.quote, attempt.key, credential);
-    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment: the key and the quote
-    // stay, so a PIN typed next sends the SAME request. Taken before every other answer.
-    if (isApprovalStop(outcome)) return stopResult(outcome);
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, noRecordToForget);
+    }
     // An answer that proves nothing moved and ends this try (the money, the wallet or the price said no): the attempt is over, and the
     // next try gets a new quote and a new key. A wrong PIN is not that: the person types it again for the SAME payment, so the attempt
     // (its quote and its key) stays, which the contract allows (a refusal before money moves is not stored against the key).

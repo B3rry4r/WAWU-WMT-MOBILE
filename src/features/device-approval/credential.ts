@@ -1,5 +1,4 @@
 import type { ApprovalAttempt, SignedRequest } from './approve';
-import type { Settled } from './settle';
 
 /**
  * How a payment is approved, once, for every payment that asks for the PIN (FIX-108 wired the sends, FIX-112 the rest).
@@ -11,9 +10,9 @@ import type { Settled } from './settle';
  *
  * THE RULE (FIX-108 verifier, high finding): a stop that is the phone's own (the person closed the prompt, the phone could not
  * approve) or the Hub's refusal of an approval proves nothing about an EARLIER try of the same payment. So a screen that gets
- * `approval_cancelled` or `approval_failed` changes NOTHING it holds for the payment: it keeps the `Idempotency-Key`, the quote,
- * and any stored intent that says an earlier try may have moved money, and only tells the sheet. `isApprovalStop` and `stopResult`
- * are the whole of it: every screen takes them FIRST, before it reads any other answer.
+ * `approval_cancelled` or `approval_failed` settles it through `notApproved` (FIX-108 round 2) and nothing else: the `Idempotency-Key` stays,
+ * the quote stays, and a stored intent that says an earlier try may have moved money stays; only a first try lets go of the record it
+ * wrote itself. Every screen takes `isApprovalStop` FIRST, before it reads any other answer.
  */
 export type Approver = (request: SignedRequest) => Promise<ApprovalAttempt>;
 export type Credential = { pin: string; approve?: never } | { approve: Approver; pin?: never };
@@ -57,7 +56,11 @@ export function isApprovalStop<T extends { kind: string }>(outcome: T): outcome 
   return outcome.kind === 'approval_cancelled' || outcome.kind === 'approval_failed';
 }
 
-/** What the sheet is told for a stop: a closed prompt says nothing, a failed approval says "Use your PIN". Uses no PIN try. */
-export function stopResult(stop: ApprovalStopped): Settled {
-  return stop.kind === 'approval_cancelled' ? { code: 'cancelled' } : { code: 'failed' };
-}
+/** Which of `notApproved`'s two answers a stop is: a closed prompt says nothing, a failed approval says "Use your PIN". Uses no PIN try. */
+export const stopCode = (stop: ApprovalStopped): 'cancelled' | 'failed' => (stop.kind === 'approval_cancelled' ? 'cancelled' : 'failed');
+
+/**
+ * The `forget` of `notApproved` for a payment whose only record is its attempt (its key and its quote, held in memory): there is no
+ * separate record that this try wrote, and the attempt stays, so the PIN that follows is sent under the same key.
+ */
+export const noRecordToForget = (): void => undefined;

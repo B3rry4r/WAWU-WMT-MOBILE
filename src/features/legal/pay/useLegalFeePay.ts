@@ -12,7 +12,7 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { fetchRequest, matterKeys } from '../matter/api';
 import { fetchFeePayment, fetchFeeQuote, payFee, type FeePayment, type FeeQuote } from './api';
 import { CONFIRMING_LINE, failedPaymentLine, feeSettled } from './model';
-import { isApprovalStop, stopResult, type Credential, type Settled } from '@/features/device-approval';
+import { isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a fee the Hub has not finished is read again (our own records). PROVISIONAL(LEGAL-FEE-POLL, owner=LEGAL-04, why=no ruling sizes it; four seconds is the send's own read). */
 const POLL_MS = 4000;
@@ -275,6 +275,8 @@ export function useLegalFeePay(args: FeePayArgs) {
   /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
   const run = async (credential: Credential): Promise<Settled> => {
     if (!quote || !owner) return { code: 'unanswered' };
+    // An earlier try of this payment that the Hub may have taken (its answer was lost) is held: this try repeats it.
+    const earlierTry = heldNow() !== null;
     const sending: Attempt<FeeQuote> = heldNow() ?? { subject, key: newRequestKey(), quote, phase: 'sent', paymentId: null };
     mine.current = sending.key;
     keepAttempt(sending);
@@ -285,9 +287,11 @@ export function useLegalFeePay(args: FeePayArgs) {
       key: sending.key,
       ...credential,
     });
-    // THE RULE (FIX-108 finding, FIX-112): a closed prompt or a failed approval changes nothing held for this payment (its key, its quote,
-    // any record that an earlier try may have moved money); only the sheet is told. Taken before every other answer.
-    if (isApprovalStop(outcome)) return stopResult(outcome);
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, noRecordToForget);
+    }
     // The Hub gave an answer that proves nothing moved for the key: the attempt is not kept, the next tap asks again.
     const nothingMoved = () => dropAttempt(subject, sending.key);
     switch (outcome.kind) {
