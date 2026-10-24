@@ -11,7 +11,7 @@ import { font, radius, space, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { aiToolsQuery } from './studioApi';
-import { isBuiltTool, STUDIO_WORDS } from './studioModel';
+import { isDrawnTool, STUDIO_WORDS } from './studioModel';
 
 /** me.js `hubItem` as M19 draws the Studio card: a 22 corner card, 16 padding, 12 between the mark and the words; a 48 accent mark, the name 16 semi-bold, a 13 muted line under it, the count at the end. */
 const ROW = { pad: space.lg, gap: space.md, icon: 48, title: 16, sub: 13, subLeading: 1.35, subGap: 3, ring: 1.5 } as const;
@@ -32,7 +32,7 @@ export function StudioRow({ onPress }: { onPress: () => void }) {
   const owner = useSessionAccount(undefined);
   const tools = useQuery({ ...aiToolsQuery(owner), retry: false }, queryClient);
   const points = useQuery({ ...myPointsQuery(owner), retry: false }, queryClient);
-  const sub = studioSub((tools.data?.tools ?? []).filter((t) => t.enabled && isBuiltTool(t)).map((t) => t.name));
+  const sub = studioSub((tools.data?.tools ?? []).filter((t) => t.enabled && isDrawnTool(t)).map((t) => t.name));
   const balance = points.data?.balance;
   return (
     <Pressable

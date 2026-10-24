@@ -242,6 +242,7 @@ const stub = (name: string) => {
 beforeAll(async () => {
   session = require('@/api/session') as typeof import('@/api/session');
   queryClient = (require('@/api/query') as typeof import('@/api/query')).queryClient;
+  const { StudioRow } = require('../StudioRow') as typeof import('../StudioRow');
   routes = {
     _layout: () => (
       <QueryClientProvider client={queryClient}>
@@ -257,6 +258,8 @@ beforeAll(async () => {
     'open-wallet-pin': stub('Create your PIN'),
     studio: page('@/app/studio'),
     'studio-tool': page('@/app/studio-tool'),
+    // The Create hub's Studio card, on its own.
+    'studio-card': () => <StudioRow onPress={() => undefined} />,
   };
   const { unmount } = await renderRouter(routes, { initialUrl: '/studio' });
   await unmount();
@@ -354,8 +357,19 @@ describe('PT1 · the tile Studio draws', () => {
     expect(screen.getByRole('header', { name: 'Dubbing' })).toBeTruthy();
   });
 
-  it('a Dubbing the Hub lists with no languages opens as unavailable, never as a tool that runs', async () => {
+  it('a Dubbing the Hub lists with no languages has no tile and no mention, and a link straight to it says it is unavailable', async () => {
+    // R-47 (lead, 24 Oct 2026): a tool the app cannot run is not drawn. This test used to pin the tile that opened as a dead end.
     hub.listed = [];
+    const studio = await renderRouter(routes, { initialUrl: '/studio' });
+    await screen.findByTestId('studio-empty');
+    expect(screen.queryByTestId('studio-tool-dubbing')).toBeNull();
+    expect(screen.queryByText(/Dubbing/)).toBeNull();
+    await studio.unmount();
+    const card = await renderRouter(routes, { initialUrl: '/studio-card' });
+    await waitFor(() => expect(queryClient.getQueryState(['ai-tools', OWNER])?.status).toBe('success'));
+    expect(screen.getByTestId('create-studio-sub')).toHaveTextContent('AI voice tools', { exact: true });
+    expect(screen.queryByText(/Dubbing/)).toBeNull();
+    await card.unmount();
     await renderRouter(routes, { initialUrl: '/studio-tool?tool=dubbing' });
     await screen.findByTestId('tool-unavailable');
     expect(screen.queryByTestId('tool-run')).toBeNull();

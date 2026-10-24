@@ -7,7 +7,7 @@ order: -118
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: building
+status: review
 depends_on: [AITOOLS-05, POINTS-10]
 decisions: [R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -38,6 +38,7 @@ As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B11), mobile `wmt/POINT
 - **Live look (V9; local stack `b11dub`, backend `wmt/AITOOLS-05` `4aeff65` on the Nuvion, voice and storage stand-ins, web export at 390 by 844, Chromium dark then light, a real sign-in on the sign-in screen through the mock sign-in service, one person with 6,000 points):** Studio drew "Dubbing, From 1,500 a minute" and opened it; 94 language rows; a 50 second WAV went up (presign, bytes, confirm), the Hub read it ("About 1 minute", "This uses 1,500 points"); a language chosen; Run made one job ("Making your Dubbing", "This can take a few minutes. You can leave this screen."); in the dark run the person left for Studio and came back to the job still working with the recording's name; the dub ended about a minute after it started: the player and 25 subtitle lines showed ("1,500 points used · 4,500 left" dark, "· 3,000 left" light); the light run did the same with a real FLAC in the player and the audio played. Pictures: `scratchpad/points-11-b/` `dubbing-1-empty`, `-2-quoted`, `-3-working`, `-4-done`, each `-dark` and `-light`; boards `board-PT2`, `-PT2a`, `-PT2b`, `-PT2c`, `-PT1`; side by side `cmp-points-11-dark.png` and `-light.png` (PT2 board, empty, quoted, PT2a board, working, PT2b board, done).
 - **Found live, worked around (not the app's):** the storage stand-in answers no CORS preflight, so the browser ran with web security off (a phone has no CORS); the shared backend `node_modules` has no `music-metadata` (AITOOLS-04's dependency), so the Hub answered "We couldn't read that file" until it was put on the Hub's path from a folder outside both repos. Neither touches a repo.
 - **Not done (for the verifier):** the play on a phone (NOT RUN); a failed dub, the daily cap and a short balance NOT RUN live (tests: `a failed dub says no points were taken`, `past the daily limit`, `with too few points the sheet appears`); the Share subtitles row NOT RUN on a phone (the web draws none; the test hands the Hub's `.vtt` to the mocked share sheet and checks the file's name, text and `text/vtt`); a real provider was never called (the stand-in's lines are `dubbed line N` and its FLAC is a header and filler); not compared picture by picture beyond the builder's own look (the boards have no file row, language rows, subtitles card or share row: G-POINTS-11-1).
+- **24 Oct 2026:** the verifier's medium (Dubbing tile drawn with no languages) fixed in this commit; lead accepts on the diff read (Fable rule); the three lows go to SWEEP-POINTS.
 - **History:** none yet. Reports go to tasks/history/POINTS-11.md.
 
 ## Read first
