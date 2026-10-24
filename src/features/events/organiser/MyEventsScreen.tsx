@@ -17,7 +17,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/
 import type { EventView } from '../api';
 import { EventsTabs, NavBar } from '../chrome';
 import { useRefetchOnFocus } from '../useRefetchOnFocus';
-import { fetchMinePage, fetchSold, mineKey, soldKey } from './organiserApi';
+import { decisionsKey, fetchDecisions, fetchMinePage, fetchSold, mineKey, soldKey } from './organiserApi';
 import { opensOf, pillOf, rowLine } from './organiserFormat';
 
 /** design/_gen/events.js `myEvents` (E17): a card per event, 10 between, a 56 picture with a 16 corner, the pill at the right end. */
@@ -48,6 +48,9 @@ export function MyEventsScreen({ onBack, onDiscover, onHost, onOpenLive, onOpenS
   const events = (mine.data?.pages ?? []).flatMap((page) => page.events);
   // The sales are the Hub's too. A row that has no count yet (or never gets one) draws its date alone, never "0 sold".
   const sold = useQuery({ queryKey: soldKey, queryFn: fetchSold, retry: false });
+  // Only asked while a removed event is on the list: nothing else on this screen needs a decision's day.
+  const anyRemoved = (mine.data?.pages ?? []).some((page) => page.events.some((e) => e.status === 'removed'));
+  const decided = useQuery({ queryKey: decisionsKey, queryFn: fetchDecisions, retry: false, enabled: anyRemoved });
   useRefetchOnFocus(['events', 'mine']);
   const [at] = useState(() => now());
 
@@ -84,6 +87,7 @@ export function MyEventsScreen({ onBack, onDiscover, onHost, onOpenLive, onOpenS
                 key={event.id}
                 event={event}
                 sold={sold.data?.[event.id]}
+                takenDownAt={decided.data?.[event.id]}
                 now={at}
                 onOpen={opensOf(event) === 'dashboard' ? () => onOpenLive(event.id) : opensOf(event) === 'sent-back' ? () => onOpenSentBack(event.id) : null}
               />
@@ -100,11 +104,11 @@ export function MyEventsScreen({ onBack, onDiscover, onHost, onOpenLive, onOpenS
   );
 }
 
-function EventCard({ event, sold, now, onOpen }: { event: EventView; sold: number | undefined; now: number; onOpen: (() => void) | null }) {
+function EventCard({ event, sold, takenDownAt, now, onOpen }: { event: EventView; sold: number | undefined; takenDownAt: string | undefined; now: number; onOpen: (() => void) | null }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const pill = pillOf(event);
-  const line = rowLine(event, sold, now);
+  const line = rowLine(event, sold, now, takenDownAt);
   const note = event.status === 'rejected' ? event.lastDecisionReason : null;
   const body = (
     <Card padded style={styles.card} testID={`my-event-${event.id}`}>

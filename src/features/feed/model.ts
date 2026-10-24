@@ -228,6 +228,9 @@ export function pillFor(item: FeedItem, kind: PostKind, detail?: CourseDetail | 
 
 export type Offer = { icon: IconName; title: string; subtitle: string };
 
+/** What H4's offer bar says about a PDF: access to a bought piece never ends. */
+export const YOURS_FOREVER = 'Yours\u00a0forever';
+
 /**
  * The offer bar under a locked post (H3, H4, H5): what unlocking gives and how it is paid
  * for. Only a locked piece has one. The price beside it is the piece's own price. The bar
@@ -237,9 +240,9 @@ export type Offer = { icon: IconName; title: string; subtitle: string };
 export function offerFor(item: FeedItem, kind: PostKind, detail?: CourseDetail | null): Offer | null {
   if (!isLocked(item)) return null;
   const length = durationText(item.media?.durationLabel ?? item.durationLabel);
-  const pages = item.media?.pageCount ?? item.pageCount;
   const frames = item.media?.frameCount;
   // Non-breaking spaces: when the subtitle wraps it breaks before "Pay", never inside it (H4 draws it whole).
+  // H4 reads "Yours forever · Pay from wallet": a bought piece has no end (R-50), so the line is a fact. The page count is in the pill above.
   const pay = 'Pay\u00a0from\u00a0wallet';
   switch (kind) {
     case 'video':
@@ -247,7 +250,7 @@ export function offerFor(item: FeedItem, kind: PostKind, detail?: CourseDetail |
     case 'audio':
       return { icon: 'Lock', title: 'Unlock the full audio', subtitle: join([length, pay]) };
     case 'pdf':
-      return { icon: 'BookOpen', title: 'Read the full PDF', subtitle: join([pages ? `${pages} pages` : null, pay]) };
+      return { icon: 'BookOpen', title: 'Read the full PDF', subtitle: join([YOURS_FOREVER, pay]) };
     case 'photos':
       return { icon: 'Images', title: 'Unlock the full set', subtitle: join([frames ? `${frames} photos` : null, pay]) };
     // H7 and H8 name the piece itself in the bar: "VFX for Beginners · 12 lessons", "Aba Collection · Template".

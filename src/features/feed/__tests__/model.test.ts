@@ -303,7 +303,8 @@ describe('the offer bar', () => {
     expect(offerFor(locked({ contentType: 'pdf', media: { ...piece().media, pageCount: 84 } }), 'pdf')).toEqual({
       icon: 'BookOpen',
       title: 'Read the full PDF',
-      subtitle: '84 pages · Pay\u00a0from\u00a0wallet',
+      // FIX-110 (G-220): H4's bar reads "Yours forever · Pay from wallet"; the page count is in the pill above it.
+      subtitle: 'Yours\u00a0forever · Pay\u00a0from\u00a0wallet',
     });
     expect(offerFor(locked({ contentType: 'image', media: { ...piece().media, frameCount: 4 } }), 'photos')?.subtitle).toBe(
       '4 photos · Pay\u00a0from\u00a0wallet',

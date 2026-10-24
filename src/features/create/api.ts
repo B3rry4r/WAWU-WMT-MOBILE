@@ -10,6 +10,8 @@ import type { FormatId, FormatRule } from './model';
  * - `GET /uploads/formats`: what each format may upload, the types, the most bytes and the clip length (M20 to M22);
  * - `POST /uploads/presign` with `format`: the link one file goes up to, checked against that format's rule;
  * - `POST /uploads/release`: gives a file back once the draft lets go of it, so it stops counting against the account's storage;
+ * - `GET /content/sale-terms`: what a creator keeps of a sale, the listing fee, the quick prices and how long a review usually
+ *   takes (M24, M25, FIX-110), every figure the Hub's, so the app never multiplies money;
  * - `POST /content`: sends the finished piece for review (M24), which takes a place in the uploads (M25's "5 of 5 used").
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data`, so each call reads it.
  */
@@ -22,6 +24,7 @@ function dataOf<T>(body: unknown, what: string): T {
 }
 
 export const allowanceKey = ['uploads', 'allowance'] as const;
+export const saleTermsKey = (priceKobo: number | null) => ['content', 'sale-terms', priceKobo] as const;
 export const formatsKey = ['uploads', 'formats'] as const;
 
 export type Allowance = {
@@ -92,4 +95,37 @@ export async function createContent(body: CreateContentBody): Promise<{ title: s
   const raw = (await unwrap(api.POST('/api/hub/content', { body }))) as unknown;
   const piece = ((raw as { data?: unknown } | undefined)?.data ?? raw ?? {}) as { title?: unknown };
   return { title: typeof piece.title === 'string' && piece.title !== '' ? piece.title : body.title };
+}
+
+/** What the Hub says about selling a piece (FIX-110). `earnPerSaleKobo` is null until a price is asked about. */
+export type SaleTerms = {
+  creatorSharePct: number;
+  listingFeeKobo: number;
+  presetsKobo: number[];
+  reviewHours: number;
+  priceKobo: number | null;
+  earnPerSaleKobo: number | null;
+};
+
+/** `GET /content/sale-terms`, with the price being typed (whole kobo) when there is one. */
+export async function fetchSaleTerms(priceKobo: number | null): Promise<SaleTerms> {
+  const query = priceKobo === null ? {} : { priceKobo };
+  const out = dataOf<Partial<SaleTerms>>(await unwrap(api.GET('/api/hub/content/sale-terms', { params: { query } })), 'terms');
+  if (
+    typeof out.creatorSharePct !== 'number' ||
+    typeof out.listingFeeKobo !== 'number' ||
+    !Array.isArray(out.presetsKobo) ||
+    !out.presetsKobo.every((q) => typeof q === 'number') ||
+    typeof out.reviewHours !== 'number'
+  ) {
+    throw unreadable('terms');
+  }
+  return {
+    creatorSharePct: out.creatorSharePct,
+    listingFeeKobo: out.listingFeeKobo,
+    presetsKobo: out.presetsKobo,
+    reviewHours: out.reviewHours,
+    priceKobo: typeof out.priceKobo === 'number' ? out.priceKobo : null,
+    earnPerSaleKobo: typeof out.earnPerSaleKobo === 'number' ? out.earnPerSaleKobo : null,
+  };
 }

@@ -12,7 +12,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 type Wat = { weekday: string; day: number; month: string; year: number; hour: string; minute: string };
 
-type Zoned = { timezone?: string | null; timeLabel?: string | null };
+type Zoned = { timezone?: string | null; timeLabel?: string | null; endsAt?: string | null };
 const LAGOS = 'Africa/Lagos';
 const keepsLagosTime = (zone?: Zoned) => !zone?.timezone || zone.timezone === LAGOS;
 
@@ -79,12 +79,17 @@ export function badgeOf(iso: string, zone?: Zoned): { month: string; day: string
 /**
  * "Sun 12 Oct · 10:00 WAT" (E2). The date is read in the event's own zone, so it always sits beside
  * that zone's clock. The year follows ("Sun 16 Mar 2031") only when the event is not in the current
- * year. An event in another zone shows the Hub's `timeLabel` where WAT would be (no label: date
+ * year. An event that ends on a later day in its own zone names both days ("Sat 8 Nov to Mon 10 Nov · 14:00 WAT"). An event in another zone shows the Hub's `timeLabel` where WAT would be (no label: date
  * only). A zone the runtime cannot resolve draws the Lagos date alone: no clock, no zone claim.
  */
 export function whenLine(iso: string, zone?: Zoned, now: number = Date.now()): string {
   const w = watOf(iso, zone);
-  const date = `${w.weekday} ${w.day} ${w.month}${w.year === watOf(new Date(now).toISOString(), zone).year ? '' : ` ${w.year}`}`;
+  const thisYear = watOf(new Date(now).toISOString(), zone).year;
+  const dayOf = (x: Wat) => `${x.weekday} ${x.day} ${x.month}${x.year === thisYear ? '' : ` ${x.year}`}`;
+  // A multi-day event (FIX-110, G-443) names both days ("Sat 8 Nov to Mon 10 Nov"); one that ends on its start day reads as before.
+  const end = zone?.endsAt && Number.isFinite(Date.parse(zone.endsAt)) ? watOf(zone.endsAt, zone) : null;
+  const endsLater = end !== null && (end.year !== w.year || end.month !== w.month || end.day !== w.day) && Date.parse(zone!.endsAt!) > Date.parse(iso);
+  const date = endsLater ? `${dayOf(w)} to ${dayOf(end)}` : dayOf(w);
   if (keepsLagosTime(zone)) return `${date} · ${w.hour}:${w.minute} WAT`;
   if (zoneUnresolved(zone)) return date;
   const label = zone?.timeLabel?.trim();

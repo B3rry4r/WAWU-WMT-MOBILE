@@ -126,10 +126,16 @@ export function PriceCard({
 }) {
   return (
     <Card padded style={styles.price} testID="detail-price-card">
-      <Text variant="meta" style={styles.priceLabel}>
-        {label}
-      </Text>
-      <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />
+      <View style={styles.priceHead}>
+        <View style={styles.priceWords}>
+          <Text variant="meta" style={styles.priceLabel}>
+            {label}
+          </Text>
+          <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />
+        </View>
+        {/* H19: a purchase never ends (no expiry exists on a bought piece, and R-50 keeps what buyers paid for), so this is a fact, not a promise. */}
+        <StatusPill testID="detail-yours-forever" label="Yours forever" tone="positive" icon="Check" />
+      </View>
       <Button testID="detail-unlock" label={`${actionLabel} · ${formatNaira(priceKobo)}`} onPress={onUnlock} loading={loading} full />
       <WalletLine balanceKobo={balanceKobo} />
     </Card>
@@ -316,7 +322,9 @@ const styles = StyleSheet.create({
   nameLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   makerName: { flexShrink: 1 },
   price: { gap: space.md },
-  priceLabel: { marginBottom: -space.sm },
+  priceHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  priceWords: { flex: 1, minWidth: 0, gap: space.sm },
+  priceLabel: {},
   walletLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: m.tightSpace },
   walletText: { textAlign: 'center' },
   engage: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: space.xs, paddingHorizontal: m.engagePad },

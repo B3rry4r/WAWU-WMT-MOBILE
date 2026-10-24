@@ -289,8 +289,9 @@ describe('H19: a locked paid piece', () => {
     expect(screen.getByText('Unlock the full PDF')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦3,000' })).toBeTruthy();
     expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
-    // Nothing the Hub does not say: no "forever", no 96%, no Read now or Tip while it is locked.
-    expect(screen.queryByText(/forever|96%/i)).toBeNull();
+    // FIX-110 (G-1723, G-HOME-03-3): "Yours forever" is drawn, since a bought piece has no end. Nothing else the Hub does not say: no 96%, no Read now or Tip while it is locked.
+    expect(screen.getByText('Yours forever')).toBeTruthy();
+    expect(screen.queryByText(/96%/i)).toBeNull();
     expect(screen.queryByTestId('detail-open')).toBeNull();
     expect(screen.queryByTestId('detail-tip')).toBeNull();
     expect(screen.getByText('1.2K')).toBeTruthy();

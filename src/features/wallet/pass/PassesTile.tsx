@@ -11,7 +11,7 @@ import { eventLine } from './model';
 /**
  * design/_gen/wallet.js line 46, `mini`: a 20 corner, padded 12 by 14, the parts 4 apart. The head is a 15 icon
  * and the word at 12.5 / 600 muted, 6 apart; the pass's name is 18 / 700 tracked -0.02em; the line under it is 12 muted.
- * Every line sits on the canvas's `line-height: normal`. The board's second line, the event's name, has no source (G-814, R-47), so the date line is there instead.
+ * Every line sits on the canvas's `line-height: normal`. The board's second line is the event's name (the Hub's, G-814, FIX-110); until an admin names the event the date line is there instead.
  */
 const TILE = { radius: 20, padV: 12, padH: 14, stack: 4, head: 12.5, headGap: 6, icon: 15, title: 18, titleTracking: -0.02, sub: 12 } as const;
 
@@ -19,10 +19,10 @@ const TILE = { radius: 20, padV: 12, padH: 14, stack: 4, head: 12.5, headGap: 6,
  * W1's Passes card: the Hub's name for the person's pass and when the event is. Tapping it opens W44. It shares a row
  * with the Points card (DV2-02) and takes what room the row gives it.
  */
-export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eventDate'>; onPress: () => void }) {
+export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eventDate' | 'eventName'>; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const when = eventLine(pass.eventDate);
+  const when = pass.eventName ?? eventLine(pass.eventDate);
   return (
     <Pressable
       testID="wallet-passes"

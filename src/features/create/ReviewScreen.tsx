@@ -10,7 +10,8 @@ import { KeyValueRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { layout, space, useWawu } from '@/theme';
 
-import { allowanceKey, fetchAllowance, type Allowance } from './api';
+import { allowanceKey, fetchAllowance, fetchSaleTerms, saleTermsKey, type Allowance } from './api';
+import { reviewWords } from './details';
 import { footMetrics } from './CreateFrame';
 import { onFreeAllowance } from './UploadsMeter';
 
@@ -34,7 +35,8 @@ export type ReviewScreenProps = {
 /**
  * M25 · Sent for review. Shown once `POST /content` has said yes, so every line is true of the piece just sent: the Hub files it
  * as pending, tells the person when it goes live, and it takes its place in the uploads (read again from `GET /uploads/allowance`,
- * never counted here). "Usually takes" is not drawn: nothing the Hub serves says how long a review takes (G-ME-08-3). View in
+ * never counted here). "Usually takes" is the Hub's review time in hours (`GET /content/sale-terms`, an admin setting, FIX-110),
+ * worded here, and left out until the Hub has answered. View in
  * library opens My content (M28, ME-07), where the piece shows as In review. The phone's back button is Done, since there is no step
  * behind this one.
  */
@@ -42,6 +44,7 @@ export function ReviewScreen({ title, onDone, onOpenLibrary }: ReviewScreenProps
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
+  const terms = useQuery({ queryKey: saleTermsKey(null), queryFn: () => fetchSaleTerms(null) });
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -69,6 +72,7 @@ export function ReviewScreen({ title, onDone, onOpenLibrary }: ReviewScreenProps
           </Text>
         </View>
         <GroupedList testID="review-card">
+          {terms.data ? <KeyValueRow testID="review-takes" label="Usually takes" value={reviewWords(terms.data.reviewHours)} /> : null}
           {counted ? <KeyValueRow testID="review-uploads" label="Uploads" value={usedLine(counted)} /> : null}
           <KeyValueRow testID="review-notify" label="We'll tell you" value="When it goes live" />
         </GroupedList>

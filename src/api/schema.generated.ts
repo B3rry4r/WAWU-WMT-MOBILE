@@ -1391,6 +1391,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/sale-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a creator keeps of a sale, the listing fee, the quick prices and how
+         *     long a review usually takes (M24, M25, FIX-110). Read only. Before `:id`
+         *     so the literal is never taken for an id.
+         */
+        get: operations["ContentPieceController_saleTermsAt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content": {
         parameters: {
             query?: never;
@@ -5551,6 +5572,27 @@ export interface paths {
          *     so there is no creator gate here.
          */
         get: operations["EventController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/events/mine/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The day an admin last sent back or took down each of the host's events
+         *     (FIX-110, E17's "Taken down 20 Sep"). A route of its own, so the shape the
+         *     web reads from `mine` does not change.
+         */
+        get: operations["EventController_mineDecisions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -10835,6 +10877,8 @@ export interface components {
             name: string;
             benefits?: string[] | null;
             eventDate?: string | null;
+            eventName?: string | null;
+            passCode?: string | null;
         };
         MyTierView: {
             /** @enum {string} */
@@ -11326,6 +11370,14 @@ export interface components {
                 currency: "NGN";
                 publicKey: string;
             };
+        };
+        ContentSaleTerms: {
+            creatorSharePct: number;
+            listingFeeKobo: number;
+            presetsKobo: number[];
+            reviewHours: number;
+            priceKobo: number | null;
+            earnPerSaleKobo: number | null;
         };
         ContentPieceResponse: {
             id: string;
@@ -13998,6 +14050,14 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             lastDecisionReason: string | null;
+        };
+        EventDecisionView: {
+            eventId: string;
+            /** Format: date-time */
+            decidedAt: string;
+        };
+        EventDecisionsView: {
+            items: components["schemas"]["EventDecisionView"][];
         };
         EventTicketRulesView: {
             hostSharePercent: number;
@@ -17830,6 +17890,27 @@ export interface operations {
                     "application/json": {
                         tipped: boolean;
                     };
+                };
+            };
+        };
+    };
+    ContentPieceController_saleTermsAt: {
+        parameters: {
+            query?: {
+                priceKobo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentSaleTerms"];
                 };
             };
         };
@@ -26442,6 +26523,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventView"][];
+                };
+            };
+        };
+    };
+    EventController_mineDecisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDecisionsView"];
                 };
             };
         };

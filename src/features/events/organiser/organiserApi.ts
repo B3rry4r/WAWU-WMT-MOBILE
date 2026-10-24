@@ -8,6 +8,7 @@ import { hostUnwrap } from '../host/hostTier';
 /**
  * What a host sees of their own events (E17, E18, E25) and what they can do to one, as the Hub's contract types it:
  * - `GET /events/mine` and `GET /events/mine/sold`: every event the person hosts, and the tickets sold on each (EVENTS-05),
+ * - `GET /events/mine/decisions`: the day an admin last sent back or took down each of them (E17's "Taken down 20 Sep", FIX-110),
  * - `GET /events/{id}/dashboard`: sold, checked in, left and what the host is owed after our cut,
  * - `GET /events/{id}/call-off`: how many people a call-off refunds (E25),
  * - `GET` and `POST /events/{id}/referrals`: the shared links with their sales,
@@ -26,6 +27,7 @@ type Envelope<T> = { data?: T | null };
 /** All under `['events']`, so a screen that changes an event refreshes them with one `invalidateQueries`. */
 export const mineKey = ['events', 'mine'] as const;
 export const soldKey = ['events', 'mine', 'sold'] as const;
+export const decisionsKey = ['events', 'mine', 'decisions'] as const;
 export const dashboardKey = (id: string) => ['events', 'dashboard', id] as const;
 export const referralsKey = (id: string) => ['events', 'referrals', id] as const;
 export const callOffKey = (id: string) => ['events', 'call-off', id] as const;
@@ -56,6 +58,16 @@ export async function fetchSold(): Promise<Record<string, number>> {
   const sold: Record<string, number> = {};
   for (const item of items) sold[item.eventId] = item.ticketsSold;
   return sold;
+}
+
+/** When an admin last sent each event back or took it down, by event id, as the Hub's timestamp. An event the Hub does not list has no date. */
+export async function fetchDecisions(): Promise<Record<string, string>> {
+  const body = (await unwrap(api.GET('/api/hub/events/mine/decisions'))) as unknown as Envelope<{ items?: { eventId: string; decidedAt: string }[] }>;
+  const items = body?.data?.items;
+  if (!Array.isArray(items)) throw unreadable('dates');
+  const decided: Record<string, string> = {};
+  for (const item of items) if (typeof item.eventId === 'string' && typeof item.decidedAt === 'string') decided[item.eventId] = item.decidedAt;
+  return decided;
 }
 
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
