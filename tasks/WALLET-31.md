@@ -125,6 +125,8 @@ Not run by this verifier, on purpose: Fintava specs (`webhook-retention`, and `w
 | L6 admin repeats | a repeated unfreeze, cancel or admin freeze is a no-op with no second audit row | spec: three audit rows for three changes and a repeated cancel |
 | L7 W29 spacing | the fee card uses `Card padded` (its rows style had overridden the padding), so the top and bottom room are the same | typecheck; picture not remade (no stack this round) |
 
+Branch checks on `bf9f85b` (run 40105092641): contract, netns, shards 1 and 3, Gates and Protected routes are green; shard 2 has one red, `webhook-retention.contract.spec` (FIX-20, "a cleared delivery sent again is refused as a repeat", Nuvion case). That red is this branch's: the spec registers its own handler for `cards.deleted` and sends it for a wallet that has no row, and the card handler (which now claims `cards.deleted`) answers `wait`, so the delivery reads `waiting` instead of `processed`. Branch checks of IAP-01, WALLET-21-HUB and NUV-11 do not show it. Not touched, by the lead's order; the fix is the same kind as H1d (the spec's default sample event `cards.deleted`, its handler's `events` and the one test title move to an event no handler claims, such as `payment_dispute.created`), for the lead to rule.
+
 Not done: M2 (the live Nuvion dev pass through the app, a funded dev wallet); pictures of round 1; the full app check. `plan-settings-round2` and `-readers` (14 tests) fail on a clean `origin/main` too. Five app wallet tests (W1, W35 x2, W26, W36) time out at 20 s on a cold, loaded machine and pass with `--testTimeout=120000`; three of them fail the same on the untouched checkout.
 
 ## Owner sign-off
