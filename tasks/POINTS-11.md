@@ -7,7 +7,7 @@ order: -118
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: building
 depends_on: [AITOOLS-05, POINTS-10]
 decisions: [R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B11), mobile `wmt/POINTS-11` on `origin/wmt/POINTS-10` `cbdb3f7d` (POINTS-10 is under check and not on main: this branch carries its file tool kind and merges its later pushes, no rebase). Status verifying. App only: no backend change. The Hub routes are on backend `wmt/AITOOLS-05` `4aeff65` (not merged): the app's contract is copied from that commit (`contract/SOURCE_COMMIT` says so), SHARED-CHANGES POINTS-11 #2. Sync again from backend main once AITOOLS-05 merges; the file should not change.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B11), mobile `wmt/POINTS-11` on `origin/wmt/POINTS-10` `cbdb3f7d` (POINTS-10 is under check and not on main: this branch carries its file tool kind and merges its later pushes, no rebase). Status building (verifier said FIX: 1 medium, 3 low, see the Verifier report below). App only: no backend change. The Hub routes are on backend `wmt/AITOOLS-05` `4aeff65` (not merged): the app's contract is copied from that commit (`contract/SOURCE_COMMIT` says so), SHARED-CHANGES POINTS-11 #2. Sync again from backend main once AITOOLS-05 merges; the file should not change.
 
 | # | Before (`wmt/POINTS-10`) | After |
 |---|---|---|
@@ -77,6 +77,31 @@ A person picks a recording and a language and gets it back dubbed, leaves the sc
 - [ ] The states match PT2a, PT2b and PT2c in light and dark, compared picture with picture (V5); the language rows are recorded as an undrawn part.
 - [ ] Playing the dubbed audio: checked on the web export and on a device, or reported NOT RUN with the reason (V10 is the owner's device run).
 - [ ] Against the local backend on the stand-in, a real sign-in runs one dub to the end and reads it back (V9).
+
+## Verifier report
+
+**Verdict: FIX** (1 medium, 3 low). Verifier is a Sonnet agent that built none of it; checked mobile `6590be7e` against `origin/wmt/POINTS-10` `cbdb3f7d`, on a local stack `vpt11` (backend `wmt/AITOOLS-05` `4aeff65`, voice and storage stand-ins, Nuvion stand-in, web export 390 x 844, real sign-in through the sign-in screen, never a live host or key). Pictures: `scratchpad/points-11-v/` (`cmp-points-11-v-dark.png`, `-light.png`: PT2, empty, quoted, PT2a, working, PT2b, done; `cmp-points-11-v-states.png`: PT3 board, refused, short balance, failed, Studio with Dubbing off, empty-languages tile opened, done light).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Diff vs report | passed | 21 files, the 12 `.ts`/`.tsx` the builder named plus `schema.generated.ts`; contract rows match SHARED-CHANGES #2 |
+| tsc | passed, EXIT 0 | `points-11-v/tsc.log` |
+| eslint (no --fix, 12 files) | passed, EXIT 0 | `eslint.log` |
+| jest points, settings, create | passed, 19 suites 409/409, EXIT 0 | `jest.log` |
+| gates, check_baseline, check_tasks | passed, EXIT 0 each (1,242 files, 0 fail, 18 warn, 0 accepted; 420 tasks) | `gates.log`, `baseline.log`, `tasks.log` |
+| V9 live: recording, language, cost, run, leave and return, done | passed, dark and light | `main-*`, logs `run-main-*.log`: 94 rows, "About 1 minute", "This uses 1,500 points", Run off until a recording AND a language, one job, back to the working view with the recording's name after a full reload and after an in-app back, done in 78 s and 82 s with player, 25 subtitle lines, "1,500 points used · 3,000 left" |
+| V6 refused file, PT3, failed dub | passed | `refused-2-refused-*`: "That didn't start", Run off; `short-3-short-*`: 1,500 / 1,000 / short by 500, no job sent; `failed-4-failed-dark`: "No points were taken", balance 4,500 back (db), Try again opens the recording choice |
+| Poll schedule | passed | reads at 2 s for the first minute, then 5 s (`gaps`), first read about 1.3 s after reopening; Hub 500 on the job read for 20 s: 12 reads (retry back-off plus the 2 s step), no tight loop, view stayed working and recovered; leaving by in-app back: 0 reads in 15 s, and a reload: 0 reads. The 10 s step (after 5 minutes) NOT RUN live (needs a 5 minute dub); the unit test pins 59,999 / 60,000 / 299,999 / 300,000 ms |
+| Fixture `studioToolsFlow` | honest | Dubbing to Receptionist, only ids and a comment change, no assertion loosened; `receptionist` has no `LOOKS` entry so it is still "no screen". No premium or video words in the done state's picture or code |
+| V5 picture | passed with the recorded gaps | working, done and failed match PT2a, PT2b (no Save and Use rows: not built, R-47), PT2c; language rows, subtitles card are G-POINTS-11-1 |
+| Dubbed audio plays | NOT RUN by the verifier | driver stopped before the tap; the builder's web check stands; phone is V10 |
+| Try again keeps the language chosen | NOT RUN live (the file picker needs a person); test `a failed dub says no points were taken...` covers it |
+
+Findings:
+- **medium, defect (R-47):** the tile is drawn and opens for a Hub that lists Dubbing with an empty `input.file.dubbing.languages`. Current state row 1 says the tile is drawn only with at least one language; `StudioScreen.tsx:86` (`filter(isBuiltTool)`) and `StudioRow.tsx:35` filter on the tool's id alone, and `dubbingFlow.test.tsx:357` pins the opposite ("opens as unavailable"). Repro: stack, intercept `GET /ai-tools` to empty Dubbing's `languages`, open Studio: a live-looking tile, tap, "Dubbing isn't available right now" (`off-nolanguages-opened-dark.png`). The Hub's own off case is fine (`listedWhenOff: false`: not listed, no tile, `off-unlisted-studio-dark.png`). Fix: draw the tile and the Create hub's Studio card name only when `toolReady` holds (or correct row 1 and the test, if the lead rules the dead end acceptable).
+- **low:** a tool listed with `enabled: false` is drawn as a dim "Not available right now" tile (`off-enabledfalse-studio-dark.png`); this is the app-wide Studio convention from POINTS-07, and the Hub never lists Dubbing off. To the sweep.
+- **low:** the done view keeps the recording row ("Ready", "Choose another") and the file-types hint above the player; the board's PT2b has neither; shared `FileParts` behaviour from POINTS-10, only label props are new here. To the sweep.
+- **low:** the Hub 500 on a job read shows `tool-job-error` while the job is still working and clears when reads recover (`main-3b-after-500-dark.png` not compared to a board; no board draws it). To the sweep.
 
 ## History
 
