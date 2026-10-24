@@ -71,9 +71,9 @@ export function failedWords(message: string | null | undefined): { title: string
   return { title: said.slice(0, cut).replace(/[.!?]+$/, ''), body: said.slice(cut + 1).trim() };
 }
 
-/** What a tool takes in: the words to speak (`text`, the default of an entry that does not say) or a description of a sound or track (`prompt`). */
-export type InputKind = 'text' | 'prompt';
-export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.input.kind === 'prompt' ? 'prompt' : 'text');
+/** What a tool takes in: the words to speak (`text`, the default of an entry that does not say), a description of a sound or track (`prompt`), or the person's own recording (`file`). */
+export type InputKind = 'text' | 'prompt' | 'file';
+export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.input.kind === 'prompt' ? 'prompt' : tool.input.kind === 'file' ? 'file' : 'text');
 
 /**
  * What a tool's screen can run: the app has its screen, and the Hub lists it as on with a limit for what it takes. A tool that reads
@@ -81,7 +81,10 @@ export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.inp
  * use, a track), with no voices and no length.
  */
 export function toolReady(tool: AiTool | undefined): tool is AiTool {
-  if (!tool || !tool.enabled || !isBuiltTool(tool) || !(tool.input.maxCharacters > 0)) return false;
+  if (!tool || !tool.enabled || !isBuiltTool(tool)) return false;
+  // A tool that takes the person's recording has no text to limit: it needs the Hub's rule for the file (its types, bytes and minutes).
+  if (inputKindOf(tool) === 'file') return Boolean(tool.input.file && tool.input.file.maxBytes > 0 && tool.input.file.maxMinutes > 0 && (tool.input.file.accepts.audio.length > 0 || tool.input.file.accepts.video.length > 0));
+  if (!(tool.input.maxCharacters > 0)) return false;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }
 

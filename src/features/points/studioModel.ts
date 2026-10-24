@@ -55,6 +55,8 @@ export const CAP_WORDS = {
 const LOOKS: Record<string, IconName> = {
   voiceover: 'Mic',
   'quick-voice': 'Zap',
+  captions: 'Captions',
+  'clean-audio': 'AudioWaveform',
   music: 'Music',
   'sound-effect': 'Volume2',
 };

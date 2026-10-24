@@ -24,6 +24,7 @@ import { switchMetrics } from '@/components/Switch';
 import { SwitchRow, switchRowMetrics } from '@/components/SwitchRow';
 import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
+import { fetchPointsSettings, pointsSettingsKey, putPointsSettings, type PointsSettings } from '@/features/points/walletUseApi';
 
 /** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
 const BODY_GAP = 12;
@@ -41,6 +42,13 @@ const footMetrics = { padV: 4, signOut: 15, between: 14, deleteAccount: 13.5 } a
  */
 export const TGIF_TITLE = 'TGIF each morning';
 export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
+
+/**
+ * G-POINTS-07-1: where "Use wallet" is switched (`GET` and `PUT /me/points/settings`). No board draws the row, so it is the TGIF switch's own
+ * look, in the same group; the line says what the switch does, and nothing is taken from the wallet by switching it.
+ */
+export const USE_WALLET_TITLE = 'Use wallet for AI tools';
+export const USE_WALLET_SUBTITLE = 'Pay for missing points from your wallet';
 
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
@@ -81,6 +89,12 @@ export function SettingsScreen(props: SettingsScreenProps) {
     read: fetchTgif,
     write: (patch) => patchTgif(patch.show === true),
     valueOf: (settings) => settings.show,
+  });
+  const useWallet = useSwitches<'useWallet', PointsSettings>({
+    queryKey: pointsSettingsKey,
+    read: fetchPointsSettings,
+    write: (patch) => putPointsSettings(patch.useWallet === true),
+    valueOf: (settings) => settings.useWallet,
   });
   const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
   const [choosingTheme, setChoosingTheme] = useState(false);
@@ -144,8 +158,25 @@ export function SettingsScreen(props: SettingsScreenProps) {
           <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
         )}
         <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
+        {useWallet.query.data ? (
+          <SwitchRow
+            testID="settings-use-wallet"
+            title={USE_WALLET_TITLE}
+            subtitle={USE_WALLET_SUBTITLE}
+            on={useWallet.isOn('useWallet')}
+            busy={useWallet.busy.includes('useWallet')}
+            onChange={(next) => void useWallet.set('useWallet', next)}
+          />
+        ) : (
+          <PendingRow testID="settings-use-wallet-pending" title={USE_WALLET_TITLE} subtitle={USE_WALLET_SUBTITLE} failed={useWallet.query.isError} onRetry={() => void useWallet.query.refetch()} />
+        )}
         <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
       </GroupedList>
+      {useWallet.failure ? (
+        <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-use-wallet">
+          {useWallet.failure}
+        </Text>
+      ) : null}
       {tgif.failure ? (
         <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
           {tgif.failure}
