@@ -3,19 +3,18 @@ import { useEffect, type ReactNode } from 'react';
 import { queryClient } from '@/api/query';
 
 import { useMoviesHome } from './api';
-import { isSoon } from './FlixSoon';
 
 /**
  * Every Flix screen sits inside this (R-27, R-47): when the Hub answers `enabled: false` no Flix screen is drawn, so a person who
  * reaches one by an old link is sent out (`onOff`) and sees nothing of it. While the answer is on its way nothing is drawn (it is
  * the answer the rails on Home and Explore already hold), except on Flix movies itself (`showWhilePending`), whose own loading
  * view is MV11. A read that fails lets the screen draw: it says for itself that it could
- * not load. When the Hub answers `soon: true` (R-77) only Flix movies itself (`allowSoon`) is drawn, and it shows "not live yet";
- * every other Flix screen treats it as off.
+ * not load. A `soon: true` answer is `enabled: false` like any other (R-80): no Flix screen is drawn and a person who opens a Flix
+ * link is sent out where off sends them.
  */
-export function MoviesGate({ onOff, showWhilePending = false, allowSoon = false, children }: { onOff: () => void; showWhilePending?: boolean; allowSoon?: boolean; children: ReactNode }) {
+export function MoviesGate({ onOff, showWhilePending = false, children }: { onOff: () => void; showWhilePending?: boolean; children: ReactNode }) {
   const home = useMoviesHome(queryClient);
-  const off = home.data?.enabled === false && !(allowSoon && isSoon(home.data));
+  const off = home.data?.enabled === false;
   useEffect(() => {
     if (off) onOff();
   }, [off, onOff]);

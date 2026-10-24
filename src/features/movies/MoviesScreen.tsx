@@ -17,7 +17,6 @@ import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/
 import { detailKey, fetchDetail, fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
 import { heroMetrics as h, posterMetrics } from './look';
 import { genreChoices, heroLine, premiereAhead, premiereText } from './model';
-import { FlixSoonNote, isSoon } from './FlixSoon';
 import { FlixTabBar } from './FlixTabBar';
 import { PosterCard, RailScroller, Scrim, SeeAll } from './parts';
 
@@ -110,9 +109,8 @@ export function MoviesLoading() {
  */
 export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer, onBrowse, onOpenTab, now = new Date() }: MoviesScreenProps) {
   const home = useMoviesHome(queryClient);
-  const soon = isSoon(home.data);
-  // Not live yet has no genres to read: the filters are not asked for.
-  const filters = useQuery({ queryKey: filtersKey, queryFn: fetchFilters, enabled: !soon }, queryClient);
+  // Movies off (a `soon` answer is off too, R-80) has no genres to read: once the Hub has said so, the filters are not asked for.
+  const filters = useQuery({ queryKey: filtersKey, queryFn: fetchFilters, enabled: home.data?.enabled !== false }, queryClient);
   const data = home.data?.enabled ? home.data : null;
   const genres: ChipItem<string>[] = [{ value: 'All', label: 'All' }, ...genreChoices(filters.data?.genres).map((g) => ({ value: g, label: g }))];
   const rails = (data?.rails ?? []).filter((r) => r.movies.length > 0);
@@ -120,11 +118,8 @@ export function MoviesScreen({ onBack, onSearch, onOpenMovie, onWatch, onTrailer
   let body;
   if (home.isPending) {
     body = <MoviesLoading />;
-  } else if (soon) {
-    // The Hub says movies are not live yet (R-77): S13's note in place of the catalog, search, filters and watch button.
-    body = <FlixSoonNote testID="movies-soon" />;
   } else if (!home.isError && !data) {
-    // Movies are off: the gate is taking the person out, so nothing is drawn meanwhile.
+    // Movies are off, or not live yet (R-80): the gate is taking the person out, so nothing is drawn meanwhile.
     body = null;
   } else if (home.isError || !data) {
     // MV12 draws its message in the middle of the screen, with a purple Try again.

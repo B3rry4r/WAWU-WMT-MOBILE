@@ -1,12 +1,11 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { queryClient } from '@/api/query';
 
 import { homeKey } from '../api';
 import { FlixRail } from '../FlixRail';
-import { isSoon, SOON_LINE, SOON_TITLE } from '../FlixSoon';
 import { MoviesGate } from '../MoviesGate';
 import { MoviesScreen } from '../MoviesScreen';
 
@@ -26,59 +25,37 @@ beforeEach(() => {
   mockGet.mockReset();
 });
 
-describe('FLIX-04 · Flix movies show "not live yet" (R-77)', () => {
-  it('says the two lines, word for word', () => {
-    expect(SOON_TITLE).toBe("Flix movies aren't switched on yet");
-    expect(SOON_LINE).toBe("You'll be able to watch movies here soon.");
-    expect(`${SOON_TITLE}${SOON_LINE}`).not.toMatch(/—/);
-  });
-
-  it('reads soon only from enabled: false with soon: true', () => {
-    expect(isSoon({ enabled: false, soon: true })).toBe(true);
-    expect(isSoon({ enabled: false })).toBe(false);
-    expect(isSoon({ enabled: false, soon: false })).toBe(false);
-    expect(isSoon({ enabled: true, soon: true })).toBe(false);
-    expect(isSoon(undefined)).toBe(false);
-  });
+describe('FIX-106 · a soon answer draws nothing for Flix, exactly like off (R-80)', () => {
+  const NOT_LIVE_TEXT = /switched on yet|movies here soon|not live yet/i;
 
   describe('the rail on Home and Explore', () => {
-    it('stays: its title and one card with the two lines, which opens Flix movies; no See all, no posters', async () => {
-      mockGet.mockResolvedValue(soonHome());
-      const onSeeAll = jest.fn();
-      await render(wrap(<FlixRail onSeeAll={onSeeAll} onOpenMovie={jest.fn()} />));
-      expect(await screen.findByTestId('flix-rail')).toBeTruthy();
-      expect(screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
-      expect(screen.getByText(SOON_TITLE)).toBeTruthy();
-      expect(screen.getByText(SOON_LINE)).toBeTruthy();
-      expect(screen.queryByTestId('flix-rail-see-all')).toBeNull();
-      expect(screen.queryByText('See all')).toBeNull();
-      expect(screen.queryByTestId('flix-rail-list')).toBeNull();
-      await fireEvent.press(screen.getByTestId('flix-rail-soon'));
-      expect(onSeeAll).toHaveBeenCalledTimes(1);
-    });
-
-    it('stays hidden for enabled: false without soon', async () => {
-      mockGet.mockResolvedValue(offHome());
+    it.each([
+      ['soon', soonHome],
+      ['off', offHome],
+    ])('draws nothing for %s: no rail, no title, no card, no See all', async (_name, answerOf) => {
+      mockGet.mockResolvedValue(answerOf());
       await render(wrap(<FlixRail onSeeAll={jest.fn()} onOpenMovie={jest.fn()} />));
       await waitFor(() => expect(mockGet).toHaveBeenCalled());
+      await waitFor(() => expect(queryClient.getQueryData(homeKey)).toBeTruthy());
       expect(screen.queryByTestId('flix-rail')).toBeNull();
-      expect(screen.queryByText(SOON_TITLE)).toBeNull();
+      expect(screen.queryByTestId('flix-rail-soon')).toBeNull();
+      expect(screen.queryByTestId('flix-rail-see-all')).toBeNull();
+      expect(screen.queryByTestId('flix-rail-list')).toBeNull();
       expect(screen.queryByText('Flix movies')).toBeNull();
+      expect(screen.queryByText(NOT_LIVE_TEXT)).toBeNull();
     });
   });
 
   describe('the movies screen', () => {
     const props = { onBack: jest.fn(), onSearch: jest.fn(), onOpenMovie: jest.fn(), onWatch: jest.fn(), onTrailer: jest.fn(), onBrowse: jest.fn(), onOpenTab: jest.fn() };
 
-    it('shows the two lines and no catalog, search, filters or watch button, and asks for no genres', async () => {
+    it('draws no note, catalog, search, filters or watch button for soon, and asks for no genres', async () => {
       mockGet.mockImplementation((path: string) => Promise.resolve(path === '/api/hub/movies' ? soonHome() : offHome()));
       // The rail on Home or Explore has read the answer already (held for a minute): this is how a person reaches the screen.
       queryClient.setQueryData(homeKey, { enabled: false, soon: true, hero: null, rails: [] });
       await render(wrap(<MoviesScreen {...props} />));
-      expect(await screen.findByTestId('movies-soon')).toBeTruthy();
-      expect(screen.getByRole('header', { name: 'Flix movies' })).toBeTruthy();
-      expect(screen.getByText(SOON_TITLE)).toBeTruthy();
-      expect(screen.getByText(SOON_LINE)).toBeTruthy();
+      expect(screen.queryByTestId('movies-soon')).toBeNull();
+      expect(screen.queryByText(NOT_LIVE_TEXT)).toBeNull();
       expect(screen.queryByTestId('movies-search')).toBeNull();
       expect(screen.queryByTestId('flix-hero')).toBeNull();
       expect(screen.queryByTestId('movies-genre')).toBeNull();
@@ -93,13 +70,15 @@ describe('FLIX-04 · Flix movies show "not live yet" (R-77)', () => {
   describe('the gate', () => {
     const child = <Text testID="child">drawn</Text>;
 
-    it('draws Flix movies itself on soon (allowSoon) and sends every other Flix screen out', async () => {
-      mockGet.mockResolvedValue(soonHome());
+    it.each([
+      ['soon', soonHome],
+      ['off', offHome],
+    ])('sends every Flix screen out on %s, Flix movies itself included, and draws none of them', async (_name, answerOf) => {
+      mockGet.mockResolvedValue(answerOf());
       const onOffMain = jest.fn();
-      await render(wrap(<MoviesGate onOff={onOffMain} allowSoon showWhilePending>{child}</MoviesGate>));
-      expect(await screen.findByTestId('child')).toBeTruthy();
-      await waitFor(() => expect(mockGet).toHaveBeenCalled());
-      expect(onOffMain).not.toHaveBeenCalled();
+      await render(wrap(<MoviesGate onOff={onOffMain} showWhilePending>{child}</MoviesGate>));
+      await waitFor(() => expect(onOffMain).toHaveBeenCalled());
+      expect(screen.queryByTestId('child')).toBeNull();
       await screen.unmount();
 
       const onOffOther = jest.fn();
@@ -108,12 +87,13 @@ describe('FLIX-04 · Flix movies show "not live yet" (R-77)', () => {
       expect(screen.queryByTestId('child')).toBeNull();
     });
 
-    it('still sends everything out, Flix movies too, for enabled: false without soon', async () => {
-      mockGet.mockResolvedValue(offHome());
+    it('draws the screen when the Hub answers enabled: true', async () => {
+      mockGet.mockResolvedValue(answer({ enabled: true, hero: null, rails: [] }));
       const onOff = jest.fn();
-      await render(wrap(<MoviesGate onOff={onOff} allowSoon showWhilePending>{child}</MoviesGate>));
-      await waitFor(() => expect(onOff).toHaveBeenCalled());
-      expect(screen.queryByTestId('child')).toBeNull();
+      await render(wrap(<MoviesGate onOff={onOff} showWhilePending>{child}</MoviesGate>));
+      expect(await screen.findByTestId('child')).toBeTruthy();
+      await waitFor(() => expect(queryClient.getQueryData(homeKey)).toBeTruthy());
+      expect(onOff).not.toHaveBeenCalled();
     });
   });
 });
