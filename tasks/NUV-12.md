@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: money-path
 status: verifying
-depends_on: [NUV-02, NUV-04]
+depends_on: []
 decisions: [R-84, R-83, R-39, R-20, R-10, R-29, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
@@ -48,6 +48,8 @@ The app says what the provider's terms say (rate, term, what leaving early costs
 Blocker: none. High: none. Medium: none known. Lows: G-NUV-12-3 and G-NUV-12-4 in `BACKEND_GAPS.md` (notifications for payouts; dev webhooks). Default (lead), owner may override: Capital is on; WAWU's fee is 0; no daily limit of ours. Shared-file rows: SHARED-CHANGES NUV-12 #1 to #4. Next: a verifier (T2, full) runs V8 on the stack (`scripts/dev/stack.sh`, the stand-in now serves Capital) and checks the pictures.
 
 ## Read first
+
+- Built on NUV-02 (opening the wallet) and NUV-04 (the naira account), both merged; `depends_on` is empty as for the FIX tasks (a negative order sits before them).
 
 - `docs/WORKFLOW.md`, `docs/roles/BUILDER.md`
 - DECISIONS.md R-84 and R-83, R-39, R-20, R-10, R-29, R-47
