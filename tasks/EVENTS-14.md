@@ -7,7 +7,7 @@ order: -116
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow
-status: verifying
+status: building
 depends_on: []
 decisions: [R-79, R-47, R-27, R-29, R-5]
 passes: [V1, V2, V3, V4, V5, V6, V7, V9]
@@ -17,20 +17,15 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026. Status: verifying. Tier T1. Built by a Sonnet builder (picked up from an earlier builder that stopped before any work).
-- **Branches:** backend `wmt/EVENTS-14` `84181d7` (on backend main `b2f4df6`, pushed); mobile `wmt/EVENTS-14` on `origin/main` `dff9b30e` (pushed, head in the hand-back and `git log`). No PR. No migration, no contract change (`npm run contract:build` leaves `contract/openapi.json` as it was).
-- **Backend:** the two rules are as built. Only the sold 409's second sentence changed (`SOLD_TIER_RULE` in `event-ticketing.service.ts`): "The price and places of a ticket type cannot change once a ticket is sold." The three specs that pinned the old sentence word for word take the new one (`event-tickets-review`, `event-price-edit-followups`, `event-purchase-races`); no other assertion moved. The app needs no new field: E18 already reads each type's `sold` (`GET /events/{id}/tickets`) and the event's `ticketsSold` (`/dashboard`, which also counts a ticket sold on a type no longer on sale).
-- **App:** E18 now passes `onEdit` and `onTickets` (`src/app/events/dashboard/[id].tsx`), so both rows are drawn.
-  - Edit event (`/events/edit/<id>`, `host/EditEventScreen.tsx`): the wizard's `Basics` and `WhenWhere` (exported from `HostScreen.tsx` with the four pickers as `StepSheets`; no copy), filled from the event in Lagos time. Only changed fields go to `PATCH /events/{id}`; Save changes stays off until something changed. A start left as it was is not asked to be in the future.
-  - Ticket types (`/events/ticket-types/<id>`, `host/TicketTypesScreen.tsx`): the wizard's `Tickets` step filled from `GET /events/{id}/tickets`, saved with `PUT /events/{id}/tickets` (each type keeps its tier and sales window, so a type sent as it is stays as it is). Once any ticket has sold (a tier's `sold`, or the event's `ticketsSold`), every type is read-only with one line of why and no add, remove or save; a 409 that still arrives shows the Hub's own message and re-reads, so the types lock.
-  - `ReviewSheet.tsx`: one confirm sheet before either save ("Your event goes back to review and comes off the calendar until a person approves it again."). Both saves end on the wizard's "Sent for review" (`HostEnds.tsx`, with My events and Done); E17 then lists the event In review.
-  - E22 (`SentBackScreen.tsx`) is untouched and its tests pass as they are. `Stepper` takes optional step names (Edit event shows two bars); `TicketDraft` gained optional kept fields.
-- **Decisions the task did not name:** Edit event is the first two steps and Ticket types is the third on its own (the task's "Edit event and Ticket types reuse E13 to E15"); the ticket types screen has no stepper (one step); the review sheet also sits before the `PUT`, because that route puts the event back in review too (it does, as built).
-- **Shared changes filed:** SHARED-CHANGES EVENTS-14 #1 (two `Stack.Screen` lines in `src/app/_layout.tsx`, applied on the branch: `route-guard.test` fails for a route file that is not listed). **Gaps:** G-EVENTS-14-1 (no board draws the sheet, the locked types or the two-step edit; built from shared parts).
-- **Pictures:** 390 px, light and dark, from the stack's web export, scratch `events-14-b/pics/` (E18, edit Basics, edit When and where, review sheet, Sent for review, E17 In review, Ticket types, Ticket types after a 409, locked). Boards rendered with `render_design.py E13 E14 E15 E18 E22`.
-- **Live walk (V9, local Hub on the stand-in, real sign-in through the app):** 14 of 14 checks, `events-14-b/walk.log`: host sends, admin approves, the host edits from E18, the event is `pending` and off the calendar, approved again it is live with the change; with no ticket sold the Hub saved a type's new price and places; a buyer's ticket was sold; Save then showed the Hub's message and locked the types; `PUT` answers 409 with the ruling.
-- **Checks:** see the Builder report in `tasks/history/EVENTS-14.md`.
-- **Open findings:** none known (builder does not verify). **Next:** a lean verifier (T1: V1 V2 V3 V4 V5 V6 V7 V9).
+As of 24 Oct 2026. Status: building (verifier said FIX, one medium). Tier T1. Built by a Sonnet builder, verified by a different Sonnet session (report in [history/EVENTS-14.md](history/EVENTS-14.md), last section).
+- **Branches:** backend `wmt/EVENTS-14` `84181d7` (on backend main `b2f4df6`), mobile `wmt/EVENTS-14` (the verifier's commit on top of `b3b19e46`). No PR. No migration, no contract change.
+- **What is built and verified:** the Hub keeps both rules and only the sold 409's second sentence changed (`SOLD_TIER_RULE`, R-79 (c)); the 3 specs that pinned the old sentence take the ruled one. E18 passes `onEdit` and `onTickets`; Edit event is the wizard's Basics and When and where in edit mode (`host/EditEventScreen.tsx`, only changed fields go to `PATCH`), Ticket types is the Tickets step on its own (`host/TicketTypesScreen.tsx`, read-only with one line once any ticket has sold, a late 409 shown as the Hub's own message), one `ReviewSheet` before either save, both end on "Sent for review". E22 untouched. SHARED-CHANGES EVENTS-14 #1 (two `Stack.Screen` lines) is needed and nothing else in `_layout.tsx` moved. No native module: ships over the air.
+- **Verifier results:** every capability check passes live (66 of 66 walk checks, light and dark, real sign-in); backend event specs 147 of 147; protected suite 244 of 244 on main and on the branch; app full jest 320 suites 5436 tests; tsc, eslint, gates, check_tasks, contract:build all EXIT 0. The 8 protected failures the builder saw are the stack's stand-in WAWU ID (same 8 on main), not a real failure.
+- **Open finding (medium, fix round):** M1, Edit event assumes a one-day event: `hostForm.ts:251` writes the end on the start day (moving a multi-day event's start time collapses its end date) and `hostForm.ts:147` refuses an end whose clock time is not later than the start (a multi-day event cannot be saved, even a rename); an event with no end cannot be renamed until an end is invented. The web's form and the Hub allow all three. Fix: send start and end only for what the host moved, keep the original end instant, compare ends as instants, do not ask for an end the event never had; add "a host can ..." tests for each.
+- **Lows (to the EVENTS sweep):** L1 the locked step also disables the name under a line that says only price and places, and the disabled values are very dim in dark; L2 the 409 sentence names price and places while the route refuses any `PUT` after a sale; L3 the E14 board's address hint is not built (older than this task).
+- **Gaps:** G-EVENTS-14-1 (no board draws the review sheet, the locked types or the two-step edit).
+- **Pictures:** the verifier's, `events-14-v/pics/` in the session scratch (E18 beside its board, edit steps, sheet, end, E17 In review, locked types, light and dark).
+- **Next:** a builder fixes M1 (and may take L1), then a lean re-check of M1 and the unchanged capability checks.
 
 ## Read first
 
@@ -87,3 +82,4 @@ Round reports, verifier reports and lead notes, word for word, oldest first: [hi
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+
