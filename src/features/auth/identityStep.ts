@@ -1,7 +1,9 @@
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import { getAccessToken, refreshAccessToken } from '@/api/session';
+import { meKey } from '@/features/profile-edit/api';
 
-import { putIdentity, readIdentity, type SavedIdentity } from './identityApi';
+import { identityOf, putIdentity, type SavedIdentity } from './identityApi';
 
 /**
  * The name and username step (SIGNUP-NAMES, R-82). Sign-up asks for a first name, a last name and a username. An account
@@ -53,14 +55,22 @@ export function claimSignupUsername(adopt: () => Promise<void>, username: string
   return run;
 }
 
-/**
- * What the account lacks, read fresh: null when it has everything, and also when the Hub could not be asked (the person
- * is let in, and the next open asks again).
- */
-export async function readIdentityNeed(): Promise<IdentityNeed | null> {
+/** Resolves once the sign-up's own try at the username is over (at once when there is none); the profile is read after it. */
+export async function claimSettled(): Promise<void> {
   try {
     await claiming;
-    const saved = await readIdentity();
+  } catch {
+    // A failed try leaves the username missing; the step asks for it.
+  }
+}
+
+/**
+ * What the account lacks, from the profile read the gate shares with the account type check (one `GET /users/me` per start):
+ * null when it has everything, and also when the Hub could not be asked (the person is let in, and the next open asks again).
+ */
+export async function readIdentityNeed(read: () => Promise<{ firstName?: unknown; lastName?: unknown; handle?: unknown }>): Promise<IdentityNeed | null> {
+  try {
+    const saved = identityOf(await read());
     const notice = claimNotice;
     claimNotice = null;
     return needOf(saved, notice);
@@ -90,6 +100,8 @@ export async function saveIdentity(need: IdentityNeed, typed: IdentityValues): P
   }
   if (need.handle) parts.handle = typed.username;
   await putIdentity(parts);
+  // The profile the rest of the app holds (Home, Edit profile) is the one without the name and username: ask for it again.
+  void queryClient.invalidateQueries({ queryKey: meKey });
   try {
     const token = await getAccessToken();
     if (token) await refreshAccessToken(token);

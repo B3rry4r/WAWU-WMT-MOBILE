@@ -141,7 +141,7 @@ export default function RootLayout() {
           <Stack.Screen name="voice-intro" />
           <Stack.Screen name="voice-consent" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible}>
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />

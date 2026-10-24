@@ -27,10 +27,8 @@ export async function putIdentity(parts: { firstName?: string; lastName?: string
   return dataOf<SavedIdentity>(await unwrap(api.PUT('/api/hub/users/me/identity', { body: parts })), 'details');
 }
 
-/** `GET /users/me`: the name (from the token WAWU ID issued) and the handle the profile holds. */
-export async function readIdentity(): Promise<SavedIdentity> {
-  const body = await unwrap(api.GET('/api/hub/users/me'));
-  const me = dataOf<{ firstName?: unknown; lastName?: unknown; handle?: unknown }>(body, 'profile');
+/** The name and the handle a profile read carries (`GET /users/me`): a part the account lacks is null. */
+export function identityOf(me: { firstName?: unknown; lastName?: unknown; handle?: unknown }): SavedIdentity {
   const text = (value: unknown) => (typeof value === 'string' && value.trim() !== '' ? value.trim() : null);
   return { firstName: text(me.firstName), lastName: text(me.lastName), handle: text(me.handle) };
 }

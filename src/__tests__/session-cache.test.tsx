@@ -109,7 +109,7 @@ function installFetch() {
       return json(401, { statusCode: 401, message: 'Unauthorized', data: null });
     }
     hub.push(`${request.method} ${path} as ${person} 200`);
-    if (path === '/api/hub/users/me') return json(200, { statusCode: 200, message: 'ok', data: { name: person, firstName: person, lastName: 'Test', handle: `${person}_test` } });
+    if (path === '/api/hub/users/me') return json(200, { statusCode: 200, message: 'ok', data: { name: person } });
     if (path === '/api/hub/money/payout-account') return json(200, { statusCode: 200, message: 'ok', data: payoutOf(person) });
     return json(404, { statusCode: 404, message: 'Not found', data: null });
   }) as typeof fetch;

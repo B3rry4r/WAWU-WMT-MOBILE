@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import type { components } from '@/api/schema.generated';
 
 import type { FieldsUpdate, MyProfile, ProfileFields, ProfileUpdate } from './form';
@@ -37,6 +38,15 @@ export async function fetchMe(): Promise<MyProfile> {
   const me = dataOf<MyProfile>(await unwrap(api.GET('/api/hub/users/me')), 'profile');
   if (typeof me.wawuUserId !== 'string') throw unreadable('profile');
   return me;
+}
+
+/**
+ * The profile read the sign-up gate shares (SIGNUP-NAMES, R-82): the app's own profile query (`meKey`), asked fresh and
+ * once, so the account type check and the name check of one start are the same single `GET /users/me`, and Home and Edit
+ * profile find the answer already in the cache. It does not retry: the gate opens without it and the next start asks again.
+ */
+export function readMine(): Promise<MyProfile> {
+  return queryClient.fetchQuery({ queryKey: meKey, queryFn: fetchMe, staleTime: 0, retry: false });
 }
 
 export async function fetchFields(): Promise<ProfileFields> {

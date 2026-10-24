@@ -4,7 +4,9 @@ import { isApiError } from '@/api/errors';
 import { signupProgressRequest, type SignupProgress } from '@/api/identity';
 import { hubNeedsType, readHubAccountType, setHubAccountType, type HubAccountType } from '@/features/after-signup/hubAccountType';
 
-import { readIdentityNeed, resetIdentityStep, type IdentityNeed } from './identityStep';
+import { readMine } from '@/features/profile-edit/api';
+
+import { claimSettled, readIdentityNeed, resetIdentityStep, type IdentityNeed } from './identityStep';
 import { authed } from './signupApi';
 
 /**
@@ -59,10 +61,13 @@ export async function refreshSignupGate(): Promise<void> {
     if (!isApiError(error)) throw error;
   }
   if (started !== generation) return;
-  await copyAccountType(progress);
+  // One read of the profile per start, shared by the account type check and the name check (SIGNUP-NAMES, R-82), made after
+  // the sign-up's own try at the username has finished. Asked only when one of them needs it.
+  let asked: ReturnType<typeof readMine> | null = null;
+  const mine = () => (asked ??= claimSettled().then(readMine));
+  await copyAccountType(progress, mine);
   if (started !== generation) return;
-  // The name and the username (SIGNUP-NAMES, R-82): read after the sign-up's own try at the username has finished.
-  const identity = await readIdentityNeed();
+  const identity = await readIdentityNeed(mine);
   if (started !== generation) return;
   change({ phase: 'ready', progress, reopened: false, identity });
 }
@@ -71,20 +76,20 @@ export async function refreshSignupGate(): Promise<void> {
  * While the sign-up's steps are open the write is made, idempotent. Once they are done (a cold start of a finished account) the Hub is asked
  * first and written to only when it still lacks the type, so an ordinary start sends no write (FIX-68 F-4). A read that fails sends nothing.
  */
-async function copyOnce(type: HubAccountType, finished: boolean): Promise<void> {
-  if (finished && !hubNeedsType(await readHubAccountType(), type)) return;
+async function copyOnce(type: HubAccountType, finished: boolean, mine: () => Promise<{ accountType?: unknown }>): Promise<void> {
+  if (finished && !hubNeedsType(await readHubAccountType(mine), type)) return;
   await setHubAccountType(type);
 }
 
 /** Copies the sign-up's account type to the Hub's profile once per session. Never throws: the next read tries again. */
-async function copyAccountType(progress: SignupProgress | null): Promise<void> {
+async function copyAccountType(progress: SignupProgress | null, mine: () => Promise<{ accountType?: unknown }>): Promise<void> {
   const type = progress?.inSequence ? progress.accountType : null;
   if (!type || copiedToHub === type) return;
   const finished = progress?.step === 'done';
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      copyOnce(type, finished).then(() => {
+      copyOnce(type, finished, mine).then(() => {
         copiedToHub = type;
       }),
       new Promise<void>((resolve) => {
