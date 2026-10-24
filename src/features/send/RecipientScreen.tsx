@@ -19,7 +19,7 @@ import { space } from '@/theme';
 
 import { recentRecipientsQuery, searchRecipientsQuery, SEARCH_MIN_CHARS, type Recipient } from './api';
 import { hueOfPayee, payeeLine, payeeOf, searchText, type Payee } from './model';
-import { PayeeTick, RecentChip, RecipientSearch, SEND, SEND_WAYS, useSettled, type SendWay } from './parts';
+import { PayeeTick, RecentChip, RecipientSearch, SEND, useSendWays, useSettled, type SendWay } from './parts';
 
 /** The Hub's search text is 60 characters at most (`GET /money/recipients`, `q` maxLength). */
 const SEARCH_MAX = 60;
@@ -31,6 +31,8 @@ export type RecipientScreenProps = {
   onPick: (payee: Payee) => void;
   /** The Bank account tab: W8. */
   onBank: () => void;
+  /** The Abroad tab (NUV-11), drawn only while the Hub says sending abroad is on. */
+  onAbroad?: () => void;
 };
 
 /**
@@ -40,7 +42,8 @@ export type RecipientScreenProps = {
  * The Bank account tab opens W8 (WALLET-03), which replaces this screen so the two tabs never pile up. The canvas's "On WAWU" list under
  * Recent is the search result: the Hub serves no list of suggestions, so with nothing typed the screen shows Recent and what to type.
  */
-export function RecipientScreen({ onBack, onPick, onBank }: RecipientScreenProps) {
+export function RecipientScreen({ onBack, onPick, onBank, onAbroad }: RecipientScreenProps) {
+  const ways = useSendWays();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const [typed, setTyped] = useState('');
@@ -82,10 +85,11 @@ export function RecipientScreen({ onBack, onPick, onBank }: RecipientScreenProps
         <SegmentedTabs<SendWay>
           testID="send-ways"
           label="Who to send to"
-          items={SEND_WAYS}
+          items={ways}
           value="user"
           onChange={(way) => {
             if (way === 'bank') onBank();
+            if (way === 'abroad') onAbroad?.();
           }}
         />
         <RecipientSearch testID="send-search" value={typed} maxLength={SEARCH_MAX} onChange={setTyped} />

@@ -1,11 +1,15 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { queryClient } from '@/api/query';
 import { Avatar } from '@/components/Avatar';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, VerifiedTick } from '@/components/icon';
 import { Text } from '@/components/Text';
+import { corridorsQuery } from '@/features/abroad/api';
 import { copyText } from '@/features/open-wallet/copy';
+import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { searchMetrics } from '@/features/wallet/history/HistoryParts';
 import { canvasNormalLineHeight, space, useWawu } from '@/theme';
 
@@ -160,4 +164,14 @@ export const SEND_WAYS = [
   { value: 'bank', label: 'Bank account' },
 ] as const;
 
-export type SendWay = (typeof SEND_WAYS)[number]['value'];
+export type SendWay = (typeof SEND_WAYS)[number]['value'] | 'abroad';
+
+/**
+ * W7 and W8's tabs, with a third, "Abroad" (NUV-11, R-84; no board, R-29), only while the Hub says sending abroad is on (R-47): a
+ * switched-off product, or a Hub that does not answer, draws the two tabs the boards draw.
+ */
+export function useSendWays(): readonly { value: SendWay; label: string }[] {
+  const owner = useSessionAccount(undefined);
+  const corridors = useQuery(corridorsQuery(owner), queryClient);
+  return corridors.data?.enabled === true ? [...SEND_WAYS, { value: 'abroad', label: 'Abroad' }] : SEND_WAYS;
+}

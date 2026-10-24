@@ -20,6 +20,7 @@ export default function SendRecipientRoute() {
     <RecipientScreen
       onBack={leave}
       onBank={() => router.replace('/send/bank')}
+      onAbroad={() => router.replace('/send/abroad')}
       onPick={(payee) => router.push({ pathname: '/send/amount', params: payeeParams(payee) })}
     />
   );

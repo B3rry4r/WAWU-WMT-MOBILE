@@ -27,6 +27,7 @@ export default function SendBankRoute() {
     <BankRecipientScreen
       onBack={leave}
       onWawuUser={() => router.replace('/send')}
+      onAbroad={() => router.replace('/send/abroad')}
       initial={start}
       onPick={(payee) => router.push({ pathname: '/send/amount', params: { ...payeeParams(payee), ...(amount ? { amount } : {}) } })}
     />
