@@ -7,7 +7,7 @@ order: -125
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: []
 decisions: [R-79, R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,7 +17,10 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, verifying (builder done; a verifier is next). Tier T2 (third-party, spends points).
+As of 24 Oct 2026, building: verifier verdict FIX (one medium, three lows), report in tasks/history/AITOOLS-02.md. Tier T2 (third-party, spends points).
+- **Verifier (24 Oct 2026, Sonnet, T2; backend `0a29c9a` on main `b2f4df6`):** every capability check passed live over HTTP and the real provider ran Quick voice twice (below). One medium to fix, then re-verify only it: **M1** `src/ai-tools/tools/quick-voice.tool.ts:22` says "at half the points" but the price is an admin setting (R-65): with Quick voice set to 240 the catalogue still says half. Say "A fast read of your words." or compute it. Lows (sweep): L1 `rollback.sql:18` treats a non-list `outputs` as empty, so such a value would be dropped by a rollback (the pipeline only writes lists); L2 the builder report omits `test/ai-tools/voice-standin-for-specs.ts`; L3 mutation checks NOT RUN.
+- **Real provider (verifier, 24 Oct 2026):** two Quick voice jobs through the Hub route with the owner's key: the Hub sent `eleven_flash_v2_5`, the provider answered 200 both times, audio/mpeg came back (62,736 bytes, about 3.9 s for 59 characters; 51,452 bytes, about 3.2 s for 45), 125 points kept each. The key's scope covers Quick voice. G-AITOOLS-01-5 is no longer NOT RUN for Quick voice. The real voice ids are still not configured anywhere (G-AITOOLS-01-2): the run used four of the provider's own premade voices.
+- **Protected suite note:** 245/253 on this machine on the branch AND on main (the same 8: verification ticks and professionals routes), so the branch changes nothing there; the builder's 253/253 did not reproduce here for either tree.
 - **Branches:** backend `wmt/AITOOLS-02` `0a29c9a` on origin/main `b2f4df6`; mobile `wmt/AITOOLS-02` (this file, SHARED-CHANGES AITOOLS-02 #1 and #2, BACKEND_GAPS, the log line) on origin/main `dff9b30e`, merged not rebased. No PR. An earlier builder stopped at a usage limit with nothing committed; this builder judged its uncommitted work, kept it, added the migration spec and finished the checks.
 - **Before:** one tool (VoiceOver) hard-wired in `AiJobService.createVoiceover`; `GET /ai-tools` held one entry; a job view had `audioUrl` only; no list of a person's jobs (G-POINTS-08-3).
 - **After:** `AiJobService.createJob(tool, ...)` runs every tool through the one pipeline; a tool is one file in `src/ai-tools/tools/` plus one line in `tools/index.ts`. VoiceOver is the first entry, route and answer unchanged. Quick voice is the second.
@@ -70,13 +73,13 @@ Every tool Studio lists runs through one job pipeline, so the next tools are a t
 
 ## Capability checks
 
-- [ ] VoiceOver behaves exactly as before: the AITOOLS-01 contract and provider specs pass with no assertion changed, and the protected suite passes (V3).
-- [ ] `GET /ai-tools` lists Quick voice with 125 points a minute before anyone runs it, only when the provider is configured, and lists nothing for a tool whose code is not built.
-- [ ] A Quick voice job holds, runs on the faster model (the stand-in records `model_id`), commits and returns audio; a failed job releases everything; the same `Idempotency-Key` twice runs one job and holds once; two jobs at once never take points below zero (V8).
-- [ ] Over the daily, characters or minutes cap the answer names the cap and nothing is held.
-- [ ] `GET /ai-tools/jobs` returns only the caller's jobs, newest first, in cursor pages; another person's job id answers not found.
-- [ ] The migration applies on a database with existing `AiToolJob` rows and rolls back without losing them.
-- [ ] No provider name, no provider id and no em-dash in any response string.
+- [x] VoiceOver behaves exactly as before: the AITOOLS-01 contract and provider specs pass with no assertion changed, and the protected suite passes (V3).
+- [x] `GET /ai-tools` lists Quick voice with 125 points a minute before anyone runs it, only when the provider is configured, and lists nothing for a tool whose code is not built.
+- [x] A Quick voice job holds, runs on the faster model (the stand-in records `model_id`), commits and returns audio; a failed job releases everything; the same `Idempotency-Key` twice runs one job and holds once; two jobs at once never take points below zero (V8).
+- [x] Over the daily, characters or minutes cap the answer names the cap and nothing is held.
+- [x] `GET /ai-tools/jobs` returns only the caller's jobs, newest first, in cursor pages; another person's job id answers not found.
+- [x] The migration applies on a database with existing `AiToolJob` rows and rolls back without losing them.
+- [x] No provider name, no provider id and no em-dash in any response string.
 
 ## History
 
