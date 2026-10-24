@@ -47,7 +47,7 @@ Addition before the push: also run and make EXIT 0 account-data-map.spec and dat
 
 ## Builder report (round 1, 24 Oct 2026, Sonnet builder, T2; fixes the verifier's FIX)
 
-Backend `wmt/NUV-11` head `ddad361` (B18's `wmt/WALLET-21-HUB` `51a8aa8` merged, no rebase); mobile `wmt/NUV-11` app code `13cd61f2` (the verifier's `69952a3c` merged), records on top. Migration `20261123090000_abroad_fee_back_and_estimate` (additive, rollback refuses while a fee is given back, held, estimated or flagged; tested in a rolled-back transaction).
+Backend `wmt/NUV-11` head `ddad361` (B18's `wmt/WALLET-21-HUB` `51a8aa8` merged, no rebase); mobile `wmt/NUV-11` app code `13cd61f2` (the verifier's `69952a3c` merged), records on top. Migration `20261128100000_abroad_fee_back_and_estimate` (restamped from `20261123090000` by backend batch D) (additive, rollback refuses while a fee is given back, held, estimated or flagged; tested in a rolled-back transaction).
 
 | Finding | Fix | Proof |
 |---|---|---|
