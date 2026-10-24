@@ -40,7 +40,7 @@ const base = {
 };
 
 type Hold = { piece: Record<string, unknown>; detail: Record<string, unknown> };
-const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: i === 0 ? '9:00' : '14:00', isFree: i === 0 }));
+const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: `Lesson ${i + 1}`, order: i + 1, durationLabel: i === 0 ? '9:00' : '14:00', isFree: i === 0, hasFile: i < 3 }));
 
 const pieces = (): Record<string, Hold> => ({
   [PDF]: {
@@ -49,11 +49,11 @@ const pieces = (): Record<string, Hold> => ({
   },
   [VIDEO]: {
     piece: { ...base, id: VIDEO, title: 'Orbit shot in one take', creatorWawuId: TIFE, contentType: 'video', accessType: 'free', price: 0, durationLabel: '1:50', pageCount: null, previewAssetUrl: 'https://cdn.test/v.webm', views: 12400, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), fullAssetUrl: 'https://cdn.test/v.webm', fullAssetLocked: false, commentCount: 340 },
-    detail: { contentId: VIDEO, contentType: 'video', updatedAt: '2026-10-10T10:00:00Z', purchasedAt: null, buyerCount: 0, studentCount: null, freePreview: { pages: null, seconds: null, lessons: null }, lessons: [], creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
+    detail: { contentId: VIDEO, contentType: 'video', updatedAt: '2026-10-10T10:00:00Z', purchasedAt: null, buyerCount: 0, studentCount: null, freePreview: { pages: null, seconds: null, lessons: null }, lessons: [], parentCourse: hub.parentCourse, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
   [COURSE]: {
-    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: true, commentCount: 0 },
-    detail: { contentId: COURSE, contentType: 'course', updatedAt: '2026-10-01T10:00:00Z', purchasedAt: null, buyerCount: 1280, studentCount: 1280, freePreview: { pages: null, seconds: null, lessons: 1 }, lessons, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
+    piece: { ...base, id: COURSE, title: 'VFX for Beginners', creatorWawuId: hub.ownCourse ? ME : TIFE, contentType: 'course', accessType: 'paid', price: 8000, durationLabel: null, pageCount: null, previewAssetUrl: 'https://cdn.test/c.jpg', views: 800, fullAssetUrl: null, fullAssetLocked: !hub.bought, commentCount: 0 },
+    detail: { contentId: COURSE, contentType: 'course', updatedAt: '2026-10-01T10:00:00Z', purchasedAt: hub.bought ? '2026-09-26T08:00:00Z' : null, buyerCount: 1280, studentCount: 1280, freePreview: { pages: null, seconds: null, lessons: 1 }, lessons, creator: maker(TIFE, 'Tife Adeola', 'VFX artist', 41000) },
   },
 });
 
@@ -88,6 +88,12 @@ const hub = {
   gone: false,
   loadFails: false,
   noWallet: false,
+  played: [] as string[],
+  lessonRefusal: 0,
+  /** H24's "From the course" row (FIX-111): what the Hub names on the free video, or null. */
+  parentCourse: null as null | { id: string; title: string; lessonCount: number; price: number; previewAssetUrl: string | null },
+  /** The viewer made the course (H25 then offers Edit lessons). */
+  ownCourse: false,
 };
 
 const FEE = 2325;
@@ -159,6 +165,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   const follows = /^\/creators\/([^/]+)\/follow$/.exec(path);
   if (follows) return json(method === 'POST' ? 201 : 200, { statusCode: 200, message: 'OK', data: { following: method === 'POST' } });
+  const done = /^\/me\/lessons\/([^/]+)\/done$/.exec(path);
+  if (done) return ok({ lessonId: done[1], contentId: COURSE, done: true, lessons: { total: 12, done: 1 } });
   const m = /^\/content\/([^/]+)(\/.*)?$/.exec(path);
   if (!m) throw new Error(`no answer for ${method} ${path}`);
   const [, id, rest = ''] = m;
@@ -171,6 +179,12 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (rest === '/engagement') return ok({ ...hub.engagement, commentCount: hold.piece.commentCount });
   if (rest === '/media') return ok({ contentId: id, contentType: hold.piece.contentType, durationLabel: hold.piece.durationLabel, pageCount: hold.piece.pageCount, frameCount: 0, frames: [] });
   if (rest === '/view') return ok({ views: 1, counted: true });
+  const play = /^\/lessons\/([^/]+)\/play$/.exec(rest);
+  if (play) {
+    hub.played.push(play[1]);
+    if (hub.lessonRefusal) return refuse(hub.lessonRefusal, 'The Hub said no.');
+    return ok({ contentId: id, lessonId: play[1], url: `https://cdn.test/lesson-${play[1]}.mp4?sig=1`, expiresAt: '2099-01-01T00:00:00.000Z', durationLabel: '9:00' });
+  }
   if (rest === '/like') {
     const on = method === 'POST';
     hub.engagement = { ...hub.engagement, likedByMe: on, likes: hub.engagement.likes + (on ? 1 : -1) };
@@ -214,12 +228,38 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 }) as typeof fetch;
 
 jest.mock('expo-router', () => ({ useIsFocused: () => true }));
+// A player the lesson tests can read and drive: what it was given to play, and the events it was told to listen for.
+type MockPlayer = { source: unknown; listeners: Record<string, () => void>; play: jest.Mock; pause: jest.Mock };
+const mockPlayers: MockPlayer[] = [];
+jest.mock('expo-video', () => {
+  const React = require('react');
+  return {
+    useVideoPlayer: (source: unknown) =>
+      React.useMemo(() => {
+        const player: MockPlayer & Record<string, unknown> = {
+          source,
+          listeners: {},
+          play: jest.fn(),
+          pause: jest.fn(),
+          addListener: (event: string, fn: () => void) => {
+            player.listeners[event] = fn;
+            return { remove: jest.fn() };
+          },
+          currentTime: 0,
+          duration: 0,
+        };
+        mockPlayers.push(player);
+        return player;
+      }, [source]),
+    VideoView: 'VideoView',
+  };
+});
 jest.mock('@/features/open-wallet/copy', () => ({ copyText: jest.fn(async () => true) }));
 
 const clients: QueryClient[] = [];
 const wired = () => ({ onOpenWallet: jest.fn(), onSetPin: jest.fn(), onForgotPin: jest.fn(), onAddMoney: jest.fn() });
 
-async function boot(id: string, ready = true) {
+async function boot(id: string, ready = true, extra: { onOpenCourse?: (id: string) => void; onEditLessons?: (id: string) => void } = {}) {
   const { ContentDetailScreen } = require('@/features/content-detail/ContentDetailScreen') as typeof import('@/features/content-detail/ContentDetailScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
@@ -227,7 +267,7 @@ async function boot(id: string, ready = true) {
   const screen = await rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <ContentDetailScreen id={id} onBack={onBack} pay={wired()} />
+        <ContentDetailScreen id={id} onBack={onBack} pay={wired()} {...extra} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -261,7 +301,12 @@ beforeEach(() => {
     gone: false,
     loadFails: false,
     noWallet: false,
+    played: [],
+    lessonRefusal: 0,
+    parentCourse: null,
+    ownCourse: false,
   });
+  mockPlayers.length = 0;
 });
 
 afterEach(async () => {
@@ -289,8 +334,9 @@ describe('H19: a locked paid piece', () => {
     expect(screen.getByText('Unlock the full PDF')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦3,000' })).toBeTruthy();
     expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
-    // Nothing the Hub does not say: no "forever", no 96%, no Read now or Tip while it is locked.
-    expect(screen.queryByText(/forever|96%/i)).toBeNull();
+    // FIX-110 (G-1723, G-HOME-03-3): "Yours forever" is drawn, since a bought piece has no end. Nothing else the Hub does not say: no 96%, no Read now or Tip while it is locked.
+    expect(screen.getByText('Yours forever')).toBeTruthy();
+    expect(screen.queryByText(/96%/i)).toBeNull();
     expect(screen.queryByTestId('detail-open')).toBeNull();
     expect(screen.queryByTestId('detail-tip')).toBeNull();
     expect(screen.getByText('1.2K')).toBeTruthy();
@@ -525,6 +571,66 @@ describe('H24: a free video', () => {
   });
 });
 
+describe('H24: the course a piece comes from (FIX-111, G-HOME-08-1)', () => {
+  const parent = { id: COURSE, title: 'VFX for Beginners', lessonCount: 12, price: 8000, previewAssetUrl: null };
+
+  it('a user sees "From the course <title>", its lesson count and its price, and a tap opens the course', async () => {
+    hub.parentCourse = parent;
+    const onOpenCourse = jest.fn();
+    const { screen } = await boot(VIDEO, true, { onOpenCourse });
+    const row = screen.getByTestId('detail-parent-course');
+    expect(rtl.within(row).getByText('From the course VFX for Beginners')).toBeTruthy();
+    expect(rtl.within(row).getByText('12 lessons')).toBeTruthy();
+    expect(rtl.within(row).getByText('₦8,000')).toBeTruthy();
+    expect(row.props.accessibilityLabel).toBe('From the course VFX for Beginners, 12 lessons, ₦8,000');
+    // It sits between who made it and the Tip, as drawn.
+    expect(screen.getByRole('button', { name: 'Tip Tife' })).toBeTruthy();
+    await rtl.fireEvent.press(row);
+    expect(onOpenCourse).toHaveBeenCalledWith(COURSE);
+  });
+
+  it('says Free for a free course and "1 lesson" for one lesson', async () => {
+    hub.parentCourse = { ...parent, lessonCount: 1, price: 0 };
+    const { screen } = await boot(VIDEO, true, { onOpenCourse: jest.fn() });
+    const row = screen.getByTestId('detail-parent-course');
+    expect(rtl.within(row).getByText('1 lesson')).toBeTruthy();
+    expect(rtl.within(row).getByText('Free')).toBeTruthy();
+    expect(rtl.within(row).queryByText(/₦/)).toBeNull();
+  });
+
+  it('draws no row when the Hub names no course', async () => {
+    const { screen } = await boot(VIDEO, true, { onOpenCourse: jest.fn() });
+    expect(screen.queryByTestId('detail-parent-course')).toBeNull();
+  });
+
+  it('draws no row when nothing can open the course', async () => {
+    hub.parentCourse = parent;
+    const { screen } = await boot(VIDEO);
+    expect(screen.queryByTestId('detail-parent-course')).toBeNull();
+  });
+});
+
+describe('H25: the creator edits their own course (FIX-111)', () => {
+  it('offers Edit lessons on the creator\'s own course, even before it has a lesson, and a tap opens the editor', async () => {
+    hub.ownCourse = true;
+    const onEditLessons = jest.fn();
+    const { screen } = await boot(COURSE, true, { onEditLessons });
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Edit lessons' }));
+    expect(onEditLessons).toHaveBeenCalledWith(COURSE);
+  });
+
+  it('offers it to nobody else', async () => {
+    const { screen } = await boot(COURSE, true, { onEditLessons: jest.fn() });
+    expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+
+  it('offers it to the creator only when there is a screen to open', async () => {
+    hub.ownCourse = true;
+    const { screen } = await boot(COURSE);
+    expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+});
+
 describe('H25: a course', () => {
   it('shows the lessons with the first Free and the rest locked, See all, and the unlock at the foot', async () => {
     const { screen } = await boot(COURSE);
@@ -595,3 +701,73 @@ describe('states', () => {
     await screen.findByTestId('detail-title');
   });
 });
+
+describe('H25: playing a lesson (FIX-107)', () => {
+  const playing = () => mockPlayers[mockPlayers.length - 1];
+
+  it('a user taps the free lesson and it plays in the picture from the Hub\'s link; a free lesson of a locked course counts nothing when it ends', async () => {
+    const { screen } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByTestId('detail-media-lesson');
+    expect(hub.played).toEqual(['l1']);
+    expect(playing().source).toBe('https://cdn.test/lesson-l1.mp4?sig=1');
+    expect(playing().play).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Pause Lesson 1' })).toBeTruthy();
+    await rtl.act(async () => playing().listeners.playToEnd());
+    expect(screen.getByRole('button', { name: 'Play Lesson 1' })).toBeTruthy();
+    expect(hub.writes.filter((w) => w.includes('/done'))).toEqual([]);
+  });
+
+  it('playing free lesson 1 of a locked course to its end sends no PUT /me/lessons/:id/done, even after the writes have had time to land', async () => {
+    const { screen } = await boot(COURSE);
+    expect(hub.bought).toBe(false);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByTestId('detail-media-lesson');
+    await rtl.act(async () => playing().listeners.playToEnd());
+    // A write the page made on the end of the lesson would be on its way by now: give it the time a request takes here.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(hub.writes).not.toContain('PUT /me/lessons/l1/done');
+    expect(hub.writes.filter((w) => w.startsWith('PUT /me/lessons/'))).toEqual([]);
+  });
+
+  it('a user taps a locked lesson and is asked to unlock the course, with no link asked of the Hub', async () => {
+    const { screen } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Unlock to play lesson 2, Lesson 2' }));
+    await screen.findByRole('button', { name: /^Unlock · ₦3,023.25$/ });
+    expect(hub.played).toEqual([]);
+    expect(screen.queryByTestId('detail-media-lesson')).toBeNull();
+  });
+
+  it('a buyer plays any lesson that has a file, sees no locks, and a finished lesson is marked done', async () => {
+    hub.bought = true;
+    const { screen } = await boot(COURSE);
+    expect(screen.queryByTestId('detail-unlock')).toBeNull();
+    // Lesson 4 has no file: it is not a button. Lessons 1 to 3 are.
+    expect(screen.queryByRole('button', { name: /lesson 4/i })).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 2, Lesson 2' }));
+    await screen.findByTestId('detail-media-lesson');
+    expect(hub.played).toEqual(['l2']);
+    await rtl.act(async () => playing().listeners.playToEnd());
+    await rtl.waitFor(() => expect(hub.writes).toContain('PUT /me/lessons/l2/done'));
+    // The next lesson replaces the one playing.
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 3, Lesson 3' }));
+    await rtl.waitFor(() => expect(playing().source).toBe('https://cdn.test/lesson-l3.mp4?sig=1'));
+  });
+
+  it('when the Hub refuses a lesson the user is told why, in words', async () => {
+    const { screen } = await boot(COURSE);
+    hub.lessonRefusal = 403;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText('Unlock the course to watch this lesson.');
+    expect(screen.queryByTestId('detail-media-lesson')).toBeNull();
+    hub.lessonRefusal = 404;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText('This lesson has no video yet.');
+    hub.lessonRefusal = 500;
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Play lesson 1, Lesson 1' }));
+    await screen.findByText("The lesson couldn't be opened. Try again.");
+  });
+});
+

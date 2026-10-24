@@ -283,7 +283,9 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(screen.getByLabelText('23 naira 25 kobo')).toBeTruthy();
     expect(screen.getByLabelText('2,523 naira 25 kobo')).toBeTruthy();
     expect(screen.getByText('Pay from wallet')).toBeTruthy();
-    expect(screen.queryByText(/Fintava|Forever/)).toBeNull();
+    // FIX-110 (G-1723): H14's "Yours: Forever, in My purchases" row is drawn.
+    expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
+    expect(screen.queryByText(/Fintava/)).toBeNull();
   });
 
   it('FIX-101 H-A: a creator with no display name still gets the sheet, the PIN and the unlock: the Hub\'s quote is never refused for a name', async () => {

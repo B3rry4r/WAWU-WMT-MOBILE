@@ -141,7 +141,8 @@ const settle = (ms = 50) =>
   });
 
 beforeEach(() => {
-  answers = {};
+  // FIX-107: SC3 asks whether the course is saved; every test starts with it not saved.
+  answers = { 'GET /me/saved/courses/c1': [ok({ courseId: 'c1', saved: false })] };
   sent = [];
   queryClient.clear();
 });
@@ -428,7 +429,8 @@ describe('SC3 · Course', () => {
       expect(rtl.within(rtl.screen.getByTestId(`course-step-${i + 1}`)).getByText(line)).toBeTruthy();
       expect(rtl.within(rtl.screen.getByTestId(`course-step-${i + 1}`)).getByText(String(i + 1))).toBeTruthy();
     });
-    expect(sent).toEqual(['GET /schools/courses/c1']);
+    // The course, and (FIX-107) whether the person saved it: nothing else is asked.
+    expect(sent.slice().sort()).toEqual(['GET /me/saved/courses/c1', 'GET /schools/courses/c1']);
   });
 
   it('the fee in the bar at the foot is the course’s, in naira', async () => {
@@ -483,8 +485,46 @@ describe('SC3 · Course', () => {
     await rtl.screen.findByText('Product Design Bootcamp');
     expect(rtl.screen.queryByRole('button', { name: /enroll/i })).toBeNull();
     expect(rtl.screen.queryByText(/apply on|enroll|one payment/i)).toBeNull();
-    expect(rtl.screen.queryAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Back']);
-    expect(rtl.screen.queryByLabelText(/bookmark|save/i)).toBeNull();
+    // FIX-107 (G-627): the bookmark is built now, so it is the one control beside Back.
+    expect(rtl.screen.queryAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Back', 'Save this course']);
+  });
+
+  it('a user can save the course with the bookmark, and take the save back', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail())];
+    answers['PUT /me/saved/courses/c1'] = [ok({ courseId: 'c1', saved: true })];
+    answers['DELETE /me/saved/courses/c1'] = [ok({ courseId: 'c1', saved: false })];
+    await openCourse();
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Save this course' }));
+    await rtl.screen.findByRole('button', { name: 'Remove this course from Saved' });
+    expect(sent).toContain('PUT /me/saved/courses/c1');
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Remove this course from Saved' }));
+    await rtl.screen.findByRole('button', { name: 'Save this course' });
+    expect(sent).toContain('DELETE /me/saved/courses/c1');
+  });
+
+  it('a course already saved is drawn saved', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail())];
+    answers['GET /me/saved/courses/c1'] = [ok({ courseId: 'c1', saved: true })];
+    await openCourse();
+    expect(await rtl.screen.findByRole('button', { name: 'Remove this course from Saved' })).toBeTruthy();
+  });
+
+  it('when the Hub refuses the save the bookmark goes back and says so', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail())];
+    answers['PUT /me/saved/courses/c1'] = [failed(500, 'Something went wrong')];
+    await openCourse();
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Save this course' }));
+    await rtl.screen.findByText("Couldn't update your saved list. Try again.");
+    expect(rtl.screen.getByRole('button', { name: 'Save this course' })).toBeTruthy();
+  });
+
+  it('when the Hub cannot say whether the course is saved the bookmark is not drawn (R-47)', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail())];
+    answers['GET /me/saved/courses/c1'] = [failed(500, 'Something went wrong')];
+    await openCourse();
+    await rtl.screen.findByText('Product Design Bootcamp');
+    await settle(10);
+    expect(rtl.screen.queryByLabelText(/save/i)).toBeNull();
   });
 
   it('every value is the API’s: another course draws its own length, classes, outcomes and steps', async () => {

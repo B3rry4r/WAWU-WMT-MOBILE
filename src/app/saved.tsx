@@ -17,6 +17,7 @@ export default function SavedRoute() {
       onBack={leave}
       onOpenEvent={(id) => router.push({ pathname: '/events/[id]', params: { id } })}
       onOpenContent={(id) => router.push({ pathname: '/content/[id]', params: { id } })}
+      onOpenCourse={(id) => router.push({ pathname: '/schools/courses/[id]', params: { id } })}
     />
   );
 }

@@ -90,7 +90,7 @@ export function Note({ tone, icon, title, body, testID }: { tone: 'info' | 'warn
 const QUIET = 4;
 
 /** The code as a picture, dark on white in either theme so a door scanner can read it. It draws exactly the text it is given. */
-export function Qr({ value, size, testID }: { value: string; size: number; testID?: string }) {
+export function Qr({ value, size, testID, label = 'Ticket QR code' }: { value: string; size: number; testID?: string; label?: string }) {
   const path = useMemo(() => {
     const modules = qrModules(value);
     let d = '';
@@ -103,7 +103,7 @@ export function Qr({ value, size, testID }: { value: string; size: number; testI
   }, [value]);
   const span = path.count + QUIET * 2;
   return (
-    <Svg testID={testID} accessibilityLabel="Ticket QR code" width={size} height={size} viewBox={`0 0 ${span} ${span}`}>
+    <Svg testID={testID} accessibilityLabel={label} width={size} height={size} viewBox={`0 0 ${span} ${span}`}>
       <Rect width={span} height={span} fill={lightColors.surfaceCard} />
       <Path d={path.d} fill={lightColors.textPrimary} />
     </Svg>

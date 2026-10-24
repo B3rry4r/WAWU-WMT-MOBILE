@@ -29,6 +29,9 @@ const MARK_STROKE = ICON_STROKE.fab;
  * "Approve ₦2,523.25 to Chidi Eze". A paid unlock ends on H16. When the money has left and the opening is not finished, H18, whose
  * Contact support opens the support chat (I12) with this payment already attached as its first message (SUPPORT-01, R-30).
  */
+/** H14's row between the price and the fee: an unlock never ends, and My purchases (M29) keeps it. */
+const YOURS = [{ label: 'Yours', value: 'Forever, in My purchases' }] as const;
+
 export function UnlockSheets({
   unlock,
   onAddMoney,
@@ -123,6 +126,7 @@ export function UnlockSheets({
         fees={fees}
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
+        details={YOURS}
         actionLabel="Unlock"
         status={status}
         onPay={flow.pay}

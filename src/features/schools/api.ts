@@ -7,7 +7,8 @@ import type { components, operations } from '@/api/schema.generated';
  * - `GET /schools?category=&q=&limit=&cursor=`: school cards, a page at a time by cursor, each with its place, its course
  *   count and the lowest course fee. `q` matches a school's name or place, or the title of one of its shown courses;
  * - `GET /schools/{id}`: the school page, with its about text and its shown courses (each with its next shown intake);
- * - `GET /schools/courses/{id}`: the course page, with its syllabus, what it gives and every shown intake.
+ * - `GET /schools/courses/{id}`: the course page, with its syllabus, what it gives and every shown intake;
+ * - `GET`, `PUT`, `DELETE /me/saved/courses/{courseId}`: whether the person saved the course (SC3's bookmark) and the two ways to change it (FIX-107).
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row
  * 11), so each call reads `data` itself. No rating is served and none is drawn (R-32).
@@ -43,6 +44,8 @@ export const schoolsKeys = {
   list: (category: string, q: string) => ['schools', 'list', category, q] as const,
   school: (id: string) => ['schools', 'school', id] as const,
   course: (id: string) => ['schools', 'course', id] as const,
+  /** The person's own bookmark on a course; under `me` so a Saved refresh and the Me count can read it again. */
+  saved: (id: string) => ['me', 'saved-course', id] as const,
 };
 
 function unreadable(what: string): ApiError {
@@ -109,4 +112,21 @@ export async function fetchCourse(id: string): Promise<CourseDetail> {
     throw unreadable('course');
   }
   return data;
+}
+
+/** Whether the person saved this course. */
+export async function fetchCourseSaved(courseId: string): Promise<boolean> {
+  const body = (await unwrap(api.GET('/api/hub/me/saved/courses/{courseId}', { params: { path: { courseId } } }))) as unknown as Envelope<{ saved?: unknown }>;
+  const saved = body?.data?.saved;
+  if (typeof saved !== 'boolean') throw unreadable('saved course');
+  return saved;
+}
+
+/** Saves the course (PUT) or takes the save back (DELETE); each is idempotent. Answers how it stands now. */
+export async function setCourseSaved(courseId: string, saved: boolean): Promise<boolean> {
+  const params = { params: { path: { courseId } } };
+  const body = (await unwrap(saved ? api.PUT('/api/hub/me/saved/courses/{courseId}', params) : api.DELETE('/api/hub/me/saved/courses/{courseId}', params))) as unknown as Envelope<{ saved?: unknown }>;
+  const now = body?.data?.saved;
+  if (typeof now !== 'boolean') throw unreadable('saved course');
+  return now;
 }

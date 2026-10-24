@@ -18,6 +18,7 @@ import { openIcon, openLabel } from '@/features/unlock/model';
 import { UnlockSheets } from '@/features/unlock/UnlockSheets';
 import { useUnlock } from '@/features/unlock/useUnlock';
 
+import type { Lesson } from './api';
 import { CommentsSheet } from './CommentsSheet';
 import { Media } from './Media';
 import {
@@ -25,6 +26,7 @@ import {
   Header,
   LessonList,
   MakerRow,
+  ParentCourseRow,
   PriceCard,
   SectionHead,
   ThreadList,
@@ -58,6 +60,9 @@ const m = { between: 18, bottom: 40, footBottom: 24, footTop: 10, titleSpace: 6,
 export const THANKS_LINE = 'Thanks for rating';
 export const COMMENTS_LOAD_FAILED = "The comments couldn't be loaded.";
 export const FILE_FAILED = "The file couldn't be opened. Try again.";
+export const LESSON_LOCKED = 'Unlock the course to watch this lesson.';
+export const LESSON_NO_FILE = 'This lesson has no video yet.';
+export const LESSON_FAILED = "The lesson couldn't be opened. Try again.";
 export const NOT_AVAILABLE = { title: "This isn't available", message: 'It was taken down, or you cannot see it.' } as const;
 export const LOAD_FAILED = { title: "Couldn't load this", message: 'Check your connection and try again.' } as const;
 
@@ -67,6 +72,10 @@ export type ContentDetailScreenProps = {
   onBack: () => void;
   /** Where the page's wallet payments (an unlock, a tip) lead when they need somewhere else: Open your wallet, a PIN to set, Forgot PIN, add money. */
   pay: FlowHandlers;
+  /** The "From the course" row (H24) opens the course's own page. The row is not drawn without it. */
+  onOpenCourse?: (courseId: string) => void;
+  /** The creator's own course opens the screen that edits its lessons. The button is not drawn without it. */
+  onEditLessons?: (courseId: string) => void;
 };
 
 type Notice = { text: string; tone: ToastTone } | null;
@@ -77,7 +86,7 @@ type Notice = { text: string; tone: ToastTone } | null;
  * price, the counts, the dates, the lessons, who made it and what the viewer has bought. A mark the Hub does not take is put back
  * and said so; a part that cannot be read says so on its own.
  */
-export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProps) {
+export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLessons }: ContentDetailScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [notice, setNotice] = useState<Notice>(null);
@@ -90,6 +99,8 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
   const [rateOpen, setRateOpen] = useState(false);
   const [allLessons, setAllLessons] = useState(false);
   const [open, setOpen] = useState(0);
+  // H25: the lesson playing in the picture (the Hub's short-lived link for it); a new `key` starts a lesson again.
+  const [playing, setPlaying] = useState<{ id: string; key: number; uri: string; title: string } | null>(null);
   // The foot's own height (the unlock button, its balance line and the safe area under it), read from the screen: the list pads by it.
   const [footHeight, setFootHeight] = useState(0);
 
@@ -166,6 +177,22 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
     if (!url) return say(FILE_FAILED);
     Linking.openURL(url).catch(() => say(FILE_FAILED));
   };
+  // H25 (FIX-107): a lesson with a file plays in the picture for anyone it is open to (the first is free, the rest are the buyer's); a
+  // locked lesson asks to unlock the course; a lesson with no file opens nothing. The Hub decides, so a refusal is said, not hidden.
+  const unlocked = !locked;
+  const opensLesson = (l: Lesson) => (unlocked || l.isFree ? l.hasFile : true);
+  const openLesson = (l: Lesson) => {
+    if (!unlocked && !l.isFree) return startUnlock();
+    if (page.playLesson.isPending) return;
+    page.playLesson.mutate(l.id, {
+      onSuccess: (play) => setPlaying({ id: l.id, key: Date.now(), uri: play.url, title: l.title }),
+      onError: (error) => say(isApiError(error) && error.status === 403 ? LESSON_LOCKED : isApiError(error) && error.status === 404 ? LESSON_NO_FILE : LESSON_FAILED),
+    });
+  };
+  // A finished lesson counts toward "3 of 12 done" for a course that is the person's; a free lesson of a locked course counts nothing.
+  const lessonEnded = () => {
+    if (unlocked && playing) page.lessonDone.mutate(playing.id);
+  };
   // The unlock sheet's last button hands the piece back to the page, read again so it draws as bought.
   const unlockSheets = {
     ...unlock,
@@ -199,7 +226,7 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="content-detail">
       <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} />
       <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: footed ? footHeight + space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
-        <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} />
+        <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} lesson={playing} onLessonEnded={lessonEnded} />
         <View style={styles.title}>
           <Text variant="sheetTitle" testID="detail-title">
             {p.title}
@@ -218,11 +245,13 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
           onToggleFollow={() => page.followMaker.mutate(!e.followsCreator)}
         />
 
+        {d.parentCourse && onOpenCourse ? <ParentCourseRow course={d.parentCourse} onPress={() => onOpenCourse(d.parentCourse!.id)} /> : null}
+
         {locked && !course ? <PriceCard label={unlockLabel(kind)} priceKobo={priceKobo(p)} balanceKobo={balanceKobo} loading={unlock.asking} onUnlock={startUnlock} /> : null}
 
         {course && lessons.length > 0 ? (
           <>
-            <LessonList lessons={shownLessons} />
+            <LessonList lessons={shownLessons} unlocked={unlocked} playingId={playing?.id ?? null} canOpen={opensLesson} onOpen={openLesson} />
             {lessons.length > LESSONS_SHOWN ? (
               <Button
                 testID="detail-lessons-toggle"
@@ -234,6 +263,10 @@ export function ContentDetailScreen({ id, onBack, pay }: ContentDetailScreenProp
               />
             ) : null}
           </>
+        ) : null}
+
+        {course && own && onEditLessons ? (
+          <Button testID="detail-edit-lessons" label="Edit lessons" icon="PenLine" variant="secondary" size="sm" onPress={() => onEditLessons(p.id)} style={styles.center} />
         ) : null}
 
         {canOpen ? (

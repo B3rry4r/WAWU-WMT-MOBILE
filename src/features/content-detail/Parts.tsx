@@ -1,11 +1,14 @@
-import type { ReactNode } from 'react';
+import { Image } from 'expo-image';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
+import { nairaToKobo } from '@/api/kobo';
 import { Avatar, type AvatarHue } from '@/components/Avatar';
 import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
+import { IconTile } from '@/components/IconTile';
 import { Money } from '@/components/Money';
 import { formatNaira } from '@/components/pay-sheet';
 import { StatusPill } from '@/components/StatusPill';
@@ -14,7 +17,7 @@ import { font, layout, space, useWawu } from '@/theme';
 import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
 
 import type { Comment, PieceDetail } from './api';
-import { ago, commenterName, lessonLength, type Thread } from './model';
+import { ago, commenterName, lessonLength, plural, type Thread } from './model';
 
 /** design/_gen/home.js lines 61 to 75: the sizes of the piece's own page. */
 export const m = {
@@ -107,6 +110,54 @@ export function MakerRow({
   );
 }
 
+/** design/_gen/home.js line 74: the "From the course" row is a 12 by 14 card, a 44 picture with 14 corners, 12 between, the amount at 15. */
+const courseRow = { pad: 14, picture: 44, corner: 14, title: 14.5, line: 12.5, amount: 15, between: 12 } as const;
+
+/**
+ * H24's "From the course VFX for Beginners · 12 lessons ₦8,000": a piece that comes from one of its creator's own courses names it, and
+ * a tap opens the course (H25). The picture is the course's own preview when it is a picture, else the course mark. Every figure is the
+ * Hub's (`parentCourse` on the detail); a free course says Free.
+ */
+export function ParentCourseRow({ course, onPress }: { course: NonNullable<PieceDetail['parentCourse']>; onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  const [broken, setBroken] = useState(false);
+  const amount = course.price > 0 ? formatNaira(nairaToKobo(course.price)) : 'Free';
+  const lines = plural(course.lessonCount, 'lesson', 'lessons');
+  return (
+    <Pressable
+      testID="detail-parent-course"
+      accessibilityRole="button"
+      accessibilityLabel={`From the course ${course.title}, ${lines}, ${amount}`}
+      accessibilityHint="Opens the course"
+      onPress={onPress}
+      {...ring.handlers}
+      style={ring.style}
+    >
+      <Card padded style={styles.courseCard}>
+        <View style={styles.courseRow}>
+          {course.previewAssetUrl && !broken ? (
+            <View style={[styles.coursePicture, { backgroundColor: colors.surfaceSunken }]}>
+              <Image source={{ uri: course.previewAssetUrl }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+            </View>
+          ) : (
+            <IconTile icon="GraduationCap" tone="accent" size={courseRow.picture} />
+          )}
+          <View style={styles.courseWords}>
+            <Text variant="body" numberOfLines={2} style={[font(600), { fontSize: courseRow.title }]}>
+              {`From the course ${course.title}`}
+            </Text>
+            <Text variant="meta" style={{ fontSize: courseRow.line, marginTop: m.lessonSpace }}>
+              {lines}
+            </Text>
+          </View>
+          {course.price > 0 ? <Money minorUnits={nairaToKobo(course.price)} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
+
 /** H19's price card: what unlocking gives, the price, Unlock, and what it is paid from. */
 export function PriceCard({
   label,
@@ -126,10 +177,16 @@ export function PriceCard({
 }) {
   return (
     <Card padded style={styles.price} testID="detail-price-card">
-      <Text variant="meta" style={styles.priceLabel}>
-        {label}
-      </Text>
-      <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />
+      <View style={styles.priceHead}>
+        <View style={styles.priceWords}>
+          <Text variant="meta" style={styles.priceLabel}>
+            {label}
+          </Text>
+          <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />
+        </View>
+        {/* H19: a purchase never ends (no expiry exists on a bought piece, and R-50 keeps what buyers paid for), so this is a fact, not a promise. */}
+        <StatusPill testID="detail-yours-forever" label="Yours forever" tone="positive" icon="Check" />
+      </View>
       <Button testID="detail-unlock" label={`${actionLabel} · ${formatNaira(priceKobo)}`} onPress={onUnlock} loading={loading} full />
       <WalletLine balanceKobo={balanceKobo} />
     </Card>
@@ -182,15 +239,42 @@ function ActionButton({ action }: { action: Action }) {
   );
 }
 
-/** H25's lessons: number, title, length, and Free or a lock. */
-export function LessonList({ lessons }: { lessons: PieceDetail['lessons'] }) {
+/**
+ * H25's lessons: number, title, length, and Free or a lock. A lesson the person can play (`canOpen`) is a button that plays it in the
+ * picture above (FIX-107); once the course is theirs a lesson with a file shows a play mark where the lock was, and the one playing
+ * shows it in the accent.
+ */
+export function LessonList({
+  lessons,
+  unlocked = false,
+  playingId = null,
+  canOpen,
+  onOpen,
+}: {
+  lessons: PieceDetail['lessons'];
+  /** The course is the person's (bought, free or their own): no lock is drawn. */
+  unlocked?: boolean;
+  playingId?: string | null;
+  canOpen?: (lesson: PieceDetail['lessons'][number]) => boolean;
+  onOpen?: (lesson: PieceDetail['lessons'][number]) => void;
+}) {
   const { colors } = useWawu();
   return (
     <Card style={styles.lessons} testID="detail-lessons">
       {lessons.map((lesson, i) => {
         const length = lessonLength(lesson.durationLabel);
-        return (
-          <View key={lesson.id} testID={`lesson-${lesson.id}`} style={[styles.lesson, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderHairline }]}>
+        const playing = lesson.id === playingId;
+        const mark = playing ? (
+          <Icon name="Play" size={m.lessonIcon} color={colors.accentFg} fill={colors.accentFg} />
+        ) : unlocked ? (
+          lesson.hasFile ? <Icon name="Play" size={m.lessonIcon} color={colors.textMuted} /> : null
+        ) : lesson.isFree ? (
+          <StatusPill label="Free" tone="positive" />
+        ) : (
+          <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />
+        );
+        const row = (
+          <>
             <NativeText style={[font(700), styles.lessonNo, { color: colors.textMuted }]}>{String(i + 1).padStart(2, '0')}</NativeText>
             <View style={styles.lessonWords}>
               <Text variant="cardTitle" numberOfLines={2}>
@@ -203,7 +287,25 @@ export function LessonList({ lessons }: { lessons: PieceDetail['lessons'] }) {
               ) : null}
             </View>
             {/* The pill hugs the top of any row it sits in (its own alignSelf); this box is what the row centres. */}
-            <View style={styles.lessonEnd}>{lesson.isFree ? <StatusPill label="Free" tone="positive" /> : <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />}</View>
+            {mark ? <View style={styles.lessonEnd}>{mark}</View> : null}
+          </>
+        );
+        const line = [styles.lesson, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderHairline }];
+        return onOpen && canOpen?.(lesson) ? (
+          <Pressable
+            key={lesson.id}
+            testID={`lesson-${lesson.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${lesson.isFree || unlocked ? 'Play' : 'Unlock to play'} lesson ${i + 1}, ${lesson.title}`}
+            accessibilityState={{ selected: playing }}
+            onPress={() => onOpen(lesson)}
+            style={line}
+          >
+            {row}
+          </Pressable>
+        ) : (
+          <View key={lesson.id} testID={`lesson-${lesson.id}`} style={line}>
+            {row}
           </View>
         );
       })}
@@ -316,8 +418,14 @@ const styles = StyleSheet.create({
   makerWords: { flex: 1, minWidth: 0, gap: m.makerSpace },
   nameLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   makerName: { flexShrink: 1 },
+  courseCard: { paddingVertical: space.md, paddingHorizontal: courseRow.pad },
+  courseRow: { flexDirection: 'row', alignItems: 'center', gap: courseRow.between },
+  coursePicture: { width: courseRow.picture, height: courseRow.picture, borderRadius: courseRow.corner, overflow: 'hidden' },
+  courseWords: { flex: 1, minWidth: 0 },
   price: { gap: space.md },
-  priceLabel: { marginBottom: -space.sm },
+  priceHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  priceWords: { flex: 1, minWidth: 0, gap: space.sm },
+  priceLabel: {},
   walletLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: m.tightSpace },
   walletText: { textAlign: 'center' },
   engage: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: space.xs, paddingHorizontal: m.engagePad },

@@ -1,20 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
-import { Button } from '@/components/Button';
+import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
+import { countsKey } from '@/features/me/counts';
+import { savedRoot } from '@/features/saved/api';
 import { NavBar } from '@/features/events/chrome';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { ApplySheet } from './ApplySheet';
-import { fetchCourse, schoolsKeys } from './api';
+import { fetchCourse, fetchCourseSaved, schoolsKeys, setCourseSaved } from './api';
 import { joinable, upcoming } from './enrolModel';
 import { ClassFullFoot } from './enrolParts';
 import { classesLine, dayLabel, nonEmpty, upcomingIntake, weeksLabel, youGetLine } from './model';
@@ -75,6 +78,29 @@ export function CourseScreen({ id, onBack, onEnroll }: CourseScreenProps) {
   const today = useToday();
   const [applying, setApplying] = useState(false);
   const [foot, setFoot] = useState(0);
+  // SC3's bookmark (FIX-107, G-627): drawn once the Hub has said whether the course is saved, never before.
+  const saved = useQuery({ queryKey: schoolsKeys.saved(id), queryFn: () => fetchCourseSaved(id) }, queryClient);
+  const [notice, setNotice] = useState<string | null>(null);
+  const keep = useMutation(
+    {
+      mutationFn: (next: boolean) => setCourseSaved(id, next),
+      onMutate: (next: boolean) => {
+        const before = queryClient.getQueryData<boolean>(schoolsKeys.saved(id));
+        queryClient.setQueryData(schoolsKeys.saved(id), next);
+        return { before };
+      },
+      onError: (_error, _next, ctx) => {
+        if (ctx?.before !== undefined) queryClient.setQueryData(schoolsKeys.saved(id), ctx.before);
+        setNotice("Couldn't update your saved list. Try again.");
+      },
+      onSuccess: (now) => queryClient.setQueryData(schoolsKeys.saved(id), now),
+      onSettled: () => {
+        void queryClient.invalidateQueries({ queryKey: savedRoot });
+        void queryClient.invalidateQueries({ queryKey: countsKey });
+      },
+    },
+    queryClient,
+  );
 
   if (course.isPending) {
     return (
@@ -126,7 +152,22 @@ export function CourseScreen({ id, onBack, onEnroll }: CourseScreenProps) {
 
   return (
     <View testID="course-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <NavBar title="Course" onBack={onBack} backTestID="course-back" />
+      <NavBar
+        title="Course"
+        onBack={onBack}
+        backTestID="course-back"
+        right={
+          saved.data === undefined ? undefined : (
+            <IconButton
+              testID="course-save"
+              icon="Bookmark"
+              filled={saved.data}
+              label={saved.data ? 'Remove this course from Saved' : 'Save this course'}
+              onPress={() => keep.mutate(!saved.data)}
+            />
+          )
+        }
+      />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.body, { paddingBottom: footHeight + courseMetrics.partGap }]}>
         <Cover height={courseMetrics.cover} style={styles.cover} testID="course-cover" />
         <View style={styles.names}>
@@ -202,6 +243,7 @@ export function CourseScreen({ id, onBack, onEnroll }: CourseScreenProps) {
           </View>
         )}
       </View>
+      <Toast message={notice} tone="alert" placement="top" offset={insets.top + space.sm} duration={4000} onHide={() => setNotice(null)} testID="course-notice" />
       <ApplySheet
         visible={applying}
         courseId={data.id}

@@ -28,6 +28,8 @@ import {
   emptyDraft,
   endShown,
   hasErrors,
+  addDays,
+  daysBetween,
   newTicket,
   priceShown,
   startLabel,
@@ -47,7 +49,7 @@ const bodyMetrics = { top: 14, between: 14, ticketsGap: 12, labelGap: 10, cardPa
 /** events_b.js form3's Add a ticket type: 12 padding, 16 corner, a 1.5 strong ring, a 16 Plus at 2.2, 7 to the words, 13.5 semi-bold. */
 const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, between: 7, font: 13.5 } as const;
 /** How far ahead a start can be picked, and the gap between the times offered. PROVISIONAL(HOST-PICKER, owner=DEV3, why=no ruling sizes them). */
-const PICKER = { days: 365, minutes: 30 } as const;
+const PICKER = { days: 365, minutes: 30, endDays: 14 } as const;
 
 export type Sheet = 'kind' | 'category' | 'starts' | 'ends' | null;
 
@@ -266,6 +268,13 @@ export function StepSheets({
   now: number;
   set: (p: Partial<HostDraft>) => void;
 }) {
+  // G-443: the end's day, from the start's day and the thirteen after it. The board draws one time; a day picker is built from the
+  // start sheet's own parts (R-29), and leaving it on the first day is the board's event that ends on its start day.
+  const start = draft.day;
+  const endDays = useMemo(
+    () => (start ? Array.from({ length: PICKER.endDays }, (_, i) => addDays(start, i)).map((d) => ({ value: d, label: dayLabel(d, now) })) : undefined),
+    [start, now],
+  );
   return (
     <>
       <ChoiceSheet
@@ -296,6 +305,9 @@ export function StepSheets({
       <WhenSheet
         visible={sheet === 'ends'}
         title="Ends"
+        days={endDays}
+        day={draft.day ? addDays(draft.day, draft.endDaysAfter ?? 0) : null}
+        onDay={(day) => set({ endDaysAfter: draft.day ? daysBetween(draft.day, day) : 0 })}
         times={TIMES}
         time={draft.endTime}
         onTime={(endTime) => set({ endTime })}

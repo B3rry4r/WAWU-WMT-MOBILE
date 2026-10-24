@@ -88,14 +88,14 @@ const two = (n: number) => String(n).padStart(2, '0');
 const isoDay = (year: number, month0: number, day: number) => `${year}-${two(month0 + 1)}-${two(day)}`;
 
 /** The calendar day `n` days after `day` (`YYYY-MM-DD`). Nigeria has no daylight saving, so a day is always 24 hours. */
-function addDays(day: string, n: number): string {
+export function addDays(day: string, n: number): string {
   const [y, m, d] = day.split('-').map(Number);
   const at = new Date(Date.UTC(y, m - 1, d + n));
   return isoDay(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate());
 }
 
 /** Whole days from one `YYYY-MM-DD` to another. */
-const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+export const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 
 type EndParts = Pick<HostDraft, 'day' | 'endTime' | 'endDaysAfter'>;
 

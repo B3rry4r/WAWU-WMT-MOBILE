@@ -80,7 +80,7 @@ beforeEach(() => {
   answers = {
     'GET /inbox/unread': [ok({ total: 0, chats: 0, paidDms: 0, communities: 0 })],
     'GET /inbox?limit=20': [page([chatRow(), textRow(), requestRow()])],
-    'GET /inbox?limit=20&kind=money_request': [page([requestRow(), requestRow({ requestId: 'r-2', direction: 'outgoing', other: femi, status: 'paid', memo: 'Shoot' }, 'money_request:r-2')])],
+    'GET /inbox?limit=20&kind=money': [page([requestRow(), requestRow({ requestId: 'r-2', direction: 'outgoing', other: femi, status: 'paid', memo: 'Shoot' }, 'money_request:r-2')])],
   };
 });
 afterEach(async () => {
@@ -132,7 +132,7 @@ describe('I20: the Money chip', () => {
     await rtl.screen.findByTestId('row-chat:c-kemi');
     await rtl.fireEvent.press(rtl.screen.getByRole('radio', { name: 'Money' }));
     await rtl.screen.findByTestId('row-money_request:r-1');
-    expect(sent).toContain('GET /inbox?limit=20&kind=money_request');
+    expect(sent).toContain('GET /inbox?limit=20&kind=money');
     expect(rtl.screen.getByText('Requested ₦12,000 · Logo edits')).toBeTruthy();
     expect(rtl.screen.getByText('Femi paid ₦12,000 · Shoot')).toBeTruthy();
     expect(rtl.screen.queryByTestId('row-chat:c-femi')).toBeNull();

@@ -21,6 +21,8 @@ export type Engagement = components['schemas']['ContentEngagement'];
 export type Maker = components['schemas']['DetailCreator'];
 export type Comment = components['schemas']['Comment'];
 export type RatingState = components['schemas']['RatingState'];
+export type LessonPlay = components['schemas']['LessonPlay'];
+export type Lesson = PieceDetail['lessons'][number];
 export type ChatSummary = components['schemas']['ChatSummary'];
 
 export const pieceKey = (id: string) => ['content-page', id] as const;
@@ -117,3 +119,20 @@ export async function fetchShareChats(): Promise<ChatSummary[]> {
 export async function sendLinkToChat(chatId: string, text: string, clientMessageId: string): Promise<void> {
   await readData<{ id: string }>(api.POST('/api/hub/chats/{chatId}/messages', { params: { path: { chatId } }, body: { text, clientMessageId } }), 'message');
 }
+
+/**
+ * A fresh link to one lesson's file (H25, FIX-107). The Hub decides who may play it: a free lesson for anyone who may open the piece,
+ * the rest for the creator and for a buyer (403 for anyone else, 404 for a lesson with no file). The link is short-lived and is asked
+ * for again each time a lesson is opened.
+ */
+export async function fetchLessonPlay(id: string, lessonId: string): Promise<LessonPlay> {
+  const play = await readData<LessonPlay>(api.GET('/api/hub/content/{id}/lessons/{lessonId}/play', { params: { path: { id, lessonId } } }), 'lesson');
+  if (!filled(play.url)) throw unreadable('lesson');
+  return play;
+}
+
+/** Marks a lesson finished for the person (M29's "3 of 12 done"); idempotent. The Hub takes it only for a course the person may open. */
+export async function markLessonDone(lessonId: string): Promise<void> {
+  await unwrap(api.PUT('/api/hub/me/lessons/{lessonId}/done', { params: { path: { lessonId } } }));
+}
+

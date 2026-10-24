@@ -49,6 +49,22 @@ export function rowNameOf(person: Pick<ChatPerson, 'name' | 'handle'>): string {
 /** The name an avatar takes its initial from: the row's name without the "@" (so "@kemi" gives "K", not "@"). */
 export const avatarNameOf = (person: Pick<ChatPerson, 'name' | 'handle'>): string => rowNameOf(person).replace(/^@/, '');
 
+export type MoveLook = { outgoing: boolean; amountKobo: number; status: 'pending' | 'completed' | 'reversed'; note: string | null };
+
+/**
+ * The line under a name for a send between two people (I20): "Sent you ₦5,000" with the arrow-in glyph, "You sent ₦25,000" with none (as the board
+ * draws them), then the sender's own note after a dot when they wrote one. A send the provider has not confirmed reads "Payment on its way" (the words
+ * a request being paid uses; the Hub shows it to the sender only), and one that was sent back reads "Reversed" (the word the wallet history uses).
+ * Every figure and word is the Hub's.
+ */
+export function moveLine({ outgoing, amountKobo, status, note }: MoveLook): { text: string; kind?: ConversationKind } {
+  const amount = naira(amountKobo);
+  const why = note?.trim() ? ` · ${note.trim()}` : '';
+  if (status === 'reversed') return { text: `Reversed ${amount}${why}`, kind: 'refund' };
+  if (status === 'pending') return { text: `Payment on its way · ${amount}` };
+  return outgoing ? { text: `You sent ${amount}${why}` } : { text: `Sent you ${amount}${why}`, kind: 'money' };
+}
+
 /** The tick a row draws after a name. */
 const rowTick = (person: Pick<ChatPerson, 'verification'>) => tickOf(person);
 
@@ -103,6 +119,27 @@ export function MoneyRequestInboxRow({ item }: { item: InboxItem }) {
       tick={rowTick(request.other)}
       lead={<Avatar name={avatarNameOf(request.other)} hue={hueFor(request.other.wawuId)} size={ROW_AVATAR} source={request.other.avatarUrl ?? undefined} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: request.chatId } })}
+    />
+  );
+}
+
+/** A send between two people in the Money view (I20): who it is with, what was sent and in which direction. Tapping it opens the chat of the two. */
+export function MoneyMoveInboxRow({ item }: { item: InboxItem }) {
+  const router = useRouter();
+  const move = item.moneyMove;
+  if (!move) return null;
+  const line = moveLine({ outgoing: move.direction === 'outgoing', amountKobo: move.amountKobo, status: move.status, note: move.note });
+  return (
+    <ConversationRow
+      testID={`row-${item.id}`}
+      name={move.other.name}
+      preview={line.text}
+      kind={line.kind}
+      time={rowTime(item.lastActivityAt)}
+      unread={0}
+      tick={rowTick(move.other)}
+      lead={<Avatar name={move.other.name} hue={hueFor(move.other.wawuId)} size={ROW_AVATAR} source={move.other.avatarUrl ?? undefined} decorative />}
+      onPress={() => router.push({ pathname: '/chat/[id]', params: { id: move.chatId } })}
     />
   );
 }

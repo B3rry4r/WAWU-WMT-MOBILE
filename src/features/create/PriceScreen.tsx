@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
@@ -6,7 +6,9 @@ import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { ApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
+import { Card, GroupedList } from '@/components/Card';
+import { FilterChips } from '@/components/FilterChips';
+import { KeyValueRow } from '@/components/ListRow';
 import { APP_NAME } from '@/components/BrandMark';
 import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
@@ -17,10 +19,10 @@ import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
 import { font, space, text, useWawu } from '@/theme';
 
-import { allowanceKey, createContent } from './api';
+import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
 import { CreateFrame } from './CreateFrame';
-import { resetDraft, useDraft, type UploadedFile } from './draft';
-import { cleanPrice, groupDigits, priceOf, priceReady, setDetails, setSent, useDetails, type AccessType, type Details } from './details';
+import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
+import { cleanPrice, groupDigits, presetDigits, priceOf, priceReady, setDetails, setSent, useDetails, type AccessType, type Details } from './details';
 import { formatBytes, iconOf, labelOf, type FormatId } from './model';
 import { Stepper } from './parts';
 
@@ -48,6 +50,17 @@ export function pieceMeta(format: FormatId, full: UploadedFile, preview: Uploade
 /** The sentence under a refused send: the Hub's own words when it gave them, else one the person can act on. */
 export const sendFailure = (error: unknown): string => (error instanceof ApiError && error.message ? error.message : 'We could not send it. Check your connection and try again.');
 
+/** The Hub's list of a course's lessons, from what the lessons step collected: every lesson has a title and a file by now. */
+export function lessonInputs(lessons: readonly DraftLesson[]): LessonInput[] {
+  return lessons.flatMap((l) =>
+    l.file ? [{ title: l.title.trim(), ...(l.duration.trim() ? { durationLabel: l.duration.trim() } : {}), assetKey: l.file.key }] : [],
+  );
+}
+
+/** The sentence under a course that was taken for review while its lessons were not saved. */
+export const lessonsFailure = (error: unknown): string =>
+  `Your course is in review, but its lessons did not save. ${error instanceof ApiError && error.message ? error.message : 'Check your connection and try again.'}`;
+
 export type PriceScreenProps = {
   format: FormatId;
   onBack: () => void;
@@ -58,17 +71,26 @@ export type PriceScreenProps = {
 /**
  * M24 · Price (step 5 of 5) and M37 (the same step with Free picked). Paid asks for a price in whole naira; Free sends 0 and
  * says what free means (R-8). Send for review is the create call: the Hub files every piece as pending, so a piece that goes
- * through is in review, and the files then belong to it, not to the draft. Left out because nothing the Hub serves backs them
- * (G-ME-08-2): the Dollar and USDT picker (R-64), the preset prices, "You earn per sale", "Your share" and "Listing fee".
+ * through is in review, and the files then belong to it, not to the draft. The quick prices, "You earn per sale", "Your share"
+ * and "Listing fee" are the Hub's own (`GET /content/sale-terms`, FIX-110): the app never multiplies money, and none of the four is
+ * drawn until the Hub has answered. Left out: the Dollar and USDT picker (R-64).
  */
 export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   const details = useDetails();
-  const { full, preview } = useDraft();
+  const draft = useDraft();
+  const lessons = useLessons();
+  const { preview } = draft;
+  const full = fullFileOf(draft, lessons);
+  const made = useMade();
   const queryClient = useQueryClient();
   const sending = useRef(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const free = details.accessType === 'free';
+  // The price being typed, in whole kobo, for the Hub to work out what the creator keeps of it.
+  const typed = free ? null : priceOf(details.price);
+  const asked = typed === null ? null : typed * 100;
+  const terms = useQuery({ queryKey: saleTermsKey(asked), queryFn: () => fetchSaleTerms(asked), placeholderData: keepPreviousData });
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
@@ -77,18 +99,37 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
     setBusy(true);
     setFailure(null);
     try {
-      const sent = await createContent({
-        contentType: format,
-        title: details.title.trim(),
-        description: details.description.trim(),
-        category: details.category,
-        accessType: details.accessType,
-        price,
-        previewAsset: preview.fileUrl,
-        fullAsset: full.fileUrl,
-      });
+      let taken = made;
+      if (!taken) {
+        const sent = await createContent({
+          contentType: format,
+          title: details.title.trim(),
+          description: details.description.trim(),
+          category: details.category,
+          accessType: details.accessType,
+          price,
+          previewAsset: preview.fileUrl,
+          fullAsset: full.fileUrl,
+          ...(details.parentCourse ? { parentCourseId: details.parentCourse.id } : {}),
+        });
+        // A course is made first and its lessons follow. The Hub's answer carries the piece's id; without one the piece is in review
+        // already, so it goes on to M25 (its lessons can be added from the course itself) rather than being made a second time.
+        taken = sent.id && format === 'course' ? { id: sent.id, title: sent.title } : null;
+        if (taken) setMade(taken);
+        else setSent({ title: sent.title });
+      }
+      if (taken) {
+        try {
+          await saveLessons(taken.id, lessonInputs(lessons));
+        } catch (error) {
+          setFailure(lessonsFailure(error));
+          sending.current = false;
+          setBusy(false);
+          return;
+        }
+        setSent({ title: taken.title });
+      }
       resetDraft();
-      setSent({ title: sent.title });
       void queryClient.invalidateQueries({ queryKey: allowanceKey });
       onSent();
     } catch (error) {
@@ -100,9 +141,9 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
 
   const foot = (
     <>
-      {failure ? <Banner testID="price-failure" tone="danger" title="Not sent" body={failure} /> : null}
+      {failure ? <Banner testID="price-failure" tone="danger" title={made ? 'Lessons not saved' : 'Not sent'} body={failure} /> : null}
       {free ? null : <NoteLine />}
-      <Button testID="create-send" label="Send for review" full loading={busy} disabled={!priceReady(details)} onPress={() => void send()} />
+      <Button testID="create-send" label={made ? 'Save the lessons' : 'Send for review'} full loading={busy} disabled={!priceReady(details)} onPress={() => void send()} />
     </>
   );
 
@@ -129,10 +170,46 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
       ) : (
         <>
           <PriceField details={details} onChange={(price) => setDetails({ price: cleanPrice(price) })} />
+          {terms.data ? <Presets terms={terms.data} price={details.price} onPick={(price) => setDetails({ price })} /> : null}
+          {terms.data ? <EarnCard terms={terms.data} asked={asked} /> : null}
           {full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
         </>
       )}
     </CreateFrame>
+  );
+}
+
+/** M24's quick prices: the Hub's, in whole naira, with the one that equals the price on. */
+export function Presets({ terms, price, onPick }: { terms: SaleTerms; price: string; onPick: (digits: string) => void }) {
+  const digits = presetDigits(terms.presets.map((p) => p.priceKobo));
+  if (digits.length === 0) return null;
+  return (
+    <FilterChips
+      testID="price-presets"
+      label="Quick prices"
+      variant="option"
+      inset={0}
+      items={digits.map((d) => ({ value: d, label: formatMoney(Number(d) * 100, { decimals: false }) }))}
+      value={digits.includes(price) ? price : ''}
+      onChange={onPick}
+    />
+  );
+}
+
+/**
+ * M24's card: what the creator keeps of one sale at the price typed (the Hub's figure, said only once it is for that price), their
+ * share, and the listing fee ("Free" when the Hub says 0).
+ */
+export function EarnCard({ terms, asked }: { terms: SaleTerms; asked: number | null }) {
+  const current = asked !== null && terms.priceKobo === asked && terms.earnPerSaleKobo !== null;
+  return (
+    <GroupedList testID="price-terms">
+      {asked === null ? null : (
+        <KeyValueRow testID="price-earn" label="You earn per sale" value={current ? formatMoney(terms.earnPerSaleKobo ?? 0, { decimals: false }) : '...'} />
+      )}
+      <KeyValueRow testID="price-share" label="Your share" value={`${terms.creatorSharePct}%`} />
+      <KeyValueRow testID="price-fee" label="Listing fee" value={terms.listingFeeKobo === 0 ? 'Free' : formatMoney(terms.listingFeeKobo, { decimals: false })} />
+    </GroupedList>
   );
 }
 

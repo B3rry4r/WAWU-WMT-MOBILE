@@ -1391,6 +1391,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/content/sale-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a creator keeps of a sale, the listing fee, the quick prices and how
+         *     long a review usually takes (M24, M25, FIX-110). Read only. Before `:id`
+         *     so the literal is never taken for an id.
+         */
+        get: operations["ContentPieceController_saleTermsAt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/content": {
         parameters: {
             query?: never;
@@ -1848,6 +1869,40 @@ export interface paths {
         };
         get: operations["ContentMediaController_get"];
         put: operations["ContentMediaController_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/lessons/{lessonId}/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A fresh link to play one lesson: free lessons for anyone who may open the piece, the rest for buyers and the creator. */
+        get: operations["CourseLessonsController_play"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/content/{id}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The creator states the lessons: the list, the order and each lesson's file. */
+        put: operations["CourseLessonsController_set"];
         post?: never;
         delete?: never;
         options?: never;
@@ -5611,6 +5666,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/events/mine/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The day an admin last sent back or took down each of the host's events
+         *     (FIX-110, E17's "Taken down 20 Sep"). A route of its own, so the shape the
+         *     web reads from `mine` does not change.
+         */
+        get: operations["EventController_mineDecisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/events/options": {
         parameters: {
             query?: never;
@@ -6203,6 +6279,25 @@ export interface paths {
         post?: never;
         /** Remove a saved creator. Idempotent. */
         delete: operations["MeController_unsaveCreator"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/saved/courses/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a school course is saved (SC3's bookmark). */
+        get: operations["MeController_courseSaved"];
+        /** Save a school course (SC3's bookmark). Idempotent. */
+        put: operations["MeController_saveCourse"];
+        post?: never;
+        /** Remove a saved school course. Idempotent. */
+        delete: operations["MeController_unsaveCourse"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8540,6 +8635,12 @@ export interface components {
             previewAsset: string;
             /** Format: uri */
             fullAsset: string;
+            /**
+             * Format: uuid
+             * @description FIX-111 (H24): the creator's own course this piece comes from ("From the course VFX for Beginners"). Optional, and only for a
+             *     piece that is not itself a course; the course must be the creator's, live or in review. Stored on the piece's side row.
+             */
+            parentCourseId?: string;
         };
         UpdateContentDto: {
             title?: string;
@@ -8580,6 +8681,25 @@ export interface components {
             durationLabel?: string;
             /** @description How many pages a PDF has. PDFs only. */
             pageCount?: number;
+        };
+        LessonInputDto: {
+            /**
+             * Format: uuid
+             * @description An existing lesson of this course to keep (its progress and place stay); left out, a new lesson is made.
+             */
+            id?: string;
+            title: string;
+            /** @description The lesson's length as a player writes it: `4:12` or `1:20:05`. */
+            durationLabel?: string;
+            /**
+             * @description The lesson's file: the key (or link) of an upload this person made under `content/full`. A new lesson with none has no file yet.
+             *     A lesson kept by `id` keeps the file it has when this is left out (FIX-111: the editor does not know the key of a file it did not
+             *     upload), takes a new one when a key is sent, and loses its file only when this is `null`.
+             */
+            assetKey?: string | null;
+        };
+        SetLessonsDto: {
+            lessons: components["schemas"]["LessonInputDto"][];
         };
         CreateProductDraftDto: {
             title: string;
@@ -11019,6 +11139,8 @@ export interface components {
             name: string;
             benefits?: string[] | null;
             eventDate?: string | null;
+            eventName?: string | null;
+            passCode?: string | null;
         };
         MyTierView: {
             /** @enum {string} */
@@ -11511,6 +11633,17 @@ export interface components {
                 publicKey: string;
             };
         };
+        ContentSalePreset: {
+            priceKobo: number;
+        };
+        ContentSaleTerms: {
+            creatorSharePct: number;
+            listingFeeKobo: number;
+            presets: components["schemas"]["ContentSalePreset"][];
+            reviewHours: number;
+            priceKobo: number | null;
+            earnPerSaleKobo: number | null;
+        };
         ContentPieceResponse: {
             id: string;
             title: string;
@@ -11735,6 +11868,14 @@ export interface components {
             order: number;
             durationLabel: string | null;
             isFree: boolean;
+            hasFile: boolean;
+        };
+        ParentCourse: {
+            id: string;
+            title: string;
+            lessonCount: number;
+            price: number;
+            previewAssetUrl: string | null;
         };
         RatingState: {
             average: number | null;
@@ -11762,8 +11903,23 @@ export interface components {
             studentCount: number | null;
             freePreview: components["schemas"]["FreePreview"];
             lessons: components["schemas"]["DetailLesson"][];
+            parentCourse: components["schemas"]["ParentCourse"];
             rating: components["schemas"]["RatingState"];
             creator: components["schemas"]["DetailCreator"];
+        };
+        LessonPlay: {
+            contentId: string;
+            lessonId: string;
+            url: string;
+            expiresAt: string;
+            durationLabel: string | null;
+        };
+        LessonView: {
+            id: string;
+            title: string;
+            order: number;
+            durationLabel: string | null;
+            hasFile: boolean;
         };
         ProductDraftView: {
             id: string;
@@ -14193,6 +14349,14 @@ export interface components {
             createdAt: string;
             lastDecisionReason: string | null;
         };
+        EventDecisionView: {
+            eventId: string;
+            /** Format: date-time */
+            decidedAt: string;
+        };
+        EventDecisionsView: {
+            items: components["schemas"]["EventDecisionView"][];
+        };
         EventTicketRulesView: {
             hostSharePercent: number;
             minPriceNaira: number;
@@ -14385,10 +14549,22 @@ export interface components {
             paying: boolean;
             canMessage: boolean;
         };
+        InboxMoneyMove: {
+            transferId: string;
+            chatId: string;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            other: components["schemas"]["InboxPerson"];
+            amountKobo: number;
+            note: string | null;
+            /** @enum {string} */
+            status: "pending" | "completed" | "reversed";
+            canMessage: boolean;
+        };
         InboxItem: {
             id: string;
             /** @enum {string} */
-            kind: "paid_dm" | "community" | "chat" | "money_request";
+            kind: "paid_dm" | "community" | "chat" | "money_request" | "money_move";
             lastActivityAt: string | null;
             unreadCount: number;
             preview: components["schemas"]["InboxPreview"] | null;
@@ -14396,6 +14572,7 @@ export interface components {
             paidDm: components["schemas"]["InboxPaidDm"] | null;
             community: components["schemas"]["InboxCommunity"] | null;
             moneyRequest: components["schemas"]["InboxMoneyRequest"] | null;
+            moneyMove?: components["schemas"]["InboxMoneyMove"] | null;
         };
         InboxPage: {
             items: components["schemas"]["InboxItem"][];
@@ -14485,14 +14662,23 @@ export interface components {
             /** @enum {string} */
             status: "cancelled" | "published";
         };
+        SavedCourseView: {
+            id: string;
+            title: string;
+            schoolName: string;
+            schoolLogo: string | null;
+            weeks: number;
+            priceKobo: number;
+        };
         SavedEntryView: {
             id: string;
             /** @enum {string} */
-            kind: "creator" | "event" | "content";
+            kind: "creator" | "course" | "event" | "content";
             savedAt: string;
             content: components["schemas"]["SavedContentView"] | null;
             event: components["schemas"]["SavedEventView"] | null;
             creator: components["schemas"]["FeedCreator"] | null;
+            course: components["schemas"]["SavedCourseView"] | null;
         };
         SavedPage: {
             items: components["schemas"]["SavedEntryView"][];
@@ -14500,6 +14686,10 @@ export interface components {
         };
         SavedCreatorState: {
             creatorWawuId: string;
+            saved: boolean;
+        };
+        SavedCourseState: {
+            courseId: string;
             saved: boolean;
         };
         PurchasedPieceView: {
@@ -18064,6 +18254,27 @@ export interface operations {
             };
         };
     };
+    ContentPieceController_saleTermsAt: {
+        parameters: {
+            query?: {
+                priceKobo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentSaleTerms"];
+                };
+            };
+        };
+    };
     ContentPieceController_list: {
         parameters: {
             query: {
@@ -18163,6 +18374,8 @@ export interface operations {
                 page: number;
                 perPage: number;
                 status?: "live" | "pending" | "rejected";
+                /** @description Only the creator's own courses. Left out, every kind. */
+                contentType?: "course";
             };
             header?: never;
             path?: never;
@@ -18850,6 +19063,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MediaDetails"];
+                };
+            };
+        };
+    };
+    CourseLessonsController_play: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonPlay"];
+                };
+            };
+        };
+    };
+    CourseLessonsController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLessonsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        lessons: components["schemas"]["LessonView"][];
+                    };
                 };
             };
         };
@@ -26745,6 +27007,25 @@ export interface operations {
             };
         };
     };
+    EventController_mineDecisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDecisionsView"];
+                };
+            };
+        };
+    };
     EventController_options: {
         parameters: {
             query?: never;
@@ -27520,10 +27801,13 @@ export interface operations {
                 /** @description 1 to 100, 20 when left out. */
                 limit?: number;
                 /**
-                 * @description Only rows of this kind (the Paid DMs, Communities and Money chips; the
-                 *     Money chip is `money_request`). All kinds when left out.
+                 * @description Only rows of this kind (the Paid DMs, Communities and Money chips). The
+                 *     Money chip is `money`: requests and sends between two WAWU people
+                 *     together (FIX-114). `money_request` stays what it was, requests only.
+                 *     Sends are served only under `money`; the unfiltered list never holds
+                 *     them. All kinds when left out.
                  */
-                kind?: "chat" | "paid_dm" | "community" | "money_request";
+                kind?: "chat" | "paid_dm" | "community" | "money_request" | "money";
             };
             header?: never;
             path?: never;
@@ -27585,7 +27869,7 @@ export interface operations {
                 /** @description Rows per page, 1 to 100. */
                 limit?: number;
                 /** @description M30's tab: everything, or one kind. Default `all`. */
-                type?: "all" | "content" | "events" | "creators";
+                type?: "all" | "content" | "events" | "creators" | "courses";
                 /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
                 cursor?: string;
             };
@@ -27643,6 +27927,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedCreatorState"];
+                };
+            };
+        };
+    };
+    MeController_courseSaved: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
+                };
+            };
+        };
+    };
+    MeController_saveCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
+                };
+            };
+        };
+    };
+    MeController_unsaveCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedCourseState"];
                 };
             };
         };

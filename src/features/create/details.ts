@@ -50,9 +50,17 @@ export const CONTENT_CATEGORIES: readonly { id: ContentCategoryId; label: string
 export const categoryLabel = (id: ContentCategoryId | null): string => (id ? CATEGORY_NAMES[id] : '');
 
 /** What steps 4 and 5 collect. `price` is the digits as typed, in whole naira; a free piece sends 0 whatever it holds. */
-export type Details = { title: string; description: string; category: ContentCategoryId | null; accessType: AccessType; price: string };
+export type Details = {
+  title: string;
+  description: string;
+  category: ContentCategoryId | null;
+  accessType: AccessType;
+  price: string;
+  /** The creator's own course this piece comes from ("From a course", FIX-111): sent as `parentCourseId`. Unset for a piece that is not from one. */
+  parentCourse?: { id: string; title: string } | null;
+};
 
-const blank: Details = { title: '', description: '', category: null, accessType: 'paid', price: '' };
+const blank: Details = { title: '', description: '', category: null, accessType: 'paid', price: '', parentCourse: null };
 let details: Details = blank;
 const listeners = new Set<() => void>();
 
@@ -123,3 +131,15 @@ onSessionEnd(() => {
   resetDetails();
   setSent(null);
 });
+
+/** The Hub's whole-kobo quick prices that are a whole number of naira, as the digits the price field takes. */
+export const presetDigits = (presetsKobo: readonly number[]): string[] =>
+  presetsKobo.filter((kobo) => Number.isInteger(kobo) && kobo > 0 && kobo % 100 === 0 && kobo / 100 <= limits.priceMax).map((kobo) => String(kobo / 100));
+
+/** M25's "Usually takes", worded from the Hub's hours: "About an hour", "About 4 hours", "About a day", "About 3 days". */
+export function reviewWords(hours: number): string {
+  if (hours <= 1) return 'About an hour';
+  if (hours < 24) return `About ${hours} hours`;
+  const days = Math.round(hours / 24);
+  return days <= 1 ? 'About a day' : `About ${days} days`;
+}
