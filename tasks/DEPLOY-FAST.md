@@ -7,7 +7,7 @@ order: -121
 priority: launch
 repo: wawu-backend
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: []
 passes: [V1, V9]
@@ -18,7 +18,12 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2), backend `wmt/DEPLOY-FAST` `6e29183` on `origin/main` `0cd8f8e`; this record on mobile `wmt/DEPLOY-FAST` (from `origin/main` `fcbf81d4`). Order -121, free. Status verifying. CI files only (shared-file row in SHARED-CHANGES.md): no source, test, gate, baseline, schema or Fintava file, and nothing in the jest suite, changed.
+As of 24 Oct 2026, built by a Sonnet builder (T2), backend `wmt/DEPLOY-FAST` `6e29183` on `origin/main` `0cd8f8e`; this record on mobile `wmt/DEPLOY-FAST` (from `origin/main` `fcbf81d4`). Order -121, free. Status building (verifier FIX, 24 Oct 2026). CI files only (shared-file row in SHARED-CHANGES.md): no source, test, gate, baseline, schema or Fintava file, and nothing in the jest suite, changed.
+
+**Verifier (24 Oct 2026, Sonnet, built none of it): FIX, one medium, no high.** The decision script and the workflow behave correctly as shipped: no input made `decide` skip an untested tree (20 builder tests plus 13 of mine, a depth-2 shallow checkout, the real GitHub API for the last 14 merges on main: 7 skip, 7 test, every skip rests on push runs of the second parent). Open for the next round:
+
+- MEDIUM. The sync check does not guard the skip's own wiring. On throwaway copies `check_deploy_in_sync.py` still EXIT 0 when: `deploy.yml:262` ends `) || true` (deploys after a failed suite); `deploy.yml:261` `needs.suite.result == 'skipped'` becomes `!= 'cancelled'`; `deploy.yml:76` becomes `run: echo skip_tests=true >> $GITHUB_OUTPUT` (always skip). Also silent: `fetch-depth: 2` to 1, a Branch checks job renamed away from `suite (shard N of 3)` (skip never fires), the `decide` unit-test step dropped. Cause: `deploy`'s `if` is checked by substrings (`check_deploy_in_sync.py:230-233`), the `decide` job is not read at all. Fix: evaluate the `deploy` `if` over the result combinations (skip, all pass, one failure, cancelled, dry run, branch ref) and assert `decide` runs `decide_skip_tests.py` with `fetch-depth` 2 or more and the Branch checks job names equal `BRANCH_CHECKS_JOBS`; add SELF_TESTS rows for each. Behaviour today is right; if the lead accepts the gap, the branch merges as is and this goes to a sweep.
+- LOW: see the Verifier report (history file).
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -69,3 +74,8 @@ A merge to main reaches the droplet in minutes when its tree was already tested,
 - [x] A step dropped or changed on one side only fails the sync check.
 - [x] The migrate, build, restart and smoke test steps are untouched.
 - [ ] A dry run from the branch in Actions: NOT RUN.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/DEPLOY-FAST.md](history/DEPLOY-FAST.md).
+
