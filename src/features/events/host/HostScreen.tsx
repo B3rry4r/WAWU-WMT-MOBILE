@@ -26,6 +26,7 @@ import {
   dayLabel,
   digitsOf,
   emptyDraft,
+  endShown,
   hasErrors,
   newTicket,
   priceShown,
@@ -38,7 +39,7 @@ import {
   type Step,
   type TicketDraft,
 } from './hostForm';
-import { AreaField, BannerTile, ChoiceSheet, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
+import { AreaField, BannerTile, ChoiceSheet, LockedField, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
 import { isHostTierRefusal, tierRunning, type HostTierRefusal } from './hostTier';
 
 /** events_b.js form1 to form3: `body(..., { between: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
@@ -401,7 +402,7 @@ export function WhenWhere({
         <View style={styles.half}>
           <PickerField
             label="Ends"
-            value={draft.endTime}
+            value={endShown(draft, now)}
             placeholder="Pick a time"
             icon="Clock"
             onPress={() => open('ends')}
@@ -447,39 +448,52 @@ export function Tickets({
     <>
       {draft.tickets.map((t, i) => (
         <View key={t.key} testID={`host-ticket-${i}`} style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-          <TextField
-            testID={`host-ticket-${i}-name`}
-            label="What buyers see"
-            value={t.name}
-            onChangeText={(name) => setTicket(t.key, { name })}
-            error={errors[`${t.key}.name`]}
-            maxLength={rules.nameMaxLength}
-            disabled={locked}
-          />
-          <View style={styles.pair}>
-            <View style={styles.half}>
+          {locked ? (
+            <>
+              <LockedField testID={`host-ticket-${i}-name`} label="What buyers see" value={t.name} />
+              <View style={styles.pair}>
+                <View style={styles.half}>
+                  <LockedField testID={`host-ticket-${i}-price`} label="Price" value={priceShown(t.price)} />
+                </View>
+                <View style={styles.half}>
+                  <LockedField testID={`host-ticket-${i}-quantity`} label="How many" value={t.quantity} />
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
               <TextField
-                testID={`host-ticket-${i}-price`}
-                label="Price"
-                keyboardType="number-pad"
-                value={priceShown(t.price)}
-                onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                error={errors[`${t.key}.price`]}
-                disabled={locked}
+                testID={`host-ticket-${i}-name`}
+                label="What buyers see"
+                value={t.name}
+                onChangeText={(name) => setTicket(t.key, { name })}
+                error={errors[`${t.key}.name`]}
+                maxLength={rules.nameMaxLength}
               />
-            </View>
-            <View style={styles.half}>
-              <TextField
-                testID={`host-ticket-${i}-quantity`}
-                label="How many"
-                keyboardType="number-pad"
-                value={t.quantity}
-                onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                error={errors[`${t.key}.quantity`]}
-                disabled={locked}
-              />
-            </View>
-          </View>
+              <View style={styles.pair}>
+                <View style={styles.half}>
+                  <TextField
+                    testID={`host-ticket-${i}-price`}
+                    label="Price"
+                    keyboardType="number-pad"
+                    value={priceShown(t.price)}
+                    onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
+                    error={errors[`${t.key}.price`]}
+                  />
+                </View>
+                <View style={styles.half}>
+                  <TextField
+                    testID={`host-ticket-${i}-quantity`}
+                    label="How many"
+                    keyboardType="number-pad"
+                    value={t.quantity}
+                    onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
+                    error={errors[`${t.key}.quantity`]}
+                  />
+                </View>
+              </View>
+            </>
+          )}
           {!locked && draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}
         </View>
       ))}

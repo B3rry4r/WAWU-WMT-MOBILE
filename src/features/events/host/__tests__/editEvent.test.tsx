@@ -2,8 +2,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { ActivityIndicator, Animated, BackHandler, Image, Modal, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, BackHandler, Image, Modal, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { darkColors, lightColors } from '@/theme/tokens.generated';
+import { setThemePick } from '@/theme/override';
 
 // The plans are read per account (`plansQuery`); the account is known here without a sign-in.
 jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'acct-host' }));
@@ -38,7 +41,7 @@ beforeAll(async () => {
 }, 60_000);
 
 const NOW = new Date('2027-01-01T09:00:00Z').getTime();
-const SOLD_RULE = 'Tickets have already sold for "Regular". The price and places of a ticket type cannot change once a ticket is sold.';
+const SOLD_RULE = 'Tickets have already sold for "Regular". Ticket types cannot change once a ticket is sold.';
 
 const options = {
   categories: [
@@ -227,6 +230,83 @@ describe('E18 · Edit event', () => {
     expect(calls.some((c) => c.method === 'PATCH')).toBe(false);
   });
 
+  describe('an event the Hub holds as several days, or with no end', () => {
+    // Tue 12 Jan 2027 09:00 to Thu 14 Jan 16:00 in Lagos.
+    const threeDays = (over: Record<string, unknown> = {}) => live({ startsAt: '2027-01-12T08:00:00.000Z', endsAt: '2027-01-14T15:00:00.000Z', ...over });
+    const serveEvent = (event: ReturnType<typeof live>) =>
+      serve([], 0, (c) => {
+        if (c.method === 'GET' && c.path === '/events/e-9') return ok(event);
+        return c.method === 'PATCH' ? ok(live({ status: 'pending' })) : undefined;
+      });
+    const sendEdit = async () => {
+      await press('edit-save');
+      await press('review-confirm');
+      await rtl.screen.findByTestId('host-submitted');
+      return calls.find((c) => c.method === 'PATCH')?.body;
+    };
+
+    it('a host can rename a three-day event: only the name is sent, so its end date is untouched', async () => {
+      serveEvent(threeDays());
+      await bootEdit();
+      await type('host-name', 'Creators Summit 2027');
+      await press('edit-continue');
+      expect(rtl.screen.getByTestId('host-ends')).toHaveTextContent(/Thu 14 Jan, 16:00/);
+      expect(await sendEdit()).toEqual({ name: 'Creators Summit 2027' });
+    });
+
+    it('a host who moves the start time of a three-day event keeps its end on day three', async () => {
+      serveEvent(threeDays());
+      await bootEdit();
+      await press('edit-continue');
+      await press('host-starts');
+      await press('host-starts-sheet-time-10:00');
+      await press('host-starts-done');
+      expect(rtl.screen.getByTestId('host-ends')).toHaveTextContent(/Thu 14 Jan, 16:00/);
+      expect(await sendEdit()).toEqual({ startsAt: '2027-01-12T09:00:00.000Z' });
+    });
+
+    it('a host who moves the start day of a three-day event moves its end with it, still three days', async () => {
+      serveEvent(threeDays());
+      await bootEdit();
+      await press('edit-continue');
+      await press('host-starts');
+      await press('host-starts-sheet-day-2027-01-19');
+      await press('host-starts-done');
+      expect(rtl.screen.getByTestId('host-ends')).toHaveTextContent(/Thu 21 Jan, 16:00/);
+      expect(await sendEdit()).toEqual({ startsAt: '2027-01-19T08:00:00.000Z', endsAt: '2027-01-21T15:00:00.000Z' });
+    });
+
+    it('a host can rename a three-day event that ends at 07:00, earlier in the day than it starts', async () => {
+      serveEvent(threeDays({ endsAt: '2027-01-14T06:00:00.000Z' }));
+      await bootEdit();
+      await type('host-name', 'Creators Summit 2027');
+      await press('edit-continue');
+      expect(rtl.screen.getByTestId('host-ends')).toHaveTextContent(/Thu 14 Jan, 07:00/);
+      expect(await sendEdit()).toEqual({ name: 'Creators Summit 2027' });
+      expect(rtl.screen.queryByText('It has to end after it starts.')).toBeNull();
+    });
+
+    it('a host can rename an event with no end: none is asked for and none is made up', async () => {
+      serveEvent(live({ endsAt: null }));
+      await bootEdit();
+      await type('host-name', 'Creators Summit 2027');
+      await press('edit-continue');
+      expect(rtl.screen.getByTestId('host-ends')).toHaveTextContent(/Pick a time/);
+      expect(await sendEdit()).toEqual({ name: 'Creators Summit 2027' });
+      expect(rtl.screen.queryByText('Pick when it ends.')).toBeNull();
+    });
+
+    it('a host who moves the start of an event with no end sends the start alone', async () => {
+      serveEvent(live({ endsAt: null }));
+      await bootEdit();
+      await press('edit-continue');
+      await press('host-starts');
+      await press('host-starts-sheet-time-15:00');
+      await press('host-starts-done');
+      expect(await sendEdit()).toEqual({ startsAt: '2027-01-12T14:00:00.000Z' });
+    });
+  });
+
   it('a host sees the Hub\'s own message when the edit is refused, keeps what they typed, and can try again', async () => {
     serve([], 0, (c) => (c.method === 'PATCH' ? { status: 409, body: { statusCode: 409, message: 'This event has been called off.' } } : undefined));
     const props = await bootEdit();
@@ -331,7 +411,7 @@ describe('E18 · Ticket types', () => {
   it('a host with a ticket sold sees every type\'s price and places locked with one line of why, and is offered nothing the Hub would refuse', async () => {
     serve([tier('t1', 'regular', 'Regular', 5000, 100, 3), vip()], 3);
     const props = await bootTypes();
-    expect(rtl.screen.getByTestId('ticket-types-locked')).toHaveTextContent('A ticket has sold, so the price and places of a ticket type cannot change.');
+    expect(rtl.screen.getByTestId('ticket-types-locked')).toHaveTextContent('A ticket has sold, so ticket types cannot change.');
     for (const field of ['name', 'price', 'quantity']) {
       expect(rtl.screen.getByTestId(`host-ticket-0-${field}`).props.editable).toBe(false);
       expect(rtl.screen.getByTestId(`host-ticket-1-${field}`).props.editable).toBe(false);
@@ -344,6 +424,35 @@ describe('E18 · Ticket types', () => {
     await press('ticket-types-done');
     expect(props.onBack).toHaveBeenCalledTimes(1);
     expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+  });
+
+  it('a host can read the locked values in both themes: the text is the secondary colour on the sunken surface, at least 4.5 to 1', async () => {
+    const ratio = (a: string, b: string) => {
+      const channel = (hex: string, at: number) => {
+        const c = parseInt(hex.slice(at, at + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      };
+      const lum = (hex: string) => 0.2126 * channel(hex, 1) + 0.7152 * channel(hex, 3) + 0.0722 * channel(hex, 5);
+      const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    try {
+      for (const [pick, theme] of [['dark', darkColors], ['light', lightColors]] as const) {
+        setThemePick(pick);
+        serve([tier('t1', 'regular', 'Regular', 5000, 100, 3)], 3);
+        await bootTypes();
+        for (const field of ['name', 'price', 'quantity']) {
+          const style = StyleSheet.flatten(rtl.screen.getByTestId(`host-ticket-0-${field}`).props.style);
+          expect(style.color).toBe(theme.textSecondary);
+          expect(ratio(style.color as string, theme.surfaceSunken)).toBeGreaterThanOrEqual(4.5);
+        }
+        // The theme's disabled text colour is the one that was too dim.
+        expect(ratio(theme.textDisabled, theme.surfaceSunken)).toBeLessThan(4.5);
+        await rtl.cleanup();
+      }
+    } finally {
+      setThemePick('system');
+    }
   });
 
   it('a host is locked out by the event\'s sold figure too: a ticket sold on a type no longer on sale still locks the rest', async () => {

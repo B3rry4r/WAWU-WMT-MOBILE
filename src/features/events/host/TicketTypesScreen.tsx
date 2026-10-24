@@ -35,8 +35,11 @@ export type TicketTypesScreenProps = {
   onSeeTiers?: () => void;
 };
 
-/** The Hub's rule in the app's words (R-79 (c)): once a ticket has sold, a ticket type's price and places stay as they are. */
-export const SOLD_LINE = 'A ticket has sold, so the price and places of a ticket type cannot change.';
+/**
+ * The Hub's rule in the app's words: once a ticket has sold, ticket types stay as they are. R-79 (c) rules the price and places;
+ * the route refuses any `PUT` after a sale (the name too), so the line says what the locked step shows.
+ */
+export const SOLD_LINE = 'A ticket has sold, so ticket types cannot change.';
 
 /**
  * E18's Ticket types: the wizard's Tickets step (E15) filled from the types on sale. While no ticket has sold, Save sends the whole list to
