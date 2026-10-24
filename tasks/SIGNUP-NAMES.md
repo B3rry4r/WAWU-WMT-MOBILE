@@ -7,7 +7,7 @@ order: -126
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: []
 decisions: [R-6, R-29, R-47, R-82]
 passes: [V1, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T2
 # SIGNUP-NAMES · Sign-up asks for a first name, a last name and a username
 
 ## Current state
+
+Verifier, round 3 (24 Oct 2026, Sonnet, T2; mobile `3574b037`, Hub `e547602`, WAWU ID `00b9f8e` untouched): **PASS**. Status review. No blocker, high or medium. M1 and M2 are closed live (an underscore is no wildcard; the username route has the sign-up rules and lock; one winner in every race; `PATCH /users/me` answers as on main, `test:protected` 253 of 253 on both; Edit profile sends the username only to `PUT /users/me/handle`, shows the Hub's sentence, still saves name, bio and location through PATCH). Full jest 325 of 325 suites, 5529 of 5529 tests. Five lows for the lead to move to SWEEP-AUTH (history file, L1 to L5): reserved list still lacks `join`, `null`, `undefined`; Edit profile's label says "Handle" while the Hub's sentences say "username"; a 61 character handle gets validator wording (the app cannot send it); `lower(handle)` has no index; no test for the username call failing offline. The web's `PATCH` gap stays G-SIGNUP-NAMES-1 (live: `pat1`, `admin`, `..` still 200 through it, on main and on the branch).
 
 Round 3 (24 Oct 2026, Sonnet builder, T2; mobile and Hub `wmt/SIGNUP-NAMES`, each with `origin/main` merged first; Hub `e547602`; WAWU ID not touched, still `00b9f8e`): the verifier's two mediums and lows, built. Status verifying.
 
