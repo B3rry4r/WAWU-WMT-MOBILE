@@ -7390,6 +7390,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/captions/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The points quote for a Captions file (AITOOLS-04): the `fileKey` of a file
+         *     the person uploaded. The Hub reads the file's length itself and prices the
+         *     minutes from that, so the phone sends no length. Answers the same quote
+         *     `POST /points/quote` does (with its `quoteToken`, to send to the job route
+         *     with the same `fileKey`), plus `file.seconds` and `file.minutes`. Nothing
+         *     is held. `404 not_found` (not the caller's own file), `422 ai_file_too_large`,
+         *     `422 ai_file_unreadable`; over the longest job the quote's `cap` names
+         *     `minutes_per_job` and `canRun` is false.
+         */
+        post: operations["AiToolsController_quoteCaptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/clean-audio/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The points quote for a Clean audio file (AITOOLS-04): exactly `POST /ai-tools/captions/quote`, for the action `clean_audio_per_min`. */
+        post: operations["AiToolsController_quoteCleanAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/captions/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Captions job (PT1 "Captions", AITOOLS-04): the `fileKey` of a
+         *     recording or video the person uploaded (`POST /uploads/presign`, folder
+         *     `ai/input-audio` or `ai/input-video`, then `POST /uploads/confirm`), an
+         *     optional `languageCode` and the `quoteToken` of the `POST /points/quote`
+         *     (sent with the same `fileKey`) for the action `captions_per_min`. Priced by
+         *     the minute of the file, as the Hub reads it from the file itself (rounded
+         *     up, at least 1). The done job's `outputs` hold the words (`text`) and a
+         *     subtitle file (`subtitles`, SRT). The request, the answer and the
+         *     `Idempotency-Key` rule are those of `POST /ai-tools/voiceover/jobs`, plus
+         *     `404 not_found` (not the caller's own file), `422 ai_file_too_large` and
+         *     `422 ai_file_unreadable`, each with nothing held; over the longest job the
+         *     answer is `422 points_cap_reached` naming `minutes_per_job`. The uploaded
+         *     file is deleted when the job ends, either way.
+         */
+        post: operations["AiToolsController_createCaptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/clean-audio/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Clean audio job (PT1 "Clean audio", AITOOLS-04): the `fileKey` of
+         *     a recording or video the person uploaded and the `quoteToken` for the
+         *     action `clean_audio_per_min`. The done job's `audioUrl` (and its `audio`
+         *     output) is the same recording with the noise taken out. The request, the
+         *     answer and every refusal are those of `POST /ai-tools/captions/jobs`.
+         */
+        post: operations["AiToolsController_createCleanAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ai-tools/jobs": {
         parameters: {
             query?: never;
@@ -8027,7 +8124,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -10091,6 +10188,24 @@ export interface components {
             /** @description True for a track without singing. */
             instrumental?: boolean;
             /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        QuoteFileDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+        };
+        CreateCaptionsJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description The language spoken, as an ISO 639 code (`en`, `yo`, `fra`). Left out: the language is detected. */
+            languageCode?: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreateCleanAudioJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
             quoteToken: string;
         };
         NamePreviewDto: {
@@ -14933,6 +15048,19 @@ export interface components {
         PointsSettingsView: {
             useWallet: boolean;
         };
+        AiToolFileView: {
+            folders: {
+                audio: string;
+                video: string;
+            };
+            accepts: {
+                audio: string[];
+                video: string[];
+            };
+            maxBytes: number;
+            maxMinutes: number;
+            languageCode: boolean;
+        };
         AiVoiceView: {
             id: string;
             name: string;
@@ -14940,7 +15068,7 @@ export interface components {
         };
         AiToolView: {
             /** @enum {string} */
-            id: "music" | "voiceover" | "quick-voice" | "sound-effect";
+            id: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio";
             action: string;
             name: string;
             description: string;
@@ -14950,10 +15078,11 @@ export interface components {
             enabled: boolean;
             input: {
                 /** @enum {string} */
-                kind: "text" | "prompt";
+                kind: "text" | "file" | "prompt";
                 maxCharacters: number;
                 charactersPerUnit: number;
                 instrumental?: boolean | null;
+                file?: components["schemas"]["AiToolFileView"];
             };
             voices: components["schemas"]["AiVoiceView"][];
         };
@@ -14975,7 +15104,7 @@ export interface components {
         AiJobView: {
             id: string;
             /** @enum {string} */
-            tool: "music" | "voiceover" | "quick-voice" | "sound-effect";
+            tool: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio";
             /** @enum {string} */
             state: "failed" | "done" | "working";
             voiceId: string;
@@ -14987,6 +15116,28 @@ export interface components {
             message: string | null;
             createdAt: string;
             finishedAt: string | null;
+        };
+        AiFileQuoteView: {
+            file: {
+                seconds: number;
+                minutes: number;
+            };
+            action: string;
+            title: string;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+            units: number;
+            languages: number;
+            perUnitPoints: number;
+            costPoints: number;
+            balancePoints: number;
+            shortfallPoints: number;
+            useWallet: boolean;
+            quoteToken: string;
+            canRun: boolean;
+            cap: components["schemas"]["PointsCapView"];
+            wallet: components["schemas"]["PointsShortfallOfferView"];
+            walletNote: string | null;
         };
         AiJobPage: {
             items: components["schemas"]["AiJobView"][];
@@ -29966,6 +30117,104 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateMusicJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteCaptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteCleanAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createCaptions: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCaptionsJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createCleanAudio: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCleanAudioJobDto"];
             };
         };
         responses: {
