@@ -122,6 +122,8 @@ export type ReviewOpening = {
   countryCode?: string;
   /** The currency of the first account, the person's pick or the country's own. */
   firstCurrency?: FiatCode;
+  /** WALLET-41 round 3: the country that issued the passport, which the Hub requires with one (a licence or national ID sends none). */
+  nationality?: string;
 };
 
 async function send(request: Promise<Answer>): Promise<unknown> {

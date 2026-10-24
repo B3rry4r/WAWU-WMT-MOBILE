@@ -29,6 +29,8 @@ export type Draft = {
   idNumber: string;
   proofType: ProofType | null;
   postalCode: string;
+  /** WALLET-41 round 3: the country that issued a passport (ISO code), chosen on A26 for a person outside Nigeria; null until chosen. */
+  passportCountry: string | null;
 };
 
 const blank = (owner: string): Draft => ({
@@ -41,6 +43,7 @@ const blank = (owner: string): Draft => ({
   idNumber: '',
   proofType: null,
   postalCode: '',
+  passportCountry: null,
 });
 
 let draft: Draft | null = null;
@@ -93,6 +96,11 @@ export function setIdType(owner: string, idType: IdType | null): void {
 
 export function setIdNumber(owner: string, idNumber: string): void {
   replace(owner, { idNumber });
+}
+
+/** The country that issued the passport (WALLET-41 round 3); it goes to the Hub as `nationality`. */
+export function setPassportCountry(owner: string, passportCountry: string | null): void {
+  replace(owner, { passportCountry });
 }
 
 export function setProofType(owner: string, proofType: ProofType | null): void {

@@ -22,8 +22,9 @@ import { pickFailure, sendFailure, type Failure } from './documentCopy';
 import { ID_NUMBER_NEEDS, ID_TYPE_NEEDS, ID_TYPES, idNumberProblem, isOneSided, labelOf, WORLD_ID_TYPES } from './documentFields';
 import { UploadTile } from './DocumentParts';
 import { pickIdPhoto } from './documents/pick';
-import { setIdNumber, setIdSide, setIdType, useDraft, useDraftLifetime } from './draft';
+import { setIdNumber, setIdSide, setIdType, setPassportCountry, useDraft, useDraftLifetime } from './draft';
 import { OpenWalletEnd } from './OpenWalletEnd';
+import { PASSPORT_COUNTRY_NEEDS, PassportCountryField } from './PassportCountryField';
 import { useHeldReview } from './keptCheck';
 import { useSessionAccount } from './sessionAccount';
 import { needsOpening, useKeptDetailsHeld } from './submit';
@@ -160,10 +161,15 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
   const sendsDetails = needsOpening(progress.data);
   const typeProblem = sendsDetails && draft.idType === null ? ID_TYPE_NEEDS : null;
   const numberProblem = sendsDetails ? idNumberProblem(draft.idNumber) : null;
+  // WALLET-41 round 3: a passport names the country that issued it; it starts as the country the person lives in.
+  const residence = heldWorld?.country ?? progress.data?.world?.country ?? null;
+  const asksPassportCountry = abroad && sendsDetails && draft.idType === 'international_passport';
+  const passportCountry = draft.passportCountry ?? residence;
+  const passportProblem = asksPassportCountry && passportCountry === null ? PASSPORT_COUNTRY_NEEDS : null;
   const photosIn = frontIn && (oneSided || backIn);
 
   const goOn = () => {
-    if (typeProblem || numberProblem) {
+    if (typeProblem || numberProblem || passportProblem) {
       setAttempted(true);
       return;
     }
@@ -213,6 +219,13 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
           error={attempted && typeProblem ? typeProblem : undefined}
           testID="open-wallet-id-type"
         />
+        {asksPassportCountry ? (
+          <PassportCountryField
+            code={passportCountry}
+            error={attempted && passportProblem ? passportProblem : undefined}
+            onPick={(code) => owner && setPassportCountry(owner, code)}
+          />
+        ) : null}
         {sendsDetails ? (
           <AuthField
             scrollRef={scrollRef}

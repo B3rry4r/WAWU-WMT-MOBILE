@@ -221,7 +221,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       const sent = await sendOpening({
         progress: current,
         draft: { ...draft, address },
-        details: detailsFromKept(owner, { address, postalCode: draft.postalCode, idType: draft.idType, idNumber: draft.idNumber, proofType: draft.proofType }),
+        details: detailsFromKept(owner, { address, postalCode: draft.postalCode, idType: draft.idType, idNumber: draft.idNumber, proofType: draft.proofType, passportCountry: draft.passportCountry }),
         onOpened: (answer) => {
           step = 'documents';
           queryClient.setQueryData(progressQuery.queryKey, answer);

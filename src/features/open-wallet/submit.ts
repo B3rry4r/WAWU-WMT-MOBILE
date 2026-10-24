@@ -18,7 +18,10 @@ import type { Draft } from './draft';
  */
 
 /** What A26 and A27 collect for the open call (G-820): the home address line, the postal code, the ID's type and number, and the bill's type. */
-export type OpeningFields = Pick<Draft, 'address' | 'postalCode' | 'idType' | 'idNumber' | 'proofType'>;
+export type OpeningFields = Pick<Draft, 'address' | 'postalCode' | 'idType' | 'idNumber' | 'proofType'> & {
+  /** The country that issued a passport, as A26 holds it; the country of residence stands in when it was never changed. */
+  passportCountry?: string | null;
+};
 
 /**
  * True while the earlier steps still hold what the open call needs from them: a passed check's name and date of
@@ -82,6 +85,9 @@ export function detailsFromKept(owner: string | undefined, fields: OpeningFields
     ...collected,
     ...(typed ? { city: typed.city, state: typed.state } : {}),
     ...(world ? { countryCode: world.country, firstCurrency: world.currency } : { bvn: numbers.bvn, nin: numbers.nin }),
+    // A passport names the country that issued it (the Hub refuses one without): the person's pick, or the country they
+    // live in as A26 prefills it. A licence or a national ID sends none.
+    ...(world && fields.idType === 'international_passport' ? { nationality: fields.passportCountry ?? world.country } : {}),
   };
 }
 
