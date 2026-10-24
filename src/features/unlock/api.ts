@@ -1,5 +1,6 @@
 import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
+import { part, type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
 /**
@@ -68,16 +69,18 @@ export type SendUnlockInput = {
   expectedTotalKobo: number;
   quoteToken: string;
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /** POST the unlock. Never rejects: whatever came back (or did not) is a `PayOutcome`. */
 export function sendUnlock(input: SendUnlockInput): Promise<PayOutcome<Unlock>> {
+  const body = { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken };
   return sendPayment(
-    () =>
+    input,
+    { method: 'POST', path: `/api/hub/content/${part(input.contentId)}/unlock/wallet`, body },
+    (header) =>
       api.POST('/api/hub/content/{id}/unlock/wallet', {
-        params: { path: { id: input.contentId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-        body: { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+        params: { path: { id: input.contentId }, header: { ...header, 'Idempotency-Key': input.key } },
+        body,
         fetch: resendsUnderKey,
       }),
     readUnlock,

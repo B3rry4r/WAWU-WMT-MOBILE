@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind Studio (PT1, PT1a) and the checks before a job runs (PT3, PT3a, PT3b, PT7), as the backend contract types them
@@ -151,6 +152,8 @@ export type ShortfallOutcome =
   | { kind: 'cap_reached'; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME request again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the sheet changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -160,8 +163,7 @@ export type ShortfallInput = JobInput & {
   quoteToken: string;
   /** One per intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -181,10 +183,13 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
  * request that got no answer is `unanswered`, and so is every 5xx: money may have moved, so only the SAME key is safe to send again.
  */
 export async function buyShortfall(input: ShortfallInput): Promise<ShortfallOutcome> {
-  const { pin, key, ...rest } = input;
+  // The body is the job and the quote the person saw: not the key, and never the PIN or the approval.
+  const { key, pin: _pin, approve: _approve, ...body } = input;
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/points/shortfall', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
-    result = await api.POST('/api/hub/points/shortfall', { params: { header: { 'X-Transaction-Pin': pin, 'Idempotency-Key': key } }, body: rest, fetch: resendsUnderKey });
+    result = await api.POST('/api/hub/points/shortfall', { params: { header: { ...headed.header, 'Idempotency-Key': key } }, body, fetch: resendsUnderKey });
   } catch {
     return { kind: 'unanswered' };
   }
@@ -198,6 +203,7 @@ export async function buyShortfall(input: ShortfallInput): Promise<ShortfallOutc
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import type { ApprovalAttempt, SignedRequest } from '@/features/device-approval';
 import { nameOrSomeone } from '@/features/feed/model';
 
 /**
@@ -13,6 +14,7 @@ import { nameOrSomeone } from '@/features/feed/model';
  * - `GET /money/fees/quote?kind=wawu_transfer` (WALLET-15): Bank charge and WAWU's fee, each as its own part, the total
  *   and the signed quote the send must carry (R-10).
  * - `POST /money/transfers/wawu` (WALLET-07): the send. The PIN is the `X-Transaction-Pin` header and nothing else keeps it;
+ *   or, from the registered phone, a fingerprint or face approval is the `X-Device-Approval` header in its place (FIX-108, W11);
  *   the `Idempotency-Key` is one per payment intent and travels again, unchanged, on every retry.
  * - `GET /money/transfers/{id}` (WALLET-07): one send as it stands now: the receipt, and what the app polls after `pending`.
  * - `GET`, `POST /money/beneficiaries` and `DELETE /money/beneficiaries/{id}` (WALLET-14): W12's "Save as beneficiary".
@@ -166,8 +168,19 @@ export type SendOutcome =
   | { kind: 'no_wallet' }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
+  /** The person closed the fingerprint or face prompt. Nothing was sent. */
+  | { kind: 'approval_cancelled' }
+  /** The phone could not approve (no usable key, or the Hub refused the approval: `403 device_approval_refused`). Nothing moved, no PIN try was used. */
+  | { kind: 'approval_failed' }
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
+
+/**
+ * Who approves a payment: the PIN, or the phone's fingerprint or face (`approve` makes the `X-Device-Approval` value for the exact
+ * request about to be sent, W11). Exactly one of the two.
+ */
+export type Approver = (request: SignedRequest) => Promise<ApprovalAttempt>;
+export type Credential = { pin: string; approve?: never } | { approve: Approver; pin?: never };
 
 export type SendInput = {
   recipientWawuUserId: string;
@@ -177,8 +190,7 @@ export type SendInput = {
   note: string;
   /** One per payment intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -194,23 +206,45 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
   return { reason, message: typeof reason.message === 'string' && reason.message ? reason.message : message };
 }
 
+/** The header that approves this request: the PIN as typed, or the phone's approval of exactly this method, path and body. */
+async function approvalHeader(
+  credential: Credential,
+  request: SignedRequest,
+): Promise<{ header: { 'X-Transaction-Pin': string } | { 'X-Device-Approval': string } } | { outcome: SendOutcome }> {
+  if (credential.approve === undefined) return { header: { 'X-Transaction-Pin': credential.pin } };
+  const attempt = await credential.approve(request);
+  switch (attempt.kind) {
+    case 'ready':
+      return { header: { 'X-Device-Approval': attempt.header } };
+    case 'cancelled':
+      return { outcome: { kind: 'approval_cancelled' } };
+    case 'unanswered':
+      return { outcome: { kind: 'unanswered' } };
+    case 'failed':
+      return { outcome: { kind: 'approval_failed' } };
+  }
+}
+
 /**
  * POST /money/transfers/wawu. Never rejects: whatever came back (or did not) is a `SendOutcome`, so the screen decides in one
  * place. A request that got no answer is `unanswered`, and so is every 5xx: money may have moved, so only the SAME key is
  * safe to send again (the contract's rule, `PinSheet`'s `unanswered`).
  */
 export async function sendToWawuUser(input: SendInput): Promise<SendOutcome> {
+  const body = {
+    amountKobo: input.amountKobo,
+    expectedTotalKobo: input.quote.totalKobo,
+    recipientWawuUserId: input.recipientWawuUserId,
+    quoteToken: input.quote.quoteToken,
+    ...(input.note.trim() ? { note: input.note.trim() } : {}),
+  };
+  const approval = await approvalHeader(input, { method: 'POST', path: '/api/hub/money/transfers/wawu', body });
+  if ('outcome' in approval) return approval.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/money/transfers/wawu', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: {
-        amountKobo: input.amountKobo,
-        expectedTotalKobo: input.quote.totalKobo,
-        recipientWawuUserId: input.recipientWawuUserId,
-        quoteToken: input.quote.quoteToken,
-        ...(input.note.trim() ? { note: input.note.trim() } : {}),
-      },
+      params: { header: { ...approval.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -231,8 +265,7 @@ export type BankSendInput = {
   note: string;
   /** One per payment intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /**
  * POST /money/transfers/bank (WALLET-09): the same send as to a WAWU user, to a bank account. The Hub asks the bank for the name again
@@ -240,19 +273,22 @@ export type BankSendInput = {
  * `SendOutcome`. The status is read from `GET /money/transfers/{id}` (`pending` until the bank answers).
  */
 export async function sendToBankAccount(input: BankSendInput): Promise<SendOutcome> {
+  const body = {
+    bankCode: input.bankCode,
+    accountNumber: input.accountNumber,
+    amountKobo: input.amountKobo,
+    expectedTotalKobo: input.quote.totalKobo,
+    quoteToken: input.quote.quoteToken,
+    ...(input.nameToken ? { nameToken: input.nameToken } : {}),
+    ...(input.note.trim() ? { note: input.note.trim() } : {}),
+  };
+  const approval = await approvalHeader(input, { method: 'POST', path: '/api/hub/money/transfers/bank', body });
+  if ('outcome' in approval) return approval.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/money/transfers/bank', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: {
-        bankCode: input.bankCode,
-        accountNumber: input.accountNumber,
-        amountKobo: input.amountKobo,
-        expectedTotalKobo: input.quote.totalKobo,
-        quoteToken: input.quote.quoteToken,
-        ...(input.nameToken ? { nameToken: input.nameToken } : {}),
-        ...(input.note.trim() ? { note: input.note.trim() } : {}),
-      },
+      params: { header: { ...approval.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -284,6 +320,8 @@ function outcomeOf(result: { data?: unknown; error?: unknown; response: Response
       return { kind: 'pin_not_set' };
     case 'wallet_not_open':
       return { kind: 'no_wallet' };
+    case 'device_approval_refused':
+      return { kind: 'approval_failed' };
     case 'idempotency_in_progress':
       return { kind: 'unanswered' };
     case 'insufficient_funds':

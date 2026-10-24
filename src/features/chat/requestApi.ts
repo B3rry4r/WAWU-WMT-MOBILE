@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { fetchFeeQuote, readQuote, readTransfer, type FeeQuote, type Transfer } from '@/features/send/api';
+import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 import { HTTP_CREATED, filled, reasonOf, readRefusal, type Refusal } from '@/features/money-attempt/refusal';
 
 import { readMessage, type ChatMessage, type MoneyRequest } from './api';
@@ -87,7 +88,8 @@ export type PayRequestOutcome =
   | { kind: 'not_yours' }
   /** The fees moved: this is the quote as it stands now. */
   | { kind: 'quote_changed'; quote: FeeQuote }
-  | Exclude<Refusal, { kind: 'quote_changed' }>;
+  | Exclude<Refusal, { kind: 'quote_changed' }>
+  | ApprovalStopped;
 
 export type PayRequestInput = {
   chatId: string;
@@ -95,16 +97,19 @@ export type PayRequestInput = {
   quote: FeeQuote;
   /** One per attempt, kept across a wrong PIN and an answer that never came. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 /** POST .../{requestId}/pay. Never rejects: whatever came back (or did not) is a `PayRequestOutcome`. */
 export async function payMoneyRequest(input: PayRequestInput): Promise<PayRequestOutcome> {
+  const body = { expectedTotalKobo: input.quote.totalKobo, quoteToken: input.quote.quoteToken };
+  const path = `/api/hub/chats/${part(input.chatId)}/money-requests/${part(input.requestId)}/pay`;
+  const headed = await credentialHeader(input, { method: 'POST', path, body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/chats/{chatId}/money-requests/{requestId}/pay', {
-      params: { path: { chatId: input.chatId, requestId: input.requestId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { expectedTotalKobo: input.quote.totalKobo, quoteToken: input.quote.quoteToken },
+      params: { path: { chatId: input.chatId, requestId: input.requestId }, header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -119,6 +124,7 @@ export async function payMoneyRequest(input: PayRequestInput): Promise<PayReques
       return { kind: 'unanswered' };
     }
   }
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { code } = reasonOf(error);
   if (code === 'money_request_not_pending') return { kind: 'not_pending' };
   if (code === 'money_request_not_yours') return { kind: 'not_yours' };

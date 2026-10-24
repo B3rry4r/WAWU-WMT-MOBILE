@@ -11,7 +11,8 @@ import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { isApprovalStop, notApproved, PayPinSheet, stopCode, type Credential, type Settled } from '@/features/device-approval';
 import { formatPoints, PointsFigure } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
@@ -85,7 +86,7 @@ export function BuyScreen(props: BuyScreenProps) {
   const [done, setDone] = useState<PackPurchase | null>(null);
   const [watching, setWatching] = useState<string | null>(null);
   const attempt = useRef<Attempt | null>(null);
-  const inFlight = useRef<Promise<PinCheckResult> | null>(null);
+  const inFlight = useRef<Promise<Settled> | null>(null);
   // Set the moment Pay is tapped and cleared when the fresh price is in: `busy` is state and lags the tap by a render, so a second tap in the same tick would ask again.
   const asking = useRef(false);
 
@@ -231,7 +232,7 @@ export function BuyScreen(props: BuyScreenProps) {
     if (attempt.current && !attempt.current.sent) attempt.current = null;
   };
 
-  const submit = async (pin: string): Promise<PinCheckResult> => {
+  const submit = async (credential: Credential): Promise<Settled> => {
     const sending = attempt.current;
     if (!sending || !owner) return { code: 'unanswered' };
     const kept = await putIntent(owner, { key: sending.key, packId: sending.packId, method: sending.method, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken, phase: 'unknown', purchaseId: null, at: Date.now() });
@@ -242,8 +243,10 @@ export function BuyScreen(props: BuyScreenProps) {
       setNotice(NOT_READY_LINE);
       return { code: 'approved' };
     }
+    // An earlier try under this key that left the phone with no answer that proves anything: this try repeats it.
+    const earlierTry = sending.sent;
     attempt.current = { ...sending, sent: true };
-    const outcome = await buyPack({ packId: sending.packId, method: sending.method, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken, key: sending.key, pin });
+    const outcome = await buyPack({ packId: sending.packId, method: sending.method, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken, key: sending.key, ...credential });
     // The Hub gave an answer that proves nothing was bought for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -255,6 +258,11 @@ export function BuyScreen(props: BuyScreenProps) {
       setResend(false);
       setPinOpen(false);
     };
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, nothingMoved);
+    }
     switch (outcome.kind) {
       case 'pin_incorrect':
         nothingMoved();
@@ -313,10 +321,11 @@ export function BuyScreen(props: BuyScreenProps) {
     }
   };
 
-  // One request at a time: a second submit while one is running is that same request, never another.
-  const submitPin = (pin: string): Promise<PinCheckResult> => {
+  // One request at a time: a second submit while one is running is that same request, never another. Pays with the PIN, or with the
+  // phone's fingerprint or face approval of exactly this request (FIX-112): one path for both.
+  const run = (credential: Credential): Promise<Settled> => {
     if (inFlight.current) return inFlight.current;
-    const running = submit(pin).finally(() => {
+    const running = submit(credential).finally(() => {
       inFlight.current = null;
     });
     inFlight.current = running;
@@ -442,11 +451,11 @@ export function BuyScreen(props: BuyScreenProps) {
         {body}
       </PointsFrame>
       {quote ? (
-        <PinSheet
+        <PayPinSheet
           visible={pinOpen}
           onClose={closePin}
           approval={{ totalKobo: quote.payment.totalKobo, purpose: pinPurpose(quote) }}
-          onSubmit={submitPin}
+          run={run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();

@@ -10,7 +10,8 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { isApprovalStop, notApproved, PayPinSheet, stopCode, type Credential, type Settled } from '@/features/device-approval';
 import { PointsFigure } from '@/components/PointsFigure';
 import { EmptyState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -236,7 +237,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
   const [resend, setResend] = useState(false);
   const [watching, setWatching] = useState<string | null>(null);
   const attempt = useRef<Attempt | null>(null);
-  const inFlight = useRef<Promise<PinCheckResult> | null>(null);
+  const inFlight = useRef<Promise<Settled> | null>(null);
   // Set the moment Confirm is tapped and cleared when the fresh quote is in: `busy` is state and lags the tap by a render.
   const asking = useRef(false);
   const latest = useRef(props);
@@ -345,7 +346,7 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
     if (attempt.current && !attempt.current.sent) attempt.current = null;
   };
 
-  const submit = async (pin: string): Promise<PinCheckResult> => {
+  const submit = async (credential: Credential): Promise<Settled> => {
     const sending = attempt.current;
     if (!sending || !owner) return { code: 'unanswered' };
     const body = { ...sending.job, expectedTotalKobo: sending.expectedTotalKobo, quoteToken: sending.quoteToken };
@@ -357,8 +358,10 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
       setNotice({ title: SHEET_WORDS.notReady, body: 'Nothing was taken.' });
       return { code: 'approved' };
     }
+    // An earlier try under this key that left the phone with no answer that proves anything: this try repeats it.
+    const earlierTry = sending.sent;
     attempt.current = { ...sending, sent: true };
-    const outcome = await buyShortfall({ ...body, key: sending.key, pin });
+    const outcome = await buyShortfall({ ...body, key: sending.key, ...credential });
     // The Hub gave an answer that proves nothing was bought for the key: it is free for the next try.
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
@@ -371,6 +374,11 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
       setPinOpen(false);
     };
     const again = () => void fetchJobQuote(job).then(props.onRequote, () => undefined);
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, nothingMoved);
+    }
     switch (outcome.kind) {
       case 'pin_incorrect':
         nothingMoved();
@@ -437,10 +445,11 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
     }
   };
 
-  // One request at a time: a second submit while one is running is that same request, never another.
-  const submitPin = (pin: string): Promise<PinCheckResult> => {
+  // One request at a time: a second submit while one is running is that same request, never another. Pays with the PIN, or with the
+  // phone's fingerprint or face approval of exactly this request (FIX-112): one path for both.
+  const run = (credential: Credential): Promise<Settled> => {
     if (inFlight.current) return inFlight.current;
-    const running = submit(pin).finally(() => {
+    const running = submit(credential).finally(() => {
       inFlight.current = null;
     });
     inFlight.current = running;
@@ -483,11 +492,11 @@ export function ShortfallSheet(props: ShortfallSheetProps) {
         )}
       </BottomSheet>
       {pinOpen ? (
-        <PinSheet
+        <PayPinSheet
           visible={pinOpen}
           onClose={closePin}
           approval={{ totalKobo: pinTotal ?? total, purpose: pinPurpose(quote) }}
-          onSubmit={submitPin}
+          run={run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             closePin();

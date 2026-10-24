@@ -83,13 +83,13 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
       draft.current = { words: trimmed, id: quote.question.id };
       return quote;
     },
-    send: async (quote, key, pin) => {
+    send: async (quote, key, credential) => {
       const outcome = await payQuestion({
         questionId: quote.question.id,
         expectedTotalKobo: quote.payment.totalKobo,
         quoteToken: quote.payment.quoteToken,
         key,
-        pin,
+        ...credential,
       });
       return outcome.kind === 'done' ? { kind: 'done', view: toResult(outcome.view) } : outcome;
     },

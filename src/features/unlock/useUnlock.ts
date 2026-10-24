@@ -23,8 +23,8 @@ export function useUnlock(handlers: FlowHandlers) {
   const engine: Engine<UnlockQuote, Unlock> = {
     scope: `unlock:${item?.id ?? ''}`,
     ask: () => (itemRef.current ? askUnlockQuote(itemRef.current.id) : Promise.reject(new Error('nothing to unlock'))),
-    send: (quote, key, pin) =>
-      sendUnlock({ contentId: quote.contentId, expectedTotalKobo: quote.payment.totalKobo, quoteToken: quote.payment.quoteToken, key, pin }),
+    send: (quote, key, credential) =>
+      sendUnlock({ contentId: quote.contentId, expectedTotalKobo: quote.payment.totalKobo, quoteToken: quote.payment.quoteToken, key, ...credential }),
     read: (paymentId) => fetchUnlock(itemRef.current?.id ?? '', paymentId),
     readKey: (paymentId) => unlockKey(item?.id ?? '', paymentId),
     shortLine: 'There is not enough in your wallet to unlock this.',

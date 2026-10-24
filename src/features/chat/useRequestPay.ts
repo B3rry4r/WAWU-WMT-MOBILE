@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
 import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -12,6 +11,7 @@ import { failureLine, limitLine, quoteAddsUp, quoteSpent } from '@/features/send
 
 import type { MoneyRequest } from './api';
 import { declineMoneyRequest, fetchFeeQuote, fetchMoneyRequest, payMoneyRequest, requestKey, type FeeQuote } from './requestApi';
+import { isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a payment the provider has not confirmed is read again (`GET .../money-requests/{id}`, which settles it first). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -193,8 +193,11 @@ export function useRequestPay(args: RequestPayArgs) {
     setPinOpen(true);
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!target || !quote) return { code: 'unanswered' };
+    // An earlier try of this payment that the Hub may have taken (its answer was lost) is held: this try repeats it.
+    const earlierTry = attemptFor(subjectOf(target.id)) !== null;
     const sending: Attempt<FeeQuote> = attemptFor<FeeQuote>(subjectOf(target.id)) ?? {
       subject: subjectOf(target.id),
       key: newRequestKey(),
@@ -204,7 +207,13 @@ export function useRequestPay(args: RequestPayArgs) {
     };
     keepAttempt(sending);
     setStatus({ kind: 'paying' });
-    const outcome = await payMoneyRequest({ chatId, requestId: target.id, quote: sending.quote, key: sending.key, pin });
+    const outcome = await payMoneyRequest({ chatId, requestId: target.id, quote: sending.quote, key: sending.key, ...credential });
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      setStatus({ kind: 'review' });
+      return notApproved(stopCode(outcome), earlierTry, noRecordToForget);
+    }
     const nothingMoved = () => {
       dropAttempt(sending.subject, sending.key);
       setStatus({ kind: 'review' });
@@ -326,7 +335,7 @@ export function useRequestPay(args: RequestPayArgs) {
           pinOpen,
           lockedUntil,
           pay,
-          submitPin,
+          run,
           closePin: () => setPinOpen(false),
           cancel: closeAll,
           refresh: () => void polled.refetch(),

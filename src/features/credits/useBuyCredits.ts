@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isApiError } from '@/api/errors';
 import type { PayStatus } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { creditsKey } from '@/features/communities/api';
 import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -21,6 +20,7 @@ import {
   type PackQuote,
 } from './api';
 import { affordablePack, defaultPack, PRICE_CHANGED_LINE, quoteAddsUp, quoteSpent } from './model';
+import { isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a purchase the Hub has not finished is read again (`GET /credits/purchase/wallet/{id}`, our own records). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -228,9 +228,12 @@ export function useBuyCredits(args: BuyCreditsArgs) {
     }
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!pack || !quote) return { code: 'unanswered' };
     // The request this purchase carries: the one already sent (same key, same quote) or the first one, made now from what is on screen.
+    // An earlier try of this payment that the Hub may have taken (its answer was lost) is held: this try repeats it.
+    const earlierTry = attemptFor(subjectOf(pack)) !== null;
     const sending: Attempt<PackQuote> = attemptFor<PackQuote>(subjectOf(pack)) ?? {
       subject: subjectOf(pack),
       key: newRequestKey(),
@@ -240,7 +243,13 @@ export function useBuyCredits(args: BuyCreditsArgs) {
     };
     keepAttempt(sending);
     setStatus({ kind: 'paying' });
-    const outcome = await buyPack({ pack, quote: sending.quote, key: sending.key, pin });
+    const outcome = await buyPack({ pack, quote: sending.quote, key: sending.key, ...credential });
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      setStatus({ kind: 'review' });
+      return notApproved(stopCode(outcome), earlierTry, noRecordToForget);
+    }
     const nothingMoved = () => {
       dropAttempt(sending.subject, sending.key);
       setStatus({ kind: 'review' });
@@ -346,7 +355,7 @@ export function useBuyCredits(args: BuyCreditsArgs) {
       tapping,
       pinOpen,
       closePin: () => setPinOpen(false),
-      submitPin,
+      run,
       forgotPin: () => {
         setPinOpen(false);
         args.onClose();

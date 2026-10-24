@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind choosing a tier and paying for it (ME-12: VF5 to VF7a) and adding five products (VERIFY-05: VF13), as the Hub's
@@ -235,6 +236,8 @@ export type PurchaseOutcome =
   | { kind: 'quote_changed'; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME request again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence (a payment still going through, a tier already running, a plan that changed, no tier for five more). Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -246,8 +249,7 @@ export type PurchaseInput = {
   quoteToken: string;
   /** One per attempt, kept across retries of the same attempt. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -274,11 +276,14 @@ export function purchaseBody(input: Pick<PurchaseInput, 'target' | 'method' | 'e
  * request that got no answer is `unanswered`, and so is every 5xx: money may have moved, so only the SAME key is safe to send again.
  */
 export async function buy(input: PurchaseInput): Promise<PurchaseOutcome> {
+  const body = purchaseBody(input);
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/plans/purchases', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/plans/purchases', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: purchaseBody(input),
+      params: { header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -294,6 +299,7 @@ export async function buy(input: PurchaseInput): Promise<PurchaseOutcome> {
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

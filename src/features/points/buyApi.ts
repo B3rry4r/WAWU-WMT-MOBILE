@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind Buy points (PT4, PT4b, PT4c), as the backend contract types them (POINTS-02, TIER-05).
@@ -87,7 +88,7 @@ export function readPackQuote(value: unknown): PackQuote {
 
 /** GET /plans/purchases/quote for one pack. */
 export async function fetchPackQuote(packId: string): Promise<PackQuote> {
-  const body = (await unwrap(api.GET('/api/hub/plans/purchases/quote', { params: { query: { kind: 'points_pack', packId } } }))) as unknown as Envelope<PackQuote>;
+  const body = (await unwrap(api.GET('/api/hub/plans/purchases/quote', { params: { query: { kind: 'points_pack' as const, packId } } }))) as unknown as Envelope<PackQuote>;
   return readPackQuote(body?.data);
 }
 
@@ -135,6 +136,8 @@ export type BuyOutcome =
   | { kind: 'quote_changed'; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME request again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -146,8 +149,7 @@ export type BuyInput = {
   quoteToken: string;
   /** One per intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -168,11 +170,14 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
  * send again (the contract's rule, `PinSheet`'s `unanswered`).
  */
 export async function buyPack(input: BuyInput): Promise<BuyOutcome> {
+  const body = { kind: 'points_pack' as const, packId: input.packId, method: input.method, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/plans/purchases', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/plans/purchases', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { kind: 'points_pack', packId: input.packId, method: input.method, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      params: { header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -188,6 +193,7 @@ export async function buyPack(input: BuyInput): Promise<BuyOutcome> {
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

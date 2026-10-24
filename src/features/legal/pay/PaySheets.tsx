@@ -1,7 +1,8 @@
 import type { IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { PaySheet } from '@/components/pay-sheet';
-import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 import { WALLET_NAME } from '@/features/events/buyModel';
 
 import { approvalPurpose } from './model';
@@ -37,11 +38,11 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
         onRetry={pay.tryAgain}
         onRefresh={pay.confirming ? pay.refresh : undefined}
       />
-      <PinSheet
+      <PayPinSheet
         visible={pay.pinOpen}
         onClose={pay.closePin}
         approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
-        onSubmit={pay.submitPin}
+        run={pay.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={pay.forgotPin}
         lockedUntil={pay.lockedUntil}
@@ -55,11 +56,11 @@ export function PayPin({ pay }: { pay: LegalFeePay }) {
   const quote = pay.quote;
   if (!quote) return null;
   return (
-    <PinSheet
+    <PayPinSheet
       visible={pay.pinOpen}
       onClose={pay.closePin}
       approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
-      onSubmit={pay.submitPin}
+      run={pay.run}
       unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={pay.forgotPin}
       lockedUntil={pay.lockedUntil}

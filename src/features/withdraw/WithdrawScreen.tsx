@@ -12,7 +12,9 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { approvalLine } from '@/components/pin-sheet/format';
+import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprovalKind, type Settled } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
@@ -21,7 +23,7 @@ import { textOfKobo } from '@/components/amount-entry';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
-import { fetchFeeQuote, sendToBankAccount, transferQuery, type FeeQuote } from '@/features/send/api';
+import { fetchFeeQuote, sendToBankAccount, transferQuery, type Credential, type FeeQuote } from '@/features/send/api';
 import { dropIntent, putIntent, rereadIntent } from '@/features/send/intent';
 import { NOT_READY_LINE } from '@/features/send/model';
 import { useSettled } from '@/features/send/parts';
@@ -194,9 +196,13 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
     }
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Sends with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-108): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!owner || !payout || !intentKey || !attempt) return { code: 'unanswered' };
     const request = { key: attempt.key, payeeId: intentKey, amountKobo: amount, note: '', quote: attempt.quote, transferId: null, at: attempt.at } as const;
+    // An earlier try under this key that the Hub may have taken: the store has it as unknown, read before this try writes its own.
+    const stored = await rereadIntent(owner, intentKey, amount);
+    const earlierTry = stored?.key === attempt.key && stored.phase === 'unknown';
     // Written before it leaves the phone, so a screen that goes away mid-request still finds it (and never pays twice).
     const kept = await putIntent(owner, { ...request, phase: 'unknown' });
     if (!kept) {
@@ -212,7 +218,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
       nameToken: null,
       note: '',
       key: attempt.key,
-      pin,
+      ...credential,
     });
     // An answer that proves no money moved frees the key; the next tap is a new attempt.
     const nothingMoved = () => void dropIntent(owner, attempt.key);
@@ -226,6 +232,12 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         return { code: 'pin_locked', lockedUntil: outcome.lockedUntil };
       case 'unanswered':
         return { code: 'unanswered' };
+      // A closed or refused fingerprint proves nothing about an earlier try under this key (a PIN whose answer was lost): the key and the
+      // stored intent stay, and only a first try lets go of the record it just wrote.
+      case 'approval_cancelled':
+        return notApproved('cancelled', earlierTry, nothingMoved);
+      case 'approval_failed':
+        return notApproved('failed', earlierTry, nothingMoved);
       case 'done': {
         const transfer = outcome.transfer;
         void queryClient.invalidateQueries({ queryKey: ['money'], predicate: (q) => q.queryKey[1] !== 'fee-quote' });
@@ -266,6 +278,11 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         return { code: 'approved' };
     }
   };
+
+  const submitPin = async (pin: string) => asPinResult(await run({ pin }));
+  const approvalKind = useApprovalKind();
+  const approvePrompt = attempt ? approvalLine({ totalKobo: attempt.quote.totalKobo, payee: payout ? payout.accountName : 'your payout account' }) : 'Approve this withdrawal';
+  const approveWithBiometric = async () => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, approvePrompt) }));
 
   const line = block ? blockLine(block) : null;
   const over = block?.kind === 'over_balance' || block?.kind === 'short_with_fees';
@@ -421,6 +438,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
           onClose={() => setPinOpen(false)}
           approval={{ totalKobo: attempt.quote.totalKobo, payee: payout ? payout.accountName : 'your payout account' }}
           onSubmit={submitPin}
+          biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             setPinOpen(false);

@@ -4,6 +4,7 @@ import type { components } from '@/api/schema.generated';
 import { readPaymentQuote, type PaymentQuote } from '@/features/events/buyApi';
 
 import type { IntakeView } from './api';
+import { approvalRefused, credentialHeader, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind enrolling in a course and paying for it from the wallet (SCHOOLS-06: SC4 to SC7 and SC11) and behind My courses
@@ -211,6 +212,8 @@ export type FeeOutcome =
   | { kind: 'in_progress'; paymentId: string | null }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence. Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -221,8 +224,7 @@ export type FeeInput = {
   quoteToken: string;
   /** One per payment intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const PAYMENT_STATUSES: readonly FeePayment['status'][] = ['pending', 'completed', 'failed', 'reversed'];
 
@@ -244,11 +246,14 @@ export async function fetchPayment(id: string): Promise<FeePayment> {
  * key is safe to send again.
  */
 export async function payFee(input: FeeInput): Promise<FeeOutcome> {
+  const body = { kind: 'school_fee' as const, targetId: input.enrolmentId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: '/api/hub/money/payments', body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/money/payments', {
-      params: { header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { kind: 'school_fee', targetId: input.enrolmentId, expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      params: { header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -264,6 +269,7 @@ export async function payFee(input: FeeInput): Promise<FeeOutcome> {
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

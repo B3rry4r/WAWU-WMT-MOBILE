@@ -1,6 +1,7 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
 
 /**
  * The calls behind paying a legal fee from the wallet (LEGAL-04's S19, LEGAL-06's S22 and S26), as the Hub's contract types them
@@ -98,6 +99,8 @@ export type PayOutcome =
   | { kind: 'in_progress' }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
+  /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken; the screen changes nothing it holds. */
+  | ApprovalStopped
   /** Any other refusal, in the Hub's own sentence (`target_not_payable` among them). Nothing moved. */
   | { kind: 'refused'; code: string | null; message: string };
 
@@ -108,8 +111,7 @@ export type PayInput = {
   quoteToken: string;
   /** One per payment intent, kept across retries of the same intent. */
   key: string;
-  pin: string;
-};
+} & Credential;
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
@@ -140,11 +142,14 @@ function reasonOf(error: unknown): { reason: Reason; message: string } {
  * to send again.
  */
 export async function payFee(input: PayInput): Promise<PayOutcome> {
+  const body = { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken };
+  const headed = await credentialHeader(input, { method: 'POST', path: `/api/hub/legal/requests/${part(input.requestId)}/pay/wallet`, body });
+  if ('outcome' in headed) return headed.outcome;
   let result;
   try {
     result = await api.POST('/api/hub/legal/requests/{id}/pay/wallet', {
-      params: { path: { id: input.requestId }, header: { 'X-Transaction-Pin': input.pin, 'Idempotency-Key': input.key } },
-      body: { expectedTotalKobo: input.expectedTotalKobo, quoteToken: input.quoteToken },
+      params: { path: { id: input.requestId }, header: { ...headed.header, 'Idempotency-Key': input.key } },
+      body,
       fetch: resendsUnderKey,
     });
   } catch {
@@ -160,6 +165,7 @@ export async function payFee(input: PayInput): Promise<PayOutcome> {
     }
   }
   if (response.status >= HTTP_SERVER_MIN) return { kind: 'unanswered' };
+  if (approvalRefused(error)) return { kind: 'approval_failed' };
   const { reason, message } = reasonOf(error);
   const code = typeof reason.code === 'string' ? reason.code : null;
   switch (code) {

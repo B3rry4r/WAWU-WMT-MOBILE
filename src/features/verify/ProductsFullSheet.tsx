@@ -8,7 +8,8 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { Money } from '@/components/Money';
-import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -162,11 +163,11 @@ export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, o
         {body}
       </BottomSheet>
       {quote ? (
-        <PinSheet
+        <PayPinSheet
           visible={purchase.pinOpen}
           onClose={purchase.closePin}
           approval={{ totalKobo: quote.totalKobo, purpose: pinPurposeOf({ kind: 'extra_products' }, null, quote.products) }}
-          onSubmit={purchase.submitPin}
+          run={purchase.run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             purchase.closePin();

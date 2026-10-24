@@ -120,6 +120,18 @@ export function PinEntry({
     return true;
   };
 
+  /** The PIN is locked (a refused PIN, or a passed approval that the lock refuses): the keypad goes off until it ends. */
+  const lockUntil = (lockedUntil: string) => {
+    const at = Date.now();
+    if (msUntil(lockedUntil, at) > 0) {
+      setNow(at);
+      setPhase({ kind: 'locked', until: lockedUntil });
+      AccessibilityInfo.announceForAccessibility(lockedLine(msUntil(lockedUntil, at)));
+    } else {
+      setPhase({ kind: 'entering' });
+    }
+  };
+
   const settlePin = (result: PinCheckResult) => {
     if (!finish()) return;
     switch (result.code) {
@@ -129,17 +141,9 @@ export function PinEntry({
       case 'pin_incorrect':
         say(wrongPinLine(result.triesLeft), true);
         return;
-      case 'pin_locked': {
-        const at = Date.now();
-        if (msUntil(result.lockedUntil, at) > 0) {
-          setNow(at);
-          setPhase({ kind: 'locked', until: result.lockedUntil });
-          AccessibilityInfo.announceForAccessibility(lockedLine(msUntil(result.lockedUntil, at)));
-        } else {
-          setPhase({ kind: 'entering' });
-        }
+      case 'pin_locked':
+        lockUntil(result.lockedUntil);
         return;
-      }
       case 'unanswered':
         say(unansweredLine);
         return;
@@ -148,9 +152,23 @@ export function PinEntry({
 
   const settleBiometric = (kind: BiometricKind, result: BiometricResult) => {
     if (!finish()) return;
-    if (result.code === 'approved') setPhase({ kind: 'approved' });
-    else if (result.code === 'failed') say(biometricFailedLine(kind));
-    else setPhase({ kind: 'entering' });
+    switch (result.code) {
+      case 'approved':
+        setPhase({ kind: 'approved' });
+        return;
+      case 'failed':
+        say(biometricFailedLine(kind));
+        return;
+      case 'unanswered':
+        say(unansweredLine);
+        return;
+      case 'pin_locked':
+        lockUntil(result.lockedUntil);
+        return;
+      case 'cancelled':
+        setPhase({ kind: 'entering' });
+        return;
+    }
   };
 
   const start = () => {

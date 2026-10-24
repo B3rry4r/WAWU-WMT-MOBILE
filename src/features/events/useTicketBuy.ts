@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
-import type { PinCheckResult } from '@/components/pin-sheet';
 import { attemptFor, dropAttempt, keepAttempt } from '@/features/money-attempt/attempts';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { newRequestKey } from '@/features/wallet/api/settings';
@@ -27,6 +26,7 @@ import {
   sheetSubtitle,
 } from './buyModel';
 import type { Basket } from './format';
+import { isApprovalStop, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /**
  * How often an order the Hub has not finished is read again (`GET /events/orders/wallet/{id}`, our own records).
@@ -62,7 +62,7 @@ export type BuySheet = {
   lockedUntil: string | null;
   fees: ReturnType<typeof feeLines>;
   pay: () => Promise<void>;
-  submitPin: (pin: string) => Promise<PinCheckResult>;
+  run: (credential: Credential) => Promise<Settled>;
   cancel: () => void;
   closePin: () => void;
   forgotPin: () => void;
@@ -297,9 +297,12 @@ export function useTicketBuy(args: TicketBuyArgs) {
     setPinOpen(true);
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     if (!payment || !quote || !owner || intent === undefined) return { code: 'unanswered' };
     // The request this payment carries: the one already sent (same key, same body) or the first one, made now from what is on screen.
+    // An earlier try under this key that the Hub may have taken: the store has it as unknown, read before this try writes its own.
+    const earlierTry = intent?.phase === 'unknown';
     const sending: BuyIntent = intent?.phase === 'unknown' ? intent : { eventId, order: quote.order, payment, key: keyForQuote(payment.quoteToken), phase: 'unknown', at: Date.now() };
     // Written before it leaves the phone, so a screen that goes away mid-payment still finds it. A first payment the store cannot keep
     // is not sent at all: the phone could not protect it from being paid twice. (A repeat of one already kept has its entry.)
@@ -315,10 +318,15 @@ export function useTicketBuy(args: TicketBuyArgs) {
       expectedTotalKobo: sending.payment.totalKobo,
       quoteToken: sending.payment.quoteToken,
       key: sending.key,
-      pin,
+      ...credential,
     });
     // The Hub gave an answer that proves nothing moved for the key: the intent is not kept, the key is free for the next try.
     const nothingMoved = () => keep(null, sending);
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, () => void nothingMoved());
+    }
     switch (outcome.kind) {
       case 'pin_incorrect':
         void nothingMoved();
@@ -409,7 +417,7 @@ export function useTicketBuy(args: TicketBuyArgs) {
       lockedUntil,
       fees: feeLines(payment.fee),
       pay,
-      submitPin,
+      run,
       cancel,
       closePin: () => setPinOpen(false),
       forgotPin: () => {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { onSessionEnd } from '@/api/session';
 import type { PayStatus } from '@/components/pay-sheet';
 import type { PinCheckResult } from '@/components/pin-sheet';
+import { asPinResult, isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 import { OVER_LIMIT_TITLE, NO_TOTAL_TITLE, PRICE_CHANGED_LINE, limitLine, quoteAddsUp } from '@/features/events/buyModel';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
@@ -40,8 +41,8 @@ export type Engine<Q extends QuoteLike, V extends PaymentViewLike> = {
   scope: string;
   /** Asks the Hub for the quote of what is on screen, fresh. */
   ask: () => Promise<Q>;
-  /** Sends the payment for that quote, with the PIN and the attempt's key. Never rejects. */
-  send: (quote: Q, key: string, pin: string) => Promise<PayOutcome<V>>;
+  /** Sends the payment for that quote, with the PIN or the phone's approval and the attempt's key. Never rejects. */
+  send: (quote: Q, key: string, credential: Credential) => Promise<PayOutcome<V>>;
   /** One payment as it stands now (what the app polls after `pending`). */
   read: (id: string) => Promise<V>;
   /** Where a polled view is cached. */
@@ -228,14 +229,22 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
     [afterMoney],
   );
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Pays with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-112): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     const q = quoteRef.current;
     if (!q) return { code: 'unanswered' };
     const scope = live.current.scope;
     // The request this payment carries: the one already sent and not answered, else the first one, made now.
+    // An earlier try of this payment that the Hub may have taken (its answer was lost) is held: this try repeats it.
+    const earlierTry = attempts.has(scope);
     const attempt = (attempts.get(scope) as Attempt<Q> | undefined) ?? { key: newRequestKey(), quote: q };
     attempts.set(scope, attempt);
-    const outcome = await live.current.send(attempt.quote, attempt.key, pin);
+    const outcome = await live.current.send(attempt.quote, attempt.key, credential);
+    // THE RULE (FIX-108 round 2, FIX-112): a closed or refused fingerprint proves nothing about an earlier try under this key. It is settled
+    // by `notApproved`: the key and an earlier try's stored intent stay, and only a first try lets go of what it wrote itself.
+    if (isApprovalStop(outcome)) {
+      return notApproved(stopCode(outcome), earlierTry, noRecordToForget);
+    }
     // An answer that proves nothing moved and ends this try (the money, the wallet or the price said no): the attempt is over, and the
     // next try gets a new quote and a new key. A wrong PIN is not that: the person types it again for the SAME payment, so the attempt
     // (its quote and its key) stays, which the contract allows (a refusal before money moves is not stored against the key).
@@ -293,6 +302,9 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
         return { code: 'approved' };
     }
   };
+
+  /** The PIN alone, as the sheet's own submit (a screen that shows no fingerprint key uses this). */
+  const submitPin = async (pin: string): Promise<PinCheckResult> => asPinResult(await run({ pin }));
 
   // What the Hub has and has not finished is read again until it decides. Only our own records are asked.
   const polled = useQuery({
@@ -352,6 +364,7 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
     open,
     pay,
     submitPin,
+    run,
     cancel,
     finish,
     closePin: () => setPinOpen(false),

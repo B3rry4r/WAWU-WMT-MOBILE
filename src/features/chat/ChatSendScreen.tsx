@@ -11,7 +11,9 @@ import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { formatMoney, Money } from '@/components/Money';
 import { PaySheet, type PayStatus } from '@/components/pay-sheet';
-import { PAYMENT_UNANSWERED_LINE, PinSheet, type PinCheckResult } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { approvalLine } from '@/components/pin-sheet/format';
+import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprovalKind, type Settled } from '@/features/device-approval';
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -19,7 +21,7 @@ import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
-import { fetchFeeQuote, sendToWawuUser, transferQuery, type FeeQuote } from '@/features/send/api';
+import { fetchFeeQuote, sendToWawuUser, transferQuery, type Credential, type FeeQuote } from '@/features/send/api';
 import { dropIntent, findIntent, putIntent, type SendIntent } from '@/features/send/intent';
 import {
   BALANCE_LABEL,
@@ -185,9 +187,12 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
     }
   };
 
-  const submitPin = async (pin: string): Promise<PinCheckResult> => {
+  /** Sends with the PIN, or with the phone's fingerprint or face approval of exactly this request (FIX-108): one path for both. */
+  const run = async (credential: Credential): Promise<Settled> => {
     const use = (kept?.phase === 'unknown' ? kept.quote : quote) as FeeQuote | null;
     if (!use || !owner || kept === undefined) return { code: 'unanswered' };
+    // An earlier try under this key that the Hub may have taken (its answer was lost): this try repeats it.
+    const earlierTry = kept?.phase === 'unknown';
     const sending: SendIntent =
       kept?.phase === 'unknown' ? kept : { key: key.current, payeeId: payee.wawuUserId, amountKobo, note: note.trim(), quote: use, phase: 'unknown', transferId: null, at: Date.now() };
     // Written before it leaves the phone, so a screen that goes away mid-send still finds it. A first send the store cannot keep is not
@@ -200,12 +205,17 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
     }
     setKept(sending);
     setStatus({ kind: 'paying' });
-    const outcome = await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, pin });
+    const outcome = await sendToWawuUser({ recipientWawuUserId: sending.payeeId, amountKobo: sending.amountKobo, quote: sending.quote, note: sending.note, key: sending.key, ...credential });
     const nothingMoved = () => {
       void dropIntent(owner, sending.key);
       key.current = newRequestKey();
       setKept(null);
       setStatus({ kind: 'review' });
+    };
+    // The record this try wrote itself, with the key kept: the PIN that follows is the same payment.
+    const forgetFirstTry = () => {
+      void dropIntent(owner, sending.key);
+      setKept(null);
     };
     switch (outcome.kind) {
       case 'pin_incorrect':
@@ -218,6 +228,14 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
       case 'unanswered':
         setStatus({ kind: 'review' });
         return { code: 'unanswered' };
+      // A closed or refused fingerprint proves nothing about an earlier try under this key (a PIN whose answer was lost): the key and the
+      // stored intent stay, and only a first try lets go of the record it just wrote.
+      case 'approval_cancelled':
+        setStatus({ kind: 'review' });
+        return notApproved('cancelled', earlierTry, forgetFirstTry);
+      case 'approval_failed':
+        setStatus({ kind: 'review' });
+        return notApproved('failed', earlierTry, forgetFirstTry);
       case 'done': {
         const transfer = outcome.transfer;
         setPinOpen(false);
@@ -270,6 +288,11 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
         return { code: 'approved' };
     }
   };
+
+  const submitPin = async (pin: string) => asPinResult(await run({ pin }));
+  const approvalKind = useApprovalKind();
+  const approvePrompt = quote ? approvalLine({ totalKobo: quote.totalKobo, payee: payee.name }) : 'Approve this payment';
+  const approveWithBiometric = async () => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, approvePrompt) }));
 
   let balanceLine;
   if (balance.data) {
@@ -422,6 +445,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
           onClose={() => setPinOpen(false)}
           approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
           onSubmit={submitPin}
+          biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {
             setPinOpen(false);

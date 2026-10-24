@@ -1,5 +1,6 @@
 import { PaySheet } from '@/components/pay-sheet';
-import { PAYMENT_UNANSWERED_LINE, PinSheet } from '@/components/pin-sheet';
+import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
+import { PayPinSheet } from '@/features/device-approval';
 
 import { WALLET_NAME } from './buyModel';
 import type { BuySheet } from './useTicketBuy';
@@ -30,11 +31,11 @@ export function BuySheets({ sheet }: { sheet: BuySheet }) {
         onOpenWallet={sheet.openWallet}
         onRetry={sheet.tryAgain}
       />
-      <PinSheet
+      <PayPinSheet
         visible={sheet.pinOpen}
         onClose={sheet.closePin}
         approval={{ totalKobo: payment.totalKobo, payee: sheet.eventName }}
-        onSubmit={sheet.submitPin}
+        run={sheet.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={sheet.forgotPin}
         lockedUntil={sheet.lockedUntil}

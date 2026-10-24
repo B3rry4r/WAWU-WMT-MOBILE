@@ -38,7 +38,7 @@ export function useTip(handlers: FlowHandlers) {
       if (!target || amountKobo === null) return Promise.reject(new Error('nothing to quote'));
       return askTipQuote({ creatorWawuId: target.wawuId, amountKobo });
     },
-    send: (quote, key, pin) =>
+    send: (quote, key, credential) =>
       sendTip({
         creatorWawuId: quote.creator.wawuUserId,
         amountKobo: quote.amountKobo,
@@ -46,7 +46,7 @@ export function useTip(handlers: FlowHandlers) {
         expectedTotalKobo: quote.payment.totalKobo,
         quoteToken: quote.payment.quoteToken,
         key,
-        pin,
+        ...credential,
       }),
     read: fetchTip,
     readKey: tipKey,
