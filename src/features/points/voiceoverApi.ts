@@ -5,7 +5,8 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
 /**
  * The calls behind one AI tool's screen (PT2, PT2a, PT2b, PT2c), as the backend contract types them (AITOOLS-01 to AITOOLS-03).
  *
- * - `POST /ai-tools/{tool}/jobs`: starts a job. A tool that reads words aloud (VoiceOver, Quick voice) sends the words, a voice id from
+ * - `POST /ai-tools/{tool}/jobs`: starts a job. A tool that takes the person's own recording (Captions, Clean audio) sends the `key` of the
+ *   file they uploaded and the `quoteToken` of the cost they saw. A tool that reads words aloud (VoiceOver, Quick voice) sends the words, a voice id from
  *   `GET /ai-tools` and the `quoteToken` of the `POST /points/quote` the person saw; a tool that takes a description (Sound effect,
  *   Music track) sends the description and the `quoteToken`. The `Idempotency-Key` is one per job and travels again, unchanged, on every retry of the same
  *   job: the Hub answers a key it knows with the first job (`200`) and holds nothing more. It answers `202` with the job `working`.
@@ -15,6 +16,7 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
  * answer and hands the screen one of `StartOutcome`.
  */
 export type VoiceJob = components['schemas']['AiJobView'];
+export type JobOutput = components['schemas']['AiJobOutputView'];
 
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const whole = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -28,10 +30,21 @@ export function readVoiceJob(value: unknown): VoiceJob {
   return {
     ...(j as VoiceJob),
     audioUrl: filled(j.audioUrl) ? j.audioUrl : null,
+    // What a done job made (POINTS-10): a transcript and its subtitle file are words, not a link. An output that is not whole is dropped, never drawn.
+    outputs: Array.isArray(j.outputs) ? j.outputs.filter((o): o is JobOutput => Boolean(o) && typeof o === 'object' && ['audio', 'text', 'subtitles'].includes(o.kind)) : [],
     message: filled(j.message) ? j.message : null,
     finishedAt: j.finishedAt ?? null,
   };
 }
+
+/** The words a done job made, by kind (`text`: the transcript, `subtitles`: the SRT), or null when it made none. */
+export function outputText(job: Pick<VoiceJob, 'outputs'>, kind: 'text' | 'subtitles'): string | null {
+  const found = job.outputs?.find((o) => o.kind === kind && filled(o.text));
+  return found?.text ?? null;
+}
+
+/** True when a done job has what it made to show: the audio link, or a transcript. A done job with neither is still being filed; the next read has it. */
+export const hasResult = (job: Pick<VoiceJob, 'audioUrl' | 'outputs'>): boolean => filled(job.audioUrl) || outputText(job, 'text') !== null;
 
 /** GET /ai-tools/jobs/{id}. */
 export async function fetchVoiceJob(id: string): Promise<VoiceJob> {
@@ -56,7 +69,7 @@ export type StartOutcome =
   | { kind: 'refused'; code: string | null; message: string };
 
 /** What a job carries, by the kind of input the tool takes (`GET /ai-tools`, `input.kind`). */
-export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string };
+export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string } | { kind: 'file'; fileKey: string };
 
 export type StartInput = {
   /** The Hub's id for the tool (`GET /ai-tools`): it names the route. */
@@ -92,6 +105,13 @@ function post(input: StartInput) {
     const body = { text: request.text, voiceId: request.voiceId, quoteToken };
     if (toolId === 'voiceover') return api.POST('/api/hub/ai-tools/voiceover/jobs', { ...options, body });
     if (toolId === 'quick-voice') return api.POST('/api/hub/ai-tools/quick-voice/jobs', { ...options, body });
+    return null;
+  }
+  if (request.kind === 'file') {
+    // The person's own file (AITOOLS-04): its `key` from the upload, and the quote token of the cost they were shown. Captions detects the language.
+    const body = { fileKey: request.fileKey, quoteToken };
+    if (toolId === 'captions') return api.POST('/api/hub/ai-tools/captions/jobs', { ...options, body });
+    if (toolId === 'clean-audio') return api.POST('/api/hub/ai-tools/clean-audio/jobs', { ...options, body });
     return null;
   }
   const body = { prompt: request.prompt, quoteToken };

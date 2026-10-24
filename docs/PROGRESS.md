@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 48 | 0 | 0 | 0 |
+| todo | 47 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 32 | 0 | 0 | 0 |
+| review | 33 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -22,6 +22,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AITOOLS-04](../tasks/AITOOLS-04.md) Captions and Clean audio, with the person's own audio or video going in (backend) (You)
 - [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
+- [POINTS-10](../tasks/POINTS-10.md) Studio: Captions and Clean audio (You)
 - [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [FLIX-04](../tasks/FLIX-04.md) Flix movies show "not live yet" until business talks finish (You)
 - [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
@@ -400,7 +401,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend), [POINTS-10](../tasks/POINTS-10.md) Studio: Captions and Clean audio, [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes
+- **You:** [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

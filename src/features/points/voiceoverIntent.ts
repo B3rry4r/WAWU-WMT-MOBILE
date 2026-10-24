@@ -32,6 +32,8 @@ export type JobIntent = {
   units: number;
   characters: number;
   quoteToken: string;
+  /** A tool that takes the person's own recording (Captions, Clean audio): the `key` the upload gave. `text` then holds the file's name. */
+  fileKey?: string;
   jobId: string | null;
   /** When the request was first sent (ms). */
   at: number;
@@ -53,8 +55,22 @@ export function readJobIntent(value: unknown): JobIntent | null {
   const v = value as Partial<JobIntent> | null;
   if (!v || typeof v !== 'object') return null;
   if (!filled(v.key) || !filled(v.toolId) || !filled(v.action) || typeof v.voiceId !== 'string' || !filled(v.text) || !filled(v.quoteToken)) return null;
-  if (!positive(v.units) || !positive(v.characters) || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
-  return { key: v.key, toolId: v.toolId, action: v.action, voiceId: v.voiceId, text: v.text, units: v.units, characters: v.characters, quoteToken: v.quoteToken, jobId: filled(v.jobId) ? v.jobId : null, at: v.at };
+  const file = filled(v.fileKey);
+  // A recording's job counts minutes, not characters: its `characters` is 0.
+  if (!positive(v.units) || !(file ? v.characters === 0 : positive(v.characters)) || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
+  return {
+    key: v.key,
+    toolId: v.toolId,
+    action: v.action,
+    voiceId: v.voiceId,
+    text: v.text,
+    units: v.units,
+    characters: v.characters as number,
+    quoteToken: v.quoteToken,
+    ...(file ? { fileKey: v.fileKey as string } : {}),
+    jobId: filled(v.jobId) ? v.jobId : null,
+    at: v.at,
+  };
 }
 
 /** True when the intent can still be trusted at `now`. */

@@ -1020,3 +1020,73 @@ describe('no screen shows the server\'s own words', () => {
     expect(sentenceOf(new Error('Network request failed'), 'That did not save. Try again.')).toBe('That did not save. Try again.');
   });
 });
+
+const POINTS_SETTINGS = 'GET /api/hub/me/points/settings';
+const POINTS_SETTINGS_SET = 'PUT /api/hub/me/points/settings';
+
+describe('G-POINTS-07-1 · Use wallet for AI tools', () => {
+  const boot = async () => {
+    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
+    await render(
+      frame(
+        <SettingsScreen
+          onBack={jest.fn()}
+          onOpenProfile={jest.fn()}
+          onOpenNotifications={jest.fn()}
+          onOpenPrivacy={jest.fn()}
+          onOpenPassword={jest.fn()}
+          onOpenAbout={jest.fn()}
+          onOpenTerms={jest.fn()}
+          onOpenPolicy={jest.fn()}
+          onSignedOut={jest.fn()}
+        />,
+      ),
+    );
+  };
+  const serve = (over: Record<string, Answer | Answer[]> = {}) => {
+    answers = { [ME]: ok(me), [TGIF]: ok({ show: true }), [POINTS_SETTINGS]: ok({ useWallet: false }), ...over };
+  };
+
+  it('a person sees the row off, as the Hub holds it, in the same group as the other switches', async () => {
+    serve();
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    expect(screen.getByText('Use wallet for AI tools')).toBeTruthy();
+    expect(screen.getByText('Pay for missing points from your wallet')).toBeTruthy();
+    expect(checked('settings-use-wallet')).toBe(false);
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/Fintava|—/);
+  });
+
+  it('a person can switch it on and off: one request carrying the value, and the switch shows the Hub’s answer', async () => {
+    serve({ [POINTS_SETTINGS_SET]: [ok({ useWallet: true }), ok({ useWallet: false })] });
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    await tap('settings-use-wallet');
+    await waitFor(() => expect(checked('settings-use-wallet')).toBe(true));
+    await idle('settings-use-wallet');
+    await tap('settings-use-wallet');
+    await waitFor(() => expect(checked('settings-use-wallet')).toBe(false));
+    await idle('settings-use-wallet');
+    expect(bodiesOf('PUT', '/api/hub/me/points/settings')).toEqual([{ useWallet: true }, { useWallet: false }]);
+  });
+
+  it('puts the switch back and says why when the Hub refuses', async () => {
+    serve({ [POINTS_SETTINGS_SET]: refusal(500, 'The server is having trouble.') });
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    await tap('settings-use-wallet');
+    expect(await screen.findByTestId('settings-problem-use-wallet')).toBeTruthy();
+    expect(checked('settings-use-wallet')).toBe(false);
+  });
+
+  it('never guesses the switch: it is a retry while the Hub has not answered, and the row appears when it does', async () => {
+    serve({ [POINTS_SETTINGS]: [refusal(500, 'The server is having trouble.'), ok({ useWallet: true })] });
+    await boot();
+    await screen.findByTestId('settings-use-wallet-pending');
+    await waitFor(() => expect(screen.getByLabelText('Use wallet for AI tools did not load. Try again')).toBeTruthy());
+    expect(screen.queryByTestId('settings-use-wallet')).toBeNull();
+    await act(async () => fireEvent.press(screen.getByLabelText('Use wallet for AI tools did not load. Try again')));
+    await screen.findByTestId('settings-use-wallet');
+    expect(checked('settings-use-wallet')).toBe(true);
+  });
+});
