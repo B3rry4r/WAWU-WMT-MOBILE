@@ -6,7 +6,6 @@ import { SectionHeading } from '@/features/explore/parts';
 import { space } from '@/theme';
 
 import { useMoviesHome, type MovieCard } from './api';
-import { FlixSoonCard, isSoon } from './FlixSoon';
 import { posterMetrics } from './look';
 import { PosterCard, RailScroller, SeeAll } from './parts';
 
@@ -23,19 +22,11 @@ export const FLIX_PATH = '/movies';
  * The "Flix movies" rail (R-74), drawn on Home's Today screen below Creators and professionals and on Explore below Who Made
  * This? (`flixRail`: a heading with See all, then posters 128 wide, 10 apart, running off the edge). It is drawn only when the Hub
  * answers `enabled: true` with titles to show (R-27, R-47): while it is read, when it cannot be read and when movies are off it
- * draws nothing at all, never an empty frame or an error. A card opens the movie (MV2); See all opens Flix movies (MV1).
- * When the Hub answers `soon: true` (R-77) the rail stays: its title and one card with S13's two lines, which opens Flix movies.
+ * draws nothing at all, never an empty frame or an error. A `soon: true` answer is off (R-80): nothing is drawn until Flix movies
+ * goes live. A card opens the movie (MV2); See all opens Flix movies (MV1).
  */
 export function FlixRail({ client = queryClient, onSeeAll, onOpenMovie, testID = 'flix-rail' }: { client?: QueryClient; onSeeAll: () => void; onOpenMovie: (id: string) => void; testID?: string }) {
   const home = useMoviesHome(client);
-  if (isSoon(home.data)) {
-    return (
-      <View testID={testID} style={styles.section}>
-        <SectionHeading title="Flix movies" />
-        <FlixSoonCard testID={`${testID}-soon`} onPress={onSeeAll} />
-      </View>
-    );
-  }
   if (home.data?.enabled !== true) return null;
   const movies = railMovies(home.data.rails);
   if (!movies) return null;
