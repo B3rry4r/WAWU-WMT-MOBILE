@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B25): backend `wmt/GEO-02` `e674a36` on `origin/main` `38be72e`; records on mobile `wmt/GEO-02`. WAWU ID's half (GEO-01, `wawu-id` `wmt/GEO-01` `7fb7dea`) is read, not changed. Not yet verified by a separate agent. Status verifying. The app half is GEO-03.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B25): backend `wmt/GEO-02` `28634ce` on `origin/main` `38be72e`; records on mobile `wmt/GEO-02`. WAWU ID's half (GEO-01, `wawu-id` `wmt/GEO-01` `7fb7dea`) is read, not changed. Not yet verified by a separate agent. Status verifying. The app half is GEO-03.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
