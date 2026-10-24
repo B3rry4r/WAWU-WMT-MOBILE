@@ -267,8 +267,13 @@ export interface components {
         SignupDto: {
             /** Format: email */
             email: string;
-            /** @description As typed: 0803..., +234... or 234... */
+            /** @description As typed: 0803..., +234... or 234... for a Nigerian number; for any other country the number with its `+` and country code (`+233 24 123 4567`). Stored and answered in E.164. A number that is not valid for its country is refused (400 PHONE_INVALID). */
             phone: string;
+            /**
+             * @description GEO-01 (R-85): the country the person lives in, ISO 3166-1 alpha-2 (the code the Hub's country list gives). Optional so every client that signs up without one keeps working: without it the account gets the phone's own country, else NG. A code that is not a country is refused (400 COUNTRY_INVALID). Also read as the country of a phone typed without a country code that is not a Nigerian number.
+             * @example GH
+             */
+            countryCode?: string;
             password: string;
             /** @description First name (SIGNUP-NAMES, R-82). Optional here so every client that signs up without one keeps working; the app asks for it and sends it. */
             firstName?: string;
@@ -358,8 +363,15 @@ export interface components {
             id: string;
             fullName: string;
             email: string | null;
+            /** @description In E.164 (`+2348031234412`, `+233241234567`): the `+`, the country code and the number. */
             phone: string;
+            /** @description The older free text the web types ("Nigeria"). Read `countryCode` to group or filter by country. */
             country: string | null;
+            /**
+             * @description GEO-01 (R-85): the country the person lives in, ISO 3166-1 alpha-2 in capitals. Set at sign-up (the code sent, else the phone's own country, else NG). Null only for an account made before this field that has no Nigerian phone.
+             * @example NG
+             */
+            countryCode: string | null;
             state: string | null;
             gender: string | null;
             occupation: string | null;
@@ -579,7 +591,7 @@ export interface operations {
                     "application/json": components["schemas"]["SignupStartedAnswer"];
                 };
             };
-            /** @description Validation, PHONE_INVALID, PHONE_NOT_SUPPORTED. */
+            /** @description Validation, PHONE_INVALID (not a valid number for its country), COUNTRY_INVALID (`countryCode` is not on the list), PHONE_NOT_SUPPORTED (a texted code only: texts go to the countries SIGNUP_ALLOWED_PHONE_PREFIX names). */
             400: {
                 headers: {
                     [name: string]: unknown;

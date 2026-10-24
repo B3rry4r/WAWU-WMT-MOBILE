@@ -9,6 +9,7 @@ import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
@@ -279,6 +280,7 @@ export default function RootLayout() {
         <Stack.Screen name="privacy-policy" />
       </Stack>
       <PushBridge live={inApp} />
+      <PlaceBridge live={inApp} />
     </QueryClientProvider>
   );
 }

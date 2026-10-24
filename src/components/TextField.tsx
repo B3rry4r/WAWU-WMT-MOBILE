@@ -1,4 +1,4 @@
-import { useImperativeHandle, useRef, useState, type Ref } from 'react';
+import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { canvasNormalLineHeight, font, layout, radius, space, text, type, useWawu } from '@/theme';
@@ -51,6 +51,8 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'editable' | 'secure
   /** A password field: dots, with a button to show it. */
   secret?: boolean;
   leadingIcon?: IconName;
+  /** Anything that sits inside the box before the text, such as the phone field's country button (GEO-03). */
+  leading?: ReactNode;
   /** The mark at the field's end (a chevron on a field that opens a picker). */
   trailingIcon?: IconName;
   /**
@@ -79,6 +81,7 @@ export function TextField({
   loading,
   secret,
   leadingIcon,
+  leading,
   trailingIcon,
   onPress,
   tone,
@@ -170,6 +173,7 @@ export function TextField({
           },
         ]}
       >
+        {leading}
         {leadingIcon ? <Icon name={leadingIcon} size={space.xl} color={colors.textMuted} /> : null}
         <TextInput
           ref={input}

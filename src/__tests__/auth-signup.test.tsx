@@ -298,7 +298,7 @@ describe('A3: email, phone and password', () => {
   it('a user can enter email, phone and password and tap Continue to reach A4; the earn pick is sent to WAWU ID as creator', async () => {
     await toA4();
     const sent = callsTo('/auth/signup')[0];
-    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
+    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '+2348031234412', password: 'hunter2hunter2', accountType: 'creator' });
     expect(screen.getByText('Verify your phone')).toBeTruthy();
     expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
     expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy();

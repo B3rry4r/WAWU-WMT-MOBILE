@@ -57,6 +57,7 @@ import {
 import { BioPlayer } from './BioPlayer';
 import { Counts, HeaderSkeleton, NameBlock, ProfileTop, SocialChips, bodyTop } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
+import { whereLine } from '@/features/geo/place';
 import { RetryNote } from './RetryNote';
 import { useProfileSaved } from './savedNotice';
 import { ServicesTab } from './ServicesTab';
@@ -253,7 +254,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               {tab === 'about' ? (
                 <AboutBody
                   me={ready.profile}
-                  location={ready.details.location}
+                  location={whereLine(ready.details)}
                   skills={ready.details.skills}
                   memberSince={ready.details.memberSince ?? ready.profile.createdAt}
                   onAddWork={onAddWork}

@@ -4,6 +4,7 @@ import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View } from 'reac
 
 import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
+import { CountryPicker, type PickerItem } from '@/components/CountryPicker';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -12,6 +13,8 @@ import { Text } from '@/components/Text';
 import { TextField, fieldMetrics } from '@/components/TextField';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
+import { regionWord } from '@/features/geo/place';
+import { useCountries, useRegions } from '@/features/geo/useGeo';
 import { Banner } from '@/components/Banner';
 import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
@@ -126,6 +129,17 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
   const [previews, setPreviews] = useState<{ avatar?: string; cover?: string }>({});
   const [leaving, setLeaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [picking, setPicking] = useState<'country' | 'region' | null>(null);
+
+  // The Hub's lists (GEO-03, R-85): every country, and the chosen country's own regions in its own word.
+  const countries = useCountries();
+  const countryRecord = countries.data?.find((c) => c.code === form.countryCode) ?? null;
+  const regions = useRegions(form.countryCode && countryRecord?.hasRegions !== false ? form.countryCode : null);
+  const regionList = regions.data ?? [];
+  const regionsListed = regionList.length > 0;
+  const word = regionWord(regionList);
+  const countryItems: PickerItem[] | undefined = countries.data?.map((c) => ({ code: c.code, name: c.name, flag: c.flag }));
+  const regionItems: PickerItem[] | undefined = regions.data?.map((r) => ({ code: r.code, name: r.name }));
 
   // M9 sits above this screen and edits the same draft; it is dropped when this screen closes.
   useEffect(() => () => clearDraft(), []);
@@ -287,14 +301,48 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
           placeholder="Tell people what you do."
           disabled={busy}
         />
+        <TextField
+          label="Country"
+          testID="edit-country"
+          value={form.countryName ? `${countryRecord?.flag ?? ''}  ${form.countryName}`.trim() : ''}
+          placeholder={countries.isError ? 'Could not load the countries' : 'Choose your country'}
+          trailingIcon="ChevronDown"
+          disabled={busy}
+          onPress={() => setPicking('country')}
+        />
+        {!form.countryCode ? (
+          <TextField label="Region" testID="edit-region" value="" placeholder="Choose a country first" trailingIcon="ChevronDown" disabled />
+        ) : regionsListed || regions.isError ? (
+          <TextField
+            label={word}
+            testID="edit-region"
+            value={form.regionName}
+            placeholder={regions.isError ? 'Could not load the list' : `Choose your ${word.toLowerCase()}`}
+            trailingIcon="ChevronDown"
+            disabled={busy}
+            onPress={() => setPicking('region')}
+          />
+        ) : regions.isPending && regions.fetchStatus !== 'idle' ? (
+          <TextField label="Region" testID="edit-region" value="" placeholder="Loading" trailingIcon="ChevronDown" disabled />
+        ) : (
+          <AuthField
+            scrollRef={scrollRef}
+            label="Region"
+            testID="edit-region"
+            value={form.regionName}
+            onChangeText={(regionName) => edit((current) => ({ ...current, regionCode: null, regionName }))}
+            autoComplete="off"
+            disabled={busy}
+          />
+        )}
         <AuthField
           scrollRef={scrollRef}
-          label="Location"
-          testID="edit-location"
-          value={form.location}
-          onChangeText={(location) => edit((current) => ({ ...current, location }))}
-          error={problems.location}
-          placeholder="City, country"
+          label="City"
+          testID="edit-city"
+          value={form.city}
+          onChangeText={(city) => edit((current) => ({ ...current, city }))}
+          error={problems.city}
+          placeholder="City or town"
           autoComplete="off"
           disabled={busy}
         />
@@ -310,6 +358,40 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
         {onOpenRole ? <ExperienceSection roles={roles} onOpen={onOpenRole} disabled={busy} /> : null}
         <SkillsSection skills={form.skills} onChange={(skills) => edit((current) => ({ ...current, skills }))} disabled={busy} input={skillInput} />
       </ScreenFrame>
+      <CountryPicker
+        visible={picking === 'country'}
+        onClose={() => setPicking(null)}
+        title="Where do you live?"
+        searchLabel="Search countries"
+        items={countryItems}
+        selected={form.countryCode}
+        failed={countries.isError}
+        onRetry={() => void countries.refetch()}
+        testID="edit-country-sheet"
+        onPick={(code) => {
+          setPicking(null);
+          const chosen = countries.data?.find((c) => c.code === code);
+          if (!chosen || code === form.countryCode) return;
+          // The region belonged to the old country: it goes with it.
+          edit((current) => ({ ...current, countryCode: chosen.code, countryName: chosen.name, regionCode: null, regionName: '' }));
+        }}
+      />
+      <CountryPicker
+        visible={picking === 'region'}
+        onClose={() => setPicking(null)}
+        title={`Choose your ${word.toLowerCase()}`}
+        searchLabel={`Search ${word.toLowerCase()}s`}
+        items={regionItems}
+        selected={form.regionCode}
+        failed={regions.isError}
+        onRetry={() => void regions.refetch()}
+        testID="edit-region-sheet"
+        onPick={(code) => {
+          setPicking(null);
+          const chosen = regions.data?.find((r) => r.code === code);
+          if (chosen) edit((current) => ({ ...current, regionCode: chosen.code, regionName: chosen.name }));
+        }}
+      />
       <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">
         <Text variant="sheetTitleSm">Discard your changes?</Text>
