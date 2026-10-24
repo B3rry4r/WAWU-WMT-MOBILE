@@ -12,7 +12,7 @@ import { MoneyGround } from '@/features/wallet/home/BalanceCard';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { cardsQuery } from './cardsList';
-import { kindTitle, statusLine, WORDS } from './model';
+import { cardsShown, summaryLine, WORDS } from './model';
 
 /** Whether the Hub says the WAWU card is on. A read that failed or is out says no: nothing is drawn for cards then (R-47). */
 export function useCardsOn(): boolean {
@@ -25,11 +25,8 @@ export function useCardsOn(): boolean {
 export function useCardsSummary(): { subtitle: string } | null {
   const owner = useSessionAccount(undefined);
   const cards = useQuery(cardsQuery(owner), queryClient);
-  if (cards.data?.enabled !== true) return null;
-  const first = cards.data.cards.find((c) => c.status !== 'blocked') ?? cards.data.cards[0];
-  return {
-    subtitle: first ? [kindTitle(first.kind), first.last4 ? `••${first.last4}` : null].filter(Boolean).join(' · ') : 'Get your card',
-  };
+  if (!cards.data || !cardsShown(cards.data)) return null;
+  return { subtitle: summaryLine(cards.data.cards, false) };
 }
 
 /**
@@ -41,9 +38,8 @@ export function CardRow() {
   const owner = useSessionAccount(undefined);
   const { colors } = useWawu();
   const cards = useQuery(cardsQuery(owner), queryClient);
-  if (cards.data?.enabled !== true) return null;
-  const first = cards.data.cards.find((c) => c.status !== 'blocked') ?? cards.data.cards[0];
-  const line = first ? [kindTitle(first.kind), first.last4 ? `••${first.last4}` : null, statusLine(first)].filter(Boolean).join(' · ') : 'Get your card';
+  if (!cards.data || !cardsShown(cards.data)) return null;
+  const line = summaryLine(cards.data.cards, true);
   return (
     <Pressable testID="wallet-card-row" accessibilityRole="button" accessibilityLabel={`${WORDS.title}. ${line}`} onPress={() => router.push('/cards')}>
       <Card style={styles.row}>

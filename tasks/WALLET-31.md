@@ -7,7 +7,7 @@ order: -3131
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: verifying
 depends_on: []
 decisions: [R-16, R-84, R-20, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,7 +30,7 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B20), backend `wmt/WALL
 
 Default (lead), owner may override: block and delete are one action (Nuvion has only delete), so one route and one word, Block; freeze and block need no PIN, unfreeze and details do; the limits (5 held, 10 a day) are not Nuvion's and not ruled; a WAWU fee above 0 is refused with `fees_not_set` until a fee-only charge exists (G-WALLET-31-1).
 
-- **Next:** a fix round on the backend (verifier finding H1: five spec files red in CI, M1, M2); the verifier report is below. Then a verifier again.
+- **Next:** a second verifier (round 1 is built, see its row below); the live Nuvion dev pass (M2) is still to do.
 - **History:** none yet. Reports go to tasks/history/WALLET-31.md.
 
 ## Read first
@@ -106,6 +106,25 @@ Repro: `npm run test:contract -- src/account-purge/tests/account-data-map.spec.t
 **L7 · low · defect.** W29's fee surface: the "Bank charge" row sits closer to the top edge than the note does to the bottom (picture `sheet-W29.png`).
 
 Not run by this verifier, on purpose: Fintava specs (`webhook-retention`, and `wallet-gate.contract.spec.ts` was run once by mistake: it imports the in-process Fintava double, no network, no sandbox); a fingerprint approval (no device on the web export); real dev webhooks.
+
+### Round 1 (24 Oct 2026, a Sonnet builder, T2; backend `wmt/WALLET-31` `c2cc38f`, mobile branch of the same name; status verifying)
+
+| Finding | Fix | Proof (EXIT lines in the hand-back) |
+|---|---|---|
+| H1a `account-data-map.spec:51` | `WalletCard.wawuUserId` is OWNED and `wawuFeeKobo` is not a user reference, in `src/account-purge/account-data-map.ts` (code, not the spec). Default (lead), owner may override: the card record goes with the account; a before-erase hook (`WalletCardPurge`) blocks every card the person still holds at Nuvion first, and a block that fails stops the purge, which retries | account-data-map spec passes; the hook is run in the card contract spec (two cards blocked at Nuvion, row `cancelled`, safe to run twice) |
+| H1b `money-contract.spec:187`, `wallet-gate.contract.spec:393` | the nine card routes added to `SERVED_MONEY_ROUTES` and to the gated-route list (inventories; no assertion changed). `wallet-gate.contract.spec.ts` was NOT run here (it imports the Fintava double, owner rule): its rows were added by reading the spec; CI's Branch checks prove it | money-contract passes locally |
+| H1c `nuvion-client.spec:434` | `error_card_creation_fee_required` (400, dev's words) is in `test/nuvion/nuvion-errors.ts` (the documented table) and in the spec's own `TABLE`, whose count and title go from 153 to 154. This is the one literal in a test I did not write that changed, as the lead ruled | nuvion-client spec passes |
+| H1d `nuvion-webhook.contract.spec:656/701/715` | only the sample events changed: `cards.deleted` (4 places) is now `payment_dispute.created` and `cards.frozen` (1 place, the "no handler lists it" test) is now `payment_dispute.completed`, events no handler claims; each test keeps its intent. `webhook-retention.contract.spec` was not touched | nuvion-webhook contract spec passes |
+| M1 WAWU fee on a card | collected like a send's fee leg (FIX-52): after the card exists, one transfer under `<card>-fee` from the person's account to WAWU's, its ledger side (money in on WAWU's account) written, the provider answering a repeat with the original; the wallet's balance is read first and a wallet that cannot cover both fees is `402 insufficient_funds` with the key free; an unconfirmed transfer never undoes the card and is tried again whenever the card is read (`WalletCard.feeCollectedAt`, migration `20261114093000_wallet_card_fee_collected`, rollback refuses while a card carries a fee). `WAWU_FEE_CARD_KOBO` above 0 now works (only a provider with no fee transfer of its own answers `fees_not_set`) | card contract spec: fee moved once, ledger row once, the balance and WAWU's account moved by exactly the fee, a repeat read moves nothing, a short wallet 402 |
+| L1 reveal limit | 5 a minute per person, its own `429 card_reveal_rate_limited` with `retryAfterSeconds`, after the wallet gate and before the PIN | spec: sixth reveal 429, another person unaffected |
+| L2 used single-use card | `CardStatus` `used`: when Nuvion blocks a card the Hub had not frozen and the card is single-use, the row is `used`; no freeze, unfreeze or details (409 `card_blocked`), payments still listed, not counted as held; the app says "Used" with its own banner | spec: handler event, status, all three refusals, the count |
+| L3 webhook bodies | a `cards.*` delivery is stored without any key that could hold a number, CVV or expiry (raw bytes and parsed copy); its dedup hash is of what arrived | nuvion-cards spec |
+| L4 W1 row | when every card is blocked or used the row says "Get a new card"; the list's button says the same | app model test |
+| L5 cards off | `enabled: false` still lists existing cards (the Hub already did); W1's row and W35's Cards row, and the list, stay while the person holds a live card; only making one is refused | contract spec (list while off) and app model test |
+| L6 admin repeats | a repeated unfreeze, cancel or admin freeze is a no-op with no second audit row | spec: three audit rows for three changes and a repeated cancel |
+| L7 W29 spacing | the fee card uses `Card padded` (its rows style had overridden the padding), so the top and bottom room are the same | typecheck; picture not remade (no stack this round) |
+
+Not done: M2 (the live Nuvion dev pass through the app, a funded dev wallet); pictures of round 1; the full app check. `plan-settings-round2` and `-readers` (14 tests) fail on a clean `origin/main` too. Five app wallet tests (W1, W35 x2, W26, W36) time out at 20 s on a cold, loaded machine and pass with `--testTimeout=120000`; three of them fail the same on the untouched checkout.
 
 ## Owner sign-off
 

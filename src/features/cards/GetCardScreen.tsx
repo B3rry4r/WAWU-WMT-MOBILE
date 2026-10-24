@@ -165,7 +165,7 @@ export function GetCardScreen(props: GetCardScreenProps) {
               );
             })}
           </View>
-          <Surface style={styles.fee} testID="get-card-fee">
+          <Surface padded style={styles.fee} testID="get-card-fee">
             {feeRows(quote.data.fee).map((row) => (
               <View key={row.label} style={styles.feeRow}>
                 <Text variant="secondary">{row.label}</Text>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   kindWords: { flex: 1, gap: space.xs },
   radio: { width: 22, height: 22, borderRadius: radius.chip, borderWidth: 2 },
-  fee: { padding: space.lg, gap: space.md },
+  fee: { gap: space.md },
   feeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -15,7 +15,7 @@ import { radius, space } from '@/theme';
 
 import { cardsQuery } from './cardsList';
 import { GetCardScreen, type GetCardScreenProps } from './GetCardScreen';
-import { kindTitle, statusLine, WORDS } from './model';
+import { isLive, kindTitle, statusLine, WORDS } from './model';
 
 export type CardsScreenProps = Omit<GetCardScreenProps, 'bare'> & {
   onOpenCard: (id: string) => void;
@@ -58,7 +58,7 @@ export function CardsScreen(props: CardsScreenProps) {
       </ScreenFrame>
     );
   }
-  if (!cards.data.enabled && cards.data.cards.length === 0) {
+  if (!cards.data.enabled && !cards.data.cards.some(isLive)) {
     return (
       <ScreenFrame {...frame} testID="cards-screen">
         <EmptyState testID="cards-off" icon="CreditCard" title={WORDS.off} message="Check again later." />
@@ -76,7 +76,7 @@ export function CardsScreen(props: CardsScreenProps) {
             testID={`cards-row-${card.id}`}
             lead={
               <IconTile
-                icon={card.status === 'frozen' ? 'Snowflake' : card.status === 'blocked' ? 'Ban' : 'CreditCard'}
+                icon={card.status === 'frozen' ? 'Snowflake' : card.status === 'blocked' ? 'Ban' : card.status === 'used' ? 'CircleCheck' : 'CreditCard'}
                 tone={card.status === 'active' ? 'accent' : 'neutral'}
               />
             }
@@ -88,7 +88,14 @@ export function CardsScreen(props: CardsScreenProps) {
       </GroupedList>
       {cards.data.enabled ? (
         <View style={styles.foot}>
-          <Button testID="cards-get-another" label={WORDS.getAnother} variant="outline" size="lg" full onPress={props.onGetCard} />
+          <Button
+            testID="cards-get-another"
+            label={cards.data.cards.some(isLive) ? WORDS.getAnother : WORDS.getNew}
+            variant="outline"
+            size="lg"
+            full
+            onPress={props.onGetCard}
+          />
         </View>
       ) : null}
     </ScreenFrame>

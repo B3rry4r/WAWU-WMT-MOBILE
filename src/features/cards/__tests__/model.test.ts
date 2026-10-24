@@ -1,4 +1,18 @@
-import { expiryLine, feeRows, groupedCardNumber, kindTitle, statusLine, transactionAmount, transactionTitle, usd, whenLine, WORDS } from '../model';
+import {
+  cardsShown,
+  expiryLine,
+  isLive,
+  summaryLine,
+  feeRows,
+  groupedCardNumber,
+  kindTitle,
+  statusLine,
+  transactionAmount,
+  transactionTitle,
+  usd,
+  whenLine,
+  WORDS,
+} from '../model';
 
 describe('WALLET-22: the words and figures of the card screens', () => {
   it('money is dollars from whole cents, with a minus on a payment and a plus on money back', () => {
@@ -52,5 +66,33 @@ describe('WALLET-22: the words and figures of the card screens', () => {
     const words = Object.values(WORDS).join(' ');
     expect(words).not.toMatch(/physical|\batm\b|verve|\blimits?\b|card pin/i);
     expect(words).not.toContain('—');
+  });
+
+  it('a used single-use card reads Used, and is not a card with anything left to do (round 1, L2)', () => {
+    expect(statusLine({ status: 'used', frozenBySupport: false })).toBe('Used');
+    expect(isLive({ status: 'used' })).toBe(false);
+    expect(isLive({ status: 'blocked' })).toBe(false);
+    expect(isLive({ status: 'frozen' })).toBe(true);
+    expect(isLive({ status: 'pending' })).toBe(true);
+  });
+
+  it("W1's row says how to get a card when none is left to use, and names the live one otherwise (round 1, L4)", () => {
+    const card = (status: 'active' | 'blocked' | 'used' | 'frozen', last4: string | null = null) => ({
+      kind: 'virtual' as const,
+      status,
+      last4,
+      frozenBySupport: false,
+    });
+    expect(summaryLine([], true)).toBe('Get your card');
+    expect(summaryLine([card('blocked'), card('used')], true)).toBe('Get a new card');
+    expect(summaryLine([card('blocked'), card('active', '4821')], true)).toBe('Virtual card · ••4821 · Active');
+    expect(summaryLine([card('frozen')], false)).toBe('Virtual card');
+  });
+
+  it('while cards are off the rows are still drawn for a person who holds a live card, so they can stop it (round 1, L5)', () => {
+    expect(cardsShown({ enabled: true, cards: [] })).toBe(true);
+    expect(cardsShown({ enabled: false, cards: [] })).toBe(false);
+    expect(cardsShown({ enabled: false, cards: [{ status: 'blocked' }, { status: 'used' }] })).toBe(false);
+    expect(cardsShown({ enabled: false, cards: [{ status: 'frozen' }] })).toBe(true);
   });
 });

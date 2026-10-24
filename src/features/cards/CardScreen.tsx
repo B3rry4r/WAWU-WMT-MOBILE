@@ -83,11 +83,13 @@ export function CardScreen(props: CardScreenProps) {
   );
   const status = card.data?.status;
   const usable = status === 'active' || status === 'frozen';
+  /** The card's payments are listed for a used single-use card too. */
+  const hasPayments = usable || status === 'used';
   const spending = useQuery(
     {
       queryKey: cardTransactionsKey(id),
       queryFn: () => fetchCardTransactions(id),
-      enabled: Boolean(owner) && usable,
+      enabled: Boolean(owner) && hasPayments,
       staleTime: 0,
     },
     queryClient,
@@ -217,14 +219,25 @@ export function CardScreen(props: CardScreenProps) {
           <StatusPill
             testID="card-status"
             label={statusLine(c)}
-            tone={c.status === 'active' ? 'positive' : c.status === 'frozen' ? 'info' : c.status === 'blocked' ? 'danger' : 'warning'}
-            icon={c.status === 'active' ? 'Check' : c.status === 'frozen' ? 'Snowflake' : c.status === 'blocked' ? 'Ban' : 'Clock'}
+            tone={
+              c.status === 'active'
+                ? 'positive'
+                : c.status === 'frozen'
+                  ? 'info'
+                  : c.status === 'blocked'
+                    ? 'danger'
+                    : c.status === 'used'
+                      ? 'neutral'
+                      : 'warning'
+            }
+            icon={c.status === 'active' || c.status === 'used' ? 'Check' : c.status === 'frozen' ? 'Snowflake' : c.status === 'blocked' ? 'Ban' : 'Clock'}
           />
           <Text variant="secondary">
             {kindTitle(c.kind)} · {WORDS.spendsFrom}
           </Text>
         </View>
         {c.status === 'pending' ? <Banner tone="info" title={WORDS.pendingTitle} body={c.statusMessage ?? ''} testID="card-pending" /> : null}
+        {c.status === 'used' ? <Banner tone="info" icon="Check" title={WORDS.usedTitle} body={WORDS.usedBody} testID="card-used" /> : null}
         {c.status === 'blocked' ? <Banner tone="danger" title={WORDS.blockedTitle} body={WORDS.blockedBody} testID="card-blocked" /> : null}
         {frozen ? (
           <>
@@ -248,7 +261,7 @@ export function CardScreen(props: CardScreenProps) {
             )}
           </View>
         ) : null}
-        {usable ? (
+        {hasPayments ? (
           <View style={styles.spending}>
             <Text variant="h3" accessibilityRole="header">
               {WORDS.spending}

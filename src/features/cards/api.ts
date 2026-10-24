@@ -38,7 +38,7 @@ export const cardQuoteKey = ['money', 'cards', 'quote'] as const;
 export const cardTransactionsKey = (id: string) => ['money', 'cards', id, 'transactions'] as const;
 
 const KINDS: readonly string[] = ['virtual', 'single_use'];
-const STATUSES: readonly string[] = ['pending', 'active', 'frozen', 'blocked'];
+const STATUSES: readonly string[] = ['pending', 'active', 'frozen', 'blocked', 'used'];
 
 /** A card as the screens read it: a known kind and status. Anything else is refused, never drawn half empty. */
 export function readCard(value: unknown): Card {

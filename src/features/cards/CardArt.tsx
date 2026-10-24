@@ -41,7 +41,7 @@ export type CardArtProps = {
 
 export function CardArt({ kind, status, last4, shown, testID }: CardArtProps) {
   const { colors } = useWawu();
-  const veiled = status === 'frozen' || status === 'blocked';
+  const veiled = status === 'frozen' || status === 'blocked' || status === 'used';
   const dots = last4 ? `•••• •••• •••• ${last4}` : '•••• •••• •••• ••••';
   return (
     <View testID={testID} style={[styles.card, { borderRadius: ART.radius }]} accessibilityLabel={`${kindTitle(kind)}, ${status}`}>
@@ -82,9 +82,9 @@ export function CardArt({ kind, status, last4, shown, testID }: CardArtProps) {
       </View>
       {veiled ? (
         <View pointerEvents="none" style={styles.stamp} testID={testID ? `${testID}-stamp` : undefined}>
-          <Icon name={status === 'frozen' ? 'Snowflake' : 'Ban'} size={34} color={colors.textOnAccent} />
+          <Icon name={status === 'frozen' ? 'Snowflake' : status === 'used' ? 'Check' : 'Ban'} size={34} color={colors.textOnAccent} />
           <Text variant="body" tone="textOnAccent" style={[font(700), styles.stampText]}>
-            {status === 'frozen' ? 'Frozen' : 'Blocked'}
+            {status === 'frozen' ? 'Frozen' : status === 'used' ? 'Used' : 'Blocked'}
           </Text>
         </View>
       ) : null}

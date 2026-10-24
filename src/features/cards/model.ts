@@ -13,6 +13,9 @@ export const WORDS = {
   frozenBody: 'Payments are blocked. Your wallet balance isn’t affected.',
   blockedTitle: 'Card blocked',
   blockedBody: 'This card can’t be used again. Get a new card if you still need one.',
+  usedTitle: 'Card used',
+  usedBody: 'This single-use card was used once and can’t be used again. Get a new card if you still need one.',
+  getNew: 'Get a new card',
   spendsFrom: 'Spends from Naira wallet',
   spending: 'Card spending',
   noSpending: 'No payments on this card yet.',
@@ -70,9 +73,27 @@ export function statusLine(card: Pick<Card, 'status' | 'frozenBySupport'>): stri
       return card.frozenBySupport ? 'Frozen by support' : 'Frozen';
     case 'blocked':
       return 'Blocked';
+    case 'used':
+      return 'Used';
     default:
       return 'Being made';
   }
+}
+
+/** A card that is, or is about to be, usable: the ones a person still has something to do with. */
+export const isLive = (card: Pick<Card, 'status'>): boolean => card.status === 'active' || card.status === 'frozen' || card.status === 'pending';
+
+/**
+ * Whether W1's row and W35's Cards row are drawn. While cards are on, always. While they are off (the Hub keeps freeze and block working),
+ * only for a person who still holds a live card, so they can stop it from the app (round 1, L5).
+ */
+export const cardsShown = (list: { enabled: boolean; cards: readonly Pick<Card, 'status'>[] }): boolean => list.enabled || list.cards.some(isLive);
+
+/** The second line of W1's row: the card that matters, or how to get one when none is left (round 1, L4). */
+export function summaryLine(cards: readonly Pick<Card, 'kind' | 'status' | 'last4' | 'frozenBySupport'>[], withStatus: boolean): string {
+  const first = cards.find(isLive);
+  if (!first) return cards.length > 0 ? WORDS.getNew : 'Get your card';
+  return [kindTitle(first.kind), first.last4 ? `••${first.last4}` : null, withStatus ? statusLine(first) : null].filter(Boolean).join(' · ');
 }
 
 export const usd = (cents: number, sign = false): string => formatMoney(cents, { currency: 'USD', sign });
