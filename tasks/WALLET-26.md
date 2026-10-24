@@ -27,6 +27,7 @@ As of 24 Oct 2026, built by the same Sonnet builder as WALLET-25 (bundle B21, T2
 
 **Dev answers.** Nuvion lists mobile money channels for Tanzania and Kenya only, so there is no Nigerian USSD to send: the Hub offers USSD only when `ADD_MONEY_USSD_CHANNEL` is set and says "USSD is not available for Nigerian phone numbers yet." until then (G-WALLET-26-1). Naira funding sessions of both kinds answer 503 on dev. GBP open banking and KES mobile money were created and read on dev; EUR open banking was settled on 23 Oct (NUV-04 row). **NOT RUN:** a USSD payment or a bank checkout settling to a naira wallet; the screens on a phone. The capability checks below are about the code and the stand-in; the dev rows say what Nuvion did.
 
+- **Round 1 (24 Oct 2026):** the shared fixes (F1 to F7) are recorded in tasks/WALLET-25.md; for USSD and the bank checkout they are F2 (a frozen attempt is held and credits on unfreeze), F4 (the hosted bank checkout is listed first), F5 to F7 (stamp, ciphertext length for the card only, the atomic daily limit).
 - **Next:** a verifier (not the builder). Nuvion names a Nigerian USSD channel and switches on naira funding sessions.
 - **History:** none yet. Reports go to tasks/history/WALLET-26.md.
 

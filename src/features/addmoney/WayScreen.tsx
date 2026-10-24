@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { isApiError } from "@/api/errors";
@@ -7,6 +7,7 @@ import { queryClient } from "@/api/query";
 import { Banner } from "@/components/Banner";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { formatMoney } from "@/components/Money";
 import { KeyValueRow, rowMetrics } from "@/components/ListRow";
 import {
   PAYMENT_UNANSWERED_LINE,
@@ -27,6 +28,7 @@ import {
   useApprovalKind,
 } from "@/features/device-approval";
 import { useOpenWalletEntry } from "@/features/open-wallet/entry";
+import { useSessionAccount } from "@/features/open-wallet/sessionAccount";
 import { newRequestKey } from "@/features/wallet/api/settings";
 import { radius, space } from "@/theme";
 
@@ -43,6 +45,7 @@ import {
 } from "./cardModel";
 import { appCryptoParts, encryptCard } from "./encryptCard";
 import { optionsQuery } from "./OtherWays";
+import { dropSent, keepSent, readSent, type SentRequest } from "./sentRequest";
 import {
   fetchQuote,
   startAddMoney,
@@ -67,6 +70,8 @@ const lines = {
     "Your card is scrambled on this phone before it is sent. We never see the number.",
   ussdNote: "You get a prompt on your phone to approve the payment.",
   pageNote: "You finish on a secure page, then come back here.",
+  keyReused:
+    "This payment may already have gone through, and the Hub could not match this try to it. Check your wallet activity before you pay again.",
   changed: "The fees changed. Check the new total before you pay.",
 };
 
@@ -101,7 +106,31 @@ export function WayScreen({
   const [pinOpen, setPinOpen] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const owner = useSessionAccount(undefined);
   const key = useRef(newRequestKey());
+  // The request of this attempt once it has been made: the same key and the same bytes on every retry (F1). `sent` is what the
+  // screen shows while a try is unconfirmed; the ref is what the next try sends.
+  const sentRef = useRef<SentRequest | null>(null);
+  const [sent, setSent] = useState<SentRequest | null>(null);
+  useEffect(() => {
+    let current = true;
+    void readSent(owner).then((kept) => {
+      if (current && kept && kept.rail === rail && !sentRef.current) {
+        sentRef.current = kept;
+        setSent(kept);
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, [owner, rail]);
+  /** Lets go of the request: the Hub has the last word, or the person starts a new payment knowingly. */
+  const release = () => {
+    sentRef.current = null;
+    setSent(null);
+    key.current = newRequestKey();
+    void dropSent(owner);
+  };
   const [settled, setSettled] = useState<number | null>(null);
 
   const kobo = koboOf(amountText);
@@ -118,11 +147,15 @@ export function WayScreen({
   );
   const approvalKind = useApprovalKind();
   const isCard = rail === "card";
-  const total = quote.data?.chargeKobo ?? 0;
+  const total = sent?.chargeKobo ?? quote.data?.chargeKobo ?? 0;
 
   const card = () => ({ number, expiry, cvv, name, address, city, state });
   const begin = () => {
     setNotice(null);
+    if (sent) {
+      setPinOpen(true);
+      return;
+    }
     if (kobo === null || !quote.data) return;
     if (isCard) {
       const found = cardProblems(card());
@@ -137,77 +170,98 @@ export function WayScreen({
   };
 
   const run = async (credential: Credential) => {
-    const q = quote.data!;
-    let cardInput;
-    if (isCard) {
-      const { month, year } = expiryParts(expiry);
-      const encrypted = await encryptCard(
-        options.data!.cardPublicKey!,
-        {
-          number,
-          expiryMonth: month,
-          expiryYear: year,
-          cvv,
-          name: name.trim(),
-        },
-        await appCryptoParts(),
-      );
-      cardInput = {
-        encrypted,
-        billing: {
-          line1: address.trim(),
-          city: city.trim(),
-          state: state.trim(),
-        },
+    let request = sentRef.current;
+    const madeNow = request === null;
+    if (!request) {
+      const q = quote.data!;
+      let card: SentRequest["card"];
+      if (isCard) {
+        const { month, year } = expiryParts(expiry);
+        // Scrambled once for the whole attempt: a retry sends this text again (the Hub compares bodies under one key).
+        const encrypted = await encryptCard(
+          options.data!.cardPublicKey!,
+          { number, expiryMonth: month, expiryYear: year, cvv, name: name.trim() },
+          await appCryptoParts(),
+        );
+        card = {
+          encrypted,
+          billing: { line1: address.trim(), city: city.trim(), state: state.trim() },
+        };
+      }
+      request = {
+        key: key.current,
+        rail,
+        amountKobo: q.amountKobo,
+        chargeKobo: q.chargeKobo,
+        ...(card ? { card } : {}),
+        ...(rail === "ussd" && phone.trim() ? { msisdn: phone.trim() } : {}),
+        at: Date.now(),
       };
+      // Kept before anything leaves the phone, so a closed app can still send the same request again.
+      sentRef.current = request;
+      await keepSent(owner, request);
     }
     const outcome = await startAddMoney({
-      rail,
-      amountKobo: q.amountKobo,
-      chargeKobo: q.chargeKobo,
-      ...(cardInput ? { card: cardInput } : {}),
-      ...(rail === "ussd" && phone.trim() ? { msisdn: phone.trim() } : {}),
-      key: key.current,
+      rail: request.rail,
+      amountKobo: request.amountKobo,
+      chargeKobo: request.chargeKobo,
+      ...(request.card ? { card: request.card } : {}),
+      ...(request.msisdn ? { msisdn: request.msisdn } : {}),
+      key: request.key,
       ...credential,
     });
     switch (outcome.kind) {
       case "pin_incorrect":
+        // The Hub answers a wrong PIN before it makes anything: no payment exists for this key.
+        if (madeNow) release();
         return { code: "pin_incorrect" as const, triesLeft: outcome.triesLeft };
       case "pin_locked":
+        if (madeNow) release();
         setLockedUntil(outcome.lockedUntil);
-        return {
-          code: "pin_locked" as const,
-          lockedUntil: outcome.lockedUntil,
-        };
+        return { code: "pin_locked" as const, lockedUntil: outcome.lockedUntil };
       case "unanswered":
+        // No answer proves nothing: the same request goes again, same key, same bytes.
+        setSent(request);
         return { code: "unanswered" as const };
       case "approval_cancelled":
-        return notApproved("cancelled", false, () => undefined);
+        if (madeNow) release();
+        return notApproved("cancelled", !madeNow, () => undefined);
       case "approval_failed":
-        return notApproved("failed", false, () => undefined);
+        if (madeNow) release();
+        return notApproved("failed", !madeNow, () => undefined);
       case "done":
         setPinOpen(false);
-        key.current = newRequestKey();
+        release();
         onStarted(outcome.attempt);
         return { code: "approved" as const };
       case "pin_not_set":
         setPinOpen(false);
+        release();
         onSetPin();
         return { code: "approved" as const };
       case "no_wallet":
         setPinOpen(false);
+        release();
         entry.open();
         return { code: "approved" as const };
       case "quote_changed":
+        // A refusal before anything is made: no payment exists for the key, so this is a new attempt at the new quote.
         setPinOpen(false);
-        key.current = newRequestKey();
+        release();
         setSettled((n) => (n ?? 0) + 1);
         setNotice(lines.changed);
         return { code: "approved" as const };
       case "refused":
         setPinOpen(false);
-        key.current = newRequestKey();
-        setNotice(outcome.message);
+        if (outcome.code === "idempotency_key_reused") {
+          // The Hub knows this key with another body. Never a new key by itself: the first charge may have gone through. The request
+          // stays, and only the person's own "Start a new payment" lets go of it.
+          setSent(request);
+          setNotice(lines.keyReused);
+        } else {
+          release();
+          setNotice(outcome.message);
+        }
         return { code: "approved" as const };
     }
   };
@@ -243,6 +297,26 @@ export function WayScreen({
         }
         onRetry={() => void options.refetch()}
       />
+    );
+  } else if (sent) {
+    body = (
+      <View style={styles.form}>
+        {notice ? (
+          <Banner testID="add-money-way-notice" tone="warning" icon="TriangleAlert" title="Check this" body={notice} />
+        ) : null}
+        <Banner
+          testID="add-money-way-sent"
+          tone="info"
+          icon="Clock"
+          title="Your payment was not confirmed"
+          body="It may already have gone through. Paying again sends the very same payment, so you are not charged twice. If you are unsure, check your wallet activity first."
+        />
+        <Card testID="add-money-way-sent-card">
+          <KeyValueRow label="You pay" value={formatMoney(sent.chargeKobo, { decimals: sent.chargeKobo % 100 !== 0 })} />
+          <KeyValueRow label="Wallet gets" value={formatMoney(sent.amountKobo, { decimals: sent.amountKobo % 100 !== 0 })} />
+        </Card>
+        <Button testID="add-money-way-new" full variant="secondary" label="Start a new payment" onPress={release} />
+      </View>
     );
   } else {
     body = (
@@ -382,7 +456,7 @@ export function WayScreen({
     );
   }
 
-  const ready = kobo !== null && !!quote.data && !options.isPending;
+  const ready = sent ? !options.isPending : kobo !== null && !!quote.data && !options.isPending;
   return (
     <AuthFrame
       testID="add-money-way-screen"
@@ -392,9 +466,9 @@ export function WayScreen({
         <Button
           testID="add-money-way-pay"
           full
-          label={payLabel(quote.data ?? null)}
+          label={sent ? `Pay ${formatMoney(sent.chargeKobo, { decimals: sent.chargeKobo % 100 !== 0 })} again` : payLabel(quote.data ?? null)}
           disabled={!ready}
-          loading={quote.isFetching && kobo !== null}
+          loading={!sent && quote.isFetching && kobo !== null}
           onPress={begin}
         />
       }

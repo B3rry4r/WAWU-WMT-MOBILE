@@ -4,7 +4,6 @@ import {
   fireEvent,
   render as plainRender,
   screen,
-  waitFor,
 } from "@testing-library/react-native";
 import type { ReactElement } from "react";
 import { Modal } from "react-native";
@@ -12,9 +11,7 @@ import Svg from "react-native-svg";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { queryClient } from "@/api/query";
-import { OtherWays, waysToDraw } from "../OtherWays";
 import { StatusScreen } from "../StatusScreen";
-import { WayScreen } from "../WayScreen";
 import * as ways from "../ways";
 
 /*

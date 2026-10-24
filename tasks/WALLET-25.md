@@ -32,7 +32,7 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B21, T2): backend `wmt/WALL
 
 **NOT RUN:** a naira card end to end against dev (refused); a card settling to a naira balance; Apple Pay on a phone; the PIN sheet and fingerprint hand-off of the way screen under jest (a test that opened the sheet did not pass and was left out; the wiring copies Send's `ReviewScreen`); the screens on a phone; Nuvion's own `payment_intent.*` and `funding_sessions.updated` deliveries (the dev webhook endpoint is not ours). One spec file that imports a Fintava double (`plan-settings-readers.contract.spec.ts`) was run by mistake once (4 failed with 401 in its own harness) and not looked at; it is Fintava code and was left alone.
 
-- **Next:** a fix round for F1 to F4 in the Verifier report below (then a verifier again). Earlier note: a verifier (not the builder). The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
+- **Next:** a verifier again on round 1 (the Builder rows in the table after the Verifier report). Earlier note: a verifier (not the builder). The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
 - **History:** none yet. Reports go to tasks/history/WALLET-25.md.
 
 ## Read first
@@ -91,6 +91,24 @@ Verifier (Sonnet, T2, 24 Oct 2026) on backend `e730428` and mobile `903851c8`; c
 - **F6 low.** `card.encrypted` accepts any base64 of 40 to 2048 characters (`add-money.dto.ts`), so plain base64 text would pass; require the key's ciphertext length (344 for RSA-2048).
 - **F7 low.** The daily limit is read in `precheck` and written later, so two simultaneous attempts can both pass.
 - **Test gap (not a defect).** The PIN sheet and fingerprint hand-off of the way screen has no jest test (builder's note); a test that submits twice with the same key would kill F1.
+
+### Round 1 (fix round, builder, 24 Oct 2026; backend `wmt/WALLET-25` `66806bd`, mobile `wmt/WALLET-25` on the verifier's `49cf0a21`)
+
+Status verifying. Each verifier finding, what was done, and its proof (no spec that imports the Fintava double was run).
+
+| # | Finding | Fix | Proof |
+|---|---|---|---|
+| F1 | high: a retry re-scrambled the card under the kept key (409 `idempotency_key_reused`, then a new key and a second charge) | `WayScreen` scrambles the card once per attempt and keeps the whole request (key, amounts, scrambled card, billing) in the money-attempt store `sentRequest.ts` (secure store, per account, 23 h, read again on open); every retry sends those bytes; a 409 `idempotency_key_reused` never takes a new key: the screen shows "Your payment was not confirmed", Pay again sends the same request, and only the person's own "Start a new payment" lets go of it; a definite refusal, a taken payment, a wrong PIN on a first try and a changed quote release it | `wayRetry.test.tsx` was RED first (the retry's `card` differed under the same key; the key-reused screen did not exist), then green (2/2); `sentRequest.test.ts` 3/3 |
+| F2 | medium: freeze, paid, unfreeze never credited (a failed delivery is final) | a frozen attempt's settled inflow is held: `creditInflow` answers `wait`, the delivery stays `pending`; unfreeze makes the held delivery due now (`offerHeldAgain`); the dispatcher credits it once | `add-money.contract.spec.ts` posts the signed delivery to the real receiver and runs the real dispatcher sweep: pending and noted "held" while frozen, no ledger row; after unfreeze `processed`, one ledger row, attempt settled |
+| F3 | medium: `rollback.sql` dropped closed attempts and audit rows | refuses while EITHER table has ANY row | run on a live database: a cancelled attempt alone refused; with an audit row refused; empty tables rolled back; migration applied again (`logs/rollback-proof.log`) |
+| F4 | medium (lead ruling): R-84 (3) "prefer hosted" | Nuvion has no hosted page for a card (its funding sessions are open banking, mobile money, stablecoin and Interac), so in-app card entry, scrambled on the phone, stays. `GET /money/add-money/options` lists the hosted ways that can be used first (Apple Pay, bank checkout), then the card, then USSD, then every way that cannot be used now; the app draws the Hub's order | spec: order `apple_pay, card, ussd, open_banking(off)` |
+| F5 | low: stamp | migration renamed `20261122090000_add_money` (after `20261121090000_store_purchases`) | `prisma migrate deploy` on a fresh database; `migrate diff` empty earlier, schema unchanged |
+| F6 | low: any base64 passed as `card.encrypted` | the Hub decodes it and requires exactly the key's ciphertext length (256 bytes for RSA-2048) before the PIN, else a plain 400 | spec: a card in the clear, 255 and 257 bytes, and 344 'A's are 400, no attempt written, no PIN try used; 256 bytes goes through |
+| F7 | low: the daily limit and the insert were two steps | read and written in one transaction under a per-person advisory lock (`pg_advisory_xact_lock`) | spec: two taps at once, one 201 and one 403 `limit_reached`, one row |
+
+Also found and fixed in this round: `src/money/tests/money-contract.spec.ts` (the served money routes list) failed for the add-money routes (round 0 did not run it); the seven `/money/add-money*` routes are now in its list and the return page carries `@BuiltBy`. The earlier `wayScreen.test.tsx` filled its card fields with `fireEvent.changeText`, which did not take, so its card-fault test saw empty fields; the new test fills them with `userEvent`. The PIN sheet and fingerprint hand-off now have a jest test (`wayRetry.test.tsx` enters the PIN twice).
+
+**Still NOT RUN:** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, and Nuvion accepting the JavaScript ciphertext with its real key.
 
 ## Owner sign-off
 

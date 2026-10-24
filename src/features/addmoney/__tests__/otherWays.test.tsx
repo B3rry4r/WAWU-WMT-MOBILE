@@ -13,8 +13,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { queryClient } from "@/api/query";
 import { OtherWays, waysToDraw } from "../OtherWays";
-import { StatusScreen } from "../StatusScreen";
-import { WayScreen } from "../WayScreen";
 import * as ways from "../ways";
 
 /*
@@ -97,29 +95,6 @@ const QUOTE: ways.AddMoneyQuote = {
   feeKobo: 75,
   chargeKobo: 1_000_075,
 };
-const attempt = (
-  over: Partial<ways.AddMoneyAttempt> = {},
-): ways.AddMoneyAttempt => ({
-  id: "3f1c5b1e-0d6a-4b9e-9d57-2f6f3c1d9a10",
-  rail: "card",
-  status: "processing",
-  currency: "NGN",
-  amountKobo: 1_000_000,
-  chargeKobo: 1_000_075,
-  providerFeeKobo: 75,
-  wawuFeeKobo: 0,
-  checkoutUrl: null,
-  message:
-    "Paid. Your wallet is being topped up. This can take a little while.",
-  failureMessage: null,
-  cardLast4: "1111",
-  cardBrand: "visa",
-  expiresAt: null,
-  createdAt: "2026-10-24T12:00:00.000Z",
-  creditedAt: null,
-  ...over,
-});
-
 beforeEach(() => {
   jest.clearAllMocks();
   queryClient.clear();
