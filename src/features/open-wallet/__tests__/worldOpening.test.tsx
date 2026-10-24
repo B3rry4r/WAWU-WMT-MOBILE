@@ -52,9 +52,9 @@ globalThis.fetch = jest.fn(
       body: await request.clone().text(),
     });
     const answer =
-    optionsFor && path.endsWith("/money/world/options")
-      ? optionsFor(new URL(request.url).searchParams.get("country") ?? "")
-      : fallback[`${request.method} ${path.replace(/^\/api\/hub/, "")}`];
+      optionsFor && path.endsWith("/money/world/options")
+        ? optionsFor(new URL(request.url).searchParams.get("country") ?? "")
+        : fallback[`${request.method} ${path.replace(/^\/api\/hub/, "")}`];
     if (!answer) throw new Error(`no answer for ${request.method} ${path}`);
     return new Response(JSON.stringify(answer.body), {
       status: answer.status,
@@ -62,6 +62,9 @@ globalThis.fetch = jest.fn(
     });
   },
 ) as typeof fetch;
+
+// Under load the first screen needs longer than the default second to appear (WALLET-41 low): the waits are longer, the checks the same.
+rtl.configure({ asyncUtilTimeout: 5000 });
 
 const { OpenWalletScreen } =
   require("../OpenWalletScreen") as typeof import("../OpenWalletScreen");
@@ -76,7 +79,9 @@ let residenceClaim: string | undefined;
 const tokenFor = (sub: string) => {
   const part = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
-  const claims = residenceClaim ? { sub, countryCode: residenceClaim } : { sub };
+  const claims = residenceClaim
+    ? { sub, countryCode: residenceClaim }
+    : { sub };
   return `${part({ alg: "RS256" })}.${part(claims)}.signature`;
 };
 
@@ -130,7 +135,10 @@ function serve() {
 function serveOptionsByCountry() {
   optionsFor = (country) =>
     country === "KP"
-      ? options("KP", { available: false, unavailableReason: "country_blocked" })
+      ? options("KP", {
+          available: false,
+          unavailableReason: "country_blocked",
+        })
       : options(country);
 }
 
@@ -306,7 +314,9 @@ describe("residence decides, not the phone (round 1)", () => {
     ));
     expect(await app.screen.findByText("United Kingdom")).toBeTruthy();
     expect(await app.screen.findByText("British pound")).toBeTruthy();
-    await rtl.fireEvent.press(app.screen.getByTestId("open-wallet-country-continue"));
+    await rtl.fireEvent.press(
+      app.screen.getByTestId("open-wallet-country-continue"),
+    );
     await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
     expect(kept.readWorld(OWNER)).toEqual({ country: "GB", currency: "GBP" });
   });
@@ -323,40 +333,65 @@ describe("residence decides, not the phone (round 1)", () => {
   });
 
   it("the claim is read as the Hub reads it: two letters, any case, or nothing", () => {
-    const { countryCodeOfToken } = require("../sessionAccount") as typeof import("../sessionAccount");
+    const { countryCodeOfToken } =
+      require("../sessionAccount") as typeof import("../sessionAccount");
     const t = (claims: object) => {
-      const part = (v: object) => Buffer.from(JSON.stringify(v)).toString("base64url");
+      const part = (v: object) =>
+        Buffer.from(JSON.stringify(v)).toString("base64url");
       return `${part({ alg: "RS256" })}.${part(claims)}.x`;
     };
     expect(countryCodeOfToken(t({ sub: "a", countryCode: "gb" }))).toBe("GB");
-    expect(countryCodeOfToken(t({ sub: "a", countryCode: "United Kingdom" }))).toBeNull();
+    expect(
+      countryCodeOfToken(t({ sub: "a", countryCode: "United Kingdom" })),
+    ).toBeNull();
     expect(countryCodeOfToken(t({ sub: "a", country: "GB" }))).toBeNull();
     expect(countryCodeOfToken(null)).toBeNull();
   });
 });
 
 describe("a refused opening names its fields (round 1)", () => {
-  const { markFields } = require("../hubFields") as typeof import("../hubFields");
-  const { toApiError } = require("@/api/errors") as typeof import("@/api/errors");
+  const { markFields } =
+    require("../hubFields") as typeof import("../hubFields");
+  const { toApiError } =
+    require("@/api/errors") as typeof import("@/api/errors");
   it("keeps reason.fields on the error, and only names", () => {
     const e = toApiError(409, {
       statusCode: 409,
       message: "Check this and try again.",
-      reason: { code: "account_not_opened", message: "Check this and try again.", fields: ["person.ssn", "address.postal_code", 7, "bad name!"] },
+      reason: {
+        code: "account_not_opened",
+        message: "Check this and try again.",
+        fields: ["person.ssn", "address.postal_code", 7, "bad name!"],
+      },
     });
     expect(e.detail?.fields).toEqual(["person.ssn", "address.postal_code"]);
   });
   it("marks exactly the fields the screen has, lists the rest in plain words, drops none", () => {
     const marks = markFields(
-      ["address.postal_code", "person.ssn", "identification.document.number", "person.date_of_birth", "address.line_1", "person.favourite_colour"],
+      [
+        "address.postal_code",
+        "person.ssn",
+        "identification.document.number",
+        "person.date_of_birth",
+        "address.line_1",
+        "person.favourite_colour",
+      ],
       ["address", "postalCode", "proofType"],
     );
     expect(marks.keys).toEqual(["postalCode", "address"]);
-    expect(marks.elsewhere).toEqual(["Social security number", "ID number", "Date of birth", "Favourite colour"]);
+    expect(marks.elsewhere).toEqual([
+      "Social security number",
+      "ID number",
+      "Date of birth",
+      "Favourite colour",
+    ]);
   });
   it("a field the app does not know is shown humanised, never hidden", () => {
     expect(markFields(["person.tax_id"], []).elsewhere).toEqual(["Tax number"]);
-    expect(markFields(undefined, ["address"])).toEqual({ keys: [], elsewhere: [] });
+    expect(markFields(undefined, ["address"])).toEqual({
+      keys: [],
+      elsewhere: [],
+    });
   });
 });
 

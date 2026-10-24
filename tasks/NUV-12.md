@@ -35,7 +35,7 @@ A reservation is 15 minutes and moves nothing. A second confirm of an APPROVED o
 
 ### Words
 
-The app says what the provider's terms say (rate, term, what leaving early costs, deductions) and promises no return: "These figures are the provider's own and are not a promise of a return." The provider's own free text is never drawn (round 1, finding 2): a product shows its terms as facts in our words, never Nuvion's description (dev's reads "guaranteed ... grow your money with confidence"); only a product's name, its issuer's name and its documents' names pass through. The Hub never works out a rate, a return or a payout; a figure the provider did not give is `null` and not drawn. No provider name reaches a person.
+The app says what the provider's terms say (rate, term, what leaving early costs, deductions) and promises no return: "These figures are the provider's own and are not a promise of a return." The provider's own free text is never drawn (round 1, finding 2): a product shows its terms as facts in our words, never Nuvion's description (dev's reads "guaranteed ... grow your money with confidence"); only a product's name, its issuer's name, its documents' names and a deductible's name (the tax's name, for example: the label of a term beside its figure) pass through. The Hub never works out a rate, a return or a payout; a figure the provider did not give is `null` and not drawn. No provider name reaches a person.
 
 ### Round 1 (24 Oct 2026, builder, backend `wmt/NUV-12` and mobile `wmt/NUV-12`)
 
