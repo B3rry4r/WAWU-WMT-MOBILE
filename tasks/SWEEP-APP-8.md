@@ -7,7 +7,7 @@ order: -170
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-27, R-47]
 passes: [V1, V4, V5, V6, V9]
@@ -58,6 +58,11 @@ Merge notes: `LessonList` in `Parts.tsx` is rewritten by FIX-107 (play marks); t
 
 Two existing tests in `editReorder.test.tsx` ("a user can edit a work", "a change the Hub refuses stays on the form") gained one stand-in answer each, `GET /users/me` as the owner, because the edit form now waits to know who is signed in; no assertion in them changed.
 
+### Verifier, 24 Oct 2026: PASS, status review (full report in `tasks/history/SWEEP-APP-8.md`)
+
+Merging `origin/main` `d9b70d20` conflicts in `ChatInboxRow.tsx` (keep `rowNameOf`/`avatarNameOf` and main's `moveLine`) and `content-detail/Parts.tsx` (re-apply row 4 around FIX-107's `mark`: `{mark ? <View style={styles.lessonEnd}>{mark}</View> : null}`); `PROGRESS.md` and `INDEX.md` are generated. With that, tsc, eslint, gates and check_tasks are EXIT 0 and 44 suites / 760 tests pass. The 19 new tests fail on `48bd75a9`. Row 2 holds, and a web reload on W10 shows the Hub's refusal.
+Open low, for the merge or the sweep: `MoneyMoveInboxRow` (new on main) still draws a blank name (`rowNameOf(move.other)`, one test). Still not done: rows 6 and 7, and `PaidInboxRow.tsx`.
+
 ## Read first
 
 - `docs/WORKFLOW.md`, `docs/roles/BUILDER.md`
@@ -81,3 +86,8 @@ Seven small lows from the sweep list are fixed in the app, each with a test that
 - [x] A user who types a skill and presses Save has it saved, or is told why not.
 - [x] A user who opens `/add-work` for somebody else's work lands on the work's page, not on an edit form.
 - [ ] M24's sale terms ask once after the price stops changing (waits for FIX-110).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SWEEP-APP-8.md](history/SWEEP-APP-8.md).
+

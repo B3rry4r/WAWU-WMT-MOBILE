@@ -9,12 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 47 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 35 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 36 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-113](../tasks/FIX-113.md) Profile, the half FIX-110 did not reach: Experience and Skills can be written on Edit profile, and a Work has a description, can be edited and can be put in order (You)
 - [SIGNUP-NAMES](../tasks/SIGNUP-NAMES.md) Sign-up asks for a first name, a last name and a username (R-82) (You)
@@ -53,7 +54,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
