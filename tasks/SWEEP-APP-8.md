@@ -40,6 +40,10 @@ Not done in row 1: `PaidInboxRow.tsx` (the creator's side of a paid question, IN
 
 Merge notes: `LessonList` in `Parts.tsx` is rewritten by FIX-107 (play marks); the one-line change here is the wrapper `<View style={styles.lessonEnd}>` around the mark and `lessonEnd: { alignSelf: 'center' }`. The new test (`lessonRow.test.tsx`) renders `LessonList` on its own, so it holds after FIX-107.
 
+### Pictures (390 px, light and dark; web dev server, a throw-away preview route that is not committed)
+
+`/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/sweep-app-6/pics/sweep-app-8-light.png` and `sweep-app-8-dark.png`: three Inbox rows (`@kemi`, `Someone`, `Femi Bankole`; the avatars say K, S, FB), H25's lesson rows (the Free pill and the lock at the row's centre), and the Studio file row after a job with the length line under it. Row 3 is pictured as its parts (`RecordingBox` settled and the length line), NOT the real Studio screen on a stack: no board draws the file tool (G-POINTS-10-1), and the full screen was walked only in `fileToolsFlow` (the four new tests). Nothing else was run live.
+
 ### Tests (red before, green after)
 
 | Row | Test | Fails on `origin/main` |
