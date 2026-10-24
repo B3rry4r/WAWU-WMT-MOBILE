@@ -82,6 +82,17 @@ const session = ok({ accessToken: 'access-new', refreshToken: 'refresh-new', use
 const progress = (step: string, over: Record<string, unknown> = {}) =>
   ok({ step, inSequence: true, accountType: 'user', steps: ['email'], emailProven: false, ...over });
 
+/** SIGNUP-NAMES (R-82): a suite that sets its own answers still meets the username check and the profile read; both answer "fine". */
+function sameForNames(call: Call): Answer | undefined {
+  if (call.method === 'GET' && call.path === '/api/hub/users/handle-available') {
+    return ok({ handle: new URL(call.url).searchParams.get('handle') ?? '', available: true, message: null });
+  }
+  if (call.method === 'GET' && call.path === '/api/hub/users/me') {
+    return ok({ wawuUserId: 'u1', accountType: 'user', firstName: 'Lennox', lastName: 'Emmanuel', handle: 'lennox_e' });
+  }
+  return undefined;
+}
+
 function installServer() {
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = input instanceof Request ? input : null;
@@ -95,7 +106,7 @@ function installServer() {
       auth: headers.get('authorization'),
     };
     calls.push(call);
-    const rule = answers[`${call.method} ${call.path}`];
+    const rule = answers[`${call.method} ${call.path}`] ?? sameForNames(call);
     if (!rule) throw new TypeError('Network request failed');
     const out = typeof rule === 'function' ? rule(call) : rule;
     return new Response(JSON.stringify(out.body), { status: out.status, headers: { 'content-type': 'application/json' } });
@@ -186,6 +197,10 @@ beforeEach(async () => {
     'POST /auth/signup': started(),
     'POST /auth/phone/verify/confirm': session,
     'GET /auth/signup/progress': progress('done'),
+    // SIGNUP-NAMES (R-82): the typed username is free, and the new account's profile already has its name and username.
+    'GET /api/hub/users/handle-available': (call) => ok({ handle: new URL(call.url).searchParams.get('handle') ?? '', available: true, message: null }),
+    'PUT /api/hub/users/me/identity': ok({ firstName: 'Lennox', lastName: 'Emmanuel', handle: 'lennox_e' }),
+    'GET /api/hub/users/me': ok({ wawuUserId: 'u1', accountType: 'user', firstName: 'Lennox', lastName: 'Emmanuel', handle: 'lennox_e' }),
   };
   installServer();
 });
@@ -210,7 +225,15 @@ async function fourWrongCodes() {
   }
 }
 
+/** A3's three name fields (SIGNUP-NAMES, R-82): first name, last name and username, as a person types them. */
+async function fillNames(first = 'Lennox', last = 'Emmanuel', username = 'lennox_e') {
+  await fireEvent.changeText(screen.getByTestId('sign-up-first-name'), first);
+  await fireEvent.changeText(screen.getByTestId('sign-up-last-name'), last);
+  await fireEvent.changeText(screen.getByTestId('sign-up-username'), `@${username}`);
+}
+
 async function fillAndContinue(email = 'lennox@wawu.africa', phone = '0803 123 4412', password = 'hunter2hunter2') {
+  await fillNames();
   await fireEvent.changeText(screen.getByTestId('sign-up-email'), email);
   await fireEvent.changeText(screen.getByTestId('sign-up-phone'), phone);
   await fireEvent.changeText(screen.getByTestId('sign-up-password'), password);
@@ -276,7 +299,7 @@ describe('A3: email, phone and password', () => {
   it('a user can enter email, phone and password and tap Continue to reach A4; the earn pick is sent to WAWU ID as creator', async () => {
     await toA4();
     const sent = callsTo('/auth/signup')[0];
-    expect(sent.body).toEqual({ email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
+    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
     expect(screen.getByText('Verify your phone')).toBeTruthy();
     expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
     expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy();
@@ -774,6 +797,7 @@ describe('fix round 1', () => {
 
   it('F9: two quick taps on A3 Continue send one sign-up', async () => {
     await toA3();
+    await fillNames();
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
@@ -1271,6 +1295,7 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
 
   it('Continue with the terms line unticked sends nothing and says to tick it; ticking it clears the line and the sign-up goes ahead', async () => {
     await toA3();
+    await fillNames();
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
     await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '0803 123 4412');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
@@ -1283,7 +1308,7 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
     await press('Continue');
     await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
     // Nothing about the terms goes to WAWU ID: the line is consent to read, not a field.
-    expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'password', 'phone']);
+    expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'firstName', 'lastName', 'password', 'phone']);
   });
 
   it('the words "terms" and "privacy policy" open the Terms and the Privacy policy, and what was typed stays', async () => {

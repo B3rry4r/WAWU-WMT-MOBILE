@@ -75,7 +75,7 @@ describe('the account type reaches the Hub right after sign-up (G-17)', () => {
 
   describe('FIX-68 F-4: a finished sign-up writes only when the Hub does not hold the type already', () => {
     const done = (type: 'user' | 'creator') => progress({ step: 'done', inSequence: true, accountType: type, steps: ['email', 'creator_setup', 'interests', 'follows'] });
-    const mine = (type: 'user' | 'creator' | null) => ok({ wawuUserId: '00000000-0000-4000-8000-000000000001', accountType: type });
+    const mine = (type: 'user' | 'creator' | null) => ok({ wawuUserId: '00000000-0000-4000-8000-000000000001', accountType: type, firstName: 'Ada', lastName: 'Obi', handle: 'ada' });
 
     it('a Hub that already holds the type is not written to on any start', async () => {
       answers['GET /auth/signup/progress'] = done('creator');
@@ -113,7 +113,8 @@ describe('the account type reaches the Hub right after sign-up (G-17)', () => {
       expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
       answers['GET /api/hub/users/me'] = mine('creator');
       await act(async () => refreshSignupGate());
-      expect(calls('GET', '/api/hub/users/me')).toHaveLength(2);
+      // Each start also reads the name and username (SIGNUP-NAMES, R-82): two reads of the same route per start.
+      expect(calls('GET', '/api/hub/users/me')).toHaveLength(4);
       expect(calls('PUT', '/api/hub/users/me/account-type')).toHaveLength(0);
     });
   });

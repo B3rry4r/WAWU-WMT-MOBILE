@@ -28339,6 +28339,68 @@
      "AdsEvents"
     ]
    }
+  },
+  "/api/hub/users/handle-available": {
+   "get": {
+    "operationId": "HandleAvailabilityController_available",
+    "parameters": [
+     {
+      "name": "handle",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "maxLength": 100,
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HandleAvailabilityView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "HandleAvailability"
+    ]
+   }
+  },
+  "/api/hub/users/me/identity": {
+   "put": {
+    "operationId": "SignupIdentityController_complete",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompleteIdentityDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/IdentityView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "SignupIdentity"
+    ]
+   }
   }
  },
  "info": {
@@ -56935,6 +56997,68 @@
     "required": [
      "campaignId",
      "audit"
+    ]
+   },
+   "CompleteIdentityDto": {
+    "type": "object",
+    "properties": {
+     "firstName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+     },
+     "lastName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+     },
+     "handle": {
+      "type": "string",
+      "description": "The username, with or without a leading \"@\". Checked by `checkHandleShape`; its words are the server's.",
+      "maxLength": 60
+     }
+    }
+   },
+   "HandleAvailabilityView": {
+    "type": "object",
+    "properties": {
+     "handle": {
+      "type": "string"
+     },
+     "available": {
+      "type": "boolean"
+     },
+     "message": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "handle",
+     "available",
+     "message"
+    ]
+   },
+   "IdentityView": {
+    "type": "object",
+    "properties": {
+     "firstName": {
+      "type": "string",
+      "nullable": true
+     },
+     "lastName": {
+      "type": "string",
+      "nullable": true
+     },
+     "handle": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "firstName",
+     "lastName",
+     "handle"
     ]
    }
   }

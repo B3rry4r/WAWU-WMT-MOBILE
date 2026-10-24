@@ -97,7 +97,7 @@ const plans = {
 // The Hub answers what the gate, the sign-up screens, VF1 and the shop ask; everything else cannot be reached (A11's four row reads
 // fail, which it shows as a note and carries on). A function answers afresh each time.
 const hub: Record<string, unknown> = {
-  'GET /api/hub/users/me': () => ok({ wawuUserId: ADA, accountType: mockType }),
+  'GET /api/hub/users/me': () => ok({ wawuUserId: ADA, accountType: mockType, firstName: 'Ada', lastName: 'Obi', handle: 'ada' }),
   'PUT /api/hub/users/me/account-type': () => ok({ accountType: mockType }),
   'GET /api/hub/users/me/interests': interests,
   'PUT /api/hub/users/me/interests': interests,

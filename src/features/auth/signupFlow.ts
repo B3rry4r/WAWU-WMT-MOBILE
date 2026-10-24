@@ -19,7 +19,10 @@ import { markOfferPending } from '@/features/claim/offerStep';
 import { markBonusPending } from '@/features/verify/bonusStep';
 
 import { wireAccountType, type AccountType } from './accountType';
+import { askUsername } from './identityApi';
+import { claimSignupUsername } from './identityStep';
 import { authed } from './signupApi';
+import { UsernameRefused, usernameOf, usernameProblem } from './username';
 import { refreshSignupGate, setSignupProgress } from './signupGate';
 import { clearSignup, heldSignup, loadSignup, saveSignup, setStarted, started } from './signupStore';
 
@@ -33,15 +36,27 @@ import { clearSignup, heldSignup, loadSignup, saveSignup, setStarted, started } 
  * without the number typed, because another account holds it.
  * `accountType` goes to WAWU ID only: never to the Hub (G-34, R-6).
  */
-export async function startSignup(values: { email: string; phone: string; password: string }, pick: AccountType | null): Promise<void> {
+export async function startSignup(
+  values: { firstName: string; lastName: string; username: string; email: string; phone: string; password: string },
+  pick: AccountType | null,
+): Promise<void> {
   const accountType = wireAccountType(pick);
+  // The username is asked of the Hub once more at Continue (SIGNUP-NAMES, R-82): a name taken since the line under the field
+  // last said "free" is refused here with the Hub's words, before a code is sent.
+  const username = usernameOf(values.username);
+  const own = usernameProblem(username);
+  if (own) throw new UsernameRefused(own);
+  const said = await askUsername(username);
+  if (!said.available) throw new UsernameRefused(said.message ?? 'That username is taken. Try another.');
   const answer = await signupRequest({
+    firstName: values.firstName.trim(),
+    lastName: values.lastName.trim(),
     email: values.email,
     phone: values.phone,
     password: values.password,
     ...(accountType ? { accountType } : {}),
   });
-  await saveSignup({ phone: answer.phone, attempt: answer.attempt });
+  await saveSignup({ phone: answer.phone, attempt: answer.attempt, username });
   setStarted({
     channel: answer.channel === 'email' ? 'email' : 'sms',
     maskedEmail: answer.maskedEmail ?? null,
@@ -105,12 +120,14 @@ export async function confirmSignupCode(code: string, emailCode: string): Promis
           code,
           ...(emailCode ? { emailCode } : {}),
         });
+  const username = held.username ?? null;
   await clearSignup();
   // JOIN-03: this account is new, so it is asked once whether it has an access code (SHARED-CHANGES JOIN-03 #4).
   await markOfferPending(tokens.accessToken);
   // VERIFY-01: and, after that, once to "Your bonus is waiting" (VF1), the same way (SHARED-CHANGES VERIFY-01 #1).
   await markBonusPending(tokens.accessToken);
-  await adoptSession(tokens);
+  // SIGNUP-NAMES: once the session is adopted the username chosen on the form is claimed on the Hub; the gate waits for it.
+  await claimSignupUsername(() => adoptSession(tokens), username);
 }
 
 /** A4 Resend: another code for the same sign-up, by the channel it started with. Resolves with the server's `resendIn`. */

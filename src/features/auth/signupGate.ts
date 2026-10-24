@@ -4,6 +4,7 @@ import { isApiError } from '@/api/errors';
 import { signupProgressRequest, type SignupProgress } from '@/api/identity';
 import { hubNeedsType, readHubAccountType, setHubAccountType, type HubAccountType } from '@/features/after-signup/hubAccountType';
 
+import { readIdentityNeed, resetIdentityStep, type IdentityNeed } from './identityStep';
 import { authed } from './signupApi';
 
 /**
@@ -23,9 +24,11 @@ type Gate = {
   progress: SignupProgress | null;
   /** A13's Back reopened A12 for new picks: A12 shows again while WAWU ID still says `follows`. Local only; any new answer clears it. */
   reopened: boolean;
+  /** What the account still lacks of first name, last name and username (SIGNUP-NAMES, R-82); null when nothing, or when the Hub could not be asked. */
+  identity: IdentityNeed | null;
 };
 
-let gate: Gate = { phase: 'idle', progress: null, reopened: false };
+let gate: Gate = { phase: 'idle', progress: null, reopened: false, identity: null };
 const listeners = new Set<() => void>();
 let generation = 0;
 /** The account type last copied to the Hub for this session; null until it has been. */
@@ -48,7 +51,7 @@ const subscribe = (listener: () => void) => {
 /** Reads the progress. Ignored if the session changed meanwhile. */
 export async function refreshSignupGate(): Promise<void> {
   const started = generation;
-  change({ phase: gate.phase === 'ready' ? 'ready' : 'loading', progress: gate.progress, reopened: false });
+  change({ phase: gate.phase === 'ready' ? 'ready' : 'loading', progress: gate.progress, reopened: false, identity: gate.identity });
   let progress: SignupProgress | null = null;
   try {
     progress = await authed(signupProgressRequest);
@@ -58,7 +61,10 @@ export async function refreshSignupGate(): Promise<void> {
   if (started !== generation) return;
   await copyAccountType(progress);
   if (started !== generation) return;
-  change({ phase: 'ready', progress, reopened: false });
+  // The name and the username (SIGNUP-NAMES, R-82): read after the sign-up's own try at the username has finished.
+  const identity = await readIdentityNeed();
+  if (started !== generation) return;
+  change({ phase: 'ready', progress, reopened: false, identity });
 }
 
 /**
@@ -94,7 +100,12 @@ async function copyAccountType(progress: SignupProgress | null): Promise<void> {
 
 /** Takes the progress a step's own answer carries. */
 export function setSignupProgress(progress: SignupProgress) {
-  change({ phase: 'ready', progress, reopened: false });
+  change({ phase: 'ready', progress, reopened: false, identity: gate.identity });
+}
+
+/** The name and username step is done: the Hub has them all. */
+export function finishIdentity() {
+  if (gate.identity) change({ ...gate, identity: null });
 }
 
 /**
@@ -114,7 +125,8 @@ export function closeInterests() {
 export function resetSignupGate() {
   generation += 1;
   copiedToHub = null;
-  if (gate.phase !== 'idle' || gate.reopened) change({ phase: 'idle', progress: null, reopened: false });
+  resetIdentityStep();
+  if (gate.phase !== 'idle' || gate.reopened || gate.identity) change({ phase: 'idle', progress: null, reopened: false, identity: null });
 }
 
 export function signupGateState(): Gate {
@@ -138,6 +150,9 @@ export function useSignupGate(): {
   progress: SignupProgress | null;
   /** A12 is open again from A13's Back. */
   reopened: boolean;
+  /** The account lacks a first name, a last name or a username: the step that asks for them opens before the tabs. */
+  needsIdentity: boolean;
+  identity: IdentityNeed | null;
 } {
   const current = useSyncExternalStore(subscribe, () => gate, () => gate);
   return {
@@ -151,5 +166,7 @@ export function useSignupGate(): {
         : null,
     progress: current.progress,
     reopened: current.reopened && current.progress?.step === 'follows',
+    needsIdentity: current.identity !== null,
+    identity: current.identity,
   };
 }
