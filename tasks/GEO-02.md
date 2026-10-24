@@ -7,7 +7,7 @@ order: -3025
 priority: launch
 repo: wawu-backend
 type: migration
-status: building
+status: review
 depends_on: []
 decisions: [R-85, R-6, R-11]
 passes: [V1, V2, V3, V4, V9]
@@ -85,3 +85,27 @@ Verifier (Sonnet, T2 check, 24 Oct 2026) of backend `wmt/GEO-02` `28634ce` again
 - **low** `src/user-profile/dto/update-profile-fields.dto.ts:22` (`PLACE_TEXT_MAX = 100`) against `src/geo/geo.service.ts:10` (`CITY_MAX_LENGTH = 80`): a city of 81 to 100 characters answers `reason.code city_too_long`, a city of 101 or more answers the DTO's generic "city must be shorter than or equal to 100 characters" with no `reason.code`.
 
 Not a finding: `people` in `/admin/geo/counts` counts accounts that have a `UserProfile`; a person who only called `/me/location` before onboarding is not counted (builder open item 1, by design). Not run: a phone, the app (GEO-03).
+
+### Verifier report, rounds 1 and 2 (Sonnet, T2 re-check, 24 Oct 2026)
+
+Verifier of backend `wmt/GEO-02` `198753e` (round 1 `457e8b3`, round 2) against round 0 `28634ce` and `origin/main` `38be72e`. Verdict: **PASS** (1 low for the sweep or a rename before merge; 1 local check not reproduced, see below). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/geo-12-r1-v/` (`be-*.log`, `iso-diff.mjs`, `names.ts`). CI on `198753e`: Branch checks run 40112684651 success (completed 16:59 UTC), Gates run 40112684875 success, Protected routes (V3) run 40112684773 success.
+
+| Check | Result | How |
+|---|---|---|
+| Codes equal `regions.json`; the JSON equals the script | passed | `node scripts/geo/build-regions.mjs --check` EXIT 0 ("regions.json is current"); installed `iso-3166` is 4.4.0. My own diff of the JSON against `iso-3166`: 5070 ISO subdivisions, 5066 served, 200 countries, nothing extra; `geo-iso-lists.spec.ts` (every country's served codes and names equal the JSON) passes |
+| The six deliberate differences | right | missing exactly `GB-EAW`, `GB-GBN`, `GB-UKM` (groupings, not places) and `GH-BA` (Brong-Ahafo, retired 2019; Ghana serves 16 as ISO has them); renamed exactly `ZA-KZN` "Kwazulu-Natal" to "KwaZulu-Natal" and `ZA-NW` "North-West" to "North West" (ISO's own spelling). No other difference |
+| The seven pins | passed | NG 37, US 57, GB 221 (ISO's 224 less the 3 groupings), GH 16, KE 47, ZA 9, CA 13 served; ZA reads Eastern Cape, Free State, Gauteng (`ZA-GP`), KwaZulu-Natal (`ZA-KZN`), Limpopo, Mpumalanga, Northern Cape, North West, Western Cape; GH has Ahafo, Bono, Bono East, North East, Oti, Savannah, Western North |
+| Country names | passed | 34 sampled through the service: Democratic Republic of the Congo, Republic of the Congo, North Macedonia, South Korea, North Korea, United Kingdom, Côte d'Ivoire, Türkiye, Czechia, Eswatini, Taiwan, Hong Kong, Palestine, Micronesia, Vatican City, Bolivia, Venezuela, Tanzania, Russia, Iran, Syria, Laos, Moldova, Netherlands, United Arab Emirates, Saint Helena, Gambia, Bahamas, Falkland Islands, Cape Verde, Timor-Leste, Myanmar, Brunei. 249 countries, no duplicate name; the only comma is the official "Bonaire, Sint Eustatius and Saba" |
+| Shared region name, `city_too_long` | passed | `geo-lists.spec.ts` ("Dhaka" is `BD-C` and `BD-13`: refused as `region_invalid`, the code picks one) and `geo.contract.spec.ts` (22 of 22 after `db:seed`: a city of 81 is `reason.code city_too_long`, a request with a bad region saves none of itself, `/me/location`, admin filters and counts) |
+| Stamp | LOW | see findings |
+| tsc, eslint (no fix), gates, contract | passed | tsc EXIT 0 (after `prisma generate`); eslint on the 31 changed files: 17 findings, all in `admin-creators.service.ts` and its DTO, none on a line this branch added; `contract:build` EXIT 0 with no change to `contract/openapi.json`; gates 0 fail, 136 warn, 88 accepted, EXIT 0; `check_baseline.py` EXIT 0 |
+| Specs | passed | `geo-iso-lists`, `geo-lists`, `geo-migration.contract`, `geo.contract`, `account-data-map`, `data-export-map`, `publishing-gate-coverage`, `hub-rate-limits.contract`: 8 suites, 180 tests, 179 pass first, the 1 failure (a fixture user missing before `db:seed`) passes after the seed: `geo.contract` 22 of 22. Two of the eight files only mention Fintava in a table name and a comment; none imports the double |
+| `test:protected` after `db:seed` | not reproduced green | 245 of 253 pass; the 8 that fail are all verification-tick and professional-listing routes (`/admin/verification/ticks/.../grant`, `.../revoke`, `/admin/verification/:id/approve`, `/verification/purchase/verify`, `/admin/professionals/:id/approve`, `/unlist`, `/professionals/:id`, `PATCH /professionals/applications/:id/listing`) answering 502 "Your verification could not be saved" from the WAWU ID write call in my stack's mock. This branch changes no file under `verification`, `professionals` or `mock-wawu-id`, and the mock answers the same PATCH with 200 when I call it directly with the same key; CI's Protected routes (V3) run 40112684773 is green on this head. I could not find the cause in the time allowed; treat it as my environment unless CI on a later head goes red |
+
+Findings:
+
+- **low** `prisma/migrations/20261124090000_geo_location`: the stamp ties with `origin/wmt/IAP-01`'s `20261124090000_store_subscription_owner` (pushed 16:06 UTC, before round 1 at 16:21), so it is not later than every other branch's. It sorts first by name, the two touch different tables, and `prisma migrate deploy` applies both in either merge order, so nothing breaks. If the lead wants the rule kept to the letter, rename it (for example `20261125090000_geo_location`) in the migration folder, `geo-migration.contract.spec.ts` and `rollback.sql`.
+- Not a finding: round 0's four lows are all closed (ZA and GH data, English names, the `city_too_long` gap, the stamp now later than `main` and the round 0 head; the `users/me` claim is written down).
+
+Not run: a phone, the app, WAWU ID live (the stack used the mock).
+
