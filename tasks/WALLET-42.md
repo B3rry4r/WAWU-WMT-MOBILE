@@ -7,7 +7,7 @@ order: -140
 priority: launch
 repo: all
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [NUV-11]
 decisions: [R-87, R-84, R-83, R-10, R-39, R-47, R-29, R-20]
 passes: [V1, V3, V4, V5, V6, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B31): backend `wmt/WALLET-42` (round 1 on `origin/main` `4153fd7`) and mobile `wmt/WALLET-42` (round 1 on `origin/main` `7ba7c210`, WALLET-41 live). Status verifying. Round 1 (lead rulings, 24 Oct 2026) is the last section of this Current state. It also depends on WALLET-41 (task file on `wmt/WALLET-41`, not on this base) and WALLET-21 (order 321, later than this free negative order); `check_tasks` cannot state either as `depends_on` yet, so add `WALLET-41` when it merges (Default (lead), owner may override). Nothing here touches Fintava; the Hub reaches Nuvion only through `WALLET_PROVIDER` (the `abroad` side). The entry for a world person is built in round 1.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B31): backend `wmt/WALLET-42` (round 1 on `origin/main` `4153fd7`) and mobile `wmt/WALLET-42` (round 1 on `origin/main` `7ba7c210`, WALLET-41 live). Status review (verified PASS, 24 Oct 2026, see Verifier report). Round 1 (lead rulings, 24 Oct 2026) is the last section of this Current state. It also depends on WALLET-41 (task file on `wmt/WALLET-41`, not on this base) and WALLET-21 (order 321, later than this free negative order); `check_tasks` cannot state either as `depends_on` yet, so add `WALLET-41` when it merges (Default (lead), owner may override). Nothing here touches Fintava; the Hub reaches Nuvion only through `WALLET_PROVIDER` (the `abroad` side). The entry for a world person is built in round 1.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -65,6 +65,27 @@ NUV-11 assertions that pinned the naira fee on a send whose source is a foreign 
 13. R1-4: `finance writes off a fee that was never taken, once; not while the partner shows it was taken; not o...`
 
 Round 1 checks (own DB `b31wa_test`; none imports the Fintava double): backend tsc, eslint (no --fix) on the changed files, `contract:build`, gates (0 fail), baseline, and 17 suites 266 tests (`world-abroad.contract` 16, the abroad suites, `money-contract`, `wallet-gate-coverage`, `money-moving-coverage`, `account-data-map`, `data-export-map`, `data-export-abroad-sections`, `publishing-gate-coverage`, `hub-rate-limits`, `nuvion-abroad`, the plan-settings specs off the Fintava harness) all EXIT 0. App lines are in the hand-back.
+
+## Verifier report
+
+Verifier: a separate Sonnet session (lean T1 check, 24 Oct 2026). It built none of this. Under check: backend `wmt/WALLET-42` `40e33e7` against `origin/main` `4153fd7`; mobile `146dadc3` against `origin/main` `7ba7c210`. Branch checks run 40132381361 on `40e33e7`: all 6 jobs success (3 suite shards, contract, netns, deploy-test-in-sync). Verdict: PASS (nothing medium or worse; two lows below).
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| 1 Money | passed | A world person's GBP send: gate hands the seam an empty wallet id, `sendCalls` carry the GBP account, one `-fee` leg in GBP to WAWU's collecting account, `getPlatformAccount`/`walletToWallet` never called (naira calls list empty). Naira person: foreign source takes the EUR/GBP leg and gives it back once with no naira leg; naira source keeps `abroad.wawu_fee_kobo` and the naira legs. NGN or a currency not held: `fx_account_not_open` in plain words at quote time, before the PIN. Races (scratch spec, deleted, same harness as `world-abroad.contract.spec`): 3 sends racing on one quote make 1 send and 1 fee take; 2 give-backs + 2 sweeps + a repeated failure make 1 give-back reference; give-back racing finance `paid_back` makes at most 1 give-back leg (the admin call is refused 409); take-fee racing finance `not_taken` ends with the row `wawuFeeTaken=true`, never written off while the provider took it. Same key twice at HTTP level is the unchanged money layer (advisory lock per user plus single-use quote, both in `AbroadSendService.send`). 4 of 4 |
+| 2 NUV-11 spec edits | passed | `git diff` of `abroad.contract.spec.ts`: +9 -4, zero `expect` lines touched. `quoteFor` default is NGN only while `settings.wawuFeeKobo > 0` (all 13 named tests are naira-fee mechanics, source incidental); the three inline quotes now name NGN (each then asserts naira legs); two inert fake methods. The old foreign-source naira-funds check removed from `assertFunds` had no test pinning it. 28 abroad specs + 102 tests green |
+| 3 Settings | passed | `abroad.service.ts:670-680`: a fee line with no `FX_FEE_COLLECTOR_<CODE>_BAN` (or a provider with no `feeLeg`) is `currency_not_supported`; a collector variable with no line gives `wawuFeeMinor` 0 and no leg; the quote's `wawuFeeMinor` is the number the send takes. The six collector currencies equal the six the fee line accepts (no unreachable line). Live: no collector refused `currency_not_supported` |
+| 4 Data | passed | account-data-map (rows for both columns), data-export-map and `data-export-abroad-sections` green, `wawuFeeMinor` exported as `Number(...)`; deletion blocker and sweep/admin queries use `HAS_FEE` (either column). Migration `20261130090000_abroad_foreign_fee` applied on a fresh DB, `prisma migrate diff` "No difference detected", stamp newer than every `origin/*` branch, rollback ran clean on empty tables and with a send holding a fee raised `WALLET-42 rollback: sends hold a fee ...` (exit 3, columns kept) |
+| 5 App | passed | tsc EXIT 0; jest `src/features/abroad`, `src/features/wallet/world`, `route-guard.test.tsx`: 5 suites 320 tests; button needs `status === "open"` and the currency in the Hub's `sources` (frozen EUR in sources and USDT not in sources are both covered by `worldSendAbroad.test.tsx`); review and receipt total through `totalFromAccount`/`wawuFeeText` in the account's currency; balances read from the Hub's `availableMinor`, nothing summed. See finding 1 |
+| 6 Live (Nuvion dev) | passed | `world-abroad-check.ts` EXIT 0 against `https://api.nuvion.dev` on a dev entity with a GBP account and no naira account: sources `GBP:358` only, 3 recipients saved, GBP to GHS quote (300 pence to 4026 pesewas, held 179 s), fee leg taken once, a repeat of its reference answered 409 and found again, give-back found. Then the Hub's own `WalletGate` + `AbroadService.quote` on a local DB against Nuvion dev: GBP quote `wawuFeeKobo` 0, `wawuFeeMinor` 25 (the configured pence); NGN and USD refused with the plain messages. Not through HTTP (a stack always runs on the stand-in) |
+
+Other EXIT lines: backend tsc 0; eslint (no `--fix`) on the 16 changed `.ts` files 0; world-abroad + abroad + abroad-settings + admin-roles + nuvion-abroad 5 suites 102 tests 0; money-contract, wallet-gate-coverage, money-moving-coverage, account-data-map, data-export-map, data-export-abroad-sections, publishing-gate-coverage, hub-rate-limits 8 suites 122 tests 0; `test:protected` (after `db:seed`) 2 suites 253 tests 0; `contract:build` 0 and no diff; gates 0 fail (1975 files) and `check_baseline` 0. App: tsc 0, gates 0 fail (1411 files), `check_tasks` 0 (also after the flip to review).
+
+Findings (none blocks):
+1. low, `defect`: `src/features/abroad/screens.tsx:127` falls back to `'NGN'` while the Hub's sources are loading or failed, so `src/features/abroad/views.tsx:155` draws the amount with a naira sign ("₦0") for a person who has no naira account until the sources land. Repro: open `/send/abroad/amount` as a world person with `GET /money/abroad/sources` failing: the error card shows and the keypad types "₦..."; no quote is asked (it waits for the sources) and nothing is charged. Fix idea: use `props.initialFrom` as the fallback, or hide the amount until the sources load. To the area sweep.
+2. low, test-gap note: `AbroadService.isWorld` (`abroad.service.ts:269`) is used only by a spec; the real world check is the gate's empty wallet id. A test that sets `settings.wawuFeeKobo > 0` and relies on the default source now sends from NGN (`abroad.contract.spec.ts:368`), which hides a new test that wants a foreign default; the helper is the only place to look.
+
+NOT RUN: a reversal or a webhook for a foreign-account send; a real UK bank success or a USD ACH send (no funded dollar person); an HTTP request through a local stack to Nuvion dev (the stack always runs on the stand-in); a phone or a picture (no layout changed). The specs that import the Fintava double are CI's (run 40132381361 green).
 
 ## Read first
 
