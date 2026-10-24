@@ -256,6 +256,11 @@ export default function RootLayout() {
           <Stack.Screen name="schools/index" />
           <Stack.Screen name="schools/mine" />
           <Stack.Screen name="search" />
+          <Stack.Screen name="send/abroad/amount" />
+          <Stack.Screen name="send/abroad/index" />
+          <Stack.Screen name="send/abroad/new" />
+          <Stack.Screen name="send/abroad/receipt" />
+          <Stack.Screen name="send/abroad/review" />
           <Stack.Screen name="send/amount" />
           <Stack.Screen name="send/bank" />
           <Stack.Screen name="send/failed" />

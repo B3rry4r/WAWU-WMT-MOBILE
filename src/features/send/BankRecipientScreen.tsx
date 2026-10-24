@@ -25,12 +25,14 @@ import { space } from '@/theme';
 
 import { fetchBeneficiaries, savedBankRowFor, type Beneficiary } from './api';
 import { bankLine, bankPayeeOf, type BankPayee, type Payee } from './model';
-import { SEND_WAYS, type SendWay } from './parts';
+import { useSendWays, type SendWay } from './parts';
 
 export type BankRecipientScreenProps = {
   onBack: () => void;
   /** W7: the other tab. */
   onWawuUser: () => void;
+  /** The Abroad tab (NUV-11), drawn only while the Hub says sending abroad is on. */
+  onAbroad?: () => void;
   /** A bank account, ready for W9: its name is the bank's. */
   onPick: (payee: Payee) => void;
   /** A bank and number to start from (Try again after W14). */
@@ -50,7 +52,8 @@ const SECTION_GAP = 12;
  * wait; the form opens again when it has passed); a check the bank did not answer is Try again. Nothing is sent from here and no
  * money moves.
  */
-export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: BankRecipientScreenProps) {
+export function BankRecipientScreen({ onBack, onWawuUser, onAbroad, onPick, initial }: BankRecipientScreenProps) {
+  const ways = useSendWays();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const [form, setForm] = useState<PayoutForm>(() => ({ bank: initial ? { code: initial.bankCode, name: initial.bankName } : null, accountNumber: initial?.accountNumber ?? '' }));
@@ -120,10 +123,11 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
         <SegmentedTabs<SendWay>
           testID="send-ways"
           label="Who to send to"
-          items={SEND_WAYS}
+          items={ways}
           value="bank"
           onChange={(way) => {
             if (way === 'user') onWawuUser();
+            if (way === 'abroad') onAbroad?.();
           }}
         />
         <TextField
