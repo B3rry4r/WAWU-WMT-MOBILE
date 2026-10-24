@@ -7,7 +7,7 @@ order: -122
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: review
 depends_on: [AITOOLS-04]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -16,6 +16,8 @@ artboards: []
 # AITOOLS-05 · Dubbing (backend)
 
 ## Current state
+
+24 Oct 2026: the verifier's one medium (the two NOT_GATED entries) fixed in b5da5fc; lead accepted it on the diff read (Fable rule, a fix of 30 lines or fewer); the four lows go to SWEEP-AI.
 
 As of 24 Oct 2026, **building (verifier said FIX: 1 medium, 4 low; a Sonnet builder continues backend `wmt/AITOOLS-05`)**. Backend only, no migration. Verifier (Sonnet, built none of it) checked backend `4aeff65`; report in "Verifier report" below. Everything it ran on the stack passed except the two items under Findings 1 and 2.
 - **Heads:** backend `wmt/AITOOLS-05` `4aeff65` (commit `fc2e066` on `origin/wmt/AITOOLS-04` `4dac644`, then `origin/main` `c3a2c7a` merged: AITOOLS-04 is in main); mobile `wmt/AITOOLS-05` carries these records.

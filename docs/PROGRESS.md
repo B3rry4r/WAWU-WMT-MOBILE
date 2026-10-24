@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 48 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 30 | 0 | 0 | 0 |
+| review | 31 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,6 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
 - [AITOOLS-03](../tasks/AITOOLS-03.md) Sound effect and Music track (backend) (You)
+- [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend) (You)
 - [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
@@ -211,7 +212,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
