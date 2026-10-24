@@ -66,7 +66,7 @@ describe('I30 · Private, pay to join, in the store sheet', () => {
   it('a person sees the pass at the store’s own price, with Restore purchases, and no wallet, PIN, bank charge or naira', async () => {
     await boot();
     expect(await rtl.screen.findByTestId('pass-price')).toBeTruthy();
-    expect(rtl.screen.getByText('$3.99 every 1 month')).toBeTruthy();
+    expect(rtl.screen.getByText('$3.99 a month')).toBeTruthy();
     expect(rtl.screen.getByText('Join · $3.99')).toBeTruthy();
     expect(rtl.screen.getByTestId('pass-restore')).toBeTruthy();
     for (const gone of ['pass-breakdown', 'pass-total', 'pass-short', 'pass-no-wallet', 'pass-add']) expect(rtl.screen.queryByTestId(gone)).toBeNull();

@@ -17,7 +17,7 @@ import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
-import { buyLabel, periodOf, type StoreItem } from '@/features/store/model';
+import { buyLabel, perPeriod, periodOf, type StoreItem } from '@/features/store/model';
 import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, layout, space, useWawu } from '@/theme';
 
@@ -248,7 +248,7 @@ function Details({ room, pass, handle, selected, withCard }: { room: RoomView; p
   if (!withCard) return null;
   return (
     <GroupedList testID="pass-card">
-      {pass.sellsPass && selected ? <KeyValueRow label="Price" value={`${selected.price} every ${periodOf(selected.product.grants.days) || 'period'}`} testID="pass-price" /> : null}
+      {pass.sellsPass && selected ? <KeyValueRow label="Price" value={[selected.price, perPeriod(selected.product.grants.days)].filter(Boolean).join(' ')} testID="pass-price" /> : null}
       <KeyValueRow label="Members" value={String(room.memberCount)} testID="pass-members" />
       {handle ? <KeyValueRow label="Host" value={`@${handle}`} testID="pass-host" /> : null}
     </GroupedList>

@@ -70,3 +70,12 @@ export function periodOf(days: number | null): string {
   if (days === 7) return '1 week';
   return days === 1 ? '1 day' : `${days} days`;
 }
+
+/** How often a subscription renews, for a price line: "a month", "a year", "every 14 days". */
+export function perPeriod(days: number | null): string {
+  if (days === null || days <= 0) return '';
+  if (days === 30 || days === 31) return 'a month';
+  if (days === 365 || days === 366) return 'a year';
+  if (days === 7) return 'a week';
+  return days === 1 ? 'a day' : `every ${days} days`;
+}
