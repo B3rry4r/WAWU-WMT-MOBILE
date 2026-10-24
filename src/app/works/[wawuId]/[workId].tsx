@@ -7,7 +7,7 @@ import { WorkScreen } from '@/features/works/WorkScreen';
  * M35 · A work (`/works/<WAWU ID or handle>/<work id>`). Signed in only; the route graph does not list it
  * under the signed-in guard yet (SHARED-CHANGES.md, ME-11), so a signed-out visit is sent to the welcome
  * screen here. The creator row only becomes a way into the creator's profile once that screen exists
- * (ME-02 passes `onOpenCreator`). The owner's Remove, once confirmed, returns to M34 (the list the work was on).
+ * (ME-02 passes `onOpenCreator`). The owner's Edit opens M36 filled with the work (FIX-113); Remove, once confirmed, returns to M34 (the list the work was on).
  */
 export default function WorkRoute() {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function WorkRoute() {
       wawuId={wawuId}
       workId={workId}
       onBack={leave}
+      onOpenCreator={(who) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: who } })}
+      onEdit={() => router.push({ pathname: '/add-work', params: { workId, wawuId } })}
       onRemoved={() => router.dismissTo({ pathname: '/works/[wawuId]', params: { wawuId } })}
     />
   );

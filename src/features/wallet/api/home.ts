@@ -2,6 +2,7 @@ import { api, unwrap } from '@/api/client';
 import { ApiError, isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { components } from '@/api/schema.generated';
+import { arrivalMinutesOf } from '@/features/wallet/arrival';
 
 /**
  * The three reads behind the Wallet tab (W1, W4, W5, W6):
@@ -25,7 +26,7 @@ export type WalletState = WalletView['state'];
 export type WalletTransaction = components['schemas']['TransactionView'];
 
 /** The Hub's success body; the contract types only its `data` (SHARED-CHANGES.md row 11). */
-type Envelope<T> = { statusCode: number; message: string; data: T | null };
+export type Envelope<T> = { statusCode: number; message: string; data: T | null };
 
 /** W1 draws three recent rows; the contract names the first page with limit 3 as W1's (MONEY-15). */
 export const RECENT_ROWS = 3;
@@ -34,12 +35,27 @@ export const RECENT_ROWS = 3;
 export type WalletHome = {
   state: WalletState;
   account: Pick<WalletAccount, 'accountNumber' | 'accountName' | 'bankName'> | null;
+  /** Whether the transaction PIN is set, as the Hub says; undefined when the answer carries none (no nudge then). */
+  pinIsSet?: boolean;
+  /** What the Hub says of a bank transfer into the wallet account (FIX-109): `feeKobo` 0 is free; each is left out when the Hub sent none. */
+  transferIn?: { feeKobo?: number; arrivalMinutes?: number };
 };
+
+/** `transferIn` as the Hub sent it, keeping only what is a figure: a whole number of kobo and a speakable count of minutes. */
+export function readTransferIn(value: unknown): WalletHome['transferIn'] {
+  const v = value as { feeKobo?: unknown; arrivalMinutes?: unknown } | null | undefined;
+  if (!v || typeof v !== 'object') return undefined;
+  const out: NonNullable<WalletHome['transferIn']> = {};
+  if (typeof v.feeKobo === 'number' && Number.isSafeInteger(v.feeKobo) && v.feeKobo >= 0) out.feeKobo = v.feeKobo;
+  const minutes = arrivalMinutesOf(v.arrivalMinutes);
+  if (minutes !== null) out.arrivalMinutes = minutes;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 const states: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
-function unreadable(what: string): ApiError {
+export function unreadable(what: string): ApiError {
   return new ApiError('unknown', 200, `Your ${what} could not be read. Try again.`);
 }
 
@@ -57,12 +73,14 @@ export async function fetchWalletHome(): Promise<WalletHome> {
   if (!view || typeof view !== 'object' || !states.includes(view.state)) throw unreadable('wallet');
   const account = readAccount(view.account);
   if ((view.state === 'open' || view.state === 'frozen') && account === null) throw unreadable('wallet');
-  return { state: view.state, account };
+  const pin = view.pin as { isSet?: unknown } | undefined;
+  const transferIn = readTransferIn((view as { transferIn?: unknown }).transferIn);
+  return { state: view.state, account, ...(typeof pin?.isSet === 'boolean' ? { pinIsSet: pin.isSet } : {}), ...(transferIn ? { transferIn } : {}) };
 }
 
 const directions: readonly WalletTransaction['direction'][] = ['in', 'out'];
 
-function readRow(value: unknown): WalletTransaction {
+export function readRow(value: unknown): WalletTransaction {
   const v = value as Partial<WalletTransaction> | null;
   if (
     !v ||

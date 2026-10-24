@@ -9,6 +9,7 @@ import { BrandMark } from '@/components/BrandMark';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
+import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 import { lightColors } from '@/theme/tokens.generated';
@@ -89,7 +90,7 @@ export function Note({ tone, icon, title, body, testID }: { tone: 'info' | 'warn
 const QUIET = 4;
 
 /** The code as a picture, dark on white in either theme so a door scanner can read it. It draws exactly the text it is given. */
-export function Qr({ value, size, testID }: { value: string; size: number; testID?: string }) {
+export function Qr({ value, size, testID, label = 'Ticket QR code' }: { value: string; size: number; testID?: string; label?: string }) {
   const path = useMemo(() => {
     const modules = qrModules(value);
     let d = '';
@@ -102,7 +103,7 @@ export function Qr({ value, size, testID }: { value: string; size: number; testI
   }, [value]);
   const span = path.count + QUIET * 2;
   return (
-    <Svg testID={testID} accessibilityLabel="Ticket QR code" width={size} height={size} viewBox={`0 0 ${span} ${span}`}>
+    <Svg testID={testID} accessibilityLabel={label} width={size} height={size} viewBox={`0 0 ${span} ${span}`}>
       <Rect width={span} height={span} fill={lightColors.surfaceCard} />
       <Path d={path.d} fill={lightColors.textPrimary} />
     </Svg>
@@ -171,18 +172,21 @@ export function RefreshFailed({ message, onRetry, testID }: { message: string; o
   );
 }
 
-/** E6's row: the date, the event, "2 × VIP", and a QR mark; it opens the first ticket that can still be scanned. */
+/**
+ * E6's row: the date, the event, "2 × VIP", and a QR mark; it opens the first ticket that can still be scanned. A called-off event's row
+ * says so in the mark's place (a ticket that cannot be scanned has no use for the QR), and opens E11, which says what came back.
+ */
 export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketId: string) => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const target = ticketToOpen(group.tickets);
+  const calledOff = group.event.cancelledAt != null;
   return (
     <Pressable
       testID={`ticket-group-${group.orderId}-${group.ticketTypeId}`}
       accessibilityRole="button"
-      accessibilityLabel={`${group.event.name}, ${groupLine(group)}`}
-      accessibilityHint="Shows the ticket's QR code"
-      disabled={!target}
+      accessibilityLabel={calledOff ? `${group.event.name}, ${groupLine(group)}, called off` : `${group.event.name}, ${groupLine(group)}`}
+      accessibilityHint={calledOff ? 'Shows the ticket and what came back' : "Shows the ticket's QR code"}
       onPress={() => target && onOpen(target.id)}
       {...ring.handlers}
       style={[styles.row, { backgroundColor: colors.surfaceCard }, ring.style]}
@@ -196,7 +200,11 @@ export function GroupRow({ group, onOpen }: { group: HeldGroup; onOpen: (ticketI
           {groupLine(group)}
         </Text>
       </View>
-      <Icon name="QrCode" size={listMetrics.qrIcon} color={colors.textSecondary} />
+      {calledOff ? (
+        <StatusPill label="Called off" tone="danger" testID={`ticket-group-${group.orderId}-${group.ticketTypeId}-called-off`} />
+      ) : (
+        <Icon name="QrCode" size={listMetrics.qrIcon} color={colors.textSecondary} />
+      )}
       <View pointerEvents="none" style={[styles.edge, { borderRadius: radius.media, borderColor: colors.borderHairline }]} />
     </Pressable>
   );

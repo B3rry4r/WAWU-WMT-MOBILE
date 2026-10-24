@@ -42,10 +42,12 @@ export type EventsScreenProps = {
   onOpenEvent: (id: string) => void;
   /** Host event and the Host your event banner (EVENTS-04): the wizard, or the tick gate (E21) for an account without one. */
   onHost?: () => void;
+  /** The My events tab (E17, EVENTS-08): the host's own events. */
+  onMine?: () => void;
 };
 
 /** E1 · Events: the featured event, this week's list with a Going toggle on each row, and the filter sheet (E8). */
-export function EventsScreen({ onBack, onOpenEvent, onHost }: EventsScreenProps) {
+export function EventsScreen({ onBack, onOpenEvent, onHost, onMine }: EventsScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [filters, setFilters] = useState<EventFilters>(defaultFilters);
@@ -120,7 +122,7 @@ export function EventsScreen({ onBack, onOpenEvent, onHost }: EventsScreenProps)
           />
         }
       />
-      <EventsTabs active="discover" onChange={(tab) => (tab === 'host' ? onHost?.() : undefined)} />
+      <EventsTabs active="discover" onChange={(tab) => (tab === 'host' ? onHost?.() : tab === 'mine' ? onMine?.() : undefined)} />
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: bodyMetrics.bottom + insets.bottom }]}
         showsVerticalScrollIndicator={false}

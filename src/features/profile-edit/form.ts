@@ -33,6 +33,8 @@ export type ProfileForm = {
   handles: SocialHandles;
   /** The added platforms, first to last: what M9 draws and what the profile shows. */
   order: SocialPlatform[];
+  /** Skills and expertise, in the order shown (FIX-113). Saved with the rest of the details. */
+  skills: string[];
 };
 
 /** The person's name as one line: first, middle and last, whichever they have. */
@@ -67,6 +69,7 @@ export function formFrom(me: MyProfile, fields: ProfileFields): ProfileForm {
     coverUrl: me.coverUrl,
     handles,
     order: orderOf(handles, fields.socialOrder),
+    skills: [...(fields.skills ?? [])],
   };
 }
 
@@ -113,25 +116,33 @@ const sameOrder = (a: readonly string[], b: readonly string[]) => a.length === b
 const filledOrder = (form: ProfileForm) => form.order.filter((p) => form.handles[p] !== '');
 
 export type Changes = {
+  /**
+   * The new username (handle) for `PUT /users/me/handle`; absent when it did not change. It does not travel in
+   * `PATCH /users/me`: the web calls that route, so it keeps the old rules, and the username's rules (unique
+   * ignoring case, reserved words, one lock) are the new route's (SIGNUP-NAMES round 3, M2).
+   */
+  handle?: string;
   /** The body for `PATCH /users/me`, or null when nothing it holds changed. */
   profile: ProfileUpdate | null;
   /** The body for `PATCH /users/me/profile-fields`, or null when nothing it holds changed. */
   fields: FieldsUpdate | null;
 };
 
-/** What differs from what is saved, as the two bodies the Hub takes. Only what changed is sent. */
+/** What differs from what is saved, as the calls the Hub takes. Only what changed is sent. */
 export function changesOf(form: ProfileForm, base: ProfileForm): Changes {
   const profile: ProfileUpdate = {};
   if (form.name.trim() !== base.name.trim()) {
     const parts = splitName(form.name);
     if (parts) Object.assign(profile, parts);
   }
-  if (form.handle !== base.handle) profile.handle = form.handle === '' ? null : form.handle;
+  // A username is never emptied here (`problemsOf` refuses it), so a change is always a name to take.
+  const handle = form.handle !== base.handle && form.handle !== '' ? form.handle : undefined;
   if (form.bio.trim() !== base.bio.trim()) profile.bio = form.bio.trim() === '' ? null : form.bio.trim();
   if (form.avatarUrl !== base.avatarUrl) profile.avatarUrl = form.avatarUrl;
   if (form.coverUrl !== base.coverUrl) profile.coverUrl = form.coverUrl;
 
   const fields: FieldsUpdate = {};
+  if (!sameOrder(form.skills, base.skills)) fields.skills = [...form.skills];
   if (form.location.trim() !== base.location.trim()) fields.location = form.location.trim() === '' ? null : form.location.trim();
 
   for (const platform of PLATFORMS) {
@@ -145,28 +156,32 @@ export function changesOf(form: ProfileForm, base: ProfileForm): Changes {
   if (!sameOrder(order, filledOrder(base))) fields.socialOrder = order;
 
   return {
+    ...(handle !== undefined && { handle }),
     profile: Object.keys(profile).length > 0 ? profile : null,
     fields: Object.keys(fields).length > 0 ? fields : null,
   };
 }
 
 export function isDirty(form: ProfileForm, base: ProfileForm): boolean {
-  const { profile, fields } = changesOf(form, base);
-  return profile !== null || fields !== null;
+  const { handle, profile, fields } = changesOf(form, base);
+  // An emptied username is a change too (it is refused, but leaving it asks first), though it is never sent.
+  return form.handle !== base.handle || handle !== undefined || profile !== null || fields !== null;
 }
 
 /**
  * The saved form after `part` of it reached the Hub: the form's own values for
- * that part, the base's for the rest. A save is two requests; when the second
- * fails the first stays saved, and a retry sends only what is left.
+ * that part, the base's for the rest. A save is up to three requests (the username,
+ * the profile, the details); when a later one fails the earlier ones stay saved, and
+ * a retry sends only what is left.
  */
-export function rebased(base: ProfileForm, form: ProfileForm, part: 'profile' | 'fields'): ProfileForm {
+export function rebased(base: ProfileForm, form: ProfileForm, part: 'handle' | 'profile' | 'fields'): ProfileForm {
+  if (part === 'handle') return { ...base, handle: form.handle };
   if (part === 'fields') {
     const handles = { ...base.handles, threads: form.handles.threads };
-    return { ...base, location: form.location, handles, order: form.order };
+    return { ...base, location: form.location, handles, order: form.order, skills: form.skills };
   }
   const handles = { ...form.handles, threads: base.handles.threads };
-  return { ...base, name: form.name, handle: form.handle, bio: form.bio, avatarUrl: form.avatarUrl, coverUrl: form.coverUrl, handles };
+  return { ...base, name: form.name, bio: form.bio, avatarUrl: form.avatarUrl, coverUrl: form.coverUrl, handles };
 }
 
 /** The platforms that have a handle, in order: M8's rows, and what the profile shows. A row just added on M9 and still empty is not one yet. */

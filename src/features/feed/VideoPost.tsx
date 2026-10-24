@@ -1,10 +1,11 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 
 import { media, metrics, words } from './look';
-import { clock, endedBodyWidth, isLocked, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS } from './model';
+import { clock, endedBodyWidth, isLocked, isPicture, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS, type CourseDetail } from './model';
 import { canPlay, VideoSurface, type SeekRequest } from './player';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { Seekable, TrackBar } from './parts';
@@ -13,10 +14,17 @@ import { Seekable, TrackBar } from './parts';
  * H2 (a video) and H5 (a locked video). It plays while it fills the screen; a tap pauses or
  * plays it, and the scrubber above the caption moves it. A locked video plays its public
  * preview, and when the preview ends the frame frosts and says so (H5).
+ *
+ * A course (H7) is the same post: its public preview is the free lesson (the creator's "first lesson is the preview", M20), which plays here the
+ * same way and just stops when it ends (a tap plays it again); the pill and the offer bar read the
+ * course's `detail`. A course whose preview is a still picture shows the picture and plays nothing.
  */
-export function VideoPost(props: PostProps) {
-  const { item, active } = props;
+export function VideoPost(props: PostProps & { course?: boolean; detail?: CourseDetail | null }) {
+  const { item, active, course = false, detail } = props;
   const locked = isLocked(item);
+  // A course's full file is the whole course (a video, a PDF or an archive): the feed only ever plays its free lesson.
+  const uri = course ? item.previewAssetUrl : playableUrl(item);
+  const still = course && isPicture(uri);
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
   const [ended, setEnded] = useState(false);
@@ -31,7 +39,18 @@ export function VideoPost(props: PostProps) {
     if (active) setPaused(false);
   }
 
-  const previewEnded = locked && ended;
+  // The post was just unlocked (H16, Watch now): the preview's end is over, and the full video plays from the start.
+  const [wasLocked, setWasLocked] = useState(locked);
+  if (locked !== wasLocked) {
+    setWasLocked(locked);
+    if (!locked) {
+      setEnded(false);
+      setPaused(false);
+      setSeek(null);
+    }
+  }
+
+  const previewEnded = !course && locked && ended;
   const playing = active && !paused && !ended;
   const seekTo = (to: number) => {
     setEnded(false);
@@ -48,7 +67,7 @@ export function VideoPost(props: PostProps) {
   const share = time.length > 0 ? time.position / time.length : 0;
   const adjective = minutesAdjective(item.media?.durationLabel ?? item.durationLabel);
 
-  const playLayer = canPlay ? (
+  const playLayer = canPlay && !still ? (
     <Pressable
       testID={`tap-${item.id}`}
       accessibilityRole="button"
@@ -67,18 +86,23 @@ export function VideoPost(props: PostProps) {
   return (
     <PostFrame
       {...props}
-      kind="video"
+      kind={course ? 'course' : 'video'}
+      detail={detail}
       backdrop={
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <VideoSurface
-            uri={playableUrl(item)}
-            playing={playing}
-            seek={seek}
-            frosted={previewEnded}
-            onTime={(position, length) => setTime({ position, length })}
-            onEnded={() => setEnded(true)}
-            testID={`video-${item.id}`}
-          />
+          {still ? (
+            <Image testID={`still-${item.id}`} source={{ uri }} contentFit="cover" accessibilityLabel={item.title} style={StyleSheet.absoluteFill} />
+          ) : (
+            <VideoSurface
+              uri={uri}
+              playing={playing}
+              seek={seek}
+              frosted={previewEnded}
+              onTime={(position, length) => setTime({ position, length })}
+              onEnded={() => setEnded(true)}
+              testID={`video-${item.id}`}
+            />
+          )}
           {previewEnded ? <View style={[StyleSheet.absoluteFill, { backgroundColor: media.veil }]} /> : null}
         </View>
       }
@@ -113,15 +137,16 @@ export function VideoPost(props: PostProps) {
         );
       }}
       above={
-        canPlay && !previewEnded ? (
+        canPlay && !still && !previewEnded ? (
           <Seekable
             testID={`scrub-${item.id}`}
-            label="Video position"
+            label={course ? 'Lesson position' : 'Video position'}
             value={`${clock(time.position)} of ${clock(time.length)}`}
             onSeek={(s) => seekTo(s * time.length)}
             onStep={(d) => seekTo(time.position + d * SKIP_SECONDS)}
+            style={styles.scrub}
           >
-            <TrackBar share={share} label={`${clock(time.position)} / ${clock(time.length)}`} testID={`scrub-fill-${item.id}`} />
+            <TrackBar inset={false} share={share} label={`${clock(time.position)} / ${clock(time.length)}`} testID={`scrub-fill-${item.id}`} />
           </Seekable>
         ) : null
       }
@@ -130,6 +155,8 @@ export function VideoPost(props: PostProps) {
 }
 
 const styles = StyleSheet.create({
+  /** The scrub bar's own box ends where the rail starts, so it can never take a tap meant for the Tip button (FIX-68 F-1). */
+  scrub: { marginRight: metrics.barRight },
   tapLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   paused: { opacity: 0.85 },
   ended: {

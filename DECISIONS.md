@@ -91,6 +91,7 @@ Credits" is the name, shown as a count, never a naira value, never cashable.
 No free trial. No em-dashes in anything a user reads (1 Sep 2026).
 **Carried out by:** the gates (`scripts/gates/gates.config.json`) and every
 task.
+*Updated by R-62 (owner, 16 Oct 2026): community messages cost credits by kind (text and emoji free, a photo 1, a video or voice note 3), replacing "every metered message costs a credit".*
 
 ---
 
@@ -150,13 +151,16 @@ The chat-first flow is built as designed.
 
 **R-15 · Ads at launch, booked by the WAWU team and invoiced by hand.**
 Self-serve buying comes later.
+*Updated by R-59 (owner, 16 Oct 2026): Home always shows the ad card; the Explore slider alternates events and adverts; a campaign needs artwork.*
 
 **R-16 · Dollar, crypto and cards come after launch.** No dollar account yet.
 Crypto runs through Cardex (Fintava's crypto partner, `docs/fintava/cardex.md`)
 and is built once its keys arrive (WALLET-33). Cards are undecided.
+*See R-64 (owner, 16 Oct 2026): tips and prices stay Naira only; the Dollar and USDT picker waits for dollar accounts.*
 
 **R-17 · Deleting an account takes 30 days and is cancelled by signing in.**
 The wallet must be empty first.
+*Updated by R-50 (owner, 16 Oct 2026): buyers keep the paid content they bought.*
 
 **R-18 · No Trust Score on professional cards.** A number nothing calculates
 never ships.
@@ -328,11 +332,14 @@ These are identifiers, not names a user reads. Changing them would break the Exp
 - Each task that builds an affected screen: every task listed above carries R-37 in its `decisions`.
 - The web follows after launch.
 
+*Updated by R-69 (owner, 16 Oct 2026): where the app names itself, the copy is "Who Made This?" with the question mark. The logos and the mapping above are unchanged.*
+
 ### R-38 · The bottom bar does not get a Studio tab
 *Owner, 6 Oct 2026 ("bugs like this would not be condoned", about the boss brief v2.0's centre "Create ✨" Studio tab).*
 The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · Inbox · Wallet · Me**, and Create stays the floating button for creator accounts. (Corrected 7 Oct 2026 after the CHECK-1 audit, F-2: this line first quoted the old web app's bar by mistake; the ruling itself, no Studio tab, is unchanged.) This holds even if Claude Design is updated to draw a Studio tab: a canvas that puts Create or a Studio tab in the bar is a design defect to report, not a ruling to build. If AI tools ship, they sit behind the Create button.
 
 **Carried out by:** every navigation and AI-tools task; a verifier treats a bar with a sixth or swapped slot as a defect.
+*Updated by R-61 (owner, 16 Oct 2026): AI tools are also a Home tile (Studio). The bar is unchanged.*
 
 ### R-39 · The wallet provider moves from Fintava to Nuvion, reversibly
 *Owner, 6 Oct 2026.*
@@ -345,6 +352,7 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 - **Waiting on:** Nuvion's NGN fees and limits (the owner is asking).
 
 **Carried out by:** MONEY-20 (the provider seam), AUTH-07 (email sign-up codes), then a Nuvion adapter task once fees and limits are in. R-1's Loma Bank licence line is superseded by this ruling.
+*Updated by R-72 (owner, 19 Oct 2026): the sign-up code and the wallet PIN reset code both go by email at launch (`SIGNUP_VERIFY_CHANNEL=email`); a text-message provider comes later, only if the owner names one.*
 
 ### R-44 · Payments on the web are the same as the app
 *Owner, 8 Oct 2026 ("Same as the app"; payments are the priority now).*
@@ -425,8 +433,11 @@ are up ... never use opus agents again to do tasks").*
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
 exactly one screen task.
 
-<!-- not-built: SH M3 W40 W18 -->
-- `SH1` to `SH15`: WAWU Shop, retired (R-2)
+<!-- not-built: SH M3 W40 W18 W16 M11 M12 M13 M14 VF5a VF13a PT4a -->
+- `SH1` to `SH15`: WAWU Shop, retired (R-2); the 16 Oct 2026 export no longer draws them
+- `W16`: add money by card, "Removed: transfer only" on the 16 Oct 2026 canvas (R-16, R-42); WALLET-36 is cancelled
+- `VF5a`, `VF13a`, `PT4a`: the dollar variants of the tier cards, the all-products-used sheet and the points packs. Dollar prices wait for dollar accounts (R-16, R-65). Unblocked when a person can be billed in dollars (dollar accounts, WALLET-32).
+- `M11` to `M14`: the verification tick, "Replaced by VF5 to VF7" on the 16 Oct 2026 canvas (R-43); ME-12 is re-cut to VF5 to VF7
 - `M3`: the profile Shop tab (R-9)
 - `W40`: move earnings to wallet (R-11)
 - `W18`: withdraw waiting on KYC (R-28). Unblocked when Fintava names an account status that blocks withdrawals.
@@ -457,7 +468,7 @@ The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALL
 ### R-42 · The owner's answers of 7 Oct 2026 (decisions page)
 *Owner, 7 Oct 2026, on the "Fintava to Nuvion: approve and go" page.*
 - **Nuvion: start now.** The Nuvion build starts without waiting for Nuvion's NGN fees and limits; they are settings filled in when Nuvion answers, and nothing moves real money before they are set. The sandbox key is coming from the owner. This lifts the money freeze for the Nuvion work.
-- **Bills: off at launch,** switched off and not deleted ("Leave them switched off, don't delete for now").
+- **Bills: off at launch,** switched off and not deleted ("Leave them switched off, don't delete for now"). *See R-52 (owner, 16 Oct 2026).*
 - **Opening a wallet** adds an ID document and a proof of address, as Nuvion requires.
 - **Adding money is by bank transfer only** at launch.
 - **Held money** (paid questions, tickets) moves through a WAWU operational account on Nuvion.
@@ -472,3 +483,152 @@ The four hubs that were waiting on long chains (HOME-01, ME-01, EXPLORE-01, WALL
 The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Developer Brief v2.0 is adopted: free sign-up and drafts; publishing or uploading a file needs a paid tier (Verify, Verify Plus, Founding Maker, with 3, 6 or 10 products); points for AI tools with lots that expire and a cash-out rate; dollar prices outside Nigeria; Voice Intro in the person's own voice; referral points. This reverses the "no subscription, no tier" rule, the 5-item cap and naira-only for those features. **The owner sends the final prices and rules;** until then the plan's figures are config values, never facts. Still open and not to be assumed: whether points replace WAWU Credits, the commission ("WAWU keeps up to 10%" against the 85/15 split, R-5), the tier-expiry rule, and the Christmas event date. R-38 stands: no Studio tab; AI tools open from the Create button.
 
 **Carried out by:** the design round 2 brief (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`), then tasks cut from the new boards.
+*Updated by R-65 (owner, 16 Oct 2026): the open figures are launch settings in admin settings.*
+
+### R-50 · Deleting an account keeps what buyers paid for
+*Owner, 16 Oct 2026 ("buyers KEEP the paid content they bought").* When a creator deletes their account (R-17), what buyers already paid for stays available to those buyers: content they unlocked, tickets they hold and services they booked. The creator's profile and unsold listings go. Updates R-17.
+**Carried out by:** SETTINGS-06 round 7. SETTINGS-06 is building, so its file is not edited here: the lead hands the builder this row.
+
+### R-51 · Withdrawals go only to an account in the person's own name; name checks are 30 an hour
+*Owner, 16 Oct 2026 (G-765, G-764).* A payout account must be in the same name as the person's verified identity, and a withdrawal to any other account is refused before the PIN. A person can run at most 30 bank name checks an hour (the number is a setting). Sends to other people's accounts are unchanged.
+**Carried out by:** WALLET-37 (new, the WALLET-09 follow-up).
+
+### R-52 · Bills: WAWU covers a failed bill's fees, and bills are switched off at the Nuvion move
+*Owner, 16 Oct 2026 (G-462, G-648).* When a bill fails, WAWU pays the provider's fee and the refund fee, and the person gets every naira back. Bills are turned off when wallets move to Nuvion (R-42: switched off, not deleted). The app draws no bill entry anywhere: no Bills button on the balance card, no bill tiles on the Wallet, no Bills filter in history.
+**Carried out by:** BILLS-04 round 2 (done, recorded here); DV2-RM for the app entries (its own removals pass). The Hub already answers `409 target_not_payable` on every bill route.
+
+### R-53 · Send quick amounts are as designed; the provider's part of a fee is labelled "Bank charge"
+*Owner, 16 Oct 2026.* The send screen's quick amounts are ₦5,000, ₦10,000, ₦25,000 and ₦50,000, as W9 draws them. Wherever a fee breakdown names the provider's part, the label is "Bank charge" (never "Fintava's charge" or "Nuvion's charge"); WAWU's part keeps its own label (R-10).
+**Carried out by:** WALLET-02 (quick amounts, as designed, no change); DV2-COPY for the built screens that print the old label; each todo task that draws a fee line carries a dated line in its Current state.
+
+### R-54 · A notice for all money in
+*Owner, 16 Oct 2026.* Every credit to a wallet sends a notice: money from a Who Made This? user, earnings that land, refunds, and bank transfers in.
+**Carried out by:** WALLET-39 (new).
+
+### R-55 · Earnings: refused earnings go to review 72 hours after the first refusal; one daily move per creator
+*Owner, 16 Oct 2026 (G-703).* Earnings the wallet refuses are put in front of a person 72 hours after the FIRST refusal. A creator's earnings go to their wallet once a day, in one transfer per creator; a day's total under ₦200 waits for the next day. The 85/15 split is unchanged (R-5).
+**Carried out by:** WALLET-16 (its task file is updated with both rules).
+
+### R-56 · A payment Nuvion takes back after the buyer got the item: the buyer keeps it and a person reviews
+*Owner, 16 Oct 2026 (G-482, G-483).* Today's default is the ruling. What was delivered stays delivered, nothing is taken back from the buyer or the payee automatically, and the case is flagged on the nightly money check for a person to review.
+**Carried out by:** NUV-08 (the nightly check flags it). No new task.
+
+### R-57 · Popular communities count at 10 members or more
+*Owner, 16 Oct 2026.* A community is listed under "popular" only once it has 10 or more members (a setting).
+**Carried out by:** EXPLORE-06 (new, the EXPLORE-05 follow-up).
+
+### R-58 · Settled with no new build: TGIF share, search figures, the test key
+*Owner, 16 Oct 2026.* (a) The TGIF reader's Share opens the phone's share sheet (R-33), with no custom card. (b) The search figures stay exactly as EXPLORE-05 built them (the newest 20 recent searches kept, a search is popular with 3 different people in 30 days, and the other limits G-340 lists). (c) A rotating Gemini test key may be used for minimal live checks, by the lead only, and is never committed; builders and verifiers still make no AI provider call.
+**Carried out by:** (a) DV2-01 checks the reader's Share on built HOME-09; (b) none, EXPLORE-05 stands; (c) the lead, no task.
+
+### R-59 · TGIF and adverts take turns
+*Owner, 16 Oct 2026 ("FOLLOW THE DESIGN, TAKE TURNS"; G-760, G-761).* Home always shows the ad card in TGIF's old place. TGIF moves to Explore and to a daily notification (turn it off in Settings, Z2 "TGIF each morning"). The Explore slider alternates events and adverts: "take turns" wins over "adverts only when no events", so slide 1 is an advert, then event, advert, event; with no event running, adverts only (X17). The line "Ads keep TGIF free" is left out. A campaign must have artwork: the dashboard refuses a campaign without it. The Home TGIF card and its Home toggle go. Updates R-15.
+**Carried out by:** DV2-01 (Home ad card, H36), EXPLORE-07 (slider X1, X16, X17 and the TGIF card on Explore), HOME-16 (the daily notification), ADS-07 (artwork required), DV2-06 (Settings Z2 wording), DV2-RM (the Home TGIF card and its toggle, after those land).
+
+### R-60 · The five gate lines are recorded now
+*Owner, 16 Oct 2026.* The gate findings the lead listed (five entries) are recorded in the backend baseline with an owner and a reason each.
+**Carried out by:** GATES-02 (new).
+
+### R-61 · Home's services row is Studio, Learn, Monetize, Legal; AI tools open from Home and from Create
+*Owner, 16 Oct 2026 ("FOLLOW THE DESIGN").* Updates R-38's "AI tools only behind Create": Studio (the AI tools) is a Home tile and is also reachable from Create. The bottom bar is unchanged and has no Studio tab. The Events tile leaves Home (events stay in Explore). Schools is renamed Learn in this row. Studio opens PT1, Learn opens Schools, Monetize opens the Create hub (M19), Legal opens Legal. Under R-47 each tile is drawn only when its screen is built.
+**Carried out by:** DV2-01 (the row, with Learn, Legal and Monetize), POINTS-07 (adds Studio, as drawn), DV2-RM (removes the Events tile).
+
+### R-62 · Community credits are by kind of message: text and emoji free, a photo 1 credit, a video or voice note 3
+*Owner, 16 Oct 2026 ("FOLLOW THE DESIGN").* Replaces "every metered message costs a credit" (R-5, INBOX-05 as built). Costs are settings. Credits stay a count, never naira. This changes the charge on `POST /communities/{id}/messages`, which the web also calls: a deliberate protected-route change (SHARED-CHANGES, INBOX-22 #1).
+**Carried out by:** INBOX-22 (backend, new), INBOX-23 (the app: I24 to I26 and I38), INBOX-13 (I27, I28 copy).
+
+### R-63 · Private communities: a monthly pass, renewed by a tap
+*Owner, 16 Oct 2026.* A person pays for 30 days from the wallet (the PIN, as every wallet payment). A reminder comes 3 days before the pass ends and one tap renews it. The host sets the price; the split is 85/15. There is no automatic monthly debit at launch and no host approval step to join.
+**Carried out by:** INBOX-24 (backend, new), INBOX-14 (screens I30 to I34 and I37, re-cut).
+*Updated by R-71 (owner, 19 Oct 2026): a host who removes a member pays back the unused days, worked out from the price paid. Leaving on one's own still pays nothing back.*
+
+### R-64 · Tips and prices are Naira only at launch
+*Owner, 16 Oct 2026 (R-16 stands).* The Dollar and USDT picker drawn on H26 and M24 is not shown until dollar and crypto accounts exist.
+**Carried out by:** HOME-13 and ME-08 (their files are updated).
+
+### R-65 · The new money figures are launch settings in admin settings
+*Owner, 16 Oct 2026 ("USE THE DESIGN'S FIGURES AS LAUNCH SETTINGS, changeable at any time").* Launch values: tiers ₦1,000, ₦3,000 and ₦5,000 (dollar prices wait for dollar accounts); add 5 products ₦1,500 (this also answers the 5-place pack price and TIER-02's D9); 1,000 points = ₦500; points last 12 months; a cap of 5,000 points a day; referral multipliers ×1 to ×3 and +500 points at 5 verified; a 7-day referral hold. 85/15 stays the one split (R-5). Any other figure drawn on a VF, PT or RF board loads as a PROVISIONAL setting with the board's value and is listed for the owner in the task's report. Updates R-43's open figures; points and WAWU Credits stay two balances.
+**Carried out by:** TIER-06 (admin settings, new), which also names where each figure is used.
+
+### R-66 · The Voice Intro player says "Bio" and carries an "AI voice" tag
+*Owner, 16 Oct 2026.* The label is "Bio" as drawn (VF11, M1), plus a small "AI voice" tag on the player so listeners know. This overrides design/CLAUDE.md ("never AI voice") and keeps the round-2 brief's requirement.
+**Carried out by:** DV2-COMP (the player), VERIFY-03 (VF11), DV2-03 (M1), VOICE-01 (the Hub marks the audio as AI voice).
+
+### R-67 · Provider and legal wording: show "Banking by Nuvion" and the terms line, hide licence lines
+*Owner, 16 Oct 2026.* Shown now: "Banking by Nuvion" (Z9) and the sign-up line "I agree to the terms and privacy policy" (A3). The licence and CBN lines ("licensed by the CBN", "Limits set by the CBN", "held at Nuvion", "Tier 1 · Nuvion") come from settings and stay hidden (not drawn) until the owner confirms the exact words. The Hub already serves `licenceLine` and `depositInsuranceLine` on the wallet account; they stay empty.
+**Carried out by:** DV2-COPY (Z9, A3, and the hidden lines on W41 to W43, A17, A19, Z10); WALLET-12 and WALLET-19 carry the same line.
+
+### R-68 · No outside brand names
+*Owner, 16 Oct 2026.* No third-party name in the app: "AI voice tools" instead of ElevenLabs; sharing uses the phone's share sheet instead of an Instagram card; real adverts replace the sample "Kora Foods" (and every other sample advertiser).
+**Carried out by:** DV2-COPY (built screens), POINTS-07 (PT1 line), REF-03 (RF2 share), DV2-01 and EXPLORE-07 (ad cards show only real campaigns).
+
+### R-69 · The app's name in copy is "Who Made This?" with the question mark
+*Owner, 16 Oct 2026.* Updates R-37's copy rule: where the app names itself the text is "Who Made This?" with the question mark, on every screen and string. The logos are unchanged (R-37's mapping stays).
+**Carried out by:** DV2-COPY for built screens; every todo task that prints the name carries a dated line in its Current state.
+
+### R-70 · Three old tests on the Fintava double may be updated by an agent, test files only
+*Owner, 19 Oct 2026 (Q-42).* An agent may update three old backend tests that run on the Fintava double: `src/fintava/tests/fintava-stall.spec.ts` (its timing), the T6b cases of `src/account/tests/account-deletion-round4.contract.spec.ts` (their timing) and `src/money/earnings/tests/earning-settlement.contract.spec.ts` (it pins the earning rules from before R-55). Test files only: never the Fintava double, the Fintava adapter or any other Fintava code. This is the owner's exception to "never edit an assertion in a test you did not write" for these three files and no others. The earlier one-argument change at `src/account/tests/account-deletion.contract.spec.ts:539` stays as it is.
+**Carried out by:** FIX-88.
+
+### R-71 · A host who removes a member from a private community pays back the unused days
+*Owner, 19 Oct 2026 (Q-43).* When a host removes a member who still has paid days left on a private community's monthly pass (R-63), the member gets the unused days back, worked out from the price they paid. A member who leaves on their own still gets nothing back. Only the removal is ruled: a pass is still not refunded when the host stops being a creator (G-INBOX-24-3), and a removed member still cannot re-join without the host's approval (G-INBOX-24-6). Updates R-63.
+**Carried out by:** INBOX-25.
+
+### R-72 · Sign-up codes and wallet PIN reset codes go by email at launch
+*Owner, 19 Oct 2026 (Q-44).* At launch the sign-up code and the wallet PIN reset code are both sent by email. WAWU ID's setting is `SIGNUP_VERIFY_CHANNEL=email`. A text-message provider comes later, and only if the owner names one: no task builds or picks one before then. Confirms R-39's "No SMS" for both codes.
+**Carried out by:** AUTH-07's release step 5 (set the value and restart WAWU ID); the PIN reset code's email route in WAWU ID is G-400, which has no task yet (the lead assigns it).
+
+### R-73 · A deleted account's ID documents are kept hidden for 5 years, then deleted
+*Owner, 19 Oct 2026 (Q-45).* When an account is deleted, its ID documents (ID card photos, and the documents of service and professional applications) are kept for 5 years after the deletion, hidden from everyone, and then deleted. The files meant are those FIX-65 refiles under `deleted-account` (G-FIX-65-1). This replaces FIX-65's lead default ("kept and refiled, never deleted"). Everything else the purge deletes stays as FIX-65 built it.
+**Carried out by:** SETTINGS-09.
+
+### R-74 · Flix movies: the Flixora catalog in the app, watched on Flixora
+*Owner, 22 Oct 2026.* Who Made This? partners with Flixora. The app shows Flixora's catalog as drawn in Flow MV (MV1 to MV12): a rail on Home below "Creators and professionals" and on Explore below "Who Made This?", browsing, search, filters and trailers in the app. Watching happens on Flixora's website, signed in, from "Watch on Flixora" (MV4, MV5). Flixora is named as drawn, because the person is sent to Flixora's site: this is the owner's exception to R-68, for Flixora only. The catalog reaches the app only through the Hub; the app never calls Flixora and holds no Flixora key. Titles, posters, ratings and dates come from Flixora, never from the design's samples.
+**Carried out by:** FLIX-01 (Hub), FLIX-02 (Flixora adapter), FLIX-03 (app).
+
+### R-75 · A person's Flixora account opens on their first "Watch on Flixora", and Flixora unplugs with one setting
+*Owner, 22 Oct 2026.* The owner asked for every person to have a Flixora account with no second sign-up. Flixora's partner API has no call that opens or closes an account: the first signed-in link creates the person's Flixora account from the name and email the Hub sends, and later links reuse it (`docs/flixora/PARTNER-API.md`). So the account opens on the person's first "Watch on Flixora". Agreement: the owner updates the terms to name Flixora; sign-up's existing box (A3, R-67) is the agreement for anyone who signed up on or after the setting `FLIXORA_TERMS_FROM` (when the updated terms went live). Anyone else, and everyone while that setting is empty, ticks A3's shared ConsentBox on MV4 before "Open Flixora" (not drawn: lead default, BACKEND_GAPS G-FLIX-1); the Hub stores that agreement with its time. The Hub sends only the person's permanent WAWU id (`sub`), email, first and last name, and whether WAWU verified the email; never phone, BVN, NIN, ID documents or wallet data. Flixora sits behind one seam, as R-39 does for wallets: code outside the adapter reaches it only through `MOVIE_PARTNER`, and never imports `src/flixora/`. `MOVIE_PARTNER=off` (the default; empty is off) hides every rail and screen (the Hub answers `enabled: false`), stops every call and every link, and changes nothing else; the stored rows stay. Deleting a WAWU account stops every further link for that person; closing their Flixora account goes to Flixora by hand (G-FLIX-2), because the API has no call for it.
+**Carried out by:** FLIX-01, FLIX-02, FLIX-03. The terms text is the owner's.
+
+### R-76 · Emails say Who Made This?
+*Owner, 23 Oct 2026 ("who made this please").* Emails a person receives name the product "Who Made This?" (with the question mark, R-69), not "WAWUAfrica" or "WAWU Africa" (R-37). Only the name changes: the sender address, every domain and every link stay as they are.
+**Carried out by:** BRAND-MAIL.
+
+### R-77 · Flix movies show "not live yet" (replaced by R-80)
+*Owner, 23 Oct 2026.* Until business talks with Flixora finish, Flix movies stays visible but does nothing: no titles, no Flixora calls, no accounts, no links. The rails on Home and Explore and the movies screen show S13's "not live yet" state with "Flix movies aren't switched on yet" and "You'll be able to watch movies here soon." (the rail as its title and one card that opens the screen), set by `MOVIE_PARTNER=soon`; `off` still hides everything. This sits beside R-74 and R-75, which stand for when it goes live.
+**Carried out by:** FLIX-04.
+
+### R-78 · Every Studio tool the design draws is built for launch
+*Owner, 23 Oct 2026 ("build this thing").* Studio (PT1) draws eight AI tools: VoiceOver, Quick voice, Captions, Clean audio, Music track, Sound effect, Dubbing and Receptionist. All eight are built for launch, not only VoiceOver (exception, R-79: the Receptionist is left out for now and built after launch, so seven at launch). Each runs on the one job pipeline and the points rules of AITOOLS-01 and POINTS-03 (hold, then keep on success or give back on failure), through the one AI voice provider seam. Every points cost is an admin setting with the board's figure as its PROVISIONAL launch value (R-65). Under R-47 a tool's tile is drawn only when the Hub lists it and the app has its screen. Where a tool's own screen is not on any board, it is built from the VoiceOver screens' shared parts and the gap is filed for the designer (R-29).
+**Carried out by:** AITOOLS-02 (the pipeline, the job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, and a person's file going in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist, after launch under R-79); the app side POINTS-09 (Quick voice, Sound effect, Music track), POINTS-10 (Captions, Clean audio), POINTS-11 (Dubbing), POINTS-12 (Receptionist, after launch under R-79). The provider's routes and limits are in `docs/elevenlabs/API-FACTS.md`.
+*Updated by R-79 (owner, 23 Oct 2026): the Receptionist is left out for now and built after launch; Quick voice is defined there.*
+
+### R-79 · Four answers of 23 Oct 2026: Receptionist after launch, what Quick voice is, editing a sent event, the designer's extra wallet list
+*Owner, 23 Oct 2026.* Four answers, each with the task that carries it out.
+**(a) Studio's Receptionist is left out for now and built after launch.** Of R-78's eight tools, seven are built for launch; the Receptionist tile is not drawn until its tasks are built (R-47). AITOOLS-06 and POINTS-12 move to priority after-launch, status todo, and no builder starts on them before the owner brings them back.
+**(b) Quick voice is a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute.** The figure is the PT1 tile's, PROVISIONAL under R-65. Closes G-AITOOLS-02-1.
+**(c) Editing an event after it is sent: the edit goes back to review, and ticket price and places cannot change once a ticket is sold.** This is today's Hub behaviour, confirmed: `PATCH /events/{id}` puts every edit back to `pending`, so the event leaves the calendar until a person approves it again, and `PUT /events/{id}/tickets` is refused with 409 as soon as any tier has sold. Closes G-833 as ruled. A creator cannot edit a sent event in the app today (E18's "Edit event" and "Ticket types" rows are not drawn, R-47), so one task builds them on these two rules.
+**(d) The designer's extra list waits until after launch:** Scan to pay and My QR (W24, W25), Account limits (A17 to A20), adding money by debit card and by USSD.
+**Carried out by:** (a) AITOOLS-06 and POINTS-12 (priority after-launch); (b) AITOOLS-02 and POINTS-09 (their text says exactly this); (c) EVENTS-14 (new: the Hub keeps both rules, the app's E18 rows open the wizard's steps in edit mode); (d) WALLET-20, WALLET-19, WALLET-25 and WALLET-26 (priority after-launch).
+
+### R-80 · Flix movies is hidden until it goes live
+*Owner, 24 Oct 2026 ("that's not the language in our docs ... if you cant find hide flix movies on those screens").* R-77's two lines ("Flix movies aren't switched on yet", "You'll be able to watch movies here soon.") are not in the docs or the design: S13 draws that "not live yet" state for Bill payments only, and the Flix lines were made up by analogy. So Flix movies is not drawn at all until it goes live: no rail on Home or Explore, no Flix screen, no Flixora call. This is `MOVIE_PARTNER=off`, whose answer the app already hides everything on (`FlixRail`, `MoviesGate`). The `soon` setting stays in the code and is not used. R-74 and R-75 still stand for when it goes live.
+**Carried out by:** the server setting `MOVIE_PARTNER=off` (console step 5, owner, 24 Oct 2026); FIX-106 (the app treats a `soon` answer exactly like off, so it draws nothing even while the server still says `soon`; the note and card are removed).
+*Replaces R-77.*
+
+### R-81 · A person is told when a community they joined has new messages, grouped
+*Owner, 24 Oct 2026 (answer to "When should someone get a notification from a community they joined?": "New messages, grouped").* When someone else posts in a community a person has joined, that person gets a notice. Several new messages in the same community are ONE notice, updated (its count and its time) rather than added, until the person opens that community; the next message after that starts a new notice. Never for a person's own messages. The Z3 "Community messages" switch (`communityMessages`) turns it off. It reaches the phone as a push like the other kinds. Closes G-21. Agent defaults, owner may override: the host of a room is told too (they are in it); a member whose pass for a paid room has ended, and anyone across a block, are not; the phone is buzzed once per notice (when it is first written), and later messages update the notice without buzzing again until the person has opened the room.
+**Carried out by:** FIX-105.
+
+### R-82 · Sign-up asks for a first name, a last name and a username; names are not wallet-only
+*Owner, 24 Oct 2026 ("Sign up should involve first name last name and username ... Names are not wallet only.").* This adds to R-6, which made sign-up email and phone only: sign-up now also asks for a first name, a last name and a username, and the account is made with them. Identity checks (BVN, details, selfie) still happen when a wallet is opened, not at sign-up (R-6 stands). (1) A3 takes first name, last name, username, email, phone number and password, in that order; the three new fields are built from the same fields Edit profile uses and are filed for the designer (R-29). The username shows whether it is free while the person types and is refused on Continue if taken, in the Hub's words. (2) The username is the profile's handle, the @handle the app already shows: one home, one set of rules (letters, numbers, dots and underscores, at most 30, unique ignoring case, a short list of words held back, PROVISIONAL). (3) An account that is signed in and lacks a first name, a last name or a username is asked for the missing ones once, on the next open, before the tabs, in a one-screen step that cannot be skipped. (4) Opening a wallet ("Confirm your details") starts with the account's first and last name; the person can still correct them to match the BVN.
+**Carried out by:** SIGNUP-NAMES.
+
+### R-83 · Dollar and crypto accounts are built now, on Nuvion
+*Owner, 24 Oct 2026 ("We left fintava and were on Nuvion that offers alot more").* R-16 put dollar and crypto after launch because Fintava had no dollar account and its crypto ran through Cardex. Nuvion serves both, so they are built now: a USD account with its own US account details, USDT and USDC (Nuvion's chains: Ethereum, Base, Polygon, Solana), receive and send, and swap between naira, dollars and the two coins (W2, W3, W20 to W23 and the Dollar and Crypto tabs on W1). What a network, a fee or a quote's hold is comes from Nuvion's docs and dev answers, never from the board's Cardex samples (TRC-20, BEP-20, 90 seconds). Cards (WALLET-22) stay undecided. Tips and prices stay naira only (R-64) until the owner says otherwise.
+**Carried out by:** WALLET-21 (Hub routes on the Nuvion adapter, and the screens). WALLET-33 (Cardex) is retired by this ruling.
+*Replaces R-16 for dollar and crypto accounts.*
+
+### R-84 · Everything Nuvion serves for people is built now
+*Owner, 24 Oct 2026 ("It's much more than dollars and crypto... What does nuvion offer", then chose all four: other currency accounts, virtual dollar card, add money by card and USSD, send abroad and Capital savings).* On top of R-83: (1) accounts in every currency Nuvion gives account details for (USD, EUR, GBP, CAD, AED, GHS), each with its own receiving details, and swap between them; (2) the WAWU card as Nuvion issues it today: virtual and single-use dollar cards (no physical card: Nuvion does not issue one, so W29's Physical choice is not drawn, R-47), card controls only where Nuvion serves them; this settles R-16's "cards are undecided"; (3) add money by card and by USSD (and open banking) through Nuvion, preferring Nuvion's hosted checkout so card numbers never reach WAWU's servers; (4) send abroad: foreign bank and mobile money payouts with conversion; (5) Capital: Nuvion's fixed-return and share-offering products. Items (4) and (5) have no board: built from the app's existing parts with gap rows (R-29). Facts come from Nuvion's docs and dev answers; where dev refuses, the screen says so plainly and a gap row names what Nuvion must switch on.
+**Carried out by:** WALLET-21 (all currencies, swap), WALLET-31 and WALLET-22 (card), WALLET-25 and WALLET-26 (add money), NUV-11 (send abroad), NUV-12 (Capital).

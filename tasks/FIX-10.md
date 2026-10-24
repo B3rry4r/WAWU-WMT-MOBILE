@@ -7,7 +7,7 @@ order: 191
 priority: launch
 repo: wawu-backend
 type: setup
-status: todo
+status: done
 depends_on: []
 decisions: []
 passes: [V1, V2, V3]
@@ -18,9 +18,11 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
-- **History:** none yet. Reports go to tasks/history/FIX-10.md.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-10.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/FIX-18` (this branch contains it); API types regenerated from backend `wmt/FIX-10` (4f52fac).
+- **Branches:** backend `wmt/FIX-10` at ad2b3c0 (from main 56f94d0); mobile `wmt/FIX-10` carries this file and one SHARED-CHANGES row (FIX-10 #1). No migration, no contract change.
+- **CI on ad2b3c0:** Branch checks run 38900973732 green (suite 3 of 3 shards, contract, baseline, deploy-test-in-sync, netns); Protected routes run 38900973513 green (253/253); Gates run 38900973587 red with the same 16 FAIL lines as main, none in the files this task touches.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: a lookup that times out reads as not found in two existence checks; redirect: 'error' is new on the four WAWU ID calls; no floor on WAWU_ID_READ_TIMEOUT_MS; one bound per lookup call, not per route. They are in tasks/SWEEP-APP.md with the report path.
+- **Next:** the lead opens the backend pull request from the batch 3 head. Merge needs the SHARED-CHANGES row FIX-10 #1 approved (`src/common/**` is fenced).
 
 ## Read first
 
@@ -40,16 +42,12 @@ When WAWU ID stalls, every Hub request waiting on it holds a socket until WAWU I
 
 ## Capability checks
 
-- [ ] With WAWU ID held, every Hub route that calls it answers within the bound, and the open sockets return to baseline.
-- [ ] With WAWU ID healthy, answers are unchanged (protected routes 253/253).
+- [x] With WAWU ID held, every Hub route that calls it answers within the bound, and the open sockets return to baseline.
+- [x] With WAWU ID healthy, answers are unchanged (protected routes 253/253).
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-10.md](history/FIX-10.md).
 
 ## Owner sign-off
 

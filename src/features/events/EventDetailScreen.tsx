@@ -7,18 +7,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
+import { Banner } from '@/components/Banner';
 import { Button, IconButton } from '@/components/Button';
 import { Icon, VerifiedTick } from '@/components/icon';
+import { Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { Toast } from '@/components/Toast';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { detailKey, fetchEvent, fetchTickets, ticketsKey, type EventView, type TicketType } from './api';
-import { tierStatus, venueOf, whenLine } from './format';
+import { BuySheets } from './BuySheets';
+import { CONFIRMING_LINE, CONFIRMING_TITLE, FAILED_TITLE, orderLines, roomFor } from './buyModel';
+import { basketCount, basketTotal, quantityOf, ticketCount, tierStatus, venueOf, whenLine, withQuantity, type Basket } from './format';
 import { useGoing } from './going';
 import { DateBadge, GoingButton } from './parts';
 import { TicketRow } from './TicketRow';
+import { TicketStepper } from './TicketStepper';
+import { useTicketBuy } from './useTicketBuy';
 
 /** design/_gen/events.js `detailTop` and `detailBody`: a 230 picture, 20 sides, 16 between the parts, a 22 title, 22 and 16 icons in the card. */
 export const detailMetrics = {
@@ -36,24 +43,49 @@ export const detailMetrics = {
   info: 14,
   footTop: 12,
   footBottom: 34,
+  count: 12,
   labelSize: 11,
+  total: 20,
   topInset: 6,
   fadeEnd: 0.4,
   stack: 16,
   tight: 2,
 } as const;
 
+/** Where buying tickets leads from here: the route supplies each (EVENTS-06). */
+export type BuyHandlers = {
+  /** The tickets are issued: E5. */
+  onOpenOrder: (orderId: string) => void;
+  /** No wallet yet (R-6): Open your wallet. */
+  onOpenWallet: () => void;
+  /** No PIN yet: A9. */
+  onSetPin: () => void;
+  /** Forgot PIN? (W37). */
+  onForgotPin: () => void;
+  /** Add money for the shortfall (kobo). Opens Add money (W15) with the shortfall. A caller that leaves it out shows the short notice without the button. */
+  onAddMoney?: (shortfallKobo: number) => void;
+};
+
 export type EventDetailScreenProps = {
   id: string;
   onBack: () => void;
+  /** Without these nothing can be bought from the screen, so the steppers, the total and Get tickets are not drawn (R-47). */
+  buy?: BuyHandlers;
+};
+
+const noBuy: BuyHandlers = {
+  onOpenOrder: () => undefined,
+  onOpenWallet: () => undefined,
+  onSetPin: () => undefined,
+  onForgotPin: () => undefined,
 };
 
 /**
- * E2 · Event, and E9 when every tier has sold: when and where, who hosts it, Going, and the tiers with their prices.
- * The quantity steppers, the running total and Get tickets are not drawn: nothing here can buy a ticket until
- * EVENTS-06, and a picker that leads nowhere is not shown (R-47). EVENTS-06 draws all three, as the artboard has them.
+ * E2 · Event, and E9 when every tier has sold: when and where, who hosts it, Going, the tiers with a stepper each, and the running
+ * total beside Get tickets. Get tickets opens E3 (the order and its price) and E4 (the PIN) over this screen; E10, "Paid, still
+ * confirming", replaces the tiers and the button while the Hub finishes a payment (`useTicketBuy`).
  */
-export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
+export function EventDetailScreen({ id, onBack, buy }: EventDetailScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const event = useQuery({ queryKey: detailKey(id), queryFn: () => fetchEvent(id) });
@@ -63,7 +95,22 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     enabled: event.data?.ticketed === true,
   });
   const going = useGoing();
+  const [picked, setPicked] = useState<Basket | null>(null);
   const [now] = useState(() => Date.now());
+
+  const known = event.data;
+  const tiers: readonly TicketType[] = tickets.data ?? [];
+  // Tiers that can be bought come first; the ones that cannot (sold out, ended) follow, each group in the Hub's order.
+  const rows = known
+    ? tiers.map((tier) => ({ tier, status: tierStatus(tier, known, now) })).sort((a, b) => Number(b.status.open) - Number(a.status.open))
+    : [];
+  const called = known?.cancelledAt != null;
+  const buyable = rows.filter((r) => r.status.open && !called).map((r) => r.tier);
+  const basket: Basket = picked ?? (buyable[0] ? { [buyable[0].id]: 1 } : {});
+  const count = basketCount(basket);
+  const total = basketTotal(buyable, basket);
+  const handlers = buy ?? noBuy;
+  const purchase = useTicketBuy({ eventId: id, eventName: known?.name ?? '', tiers: buyable, basket, ...handlers });
 
   if (event.isPending) return <DetailSkeleton onBack={onBack} />;
   if (event.isError) {
@@ -91,15 +138,14 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
   }
 
   const data = event.data;
-  const called = data.cancelledAt !== null;
-  const tiers: readonly TicketType[] = tickets.data ?? [];
-  // Tiers that can be bought come first; the ones that cannot (sold out, ended) follow, each group in the Hub's order.
-  const rows = tiers
-    .map((tier) => ({ tier, status: tierStatus(tier, data, now) }))
-    .sort((a, b) => Number(b.status.open) - Number(a.status.open));
-  const buyable = rows.filter((r) => r.status.open && !called).map((r) => r.tier);
   const allSold = tiers.length > 0 && tiers.every((t) => t.soldOut || t.remaining <= 0);
   const soldBar = allSold && !called;
+  // Nothing is drawn to buy with unless the route says where buying leads (R-47). While the Hub finishes a payment the tiers and
+  // the button give way to E10.
+  const canBuy = buy !== undefined && buyable.length > 0 && !called;
+  const totalBar = canBuy && !purchase.confirming;
+  const refreshBar = buy !== undefined && purchase.confirming;
+  const freePick = total === 0 && count > 0;
 
   const share = () => {
     const message = [data.name, whenLine(data.startsAt, data), venueOf(data)].filter(Boolean).join('\n');
@@ -110,7 +156,7 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
     <View testID="event-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: soldBar ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
+        contentContainerStyle={{ paddingBottom: soldBar || totalBar || refreshBar ? layout.tabbarH + insets.bottom : insets.bottom + space.s2xl }}
       >
         <Cover event={data} insetTop={insets.top} onBack={onBack} onShare={share} />
         <View style={styles.body}>
@@ -150,8 +196,15 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
             <Text variant="muted" testID="event-called-off">
               This event was called off.
             </Text>
+          ) : purchase.confirming ? (
+            <Banner tone="warning" icon="Clock" title={CONFIRMING_TITLE} body={CONFIRMING_LINE} testID="event-confirming" />
           ) : data.ticketed ? (
             <View>
+              {purchase.failed ? (
+                <View style={styles.failed}>
+                  <Banner tone="danger" title={FAILED_TITLE} body={purchase.failed} testID="event-order-failed" />
+                </View>
+              ) : null}
               <Text variant="label" style={styles.sectionLabel}>
                 Tickets
               </Text>
@@ -172,7 +225,22 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
               ) : (
                 <>
                   {rows.map(({ tier, status }) => (
-                    <TicketRow key={tier.id} tier={tier} status={status} />
+                    <TicketRow
+                      key={tier.id}
+                      tier={tier}
+                      status={status}
+                      stepper={
+                        buy !== undefined && status.open ? (
+                          <TicketStepper
+                            name={tier.name}
+                            tierId={tier.id}
+                            quantity={quantityOf(basket, tier.id)}
+                            max={roomFor(tier, basket)}
+                            onChange={(q) => setPicked(withQuantity(basket, tier, Math.min(q, roomFor(tier, basket))))}
+                          />
+                        ) : undefined
+                      }
+                    />
                   ))}
                   {allSold ? (
                     <Text variant="muted" testID="event-sold-out" style={styles.soldNote}>
@@ -200,6 +268,55 @@ export function EventDetailScreen({ id, onBack }: EventDetailScreenProps) {
           <Button label="Sold out" full disabled onPress={() => void tickets.refetch()} testID="event-sold-button" />
         </View>
       ) : null}
+      {totalBar ? (
+        <View
+          testID="event-total"
+          style={[
+            styles.foot,
+            styles.totalBar,
+            { backgroundColor: colors.surfacePage, paddingBottom: Math.max(insets.bottom, detailMetrics.footBottom) },
+          ]}
+        >
+          <View>
+            <Text variant="body" tone="textMuted" style={{ fontSize: detailMetrics.count }}>
+              {ticketCount(count)}
+            </Text>
+            {freePick ? (
+              <Text variant="body" style={[font(600), { fontSize: detailMetrics.total }]}>
+                Free
+              </Text>
+            ) : (
+              <Money minorUnits={total} size={detailMetrics.total} decimals={false} testID="event-total-amount" />
+            )}
+          </View>
+          <Button
+            label="Get tickets"
+            size="lg"
+            testID="event-get-tickets"
+            loading={purchase.starting || !purchase.ready}
+            disabled={orderLines(buyable, basket).length === 0}
+            onPress={() => void purchase.start()}
+          />
+        </View>
+      ) : null}
+      {refreshBar ? (
+        <View
+          testID="event-refresh-bar"
+          style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: Math.max(insets.bottom, detailMetrics.footBottom) }]}
+        >
+          <Button label="Refresh" icon="RotateCcw" full loading={purchase.refreshing} onPress={purchase.refresh} testID="event-refresh" />
+        </View>
+      ) : null}
+      {purchase.sheet ? <BuySheets sheet={purchase.sheet} /> : null}
+      <Toast
+        message={purchase.notice ?? (purchase.refreshFailed ? "Couldn't check. Try again." : null)}
+        tone="alert"
+        placement="top"
+        lines={2}
+        duration={5000}
+        onHide={purchase.clearNotice}
+        testID="event-notice"
+      />
     </View>
   );
 }
@@ -297,6 +414,8 @@ const styles = StyleSheet.create({
   sectionLabel: { lineHeight: canvasNormalLineHeight(detailMetrics.labelSize) },
   tierSkeletons: { gap: space.md },
   soldNote: { paddingTop: space.lg },
+  failed: { paddingBottom: detailMetrics.stack },
+  totalBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   foot: {
     position: 'absolute',
     left: 0,

@@ -11,20 +11,25 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField, fieldMetrics } from '@/components/TextField';
+import { fetchMyTier, tierKey } from '@/features/me/api';
 import { canPickImage, pickImage, type PickedImage } from '@/features/profile-edit/pickImage';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { eventsKey, fetchOptions, optionsKey, type EventOptions, type EventView } from '../api';
 import { EventsTabs, NavBar } from '../chrome';
-import { HostGate, Submitted, footMetrics } from './HostEnds';
-import { createEvent, fetchMyVerification, isTickRefusal, mayHost, uploadBanner, verificationKey } from './hostApi';
+import { HostGateScreen } from './HostGateScreen';
+import { Submitted, footMetrics } from './HostEnds';
+import { createEvent, fetchMyVerification, mayHost, uploadBanner, verificationKey } from './hostApi';
 import {
   createBody,
   dayChoices,
   dayLabel,
   digitsOf,
   emptyDraft,
+  endShown,
   hasErrors,
+  addDays,
+  daysBetween,
   newTicket,
   priceShown,
   startLabel,
@@ -36,32 +41,44 @@ import {
   type Step,
   type TicketDraft,
 } from './hostForm';
-import { AreaField, BannerTile, ChoiceSheet, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
+import { AreaField, BannerTile, ChoiceSheet, LockedField, OptionRow, PickerField, SectionLabel, Stepper, WhenSheet } from './hostParts';
+import { isHostTierRefusal, tierRunning, type HostTierRefusal } from './hostTier';
 
 /** events_b.js form1 to form3: `body(..., { between: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
 const bodyMetrics = { top: 14, between: 14, ticketsGap: 12, labelGap: 10, cardPad: 14, cardGap: 10, pairBetween: 10 } as const;
 /** events_b.js form3's Add a ticket type: 12 padding, 16 corner, a 1.5 strong ring, a 16 Plus at 2.2, 7 to the words, 13.5 semi-bold. */
 const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, between: 7, font: 13.5 } as const;
 /** How far ahead a start can be picked, and the gap between the times offered. PROVISIONAL(HOST-PICKER, owner=DEV3, why=no ruling sizes them). */
-const PICKER = { days: 365, minutes: 30 } as const;
+const PICKER = { days: 365, minutes: 30, endDays: 14 } as const;
 
-type Sheet = 'kind' | 'category' | 'starts' | 'ends' | null;
+export type Sheet = 'kind' | 'category' | 'starts' | 'ends' | null;
 
 export type HostScreenProps = {
   onBack: () => void;
   onDiscover: () => void;
   onDone: () => void;
+  /** The My events tab, and E16's My events button (E17, EVENTS-08). */
+  onMine?: () => void;
+  /** E21's See tiers opens VF5. The button is not drawn without it. */
+  onSeeTiers?: () => void;
   /** The clock the wizard checks a start against. */
   now?: () => number;
 };
 
-/** E13 to E16, and E21 for an account without a tick: the host wizard and its ends. */
-export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostScreenProps) {
+/**
+ * E13 to E16, and E21 for an account without a tier: the host wizard and its ends. The entry is decided from what the app already
+ * reads: a running tier (`GET /me/tier`) or a verification tick that has not ended (`GET /verification/me`) opens the form; neither
+ * opens E21 (the Hub has no read that says "may host" before a POST, G-EVENTS-12-2). The Hub's 403 has the last word: a refused send
+ * opens E21 with the Hub's own sentence and price, whatever the app thought.
+ */
+export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now = Date.now }: HostScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const client = useQueryClient();
   const verification = useQuery({ queryKey: verificationKey, queryFn: fetchMyVerification });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
+  // Read again on every visit: a tier bought or ended since the last one decides the entry.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
 
   const [step, setStep] = useState<Step>(0);
   const [draft, setDraft] = useState<HostDraft>(emptyDraft);
@@ -71,7 +88,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [sent, setSent] = useState<EventView | null>(null);
-  const [refused, setRefused] = useState(false);
+  const [refused, setRefused] = useState<HostTierRefusal | null>(null);
   const inFlight = useRef(false);
 
   const set = (patch: Partial<HostDraft>) => {
@@ -97,14 +114,22 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
     return () => sub.remove();
   });
 
-  const loading = verification.isPending || options.isPending;
-  // A refetch that fails after the form is up never replaces it: what the person typed stays on screen.
-  const failed = !verification.data && verification.isError ? verification.error : !options.data && options.isError ? options.error : null;
+  const tickLive = verification.data ? mayHost(verification.data) : false;
+  const loading = verification.isPending || options.isPending || tier.isPending;
+  // A tier read that fails matters only when no live tick already opens the form; a refetch that fails after the form is up never replaces it.
+  const failed =
+    !verification.data && verification.isError
+      ? verification.error
+      : !options.data && options.isError
+        ? options.error
+        : verification.data && !tickLive && !tier.data && tier.isError
+          ? tier.error
+          : null;
 
-  if (sent) return <Submitted name={sent.name} onDone={onDone} />;
+  if (sent) return <Submitted name={sent.name} onDone={onDone} onMyEvents={onMine} />;
 
-  if (!loading && !failed && verification.data && (refused || !mayHost(verification.data))) {
-    return <HostGate pricing={verification.data.pricing} onBack={onBack} />;
+  if (!loading && !failed && verification.data && (refused || !(tickLive || tierRunning(tier.data)))) {
+    return <HostGateScreen refusal={refused} onBack={onBack} onSeeTiers={onSeeTiers} />;
   }
 
   const opts = options.data;
@@ -135,9 +160,11 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
       void client.invalidateQueries({ queryKey: eventsKey });
       setSent(event);
     } catch (error) {
-      if (isTickRefusal(error)) {
-        setRefused(true);
+      if (isHostTierRefusal(error)) {
+        // E21 is the answer, with the Hub's own words; what the app read about the tier and the tick is out of date.
+        setRefused(error as HostTierRefusal);
         void client.invalidateQueries({ queryKey: verificationKey });
+        void client.invalidateQueries({ queryKey: tierKey });
       } else {
         setFailure(isApiError(error) ? error.message : 'Your event was not sent. Try again.');
       }
@@ -158,7 +185,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
   return (
     <View testID="host-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Host an event" onBack={back} backTestID="host-back" />
-      <EventsTabs active="host" onChange={(tab) => (tab === 'discover' ? onDiscover() : undefined)} />
+      <EventsTabs active="host" onChange={(tab) => (tab === 'discover' ? onDiscover() : tab === 'mine' ? onMine?.() : undefined)} />
       {loading ? (
         <HostSkeleton />
       ) : failed || !opts ? (
@@ -169,6 +196,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
           onRetry={() => {
             void verification.refetch();
             void options.refetch();
+            void tier.refetch();
           }}
         />
       ) : (
@@ -215,41 +243,7 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
               <Button testID="host-send" label="Send for review" full loading={sending} onPress={() => void send(opts)} />
             )}
           </View>
-          <ChoiceSheet
-            visible={sheet === 'kind'}
-            title="Kind"
-            items={opts.types}
-            value={draft.kind}
-            onPick={(kind) => {
-              set({ kind });
-              setSheet(null);
-            }}
-            onClose={() => setSheet(null)}
-            testID="host-kind-sheet"
-          />
-          <ChoiceSheet
-            visible={sheet === 'category'}
-            title="Category"
-            items={opts.categories}
-            value={draft.category}
-            onPick={(category) => {
-              set({ category });
-              setSheet(null);
-            }}
-            onClose={() => setSheet(null)}
-            testID="host-category-sheet"
-          />
-          <StartsSheet draft={draft} now={now()} visible={sheet === 'starts'} set={set} close={() => setSheet(null)} />
-          <WhenSheet
-            visible={sheet === 'ends'}
-            title="Ends"
-            times={TIMES}
-            time={draft.endTime}
-            onTime={(endTime) => set({ endTime })}
-            onClose={() => setSheet(null)}
-            footer={<Button testID="host-ends-done" label="Done" full onPress={() => setSheet(null)} />}
-            testID="host-ends-sheet"
-          />
+          <StepSheets sheet={sheet} setSheet={setSheet} draft={draft} options={opts} now={now()} set={set} />
         </>
       )}
     </View>
@@ -257,6 +251,73 @@ export function HostScreen({ onBack, onDiscover, onDone, now = Date.now }: HostS
 }
 
 const TIMES = timeChoices(PICKER.minutes);
+
+/** The four pickers the steps open (kind, category, starts, ends), shared by the wizard and the edit screens. */
+export function StepSheets({
+  sheet,
+  setSheet,
+  draft,
+  options,
+  now,
+  set,
+}: {
+  sheet: Sheet;
+  setSheet: (s: Sheet) => void;
+  draft: HostDraft;
+  options: EventOptions;
+  now: number;
+  set: (p: Partial<HostDraft>) => void;
+}) {
+  // G-443: the end's day, from the start's day and the thirteen after it. The board draws one time; a day picker is built from the
+  // start sheet's own parts (R-29), and leaving it on the first day is the board's event that ends on its start day.
+  const start = draft.day;
+  const endDays = useMemo(
+    () => (start ? Array.from({ length: PICKER.endDays }, (_, i) => addDays(start, i)).map((d) => ({ value: d, label: dayLabel(d, now) })) : undefined),
+    [start, now],
+  );
+  return (
+    <>
+      <ChoiceSheet
+        visible={sheet === 'kind'}
+        title="Kind"
+        items={options.types}
+        value={draft.kind}
+        onPick={(kind) => {
+          set({ kind });
+          setSheet(null);
+        }}
+        onClose={() => setSheet(null)}
+        testID="host-kind-sheet"
+      />
+      <ChoiceSheet
+        visible={sheet === 'category'}
+        title="Category"
+        items={options.categories}
+        value={draft.category}
+        onPick={(category) => {
+          set({ category });
+          setSheet(null);
+        }}
+        onClose={() => setSheet(null)}
+        testID="host-category-sheet"
+      />
+      <StartsSheet draft={draft} now={now} visible={sheet === 'starts'} set={set} close={() => setSheet(null)} />
+      <WhenSheet
+        visible={sheet === 'ends'}
+        title="Ends"
+        days={endDays}
+        day={draft.day ? addDays(draft.day, draft.endDaysAfter ?? 0) : null}
+        onDay={(day) => set({ endDaysAfter: draft.day ? daysBetween(draft.day, day) : 0 })}
+        times={TIMES}
+        time={draft.endTime}
+        onTime={(endTime) => set({ endTime })}
+        onClose={() => setSheet(null)}
+        footer={<Button testID="host-ends-done" label="Done" full onPress={() => setSheet(null)} />}
+        testID="host-ends-sheet"
+      />
+    </>
+  );
+}
 
 function StartsSheet({ draft, now, visible, set, close }: { draft: HostDraft; now: number; visible: boolean; set: (p: Partial<HostDraft>) => void; close: () => void }) {
   const days = useMemo(() => dayChoices(now, PICKER.days).map((d) => ({ value: d, label: dayLabel(d, now) })), [now]);
@@ -277,10 +338,10 @@ function StartsSheet({ draft, now, visible, set, close }: { draft: HostDraft; no
   );
 }
 
-type StepProps = { draft: HostDraft; errors: Errors; options: EventOptions };
+export type StepProps = { draft: HostDraft; errors: Errors; options: EventOptions };
 
 /** E13 · Basics. */
-function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p: Partial<HostDraft>) => void; openKind: () => void }) {
+export function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p: Partial<HostDraft>) => void; openKind: () => void }) {
   const kind = options.types.find((t) => t.value === draft.kind)?.label ?? null;
   return (
     <>
@@ -318,7 +379,7 @@ function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p
 }
 
 /** E14 · When and where. */
-function WhenWhere({
+export function WhenWhere({
   draft,
   errors,
   options,
@@ -353,7 +414,7 @@ function WhenWhere({
         <View style={styles.half}>
           <PickerField
             label="Ends"
-            value={draft.endTime}
+            value={endShown(draft, now)}
             placeholder="Pick a time"
             icon="Clock"
             onPress={() => open('ends')}
@@ -383,52 +444,69 @@ function WhenWhere({
   );
 }
 
-/** E15 · Tickets. */
-function Tickets({
+/** E15 · Tickets. With `locked` (a ticket has sold) every type is read-only and nothing that would be refused is offered: no add, no remove. */
+export function Tickets({
   draft,
   errors,
   options,
   setTicket,
   add,
   remove,
-}: StepProps & { setTicket: (key: string, p: Partial<TicketDraft>) => void; add: () => void; remove: (key: string) => void }) {
+  locked = false,
+}: StepProps & { setTicket: (key: string, p: Partial<TicketDraft>) => void; add: () => void; remove: (key: string) => void; locked?: boolean }) {
   const { colors } = useWawu();
   const rules = options.tickets;
   return (
     <>
       {draft.tickets.map((t, i) => (
         <View key={t.key} testID={`host-ticket-${i}`} style={[styles.card, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-          <TextField
-            testID={`host-ticket-${i}-name`}
-            label="What buyers see"
-            value={t.name}
-            onChangeText={(name) => setTicket(t.key, { name })}
-            error={errors[`${t.key}.name`]}
-            maxLength={rules.nameMaxLength}
-          />
-          <View style={styles.pair}>
-            <View style={styles.half}>
+          {locked ? (
+            <>
+              <LockedField testID={`host-ticket-${i}-name`} label="What buyers see" value={t.name} />
+              <View style={styles.pair}>
+                <View style={styles.half}>
+                  <LockedField testID={`host-ticket-${i}-price`} label="Price" value={priceShown(t.price)} />
+                </View>
+                <View style={styles.half}>
+                  <LockedField testID={`host-ticket-${i}-quantity`} label="How many" value={t.quantity} />
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
               <TextField
-                testID={`host-ticket-${i}-price`}
-                label="Price"
-                keyboardType="number-pad"
-                value={priceShown(t.price)}
-                onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                error={errors[`${t.key}.price`]}
+                testID={`host-ticket-${i}-name`}
+                label="What buyers see"
+                value={t.name}
+                onChangeText={(name) => setTicket(t.key, { name })}
+                error={errors[`${t.key}.name`]}
+                maxLength={rules.nameMaxLength}
               />
-            </View>
-            <View style={styles.half}>
-              <TextField
-                testID={`host-ticket-${i}-quantity`}
-                label="How many"
-                keyboardType="number-pad"
-                value={t.quantity}
-                onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                error={errors[`${t.key}.quantity`]}
-              />
-            </View>
-          </View>
-          {draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}
+              <View style={styles.pair}>
+                <View style={styles.half}>
+                  <TextField
+                    testID={`host-ticket-${i}-price`}
+                    label="Price"
+                    keyboardType="number-pad"
+                    value={priceShown(t.price)}
+                    onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
+                    error={errors[`${t.key}.price`]}
+                  />
+                </View>
+                <View style={styles.half}>
+                  <TextField
+                    testID={`host-ticket-${i}-quantity`}
+                    label="How many"
+                    keyboardType="number-pad"
+                    value={t.quantity}
+                    onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
+                    error={errors[`${t.key}.quantity`]}
+                  />
+                </View>
+              </View>
+            </>
+          )}
+          {!locked && draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}
         </View>
       ))}
       {errors.tickets ? (
@@ -436,10 +514,12 @@ function Tickets({
           {errors.tickets}
         </Text>
       ) : null}
-      {draft.tickets.length < rules.maxTypes ? <AddTicket onPress={add} /> : null}
-      <Text variant="muted" testID="host-ticket-note">
-        {ticketNote(rules)}
-      </Text>
+      {!locked && draft.tickets.length < rules.maxTypes ? <AddTicket onPress={add} /> : null}
+      {locked ? null : (
+        <Text variant="muted" testID="host-ticket-note">
+          {ticketNote(rules)}
+        </Text>
+      )}
     </>
   );
 }

@@ -1,11 +1,12 @@
 import { formatMoney } from '@/components/Money';
-import { APP_NAME } from '@/components/BrandMark';
-import { nairaToKobo } from '@/features/feed/api';
+import { productsMeterCaption } from '@/components/ProductsMeter';
+import { APP_NAME_COPY } from '@/lib/appName';
+import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
-import { PROFILE_LINK_PREFIX } from '@/features/profile-edit/limits';
+import { profileLink } from '@/lib/appLinks';
 import { PLATFORMS, SOCIAL, bareHandle, handleOf, orderOf, type SocialHandles, type SocialPlatform } from '@/features/profile-edit/social';
 
-import type { ContentPiece, Experience, Listing, MyProfile, ProfileFields, ServiceState } from './api';
+import type { ContentPiece, Experience, Listing, MyProfile, MyTier, ProductDraft, ProfileFields, ServiceState } from './api';
 
 /**
  * What the Me tab (M1, M2, M4, M10) decides from the Hub's data, kept apart from the drawing so each rule is
@@ -36,6 +37,24 @@ export function ticksOf(me: Pick<MyProfile, 'verification'>): ('creator' | 'pro'
   if (me.verification?.creator?.verified) out.push('creator');
   if (me.verification?.professional?.verified) out.push('pro');
   return out;
+}
+
+/**
+ * The line under Verification on the Me menu (M7, R-6, R-43): the tick state only, in the words the tick is named by ("Creator tick",
+ * "Professional tick"), and nothing when the person holds none (there is no "ID check in review" at launch).
+ */
+export function tickLine(ticks: readonly ('creator' | 'pro')[]): string | undefined {
+  if (ticks.length === 0) return undefined;
+  return ticks.map((kind) => (kind === 'pro' ? 'Professional tick' : 'Creator tick')).join(' · ');
+}
+
+/**
+ * The line under Your tier on the Me menu (M7, VERIFY-05): the name of the tier the Hub says the person holds (`GET /me/tier`,
+ * `tier.name`). A person with no tier, or one the Hub sent no name for, has nothing to show under the title.
+ */
+export function tierLine(held: Pick<MyTier, 'state' | 'tier'> | null | undefined): string | undefined {
+  if (!held || held.state === 'none') return undefined;
+  return held.tier?.name?.trim() || undefined;
 }
 
 /** One social chip above the counts: the platform, what is written on the chip, and where a tap goes. */
@@ -73,7 +92,9 @@ export function openableLink(url: string): string {
  * The social chips, in the order the person set on M9 (`socialOrder`, then any other filled one in the default
  * order), each with the handle as the chip shows it and the platform page a tap opens.
  */
-export function socialLinksOf(me: MyProfile, fields: Pick<ProfileFields, 'threadsHandle' | 'socialOrder'>): SocialLink[] {
+export type SocialSource = Pick<MyProfile, 'instagramHandle' | 'tiktokHandle' | 'youtubeUrl' | 'xHandle' | 'linkedinUrl' | 'facebookUrl'>;
+
+export function socialLinksOf(me: SocialSource, fields: Pick<ProfileFields, 'threadsHandle' | 'socialOrder'>): SocialLink[] {
   const handles = {} as SocialHandles;
   const stored = {} as Record<SocialPlatform, string>;
   for (const platform of PLATFORMS) {
@@ -99,11 +120,11 @@ export function countsOf(stats: { followerCount: number; followingCount: number;
   ] as const;
 }
 
-/** What the share sheet carries: who this is and their profile link, written the app's way (`wawu/handle`). */
+/** What the share sheet carries: who this is and their profile link, `https://wawuafrica.com/u/<handle>` (LINKS-01, A2). */
 export function profileShareText(name: string, handle: string | null | undefined): string {
-  const who = name ? `${name} on ${APP_NAME}` : APP_NAME;
+  const who = name ? `${name} on ${APP_NAME_COPY}` : APP_NAME_COPY;
   const bare = (handle ?? '').trim().replace(/^@+/, '');
-  return bare ? `${who}\n${PROFILE_LINK_PREFIX}${bare}` : who;
+  return bare ? `${who}\n${profileLink(bare)}` : who;
 }
 
 /** One tile of the Content grid: a free piece shows its views, a paid one its price and a lock, as M1 draws them. */
@@ -118,6 +139,8 @@ export type GridTile = {
   caption: string;
   /** What a screen reader says for the tile. */
   spoken: string;
+  /** A draft (DV2-03): it carries the Draft tag, has no file or views, and shows its title where a piece shows its figure. */
+  draft?: boolean;
 };
 
 export function tileOf(piece: ContentPiece): GridTile {
@@ -132,6 +155,34 @@ export function tileOf(piece: ContentPiece): GridTile {
     locked: paid,
     caption,
     spoken: paid ? `${piece.title}, paid, ${caption}` : `${piece.title}, free, ${views}`,
+  };
+}
+
+/**
+ * A tile on someone else's profile: a paid piece the viewer has bought (the Hub says `fullAssetLocked: false` for that viewer) is drawn
+ * open, with no frost and no lock, never as locked (SWEEP-FLOWS L1). Anything the Hub does not say is open stays locked. The owner's own
+ * grid keeps `tileOf`: the Hub counts the owner as unlocked, and M1 draws their paid pieces frosted with the price.
+ */
+export function visitorTileOf(piece: ContentPiece): GridTile {
+  const tile = tileOf(piece);
+  if (piece.accessType !== 'paid' || piece.fullAssetLocked !== false) return tile;
+  return { ...tile, locked: false, spoken: `${piece.title}, yours, ${tile.caption}` };
+}
+
+/**
+ * A draft as a tile of the grid (M1 draws it first, tagged Draft). A draft has no file, so no picture and no views: the tile shows
+ * the kind of file it will be (an image mark when none is chosen yet) and its title.
+ */
+export function draftTileOf(draft: ProductDraft): GridTile {
+  return {
+    id: draft.id,
+    title: draft.title,
+    still: null,
+    kind: draft.contentType ?? 'image',
+    locked: false,
+    caption: draft.title,
+    spoken: `${draft.title}, draft`,
+    draft: true,
   };
 }
 
@@ -189,13 +240,13 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 /** Lagos is UTC+1 all year (no daylight saving), so a month is read an hour ahead of UTC (wawu-backend CONVENTIONS section 7). */
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 
-/** "On Who Made This since March 2025" (M4, with the app's name, R-37), from the date the profile was made. */
+/** "On Who Made This? since March 2025" (M4, with the app's name, R-37, R-69), from the date the profile was made. */
 export function memberSinceLine(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const at = Date.parse(iso);
   if (Number.isNaN(at)) return null;
   const lagos = new Date(at + LAGOS_OFFSET_MS);
-  return `On ${APP_NAME} since ${MONTHS[lagos.getUTCMonth()]} ${lagos.getUTCFullYear()}`;
+  return `On ${APP_NAME_COPY} since ${MONTHS[lagos.getUTCMonth()]} ${lagos.getUTCFullYear()}`;
 }
 
 /** The year a role started or ended: the Hub sends a month, `YYYY-MM`. */
@@ -222,4 +273,35 @@ export function roleLinesOf(experience: readonly Experience[]): RoleLine[] {
     const parts = [where, yearsOf(role)].filter((part): part is string => Boolean(part));
     return { id: role.id, title: role.title, detail: parts.length ? parts.join(' · ') : null };
   });
+}
+
+/** A tier is running while it is `active` or `ending`; `none` and `ended` have nothing to show beside the name (the Hub's PersonBadgeView rule). */
+function runningTier(tier: MyTier | null | undefined): MyTier | null {
+  return tier && tier.tier && (tier.state === 'active' || tier.state === 'ending') ? tier : null;
+}
+
+/** The badge by the name (M1): the tier's name, and the number a numbered badge (Founding Maker) carries. */
+export type HeaderBadge = { name: string; number: number | null };
+
+/**
+ * The pill beside the name for a person with a running tier, from `GET /me/tier`. A numbered badge's number is not on that answer: it
+ * is on the profile details' `badge` (`GET /users/me/profile-fields`), which the screen already reads. A tier with no badge, or no name,
+ * or no tier at all draws no pill.
+ */
+export function headerBadgeOf(tier: MyTier | null | undefined, personBadge: ProfileFields['badge'] | undefined): HeaderBadge | null {
+  const held = runningTier(tier);
+  const name = held?.tier?.name?.trim();
+  const badge = held?.tier?.badge;
+  if (!name || !badge) return null;
+  const number = badge.numbered && personBadge?.numbered && typeof personBadge.number === 'number' ? personBadge.number : null;
+  return { name, number };
+}
+
+/** The meter under the counts (M1): products used of what the tier allows, with "Verify · ends 26 Nov". Null with no running tier or no allowance. */
+export type ProductsMeterView = { used: number; allowed: number; caption: string | undefined };
+
+export function productsMeterOf(tier: MyTier | null | undefined, now: Date = new Date()): ProductsMeterView | null {
+  const held = runningTier(tier);
+  if (!held || !(held.productsAllowed > 0)) return null;
+  return { used: held.productsUsed, allowed: held.productsAllowed, caption: productsMeterCaption(held.tier?.name, held.activeUntil, now) };
 }

@@ -140,6 +140,17 @@ describe('SC1 · Schools', () => {
     expect(rtl.screen.getAllByText('from')).toHaveLength(2);
   });
 
+  it('a lowest fee of 50 kobo is a price, not "Free": only a fee of nothing is free (SCHOOLS-03 V2-1)', async () => {
+    answers[LIST] = [page([card('s8', 'Kobo Only Academy', { fromPriceKobo: 50, courseCount: 1 }), GREENFIELD])];
+    await open();
+    await rtl.screen.findByText('Kobo Only Academy');
+    const row = rtl.within(rtl.screen.getByTestId('schools-row-s8'));
+    expect(row.queryByText('Free')).toBeNull();
+    expect(row.getByText('from')).toBeTruthy();
+    expect(rtl.screen.getByTestId('schools-price-s8').props.accessibilityLabel).toBe('0 naira 50 kobo');
+    expect(rtl.screen.getByRole('button', { name: 'Kobo Only Academy, Yaba, Lagos · 1 course, from ₦0.50' })).toBeTruthy();
+  });
+
   it('a school whose lowest fee is 0 reads "Free" on its card, with no "from" and no naira sign', async () => {
     answers[LIST] = [page([card('s7', 'Free Lessons Academy', { fromPriceKobo: 0, courseCount: 1 }), GREENFIELD])];
     await open();

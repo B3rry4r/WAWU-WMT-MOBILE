@@ -19,7 +19,7 @@ import { fetchFields, proKeys } from '@/features/pro-listing/api';
 import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
 
 import { fetchDirectoryPage, prosKeys, type DirectoryEntry } from './api';
-import { chosenField, emptyCopy, fieldChips, hasProTick, messagePrice, rowsOf, type FieldChoice } from './model';
+import { chosenField, emptyCopy, fieldChips, fieldLabelOf, hasProTick, messagePrice, rowsOf, type FieldChoice } from './model';
 import { ProsNav, RefreshFailed } from './parts';
 
 /**
@@ -195,7 +195,7 @@ export function ProRow({ entry, onPress }: { entry: DirectoryEntry; onPress: () 
   const { colors } = useWawu();
   const ring = useFocusRing();
   const price = messagePrice(entry);
-  const label = [entry.name, entry.headline, entry.field.label, price !== null ? `${formatMoney(price, { decimals: false })} a message` : null].filter(Boolean).join(', ');
+  const label = [entry.name, entry.headline, fieldLabelOf(entry), price !== null ? `${formatMoney(price, { decimals: false })} a message` : null].filter(Boolean).join(', ');
   return (
     <Pressable
       testID={`pros-row-${entry.id}`}
@@ -224,7 +224,7 @@ export function ProRow({ entry, onPress }: { entry: DirectoryEntry; onPress: () 
           {entry.headline}
         </Text>
         <Text variant="body" tone="accentFg" numberOfLines={1} style={styles.field}>
-          {entry.field.label}
+          {fieldLabelOf(entry)}
         </Text>
       </View>
       {price !== null ? (

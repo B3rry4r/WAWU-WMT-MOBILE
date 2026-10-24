@@ -41,6 +41,12 @@ export type CategoriesScreenProps = {
   /** The category the screen opens on, as the route carried it. Anything unknown opens All. */
   initial?: string | string[];
   onBack: () => void;
+  /** The screen's title: Categories (X2, X3, X13), or Creators on All creators (X4). */
+  title?: string;
+  /** X4 draws a search button at the end of the bar; Categories draws none. */
+  onSearch?: () => void;
+  /** A creator's card opens their profile (X4, X8 to M5, ME-02). The card is not pressed without it. */
+  onOpenCreator?: (wawuId: string) => void;
   /** The chip changed, so the route can carry it (a link or a back step lands on the same category). */
   onChange?: (category: CategoryChoice) => void;
 };
@@ -64,8 +70,8 @@ function GridSkeleton({ testID = 'categories-loading' }: { testID?: string }) {
   );
 }
 
-/** X2, X3 and X13: every creator category as a chip above the creators in it, each with Follow. */
-export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreenProps) {
+/** X2, X3 and X13: every creator category as a chip above the creators in it, each with Follow. With a title and a search button it is X4, All creators. */
+export function CategoriesScreen({ initial, onBack, title = 'Categories', onSearch, onChange, onOpenCreator }: CategoriesScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
@@ -135,10 +141,10 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
         </View>
         <View style={styles.titles}>
           <Text variant="body" numberOfLines={1} accessibilityRole="header" style={styles.title}>
-            Categories
+            {title}
           </Text>
         </View>
-        <View style={styles.side} />
+        <View style={styles.side}>{onSearch ? <IconButton icon="Search" label="Search" onPress={onSearch} testID="categories-search" /> : null}</View>
       </View>
       <View style={styles.chips}>
         {list.length > 0 ? (
@@ -157,6 +163,7 @@ export function CategoriesScreen({ initial, onBack, onChange }: CategoriesScreen
             creator={item}
             width={cell}
             height={creatorCardMetrics.gridHeight}
+            onPress={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
             onToggleFollow={item.wawuId === me.data ? undefined : () => follow.toggle(item)}
           />
         )}

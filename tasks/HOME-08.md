@@ -7,7 +7,7 @@ order: 144
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [HOME-03, UI-02, HOME-13, HOME-12]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V9]
@@ -17,10 +17,12 @@ artboards: [H24, H25]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): HOME-03, HOME-13, HOME-12.
-- **History:** none yet. Reports go to tasks/history/HOME-08.md.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: FIX round for one medium (the locked course's foot covered the comments and the action row); closed in S1b round 2 (mobile e2748258) on the lead's diff read; H24 passed (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S1b.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main. Built: Same branches as HOME-03 (`wmt/S1b`, mobile and backend). H24 and H25 are layouts of the one screen `src/features/content-detail/ContentDetailScreen.tsx`: a free piece (H24) and a course (H25, lessons list, "See all N lessons", the unlock at the foot).
+- **Built:** H24: "Free · 1:50", "Video · 12.4K views · 3 days ago", Tip instead of a price, Follow, Share/Save/Rate, the comments. H25: "12 lessons · 2h 40m" (the lessons' own lengths added up), "Course · 1,280 students" (the Hub's `studentCount`), Free lesson tag and locks from `isFree`, "Unlock course · ₦8,000" (the price; the sheet shows the total), and the wallet line above it.
+- **Not built:** the parent-course row on H24 (G-HOME-08-1: no link from a free piece to its course); playing a free lesson (G-HOME-08-2: no file per lesson); a course total from the Hub (G-HOME-08-3).
+- **Round 2 (17 Oct 2026, finding 1):** the locked course's foot now lies over the screen's bottom and the list is padded by the foot's measured height (plus 16), so the five marks and the comments scroll up clear of it on every screen size (web export 360x640, 390x844 and 430x932: lowest mark or comment 16 above the foot). Not reproduced on the build as verified: scrolled to the end, the list already stopped at the foot's top, and the verifier's "scrolled" picture is the unscrolled page (marks cut at the fold). The change makes it hold whatever the list does when laid out. Tests: `contentDetail.test.tsx` "the foot never sits over the page" (3).
+- **Next:** the batch 14 pull request (the lead). No low is left open.
 
 ## Read first
 
@@ -78,13 +80,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-08.md](history/HOME-08.md).
 
 ## Owner sign-off
 

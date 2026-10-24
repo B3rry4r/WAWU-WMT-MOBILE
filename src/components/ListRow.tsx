@@ -36,20 +36,43 @@ export type ListRowProps = {
   /** An Avatar, IconTile or MediaCard thumbnail. */
   lead?: ReactNode;
   title: string;
+  /** How many lines the title may take before it is cut (default 1; `0` for no limit, so a long name wraps whole). */
+  titleLines?: number;
   /** Sits right of the title, such as a verified Tick. */
   titleAccessory?: ReactNode;
   subtitle?: string;
+  /** How many lines the subtitle may take before it is cut (default 1; `0` for no limit: a licence line or an address is shown whole). */
+  subtitleLines?: number;
+  /** The subtitle can be selected and copied (an address a person may need to use). */
+  subtitleSelectable?: boolean;
+  subtitleTestID?: string;
   /** Replaces the chevron, such as a Money figure or a pill. */
   trailing?: ReactNode;
   /** With no `trailing`, a row that can be opened shows a chevron. */
   onPress?: () => void;
   /** What a screen reader says when it is not just the title and subtitle. */
   accessibilityLabel?: string;
+  /** Room above and below the words, for a row that sits alone in a card taller than the kit's (default: the kit's 12; SHARED-CHANGES SWEEP-VOICE #1). */
+  padV?: number;
   testID?: string;
 };
 
 /** One row of a grouped list: lead, title with a line under it, and a chevron or a figure. */
-export function ListRow({ lead, title, titleAccessory, subtitle, trailing, onPress, accessibilityLabel, testID }: ListRowProps) {
+export function ListRow({
+  lead,
+  title,
+  titleLines = 1,
+  titleAccessory,
+  subtitle,
+  subtitleLines = 1,
+  subtitleSelectable,
+  subtitleTestID,
+  trailing,
+  onPress,
+  accessibilityLabel,
+  padV,
+  testID,
+}: ListRowProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const end = trailing ?? (onPress ? <Icon name="ChevronRight" size={rowMetrics.chevron} color={colors.textMuted} /> : null);
@@ -58,13 +81,13 @@ export function ListRow({ lead, title, titleAccessory, subtitle, trailing, onPre
       {lead}
       <View style={styles.words}>
         <View style={styles.titleLine}>
-          <Text variant="body" numberOfLines={1} style={[font(600), styles.title]}>
+          <Text variant="body" numberOfLines={titleLines || undefined} style={[font(600), styles.title]}>
             {title}
           </Text>
           {titleAccessory}
         </View>
         {subtitle ? (
-          <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.subtitle}>
+          <Text variant="secondary" tone="textMuted" numberOfLines={subtitleLines || undefined} selectable={subtitleSelectable} testID={subtitleTestID} style={styles.subtitle}>
             {subtitle}
           </Text>
         ) : null}
@@ -75,7 +98,7 @@ export function ListRow({ lead, title, titleAccessory, subtitle, trailing, onPre
 
   if (!onPress) {
     return (
-      <View testID={testID} accessible accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')} style={styles.row}>
+      <View testID={testID} accessible accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')} style={[styles.row, padV !== undefined && { paddingVertical: padV }]}>
         {body}
       </View>
     );
@@ -87,7 +110,7 @@ export function ListRow({ lead, title, titleAccessory, subtitle, trailing, onPre
       accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')}
       onPress={onPress}
       {...ring.handlers}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
+      style={({ pressed }) => [styles.row, padV !== undefined && { paddingVertical: padV }, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
     >
       {body}
     </Pressable>

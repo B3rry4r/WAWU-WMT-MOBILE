@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import type { FeedItem } from '../api';
+import { metrics } from '../look';
 import type { VideoSurfaceProps } from '../player';
 
 /*
@@ -66,13 +68,13 @@ const lockedVideo = (over: Partial<FeedItem> = {}) => video({ accessType: 'paid'
 
 const clients: QueryClient[] = [];
 
-async function show(item: FeedItem, active = true) {
+async function show(item: FeedItem, active = true, viewer?: { myId: string; onTip: () => void }) {
   const { VideoPost } = require('../VideoPost') as typeof import('../VideoPost');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   const screen = await rtl.render(
     <QueryClientProvider client={client}>
-      <VideoPost item={item} active={active} width={390} height={754} myId={null} chromeTop={50} />
+      <VideoPost item={item} active={active} width={390} height={754} myId={viewer?.myId ?? null} chromeTop={50} onTip={viewer?.onTip} />
     </QueryClientProvider>,
   );
   // Let the counted view's answer land inside act, so it does not update the post outside one.
@@ -136,5 +138,28 @@ describe('H5: a locked video', () => {
     expect(mockSurface.current?.frosted).toBe(false);
     expect(screen.queryByTestId('preview-ended-a')).toBeNull();
     expect(screen.queryByText('Preview ended')).toBeNull();
+  });
+});
+
+describe('FIX-68 F-1: the scrubber never takes a tap meant for the rail', () => {
+  const flat = (id: string) => StyleSheet.flatten(rtl.screen.getByTestId(id).props.style) ?? {};
+
+  it('the scrub bar ends clear of the rail, so its hit area never covers the Tip button', async () => {
+    await show(video(), true, { myId: 'viewer', onTip: () => undefined });
+    expect(rtl.screen.getByTestId('tip-a')).toBeTruthy();
+    // The foot runs `side` in from the phone's edge; the rail's left edge is `railRight` + its widest item in.
+    const railLeftFromEdge = metrics.railRight + metrics.avatar;
+    const scrubRightFromEdge = metrics.side + Number(flat('scrub-a').marginRight ?? 0);
+    expect(scrubRightFromEdge).toBeGreaterThanOrEqual(railLeftFromEdge);
+  });
+
+  it('the rail sits above the foot, so a button wins a tap even where the two boxes meet', async () => {
+    await show(video(), true, { myId: 'viewer', onTip: () => undefined });
+    expect(Number(flat('rail-a').zIndex)).toBeGreaterThan(Number(flat('foot-a').zIndex));
+  });
+
+  it('the scrub bar still takes a press along its own track', async () => {
+    await show(video());
+    expect(rtl.screen.getByTestId('scrub-a').props.onStartShouldSetResponder()).toBe(true);
   });
 });

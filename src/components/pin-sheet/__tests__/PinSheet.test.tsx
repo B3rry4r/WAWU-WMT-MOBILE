@@ -4,6 +4,7 @@ import { ActivityIndicator, Modal, Platform, Pressable, Text, View } from 'react
 import Svg from 'react-native-svg';
 
 import {
+  PAYMENT_UNANSWERED_LINE,
   PinEntry,
   PinSheet,
   detectBiometric,
@@ -200,6 +201,18 @@ describe('PinSheet', () => {
     await enter(user, '1234');
     await flush();
     expect(screen.getByText("We couldn't check your PIN. Try again.")).toBeOnTheScreen();
+  });
+
+  // SWEEP-APP rows POINTS-05 L3, LEGAL-04 S4 F5, ME-12 S7 F4: a sheet that pays says the payment happens once, not that the PIN was unreadable.
+  it('a sheet that pays shows its own line for an answer that never came, and the default stays for the rest', async () => {
+    const user = press();
+    const onSubmit = jest.fn((_pin: string) => Promise.reject(new Error('network')));
+    await render(<PinSheet {...setup({ onSubmit })} unansweredLine={PAYMENT_UNANSWERED_LINE} />);
+    await enter(user, '1234');
+    await flush();
+    expect(screen.getByText(PAYMENT_UNANSWERED_LINE)).toBeOnTheScreen();
+    expect(screen.queryByText("We couldn't check your PIN. Try again.")).toBeNull();
+    expect(PAYMENT_UNANSWERED_LINE).not.toMatch(/\u2014/);
   });
 
   it('lets a user close the sheet after it was hidden mid-check and opened again', async () => {

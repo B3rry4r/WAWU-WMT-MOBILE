@@ -17,13 +17,14 @@ import { THEME_LABEL, useDevicePrefs } from './devicePrefs';
 import { sentenceOf } from './failure';
 import { ROW_TILE } from './metrics';
 import { maskPhone } from './phone';
-import { SettingsFrame } from './SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { useSignedIn } from './sessionGuard';
 import { signOutOfThisPhone } from './signOutFlow';
-import { switchMetrics } from './Switch';
-import { SwitchRow, switchRowMetrics } from './SwitchRow';
+import { switchMetrics } from '@/components/Switch';
+import { SwitchRow, switchRowMetrics } from '@/components/SwitchRow';
 import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
+import { fetchPointsSettings, pointsSettingsKey, putPointsSettings, type PointsSettings } from '@/features/points/walletUseApi';
 
 /** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
 const BODY_GAP = 12;
@@ -31,8 +32,23 @@ const BODY_GAP = 12;
 const headerMetrics = { padV: 12, padH: 14, avatar: 52, between: 12, name: 16, tick: 15, tickGap: 5, line: 13, lineGap: 2, chevron: 17 } as const;
 /** Line 11, the Theme row: 56 high, a 15 title at 600, its value at 14 with a 17 chevron. */
 const themeRow = { minHeight: 56, title: 15, valueSize: 14, chevron: 17 } as const;
-/** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below. */
-const footMetrics = { padV: 4, signOut: 15 } as const;
+/** Line 11, the foot of the page: Sign out 15 at 600 in the danger colour, 14 between it and the next line, 4 above and below; "Delete account" under it at 13.5 in the muted colour. */
+const footMetrics = { padV: 4, signOut: 15, between: 14, deleteAccount: 13.5 } as const;
+
+/**
+ * Z2's TGIF switch (R-59, DV2-06): it means "send me TGIF each morning" (HOME-16 sends the notice).
+ * The line names no time of day: the notice time is an admin setting on the Hub, and `GET /settings/tgif`
+ * does not serve it, so a time is not written here.
+ */
+export const TGIF_TITLE = 'TGIF each morning';
+export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
+
+/**
+ * G-POINTS-07-1: where "Use wallet" is switched (`GET` and `PUT /me/points/settings`). No board draws the row, so it is the TGIF switch's own
+ * look, in the same group; the line says what the switch does, and nothing is taken from the wallet by switching it.
+ */
+export const USE_WALLET_TITLE = 'Use wallet for AI tools';
+export const USE_WALLET_SUBTITLE = 'Pay for missing points from your wallet';
 
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
@@ -44,10 +60,14 @@ export type SettingsScreenProps = {
   onOpenNotifications: () => void;
   onOpenPrivacy: () => void;
   onOpenPassword: () => void;
+  /** Your tier (VF14, VERIFY-05): the tier the person holds, or the way to get one. The row is drawn only when the route gives a place to go. */
+  onOpenTier?: () => void;
   /** The launch access code screen (JOIN-03): claim the plan an event registration paid for. The row is drawn only when the route gives a place to go. */
   onOpenClaimCode?: () => void;
   /** Wallet and PIN: W35 (WALLET-06). The row is drawn only when the screen has somewhere to open it (the route gives it). */
   onOpenWallet?: () => void;
+  /** Delete account (Z6, SETTINGS-05): the muted line under Sign out. Drawn only when the route gives a place to go. */
+  onOpenDeleteAccount?: () => void;
   onOpenAbout: () => void;
   onOpenTerms: () => void;
   onOpenPolicy: () => void;
@@ -58,8 +78,8 @@ export type SettingsScreenProps = {
 /**
  * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
  * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
- * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account is added by SETTINGS-05,
- * each where Z2 draws it.
+ * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account (SETTINGS-05, Z6) is the muted
+ * line under Sign out, each where Z2 draws it.
  */
 export function SettingsScreen(props: SettingsScreenProps) {
   const signedIn = useSignedIn();
@@ -69,6 +89,12 @@ export function SettingsScreen(props: SettingsScreenProps) {
     read: fetchTgif,
     write: (patch) => patchTgif(patch.show === true),
     valueOf: (settings) => settings.show,
+  });
+  const useWallet = useSwitches<'useWallet', PointsSettings>({
+    queryKey: pointsSettingsKey,
+    read: fetchPointsSettings,
+    write: (patch) => putPointsSettings(patch.useWallet === true),
+    valueOf: (settings) => settings.useWallet,
   });
   const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
   const [choosingTheme, setChoosingTheme] = useState(false);
@@ -98,12 +124,13 @@ export function SettingsScreen(props: SettingsScreenProps) {
   };
 
   return (
-    <SettingsFrame title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
+    <ScreenFrame idPrefix="settings" title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
       <Header me={me.data} loading={me.isPending} onOpen={props.onOpenProfile} onRetry={() => void me.refetch()} />
       <GroupedList testID="settings-account">
         <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
         <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
         <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+        {props.onOpenTier ? <ListRow testID="settings-tier" lead={<IconTile icon="BadgeCheck" size={ROW_TILE} />} title="Your tier" onPress={props.onOpenTier} /> : null}
         {props.onOpenClaimCode ? (
           <ListRow testID="settings-claim-code" lead={<IconTile icon="Ticket" size={ROW_TILE} />} title="Access code" subtitle="Claim a plan you paid for at an event" onPress={props.onOpenClaimCode} />
         ) : null}
@@ -121,25 +148,42 @@ export function SettingsScreen(props: SettingsScreenProps) {
         {tgif.query.data ? (
           <SwitchRow
             testID="settings-tgif"
-            title="TGIF on Home"
-            subtitle="Daily verse and prayer"
+            title={TGIF_TITLE}
+            subtitle={TGIF_SUBTITLE}
             on={tgif.isOn('show')}
             busy={tgif.busy.includes('show')}
             onChange={(next) => void tgif.set('show', next)}
           />
         ) : (
-          <PendingRow testID="settings-tgif-pending" title="TGIF on Home" subtitle="Daily verse and prayer" failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
+          <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
         )}
         <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
+        {useWallet.query.data ? (
+          <SwitchRow
+            testID="settings-use-wallet"
+            title={USE_WALLET_TITLE}
+            subtitle={USE_WALLET_SUBTITLE}
+            on={useWallet.isOn('useWallet')}
+            busy={useWallet.busy.includes('useWallet')}
+            onChange={(next) => void useWallet.set('useWallet', next)}
+          />
+        ) : (
+          <PendingRow testID="settings-use-wallet-pending" title={USE_WALLET_TITLE} subtitle={USE_WALLET_SUBTITLE} failed={useWallet.query.isError} onRetry={() => void useWallet.query.refetch()} />
+        )}
         <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
       </GroupedList>
+      {useWallet.failure ? (
+        <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-use-wallet">
+          {useWallet.failure}
+        </Text>
+      ) : null}
       {tgif.failure ? (
         <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
           {tgif.failure}
         </Text>
       ) : null}
       <GroupedList testID="settings-about">
-        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This" onPress={props.onOpenAbout} />
+        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
         <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
         <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
       </GroupedList>
@@ -161,6 +205,13 @@ export function SettingsScreen(props: SettingsScreenProps) {
             {problem}
           </Text>
         ) : null}
+        {props.onOpenDeleteAccount ? (
+          <Pressable testID="settings-delete-account" accessibilityRole="button" accessibilityLabel="Delete account" hitSlop={space.sm} onPress={props.onOpenDeleteAccount}>
+            <Text variant="secondary" tone="textMuted" style={{ fontSize: footMetrics.deleteAccount, lineHeight: canvasNormalLineHeight(footMetrics.deleteAccount) }}>
+              Delete account
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
       <ThemeSheet
         visible={choosingTheme}
@@ -171,7 +222,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         }}
         onClose={() => setChoosingTheme(false)}
       />
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }
 
@@ -304,5 +355,5 @@ const styles = StyleSheet.create({
   pending: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: switchRowMetrics.minHeight, paddingVertical: switchRowMetrics.padV },
   pendingWords: { flex: 1, minWidth: 0 },
   pendingTitle: { fontSize: switchRowMetrics.title, lineHeight: canvasNormalLineHeight(switchRowMetrics.title) },
-  foot: { alignItems: 'center', gap: space.md, paddingVertical: footMetrics.padV },
+  foot: { alignItems: 'center', gap: footMetrics.between, paddingVertical: footMetrics.padV },
 });

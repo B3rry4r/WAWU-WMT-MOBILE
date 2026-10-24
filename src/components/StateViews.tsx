@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { font, space } from '@/theme';
 
-import { Button } from './Button';
+import { Button, type ButtonVariant } from './Button';
 import type { IconName } from './icon';
 import { IconTile } from './IconTile';
 import { Text } from './Text';
@@ -18,11 +18,12 @@ type StateMessageProps = {
   message: string;
   action?: StateAction;
   actionIcon?: IconName;
+  actionVariant?: ButtonVariant;
   role?: 'alert';
   testID?: string;
 };
 
-function StateMessage({ icon, title, message, action, actionIcon, role, testID }: StateMessageProps) {
+function StateMessage({ icon, title, message, action, actionIcon, actionVariant = 'secondary', role, testID }: StateMessageProps) {
   return (
     <View testID={testID} style={styles.root}>
       <IconTile icon={icon} size={stateMetrics.icon} />
@@ -40,7 +41,7 @@ function StateMessage({ icon, title, message, action, actionIcon, role, testID }
       </Text>
       {action ? (
         <View style={styles.action}>
-          <Button label={action.label} icon={actionIcon} variant="secondary" size="md" onPress={action.onPress} />
+          <Button label={action.label} icon={actionIcon} variant={actionVariant} size="md" onPress={action.onPress} />
         </View>
       ) : null}
     </View>
@@ -53,12 +54,14 @@ export type EmptyStateProps = {
   icon?: IconName;
   /** The one thing a user can do about it ("Browse communities"). */
   action?: StateAction;
+  /** The action's look. Left out, it is the secondary button as before. */
+  actionVariant?: ButtonVariant;
   testID?: string;
 };
 
 /** Nothing here yet, or nothing matched. Not a failure: no alert, no retry. */
-export function EmptyState({ title, message, icon = 'MessageCircle', action, testID }: EmptyStateProps) {
-  return <StateMessage testID={testID} icon={icon} title={title} message={message} action={action} />;
+export function EmptyState({ title, message, icon = 'MessageCircle', action, actionVariant, testID }: EmptyStateProps) {
+  return <StateMessage testID={testID} icon={icon} title={title} message={message} action={action} actionVariant={actionVariant} />;
 }
 
 export type ErrorStateProps = {
@@ -67,11 +70,13 @@ export type ErrorStateProps = {
   /** Runs the request again. Shown as "Try again". */
   onRetry?: () => void;
   icon?: IconName;
+  /** The retry button's look. Left out, it is the secondary button as before. */
+  actionVariant?: ButtonVariant;
   testID?: string;
 };
 
 /** The request failed. A screen reader is told at once, and the user gets a way to try again. */
-export function ErrorState({ title, message, onRetry, icon = 'WifiOff', testID }: ErrorStateProps) {
+export function ErrorState({ title, message, onRetry, icon = 'WifiOff', actionVariant, testID }: ErrorStateProps) {
   return (
     <StateMessage
       testID={testID}
@@ -81,6 +86,7 @@ export function ErrorState({ title, message, onRetry, icon = 'WifiOff', testID }
       message={message}
       action={onRetry ? { label: 'Try again', onPress: onRetry } : undefined}
       actionIcon="RotateCw"
+      actionVariant={actionVariant}
     />
   );
 }

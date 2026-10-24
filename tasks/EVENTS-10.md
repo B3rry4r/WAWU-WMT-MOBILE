@@ -7,7 +7,7 @@ order: 149
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [EVENTS-07, MONEY-18]
 decisions: [R-10, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,10 +17,27 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-07.
-- **History:** none yet. Reports go to tasks/history/EVENTS-10.md.
+As of 17 Oct 2026.
+- **Status:** merging (lead). Built by a Sonnet builder and checked by an independent Sonnet verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-10.md`): verdict merge, nothing medium or worse. Stacked on batch 7 (`wmt/MERGE-7`). Backend `wmt/EVENTS-10` `1b0ea03` on `wmt/MERGE-6` `fbf391f`. Mobile record on `wmt/MERGE-6` `70a7895`. No migration, no fenced file, no contract change (the cancel route keeps its answer's shape).
+- **Ruling carried out (lead, 16 Oct):** a called-off event gives each buyer back EVERYTHING they paid, Fintava's charge included (`refund(..., { returnCharge: true })`: one move of price + charge, the hold's `refundedKobo` stays the price, WAWU carries the charge). This replaces "the ticket price comes back, not Fintava's charge" in Scope below.
+- **What is built** (backend `src/event-ticketing/`):
+  - `wallet/event-call-off-refund.service.ts`: for each `paid` wallet order of a called-off event, asks its hold to refund (the same call as a losing buyer and a host who left, no money path of its own), then marks the order `refunded` and voids its tickets. The order flips once the refund is CHOSEN (the hold can only go back to the buyer from then on); the buyer's order view says "on its way" until the hold reads `refunded`, and the hold sweep finishes a move the provider has not confirmed.
+  - `event-cancel-hooks.ts`: a registry `POST /events/:id/cancel` runs after it voids the tickets. The wallet module registers into it, so `EventTicketingModule` never imports `MoneyModule`. The route's answer keeps its shape: `ordersRefunded` and `refundsNeedingAttention` now include wallet orders. The web's Flutterwave loop is as it was; an event with no wallet order costs one extra query.
+  - Time and connections: refunds go five at a time; each provider call is made by the hold service holding no transaction, connection or lock. The request stops at 15 s; a minute sweep (`event-called-off-refunds`) finishes the rest and anything a crash left, for any called-off event with a `paid` wallet order.
+  - Once: the hold decides one way, once, under its own reference. Two cancels at once, a retry and the sweep together move each order's price once (spec).
+  - No ticket for a called-off event: issuing tickets takes a share lock on the event row, so a cancel that lands a moment before makes the order `failed` and refunds it, and one that lands after voids the new tickets.
+  - My tickets (`GET /events/tickets/held`, `/held/:ticketId`) keeps the void ticket of a refunded order of a called-off event (it would have vanished when the order left `paid`). E11 reads the money from `GET /events/orders/wallet/{orderId}`: `returned.returnedKobo`.
+- **Decisions the task did not name (change if the lead rules otherwise):**
+  - A called-off event is refunded whether or not it has started: the host is still here and chose to call it off. The "started keeps its holds held" rule is the host-erase path's (the payee is gone).
+  - A price already released to the host (the event took place and WALLET-17 paid the share) cannot be refunded by itself: the order stays `paid`, `refundError` says why, the cancel counts it in `refundsNeedingAttention`, and the sweep leaves it. G-793.
+  - A free ticket has no payment: nothing is sent, its ticket is void. An unpaid quote stays `pending` and cannot be paid. A debit still being confirmed is refunded when it lands (the existing delivery path).
+- **Changed test:** `event-wallet-order.contract.spec.ts` expected a cancel to leave the order `paid` and the hold `held` (EVENTS-07's interim state, round 2 finding 5); it now expects the refund.
+- **For EVENTS-08 (mobile screens):** its brief for E25 and E11 says the buyer gets the ticket price back and Fintava's charge is not returned, and bans "everything you paid". That is superseded by the ruling above: the buyer gets back the whole sum (`returnedKobo` is the total). The lead rules the copy.
+- **Not done:** the real Fintava sandbox (no keys; the double only); MONEY-16's nightly ledger check was not run on this stack (the spec checks both ledger rows of each refund).
+- **Open for the lead:** G-793. A buy-then-cancel loop by two colluding accounts costs WAWU the provider's charge each round (the ruling makes WAWU carry it); a cap or a rule is the lead's call.
+- **Open findings:** none medium or worse. Verifier finding 2 (the 15 s budget and what the answer says) is in `tasks/SWEEP-EVENTS.md` (EVENTS-10 F2). Findings 1, 3, 4 and 5 (a lazy request in the slow-provider spec, a double 201 on two cancels at once, a free order made at the instant of the cancel, the per-order charge cap) go to the lead's task EVENTS-13.
+- **Next:** the lead merges it with batch 7; EVENTS-13 takes findings 1, 3, 4 and 5.
+- **History:** the builder report is in tasks/history/EVENTS-10.md.
 
 ## Read first
 
@@ -45,13 +62,9 @@ Refunds from WAWU's merchant wallet, where ticket money waits (R-19): the ticket
 - [ ] Running the refund twice pays each buyer once (V8).
 - [ ] The ledger and Fintava agree after the refunds (MONEY-16).
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EVENTS-10.md](history/EVENTS-10.md).
 
 ## Owner sign-off
 

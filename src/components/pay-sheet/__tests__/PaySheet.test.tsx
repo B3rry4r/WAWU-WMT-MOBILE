@@ -1,10 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+import { Text } from 'react-native';
+
 import { motion } from '@/theme';
 
 import { PaySheet, type PaySheetProps } from '..';
 
-const charge = { label: "Fintava's charge", amountKobo: 2325 };
+const charge = { label: "Bank charge", amountKobo: 2325 };
 
 function props(overrides: Partial<PaySheetProps> = {}): PaySheetProps {
   return {
@@ -28,7 +30,7 @@ describe('PaySheet', () => {
     const p = props();
     await render(<PaySheet {...p} />);
     expect(screen.getByText('₦2,500')).toBeTruthy();
-    expect(screen.getByText("Fintava's charge")).toBeTruthy();
+    expect(screen.getByText("Bank charge")).toBeTruthy();
     expect(screen.getByText('₦23.25')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('₦2,523.25')).toBeTruthy();
@@ -43,6 +45,34 @@ describe('PaySheet', () => {
     expect(screen.getByText('· Video · 18 min')).toBeTruthy();
   });
 
+  it('INBOX-20 L1: a header with no picture is the title alone, with no empty tile before it', async () => {
+    const view = props({ item: { title: 'Pay Ada' }, wallet: { kind: 'open', balanceKobo: 100 } });
+    await render(<PaySheet {...view} />);
+    expect(screen.getByText('Pay Ada')).toBeTruthy();
+    // The head holds the words and nothing before them: one child, the words.
+    expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(1);
+  });
+
+  it('SWEEP-APP-4 row 140: a header with a lead tile (S19, SC5) draws it before the words, and still no empty square', async () => {
+    const view = props({ item: { title: 'Video consultation', subtitle: 'Thu 2 Oct, 12:00 · 30 min', lead: <Text testID="lead-tile">V</Text> } });
+    await render(<PaySheet {...view} />);
+    expect(screen.getByTestId('pay-sheet-lead-row').children).toHaveLength(2);
+    expect(screen.getByTestId('pay-sheet-lead')).toContainElement(screen.getByTestId('lead-tile'));
+    expect(screen.getByText('Video consultation')).toBeTruthy();
+    expect(screen.queryByTestId('pay-sheet-head-image')).toBeNull();
+  });
+
+  it('SWEEP-APP-4 row 140: without a lead the header is as it was, with no lead row', async () => {
+    await render(<PaySheet {...props({ item: { title: 'Pay Ada' } })} />);
+    expect(screen.queryByTestId('pay-sheet-lead-row')).toBeNull();
+  });
+
+  it('a header with a picture still draws it before the title', async () => {
+    await render(<PaySheet {...props({ item: { title: 'A talk', image: 'https://example.test/a.jpg' } })} />);
+    expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(2);
+    expect(screen.getByTestId('pay-sheet-head-image')).toBeTruthy();
+  });
+
   it('draws no tick for a seller who is not verified', async () => {
     await render(<PaySheet {...props({ item: { title: 'A talk', by: 'Ada', subtitle: 'Audio' } })} />);
     expect(screen.queryByTestId('tick-pro')).toBeNull();
@@ -55,7 +85,7 @@ describe('PaySheet', () => {
         {...props({
           amountKobo: 2500000,
           fees: [
-            { label: "Fintava's charge", amountKobo: 4000 },
+            { label: "Bank charge", amountKobo: 4000 },
             { label: "WAWU's fee", amountKobo: 2500 },
           ],
         })}
@@ -119,7 +149,7 @@ describe('PaySheet', () => {
   });
 
   it('shows a ₦0 fee line and a total equal to the price', async () => {
-    await render(<PaySheet {...props({ fees: [{ label: "Fintava's charge", amountKobo: 0 }] })} />);
+    await render(<PaySheet {...props({ fees: [{ label: "Bank charge", amountKobo: 0 }] })} />);
     expect(screen.getByText('₦0')).toBeTruthy();
     expect(screen.getAllByText('₦2,500')).toHaveLength(2); // the price row and the Total row
     expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
@@ -139,11 +169,20 @@ describe('PaySheet', () => {
     expect(p.onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('draws no Add button when the caller has no way to add money, and keeps the notice and Cancel', async () => {
+    const p = props({ wallet: { kind: 'open', balanceKobo: 120000 }, onAddMoney: undefined });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('Not enough in your Naira wallet')).toBeTruthy();
+    expect(screen.getByText('Top up at least')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Add / })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+  });
+
   it('counts a WAWU fee and the charge in both the total and the shortfall', async () => {
     const p = props({
       amountKobo: 2500000,
       fees: [
-        { label: "Fintava's charge", amountKobo: 4000 },
+        { label: "Bank charge", amountKobo: 4000 },
         { label: "WAWU's fee", amountKobo: 2500 },
       ],
       wallet: { kind: 'open', balanceKobo: 2500000 },
@@ -163,7 +202,7 @@ describe('PaySheet', () => {
       { label: 'Account', value: '0123456789' },
     ],
     fees: [
-      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: "Bank charge", amountKobo: 4000 },
       { label: "WAWU's fee", amountKobo: 2500 },
     ],
     notes: [{ label: 'Note', value: 'Rent contribution' }],
@@ -183,6 +222,30 @@ describe('PaySheet', () => {
     expect(p.onPay).toHaveBeenCalledTimes(1);
   });
 
+  it('on a send page the status buttons sit in the foot, as the not-enough state and the canvas draw them: blocked, still confirming and failed', async () => {
+    const states = [
+      { kind: 'blocked', title: 'Over today’s limit', message: 'You can send ₦15,000 more today.' },
+      { kind: 'confirming', line: 'Check Wallet activity for the result.' },
+      { kind: 'failed', message: 'The bank turned this send down.' },
+    ] as const;
+    for (const status of states) {
+      const { unmount } = await render(<PaySheet {...props({ ...send(), status, onRefresh: jest.fn(), onRetry: jest.fn() })} />);
+      const foot = screen.getByTestId('pay-sheet-foot');
+      expect(foot).toHaveStyle({ marginTop: 'auto' });
+      expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
+      for (const button of screen.getAllByRole('button')) expect(foot).toContainElement(button);
+      await unmount();
+    }
+  });
+
+  it('a still-confirming sheet says what the host gives it, and its own sentence when the host gives none', async () => {
+    const { unmount } = await render(<PaySheet {...props({ ...send(), status: { kind: 'confirming', line: 'Check Wallet activity for the result.' } })} />);
+    expect(screen.getByText('Check Wallet activity for the result.')).toBeTruthy();
+    await unmount();
+    await render(<PaySheet {...props({ ...send(), status: { kind: 'confirming' } })} />);
+    expect(screen.getByText(/hasn't been confirmed yet/)).toBeTruthy();
+  });
+
   it('shows every send amount with its kobo faded, as W10 draws it', async () => {
     await render(<PaySheet {...props(send())} />);
     for (const whole of ['₦40.00', '₦25.00', '₦65.00', '₦25,065.00']) expect(screen.getByText(whole)).toBeTruthy();
@@ -194,9 +257,9 @@ describe('PaySheet', () => {
   it('puts the Note after Total on a send, as W10 does', async () => {
     await render(<PaySheet {...props(send())} />);
     const labels = screen
-      .getAllByText(/^(Bank|Account|Fintava's charge|WAWU's fee|Fees|Total|Note)$/)
+      .getAllByText(/^(Bank|Account|Bank charge|WAWU's fee|Fees|Total|Note)$/)
       .map((n) => n.props.children);
-    expect(labels).toEqual(['Bank', 'Account', "Fintava's charge", "WAWU's fee", 'Fees', 'Total', 'Note']);
+    expect(labels).toEqual(['Bank', 'Account', "Bank charge", "WAWU's fee", 'Fees', 'Total', 'Note']);
     expect(screen.queryByText('Price')).toBeNull();
   });
 
@@ -271,5 +334,23 @@ describe('PaySheet', () => {
     expect(p.onRetry).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(p.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a blocked payment as a warning with Cancel only: nothing was tried, so no failed mark and no "didn\'t go through"', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'Over today’s limit', message: 'You can send ₦15,000 more today.' }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    expect(screen.getByText('Over today’s limit')).toBeTruthy();
+    expect(screen.getByText('You can send ₦15,000 more today.')).toBeTruthy();
+    expect(screen.queryByText("Payment didn't go through")).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(p.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Try again on a blocked payment only when the host asks for it', async () => {
+    const p = props({ status: { kind: 'blocked', title: 'We couldn’t work out the total', message: 'Try again.', tryAgain: true }, onRetry: jest.fn() });
+    await render(<PaySheet {...p} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(p.onRetry).toHaveBeenCalledTimes(1);
   });
 });

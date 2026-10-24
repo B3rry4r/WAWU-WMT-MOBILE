@@ -403,6 +403,8 @@ describe('W36 · Change the transaction PIN', () => {
     });
 
     it('N4: the repeat is told the PIN was changed again since: nothing is claimed, the PIN in use is asked for afresh, and the Hub is read again', async () => {
+      // SWEEP-MONEY WALLET-06 T4: the wallet is read again (the money queries are invalidated).
+      const reread = jest.spyOn((require('@/api/query') as typeof import('@/api/query')).queryClient, 'invalidateQueries');
       routes['PUT /money/pin'] = ['offline', refusal(409, 'pin_changed_again', 'Your PIN was changed again since. Check it in Wallet settings.')];
       const props = await boot();
       await type('1234');
@@ -411,6 +413,7 @@ describe('W36 · Change the transaction PIN', () => {
       expect(await rtl.screen.findByText('Your PIN was changed again since. Check it in Wallet settings.')).toBeTruthy();
       expect(props.onChanged).not.toHaveBeenCalled();
       expect(asked('PUT', '/money/pin')).toHaveLength(2);
+      expect(reread).toHaveBeenCalledWith({ queryKey: ['money'] });
       // Back at the PIN in use: the one typed before is no longer the PIN, so it is not sent again behind the person's back.
       expect(rtl.screen.getByTestId('change-pin-current')).toBeTruthy();
       expect(rtl.screen.queryByRole('button', { name: 'Try again' })).toBeNull();

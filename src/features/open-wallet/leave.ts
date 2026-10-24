@@ -1,11 +1,30 @@
-import { useNavigation, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useNavigation, useRouter, type Href } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 
-import { OPEN_WALLET_ACCOUNT_PATH } from './entry';
+import { forgetDraft } from './draft';
+import {
+  OPEN_WALLET_ACCOUNT_PATH,
+  OPEN_WALLET_ADDRESS_PATH,
+  OPEN_WALLET_CHECKING_PATH,
+  OPEN_WALLET_DETAILS_AGAIN,
+  OPEN_WALLET_ID_PATH,
+  OPEN_WALLET_REJECTED_PATH,
+  OPEN_WALLET_SELFIE_PATH,
+} from './entry';
 import { expireKeptCheck } from './keptCheck';
 
-/** The route names of Open your wallet's screens (`src/app`): A26, A5, A6 with A7 and A16, A8, and A9 with A10. */
-const FLOW_ROUTES: readonly string[] = ['open-wallet', 'open-wallet-details', 'open-wallet-selfie', 'open-wallet-account', 'open-wallet-pin'];
+/** The route names of Open your wallet's screens (`src/app`): the BVN step, A5, A6 with A7 and A16, A26 to A29 (KYC-06), A8, and A9 with A10. */
+const FLOW_ROUTES: readonly string[] = [
+  'open-wallet',
+  'open-wallet-details',
+  'open-wallet-selfie',
+  'open-wallet-id',
+  'open-wallet-address',
+  'open-wallet-checking',
+  'open-wallet-rejected',
+  'open-wallet-account',
+  'open-wallet-pin',
+];
 
 type StackState = { routes: readonly { name: string }[] };
 
@@ -18,6 +37,30 @@ export function flowDepth(state: StackState | undefined): { depth: number; below
   let depth = 0;
   for (let i = routes.length - 1; i >= 0 && FLOW_ROUTES.includes(routes[i].name); i -= 1) depth += 1;
   return { depth, below: routes.length > depth };
+}
+
+/**
+ * True when the newest screen on the stack is not one of Open your wallet's: the person has left the flow
+ * (a screen of the app was opened over A26 or A27, or the flow is gone), so what A26 and A27 held goes. Pure, for the tests.
+ */
+export function leavesFlow(state: StackState | undefined): boolean {
+  return flowDepth(state).depth === 0;
+}
+
+/**
+ * Drops what A26 and A27 hold the moment another screen takes the front (route files of A26 and A27 call it):
+ * the screens' own unmount covers the person going back, the browser's back and the flow closing (`useDraftLifetime`);
+ * this covers a screen opened over them that leaves them mounted underneath.
+ */
+export function useDropDraftOnExit(): void {
+  const navigation = useNavigation();
+  useEffect(
+    () =>
+      navigation.addListener('blur', () => {
+        if (leavesFlow(navigation.getState() as StackState | undefined)) forgetDraft();
+      }),
+    [navigation],
+  );
 }
 
 export type OpenWalletWay = {
@@ -35,6 +78,21 @@ export type OpenWalletWay = {
    * and a back from A8 never lands on a step that would ask for them.
    */
   opened: () => void;
+  /** The documents are sent (A27's Submit): A28 takes the place of every step so far. */
+  checking: () => void;
+  /** The review said no (A28): A29 takes the place of every step so far. */
+  rejected: () => void;
+  /** The documents are in and the hosted selfie is all that is left (DV2-05): A6 takes the place of every step so far. */
+  selfie: () => void;
+  /** Upload again (A29): A26 or A27 takes the place of A29. */
+  uploadAgain: (to: 'id' | 'address') => void;
+  /** The documents are needed (A28 found nothing sent, or a correction reopened them): A26. */
+  needsDocuments: () => void;
+  /**
+   * The Hub asks for the details again and nothing holds them (a refusal, an expired opening, a cold start):
+   * the first step, which collects them, takes the place of every screen so far and does not send the person back to A29.
+   */
+  details: () => void;
 };
 
 /**
@@ -47,9 +105,22 @@ export type OpenWalletWay = {
 export function useOpenWalletWay(): OpenWalletWay {
   const router = useRouter();
   const navigation = useNavigation();
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    // Every Open your wallet screen on the stack goes and `path` takes their place, on top of whatever opened the flow:
+    // nothing of the steps before it is wanted again, and a back from it never lands on one that would ask for them.
+    const replaceFlow = (path: Href) => {
+      const { depth, below } = flowDepth(navigation.getState() as StackState | undefined);
+      if (below && depth > 0) {
+        router.dismiss(depth);
+        router.push(path);
+        return;
+      }
+      if (depth > 1) router.dismiss(depth - 1);
+      router.replace(path);
+    };
+    return {
       leave: () => {
+        forgetDraft();
         const { depth, below } = flowDepth(navigation.getState() as StackState | undefined);
         if (below && depth > 0) {
           router.dismiss(depth);
@@ -67,16 +138,18 @@ export function useOpenWalletWay(): OpenWalletWay {
         router.dismissTo('/open-wallet');
       },
       opened: () => {
-        const { depth, below } = flowDepth(navigation.getState() as StackState | undefined);
-        if (below && depth > 0) {
-          router.dismiss(depth);
-          router.push(OPEN_WALLET_ACCOUNT_PATH);
-          return;
-        }
-        if (depth > 1) router.dismiss(depth - 1);
-        router.replace(OPEN_WALLET_ACCOUNT_PATH);
+        forgetDraft();
+        replaceFlow(OPEN_WALLET_ACCOUNT_PATH);
       },
-    }),
-    [router, navigation],
-  );
+      checking: () => replaceFlow(OPEN_WALLET_CHECKING_PATH),
+      rejected: () => replaceFlow(OPEN_WALLET_REJECTED_PATH),
+      selfie: () => replaceFlow(OPEN_WALLET_SELFIE_PATH),
+      uploadAgain: (to) => replaceFlow(to === 'address' ? OPEN_WALLET_ADDRESS_PATH : OPEN_WALLET_ID_PATH),
+      needsDocuments: () => replaceFlow(OPEN_WALLET_ID_PATH),
+      details: () => {
+        forgetDraft();
+        replaceFlow(OPEN_WALLET_DETAILS_AGAIN);
+      },
+    };
+  }, [router, navigation]);
 }

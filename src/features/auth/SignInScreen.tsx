@@ -7,7 +7,7 @@ import { font, layout, space } from '@/theme';
 
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
-import { Banner } from './Banner';
+import { Banner } from '@/components/Banner';
 import { signInFailure, type Failure } from './signInFailure';
 
 /** design/_gen/auth.js line 21: the title is `h1` at 28 px, tracking -0.03em, line 1.15. */

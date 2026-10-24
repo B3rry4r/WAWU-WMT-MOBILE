@@ -3,11 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { useFocusRing } from './focusRing';
-import { blackAt } from './shadow';
 import { Text } from './Text';
 
 /** design/_gen/kit.js `Seg`: 4 round the track, 2 between segments, 14 semi-bold, the selected one lifted by `0 1px 3px` at 8% black in both themes. */
-export const segmentMetrics = { height: 42, trackPad: space.xs, between: 2, font: 14, shadowY: 1, shadowBlur: 3, shadowAlpha: 0.08 } as const;
+export const segmentMetrics = { height: 42, trackPad: space.xs, between: 2, font: 14 } as const;
 
 export type SegmentItem<T extends string> = { value: T; label: string };
 
@@ -17,11 +16,13 @@ export type SegmentedTabsProps<T extends string> = {
   onChange: (value: T) => void;
   /** What the tabs switch between, for a screen reader. */
   label: string;
+  /** Let a segment's words wrap to two lines instead of being cut to one (Flix movies' "Most watched", MV7). Left out, a label is one line as before. */
+  wrapLabels?: boolean;
   testID?: string;
 };
 
-function Segment({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  const { colors } = useWawu();
+function Segment({ label, selected, onPress, lines }: { label: string; selected: boolean; onPress: () => void; lines: number }) {
+  const { colors, shadows } = useWawu();
   const ring = useFocusRing();
   return (
     <Pressable
@@ -41,8 +42,8 @@ function Segment({ label, selected, onPress }: { label: string; selected: boolea
         ring.style,
       ]}
     >
-      {selected ? <View testID="segment-lift" pointerEvents="none" style={styles.lift} /> : null}
-      <Text variant="body" tone={selected ? 'textPrimary' : 'textSecondary'} numberOfLines={1} style={[font(600), styles.label]}>
+      {selected ? <View testID="segment-lift" pointerEvents="none" style={[styles.lift, { boxShadow: shadows.lift }]} /> : null}
+      <Text variant="body" tone={selected ? 'textPrimary' : 'textSecondary'} numberOfLines={lines} style={[font(600), styles.label]}>
         {label}
       </Text>
     </Pressable>
@@ -50,7 +51,7 @@ function Segment({ label, selected, onPress }: { label: string; selected: boolea
 }
 
 /** Two to four views of the same thing, side by side in one track (not the app's bottom tab bar). */
-export function SegmentedTabs<T extends string>({ items, value, onChange, label, testID }: SegmentedTabsProps<T>) {
+export function SegmentedTabs<T extends string>({ items, value, onChange, label, wrapLabels = false, testID }: SegmentedTabsProps<T>) {
   const { colors } = useWawu();
   return (
     <View
@@ -60,7 +61,7 @@ export function SegmentedTabs<T extends string>({ items, value, onChange, label,
       style={[styles.track, { backgroundColor: colors.surfaceSunken }]}
     >
       {items.map((item) => (
-        <Segment key={item.value} label={item.label} selected={item.value === value} onPress={() => onChange(item.value)} />
+        <Segment key={item.value} label={item.label} selected={item.value === value} onPress={() => onChange(item.value)} lines={wrapLabels ? 2 : 1} />
       ))}
     </View>
   );
@@ -86,6 +87,5 @@ const styles = StyleSheet.create({
   lift: {
     ...(StyleSheet.absoluteFill as object),
     borderRadius: radius.chip,
-    boxShadow: [{ offsetX: 0, offsetY: segmentMetrics.shadowY, blurRadius: segmentMetrics.shadowBlur, color: blackAt(segmentMetrics.shadowAlpha) }],
   },
 });

@@ -5,10 +5,11 @@ import { pickedAccountType } from '@/features/auth/accountType';
 import { SignUpScreen } from '@/features/auth/SignUpScreen';
 import { knownSignupChannel, signupChannel, startSignup } from '@/features/auth/signupFlow';
 import { heldSignup } from '@/features/auth/signupStore';
+import { askUsername } from '@/features/auth/identityApi';
 
 /**
  * A3. Only reachable signed out (the root layout's guard). Continue sends the code (texted by default, mailed when WAWU ID's
- * SIGNUP_VERIFY_CHANNEL is `email`, R-39) and opens A4. The line under the heading names that channel, asked of WAWU ID on arrival.
+ * SIGNUP_VERIFY_CHANNEL is `email`, R-39) and opens A4. The line under the heading names that channel, asked of WAWU ID each time A3 comes into focus.
  * A refused Continue keeps the sign-up already waiting for its code; while one is held, a link goes back to it.
  */
 export default function SignUpRoute() {
@@ -33,6 +34,7 @@ export default function SignUpRoute() {
   return (
     <SignUpScreen
       channel={channel}
+      checkUsername={askUsername}
       onContinue={async (values) => {
         try {
           await startSignup(values, pickedAccountType());
@@ -42,6 +44,8 @@ export default function SignUpRoute() {
         }
         router.push('/phone-code');
       }}
+      onOpenTerms={() => router.push('/terms')}
+      onOpenPrivacy={() => router.push('/privacy-policy')}
       onEnterSentCode={held ? () => router.push('/phone-code') : undefined}
       onBack={router.canGoBack() ? () => router.back() : undefined}
     />

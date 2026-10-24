@@ -20,28 +20,46 @@ const serviceMetrics = { between: 10, padV: 14, padH: 16, iconGap: 12, title: 15
 const LISTED = 'Listed as a professional';
 const VIA_PAID = 'via paid messages';
 
-export type ServicesTabProps = { paid: PaidMessages | null; listings: readonly Listing[]; onOpenListings?: () => void };
+export type ServicesTabProps = {
+  paid: PaidMessages | null;
+  listings: readonly Pick<Listing, 'id' | 'headline' | 'category'>[];
+  onOpenListings?: () => void;
+  onOpenPaid?: () => void;
+  /** On somebody else's profile (M5) a listing opens that professional's own page, so the row says which. Takes the place of `onOpenListings`. */
+  onOpenListing?: (listingId: string) => void;
+};
 
 /**
  * M2: the person's paid messages (price and reply window, I21's settings) and each professional listing that is
  * live. Each row tells a visitor what they can buy. A listing row opens P8 with the chevron M2 draws (PROS-03,
- * R-41). The way into I21 from the paid messages row is added by INBOX-12, so that row carries no chevron yet.
+ * R-41). The paid messages row opens I21 (INBOX-12) with the same chevron, and carries none while no way in is given.
  */
-export function ServicesTab({ paid, listings, onOpenListings }: ServicesTabProps) {
+export function ServicesTab({ paid, listings, onOpenListings, onOpenPaid, onOpenListing }: ServicesTabProps) {
   return (
     <View testID="me-services" style={styles.list}>
       {paid ? (
-        <ServiceRow
-          testID="me-service-paid"
-          icon="MessageCircle"
-          tone="accent"
-          title="Paid messages"
-          sub={paid.replyLine ? `${paid.priceLine} · ${paid.replyLine}` : paid.priceLine}
-        />
+        onOpenPaid ? (
+          <ListingRow
+            testID="me-service-paid"
+            icon="MessageCircle"
+            tone="accent"
+            title="Paid messages"
+            sub={paid.replyLine ? `${paid.priceLine} · ${paid.replyLine}` : paid.priceLine}
+            onPress={onOpenPaid}
+          />
+        ) : (
+          <ServiceRow
+            testID="me-service-paid"
+            icon="MessageCircle"
+            tone="accent"
+            title="Paid messages"
+            sub={paid.replyLine ? `${paid.priceLine} · ${paid.replyLine}` : paid.priceLine}
+          />
+        )
       ) : null}
       {listings.map((listing) => (
-        onOpenListings ? (
-          <ListingRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} onPress={onOpenListings} />
+        onOpenListing || onOpenListings ? (
+          <ListingRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} onPress={() => (onOpenListing ? onOpenListing(listing.id) : onOpenListings?.())} />
         ) : (
           <ServiceRow key={listing.id} testID={`me-service-listing-${listing.id}`} icon="BriefcaseBusiness" tone="neutral" title={listingTitle(listing)} sub={paid ? `${LISTED} · ${VIA_PAID}` : LISTED} />
         )

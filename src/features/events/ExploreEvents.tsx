@@ -13,7 +13,7 @@ import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
-import { defaultFilters, featuredKey, fetchEventsPage, fetchFeatured, type EventView } from './api';
+import { defaultFilters, featuredListKey, fetchEventsPage, fetchFeaturedEvents, type EventView } from './api';
 import { SeeAll } from './EventsScreen';
 import { dateLine, placeOf } from './format';
 import { DateBadge } from './parts';
@@ -26,7 +26,7 @@ import { DateBadge } from './parts';
  *   off the right edge; a card is a 120 high picture with the date badge 10 in, then the name 15 semi-bold and the
  *   place 12.5 muted after a 13 pin, padded 11 above, 13 at the sides and below;
  * - X14's 196 high block where the hero will be.
- * The hero's three pager dots are drawn by Explore itself (`HeroDots` in src/features/explore/parts.tsx), not here.
+ * The pager dots are drawn by Explore's slider (`ExploreSlider` in src/features/explore/ExploreSlider.tsx), not here.
  */
 export const exploreEventMetrics = {
   heroHeight: 196,
@@ -63,9 +63,9 @@ const m = exploreEventMetrics;
 
 export const exploreRailKey = ['events', 'explore-rail'] as const;
 
-/** The featured event and the upcoming events, read for Explore (only when it can open them). A failure draws neither and is not retried: Explore's other parts carry on. */
+/** The featured events (the slider's event slides, R-59) and the upcoming events, read for Explore (only when it can open them). A failure draws neither and is not retried: Explore's other parts carry on. */
 export function useExploreEvents(enabled = true) {
-  const featured = useQuery({ queryKey: featuredKey(defaultFilters), queryFn: () => fetchFeatured(defaultFilters), enabled, retry: false }, queryClient);
+  const featured = useQuery({ queryKey: featuredListKey(defaultFilters), queryFn: () => fetchFeaturedEvents(defaultFilters), enabled, retry: false }, queryClient);
   const rail = useQuery({ queryKey: exploreRailKey, queryFn: () => fetchEventsPage(defaultFilters, 1), enabled, retry: false }, queryClient);
   const refetchFeatured = featured.refetch;
   const refetchRail = rail.refetch;
@@ -76,18 +76,31 @@ export function useExploreEvents(enabled = true) {
   // D12: Explore holds X14 until both reads have answered or failed (not retried here, so a failure settles at once),
   // so nothing moves after its first paint.
   const settled = !enabled || (!featured.isPending && !rail.isPending);
-  return { settled, featured: featured.data ?? null, upcoming: (rail.data?.events ?? []).slice(0, m.railLimit), refetch };
+  return { settled, featured: featured.data ?? [], upcoming: (rail.data?.events ?? []).slice(0, m.railLimit), refetch };
 }
 
-/** X1's FEATURED EVENT card: the picture under a dark fade, the kicker, the name, and its day and place. */
-export function ExploreFeaturedEvent({ event, onOpen }: { event: EventView; onOpen: () => void }) {
+/**
+ * X1's FEATURED EVENT card (X16 when it is a slide of the slider): the picture under a dark fade, the kicker, the name, and
+ * its day and place. `reserveRight` keeps the day and place line clear of the slider's dots.
+ */
+export function ExploreFeaturedEvent({
+  event,
+  onOpen,
+  testID = 'explore-featured-event',
+  reserveRight = 0,
+}: {
+  event: EventView;
+  onOpen: () => void;
+  testID?: string;
+  reserveRight?: number;
+}) {
   const { colors, gradients } = useWawu();
   const ring = useFocusRing();
   const ends = gradientEnds(gradients.scrimCard.angle);
   const line = [dateLine(event.startsAt, event), placeOf(event)].filter(Boolean).join(' · ');
   return (
     <Pressable
-      testID="explore-featured-event"
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={`Featured event: ${event.name}, ${line}`}
       onPress={onOpen}
@@ -118,7 +131,7 @@ export function ExploreFeaturedEvent({ event, onOpen }: { event: EventView; onOp
         <Text variant="body" tone="textOnAccent" numberOfLines={2} style={[font(700), styles.heroName]}>
           {event.name}
         </Text>
-        <Text variant="body" tone="textOnAccent" numberOfLines={1} style={styles.heroLine}>
+        <Text variant="body" tone="textOnAccent" numberOfLines={1} style={[styles.heroLine, reserveRight ? { marginRight: reserveRight } : null]}>
           {line}
         </Text>
       </View>

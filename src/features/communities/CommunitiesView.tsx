@@ -6,6 +6,7 @@ import { isApiError } from '@/api/errors';
 import { Button } from '@/components/Button';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
 import { layout, space, useWawu } from '@/theme';
 import { queryClient } from '@/api/query';
 
@@ -14,7 +15,7 @@ import { CommunitiesSkeleton } from './CommunitiesSkeleton';
 import { CommunityRow } from './CommunityRow';
 import { CreditsStrip } from './CreditsStrip';
 import { lastLine, membersShort, rowTime } from './format';
-import { openRoom } from './routes';
+import { openPass, openRoom } from './routes';
 import { useJoinCommunity, useMyCommunities, useSuggestedCommunities } from './useCommunities';
 import { useMe } from './useRoomMessages';
 
@@ -34,8 +35,7 @@ export type CommunitiesViewProps = {
 /**
  * I24: the Communities chip's view of the Inbox. The person's WAWU Credits, the rooms they host or have
  * joined with the last message of each, and open rooms they could join, each on one tap that opens the room.
- * A private room is not listed: asking to join it is INBOX-14's screen, as Buy is INBOX-13's (R-47,
- * docs/WORKFLOW.md section 7), so neither is drawn until its task builds where it leads.
+ * A private room is listed with a lock and Join: it opens I30, where the host's monthly pass is paid for (INBOX-14, R-63).
  */
 export function CommunitiesView({ testID = 'communities-view' }: CommunitiesViewProps) {
   const router = useRouter();
@@ -62,6 +62,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
     wasFocused.current = focused;
   }, [focused, recover]);
   const [pulled, setPulled] = useState(false);
+  const [buying, setBuying] = useState(false);
 
   const joining = join.isPending ? join.variables : undefined;
   const joinFailed = join.isError ? join.variables : undefined;
@@ -141,6 +142,8 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
                 ? lastLine({
                     text: last.text,
                     hasPhoto: Boolean(last.imageUrl),
+                    hasVideo: Boolean(last.videoUrl),
+                    hasVoice: Boolean(last.voiceUrl),
                     mine: me.data !== undefined && last.senderWawuId === me.data.wawuUserId,
                     senderName: last.sender?.name ?? null,
                   })
@@ -160,12 +163,12 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
           testID={`suggested-${room.id}`}
           name={room.name}
           imageUrl={room.imageUrl}
-          locked={false}
+          locked={room.kind === 'private'}
           line={`${membersShort(room.memberCount)} · ${room.kind}`}
           meta={busy ? 'Joining' : failed ? 'Try again' : 'Join'}
           problem={failed}
-          accessibilityLabel={`Join ${room.name}, ${membersShort(room.memberCount)}`}
-          onPress={() => onJoin(room.id)}
+          accessibilityLabel={`Join ${room.name}, ${room.kind === 'private' ? 'private, ' : ''}${membersShort(room.memberCount)}`}
+          onPress={() => (room.kind === 'private' ? openPass(router, room.id) : onJoin(room.id))}
         />
       );
     },
@@ -190,7 +193,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         renderItem={renderEntry}
         ListHeaderComponent={
           <View style={styles.header}>
-            <CreditsStrip />
+            <CreditsStrip onBuy={() => setBuying(true)} />
           </View>
         }
         ListEmptyComponent={
@@ -240,6 +243,7 @@ export function CommunitiesView({ testID = 'communities-view' }: CommunitiesView
         contentContainerStyle={styles.content}
         style={styles.list}
       />
+      {buying ? <BuyCreditsEntry visible onClose={() => setBuying(false)} doneLabel="Done" onAdded={recover} /> : null}
     </View>
   );
 }

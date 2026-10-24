@@ -1,4 +1,5 @@
-import { clockTime, dayKey, dayLabel, firstName, lastLine, membersFull, membersShort, rowTime, wawuCredits } from '../format';
+import type { CostsByKind } from '../api';
+import { chatLine, clockTime, dayKey, dayLabel, firstName, lastLine, membersFull, membersShort, outOfCreditsLine, priceLine, rowTime, wawuCredits } from '../format';
 
 const NOW = new Date('2026-10-07T12:00:00');
 
@@ -71,5 +72,35 @@ describe('the line under a room\'s name', () => {
 
   it('leaves the name out when the sender has none', () => {
     expect(lastLine({ text: 'hi', hasPhoto: false, mine: false, senderName: null })).toBe('hi');
+  });
+});
+
+describe('what each kind of message costs, in the Hub\'s words (R-62)', () => {
+  const costs = (over: Partial<CostsByKind> = {}): CostsByKind => ({ text: 0, photo: 1, video: 3, voice: 3, ...over });
+
+  it('I24\'s line names the kinds the Hub prices and says chat is free', () => {
+    expect(chatLine(costs())).toBe('Chat free · photos, video, voice use credits');
+    expect(chatLine(costs({ photo: 0 }))).toBe('Chat free · video, voice use credits');
+    expect(chatLine(costs({ photo: 0, video: 0, voice: 0 }))).toBe('Chat free');
+  });
+
+  it('I38\'s line gives photos their credits and a video and voice note that cost the same one clause', () => {
+    expect(priceLine(costs())).toBe('Photos 1 credit · video and voice notes 3');
+    expect(priceLine(costs({ photo: 2, video: 5, voice: 4 }))).toBe('Photos 2 credits · video 5 · voice notes 4');
+    expect(priceLine(costs({ photo: 0 }))).toBe('Video and voice notes 3');
+    expect(priceLine(costs({ photo: 0, video: 0, voice: 0 }))).toBeNull();
+  });
+
+  it('I27\'s words list what there is to buy credits for, and nothing when the Hub prices nothing', () => {
+    expect(outOfCreditsLine(costs())).toBe('Text and emoji stay free. Buy credits to send photos, video and voice notes.');
+    expect(outOfCreditsLine(costs({ video: 0, voice: 0 }))).toBe('Text and emoji stay free. Buy credits to send photos.');
+    expect(outOfCreditsLine(costs({ photo: 0, video: 0, voice: 0 }))).toBeNull();
+  });
+
+  it('a room\'s last line names a video or a voice note that has no words', () => {
+    const base = { text: null, hasPhoto: false, mine: false, senderName: 'Tolu Balogun' };
+    expect(lastLine({ ...base, hasVideo: true })).toBe('Tolu: Video');
+    expect(lastLine({ ...base, hasVoice: true })).toBe('Tolu: Voice note');
+    expect(lastLine({ ...base, hasPhoto: true })).toBe('Tolu: Photo');
   });
 });

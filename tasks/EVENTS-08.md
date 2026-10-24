@@ -7,9 +7,9 @@ order: 152
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
-depends_on: [EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, ME-12, UI-02, EVENTS-01]
-decisions: [R-10, R-37]
+status: verifying
+depends_on: [EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, UI-02, EVENTS-01]
+decisions: [R-10, R-37, R-69]
 passes: [V1, V4, V5, V6, V7, V9]
 artboards: [E17, E18, E25, E11]
 ---
@@ -17,10 +17,29 @@ artboards: [E17, E18, E25, E11]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-10, ME-12.
-- **History:** none yet. Reports go to tasks/history/EVENTS-08.md.
+As of 17 Oct 2026.
+- **Status:** merging (lead) (partly built, see Not built). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-08.md`, verdict merge, two lows). Stacked in batch 8 by MERGE-8. Built by a Sonnet builder. Backend `wmt/EVENTS-08` `b10d7f0` on `wmt/MERGE-7` `9c40478` (no migration; one new route, `GET /events/{id}/call-off`). Mobile `wmt/EVENTS-08` on `wmt/MERGE-7` `0aca612c`.
+- **Built (mobile, `src/features/events/organiser/`, routes `src/app/events/mine.tsx`, `dashboard/[id].tsx`, `links/[id].tsx`):**
+  - E17 My events: the Hub's events at every status with its pill (Live, In review, Sent back with the reviewer's note, Removed, and Called off). A live event opens E18, a sent-back one opens E22; In review, Removed and Called off have no screen so the row is not pressable. Sales are `GET /events/mine/sold`; a count the Hub did not send leaves the date alone. The My events tab is on E1 and the wizard (`chrome.tsx`), and E16 has its My events button beside Done.
+  - E18 dashboard: Sold, Checked in, Left, "Yours after our cut" and the share, all from `GET /events/{id}/dashboard` and `/events/options` (no figure typed). Rows drawn: At the door (opens E19), Shared links (`3 links · 22 sales` from `/referrals`).
+  - E25 call-off sheet over E18: the Hub's `buyersToRefund` (`GET /events/{id}/call-off`; with no answer the line says it without a number), a reason (10 to 500 characters, the Hub's check), Cancel and refund everyone, Keep the event. After the cancel the sheet says what the Hub's answer says: refunds sent, `ordersLeftToSweep` still going out, `refundsNeedingAttention` that could not be sent automatically. A second cancel shows the Hub's 409 words. A called-off event shows its reason and no longer offers the cancel.
+  - Shared links: the host's links with the Hub's code and sales, and a field to make another (`POST /events/{id}/referrals`).
+  - E11: a void ticket of a called-off event reads `GET /events/orders/wallet/{orderId}`: "₦7,500 is back in your Naira wallet." (the order's `returnedKobo`, so "₦15,000 for your 2 tickets" for a two-ticket order), "on its way" while the hold has not refunded, "could not be sent automatically" when the host was already paid (G-793). With no answer, or a free order, the plain "not valid" note stands.
+- **Backend:** new route `GET /events/{id}/call-off` answers `{ buyersToRefund }` (distinct buyers of a priced ticket; host only; spec in `event-running.contract.spec.ts`; contract regenerated). It is a route and not a dashboard field because the protected route suite locks the dashboard's answer.
+- **Decisions the task did not name (change if the lead rules otherwise):**
+  - Copy follows the lead's call-off ruling (EVENTS-10: the buyer gets everything back, the provider's charge included; the wallet provider is Nuvion, R-39 and R-45, and nothing here is built for Fintava), so E25 reads "All 64 buyers get their money back." and E11 does not say "ticket price"; BRIEF E25 and E11 (R-10 default) are superseded and not edited here.
+  - A void ticket still shows no QR or code (EVENTS-03's tested behaviour); the board draws a dimmed QR.
+  - E17's "Taken down 20 Sep" has no date source (G-EVENTS-08-2): the row says "Taken down".
+  - `tests`: `host/__tests__/hostScreens.test.tsx` had one assertion that the My events tab is not drawn until this task; it now expects the three tabs.
+- **Not built (filed, not drawn, R-47):** E18's Edit event and Ticket types rows. Two Hub rules decide them (G-833): every `PATCH` sends a live event back to review, and `PUT /tickets` is refused once any tier has sold. They need an owner answer before the wizard's steps are mounted in edit mode.
+- **Gaps and shared changes filed:** BACKEND_GAPS G-EVENTS-08-1, G-EVENTS-08-2, G-832 and G-833; SHARED-CHANGES EVENTS-08 #1 (a `danger` Button variant; `DangerButton` stands in), #2, #3 (contract).
+- **Pictures:** 390 px, light and dark, from the stack's web export, beside the boards (`render_design.py E17 E18 E25 E11`): scratch `events-08-b/pics/` (E17, E18, E25, E25-result, links, E11).
+- **Checks (local, mobile CI is off):** full run 194 suites, 3380 tests passed; typecheck, lint, gates (0 fail, 7 warn: two new PROVISIONAL, G-EVENTS-08-1), baseline and tasks all exit 0; the 21 new tests in `organiser/__tests__`. Backend: typecheck, lint, contract:build; the specs run in GitHub. No Fintava code was touched, run or tested; the stack's Hub ran with the repo default provider setting at a closed port and made no provider call.
+- **Next:** a verifier; the lead rules the two decisions above and G-833.
+
+## Design v2 update (16 Oct 2026)
+
+- Copy only: the organiser dashboard line reads "Yours after our cut ₦408,000 · 85%" (the figure comes from the Hub, never typed; 85/15 stays, R-5). Hosting by tier (E21) is DV2-04 and EVENTS-12.
 
 ## Read first
 
@@ -90,13 +109,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EVENTS-08.md](history/EVENTS-08.md).
 
 ## Owner sign-off
 

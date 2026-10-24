@@ -16,6 +16,7 @@ export default function ProfessionalListingsRoute() {
   return (
     <ListingsScreen
       onBack={leave}
+      onOpenInboxSettings={() => router.push('/paid-message-settings')}
       onApply={(field) => router.push(field ? { pathname: '/professional-apply', params: { field } } : '/professional-apply')}
     />
   );

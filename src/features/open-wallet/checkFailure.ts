@@ -1,7 +1,6 @@
-import { isApiError } from '@/api/errors';
+import { isApiError, retryAfterOf } from '@/api/errors';
 import { identityProblem } from '@/api/walletIdentity';
 
-import { waitOf } from './api/check';
 import { waitPhrase } from './wait';
 
 /** Where a refused BVN check shows on A26. */
@@ -32,7 +31,7 @@ export function checkFailure(error: unknown): CheckFailure {
     case 'wallet_open':
       return { kind: 'end', end: 'wallet_open', message };
     case 'limit': {
-      const wait = waitOf(error);
+      const wait = retryAfterOf(error);
       return { kind: 'banner', tone: 'warning', title: "You've used today's checks", body: wait === null ? message : `Try again ${waitPhrase(wait)}.` };
     }
     case 'unreachable':
@@ -44,7 +43,7 @@ export function checkFailure(error: unknown): CheckFailure {
     return { kind: 'banner', tone: 'danger', title: 'No connection', body: message };
   }
   if (isApiError(error) && error.kind === 'rate_limited') {
-    return { kind: 'banner', tone: 'warning', title: 'Too many tries', body: `Try again ${waitPhrase(waitOf(error))}.` };
+    return { kind: 'banner', tone: 'warning', title: 'Too many tries', body: `Try again ${waitPhrase(retryAfterOf(error))}.` };
   }
   return { kind: 'banner', tone: 'danger', title: "We couldn't check your BVN", body: message };
 }

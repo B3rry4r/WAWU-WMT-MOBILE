@@ -7,22 +7,45 @@ import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
+import { ProductsMeter } from '@/components/ProductsMeter';
+import { CreateEntry } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
+import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
+import { EntryRow } from '@/features/verify/voiceParts';
 import { readFailure } from '@/features/profile-edit/failure';
 import { layout, radius, space, useWawu } from '@/theme';
 
-import { aboutWorksKey, fetchAboutWorks, fetchGridPage, fetchListings, fetchProfileStats, fetchServiceState, gridKey, listingsKey, servicesKey, statsKey, type MyProfile } from './api';
+import {
+  aboutWorksKey,
+  draftsKey,
+  fetchAboutWorks,
+  fetchDrafts,
+  fetchGridPage,
+  fetchListings,
+  fetchMyTier,
+  fetchProfileStats,
+  fetchServiceState,
+  gridKey,
+  listingsKey,
+  servicesKey,
+  statsKey,
+  tierKey,
+  type MyProfile,
+} from './api';
 import { AboutTab } from './AboutTab';
 import { ContentGrid, GridSkeleton } from './ContentGrid';
 import { MeMenuSheet } from './MeMenuSheet';
 import {
   countsOf,
+  draftTileOf,
+  headerBadgeOf,
   liveListings,
   memberSinceLine,
   nameOf,
   openableLink,
   paidMessagesOf,
+  productsMeterOf,
   profileShareText,
   roleLinesOf,
   socialLinksOf,
@@ -31,8 +54,10 @@ import {
   type ProfileTab,
   type SocialLink,
 } from './model';
+import { BioPlayer } from './BioPlayer';
 import { Counts, HeaderSkeleton, NameBlock, ProfileTop, SocialChips, bodyTop } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
+import { RetryNote } from './RetryNote';
 import { useProfileSaved } from './savedNotice';
 import { ServicesTab } from './ServicesTab';
 
@@ -59,8 +84,36 @@ export type MeScreenProps = {
   onOpenWork: (wawuId: string, workId: string) => void;
   /** A listing row on Services opens P8, Your listings (PROS-03, R-41). */
   onOpenListings?: () => void;
+  /** The paid messages row on Services opens I21, Paid messages (INBOX-12, R-41). */
+  onOpenPaid?: () => void;
   /** Settings, the last row of the Menu sheet (Z1): opens Z2. */
   onOpenSettings: () => void;
+  /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
+  onOpenInvite?: () => void;
+  /** My courses (SCHOOLS-08): the menu's row, drawn only when given. */
+  onOpenCourses?: () => void;
+  /** Verification (ME-13): the menu's row, drawn only when given. */
+  onOpenVerification?: () => void;
+  /** The tier pill by the name opens Your tier (VF14, VERIFY-05). */
+  onOpenTier?: () => void;
+  /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
+  onOpenShop?: () => void;
+  /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
+  onCreate?: () => void;
+  /** Creator dashboard (M18, ME-07): the menu's first row for a creator account, drawn only when given. */
+  onOpenDashboard?: () => void;
+  /** My content (M28, ME-07): the menu's second row for a creator account, drawn only when given. */
+  onOpenLibrary?: () => void;
+  /** My purchases (M29, ME-14): a row of the menu, drawn only when given. */
+  onOpenPurchases?: () => void;
+  /** Saved (M30, ME-14): a row of the menu, drawn only when given. */
+  onOpenSaved?: () => void;
+  /** Notifications (M31, ME-14): a row of the menu, drawn only when given. */
+  onOpenNotifications?: () => void;
+  /** The Voice Intro prompt under the name (VF4, VERIFY-02): drawn only when given, for a creator account with no Voice Intro made yet. */
+  onOpenVoiceIntro?: () => void;
+  /** False while another tab or screen is in front: the Bio clip stops and does not start again by itself. The route says; true when left out. */
+  focused?: boolean;
 };
 
 /**
@@ -70,17 +123,26 @@ export type MeScreenProps = {
  *
  * Menu (BRAND-01) raises the Me menu (Z1) and its Settings row opens Z2, so a signed-in person always has a way
  * into Settings, also while the profile is loading or has failed. Not drawn yet (the task that builds
- * where each leads adds it, R-47): QR (WALLET-20, after launch), the tick and the "Get your professional tick" prompt (ME-12), the
+ * where each leads adds it, R-47): QR (WALLET-20, after launch), the
  * Create button (ME-04), and the way into paid message settings (INBOX-12) from Services. The listings
- * (PROS-03) are in.
+ * (PROS-03) are in. There is no "Get your professional tick" card (R-43, DV2-RM: M11 to M14 are replaced by VF5 to VF7); the tick is
+ * only a mark beside the name, from the Hub's `verification`.
+ *
+ * DV2-03: a person with a running tier sees its badge by their name and the "N of M products" meter under the counts (`GET /me/tier`);
+ * a creator's drafts lead the Content grid, each tagged Draft (`GET /product-drafts`). A creator with no Voice Intro made yet sees the
+ * prompt under the name, which opens VF4 (`GET /me/voice-intro`, VERIFY-02). A creator whose Voice Intro is made sees its player under the
+ * bio instead (M1, "Bio" with the "AI voice" tag, R-66, FIX-103), playing `audioUrl` from the same read. A draft tile opens
+ * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenSettings }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe }, cache);
   const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields }, cache);
   const stats = useQuery({ queryKey: statsKey, queryFn: fetchProfileStats }, cache);
+  // The tier and its meter are read apart from the page: a failure here leaves the profile on screen with a note and a retry.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier }, cache);
   const [tab, setTab] = useState<ProfileTab>('content');
   const [notice, setNotice] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,6 +154,8 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
   }, [toast]);
 
   const wawuId = me.data?.wawuUserId ?? null;
+  // Drafts are for creator accounts (the Hub refuses the rest), so only a creator asks.
+  const creator = me.data?.accountType === 'creator';
   // The whole-page error only when there is nothing to show: a refresh that fails (after a save on M8, say) keeps the profile on screen.
   const failed = (me.isError && !me.data) || (fields.isError && !fields.data) || (stats.isError && !stats.data);
   const ready = me.data && fields.data && stats.data ? { profile: me.data, details: fields.data, counts: stats.data } : null;
@@ -123,6 +187,10 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
     getNextPageParam: (last) => last.nextPage ?? undefined,
     enabled: wawuId !== null && tab === 'content',
   }, cache);
+  const drafts = useQuery({ queryKey: draftsKey, queryFn: fetchDrafts, enabled: creator && tab === 'content' }, cache);
+  // The Voice Intro: its player (M1) when the Hub has the audio, else the prompt to make one. A read that fails or is still on its way draws neither.
+  const voiceIntro = useQuery({ queryKey: voiceIntroKey, queryFn: fetchVoiceIntro, enabled: creator }, cache);
+  const bioUrl = creator ? voiceIntro.data?.audioUrl : null;
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (tab !== 'content' || !grid.hasNextPage || grid.isFetchingNextPage) return;
@@ -133,7 +201,14 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
   return (
     <View testID="me-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <ProfileTop coverUrl={me.data?.coverUrl ?? null} top={insets.top} canShare={ready !== null} onShare={() => void share()} onOpenMenu={() => setMenuOpen(true)} />
+        <ProfileTop
+          coverUrl={me.data?.coverUrl ?? null}
+          top={insets.top}
+          canShare={ready !== null}
+          onShare={() => void share()}
+          onOpenInvite={onOpenInvite}
+          onOpenMenu={() => setMenuOpen(true)}
+        />
         <View style={[styles.body, { paddingTop: bodyTop(insets.top) }]}>
           {failed ? (
             <ErrorState
@@ -159,15 +234,22 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
                 name={nameOf(ready.profile)}
                 avatarUrl={ready.profile.avatarUrl}
                 ticks={ticksOf(ready.profile)}
+                badge={headerBadgeOf(tier.data, ready.details.badge)}
                 bio={ready.profile.bio}
                 onEditProfile={onEditProfile}
+                onOpenTier={onOpenTier}
               />
+              {bioUrl && voiceIntro.data ? <BioPlayer url={bioUrl} aiVoice={voiceIntro.data.aiVoice} active={focused} testID="me-bio-player" /> : null}
               {notice ? <Banner tone="warning" title="That did not open" body={notice} testID="me-notice" /> : null}
+              {creator && onOpenVoiceIntro && voiceIntro.data && !voiceIntro.data.audioUrl ? (
+                <EntryRow testID="me-voice-intro" icon="AudioLines" title="Voice Intro" line="Write it, hear it in your voice" onPress={onOpenVoiceIntro} />
+              ) : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf(ready.counts)} />
+              <TierMeter tier={tier} />
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} /> : null}
-              {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} /> : null}
+              {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
               {tab === 'about' ? (
                 <AboutBody
                   me={ready.profile}
@@ -183,6 +265,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           )}
         </View>
       </ScrollView>
+      {onCreate ? <CreateEntry onPress={onCreate} /> : null}
       <Toast message={toast ? 'Profile saved' : null} testID="profile-saved" />
       <MeMenuSheet
         visible={menuOpen}
@@ -191,6 +274,71 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
           setMenuOpen(false);
           onOpenSettings();
         }}
+        ticks={me.data ? ticksOf(me.data) : undefined}
+        onOpenCourses={
+          onOpenCourses
+            ? () => {
+                setMenuOpen(false);
+                onOpenCourses();
+              }
+            : undefined
+        }
+        onOpenTier={
+          onOpenTier
+            ? () => {
+                setMenuOpen(false);
+                onOpenTier();
+              }
+            : undefined
+        }
+        onOpenVerification={
+          onOpenVerification
+            ? () => {
+                setMenuOpen(false);
+                onOpenVerification();
+              }
+            : undefined
+        }
+        onOpenDashboard={
+          creator && onOpenDashboard
+            ? () => {
+                setMenuOpen(false);
+                onOpenDashboard();
+              }
+            : undefined
+        }
+        onOpenLibrary={
+          creator && onOpenLibrary
+            ? () => {
+                setMenuOpen(false);
+                onOpenLibrary();
+              }
+            : undefined
+        }
+        onOpenPurchases={
+          onOpenPurchases
+            ? () => {
+                setMenuOpen(false);
+                onOpenPurchases();
+              }
+            : undefined
+        }
+        onOpenSaved={
+          onOpenSaved
+            ? () => {
+                setMenuOpen(false);
+                onOpenSaved();
+              }
+            : undefined
+        }
+        onOpenNotifications={
+          onOpenNotifications
+            ? () => {
+                setMenuOpen(false);
+                onOpenNotifications();
+              }
+            : undefined
+        }
       />
     </View>
   );
@@ -198,24 +346,49 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
 
 type GridQuery = ReturnType<typeof useInfiniteQuery<Awaited<ReturnType<typeof fetchGridPage>>>>;
 
-function ContentBody({ query }: { query: GridQuery }) {
+type TierQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchMyTier>>>>;
+type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDrafts>>>>;
+
+/**
+ * The products meter under the counts. Loading is a block the meter's size; a person with no running tier sees nothing here
+ * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
+ */
+function TierMeter({ tier }: { tier: TierQuery }) {
+  if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
+  if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
+  const meter = productsMeterOf(tier.data);
+  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
+}
+
+function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void }) {
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
-  if (!query.data) {
+  // A creator's drafts lead the grid. The grid waits for them only when there is nothing else to draw, so a drafts read that never
+  // answers cannot hide the published pieces (SWEEP-APP row DV2-03 L1); a failed read does not hold it either: the note below tells them.
+  const nothingToDraw = !query.data || query.data.pages.every((page) => page.pieces.length === 0);
+  if (!query.data || (creator && drafts.isPending && nothingToDraw)) {
     return (
       <LoadingView label="Loading your content" testID="me-grid-loading">
         <GridSkeleton />
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(tileOf);
+  const draftsFailed = creator && drafts.isError && !drafts.data;
+  const note = draftsFailed ? <RetryNote testID="me-drafts-error" title="Your drafts did not load" retryLabel="Try loading your drafts again" onRetry={() => void drafts.refetch()} /> : null;
+  const tiles = [...(drafts.data ?? []).map(draftTileOf), ...query.data.pages.flatMap((page) => page.pieces).map(tileOf)];
   if (tiles.length === 0) {
-    return <EmptyState testID="me-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What you publish shows here, as people see it on your profile." />;
+    return (
+      <View style={styles.gridWrap}>
+        {note ? <View style={styles.note}>{note}</View> : null}
+        <EmptyState testID="me-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What you publish shows here, as people see it on your profile." />
+      </View>
+    );
   }
   return (
     <View style={styles.gridWrap}>
-      <ContentGrid tiles={tiles} />
+      {note ? <View style={styles.note}>{note}</View> : null}
+      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="me-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />
@@ -224,7 +397,7 @@ function ContentBody({ query }: { query: GridQuery }) {
   );
 }
 
-function ServicesBody({ creator, onOpenListings }: { creator: boolean; onOpenListings?: () => void }) {
+function ServicesBody({ creator, onOpenListings, onOpenPaid }: { creator: boolean; onOpenListings?: () => void; onOpenPaid?: () => void }) {
   const cache = useCache();
   const services = useQuery({ queryKey: servicesKey, queryFn: fetchServiceState, enabled: creator }, cache);
   const listings = useQuery({ queryKey: listingsKey, queryFn: fetchListings }, cache);
@@ -256,7 +429,7 @@ function ServicesBody({ creator, onOpenListings }: { creator: boolean; onOpenLis
   if (!paid && live.length === 0) {
     return <EmptyState testID="me-services-empty" icon="BriefcaseBusiness" title="No services yet" message="Paid messages and professional listings show here once they are on." />;
   }
-  return <ServicesTab paid={paid} listings={live} onOpenListings={onOpenListings} />;
+  return <ServicesTab paid={paid} listings={live} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} />;
 }
 
 type AboutBodyProps = {
@@ -304,4 +477,5 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: layout.gutter, gap: BODY_GAP },
   skeleton: { gap: BODY_GAP },
   gridWrap: { gap: space.xs },
+  note: { marginBottom: space.sm },
 });

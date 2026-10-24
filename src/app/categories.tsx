@@ -15,6 +15,7 @@ export default function CategoriesRoute() {
       initial={category}
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/explore'))}
       onChange={(next) => router.setParams({ category: next })}
+      onOpenCreator={(id) => router.push({ pathname: '/profile/[wawuId]', params: { wawuId: id } })}
     />
   );
 }

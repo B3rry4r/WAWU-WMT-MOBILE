@@ -7,7 +7,7 @@ order: 212
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [POINTS-01, TIER-03, TIER-05]
 decisions: [R-43, R-44]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,9 +17,21 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): TIER-05.
+As of 17 Oct 2026, builder round 1 done (Sonnet builder). Status: merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/POINTS-02.md`, verdict merge, nothing medium or worse; lows go to tasks/SWEEP-MONEY.md). Stacked in batch 7 by MERGE-7f.
+- **Branches:** backend `wmt/POINTS-02` `1cf41b0` on `origin/wmt/TIER-05` `36d2004` (it extends TIER-05, which joins batch 7); mobile `wmt/POINTS-02` on `origin/wmt/TIER-05` `7ca6b9f` (this file, SHARED-CHANGES row POINTS-02 #1, contract and API types regenerated).
+- **Migration:** none. The stamp `20261025010000` is unused: the payment kind is a text column, the lot is the points service's own `pack` lot keyed by the payment, and the order is TIER-05's table.
+- **Built:** `kind: points_pack` with a `packId` on `GET /plans/purchases/quote`, `POST /plans/purchases` and `GET /plans/purchases/{id}`; a new wallet payment kind `points_pack` (WAWU's own sale, not held, target `pack-<id>`), registered beside `tier` and `tier_bump`. New `PointsPackService` (`src/plans/purchases/points-pack.service.ts`) with pure rules and goods beside it. Contract: `docs/contract/PLANS.md` section 9, `WALLET.md` kind table.
+- **Every figure is a setting (R-65):** price (`plan.pack.<id>.price_kobo`), points (`plan.pack.<id>.points`), expiry (`points.expiry_months`) and the Founding percent (`plan.tier.<id>.pack_bonus_pct`) are read from the live plan on each call. No literal in code.
+- **The bonus:** while the person's tier is running (`active` or `ending`) the tier's percent of the pack's points is added, rounded down; an ended or no tier, or a tier with 0, adds none. The price is the pack's. The checkout bump gets no bonus (it is not a pack). Agent defaults, owner may override.
+- **The quote binds price and goods:** the pack, its points, the bonus and the expiry are the payment's terms. Any change since the quote is `409 quote_changed`; the payment keeps them from the claim, so a setting changed while it confirms (or a transfer waits) does not change the lot. A transfer whose terms changed before the money lands is closed, nothing taken.
+- **Once (V8):** `PointsService.grant` (source `pack`, ref = the payment id) is the last write of a database-only transaction (it also fixes the billing currency at a first purchase). The same key twice, ten taps at once and a delivery run four times add one lot. No transaction, connection or lock is held across a provider call.
+- **By transfer:** TIER-05's orders carry the pack (`PURCHASE_PAYMENT_KINDS`); the tier flow's code and `PLAN_PAYMENT_KINDS` are unchanged. A pack order and a plan order wait side by side; a wallet purchase of the same pack closes a waiting order.
+- **TIER-06 round 2, low 2 (done):** `pointsSales` in `plan-setting-rules.ts` counts every pack with the largest bonus of any tier, and `ruleKeys` includes every tier's `pack_bonus_pct`, so a cash rate that fits the pack alone but pays more than a Founding buyer paid is refused (the message names the percent setting).
+- **A test I did not write was changed (lead to approve, as with TIER-03's test in TIER-05):** `plan-settings-round2.contract.spec.ts`, the describe "the cash rate can never be set above what points are sold for (finding 7)": its table of sales now counts the Founding bonus, and two cases use rates that fit it (`70_000` instead of `79_000`; `80_000` with pack L at `530_000` instead of `85_000`, bump `90_000`, L `520_000`). Those expectations were the loophole this rule closes. Nothing else in that file changed.
+- **Checks:** backend CI on `1cf41b0`: see the Builder report. Local: tsc 0, eslint 0 and prettier on the changed files; 4 new specs (37 cases) pass; the existing plan-settings and purchase specs pass; `contract:build` twice identical.
+- **Not done:** capability check 4 (dollar packs) waits for dollar accounts (R-16, NUV-09): no dollar pack is drawn or sold; a dollar-billed person is priced from the file's dollar column and refused `target_not_payable` by the payment service (tested), nothing taken. No screen (PT4 is POINTS-06).
+- **Open findings:** none known.
+- **Next:** the lead merges with batch 7 (stacked here by MERGE-7f; the migration stamps are unchanged, the backend has no migration of its own).
 - **History:** none yet. Reports go to tasks/history/POINTS-02.md.
 
 ## Read first
@@ -50,13 +62,13 @@ From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the ver
 
 ## Capability checks
 
-- [ ] A naira-billed person buys a pack from the wallet: one debit at the config price, one lot of the config points with its expiry.
-- [ ] A Founding Maker gets the pack plus the config bonus, rounded down.
-- [ ] The same request twice debits once and grants once (V8); by transfer it completes when the money lands (TIER-05).
-- [ ] A dollar-billed person sees and pays only the dollar packs.
+- [x] A naira-billed person buys a pack from the wallet: one debit at the config price, one lot of the config points with its expiry.
+- [x] A Founding Maker gets the pack plus the config bonus, rounded down.
+- [x] The same request twice debits once and grants once (V8); by transfer it completes when the money lands (TIER-05).
+- [ ] A dollar-billed person sees and pays only the dollar packs. (Waits for dollar accounts, R-16 and NUV-09: no dollar pack is sold at launch.)
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-02.md](history/POINTS-02.md).
 
 ## Owner sign-off

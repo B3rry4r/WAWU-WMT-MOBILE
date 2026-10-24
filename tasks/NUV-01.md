@@ -62,7 +62,7 @@ boot stop. Nothing a person sees changes under `fintava`.
 - [ ] With a Nuvion-written wallet, opening and ledger row present, a server switched back to `fintava` leaves them alone in the status sweep, opening sweep, balance and ledger consumer (spec over both adapters).
 - [ ] Under `nuvion` a person who resets their PIN gets the code by email, and nothing is sent by SMS.
 - [ ] No spec reaches a host other than the stand-in (the spec fails on any other outbound request).
-- [ ] (key) `GET /bank-codes/NG` through the client returns the sandbox's bank list.
+- [x] (key) `GET /bank-codes/NG` through the client returns the sandbox's bank list. PASSED 23 Oct 2026 (NUV-KEYS): HTTP 200, 539 banks (`scripts/nuvion/bank-codes-check.ts`; docs/nuvion/DEV-RESULTS.md).
 
 ## Builder report
 

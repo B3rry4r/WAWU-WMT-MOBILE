@@ -1,5 +1,6 @@
-import { useIsFocused } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useIsFocused, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,11 +9,14 @@ import { FilterChips } from '@/components/FilterChips';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import { CommunitiesView } from '@/features/communities/CommunitiesView';
+import { PaidQueueView, waitingQuery } from '@/features/paid-answers/PaidQueueView';
+import { fetchIsCreator, proKeys } from '@/features/pro-listing/api';
 import { layout, space, useWawu } from '@/theme';
 
-import type { InboxItem, InboxKind } from './api';
-import { communitiesChip, inboxChips } from './chips';
+import type { InboxFilter, InboxItem } from './api';
+import { communitiesChip, inboxChips, paidChip, withPaidChip } from './chips';
 import { InboxSkeleton } from './InboxSkeleton';
 import { drawableRows, inboxRowRenderers, type InboxRowRenderers } from './rows';
 import { useInbox } from './useInbox';
@@ -30,39 +34,52 @@ const inboxMetrics = {
 export type InboxScreenProps = {
   /** Which kinds of row are drawn, and how. Defaults to the app's (`rows.tsx`). */
   renderers?: InboxRowRenderers;
+  /** The round buttons at the right of the title (kit.js line 24, `Big`), each added by the task that builds the screen it opens. */
+  headerActions?: ReactNode;
 };
 
 /**
  * I1, I35 and I36: the inbox, its chips, and the empty and loading states, with a real error state
  * (the request failed, with a retry). The list reads `GET /inbox` a page at a time, refreshes when the
  * live connection says something changed (see `unread.ts`), and when pulled down. The Communities chip
- * swaps the list for I24 (`CommunitiesView`), which reads its own rooms.
+ * swaps the list for I24 (`CommunitiesView`), which reads its own rooms. A creator's Paid DMs chip (INBOX-18) swaps it for I9
+ * (`PaidQueueView`), the questions waiting on their reply.
  */
-export function InboxScreen({ renderers = inboxRowRenderers }: InboxScreenProps) {
+export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: InboxScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
+  const router = useRouter();
   const [chip, setChip] = useState(inboxChips[0]?.value ?? 'all');
-  const kind = inboxChips.find((c) => c.value === chip)?.kind ?? 'all';
+  // Paid questions are a creator's: only they get the chip, counting what waits on them (the Hub's count, read again each visit).
+  const account = useQuery({ queryKey: proKeys.account, queryFn: fetchIsCreator }, queryClient);
+  const creator = account.data === true;
+  const waiting = useQuery({ ...waitingQuery, enabled: creator }, queryClient);
+  const chips = useMemo(() => withPaidChip(inboxChips, creator, waiting.data?.count), [creator, waiting.data?.count]);
+  // A money request or a send is a row of its own only under the Money chip; in All the chat it is in is the row, with the request as its last words (I1, I20).
+  const kind = chips.find((c) => c.value === chip)?.kind ?? 'all';
 
   return (
     <View testID="inbox-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.title}>
         <Text variant="title">Inbox</Text>
+        {headerActions ? <View style={styles.actions}>{headerActions}</View> : null}
       </View>
       <View style={styles.chips}>
-        <FilterChips items={inboxChips} value={chip} onChange={setChip} label="Filter your inbox" testID="inbox-chips" />
+        <FilterChips items={chips} value={chip} onChange={setChip} label="Filter your inbox" testID="inbox-chips" />
       </View>
       {chip === communitiesChip ? (
         <CommunitiesView />
+      ) : chip === paidChip && creator ? (
+        <PaidQueueView onOpenSettings={() => router.push('/paid-message-settings')} />
       ) : (
-        <InboxList kind={kind} renderers={renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
+        <InboxList kind={kind} renderers={kind === 'all' ? { ...renderers, money_request: undefined, money_move: undefined } : renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
       )}
     </View>
   );
 }
 
 type InboxListProps = {
-  kind: InboxKind | 'all';
+  kind: InboxFilter | 'all';
   renderers: InboxRowRenderers;
   /** The empty state's way on: the Communities chip. */
   onBrowseCommunities: () => void;
@@ -189,7 +206,8 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  title: { paddingTop: inboxMetrics.titleTop, paddingBottom: inboxMetrics.titleBottom, paddingHorizontal: layout.gutter },
+  title: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, paddingTop: inboxMetrics.titleTop, paddingBottom: inboxMetrics.titleBottom, paddingHorizontal: layout.gutter },
+  actions: { flexDirection: 'row', gap: space.sm },
   chips: { paddingBottom: inboxMetrics.chipsBottom },
   list: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: inboxMetrics.listTop, paddingBottom: inboxMetrics.listBottom },

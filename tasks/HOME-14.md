@@ -7,7 +7,7 @@ order: 114
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15, WALLET-16]
 decisions: [R-5, R-10, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,10 +17,18 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): MONEY-16, WALLET-16.
-- **History:** none yet. Reports go to tasks/history/HOME-14.md.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge (lows only) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/B1.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main.
+- **Branches:** backend `wmt/B1` `e41210e` (on `origin/wmt/MERGE-7` `432f017`, with backend `wmt/WALLET-16` `315b69b` merged), mobile `wmt/B1` (records and the contract copy; docs only). No migration.
+- **Round 2 (bundle B3a, 17 Oct 2026):** a tip that cannot be delivered now returns EVERY naira, the payment's charge included (the payer did not cause it; lead ruling, as Q-03 and EVENTS-10); WAWU bears the refund transfer's own charge. Backend backend `wmt/B3a` `242ce9d` (carries `wmt/B1` `e41210e`); the shared `deliver-or-refund.ts` carries it (tips, unlocks, legal fees). The spec's refund assertion was updated to the ruling.
+- **Merged and live:** nothing of this task (it is in `wmt/MERGE-12`, not on main).
+- **What is built:** `src/purchase/wallet/`: the kind `tip` registered with MONEY-17 and three routes: `GET /tips/wallet/quote?creatorWawuId=&amountKobo=` (H26), `POST /tips/wallet` (PIN, `Idempotency-Key`, optional note) and `GET /tips/wallet/{id}`. The amount is the payer's, a whole number of naira from 1 to 10,000,000 (`amount_out_of_range`); not oneself, not a blocked account. Delivery writes the web's own `Purchase` row of type `tip` once per payment (`wallet:<payment id>`), so earnings, admin streams and the notification read it. A tip of 2,000 naira costs 200,000 kobo plus the provider's charge; the creator's 170,000 lands by the WALLET-16 sweep, WAWU keeps 30,000. A tip that cannot be delivered (creator gone or blocked since) is paid back through MONEY-18's refund: the price and the charge return (B3a round 2). Shared helper `deliver-or-refund.ts` (one short transaction under the payment's row lock excludes grant and refund).
+- **Attacks (Nuvion stand-in, the ledger equals the stand-in after each):** 8 tests in `tip-wallet.contract.spec.ts`: the happy path with exact figures, double submit (one key twice, `Idempotent-Replayed`), twice in parallel (one key, and two keys while the provider is pending: one `payment_in_progress`), wrong PIN (403 `pin_incorrect`, then the right PIN pays once), short balance (402 with the shortfall), a lost provider answer then a retry with the same key and the sweep (one transfer, one tip), a refund (price and charge back, no earning), and the refusals (self, stranger, blocked, not whole naira).
+- **Fences touched:** SHARED-CHANGES HOME-14 #1 to #3 (`src/app.module.ts` mounts the module, `contract/openapi.json`, the route inventories in `wallet-gate-coverage.spec.ts` and `money-moving-coverage.spec.ts`; entries added, nothing weakened).
+- **NOT RUN:** any call to Fintava or its sandbox (never used); the 20-parallel latency measurement (the only transaction in the delivery is database-only; no provider call is made inside one); the app (backend task).
+- **Open for the lead:** the web's `/me/earnings` now sees wallet tips (G-704 for tips); a refunded tip leaves a hold row that appears in the payer's holds list as `tip_delivered` (same as TIER-03's refund).
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B1 F2, F4 to F6).
+- **Records:** tasks/history/HOME-14.md.
 
 ## Read first
 
@@ -45,13 +53,9 @@ Tips pay from the wallet (H26-H28) with an optional note, and land in the creato
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-14.md](history/HOME-14.md).
 
 ## Owner sign-off
 

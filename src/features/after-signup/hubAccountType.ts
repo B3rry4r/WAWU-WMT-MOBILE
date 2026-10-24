@@ -1,0 +1,42 @@
+import { api, unwrap } from '@/api/client';
+import { ApiError } from '@/api/errors';
+import { readMine } from '@/features/profile-edit/api';
+
+export type HubAccountType = 'user' | 'creator';
+
+/**
+ * `PUT /users/me/account-type` (AUTH-06): records the account type on the Hub's profile, with no wallet opened (R-6; `PATCH /users/me`
+ * opens one for a creator, BACKEND_GAPS G-34). Idempotent. Resolves with the type the Hub now holds: a creator is never moved back to a
+ * user, so it can differ from `type`. Used by the sign-up gate (the type picked at A2) and by "Become a creator" (P10).
+ */
+export async function setHubAccountType(type: HubAccountType): Promise<HubAccountType> {
+  const body = await unwrap(api.PUT('/api/hub/users/me/account-type', { body: { accountType: type } }));
+  const held = (body as { data?: { accountType?: unknown } | null } | null)?.data?.accountType;
+  if (held !== 'user' && held !== 'creator') throw new ApiError('unknown', 200, 'The account type could not be read. Try again.');
+  return held;
+}
+
+/** The account type a profile read carries: null when the Hub holds none yet; anything else than the two types is unreadable. */
+export function accountTypeOf(me: { accountType?: unknown } | null | undefined): HubAccountType | null {
+  const held = me?.accountType;
+  if (held === null || held === undefined) return null;
+  if (held !== 'user' && held !== 'creator') throw new ApiError('unknown', 200, 'The account type could not be read. Try again.');
+  return held;
+}
+
+/**
+ * The account type the Hub holds for this person (`GET /users/me`): null when it holds none yet. A read the Hub cannot answer throws, so the
+ * caller sends nothing and looks again on the next start. The sign-up gate passes its one shared profile read (SIGNUP-NAMES: the name check
+ * uses the same read); on its own the profile query is asked.
+ */
+export async function readHubAccountType(read: () => Promise<{ accountType?: unknown }> = readMine): Promise<HubAccountType | null> {
+  return accountTypeOf(await read());
+}
+
+/**
+ * Whether the Hub still needs `type` written. It does not when it holds that type already, or holds `creator`: a creator is never moved
+ * back to a user, so writing `user` over one would change nothing (FIX-68 F-4).
+ */
+export function hubNeedsType(held: HubAccountType | null, type: HubAccountType): boolean {
+  return held !== type && held !== 'creator';
+}

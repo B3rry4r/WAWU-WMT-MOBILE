@@ -10,6 +10,8 @@ import type { components } from '@/api/schema.generated';
  * - `GET /users/{wawuId}/featured-works/{workId}`: one work and its owner;
  * - `GET /users/me/featured-works`: the person's own list (M36 reads how many works they have, against the cap);
  * - `POST /users/me/featured-works`: add a work;
+ * - `PATCH /users/me/featured-works/{id}`: change one of their own (FIX-113: M35's Edit);
+ * - `PUT /users/me/featured-works/order`: the order of their works (FIX-113: M34's Reorder);
  * - `DELETE /users/me/featured-works/{id}`: remove one of their own (M35);
  * - `POST /uploads/presign` (folder `profile/work`) for each photo or video.
  *
@@ -24,6 +26,7 @@ export type WorkDetail = components['schemas']['ProfileWorkDetailView'];
 export type WorkOwner = components['schemas']['ProfileWorkOwnerView'];
 export type WorkMedia = components['schemas']['ProfileWorkMediaView'];
 export type NewWork = components['schemas']['CreateProfileWorkDto'];
+export type WorkUpdate = components['schemas']['UpdateProfileWorkDto'];
 
 function unreadable(what: string): ApiError {
   return new ApiError('unknown', 200, `The ${what} could not be read. Try again.`);
@@ -79,6 +82,18 @@ export async function createWork(body: NewWork): Promise<Work> {
 export async function fetchMyWorks(): Promise<Works> {
   const works = dataOf<Works>(await unwrap(api.GET('/api/hub/users/me/featured-works', { params: { query: { limit: 1 } } })), 'works');
   if (!Array.isArray(works.works) || typeof works.count !== 'number' || typeof works.owner !== 'object') throw unreadable('works');
+  return works;
+}
+
+/** Changes one of the signed-in person's own works: only the fields sent (`null` clears an optional one). */
+export async function updateWork(workId: string, body: WorkUpdate): Promise<Work> {
+  return dataOf<Work>(await unwrap(api.PATCH('/api/hub/users/me/featured-works/{id}', { params: { path: { id: workId } }, body })), 'work');
+}
+
+/** Saves the order of the person's own works: every one of them, first to last. The Hub answers 409 when the list is not exactly theirs (a work added or removed elsewhere). */
+export async function reorderWorks(ids: readonly string[]): Promise<Works> {
+  const works = dataOf<Works>(await unwrap(api.PUT('/api/hub/users/me/featured-works/order', { body: { ids: [...ids] } })), 'works');
+  if (!Array.isArray(works.works)) throw unreadable('works');
   return works;
 }
 

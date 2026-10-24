@@ -7,7 +7,7 @@ order: 205
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [NUV-01, WALLET-14]
 decisions: [R-39, R-42, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,13 +17,7 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026, from the lead's log (12 Oct 17:25, nothing newer) and the branch.
-- **Status:** review on its branch (round 2 verified: no blocker, no defect above low). This file on main still says todo.
-- **Branches:** mobile `wmt/NUV-06` c7edcd8. Backend `wmt/NUV-06` d6a303a (migration `20261021170000_*`). No PR is open (the lead, 16 Oct 2026).
-- **Merged and live:** nothing of this task. NUV-05, which it builds on, is live (backend 51b02c5).
-- **Open findings:** blocker 0, high 0, medium 0. Lows F1 to F4 are in tasks/SWEEP-MONEY.md.
-- **Next:** round 2 is ready to merge when the lead resumes it (the lead, 16 Oct 2026). Its migration stamp ties MONEY-16's `20261021170000`: pick the stamp after main's last folder at merge. Then WALLET-09 can start.
-- **Records:** on the branch, `wmt/NUV-06`, in tasks/NUV-06.md there (79 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py NUV-06`; the history goes to tasks/history/NUV-06.md.
+live: send to a bank and pay out with the account name check, backend PR #134 (bac39c4), deploy run 38906156612.
 
 ## Read first
 
@@ -62,10 +56,10 @@ holder's name; WAWU can pay out from its operational account. All of it as Nuvio
 - [ ] A bank send's `outflows.completed`, `.failed`, `.cancelled` and `.refunded` reach the ledger once; a failed send gives the money back once.
 - [ ] A payout from WAWU's operational account to a creator's payout account goes once and reaches the ledger once.
 - [ ] An account saved in the Fintava days is checked by name before its first Nuvion send.
-- [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it.
+- [ ] (key) `POST /counterparty-lookups` works with an API key for a sandbox test account (SANDBOX-FINDINGS item 7); if it does not, the report says so and names what unblocks it. FAILED 23 Oct 2026 (NUV-KEYS): the route works with the key, but our body needs `issuer.code`, our reader needs `details.name`, and a counterparty needs email and address (`src/nuvion/areas/payouts.ts` lines 291-297, 899-914, 1343-1356; a fix task is needed; bank 044 test account ending 0031 resolves on dev).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/NUV-06.md](history/NUV-06.md).
 
 ## Owner sign-off

@@ -39,7 +39,7 @@ const unsent = () => notice("We couldn't send the code", 'Try again in a moment.
 const changed = () => notice('This sign-up needs to start again', 'Go back and tap Continue to get a new code.', 'warning');
 
 /** Seconds the server asked for. A 429 that names none is treated as the shortest wait the screen can show. */
-const waitOf = (retry: number | undefined) => (typeof retry === 'number' && retry > 0 ? retry : 1);
+const waitOf = (retry: number | null | undefined) => (typeof retry === 'number' && retry > 0 ? retry : 1);
 
 /**
  * A refused phone code call (confirm or resend), by its real cause. Codes are

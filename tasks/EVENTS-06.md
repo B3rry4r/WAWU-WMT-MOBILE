@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, EVENTS-01, EVENTS-03, EVENTS-07, UI-02]
 decisions: [R-6, R-8, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
@@ -17,10 +17,24 @@ artboards: [E3, E4, E5, E10]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): EVENTS-07.
-- **History:** none yet. Reports go to tasks/history/EVENTS-06.md.
+As of 17 Oct 2026.
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/EVENTS-06.md`, verdict merge, four lows). Stacked in batch 8 by MERGE-8. Built by a Sonnet builder on mobile `wmt/EVENTS-06`, stacked on `wmt/MERGE-7` (`0aca612c`, backend `9c40478`). No backend, wawu-id or web change: EVENTS-07 and EVENTS-13 (merged in batch 7) already serve everything these screens read. No migration. No PR.
+- **Next:** an independent verifier (V1, V4 to V10). V10 is the real Android phone only (R-24).
+- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; DV2-COPY re-checks this task last.
+- **What is built** (all under `src/features/events/`, routes `src/app/events/[id].tsx` and `src/app/events/orders/[orderId].tsx`):
+  - **E2** draws the quantity steppers, the running total and Get tickets again (the first open tier starts at 1; a tier cannot pass what is left; the whole order cannot pass 50, `roomFor`). Without the route's `buy` handlers the screen draws none of them (R-47).
+  - **Get tickets** makes the order (`POST /events/{id}/orders/wallet`, one `Idempotency-Key` per basket, so a second tap answers the same order). A basket of ₦0 is issued by that call: straight to E5, no wallet, pay sheet or PIN (R-8). No wallet (`wallet_not_open`, `wallet_opening`) goes to Open your wallet (A26). The Hub's own sentence shows for `event_order_limit`.
+  - **E3** is the shared `PaySheet`: Tickets, "Bank charge" (and "WAWU's fee" only when the Hub's quote has one), Total, "Pay from wallet" with the balance in the quote. A quote past its time is asked for again before the PIN. Short of money shows the bank's figures and Add money; over today's limit and an order-limit refusal are blocked states, not failures.
+  - **E4** is the shared `PinSheet`, "Approve ₦X to <event>"; the pay sheet steps aside while it is up. `X-Transaction-Pin` and `Idempotency-Key` go on `POST /events/orders/wallet/pay`.
+  - **Exactly once:** one payment key per quote, sent again unchanged after a wrong PIN or a lost answer (`buyApi.ts`, `useTicketBuy.ts`). The payment is written to the phone before it leaves (`buyIntent.ts`, secure store) and removed when the Hub decides; a first payment the phone cannot keep is not sent. A payment the Hub took but did not answer is found by reading the order, never paid again.
+  - **E10** (the Hub's `processing`) replaces the tiers and the button with "Paid, still confirming. Don't pay again. Your ticket shows up in a minute." and Refresh; the order is read every 4 s and on Refresh, and goes on to E5 when `paid`. Leaving and coming back (or closing the app) shows E10 again, not Get tickets. A `failed` order shows the Hub's reason on E2 and Get tickets works again.
+  - **E5** (`/events/orders/<id>`, replaces E2 so Back never lands on Get tickets): "You're in. Show this at the door.", the QR and code (the Hub's), tier and holder name, Add to calendar (the phone's own new-event screen, `expo-calendar/legacy`, no permission; the browser build opens the calendar's add page), My tickets. Several tickets show one at a time. The same page reads a `processing` order (Refresh) or a `failed` one.
+- **Decisions the task did not name (change if the lead rules otherwise):** (1) the sheet's subtitle reads "1 × Regular · Sun 12 Oct"; (2) an event with no end is held 3 hours in the calendar (`PROVISIONAL(EVENT-CALENDAR-HOLD)`); (3) polling is 4 s (`PROVISIONAL(EVENT-ORDER-POLL)`); (4) the pay sheet hides while the PIN sheet is up; (5) a failed order after payment is a banner on E2, not the sheet's failed state, because Try again could not pay a failed order.
+- **Filed:** BACKEND_GAPS G-EVENTS-06-1 (the 50-ticket cap counts the whole order and is not served; the app keeps a copy), G-EVENTS-06-2 (`EventOrderEventView` has no `format`, so an online event's ticket card says its location). SHARED-CHANGES EVENTS-06 #1 (open: `PaySheet` joins the verb and total with " · ", the artboard draws "Pay ₦7,515.75"; until it lands the button reads "Pay · ₦7,515.75") and #2 (contract already regenerated in MERGE-7e).
+- **Checks:** see the builder report in `tasks/history/EVENTS-06.md`.
+- **Provider (lead note, 17 Oct, R-39, R-45):** nothing built here names or depends on a wallet provider: the app calls the Hub's `/events/orders/wallet` routes, which go through `WALLET_PROVIDER`, and the label is "Bank charge". No Fintava code was built or touched, so the rollback is unaffected. **NOT RUN:** a purchase through a Hub with `WALLET_PROVIDER=nuvion` and the Nuvion stand-in. `scripts/dev/stack.sh` at `wmt/MERGE-7` has no `WALLET_PROVIDER` switch and the Nuvion stand-ins are in-process doubles under `test/nuvion/` that a stack cannot start, so the pictures come from the web export with a browser stand-in answering the Hub's events and wallet routes in the contract's shapes. A verifier with a stack that runs Nuvion should buy a ticket end to end (E3, PIN, E5, and E10 by making the provider answer pending).
+- **NOT RUN:** V10 on a real Android phone (the calendar screen, the biometric key, brightness); the rest of the list is in the builder report in `tasks/history/EVENTS-06.md`.
+- **History:** `tasks/history/EVENTS-06.md`.
 
 ## Read first
 
@@ -93,13 +107,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/EVENTS-06.md](history/EVENTS-06.md).
 
 ## Owner sign-off
 

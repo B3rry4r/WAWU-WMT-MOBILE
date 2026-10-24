@@ -5,12 +5,25 @@ import { UPLOAD_FAILED } from './upload';
 /** Where a refused save belongs: on the handle field, or in the banner above the form. */
 export type SaveFailure = { handle?: string; banner?: string };
 
-/** The Hub answers 400 "handle is already taken" when another account has the handle (`user-profile.service.ts`). */
-const HANDLE_TAKEN = /handle is already taken/i;
+/**
+ * `PUT /users/me/handle` refused the username: taken (409, ignoring case) or not allowed (400: a word kept back, a
+ * name with nothing to read, a bad shape). The message is the Hub's own sentence, shown under the handle field.
+ */
+export class HandleRefused extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'HandleRefused';
+  }
+}
+
+/** What a failed username change becomes: a refusal that belongs on the field, or the error itself for the banner. */
+export function handleFailure(error: unknown): unknown {
+  return isApiError(error) && (error.kind === 'conflict' || error.kind === 'validation') ? new HandleRefused(error.message) : error;
+}
 
 export function saveFailure(error: unknown): SaveFailure {
+  if (error instanceof HandleRefused) return { handle: error.message };
   if (isApiError(error)) {
-    if (HANDLE_TAKEN.test(error.message)) return { handle: 'That handle is taken. Try another.' };
     if (error.kind === 'network' || error.kind === 'validation' || error.status === 200) return { banner: error.message };
   }
   return { banner: 'Your profile did not save. Try again.' };

@@ -132,7 +132,7 @@ export function BillerRow({ name, initials, plan, onPress, testID }: { name: str
       {...ring.handlers}
       style={({ pressed }) => [styles.row, { borderBottomColor: colors.borderHairline }, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
     >
-      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.badge, { backgroundColor: colors.surfaceSunken }]}>
+      <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.badge, { backgroundColor: colors.surfaceSunken }]}>
         <Text variant="body" style={[font(700), styles.badgeWord]}>
           {initials}
         </Text>

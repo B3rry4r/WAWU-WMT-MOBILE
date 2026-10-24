@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Avatar, type AvatarHue } from '@/components/Avatar';
+import { Banner } from '@/components/Banner';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
@@ -12,7 +13,7 @@ import { KeyValueRow } from '@/components/ListRow';
 import { MediaCard } from '@/components/MediaCard';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
-import { canvasNormalLineHeight, layout, motion, radius, space, text, type, useWawu } from '@/theme';
+import { canvasNormalLineHeight, layout, motion, space, text, type, useWawu } from '@/theme';
 import type { ColorToken } from '@/theme';
 
 import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo, type PayFeeLine } from './money';
@@ -29,6 +30,11 @@ export type PayItem = {
   subtitle?: string;
   /** Thumbnail: a URL, or a bundled image (`require(...)`). Left out, the header is the title alone. */
   image?: string | number;
+  /**
+   * A tile the caller draws left of the words when there is no `image`: S19's tinted circle with the call's icon, SC5's school logo
+   * (SHARED-CHANGES LEGAL-04 #1 and SCHOOLS-06 #1, applied in SWEEP-APP-4 as one optional node). Left out, the header is as it was.
+   */
+  lead?: ReactNode;
   /**
    * Send: the recipient's short display name ("Chidinma Okoro"), which the
    * avatar's initials come from, as W10 draws "CO"; `title` stays the full name.
@@ -48,8 +54,8 @@ export type PayDetailRow = { label: string; value: string };
 export type PayWallet =
   | { kind: 'loading' }
   /**
-   * No wallet opened yet (R-6): the sheet shows no balance and no Pay. KYC-05 builds
-   * Open your wallet and adds its entry here (DECISIONS R-27).
+   * No wallet opened yet (R-6): the sheet shows no balance and no Pay. With `onOpenWallet`
+   * the footer offers "Open your wallet" in Pay's place (DECISIONS R-27).
    */
   | { kind: 'none' }
   | { kind: 'open'; balanceKobo: number };
@@ -58,10 +64,18 @@ export type PayWallet =
 export type PayStatus =
   | { kind: 'review' }
   | { kind: 'paying' }
-  /** The debit was sent and its result has not come back yet. */
-  | { kind: 'confirming' }
+  /**
+   * The debit was sent and its result has not come back yet. `line` replaces the sheet's sentence (W10 points to Wallet activity,
+   * the one place the result shows; WALLET-02 round 3). Without it the sentence is the default.
+   */
+  | { kind: 'confirming'; line?: string }
   /** The payment did not complete. `message` says why, when the server said. */
-  | { kind: 'failed'; message?: string };
+  | { kind: 'failed'; message?: string }
+  /**
+   * The payment cannot be tried yet, and nothing was tried (WALLET-02 round 2: over today's limit). Not a failure: no red mark,
+   * no "didn't go through". `title` and `message` say why. Cancel is always offered; Try again only with `tryAgain` and `onRetry`.
+   */
+  | { kind: 'blocked'; title: string; message: string; tryAgain?: boolean };
 
 export type PaySheetProps = {
   /**
@@ -80,7 +94,7 @@ export type PaySheetProps = {
   /** Rows before the fees that are not money (Yours; Bank, Account). */
   details?: readonly PayDetailRow[];
   /**
-   * The fee breakdown from the fee quote, one line per part (Fintava's charge,
+   * The fee breakdown from the fee quote, one line per part (Bank charge,
    * WAWU's fee). Any part can be zero. With two or more parts a "Fees" row
    * adds them up (DECISIONS.md R-23). The Total row always shows.
    */
@@ -101,9 +115,17 @@ export type PaySheetProps = {
    * that returns nothing gets a short guard against a double tap.
    */
   onPay: () => void | Promise<unknown>;
-  /** Top up by at least the shortfall (kobo), then come back. */
-  onAddMoney: (shortfallKobo: number) => void;
+  /**
+   * Top up by at least the shortfall (kobo), then come back. Left out, the "Add" button is not drawn and the notice stands
+   * alone (R-47: a caller whose way to add money is not built does not offer one).
+   */
+  onAddMoney?: (shortfallKobo: number) => void;
   onCancel: () => void;
+  /**
+   * With no wallet yet (`wallet.kind === 'none'`) the footer offers "Open your wallet" in Pay's place and calls this
+   * (KYC-05: the payer passes `useOpenWalletEntry().open`). Left out, the footer draws nothing there.
+   */
+  onOpenWallet?: () => void;
   /** Failed: try the same payment again. */
   onRetry?: () => void;
   /** Still confirming: ask the server again. */
@@ -129,9 +151,11 @@ export function PaySheet(props: PaySheetProps) {
 
   let body: ReactNode;
   if (status.kind === 'confirming') {
-    body = <Confirming {...props} total={total} />;
+    body = <Confirming {...props} total={total} line={status.line} />;
   } else if (status.kind === 'failed') {
     body = <Failed {...props} total={total} message={status.message} />;
+  } else if (status.kind === 'blocked') {
+    body = <Blocked {...props} total={total} title={status.title} message={status.message} tryAgain={status.tryAgain === true} />;
   } else if (wallet.kind === 'open' && short > 0 && status.kind === 'review') {
     body = <NotEnough {...props} total={total} balanceKobo={wallet.balanceKobo} short={short} />;
   } else {
@@ -212,7 +236,9 @@ function Review(p: Inner) {
     </GroupedList>
   );
   const action =
-    p.wallet.kind === 'none' ? null : (
+    p.wallet.kind === 'none' ? (
+      p.onOpenWallet ? <Button label="Open your wallet" onPress={p.onOpenWallet} full /> : null
+    ) : (
       <Button
         label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
@@ -254,24 +280,16 @@ function Review(p: Inner) {
 }
 
 function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
-  const { colors } = useWawu();
   const send = p.variant === 'send';
   const content = (
     <>
       {send ? <SendHeader item={p.item} amountKobo={p.amountKobo} /> : <Header item={p.item} />}
-      <View style={[styles.banner, { backgroundColor: colors.warningTint }]}>
-        <View style={styles.bannerIcon}>
-          <Icon name="Wallet" size={ICON_BANNER} color={colors.warning} strokeWidth={ICON_STROKE.button} />
-        </View>
-        <View style={styles.flex}>
-          <Text variant="kvValue" accessibilityRole="alert" style={styles.bannerTitle}>
-            Not enough in your {p.walletName}
-          </Text>
-          <Text variant="bannerBody">
-            This costs {formatNaira(p.total)}. You have {formatNaira(p.balanceKobo, 'always')}.
-          </Text>
-        </View>
-      </View>
+      <Banner
+        tone="warning"
+        icon="Wallet"
+        title={`Not enough in your ${p.walletName}`}
+        body={`This costs ${formatNaira(p.total)}. You have ${formatNaira(p.balanceKobo, 'always')}.`}
+      />
       <GroupedList>
         <KeyValueRow key="price" label={p.amountLabel ?? (send ? 'Amount' : 'Price')} value={money(p, p.amountKobo)} />
         {feeRows(p)}
@@ -282,7 +300,7 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
   );
   const buttons = (
     <View style={styles.buttons}>
-      <Button label={`Add ${formatNaira(p.short)}`} onPress={() => p.onAddMoney(p.short)} icon="Plus" full />
+      {p.onAddMoney ? <Button label={`Add ${formatNaira(p.short)}`} onPress={() => p.onAddMoney?.(p.short)} icon="Plus" full /> : null}
       <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
     </View>
   );
@@ -302,49 +320,95 @@ function NotEnough(p: Inner & { balanceKobo: number; short: number }) {
   );
 }
 
-function Confirming(p: Inner) {
+/**
+ * A status (still confirming, failed, blocked) and its buttons. A purchase sheet spaces them with the sheet's own gap. W10's page
+ * pins the buttons to the foot, as it does the Send button and the not-enough state (the canvas's W14 and SH14 do the same), so a
+ * message never sits a few points above its button (WALLET-02 round 3).
+ */
+function StatusBody({ send, status, buttons }: { send: boolean; status: ReactNode; buttons: ReactNode }) {
+  if (!send) {
+    return (
+      <>
+        {status}
+        {buttons}
+      </>
+    );
+  }
   return (
     <>
-      <Status
-        icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
-        title="Still confirming"
-        line={`Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
-      />
-      <View style={styles.buttons}>
-        {p.onRefresh && <Button label="Refresh" onPress={p.onRefresh} icon="RotateCcw" full />}
-        {p.onContactSupport && <Button label="Contact support" onPress={p.onContactSupport} variant="secondary" full />}
-        {!p.onRefresh && !p.onContactSupport && <Button label="Close" onPress={p.onCancel} variant="secondary" full />}
+      <View style={styles.sendBody}>{status}</View>
+      <View testID="pay-sheet-foot" style={styles.foot}>
+        {buttons}
       </View>
     </>
+  );
+}
+
+function Confirming(p: Inner & { line?: string }) {
+  return (
+    <StatusBody
+      send={p.variant === 'send'}
+      status={
+        <Status
+          icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
+          title="Still confirming"
+          line={p.line ?? `Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
+        />
+      }
+      buttons={
+        <View style={styles.buttons}>
+          {p.onRefresh && <Button label="Refresh" onPress={p.onRefresh} icon="RotateCcw" full />}
+          {p.onContactSupport && <Button label="Contact support" onPress={p.onContactSupport} variant="secondary" full />}
+          {!p.onRefresh && !p.onContactSupport && <Button label="Close" onPress={p.onCancel} variant="secondary" full />}
+        </View>
+      }
+    />
   );
 }
 
 function Failed(p: Inner & { message?: string }) {
   return (
-    <>
-      <Status
-        icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
-        title="Payment didn't go through"
-        line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
-      />
-      <View style={styles.buttons}>
-        {p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
-        <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
-      </View>
-    </>
+    <StatusBody
+      send={p.variant === 'send'}
+      status={
+        <Status
+          icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
+          title="Payment didn't go through"
+          line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
+        />
+      }
+      buttons={
+        <View style={styles.buttons}>
+          {p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
+          <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
+        </View>
+      }
+    />
   );
 }
 
 /** H14's head: the thumbnail, the title, and "Chidi Eze ✓ · Video · 18 min" (UI-02's `MediaCard`, row layout). */
 function Header({ item }: { item: PayItem }) {
-  return (
+  const led = item.lead !== undefined && item.lead !== null && item.image === undefined;
+  const card = (
     <MediaCard
       title={item.title}
       byline={item.by}
       subtitle={item.subtitle}
       subtitleAccessory={item.verified ? <VerifiedTick kind={item.verified} size={TICK} /> : undefined}
       image={item.image}
+      // Left out, the header is the title alone: no empty tile before it (SWEEP-INBOX INBOX-20 L1, SHARED-CHANGES INBOX-13 #3).
+      bare
+      testID="pay-sheet-head"
     />
+  );
+  if (!led) return card;
+  // S19 and SC5 draw a tile of the caller's before the words (SWEEP-APP-4 row 140).
+  return (
+    <View testID="pay-sheet-lead-row" style={styles.leadRow}>
+      <View testID="pay-sheet-lead">{item.lead}</View>
+      <View style={styles.leadWords}>{card}</View>
+    </View>
   );
 }
 
@@ -414,11 +478,26 @@ function Status({ icon, title, line }: { icon: ReactNode; title: string; line: s
   );
 }
 
+/** A payment that cannot be tried (over a limit): a warning mark, why, and Cancel. Nothing went wrong, so nothing is drawn as failed. */
+function Blocked(p: Inner & { title: string; message: string; tryAgain: boolean }) {
+  return (
+    <StatusBody
+      send={p.variant === 'send'}
+      status={<Status icon={<IconTile icon="CircleAlert" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />} title={p.title} line={p.message} />}
+      buttons={
+        <View style={styles.buttons}>
+          {p.tryAgain && p.onRetry && <Button label="Try again" onPress={p.onRetry} full />}
+          <Button label="Cancel" onPress={p.onCancel} variant="secondary" full />
+        </View>
+      }
+    />
+  );
+}
+
 /** The canvas nudges a few things by 2 px off the 4-point scale. */
 const NUDGE = space.xs / 2;
 const AVATAR = space.s3xl * 2; // 64, wallet.js W10 `Av(..., 64)`
-/** Icon sizes the artboards pass to I(): banner 19 (kit `banner`), check 20 (kit `fromWallet`); the tick 13 (unlockSheet). */
-const ICON_BANNER = space.xl - 1;
+/** Icon sizes the artboards pass to I(): check 20 (kit `fromWallet`); the tick 13 (unlockSheet). */
 const ICON_CHECK = space.xl;
 /** H18's status mark: a 72 tinted disc (its 32 glyph is `IconTile`'s 45%). */
 const STATUS_MARK = layout.tapMin + space.s3xl - space.xs;
@@ -442,6 +521,8 @@ const styles = StyleSheet.create({
   sendBody: { gap: space.lg + NUDGE },
   foot: { marginTop: 'auto', paddingTop: space.md, gap: space.sm + NUDGE },
   flex: { flex: 1, minWidth: 0 },
+  leadRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  leadWords: { flex: 1, minWidth: 0 },
   centre: { textAlign: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   sendHead: { alignItems: 'center', gap: space.xs + NUDGE, paddingTop: space.xs + NUDGE },
@@ -455,16 +536,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.cardPad,
   },
   walletLine: { marginTop: NUDGE },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: space.md,
-    borderRadius: radius.tile,
-    paddingVertical: space.md + NUDGE,
-    paddingHorizontal: space.lg,
-  },
-  bannerIcon: { paddingTop: NUDGE / 2 },
-  bannerTitle: { marginBottom: NUDGE + 1 },
   buttons: { gap: space.sm + NUDGE },
   status: { alignItems: 'center', gap: space.sm + NUDGE },
 });

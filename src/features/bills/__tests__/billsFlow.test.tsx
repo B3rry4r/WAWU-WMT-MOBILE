@@ -9,7 +9,8 @@ import { localDay } from '@/features/tgif/model';
 
 /*
  * The bills screens on the real Expo Router stack and tabs (BILLS-01): a signed-in user walks Wallet or Home to Pay a bill
- * (S2), Electricity (S3), a company and the meter (S4), and Back walks the same way home. The Hub answers through a
+ * (S2), Electricity (S3), a company and the meter (S4), and Back walks the same way. Home and the Wallet tab draw no entry to them
+ * (R-52): the screens stay in the repo, switched off and unreachable from the tabs. The Hub answers through a
  * stand-in `fetch`, installed before the app's modules load: the API client keeps the `fetch` it finds when it is made.
  */
 const mockVault = new Map<string, string>();
@@ -103,34 +104,6 @@ afterAll(async () => {
 });
 
 describe('bills, on the real router', () => {
-  it('a user on the Wallet tab taps a bills tile and lands on Pay a bill (S2), then Electricity, a company and the meter (S4), and Back walks home', async () => {
-    await renderRouter(routes);
-    await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Power' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    expect(await screen.findByText('What are you paying for?')).toBeTruthy();
-
-    await fireEvent.press(await screen.findByRole('button', { name: 'Electricity' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Ikeja Electric, Prepaid' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity/Ikeja_Electric_Bill_Payment'));
-    expect(await screen.findByText('Ikeja Electric · Prepaid')).toBeTruthy();
-
-    await fireEvent.changeText(screen.getByTestId('meter-number'), '0412 3456 789');
-    expect(await screen.findByText('Chidinma Okoro · 14 Admiralty Way', undefined, { timeout: 4000 })).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: '₦5,000' }));
-    expect(screen.getByTestId('amount').props.value).toBe('5,000');
-    expect(asked.filter((a) => a === 'POST /bills/electricity/meter-preview')).toHaveLength(1);
-
-    // Back walks S4, S3, S2 and the Wallet tab again.
-    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/bills/electricity'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/wallet'));
-  });
-
   it('the X on "Paying for" on S4 goes to S2, and the X on "Biller" goes to S3', async () => {
     await renderRouter(routes, { initialUrl: '/bills' });
     await fireEvent.press(await screen.findByRole('button', { name: 'Electricity' }));
@@ -145,16 +118,15 @@ describe('bills, on the real router', () => {
     expect(await screen.findByText('What are you paying for?')).toBeTruthy();
   });
 
-  it('a user on Home taps Pay bills, or Bills on the balance card, and lands on Pay a bill (S2)', async () => {
+  it('a user on Home finds no Pay bills tile and no Bills button on the balance card: no entry leads to Pay a bill (R-52, DV2-RM)', async () => {
     await renderRouter(routes);
-    await fireEvent.press(await screen.findByRole('button', { name: 'Pay bills' }));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    expect(await screen.findByText('What are you paying for?')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(pathname()).toBe('/'));
-    await fireEvent.press(await screen.findByTestId('today-action-bills'));
-    await waitFor(() => expect(pathname()).toBe('/bills'));
-    expect(await screen.findByText('What are you paying for?')).toBeTruthy();
+    expect(await screen.findByTestId('today-balance')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay bills' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
+    expect(screen.queryByTestId('today-action-bills')).toBeNull();
+    expect(screen.queryByTestId('today-service-bills')).toBeNull();
+    expect(pathname()).toBe('/');
   });
 
   it('the bills screens open straight from their address, as a person who follows a link does', async () => {

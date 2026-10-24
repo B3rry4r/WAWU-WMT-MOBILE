@@ -3,8 +3,8 @@ id: WEBPAY-01
 title: Open your wallet on the website
 owner: YOU
 area: WEB
-order: 216
-priority: launch
+order: 347
+priority: after-launch
 repo: wawuafrica
 type: web-port
 status: todo
@@ -18,6 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026, from the branch. Web work is paused (R-49); the lead's log does not mention this task.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
 - **Status:** building on its branches (verifier: one blocker). This file on main still says todo.
 - **Branches:** mobile `wmt/WEBPAY-01` c49b7b1. Web `wmt/WEBPAY-01` 511095f.
 - **Merged and live:** nothing of this task.

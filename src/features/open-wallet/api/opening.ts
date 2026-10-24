@@ -1,17 +1,15 @@
-import { api } from '@/api/client';
-import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
+import { api, unwrap } from '@/api/client';
+import { ApiError, isApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { SELFIE_MAX_BASE64_CHARS, type SelfieMatch } from '@/api/walletIdentity';
 
-import { retryAfterOf } from './check';
 import type { WalletState } from './account';
 
 /**
  * The two charged or bank-facing calls after A26 (KYC-03): A6 sends the
- * selfie to be matched with the BVN photo, A7 opens the account. Each refusal
- * keeps what the server said about trying again (`checksLeft`, the wait),
- * which the shared `ApiError` drops (SHARED-CHANGES KYC-02 #4, KYC-05 #3).
- * The reads (`fetchSelfieMatch`, `fetchWalletState`) and A5's occupation
+ * selfie to be matched with the BVN photo, A7 opens the account. A refusal's
+ * `ApiError` carries what the server said about trying again (`detail.checksLeft`,
+ * `retryAfterSeconds`). The reads (`fetchSelfieMatch`, `fetchWalletState`) and A5's occupation
  * (`saveOccupation`) need neither, so the screens call the shared ones.
  *
  * **The BVN and the NIN are not sent again** (BACKEND_GAPS G-72, served). A26
@@ -26,44 +24,22 @@ import type { WalletState } from './account';
  * keeps them, logs them, or puts them in a URL.
  */
 type Envelope<T> = { statusCode: number; message: string; data: T | null };
-type Reason = components['schemas']['MoneyErrorReason'];
 type WalletView = components['schemas']['WalletView'];
-
-/** An ApiError plus what the refusal said about trying again: the wait in seconds, and matches left today. */
-export type StepRefusal = ApiError & { retryAfterSeconds: number | null; checksLeft: number | null };
-
-function refused(error: ApiError, retryAfterSeconds: number | null, checksLeft: number | null): StepRefusal {
-  return Object.assign(error, { retryAfterSeconds, checksLeft });
-}
 
 /** The matches (or checks) left today that a refusal carried, or null. */
 export function checksLeftOf(error: unknown): number | null {
   if (!isApiError(error)) return null;
-  const left = (error as Partial<StepRefusal>).checksLeft;
-  return typeof left === 'number' ? left : null;
+  return error.detail?.checksLeft ?? null;
 }
 
 function unreadable(): ApiError {
   return new ApiError('unknown', 200, 'Your details could not be read. Try again.');
 }
 
-type Answer = { data?: unknown; error?: unknown; response: Response };
-
-/** Sends one request; a refusal becomes a `StepRefusal`, an answer is the envelope's `data`. */
-async function send(request: Promise<Answer>): Promise<unknown> {
-  let answer: Answer;
-  try {
-    answer = await request;
-  } catch (error) {
-    throw refused(isApiError(error) ? error : networkError(), null, null);
-  }
-  const { data, error, response } = answer;
-  if (!response.ok) {
-    const reason = (error as { reason?: Partial<Reason> } | null)?.reason;
-    const left = reason?.checksLeft;
-    throw refused(toApiError(response.status, error), retryAfterOf(error, response.headers), Number.isSafeInteger(left) ? (left as number) : null);
-  }
-  return (data as Envelope<unknown> | undefined)?.data;
+/** Sends one request; a refusal rejects with the shared `ApiError`, an answer is the envelope's `data`. */
+async function send(request: Promise<{ data?: unknown; error?: unknown; response: Response }>): Promise<unknown> {
+  const body = (await unwrap(request)) as Envelope<unknown> | undefined;
+  return body?.data;
 }
 
 function readSelfie(value: unknown): SelfieMatch {
@@ -96,7 +72,7 @@ export function isSendableSelfie(image: string): boolean {
  * is not a match.
  */
 export async function matchSelfie(image: string, checkHandle: string): Promise<SelfieMatch> {
-  if (!isSendableSelfie(image)) throw refused(new ApiError('validation', 0, 'That photo could not be used. Take it again.'), null, null);
+  if (!isSendableSelfie(image)) throw new ApiError('validation', 0, 'That photo could not be used. Take it again.');
   const match = readSelfie(await send(api.POST('/api/hub/money/identity/selfie', { body: { image, checkHandle } })));
   if (match.matchedAt === null) throw unreadable();
   return match;

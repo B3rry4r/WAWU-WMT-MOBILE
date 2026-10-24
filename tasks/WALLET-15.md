@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: backend-endpoint
 status: done
-depends_on: [MONEY-04, OPS-09]
+depends_on: [MONEY-04]
 decisions: [R-10, R-31]
 passes: [V1, V2, V3, V4, V9]
 artboards: []

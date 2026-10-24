@@ -27,6 +27,7 @@ export function GroupTile({ uri, size, testID }: GroupTileProps) {
   return (
     <View
       testID={testID}
+      aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[styles.tile, { width: size.size, height: size.size, borderRadius: size.corner, backgroundColor: colors.accentTint }]}

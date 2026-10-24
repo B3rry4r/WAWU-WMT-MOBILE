@@ -7,7 +7,7 @@ order: 234
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: done
 depends_on: [FIX-21]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -18,9 +18,16 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **Status:** done (live on main; records pass OPS-R0, 17 Oct 2026). Checked once by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/FIX-26.md`): verdict merge, nothing medium or worse. Batch 3: stacked on `wmt/WALLET-23` (this branch contains it); API types regenerated from backend `wmt/FIX-26` (5c5b47a).
+- **Branches:** backend `wmt/FIX-26` at c98bd77 (two commits on main 56f94d0: 6860da9 the build, c98bd77 one more spec test). Mobile `wmt/FIX-26`: this file and the G-410 text in BACKEND_GAPS.md. wawu-id: none. Migration: none. No route, contract or answer changes.
+- **Merged / live:** nothing yet.
+- **Built:** `assertMayMove` and `assertWithinLimits` take `tx` as required (`MovementTx`, `src/money/limits/movement-tx.ts`); the service's own client does not type-check there, and at run time nothing, the service's own client or any root client throws `NotInTransactionError` (a 500, before fees_not_set and before anything is locked, read or written).
+- **Specs:** `movement-tx.contract.spec.ts` (new, real Postgres), `read-committed.contract.spec.ts` (level before the per-transaction limit), `money-moving-coverage.spec.ts` (walk, subclass, class `@ApiResponse`, global guards, deny-by-default list, 11 fixtures served over HTTP). Existing calls in `money-limits.spec.ts` and `money-limits.contract.spec.ts` now pass a `tx` (the API changed; no assertion changed).
+- **Checks (builder):** backend `tsc`, eslint and prettier clean; limits folder passed on the fix_26 stack before the push. Backend CI on c98bd77 (the head): suite shards 1 to 3 (97 suites, 4,019 tests in shard 1), contract, netns, protected routes and baseline all green; the gates job red with 16 FAIL, none in a changed file (6860da9 the same). Mobile (docs only): typecheck, lint (0 errors, 5 warnings), gates (0 fail) and tasks pass; jest 2,711 of 2,713 with 3 suites down under load 33 to 37 (timeouts, a killed worker), those 3 alone 81/81.
+- **Mutants run by the builder:** 10 on the coverage spec (the 3 F2 ones, 7 F1 shapes), 8 on the service and guard (the F2 level order among them); all killed, files restored.
 - **History:** none yet. Reports go to tasks/history/FIX-26.md.
+- **Open findings:** blocker 0, high 0, medium 0. Lows: the deny-by-default list misses a write at exactly `money`; it stops at `money/`; a mutant reading the daily total through the service's own client survives. They are in tasks/SWEEP-MONEY.md with the report path.
+- **Next:** the lead opens the backend pull request from the batch 3 head. Merge note: with WALLET-23 stacked below, the merge needed three small changes (the account-limit read goes through the required tx; WALLET-23's account-limits.contract.spec.ts passes a tx; POST money/statements/email, a WALLET-35 route on main, is named in NON_MONEY_WRITES with its reason).
 
 ## Read first
 
@@ -48,13 +55,9 @@ FIX-21's verifier found:
 - [ ] The four F2 mutants and each F1 shape fail the spec.
 - [ ] Protected routes 253/253 with the lock unchanged.
 
-## Builder report
+## History
 
-_Not started._
-
-## Verifier report
-
-_Not started._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/FIX-26.md](history/FIX-26.md).
 
 ## Owner sign-off
 

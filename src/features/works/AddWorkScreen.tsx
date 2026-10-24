@@ -5,9 +5,8 @@ import { AccessibilityInfo, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Text } from '@/components/Text';
-import { AuthField } from '@/features/auth/AuthField';
-import { Banner } from '@/features/auth/Banner';
-import { EditFrame } from '@/features/profile-edit/EditFrame';
+import { Banner } from '@/components/Banner';
+import { ScreenFrame } from '@/components/ScreenFrame';
 
 import { createWork, fetchMyWorks, myWorksKey, worksRoot } from './api';
 import { PROFILE_FULL, saveFailure, uploadFailure, type SaveFailure } from './failure';
@@ -33,8 +32,9 @@ import { WORK_LIMITS } from './limits';
 import { MediaPicker } from './MediaPicker';
 import { canPickMedia, pickMedia } from './pickMedia';
 import { uploadWorkFile } from './upload';
+import { WorkFields } from './WorkFields';
 
-/** design/_gen/me.js line 72 (M36): the body stacks its parts 14 apart, and the role and the year sit side by side 10 apart. */
+/** design/_gen/me.js line 72 (M36): the body stacks its parts 14 apart (the fields are `WorkFields`). */
 const BODY_GAP = 14;
 const PAIR_GAP = 10;
 
@@ -140,7 +140,7 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
 
   return (
     <>
-      <EditFrame
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1}
         testID="add-work"
         title="Add a work"
         onBack={back}
@@ -170,51 +170,8 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
             full={mediaRoom(media.length) === 0}
           />
         ) : null}
-        <AuthField scrollRef={scrollRef} label="Title" testID="work-title" value={form.title} onChangeText={(v) => edit('title', v)} error={errorOf('title')} autoCapitalize="sentences" disabled={busy} />
-        <View style={styles.pair}>
-          <View style={styles.half}>
-            <AuthField scrollRef={scrollRef} label="Your role" testID="work-role" value={form.role} onChangeText={(v) => edit('role', v)} error={errorOf('role')} autoCapitalize="sentences" disabled={busy} />
-          </View>
-          <View style={styles.half}>
-            <AuthField
-              scrollRef={scrollRef}
-              label="Year"
-              testID="work-year"
-              value={form.year}
-              onChangeText={(v) => edit('year', v.replace(/\D/g, '').slice(0, 4))}
-              error={errorOf('year')}
-              keyboardType="number-pad"
-              maxLength={4}
-              disabled={busy}
-            />
-          </View>
-        </View>
-        <AuthField scrollRef={scrollRef} label="Client" testID="work-client" value={form.client} onChangeText={(v) => edit('client', v)} error={errorOf('client')} autoCapitalize="words" disabled={busy} />
-        <AuthField
-          scrollRef={scrollRef}
-          label="Link"
-          testID="work-link"
-          value={form.link}
-          onChangeText={(v) => edit('link', v)}
-          hint="Optional"
-          error={errorOf('link')}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          disabled={busy}
-        />
-        <AuthField
-          scrollRef={scrollRef}
-          label="Category"
-          testID="work-category"
-          value={form.category}
-          onChangeText={(v) => edit('category', v)}
-          hint="Optional. Works with the same category are grouped under one filter."
-          error={errorOf('category')}
-          autoCapitalize="sentences"
-          disabled={busy}
-        />
-      </EditFrame>
+        <WorkFields form={form} errorOf={errorOf} onChange={edit} disabled={busy} scrollRef={scrollRef} />
+      </ScreenFrame>
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard this work?" testID="work-discard">
         <Text variant="sheetTitleSm">Discard this work?</Text>
         <Text variant="muted">What you added has not been saved.</Text>
@@ -236,6 +193,4 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
 
 const styles = StyleSheet.create({
   full: { gap: PAIR_GAP },
-  pair: { flexDirection: 'row', gap: PAIR_GAP },
-  half: { flex: 1, minWidth: 0 },
 });

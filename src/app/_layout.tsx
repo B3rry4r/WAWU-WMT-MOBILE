@@ -3,15 +3,48 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { PushBridge } from '@/features/push/PushBridge';
+import { applyStoredTheme } from '@/features/settings/devicePrefs';
+import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+/** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
+export const THEME_READ_LIMIT_MS = 3000;
+
+/**
+ * True once the saved Theme has been applied. Nothing is drawn before then, so the first screen
+ * is already in the chosen theme. An unreadable phone store counts as nothing saved (it follows
+ * the phone), so the app still opens.
+ */
+function useStoredTheme(): boolean {
+  const [applied, setApplied] = useState(false);
+  useEffect(() => {
+    let live = true;
+    // A phone store that never answers must not hold the splash forever: after this long the app opens following the phone.
+    const gaveUp = setTimeout(() => {
+      if (live) setApplied(true);
+    }, THEME_READ_LIMIT_MS);
+    applyStoredTheme()
+      .catch(() => undefined)
+      .then(() => {
+        clearTimeout(gaveUp);
+        if (live) setApplied(true);
+      });
+    return () => {
+      live = false;
+      clearTimeout(gaveUp);
+    };
+  }, []);
+  return applied;
+}
 
 /**
  * Root of the route graph. Fenced: only a flow-pass task edits routing
@@ -24,8 +57,33 @@ SplashScreen.preventAutoHideAsync();
  * emptied whenever the session ends, so one account's answers are never drawn
  * for the next (FIX-04). A signed-in account whose sign-up has an email step
  * left opens that step before the tabs; the server's progress decides (AUTH-04,
- * SHARED-CHANGES AUTH-04 #2). Categories (EXPLORE-01 #2) and the featured works
+ * SHARED-CHANGES AUTH-04 #2). So do A11, A12 and A13 (AUTH-06, SHARED-CHANGES AUTH-06 #1): the tabs wait while the progress
+ * says `creator_setup`, `interests` or `follows`; A11 is also reachable from "Become a creator" once the sequence is over, and
+ * the screens A11's rows open stay reachable while it is the step. Categories (EXPLORE-01 #2) and the featured works
  * screens (ME-11 #3) sit with the tabs: a signed-out visit to one never draws it.
+ * So do every other signed-in screen that is not a tab: Payout bank, Edit profile and Social
+ * links, the five steps of Open your wallet, and the five Settings screens (SHARED-05). The
+ * guard is the one place that sends a signed-out visitor to the welcome screen; those screens
+ * carry no sign-in check of their own. About, Terms and Privacy policy are public on purpose
+ * (the Terms must be readable before sign-up), so they sit outside every guard, after the
+ * signed-out set so that a cold start with nobody signed in still opens the welcome screen.
+ * The Theme a person picked in Settings (System, Light or Dark) is read from the phone and
+ * applied before the first screen is drawn, with the splash screen still up, so the next
+ * launch never shows the other theme first (SETTINGS-01 #3 (a)).
+ * Every other route file that needs a session sits in that same last signed-in group (FIX-63, SHARED-CHANGES FIX-63 #1): wallet,
+ * send, withdraw, bills, events, schools, professionals, library, create and publish, chat and rooms, points, invite, legal,
+ * notifications, search, saved, TGIF and the rest. A route file is listed in a signed-in group, or it is on the short public
+ * list kept in `src/__tests__/route-guard.test.tsx`: the signed-out set above, About, Terms and Privacy policy, the app links
+ * (`/r`, `/selfie`, `/activate`, `/receipt`, `/u`, `/c`, `/content`, which each send a signed-out visitor on themselves),
+ * `/claim-code` (sends a signed-out visitor to sign-in and brings the sign-in back) and the development-only screens. That test
+ * fails when a route file is neither.
+ * The Voice Intro's writing and recording screens (`/voice-intro`, `/voice-consent`) sit with the creator's setup checklist, so VF7's
+ * "Record my voice" works for a creator who bought a tier while still inside sign-up setup (SWEEP-FLOWS B4); there, Use this
+ * goes back to the checklist, since the tabs are not open yet.
+ * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
+ * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
+ * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
+ * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontFiles);
@@ -34,7 +92,10 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
-  const ready = status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+  const bonus = useBonusStep(signedIn, gate.progress?.accountType);
+  const themed = useStoredTheme();
+  const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
+  const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !bonus.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -54,15 +115,156 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && gate.needsIdentity}>
+          <Stack.Screen name="your-details" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !offer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && bonus.visible}>
+          <Stack.Screen name="verify-bonus" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'interests'}>
+          <Stack.Screen name="interests" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'follows'}>
+          <Stack.Screen name="people-to-follow" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !bonus.visible}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="shop" />
+          <Stack.Screen name="shop-product" />
+          <Stack.Screen name="hear-name" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
+          <Stack.Screen name="creator-setup" />
+          <Stack.Screen name="voice-intro" />
+          <Stack.Screen name="voice-consent" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible}>
           <Stack.Screen name="categories" />
           <Stack.Screen name="add-work" />
           <Stack.Screen name="works/[wawuId]/index" />
           <Stack.Screen name="works/[wawuId]/[workId]" />
+          <Stack.Screen name="payout-account" />
+          <Stack.Screen name="edit-profile" />
+          <Stack.Screen name="social-links" />
+          <Stack.Screen name="open-wallet" />
+          <Stack.Screen name="open-wallet-details" />
+          <Stack.Screen name="open-wallet-selfie" />
+          <Stack.Screen name="open-wallet-id" />
+          <Stack.Screen name="open-wallet-address" />
+          <Stack.Screen name="open-wallet-checking" />
+          <Stack.Screen name="open-wallet-rejected" />
+          <Stack.Screen name="open-wallet-account" />
+          <Stack.Screen name="open-wallet-pin" />
+          <Stack.Screen name="settings/index" />
+          <Stack.Screen name="settings/notifications" />
+          <Stack.Screen name="settings/privacy" />
+          <Stack.Screen name="settings/blocked" />
+          <Stack.Screen name="settings/password" />
+          <Stack.Screen name="add-money" />
+          <Stack.Screen name="bills/electricity/[code]" />
+          <Stack.Screen name="bills/electricity/index" />
+          <Stack.Screen name="bills/index" />
+          <Stack.Screen name="change-pin" />
+          <Stack.Screen name="chat/[id]" />
+          <Stack.Screen name="chat/send" />
+          <Stack.Screen name="checkout" />
+          <Stack.Screen name="community/[id]" />
+          <Stack.Screen name="community/created/[id]" />
+          <Stack.Screen name="community/new" />
+          <Stack.Screen name="community/pass/[id]" />
+          <Stack.Screen name="community/requests/[id]" />
+          <Stack.Screen name="confirm-email" />
+          <Stack.Screen name="create" />
+          <Stack.Screen name="create-details" />
+          <Stack.Screen name="create-format" />
+          <Stack.Screen name="create-preview" />
+          <Stack.Screen name="create-price" />
+          <Stack.Screen name="create-review" />
+          <Stack.Screen name="create-upload" />
+          <Stack.Screen name="creator" />
+          <Stack.Screen name="creators" />
+          <Stack.Screen name="earnings" />
+          <Stack.Screen name="events/[id]" />
+          <Stack.Screen name="events/dashboard/[id]" />
+          <Stack.Screen name="events/door/[id]" />
+          <Stack.Screen name="events/edit/[id]" />
+          <Stack.Screen name="events/host" />
+          <Stack.Screen name="events/index" />
+          <Stack.Screen name="events/links/[id]" />
+          <Stack.Screen name="events/mine" />
+          <Stack.Screen name="events/orders/[orderId]" />
+          <Stack.Screen name="events/sent-back/[id]" />
+          <Stack.Screen name="events/ticket-types/[id]" />
+          <Stack.Screen name="events/tickets/[ticketId]" />
+          <Stack.Screen name="events/tickets/index" />
+          <Stack.Screen name="invite" />
+          <Stack.Screen name="invite-card" />
+          <Stack.Screen name="invite-rules" />
+          <Stack.Screen name="legal" />
+          <Stack.Screen name="legal-book" />
+          <Stack.Screen name="legal-fixed" />
+          <Stack.Screen name="legal-matter" />
+          <Stack.Screen name="library/[id]/edit" />
+          <Stack.Screen name="library/[id]/index" />
+          <Stack.Screen name="library/[id]/lessons" />
+          <Stack.Screen name="library/[id]/replace" />
+          <Stack.Screen name="library/index" />
+          <Stack.Screen name="movies/[id]/index" />
+          <Stack.Screen name="movies/[id]/trailer" />
+          <Stack.Screen name="movies/all" />
+          <Stack.Screen name="movies/index" />
+          <Stack.Screen name="movies/search" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="paid-message-settings" />
+          <Stack.Screen name="paid-questions/[wawuId]" />
+          <Stack.Screen name="paid-thread/[wawuId]" />
+          <Stack.Screen name="pass" />
+          <Stack.Screen name="points" />
+          <Stack.Screen name="points-buy" />
+          <Stack.Screen name="points-convert" />
+          <Stack.Screen name="professional-apply" />
+          <Stack.Screen name="professional-listings" />
+          <Stack.Screen name="professionals/[id]" />
+          <Stack.Screen name="professionals/index" />
+          <Stack.Screen name="profile/[wawuId]" />
+          <Stack.Screen name="publish" />
+          <Stack.Screen name="purchases" />
+          <Stack.Screen name="reset-pin" />
+          <Stack.Screen name="role" />
+          <Stack.Screen name="saved" />
+          <Stack.Screen name="schools/[id]" />
+          <Stack.Screen name="schools/courses/[id]" />
+          <Stack.Screen name="schools/enrol/[courseId]" />
+          <Stack.Screen name="schools/enrolments/[id]" />
+          <Stack.Screen name="schools/index" />
+          <Stack.Screen name="schools/mine" />
+          <Stack.Screen name="search" />
+          <Stack.Screen name="send/amount" />
+          <Stack.Screen name="send/bank" />
+          <Stack.Screen name="send/failed" />
+          <Stack.Screen name="send/index" />
+          <Stack.Screen name="send/receipt" />
+          <Stack.Screen name="send/review" />
+          <Stack.Screen name="settings/delete-account/confirm" />
+          <Stack.Screen name="settings/delete-account/index" />
+          <Stack.Screen name="settings/delete-account/scheduled" />
+          <Stack.Screen name="studio" />
+          <Stack.Screen name="studio-tool" />
+          <Stack.Screen name="tgif" />
+          <Stack.Screen name="tier-done" />
+          <Stack.Screen name="tiers" />
+          <Stack.Screen name="transactions/[id]" />
+          <Stack.Screen name="transactions/index" />
+          <Stack.Screen name="verification" />
+          <Stack.Screen name="wallet-settings" />
+          <Stack.Screen name="wallet-statement" />
+          <Stack.Screen name="withdraw/failed" />
+          <Stack.Screen name="withdraw/index" />
+          <Stack.Screen name="withdraw/receipt" />
+          <Stack.Screen name="your-tier" />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           <Stack.Screen name="welcome" />
@@ -72,7 +274,11 @@ export default function RootLayout() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>
+        <Stack.Screen name="about" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy-policy" />
       </Stack>
+      <PushBridge live={inApp} />
     </QueryClientProvider>
   );
 }

@@ -141,7 +141,7 @@ export default function AuthPreviewRoute() {
       <CodeScreen
         testID={p.screen}
         navTitle={code ? (texted ? 'Verify your phone' : 'Verify your email') : 'Check your email'}
-        subtitle={code ? (texted ? 'Sent by SMS to 0803 ••• 4412' : 'Sent to n•••@example.com') : 'Sent to lennox@wawu.africa'}
+        subtitle={code ? (texted ? 'Sent by SMS to 0803 ••• 4412.' : 'Sent to n•••@example.com') : 'Sent to lennox@wawu.africa'}
         resendIn={p.resend === undefined ? 42 : Number(p.resend)}
         initialDigits={p.digits ?? ''}
         initialWrong={p.wrong === '1'}

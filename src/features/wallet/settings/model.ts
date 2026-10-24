@@ -67,3 +67,13 @@ export function limitsLine(limits: NonNullable<WalletSettings['limits']>): { tit
 export function accountLine(bankName: string, groupedNumber: string): string {
   return `${bankName} · ${groupedNumber}`;
 }
+
+/** The switch's title: what this phone approves with (R-26: "Fingerprint", "Face unlock" or "Face ID", by the phone). */
+export function approvalTitle(name: string): string {
+  return `${name} for payments`;
+}
+
+/** The line on the PIN sheet that turns it on, in place of an amount: "Turn on fingerprint for payments". */
+export function turnOnLine(name: string): string {
+  return `Turn on ${name === 'Face ID' ? name : name.toLowerCase()} for payments`;
+}

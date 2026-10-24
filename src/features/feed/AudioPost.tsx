@@ -10,6 +10,17 @@ import { AudioSource, canPlay, loadPeaks, type SeekRequest } from './player';
 import { fromTop, PostFrame, type PostProps } from './PostFrame';
 import { Seekable } from './parts';
 
+/** The waveform at the canvas's size: every bar and the gaps between them (44 x 3 + 43 x 2.5 = 239.5 wide). */
+const WAVE_WIDTH = WAVEFORM_BARS * metrics.waveBar + (WAVEFORM_BARS - 1) * metrics.waveGap;
+
+/**
+ * How much of the canvas's waveform a phone this wide has room for. It is centred under the square, and the rail's box starts
+ * `railRight` + the avatar in from the right edge, and the avatar's ring (drawn outside that box) takes the tap too, so a phone under about
+ * 364 wide would draw its last bars under the rail, where the rail takes the tap (zIndex 7 over the middle's 3): the same room is kept on
+ * both sides and the bars are drawn smaller, never fewer (FIX-68 N1, SWEEP-APP-6b L4). Phones from 364 up draw it as the canvas does.
+ */
+const waveFit = (width: number) => Math.max(0, Math.min(1, (width - 2 * (metrics.railRight + metrics.avatar + metrics.avatarRing)) / WAVE_WIDTH));
+
 /** Bar heights while the file has not been read (or cannot be, on a phone build today): level. */
 const level = Array.from({ length: WAVEFORM_BARS }, () => 0.5);
 
@@ -41,7 +52,8 @@ function RoundButton({ icon, label, onPress, big, testID }: { icon: 'RotateCcw' 
  * cover picture (BACKEND_GAPS G-218).
  */
 export function AudioPost(props: PostProps) {
-  const { item, active } = props;
+  const { item, active, width } = props;
+  const fit = waveFit(width);
   const uri = playableUrl(item);
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
@@ -80,6 +92,7 @@ export function AudioPost(props: PostProps) {
       style={[
         styles.bar,
         {
+          width: metrics.waveBar * fit,
           height: Math.max(metrics.waveMin, h) * metrics.waveH,
           backgroundColor: i < played ? media.ink : media.waveRest,
         },
@@ -115,12 +128,12 @@ export function AudioPost(props: PostProps) {
               value={`${clock(time.position)} of ${clock(time.length)}`}
               onSeek={(s) => seekTo(s * time.length)}
               onStep={(d) => seekTo(time.position + d * SKIP_SECONDS)}
-              style={styles.wave}
+              style={[styles.wave, { gap: metrics.waveGap * fit }]}
             >
               {waveform}
             </Seekable>
           ) : (
-            <View style={styles.wave} testID={`wave-${item.id}`}>
+            <View style={[styles.wave, { gap: metrics.waveGap * fit }]} testID={`wave-${item.id}`}>
               {waveform}
             </View>
           )}

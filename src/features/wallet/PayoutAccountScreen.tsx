@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -7,23 +7,23 @@ import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { fieldMetrics } from '@/components/TextField';
+import { TextField, fieldMetrics } from '@/components/TextField';
 import { AuthField } from '@/features/auth/AuthField';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { space, useWawu } from '@/theme';
 
 import {
   failureMessage,
-  isUnconfirmedAccount,
+  isRefusedAccount,
   nameCheckQuery,
+  nameCheckWait,
   payoutAccountQuery,
   payoutProblem,
   savePayoutAccount,
   type PayoutAccount,
 } from './api/payoutAccount';
-import { BankField } from './BankField';
 import { BankSheet } from './BankSheet';
-import { NameLineView } from './NameLineView';
+import { nameLineHint } from './nameLine';
 import { canSave, digitsOnly, formFrom, isComplete, nameLine, shouldCheckName, type NameCheck, type NameLine, type PayoutForm } from './payoutForm';
 
 /** design/_gen/auth.js line 50: A21's body stacks its parts 16 apart. */
@@ -35,6 +35,12 @@ const LABEL_SKELETON_W = '30%';
 const footErrorMetrics = { icon: 15, stroke: 2.2, iconGap: 6 } as const;
 
 const NAV_TITLE = 'Where you get paid';
+/**
+ * A21's first line (auth.js line 50, `muted`). The board also opens it with "Creators only."; that half is left out because it is not
+ * true here: any person with an open wallet reaches this screen from Withdraw, and the Hub keeps no creator gate on the account
+ * (R-51 asks only that the account is in the person's own name, FIX-78 F-6).
+ */
+export const OWN_NAME_LINE = 'The account must be in your own name.';
 
 export type PayoutAccountScreenProps = {
   /** The round back button. */
@@ -134,17 +140,36 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
     },
   });
 
+  // A refusal for the hour's name check limit ends (R-51): when the wait the Hub named has passed, a refused check
+  // is made again for the same number, and a refused save is cleared so Save opens; the person edits nothing.
+  const checkWait = check.isError ? nameCheckWait(check.error) : null;
+  const refetchCheck = check.refetch;
+  useEffect(() => {
+    if (checkWait === null) return;
+    const timer = setTimeout(() => void refetchCheck(), checkWait * 1000);
+    return () => clearTimeout(timer);
+  }, [check.error, checkWait, refetchCheck]);
+  const saveWait = save.isError ? nameCheckWait(save.error) : null;
+  const resetSave = save.reset;
+  useEffect(() => {
+    if (saveWait === null) return;
+    const timer = setTimeout(() => resetSave(), saveWait * 1000);
+    return () => clearTimeout(timer);
+  }, [save.error, saveWait, resetSave]);
+
   const nameCheck: NameCheck = !shouldCheckName(form, saved)
     ? { status: 'idle' }
     : check.isSuccess
       ? { status: 'success', data: check.data }
       : check.isError
-        ? { status: 'error', unconfirmed: isUnconfirmedAccount(check.error), message: check.error.message }
+        ? { status: 'error', unconfirmed: isRefusedAccount(check.error), message: check.error.message }
         : { status: 'pending' };
 
-  // A save the bank refused says so on the field, exactly as a refused name check does.
-  const refusedOnSave = save.isError && isUnconfirmedAccount(save.error);
+  // A save the bank refused, or one refused because the account is not in the person's own name (R-51), says so
+  // on the field, exactly as a refused name check does; changing the bank or the number clears it.
+  const refusedOnSave = save.isError && isRefusedAccount(save.error);
   const line: NameLine = refusedOnSave ? { kind: 'unconfirmed', message: save.error.message } : nameLine(form, saved, nameCheck);
+  const nameHint = nameLineHint(line);
   const footError = save.isError && !refusedOnSave ? failureMessage(save.error) : null;
 
   const edit = (next: PayoutForm) => {
@@ -185,12 +210,30 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
       }
     >
       <View style={styles.body}>
-        <BankField bank={form.bank} onPress={() => setPicking(true)} disabled={save.isPending} testID="payout-bank" />
+        <Text variant="muted" testID="payout-own-name">
+          {OWN_NAME_LINE}
+        </Text>
+        <TextField
+          label="Bank"
+          testID="payout-bank"
+          value={form.bank?.name ?? ''}
+          placeholder="Choose your bank"
+          leadingIcon="Landmark"
+          trailingIcon="ChevronDown"
+          onPress={() => setPicking(true)}
+          disabled={save.isPending}
+          accessibilityLabel={form.bank ? `Bank, ${form.bank.name}` : 'Bank, choose your bank'}
+          accessibilityHint="Opens the list of banks"
+        />
         <View>
           <AuthField
             scrollRef={scrollRef}
             label="Account number"
             testID="payout-number"
+            mono
+            hint={nameHint?.hint}
+            tone={nameHint?.tone}
+            announce={nameHint?.announce}
             value={form.accountNumber}
             // No `maxLength` on the raw input: the platform would cut a pasted "0987 654 321" to ten
             // characters before the spaces are taken out. `digitsOnly` keeps the digits, then caps at ten.
@@ -205,7 +248,6 @@ function PayoutAccountForm({ saved, onBack, onSaved }: FormProps) {
             returnKeyType="done"
             onSubmitEditing={submit}
           />
-          <NameLineView line={line} testID="payout-name" />
         </View>
       </View>
       <BankSheet

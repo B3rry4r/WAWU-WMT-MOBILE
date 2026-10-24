@@ -8,7 +8,7 @@ priority: launch
 repo: all
 type: ops
 status: todo
-depends_on: [CHECK-1, NUV-10, BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, KYC-04, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17, TIER-04, TIER-05, POINTS-03, POINTS-04, REF-01, WEBPAY-04, WEBPAY-05]
+depends_on: [CHECK-1, NUV-10, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, KYC-04, LEGAL-06, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17, TIER-04, TIER-05, POINTS-03, POINTS-04, REF-01]
 decisions: [R-20, R-25]
 passes: [V8, V11]
 artboards: []
@@ -21,6 +21,7 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): NUV-10, BILLS-03, EVENTS-06, EVENTS-10, INBOX-11, INBOX-13, INBOX-20, LEGAL-06, ME-12, SCHOOLS-06, SCHOOLS-11, WALLET-13, WALLET-17, TIER-04, TIER-05, POINTS-03, POINTS-04, WEBPAY-04, WEBPAY-05.
 - **History:** none yet. Reports go to tasks/history/CHECK-2.md.
+- **Design v2 (16 Oct 2026):** ME-12 is re-cut to the tier checkout (VF5 to VF7) and is no longer a dependency here. The tier purchase is checked by ME-12's own money pass (V8) and TIER-03; this checkpoint reruns the tier purchase check only if the lead asks.
 
 ## Read first
 

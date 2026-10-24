@@ -22,6 +22,8 @@ export type TransactionRowProps = {
   /** In kobo (or cents), negative when money left the wallet. */
   amountMinor: number;
   currency?: Currency;
+  /** Kobo (or cents) drawn after the figure; false draws whole units only (+₦42,000), as Earnings' rows do for a whole amount. Default true. */
+  decimals?: boolean;
   /** "10:24". */
   time?: string;
   /** An Avatar for a person. Without one the row draws `icon` on a tinted circle. */
@@ -38,6 +40,7 @@ export function TransactionRow({
   subtitle,
   amountMinor,
   currency = 'NGN',
+  decimals = true,
   time,
   lead,
   icon = 'ArrowUpRight',
@@ -46,7 +49,7 @@ export function TransactionRow({
   testID,
 }: TransactionRowProps) {
   const ring = useFocusRing();
-  const label = [title, subtitle, formatMoney(amountMinor, { currency, sign: true }), time].filter(Boolean).join(', ');
+  const label = [title, subtitle, formatMoney(amountMinor, { currency, sign: true, decimals }), time].filter(Boolean).join(', ');
   const body = (
     <>
       {lead ?? <IconTile icon={icon} tone={tone ?? (amountMinor > 0 ? 'in' : 'neutral')} size={leadSize} />}
@@ -61,7 +64,7 @@ export function TransactionRow({
         ) : null}
       </View>
       <View style={styles.end}>
-        <Money minorUnits={amountMinor} currency={currency} signed size={amountSize} />
+        <Money minorUnits={amountMinor} currency={currency} signed size={amountSize} decimals={decimals} />
         {time ? (
           <Text variant="caption" style={{ fontSize: meta }}>
             {time}

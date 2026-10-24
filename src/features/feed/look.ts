@@ -1,24 +1,14 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { blackAt } from '@/components/shadow';
-import { font } from '@/theme';
-import { darkColors, darkGradients } from '@/theme/tokens.generated';
+import { font, radius } from '@/theme';
+import { darkColors, darkGradients, darkShadows } from '@/theme/tokens.generated';
 
 /**
  * The feed's look. A post is drawn over its own picture, so H2 to H6 draw it the same in
  * the light and the dark theme (each artboard's two phones are identical): white words,
- * glass and ink over the media. The colours are the theme's own tokens; where the canvas
- * uses one of them at another strength, the strength is the canvas's (the theme has no
- * token for those overlays, SHARED-CHANGES HOME-02 #1).
+ * glass and ink over the media. Every colour is one of the theme's own tokens (`media-*`
+ * for the overlays only a post draws).
  */
-
-/** A token colour written with an alpha channel, given another strength. */
-const atStrength = (rgba: string, alpha: number) => rgba.replace(/[\d.]+\)$/, `${alpha})`);
-
-/** The page ink (11, 10, 13), as the canvas's pills and veils use it. */
-const inkAt = (alpha: number) => atStrength(darkColors.lockedVeil, alpha);
-/** White at a strength, as the canvas's tracks, dots and the Tip circle use it. */
-const whiteAt = (alpha: number) => atStrength(darkColors.surfaceGlass, alpha);
 
 export const media = {
   /** White on every artboard: the words and icons over a post. */
@@ -26,30 +16,45 @@ export const media = {
   /** The ink on the white price button. */
   inkOnLight: darkColors.textOnLight,
   /** Black, under the picture. */
-  black: blackAt(1),
+  black: darkColors.mediaBlack100,
   /** The page ink at 55%: the pill and the frame counter. */
-  pill: inkAt(0.55),
+  pill: darkColors.mediaInk55,
   /** The page ink at 38%: the veil over a blurred backdrop (H4, H5, H6). */
-  veil: inkAt(0.38),
+  veil: darkColors.mediaInk38,
   /** White at 14% with a 1 px edge at 16%: the offer bar and H5's lock circle. */
   glass: darkColors.surfaceGlass,
   glassEdge: darkColors.borderGlass,
   /** White at 25%: an unplayed track (H2, H4). */
-  track: whiteAt(0.25),
+  track: darkColors.mediaWhite25,
   /** White at 45%: a photo-set dot that is not the current frame (H3). */
-  dot: whiteAt(0.45),
+  dot: darkColors.mediaWhite45,
   /** White at 35%: a waveform bar not yet played (H6). */
-  waveRest: whiteAt(0.35),
+  waveRest: darkColors.mediaWhite35,
   /** White at 60%: the tabs that are not selected. */
-  tabIdle: whiteAt(0.6),
+  tabIdle: darkColors.mediaWhite60,
+  /** White at 25%: a chip's edge on a card (H10) and the soft disc behind a person with no portrait (H9, H10). */
+  chipEdge: darkColors.mediaWhite25,
   /** H4's book: the cover (the canvas's deep purple) and the pale page behind it. */
-  cover: darkColors.accentDeep,
+  cover: darkColors.mediaCover,
   page: darkColors.textPrimary,
   /** Black at 25%: the spine on the cover. */
-  spine: blackAt(0.25),
+  spine: darkColors.mediaBlack25,
   /** `--shadow-cover`, black at 70%: under H4's book and H6's square. */
-  coverShadow: blackAt(0.7),
+  coverShadow: darkShadows.cover[0].color,
   accent: darkColors.accent,
+  /** H10's note: the blue tint with its edge, and the star's amber (the dark theme's, as the card is drawn over media). */
+  info: darkColors.info,
+  infoTint: darkColors.infoTint,
+  star: darkColors.warning,
+  /** Black at 30%: the veil over a locked piece's picture in H9's strip (the canvas's .28). */
+  tileVeil: darkColors.mediaBlack30,
+  /** H9 and H10's frame: dark at the top, clear from 18% to 30%, the dark scrim at 52% and the page's own black from 72% (the canvas's stops), built from the feed's scrim, the dark scrim and the page token. */
+  cardScrim: {
+    colors: [darkGradients.scrimFeed.colors[0], darkColors.mediaBlack0, darkColors.mediaBlack0, darkColors.surfaceScrim, darkColors.surfacePage],
+    locations: [0, 0.18, 0.3, 0.52, 0.72],
+  },
+  /** A tile of H9's strip: clear to 45%, then black at 75% (the canvas's own). */
+  tileScrim: { colors: [darkColors.mediaBlack0, darkColors.surfaceScrim], locations: [0.45, 1] },
   /** Under a post that has no picture of its own (a PDF, an audio file): the sunken ink. */
   backdrop: darkColors.surfaceSunken,
   scrim: darkGradients.scrimFeed,
@@ -77,6 +82,8 @@ export const metrics = {
    * the button there (H26); until then the place is kept, so the rail sits where H2 to H6 draw it.
    */
   tipSlot: 80,
+  /** The ₦ Tip button's round plate (H2's rail). */
+  tipCircle: 42,
   avatar: 46,
   avatarRing: 2,
   followBadge: 20,
@@ -194,6 +201,55 @@ export const metrics = {
   controlIcon: 24,
   /** The play mark in the middle of a paused video. */
   pausedIcon: 64,
+  /** The template's mark in the frame of a template with no picture. */
+  templateMark: 64,
+} as const;
+
+/** The canvas's sizes for the interstitial cards (H9 creator, H10 professional): 20 in from each side, 104 above the phone's bottom, 16 between rows. */
+export const cardMetrics = {
+  side: 20,
+  pillTop: 104,
+  stack: 16,
+  nameStack: 6,
+  nameGap: 8,
+  tick: 24,
+  panelRadius: radius.tile,
+  panelPadV: 12,
+  panelPadH: 16,
+  panelGap: 10,
+  statGap: 2,
+  starGap: 5,
+  star: 16,
+  knownGap: 10,
+  knownAvatar: 24,
+  knownOverlap: -8,
+  knownRing: 2,
+  tileGap: 8,
+  tileW: 104,
+  tileH: 132,
+  tileRadius: radius.input,
+  tileInset: 7,
+  tileLeft: 8,
+  tileIcon: 26,
+  tileIconGlyph: 13,
+  tileLock: 20,
+  tileLockTop: '44%',
+  tileBlur: 8,
+  buttonH: 50,
+  buttonGap: 8,
+  buttonIcon: 18,
+  buttonInner: 6,
+  /** The row stops this far short of the right edge, clear of the Create button. */
+  buttonRight: 70,
+  chipH: 32,
+  chipPad: 13,
+  chipGap: 6,
+  noteRadius: radius.tile,
+  notePadV: 12,
+  notePadH: 14,
+  /** The soft disc behind a person with no portrait. */
+  disc: 250,
+  discTop: 322,
 } as const;
 
 /** The canvas's type for the feed, each from the artboard's own CSS. */
@@ -215,9 +271,22 @@ export const words = StyleSheet.create({
   offerSub: type(12, 400, { opacity: 0.7 }),
   price: type(14, 700),
   counter: type(13, 700),
+  tipGlyph: type(18, 700),
   bookBy: type(10, 700, { letterSpacing: 10 * 0.14, opacity: 0.7, textTransform: 'uppercase' }),
   bookTitle: type(26, 700, { lineHeight: 26 * 1.05, letterSpacing: 26 * -0.03 }),
   bookPages: type(11, 400, { opacity: 0.7 }),
+  cardName: type(32, 700, { letterSpacing: 32 * -0.04, lineHeight: 32 }),
+  cardLine: type(14.5, 400, { opacity: 0.8 }),
+  statValue: type(18, 700, { letterSpacing: 18 * -0.02 }),
+  statLabel: type(12, 400, { opacity: 0.65 }),
+  known: type(13, 400, { opacity: 0.85 }),
+  knownBold: type(13, 700),
+  tileMain: type(12, 700),
+  tileSide: type(10.5, 600, { opacity: 0.75 }),
+  chip: type(13, 600),
+  note: type(13, 400, { lineHeight: 13 * 1.4 }),
+  button: type(15.5, 700),
+  failed: type(12.5, 600),
   endedTitle: type(22, 700, { letterSpacing: 22 * -0.025 }),
   endedBody: type(14.5, 400, { lineHeight: 14.5 * 1.45, opacity: 0.85, textAlign: 'center' }),
 });

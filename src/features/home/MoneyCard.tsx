@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { useFocusRing } from '@/components/focusRing';
-import { Icon } from '@/components/icon';
+import { Icon, type IconName } from '@/components/icon';
 import { Money } from '@/components/Money';
 import { ACCT, BalanceEye, FittedBalance, MoneyGround } from '@/features/wallet/home/BalanceCard';
 import { radius, useWawu } from '@/theme';
@@ -23,8 +23,10 @@ export type MoneyCardProps = {
   /** Asks for the balance again (the bank did not answer, frozen, or that read failed). */
   onRetryBalance: () => void;
   retrying: boolean;
-  /** Opens Pay a bill (S2). */
-  onOpenBills: () => void;
+  /** Opens Send money (W7, WALLET-02). */
+  onSend: () => void;
+  /** Opens Add money (W15, WALLET-05). */
+  onAdd: () => void;
 };
 
 /**
@@ -33,11 +35,11 @@ export type MoneyCardProps = {
  * a balance is never cut off here either; with no figure, the Wallet tab's words for the state and its one
  * button take the figure's place.
  *
- * Bills (BILLS-01) is the one action built; Send and Add are added by WALLET-02 and WALLET-05 with their screens, and Scan by
- * WALLET-20 after launch (R-27, R-41), each in the canvas's order (Send, Add, Bills, Scan), packed from the left; the chip's currency switch comes with the Dollar and Crypto accounts (WALLET-21),
- * so the chip is a label until then.
+ * Send (WALLET-02) and Add (WALLET-05) are the actions built, and Scan is added by WALLET-20 after launch
+ * (R-27, R-41), each in the canvas's order, packed from the left. There is no Bills button: bills are off (R-52, DV2-RM). The chip's
+ * currency switch comes with the Dollar and Crypto accounts (WALLET-21), so the chip is a label until then.
  */
-export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onOpenBills }: MoneyCardProps) {
+export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd }: MoneyCardProps) {
   const { shadows } = useWawu();
 
   let body;
@@ -95,18 +97,20 @@ export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWa
       </View>
       {body}
       <View style={styles.actions}>
-        <CardAction testID="today-action-bills" icon="Receipt" label="Bills" onPress={onOpenBills} />
+        <CardAction testID="today-action-send" icon="ArrowUpRight" label="Send" accent onPress={onSend} />
+        <CardAction testID="today-action-add" icon="Plus" label="Add" onPress={onAdd} />
       </View>
     </View>
   );
 }
 
-/** One of the card's round actions: a 48 circle on the glass colour, its glyph, and its word under it. */
-function CardAction({ testID, icon, label, onPress }: { testID: string; icon: 'Receipt'; label: string; onPress: () => void }) {
+/** One of the card's round actions: a 48 circle on the glass colour (the accent for Send, as H1 draws it), its glyph, and its word under it. */
+function CardAction({ testID, icon, label, accent, onPress }: { testID: string; icon: IconName; label: string; accent?: boolean; onPress: () => void }) {
   const ring = useFocusRing();
+  const { colors } = useWawu();
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} {...ring.handlers} style={[styles.cardAction, ring.style]}>
-      <View style={[styles.actionCircle, { backgroundColor: cardInk.chip }]}>
+      <View style={[styles.actionCircle, { backgroundColor: accent ? colors.accent : cardInk.chip }]}>
         <Icon name={icon} size={m.actionIcon} color={cardInk.ink} strokeWidth={m.actionStroke} />
       </View>
       <Text style={[todayWords.action, { color: cardInk.ink }]}>{label}</Text>

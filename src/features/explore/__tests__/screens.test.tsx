@@ -44,6 +44,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 // Loaded after `fetch` is replaced: the API client keeps the fetch it finds when it is created.
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { ExploreScreen } = require('../ExploreScreen') as typeof import('../ExploreScreen');
+const { tgifDayLabel } = require('@/features/home/model') as typeof import('@/features/home/model');
+const { localDay } = require('@/features/tgif/model') as typeof import('@/features/tgif/model');
 const { CategoriesScreen } = require('../CategoriesScreen') as typeof import('../CategoriesScreen');
 
 const categories = [
@@ -71,12 +73,14 @@ function card(wawuId: string, handle: string, field: string, over: Record<string
 }
 
 /**
- * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. A neutral frame
- * carries none of its own, so a name, date or figure on one is a word that is not in this list.
+ * Every word X1 draws when the Hub serves nothing but (maybe) the categories, in the order it draws them. Upcoming events is
+ * left out when the Hub has none (FIX-68 F-6). "Who Made This?" stays drawn with its designed empty state, as Home's does
+ * (R-47, FIX-100 #6: the line that used to leave it out pinned the defect, so its three words are in this list now).
  */
-const WORDS_BEFORE_TILES = ['FEATURED EVENT', 'All'];
+const WORDS_BEFORE_TILES = [tgifDayLabel(localDay()), 'Sons, not slaves', '5 cards', 'All'];
 const WORDS_AFTER_TILES = [
-  'More', 'Featured creators', 'Upcoming events', 'See all',
+  'More',
+  'Who Made This?', 'No creators to suggest yet', 'New creators show up here as they join and publish.',
   'Find a professional', 'Accountants, lawyers, designers',
   'Find a school', 'Courses from schools and academies',
   'List your services', 'Get paid to answer questions',
@@ -90,7 +94,11 @@ const ME = 'me-1';
 const ALL_PAGE_1 = 'GET /explore/creators?page=1&perPage=24';
 const PHOTO_PAGE_1 = 'GET /explore/creators?page=1&perPage=24&category=photography';
 const GAMING_PAGE_1 = 'GET /explore/creators?page=1&perPage=24&category=gaming_esports';
-const FEATURED_EVENT = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+const FEATURED_EVENT = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
+const ADS = 'GET /ads?placement=explore_slider';
+const TGIF_DAY = () => `GET /tgif/${localDay()}`;
+const TGIF_STATS = () => `GET /tgif/${localDay()}/stats`;
+const tgifDay = { date: localDay(), series: 'Sons, not slaves', seriesTheme: 'Sonship', verse: 'v', verseReference: 'Galatians 4:7', reality: 'r', remember: 'm', prayer: 'p', takeaway: 't', shareLink: null };
 const UPCOMING = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
 const COUNTS = 'GET /me/counts';
 const noEvents: Answer = {
@@ -98,9 +106,22 @@ const noEvents: Answer = {
   body: { statusCode: 200, message: 'OK', data: [], pagination: { currentPage: 1, nextPage: null, perPage: 20, total: 0 } },
 };
 
+const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+  id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
+  format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
+  location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
+  contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
+  featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
+  speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
+});
+const pageOf = (items: unknown[]): Answer => ({
+  status: 200,
+  body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
+});
+
 /** Every destination Explore can open, each a spy; a test names the ones it taps. */
 function entries(over: Partial<ExploreScreenProps> = {}): ExploreScreenProps {
-  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onFindProfessional: jest.fn(), onFindSchool: jest.fn(), onListServices: jest.fn(), ...over };
+  return { onOpenCategory: jest.fn(), onOpenEvent: jest.fn(), onSeeAllEvents: jest.fn(), onFindProfessional: jest.fn(), onFindSchool: jest.fn(), onListServices: jest.fn(), onOpenTgif: jest.fn(), ...over };
 }
 
 function wrap(children: ReactNode) {
@@ -179,6 +200,9 @@ beforeEach(() => {
     'GET /users/me': [ok({ wawuUserId: ME })],
     [FEATURED_EVENT]: [noEvents],
     [UPCOMING]: [noEvents],
+    [ADS]: [ok([])],
+    [TGIF_DAY()]: [ok(tgifDay)],
+    [TGIF_STATS()]: [ok({ date: localDay(), cards: [], readers: 0, shares: 0, readByMe: false, sharedByMe: false })],
     [COUNTS]: [ok({ purchases: 0, saved: 0, unreadNotifications: 0 })],
   };
   sent = [];
@@ -200,7 +224,7 @@ describe('X1 · Explore', () => {
   it('a user sees the category tiles in the server’s order and the featured creators, with handle, field and tick', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist'), card('c2', 'funmi', 'Accountant', { verification: ticks(false, true) })] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
     const tiles = rtl.screen.getByTestId('explore-tiles');
     expect(rtl.within(tiles).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
       'All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More categories',
@@ -215,18 +239,19 @@ describe('X1 · Explore', () => {
     answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[COUNTS] = [ok({ purchases: 0, saved: 0, unreadNotifications: 2 })];
+    answers[UPCOMING] = [pageOf([ev('e1', 'Creators Summit')])];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByText('Featured creators');
+    await rtl.screen.findByText('Who Made This?');
     await settle();
     expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
-    for (const words of ['FEATURED EVENT', 'Featured creators', 'Upcoming events', 'Find a professional', 'Find a school', 'List your services']) {
+    for (const words of ['Who Made This?', 'Upcoming events', 'Find a professional', 'Find a school', 'List your services']) {
       expect(rtl.screen.getByText(words)).toBeTruthy();
     }
     // What X1 draws for screens that are not built is not drawn: not for a creator account, not with notifications waiting.
     for (const id of ['explore-search', 'explore-bell', 'explore-bell-dot', 'explore-featured-see-all', 'explore-create']) {
       expect(rtl.screen.queryByTestId(id)).toBeNull();
     }
-    for (const name of ['Search Who Made This', 'Notifications', 'See all creators', 'Create']) {
+    for (const name of ['Search Who Made This?', 'Notifications', 'See all creators', 'Create']) {
       expect(rtl.screen.queryByRole('button', { name })).toBeNull();
     }
     expect(rtl.screen.queryByText(/Search/)).toBeNull();
@@ -236,15 +261,18 @@ describe('X1 · Explore', () => {
   it('every button on Explore does something: each press opens a built screen or follows, and a creator card is not one of them (R-47)', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers['POST /creators/c1/follow'] = [ok({ following: true }, 201)];
+    answers[UPCOMING] = [pageOf([ev('e1', 'Creators Summit')])];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByText('@adaeze');
     await settle();
     const names = rtl.screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
     expect(names).toEqual([
+      `${tgifDayLabel(localDay())}. Sons, not slaves. 5 cards`,
       'All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More categories',
       'Follow',
       'See all events',
+      'Creators Summit, 2 Nov, Eko Convention Centre',
       'Find a professional, Accountants, lawyers, designers',
       'Find a school, Courses from schools and academies',
       'List your services, Get paid to answer questions',
@@ -266,6 +294,8 @@ describe('X1 · Explore', () => {
     expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
     expect(sent).toContain('POST /creators/c1/follow');
     expect(spies.onOpenEvent).not.toHaveBeenCalled();
+    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Creators Summit, 2 Nov, Eko Convention Centre' }));
+    expect(spies.onOpenEvent).toHaveBeenCalledWith('e1');
   });
 
   it('a creator card opens nothing yet, and its Follow still follows', async () => {
@@ -314,31 +344,36 @@ describe('X1 · Explore', () => {
     },
   );
 
-  it('with nobody featured, a user sees Featured creators with three neutral cards, no See all (EXPLORE-02) and no invented creator', async () => {
+  // FIX-100 #6 (U1, R-47): this test used to say the section is left out when nobody is featured (FIX-68 F-6). It pinned the defect:
+  // a built section stays drawn with its designed empty state, as Home's "Who Made This?" is.
+  it('with nobody featured, Who Made This? stays drawn with its designed empty state, as Home does (R-47)', async () => {
     answers[featured] = [ok({ items: [] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-tiles');
-    expect(rtl.screen.getByText('Featured creators')).toBeTruthy();
-    expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
-    const empty = rtl.screen.getByTestId('explore-featured-empty');
-    expect(empty.props.accessibilityLabel).toBe('Featured creators, none to show');
-    expect(rtl.within(empty).queryByText(/@/)).toBeNull();
-    expect(rtl.within(empty).queryAllByRole('button')).toHaveLength(0);
+    await settle();
+    expect(rtl.screen.getByText('Who Made This?')).toBeTruthy();
+    const section = rtl.screen.getByTestId('explore-featured');
+    expect(rtl.within(section).getByTestId('explore-featured-empty')).toBeTruthy();
+    expect(rtl.within(section).getByText('No creators to suggest yet')).toBeTruthy();
+    expect(rtl.within(section).getByText('New creators show up here as they join and publish.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/@/)).toBeNull();
     expect(rtl.screen.queryByText('Follow')).toBeNull();
   });
 
-  it('with no featured event and no upcoming events, a user sees both sections: the hero frame, and Upcoming events with a working See all', async () => {
+  it('with no advert and no event, a user sees no slider and no empty frame for it, and no Upcoming events row (R-59, FIX-68 F-6)', async () => {
     answers[featured] = [ok({ items: [] })];
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByTestId('explore-tiles');
-    expect(rtl.screen.getByTestId('explore-featured-event-empty').props.accessibilityLabel).toBe('Featured event, none to show');
-    expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
-    expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
-    expect(rtl.screen.getByTestId('explore-events-empty').props.accessibilityLabel).toBe('Upcoming events, none to show');
-    expect(rtl.screen.queryByTestId('explore-featured-event')).toBeNull();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-events-see-all'));
-    expect(spies.onSeeAllEvents).toHaveBeenCalledTimes(1);
+    await settle();
+    expect(rtl.screen.queryByTestId('explore-hero')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-featured-event-empty')).toBeNull();
+    expect(rtl.screen.queryByText('FEATURED EVENT')).toBeNull();
+    // The board draws no empty Upcoming events: with none, the row (and its See all) is not drawn.
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-events')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-events-empty')).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'See all events' })).toBeNull();
     expect(spies.onOpenEvent).not.toHaveBeenCalled();
   });
 
@@ -355,19 +390,6 @@ describe('X1 · Explore', () => {
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-tile-all'));
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-tile-more'));
     expect(onOpen.mock.calls).toEqual([['all'], ['all']]);
-  });
-
-  it('draws the hero’s three pager dots as the canvas does, over a featured event and over the empty frame', async () => {
-    const flat = (node: { props: Record<string, unknown> }) => Object.assign({}, ...[node.props.style].flat(Infinity).filter(Boolean));
-    answers[featured] = [ok({ items: [] })];
-    await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    await rtl.screen.findByTestId('explore-featured-event-empty');
-    const hidden = { includeHiddenElements: true };
-    const dots = [0, 1, 2].map((i) => flat(rtl.screen.getByTestId(`explore-hero-dot-${i}`, hidden)));
-    expect(dots.map((d) => d.width)).toEqual([22, 6, 6]);
-    expect(dots.map((d) => d.opacity)).toEqual([1, 0.4, 0.4]);
-    expect(dots.every((d) => d.height === 6 && d.borderRadius === 3)).toBe(true);
-    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden))).toMatchObject({ right: 16, bottom: 18, gap: 5 });
   });
 
   it('a user can tap a category tile to open that category, and All or More to open every category', async () => {
@@ -503,6 +525,7 @@ describe('X1 · Explore', () => {
     const spies = entries();
     await rtl.render(wrap(<ExploreScreen {...spies} />));
     await rtl.screen.findByTestId('explore-tiles');
+    // The section is drawn with its empty state (FIX-100 #6), no card in it.
     expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
     const doors = rtl.screen.getByTestId('explore-doors');
     expect(rtl.within(doors).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
@@ -543,12 +566,12 @@ describe('X1 · Explore', () => {
     await settle();
     expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
-    expect(rtl.screen.queryByRole('button', { name: 'Search Who Made This' })).toBeNull();
+    expect(rtl.screen.queryByRole('button', { name: 'Search Who Made This?' })).toBeNull();
     expect(rtl.screen.queryByRole('button', { name: 'Notifications' })).toBeNull();
     expect(rtl.screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  describe('a read that fails keeps every section drawn (R-47), under one banner with Try again', () => {
+  describe('a read that fails keeps the sections that are built drawn (R-47), under one banner with Try again', () => {
     beforeEach(() => {
       failAtOnce();
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'creator' })];
@@ -557,7 +580,7 @@ describe('X1 · Explore', () => {
     it.each([
       ['the categories', 'GET /explore/categories'],
       ['the featured creators', featured],
-    ])('when %s cannot be read, a user still sees the bar, the hero, the tiles, both rails and the doors, and the one banner', async (_what, failing) => {
+    ])('when %s cannot be read, a user still sees the bar, TGIF, the tiles and the doors, and the one banner, with no empty rails', async (_what, failing) => {
       answers['GET /explore/categories'] = [ok({ items: categories })];
       answers[featured] = [ok({ items: [] })];
       answers[failing] = [refused(500, 'Something went wrong on our side')];
@@ -572,25 +595,31 @@ describe('X1 · Explore', () => {
       // The bar.
       expect(rtl.screen.getByRole('header', { name: 'Explore' })).toBeTruthy();
       // The sections, as when nothing is served.
-      expect(rtl.screen.getByTestId('explore-featured-event-empty')).toBeTruthy();
+      expect(rtl.screen.getByTestId('explore-tgif')).toBeTruthy();
       expect(rtl.within(rtl.screen.getByTestId('explore-tiles')).getAllByRole('button').length).toBeGreaterThanOrEqual(2);
-      expect(rtl.screen.getByText('Featured creators')).toBeTruthy();
-      expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
-      expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
-      expect(rtl.screen.getByText('Upcoming events')).toBeTruthy();
-      expect(rtl.screen.getByRole('button', { name: 'See all events' })).toBeTruthy();
+      // Upcoming events served nothing and is left out (FIX-68 F-6). Who Made This? draws its empty state when its read worked and
+      // served nobody (the categories case), and is left out under the banner when its own read is the one that failed.
+      if (failing === featured) {
+        expect(rtl.screen.queryByText('Who Made This?')).toBeNull();
+        expect(rtl.screen.queryByRole('button', { name: 'See all creators' })).toBeNull();
+        expect(rtl.screen.queryByTestId('explore-featured')).toBeNull();
+      } else {
+        expect(rtl.screen.getByTestId('explore-featured-empty')).toBeTruthy();
+      }
+      expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
+      expect(rtl.screen.queryByRole('button', { name: 'See all events' })).toBeNull();
       for (const door of ['find-professional', 'find-school', 'list-services']) expect(rtl.screen.getByTestId(`explore-door-${door}`)).toBeTruthy();
       expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
     });
 
-    it('the banner sits above the hero, and the doors still open List your services', async () => {
+    it('the banner sits above the TGIF card, and the doors still open List your services', async () => {
       answers['GET /explore/categories'] = [refused(500, 'Down')];
       answers[featured] = [ok({ items: [] })];
       const spies = entries();
       await rtl.render(wrap(<ExploreScreen {...spies} />));
       await rtl.screen.findByTestId('explore-error');
-      const order = outline().split('\n').map((l) => l.trim().split(' ')[1]).filter((id) => ['explore-error', 'explore-featured-event-empty', 'explore-tiles', 'explore-doors'].includes(id ?? ''));
-      expect(order).toEqual(['explore-error', 'explore-featured-event-empty', 'explore-tiles', 'explore-doors']);
+      const order = outline().split('\n').map((l) => l.trim().split(' ')[1]).filter((id) => ['explore-error', 'explore-tgif', 'explore-tiles', 'explore-doors'].includes(id ?? ''));
+      expect(order).toEqual(['explore-error', 'explore-tgif', 'explore-tiles', 'explore-doors']);
       await rtl.fireEvent.press(rtl.screen.getByTestId('explore-door-list-services'));
       expect(spies.onListServices).toHaveBeenCalledTimes(1);
     });
@@ -786,20 +815,8 @@ describe('X2, X3, X13 · Categories', () => {
 
 describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
   const featured = 'GET /explore/featured-creators?limit=10';
-  const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+  const featuredEvent = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
   const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
-  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
-    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
-    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
-    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
-    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
-    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
-    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
-  });
-  const pageOf = (items: unknown[]): Answer => ({
-    status: 200,
-    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
-  });
   // 14 Oct 23:00 UTC is still 14 Oct in New York (15 Oct in Lagos).
   const summit = ev('ev-1', 'Creators Summit', { featured: true });
   const nyc = ev('ev-2', 'New York Night', { timezone: 'America/New_York', startsAt: '2026-10-14T23:00:00.000Z', venueName: null, location: 'New York' });
@@ -817,7 +834,7 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     // The card's badge is read in the event's own zone, the day in two digits.
     expect(rtl.screen.getByLabelText('OCT 14')).toBeTruthy();
     expect(rtl.screen.getByLabelText('NOV 02')).toBeTruthy();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event-ev-1'));
     expect(onOpenEvent).toHaveBeenLastCalledWith('ev-1');
     await rtl.fireEvent.press(rtl.screen.getByTestId('explore-event-ev-2'));
     expect(onOpenEvent).toHaveBeenLastCalledWith('ev-2');
@@ -825,7 +842,7 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     expect(onSeeAllEvents).toHaveBeenCalledTimes(1);
   });
 
-  it('a user sees the pager dots over a featured event and no empty frame beside it, and a tap on the hero still opens the event', async () => {
+  it('a user sees a featured event as the slider’s one slide, with no dots and no empty frame beside it, and a tap on it opens the event', async () => {
     answers[featured] = [ok({ items: [] })];
     answers[featuredEvent] = [pageOf([summit])];
     answers[upcoming] = [pageOf([summit, nyc])];
@@ -833,23 +850,23 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     await rtl.render(wrap(<ExploreScreen {...entries({ onOpenEvent })} />));
     await rtl.screen.findByText('FEATURED EVENT');
     const hero = rtl.screen.getByTestId('explore-hero');
-    expect(rtl.within(hero).getByTestId('explore-hero-dots', { includeHiddenElements: true })).toBeTruthy();
+    expect(rtl.within(hero).queryByTestId('explore-hero-dots', { includeHiddenElements: true })).toBeNull();
     expect(rtl.screen.queryByTestId('explore-featured-event-empty')).toBeNull();
-    expect(rtl.screen.queryByTestId('explore-events-empty')).toBeNull();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    expect(rtl.screen.getByTestId('explore-events')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event-ev-1'));
     expect(onOpenEvent).toHaveBeenCalledWith('ev-1');
   });
 
-  it('a user still sees the tiles and creators when the events cannot be read, and the event sections as neutral frames', async () => {
+  it('a user still sees the tiles and creators when the events cannot be read, and no event section (FIX-68 F-6)', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[featuredEvent] = [refused(500, 'Down')];
     answers[upcoming] = [refused(500, 'Down')];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
-    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
     await settle();
-    expect(rtl.screen.getByTestId('explore-featured-event-empty')).toBeTruthy();
-    expect(rtl.screen.getByTestId('explore-events-empty')).toBeTruthy();
-    expect(rtl.screen.queryByTestId('explore-featured-event')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-hero')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-events')).toBeNull();
+    expect(rtl.screen.queryByText('Upcoming events')).toBeNull();
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
   });
 
@@ -863,20 +880,8 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
 
 describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01 round 7, D12, D13, D14, T4)', () => {
   const featured = 'GET /explore/featured-creators?limit=10';
-  const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+  const featuredEvent = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
   const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
-  const ev = (id: string, name: string, over: Record<string, unknown> = {}) => ({
-    id, hostWawuId: 'h', hostVerification: ticks(false, false), name, description: '', hostOrg: 'Hosts', hostOrgBio: null,
-    format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
-    location: 'Lagos', address: null, venueName: 'Eko Convention Centre', externalUrl: null, bannerUrl: null, category: 'conference',
-    contactEmail: null, contactPhone: null, cancelledAt: null, cancelReason: null, hasRecap: false, recapUrl: null, recapText: null,
-    featured: false, status: 'published', goingCount: 0, userGoing: false, userSaved: false, ticketed: false, priceFromNaira: null,
-    speakers: [], createdAt: '2026-10-01T00:00:00.000Z', lastDecisionReason: null, ...over,
-  });
-  const pageOf = (items: unknown[]): Answer => ({
-    status: 200,
-    body: { statusCode: 200, message: 'OK', data: items, pagination: { currentPage: 1, nextPage: null, perPage: 20, total: items.length } },
-  });
   const screen = () => <ExploreScreen {...entries()} />;
 
   it('keeps X14, hero block included, while the events read is held, then draws the tiles once', async () => {
@@ -890,7 +895,7 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
     expect(rtl.screen.queryByTestId('explore-tiles')).toBeNull();
     // The reads answer: the tiles appear once, with the hero above them already in place.
     await rtl.act(async () => {
-      queryClient.setQueryData(['events', 'featured', { view: 'upcoming', kind: null, category: null }], ev('ev-1', 'Creators Summit'));
+      queryClient.setQueryData(['events', 'featured-list', { view: 'upcoming', kind: null, category: null }], [ev('ev-1', 'Creators Summit')]);
       queryClient.setQueryData(['events', 'explore-rail'], { events: [ev('ev-1', 'Creators Summit')], nextPage: null, total: 1 });
     });
     expect(await rtl.screen.findByTestId('explore-tiles')).toBeTruthy();
@@ -898,14 +903,14 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
     expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
   });
 
-  it('draws Explore with the event sections as neutral frames once a failed events read has settled, asking each only once', async () => {
+  it('draws Explore without the event sections once a failed events read has settled, asking each only once', async () => {
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     answers[featuredEvent] = [refused(500, 'Down')];
     answers[upcoming] = [refused(500, 'Down')];
     await rtl.render(wrap(screen()));
-    expect(await rtl.screen.findByText('Featured creators')).toBeTruthy();
+    expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
-    expect(rtl.screen.getByTestId('explore-featured-event-empty')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-hero')).toBeNull();
     expect(sent.filter((s) => s.startsWith('GET /events?'))).toHaveLength(2);
   });
 
@@ -918,7 +923,7 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
     const onOpenEvent = jest.fn();
     await rtl.render(wrap(<ExploreScreen {...entries({ onOpenEvent })} />));
     expect(await rtl.screen.findByText('14 Oct · New York')).toBeTruthy();
-    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('explore-featured-event-ev-2'));
     expect(onOpenEvent).toHaveBeenLastCalledWith('ev-2');
   });
 
@@ -940,7 +945,7 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
     const { listServicesTarget } = require('@/features/pro-listing/door') as typeof import('@/features/pro-listing/door');
     answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
     await rtl.render(wrap(<ExploreScreen {...entries({ onListServices: () => void listServicesTarget(queryClient).then(opened) })} />));
-    await rtl.screen.findByText('Featured creators');
+    await rtl.screen.findByText('Who Made This?');
   };
 
   it('the card has the doors whose screens are built, in the canvas’s order, with its words (R-47)', async () => {
@@ -970,7 +975,7 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
   });
 
   it('with the event entries in, the card waits with them under X14, then follows Upcoming events (merge with EVENTS-01, D12)', async () => {
-    const featuredEvent = 'GET /events?page=1&perPage=1&view=upcoming&sort=starting_soon&featured=true';
+    const featuredEvent = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon&featured=true';
     const upcoming = 'GET /events?page=1&perPage=20&view=upcoming&sort=starting_soon';
     const event = { ...{ id: 'ev-1', hostWawuId: 'h', hostVerification: ticks(false, false), name: 'Creators Summit', description: '', hostOrg: 'Hosts' },
       hostOrgBio: null, format: 'in_person', type: 'summit', startsAt: '2026-11-02T09:00:00.000Z', endsAt: null, timeLabel: null, timezone: null,
@@ -988,12 +993,41 @@ describe('X1 · the "List your services" door (PROS-03, R-41, D3)', () => {
     expect(rtl.screen.getByTestId('explore-loading')).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-doors')).toBeNull();
     await rtl.act(async () => {
-      queryClient.setQueryData(['events', 'featured', { view: 'upcoming', kind: null, category: null }], event);
+      queryClient.setQueryData(['events', 'featured-list', { view: 'upcoming', kind: null, category: null }], [event]);
       queryClient.setQueryData(['events', 'explore-rail'], { events: [event], nextPage: null, total: 1 });
     });
     expect(await rtl.screen.findByTestId('explore-doors')).toBeTruthy();
-    // Tree order: Featured creators, then Upcoming events, then the doors card.
-    const order = rtl.screen.getAllByText(/^(Featured creators|Upcoming events|List your services)$/).map((n) => n.props.children);
-    expect(order).toEqual(['Featured creators', 'Upcoming events', 'List your services']);
+    // Tree order: the creators, then Upcoming events, then the doors card.
+    const order = rtl.screen.getAllByText(/^(Who Made This\?|Upcoming events|List your services)$/).map((n) => n.props.children);
+    expect(order).toEqual(['Who Made This?', 'Upcoming events', 'List your services']);
+  });
+});
+
+describe('FIX-106 · the Flix movies rail on Explore when the Hub answers soon (R-80)', () => {
+  it('a user sees no rail, no title, no card and no note for a soon answer, exactly as for off', async () => {
+    answers['GET /explore/featured-creators?limit=10'] = [ok({ items: [] })];
+    answers['GET /movies'] = [ok({ enabled: false, soon: true, hero: null, rails: [] })];
+    const onSeeAllMovies = jest.fn();
+    await rtl.render(wrap(<ExploreScreen {...entries({ onSeeAllMovies, onOpenMovie: jest.fn() })} />));
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    // The soon answer is in the cache and Explore has drawn past the creators; the Flix rail has not.
+    await rtl.waitFor(() => expect(queryClient.getQueryData(['movies', 'home'])).toBeDefined());
+    expect(await rtl.screen.findByTestId('explore-featured-empty')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('explore-flix')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-flix-soon')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-flix-see-all')).toBeNull();
+    expect(rtl.screen.queryByTestId('explore-flix-list')).toBeNull();
+    expect(rtl.screen.queryByText('Flix movies')).toBeNull();
+    expect(rtl.screen.queryByText(/switched on yet|movies here soon/i)).toBeNull();
+    expect(onSeeAllMovies).not.toHaveBeenCalled();
+  });
+
+  it('a user sees no rail when the Hub says movies are off without soon', async () => {
+    answers['GET /explore/featured-creators?limit=10'] = [ok({ items: [] })];
+    answers['GET /movies'] = [ok({ enabled: false, hero: null, rails: [] })];
+    await rtl.render(wrap(<ExploreScreen {...entries({ onSeeAllMovies: jest.fn(), onOpenMovie: jest.fn() })} />));
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    expect(rtl.screen.queryByTestId('explore-flix')).toBeNull();
+    expect(rtl.screen.queryByText('Flix movies')).toBeNull();
   });
 });

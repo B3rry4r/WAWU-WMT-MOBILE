@@ -44,6 +44,17 @@ wallet's tier, but the API does report one: `GET /merchant/balance` returned
   the user's daily limit and what's left of it, and a send that would pass the
   limit is stopped before the PIN with a clear message. Never hard-code the
   numbers in a screen.
+- **Built (WALLET-23, 16 Oct 2026).** Fintava publishes no limit, so the limit
+  is the tier's: the backend reads the tier from the balance read
+  (`data.tier`) and takes the tier's daily limit from the setting
+  `FINTAVA_TIER_DAILY_LIMITS_KOBO` (empty: the three figures above, in kobo).
+  The read is kept on the wallet row, `WalletView.limits` is filled from it
+  (no tier named, W35 hides the row until a balance read has kept one), and a
+  debit that would take the day past it is refused `403 limit_reached` with
+  `limit: daily`, `limitKobo` and `remainingTodayKobo`, before anything is
+  sent. Every kind of money out counts together, by amount before fees, in the
+  Lagos day. Still unknown: Fintava's own refusal for a limit (none seen) and
+  whether a purchase into WAWU's merchant wallet counts toward it (question 16).
 - The merchant account's ₦10,000,000 per-transaction cap matters for paying
   out to schools and for large school-fee payments; amounts above it are split
   or refused with a message.

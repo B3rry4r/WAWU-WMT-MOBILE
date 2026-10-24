@@ -4,7 +4,7 @@ import { Text } from '@/components/Text';
 import { fetchNotifications, patchNotifications, settingsKeys, type NotificationSettings } from './api/hub';
 import { loadProblem } from './failure';
 import { NOTIFICATION_GROUPS, notificationOn, type NotificationKey } from './groups';
-import { SettingsFrame } from './SettingsFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { SwitchGroups } from './SwitchGroups';
 import { SwitchesLoading } from './SwitchesLoading';
 import { useSwitches } from './useSwitches';
@@ -32,7 +32,7 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
   const problem = loadProblem(query.error);
 
   return (
-    <SettingsFrame title="Notifications" onBack={onBack} gap={BODY_GAP} testID="notifications-screen">
+    <ScreenFrame idPrefix="settings" title="Notifications" onBack={onBack} gap={BODY_GAP} testID="notifications-screen">
       {query.data ? (
         <>
           <SwitchGroups
@@ -59,6 +59,6 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
       ) : (
         <SwitchesLoading cards={CARD_SIZES} testID="notify-loading" />
       )}
-    </SettingsFrame>
+    </ScreenFrame>
   );
 }

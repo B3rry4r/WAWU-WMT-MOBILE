@@ -85,9 +85,10 @@ describe('the Me tab: what it reads from the Hub', () => {
     expect(countsOf({ followerCount: 1, followingCount: 0, postCount: 1 }).map((c) => `${c.value} ${c.label}`)).toEqual(['1 follower', '0 following', '1 piece']);
   });
 
-  it('shares the name and the wawu/ link, or the name alone without a handle', () => {
-    expect(profileShareText('Lennox Emmanuel', 'lennox')).toBe('Lennox Emmanuel on Who Made This\nwawu/lennox');
-    expect(profileShareText('Lennox Emmanuel', null)).toBe('Lennox Emmanuel on Who Made This');
+  it('shares the name and the https profile link, or the name alone without a handle', () => {
+    expect(profileShareText('Lennox Emmanuel', 'lennox')).toBe('Lennox Emmanuel on Who Made This?\nhttps://wawuafrica.com/u/lennox');
+    expect(profileShareText('Lennox Emmanuel', ' @lennox.films ')).toBe('Lennox Emmanuel on Who Made This?\nhttps://wawuafrica.com/u/lennox.films');
+    expect(profileShareText('Lennox Emmanuel', null)).toBe('Lennox Emmanuel on Who Made This?');
   });
 
   it('gives a free piece its views and a paid one its price in naira, locked', () => {
@@ -117,10 +118,10 @@ describe('the Me tab: what it reads from the Hub', () => {
     expect(listingTitle(listing('a', 'approved', true, '  '))).toBe('marketing');
   });
 
-  it('writes "On Who Made This since" with the month in Lagos time', () => {
-    expect(memberSinceLine('2025-03-14T10:00:00.000Z')).toBe('On Who Made This since March 2025');
+  it('writes "On Who Made This? since" with the month in Lagos time', () => {
+    expect(memberSinceLine('2025-03-14T10:00:00.000Z')).toBe('On Who Made This? since March 2025');
     // 23:30 UTC on 28 February is 00:30 on 1 March in Lagos.
-    expect(memberSinceLine('2025-02-28T23:30:00.000Z')).toBe('On Who Made This since March 2025');
+    expect(memberSinceLine('2025-02-28T23:30:00.000Z')).toBe('On Who Made This? since March 2025');
     expect(memberSinceLine(null)).toBeNull();
     expect(memberSinceLine('not a date')).toBeNull();
   });

@@ -187,6 +187,27 @@ describe('E6 · My tickets', () => {
     expect(rtl.screen.queryByText('Old Summit')).toBeNull();
   });
 
+  it('FIX-101 L-C: a called-off event\'s ticket under Past says it was called off, and still opens the ticket page (which says what came back)', async () => {
+    const off = group({
+      orderId: 'o-7',
+      event: heldEvent({ id: 'e-7', name: 'Dusk photo walk', status: 'cancelled', cancelledAt: '2026-10-22T09:00:00Z', startsAt: '2026-10-24T16:00:00Z' }),
+      tickets: [stub(7, 'void')],
+    });
+    const past = group({ orderId: 'o-8', event: heldEvent({ id: 'e-8', name: 'Old Summit', startsAt: '2026-08-01T09:00:00Z' }) });
+    handler = (c) => (heldList(c) ? page(c.query.get('view') === 'past' ? [off, past] : []) : undefined);
+    const props = await bootList();
+    await rtl.fireEvent.press(await rtl.screen.findByText('Past'));
+    expect(await rtl.screen.findByText('Dusk photo walk')).toBeTruthy();
+    expect(rtl.screen.getByTestId('ticket-group-o-7-t-1-called-off')).toBeTruthy();
+    expect(rtl.screen.getByText('Called off')).toBeTruthy();
+    expect(rtl.screen.getAllByText('1 × Regular')).toHaveLength(2);
+    // An event that simply ended says nothing of the kind.
+    expect(rtl.screen.queryByTestId('ticket-group-o-8-t-1-called-off')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('ticket-group-o-7-t-1'));
+    expect(props.onOpenTicket).toHaveBeenCalledWith(UUID(7));
+    noDashes();
+  });
+
   it('draws the event\'s own date: 03:00 UTC on the 15th is the 14th in New York', async () => {
     const ny = group({ event: heldEvent({ startsAt: '2026-10-15T03:00:00Z', timezone: 'America/New_York', timeLabel: '10:00 EDT' }) });
     handler = (c) => (heldList(c) ? page([ny]) : undefined);

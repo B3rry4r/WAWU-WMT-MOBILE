@@ -3,7 +3,7 @@ id: WALLET-24
 title: Proof of address (A20)
 owner: YOU
 area: WALLET
-order: 262
+order: 308
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint

@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
+import { useRef, useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type DimensionValue, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -8,15 +8,18 @@ import { Button, IconButton } from '@/components/Button';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import type { AdCard } from '@/features/ads/api';
+import { SponsoredBackdrop, SponsoredStep } from '@/features/ads/SponsoredStep';
+import { useAd, useAdReports } from '@/features/ads/useAd';
 import { font, layout, space, useWawu } from '@/theme';
 
 import type { TgifCard, TgifDay } from './api/tgif';
 import { CardBackdrop } from './CardBackdrop';
 import { ink, looks } from './look';
-import { cardLabels, cardText, compactCount, fitSize, headerLine, localDay, readerSteps, wordLeading, wordSize, type WordRoom } from './model';
-import { partMetrics, Progress } from './parts';
-import { ShareSheet } from './ShareSheet';
-import { useAmen, useCountRead, useDay, useStats } from './useTgif';
+import { backZone, cardLabels, cardText, compactCount, fitSize, headerLine, readerDay, readerSteps, sponsoredSlot, tapGoesBack, wordLeading, wordSize, type WordRoom } from './model';
+import { partMetrics, Progress, ReadPill } from './parts';
+import { COULD_NOT_SHARE_VERSE, shareVerse } from './sharePhone';
+import { useAmen, useCountRead, useCountShare, useDay, useStats } from './useTgif';
 
 /**
  * design/_gen/home.js, H29 to H34: where everything sits on a card. The canvas keeps 170 clear below
@@ -80,24 +83,28 @@ export function wordRoom(card: TgifCard, viewport: WordRoom): WordRoom {
 export type TgifReaderProps = {
   /** Leaves the reader: the close control, and Done on the last card. */
   onClose: () => void;
-  /** Where a person with no chats is sent from the share sheet. */
-  onOpenInbox?: () => void;
+  /** Opens an event (E2): where the sponsored card's button leads. Without it the reader offers no sponsored card, so it never draws a button that does nothing. */
+  onOpenEvent?: (eventId: string) => void;
   /** The moment the reader was opened; the day it reads is this moment's calendar day on the phone. */
   now?: Date;
+  /** The day a morning notice was made for (HOME-16, `YYYY-MM-DD`). Read when it is yesterday, today or tomorrow on the phone, otherwise today is read. */
+  date?: string;
 };
 
 /**
  * H29 to H34 · TGIF. The five cards of today, one at a time, full screen: tap to continue, Amen
- * on any card (and inline on the prayer), Share from any card (H35), Done on the last. Every word
+ * on any card (and inline on the prayer), Share from any card (the phone's share sheet, R-58 a), Done on the last. Every word
  * and count comes from the Hub: the text from `GET /tgif/{date}`, the Amen counts and which the
- * person has said from `GET /tgif/{date}/stats`.
+ * person has said, and how many have read today, from `GET /tgif/{date}/stats`. When a campaign is live, the sponsored card (H33,
+ * `GET /ads?placement=tgif_card`, ADS-01) is a sixth step before the takeaway; the cards never wait for it.
  */
-export function TgifReader({ onClose, onOpenInbox, now }: TgifReaderProps) {
-  const [date] = useState(() => localDay(now));
+export function TgifReader({ onClose, onOpenEvent, now, date: requested }: TgifReaderProps) {
+  const [date] = useState(() => readerDay(requested, now));
   const day = useDay(date);
-  useCountRead(date, Boolean(day.data));
+  const ad = useAd('tgif_card', Boolean(onOpenEvent));
+  const marked = useCountRead(date, Boolean(day.data));
 
-  if (day.data) return <Cards date={date} day={day.data} onClose={onClose} onOpenInbox={onOpenInbox} />;
+  if (day.data) return <Cards date={date} day={day.data} ad={ad.data ?? null} marked={marked} onClose={onClose} onOpenEvent={onOpenEvent} />;
   return (
     <Frame onClose={onClose}>
       {day.isError ? (
@@ -137,27 +144,53 @@ function Frame({ onClose, children }: FrameProps) {
   );
 }
 
-type CardsProps = { date: string; day: TgifDay; onClose: () => void; onOpenInbox?: () => void };
+type CardsProps = {
+  date: string;
+  day: TgifDay;
+  ad: AdCard | null;
+  /** The day's readers as the Hub answered this person's own read, which includes them. */
+  marked: number | null;
+  onClose: () => void;
+  onOpenEvent?: (eventId: string) => void;
+};
 
-function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
+function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const steps = readerSteps();
   const [at, setAt] = useState(0);
-  const [sharing, setSharing] = useState(false);
+  // The sponsored card joins the steps only while its place is still ahead: a card that arrives once the person is on the
+  // takeaway is not put in front of them, and one that goes is not taken from under them.
+  const [passedSlot, setPassedSlot] = useState(false);
+  // A card whose picture will not load is left out of the steps too (SWEEP-APP row ADS-01 L5): no bare dark card to skip.
+  const [unloaded, setUnloaded] = useState<string | null>(null);
+  const offer = onOpenEvent && ad && !passedSlot && unloaded !== ad.artworkUrl ? ad : null;
+  // The picture that has been drawn: a view is told to the Hub only once the card's picture is on screen, as on Today (SWEEP-APP-4 row 62/106 low).
+  const [drawn, setDrawn] = useState<string | null>(null);
+  const steps = readerSteps(Boolean(offer));
+  const [shareFailed, setShareFailed] = useState(false);
   // The scroll area's size once it has been laid out; until then the text is sized by its length alone.
   const [viewport, setViewport] = useState<WordRoom | null>(null);
   // Whether the words are taller than their area: only then the scroll bar is shown.
   const [overflow, setOverflow] = useState(false);
   const stats = useStats(date);
   const amen = useAmen(date);
+  const counted = useCountShare(date);
 
   const step = steps[Math.min(at, steps.length - 1)];
-  const card = step.card;
+  const sponsored = step.kind === 'sponsored';
+  // On the sponsored step the card under it is the takeaway's, the one it leads to.
+  const card: TgifCard = step.kind === 'card' ? step.card : 'takeaway';
+  const reports = useAdReports(offer, sponsored && offer !== null && drawn === offer.artworkUrl);
   const last = at >= steps.length - 1;
   const mine = stats.data?.cards.find((c) => c.card === card);
   const said = Boolean(mine?.amenByMe);
   const count = mine && mine.amen > 0 ? compactCount(mine.amen) : undefined;
+  // The Hub's count for the day, or the count its answer to this person's own read gave if that is higher (it includes them); none until one has come.
+  // The count only rises while the reader is open: a later answer that is lower (the read call failed, then a refetch) does not take the pill down (SWEEP-APP row DV2-01 L3).
+  const latestReaders = Math.max(stats.data?.readers ?? 0, marked ?? 0);
+  const [peakReaders, setPeakReaders] = useState(0);
+  if (latestReaders > peakReaders) setPeakReaders(latestReaders);
+  const readers = Math.max(latestReaders, peakReaders);
   const text = cardText(day, card);
   const size = viewport ? fitSize(card, text, wordRoom(card, viewport)) : wordSize(card, text);
   const onViewport = ({ nativeEvent }: LayoutChangeEvent) => {
@@ -168,15 +201,51 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
   const advance = () => {
     if (!last) {
       amen.clearFailure();
+      if (!offer && at + 1 >= sponsoredSlot) setPassedSlot(true);
       setAt(at + 1);
     }
   };
+  // A tap on the left of the card goes back a card; on the first card it does nothing. The step is counted from the cards
+  // that are in the steps now (a sponsored card that failed to load has left them), so Back never lands where it already is.
+  const back = () => {
+    const here = Math.min(at, steps.length - 1);
+    if (here <= 0) return;
+    amen.clearFailure();
+    setAt(here - 1);
+  };
+  const tapCard = (event?: GestureResponderEvent) => (tapGoesBack(event?.nativeEvent?.pageX, width) ? back() : advance());
+  const openEvent = () => {
+    if (!offer || !onOpenEvent) return;
+    reports.tap();
+    onOpenEvent(offer.ctaDestinationId);
+  };
+  const skipAd = () => {
+    reports.skip();
+    advance();
+  };
   const toggleAmen = () => amen.say({ card, on: !said });
+  // Share opens the phone's own share sheet with the verse and its link (R-58 a); it counts once something has gone out.
+  // One sheet at a time: a second tap while a sheet is open opens nothing and sends no second count (SWEEP-APP row DV2-01 L4).
+  const sharing = useRef(false);
+  const shareToday = async () => {
+    if (sharing.current) return;
+    sharing.current = true;
+    setShareFailed(false);
+    try {
+      if ((await shareVerse(day)) === 'shared') counted.mutate();
+    } catch {
+      setShareFailed(true);
+    } finally {
+      sharing.current = false;
+    }
+  };
 
   return (
     <View testID="tgif-reader" style={[styles.root, { backgroundColor: looks[card].ground }]}>
       <StatusBar style="light" />
-      <CardBackdrop look={looks[card]} width={width} height={height} />
+      {sponsored && offer ? <SponsoredBackdrop ad={offer} onFail={() => setUnloaded(offer.artworkUrl)} onLoad={() => setDrawn(offer.artworkUrl)} /> : <CardBackdrop look={looks[card]} width={width} height={height} />}
+      {/* The sponsored card has no tap of its own (a tap outside its button or Skip does nothing), but its left edge goes back, like every card. Behind the step, so its button and Skip keep their taps. */}
+      {sponsored && offer ? <Pressable testID="tgif-back-zone" accessible={false} onPress={back} style={styles.backZone} /> : null}
       <View pointerEvents="box-none" style={[styles.top, { paddingTop: insets.top + space.sm, paddingHorizontal: layout.gutter + insets.left }]}>
         <Progress steps={steps.length} at={at} />
         <View style={styles.header}>
@@ -191,99 +260,112 @@ function Cards({ date, day, onClose, onOpenInbox }: CardsProps) {
           <IconButton testID="tgif-close" icon="X" label="Close" tone="glass" size={partMetrics.close} onPress={onClose} />
         </View>
       </View>
-      <ScrollView
-        testID="tgif-body"
-        onLayout={onViewport}
-        onContentSizeChange={(_w, h) => setOverflow(Boolean(viewport) && h > (viewport?.height ?? 0) + 1)}
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={overflow}
-        persistentScrollbar={overflow}
-        bounces={false}
-      >
-        <Pressable
-          testID={`tgif-card-${card}`}
-          accessible={false}
-          onPress={advance}
-          style={styles.words}
+      {sponsored && offer ? (
+        <SponsoredStep ad={offer} onOpen={openEvent} onSkip={skipAd} bottomInset={insets.bottom} />
+      ) : (
+        <>
+        <ScrollView
+          testID="tgif-body"
+          onLayout={onViewport}
+          onContentSizeChange={(_w, h) => setOverflow(Boolean(viewport) && h > (viewport?.height ?? 0) + 1)}
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={overflow}
+          persistentScrollbar={overflow}
+          bounces={false}
         >
-          {card === 'verse' ? (
-            <View style={styles.quoteMarkBox} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Text variant="body" style={[font(700), styles.quoteMark]}>
-                {'“'}
-              </Text>
-            </View>
-          ) : null}
-          <Text variant="body" testID="tgif-label" style={[font(700), styles.label]}>
-            {cardLabels[card]}
-          </Text>
-          <Text
-            variant="body"
-            testID="tgif-text"
-            style={[font(card === 'verse' ? 700 : 600), { fontSize: size, lineHeight: size * wordLeading, letterSpacing: readerMetrics.tracking * size, color: ink }]}
+          <Pressable
+            testID={`tgif-card-${card}`}
+            accessible={false}
+            onPress={tapCard}
+            style={styles.words}
           >
-            {text}
-          </Text>
-          {card === 'verse' ? (
-            <Text variant="body" testID="tgif-reference" style={styles.reference}>
-              {day.verseReference}
+            {card === 'verse' ? (
+              <View style={styles.quoteMarkBox} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <Text variant="body" style={[font(700), styles.quoteMark]}>
+                  {'“'}
+                </Text>
+              </View>
+            ) : null}
+            <Text variant="body" testID="tgif-label" style={[font(700), styles.label]}>
+              {cardLabels[card]}
             </Text>
-          ) : null}
-          {card === 'prayer' ? (
-            <View style={styles.inline}>
-              <Button
-                testID="tgif-amen-inline"
-                label="Amen"
-                icon="HandHeart"
-                size="md"
-                variant={said ? 'glass' : 'white'}
-                onPress={toggleAmen}
-              />
-            </View>
-          ) : null}
-        </Pressable>
-      </ScrollView>
-      <View
-        testID="tgif-controls"
-        style={[styles.controls, { paddingBottom: Math.max(readerMetrics.controlsBottom, insets.bottom + space.lg) }]}
-      >
-        {amen.failed ? (
-          <Text variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-amen-problem" style={[font(600), styles.problem]}>
-            Your Amen could not be saved. Try again.
-          </Text>
-        ) : null}
-        <View style={styles.pills}>
-          <Button
-            testID="tgif-amen"
-            label={count ? `Amen ${count}` : 'Amen'}
-            icon="HandHeart"
-            size="sm"
-            variant={said ? 'white' : 'glass'}
-            style={styles.pill}
-            onPress={toggleAmen}
-          />
-          <Button testID="tgif-share" label="Share" icon="Share2" size="sm" variant="glass" style={styles.pill} onPress={() => setSharing(true)} />
-        </View>
-        <View style={styles.continueRow}>
-          <Pressable testID="tgif-hint" accessible={false} onPress={advance} style={styles.hintArea}>
-            <Text variant="body" style={styles.hint}>
-              Tap to continue
+            <Text
+              variant="body"
+              testID="tgif-text"
+              style={[font(card === 'verse' ? 700 : 600), { fontSize: size, lineHeight: size * wordLeading, letterSpacing: readerMetrics.tracking * size, color: ink }]}
+            >
+              {text}
             </Text>
+            {card === 'verse' ? (
+              <Text variant="body" testID="tgif-reference" style={styles.reference}>
+                {day.verseReference}
+              </Text>
+            ) : null}
+            {card === 'prayer' ? (
+              <View style={styles.inline}>
+                <Button
+                  testID="tgif-amen-inline"
+                  label="Amen"
+                  icon="HandHeart"
+                  size="md"
+                  variant={said ? 'glass' : 'white'}
+                  onPress={toggleAmen}
+                />
+              </View>
+            ) : null}
           </Pressable>
-          {last ? (
-            <Button testID="tgif-done" label="Done" size="md" variant="white" onPress={onClose} />
-          ) : (
-            <IconButton testID="tgif-next" icon="ArrowRight" label="Next card" tone="glass" size={partMetrics.next} onPress={advance} />
-          )}
+        </ScrollView>
+        <View
+          testID="tgif-controls"
+          style={[styles.controls, { paddingBottom: Math.max(readerMetrics.controlsBottom, insets.bottom + space.lg) }]}
+        >
+          {amen.failed ? (
+            <Text variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-amen-problem" style={[font(600), styles.problem]}>
+              Your Amen could not be saved. Try again.
+            </Text>
+          ) : null}
+          {shareFailed ? (
+            <Text variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="tgif-share-problem" style={[font(600), styles.problem]}>
+              {COULD_NOT_SHARE_VERSE}
+            </Text>
+          ) : null}
+          <View style={styles.pills}>
+            <Button
+              testID="tgif-amen"
+              label="Amen"
+              count={count || undefined}
+              selected={said}
+              icon="HandHeart"
+              size="pill"
+              variant={said ? 'white' : 'glass'}
+              onPress={toggleAmen}
+            />
+            {readers > 0 ? <ReadPill count={compactCount(readers)} /> : null}
+            <Button testID="tgif-share" label="Share" icon="Share2" size="pill" variant="glass" onPress={() => void shareToday()} />
+          </View>
+          <View style={styles.continueRow}>
+            <Pressable testID="tgif-hint" accessible={false} onPress={advance} style={styles.hintArea}>
+              <Text variant="body" style={styles.hint}>
+                Tap to continue
+              </Text>
+            </Pressable>
+            {last ? (
+              <Button testID="tgif-done" label="Done" size="md" variant="white" onPress={onClose} />
+            ) : (
+              <IconButton testID="tgif-next" icon="ArrowRight" label="Next card" tone="lift" size={partMetrics.next} onPress={advance} />
+            )}
+          </View>
         </View>
-      </View>
-      <ShareSheet visible={sharing} onClose={() => setSharing(false)} date={date} day={day} onOpenInbox={onOpenInbox} />
+        </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  backZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: `${backZone * 100}%` as DimensionValue },
   frameBar: { alignItems: 'flex-end', paddingHorizontal: layout.gutter },
   frameBody: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.gutter },
   loading: { gap: readerMetrics.headerGap },
@@ -309,7 +391,6 @@ const styles = StyleSheet.create({
   inline: { marginTop: readerMetrics.inlineTop, alignSelf: 'flex-start' },
   controls: { paddingHorizontal: readerMetrics.controlsX, gap: readerMetrics.controlsGap },
   pills: { flexDirection: 'row', gap: readerMetrics.pillsGap },
-  pill: { height: partMetrics.pillHeight },
   continueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   hintArea: { flex: 1, justifyContent: 'center', minHeight: layout.tapMin },
   hint: { fontSize: readerMetrics.hint, color: ink, opacity: readerMetrics.hintFaint },

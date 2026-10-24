@@ -4,14 +4,13 @@ import * as rtl from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { localDay } from '@/features/tgif/model';
-
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => '00000000-0000-4000-8000-0000000000aa' }));
+let mockSession: 'signedIn' | 'signedOut' | 'restoring' = 'signedIn';
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
-  useSession: () => ({ status: 'signedIn' }),
+  useSession: () => ({ status: mockSession }),
 }));
 // The feed is HOME-02's and has its own tests; here it only has to show which tab it opened on and lead back to Today.
 jest.mock('@/features/feed/FeedScreen', () => {
@@ -57,7 +56,6 @@ const ME = '00000000-0000-4000-8000-0000000000aa';
 const ADA = '00000000-0000-4000-8000-0000000000a1';
 const FUNMI = '00000000-0000-4000-8000-0000000000a2';
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
-const DATE = localDay();
 
 function creator(wawuId: string, name: string, over: Record<string, unknown> = {}) {
   return {
@@ -74,40 +72,21 @@ function creator(wawuId: string, name: string, over: Record<string, unknown> = {
 }
 const creatorsPage = (items: unknown[]) => ok(items, { currentPage: 1, nextPage: null, perPage: 12, total: items.length });
 
-const day = {
-  date: '2026-09-25',
-  series: 'Sons, not slaves',
-  seriesTheme: 'Identity',
-  verse: 'The verse',
-  verseReference: 'Galatians 4:7',
-  reality: 'The reality',
-  remember: 'Remember this',
-  prayer: 'A prayer',
-  takeaway: 'The takeaway',
-  shareLink: null,
-};
-const stats = (readers: number) => ({ date: DATE, cards: [], readers, shares: 0, readByMe: false, sharedByMe: false });
-
 const account = { accountNumber: '1154079370', accountName: 'Ada Sandbox', bankName: 'Loma Bank' };
 const walletOpen = ok({ state: 'open', account });
 
 const T = {
   wallet: 'GET /money/wallet',
   balance: 'GET /money/wallet/balance',
-  tgif: 'GET /settings/tgif',
-  day: `GET /tgif/${DATE}`,
-  stats: `GET /tgif/${DATE}/stats`,
   creators: 'GET /creators',
   me: 'GET /users/me',
+  counts: 'GET /me/counts',
 };
 
 function everyAnswer(): Record<string, Answer[]> {
   return {
     [T.wallet]: [walletOpen],
     [T.balance]: [ok({ availableKobo: 48525075, asOf: '2026-10-07T10:00:00Z' })],
-    [T.tgif]: [ok({ show: true })],
-    [T.day]: [ok(day)],
-    [T.stats]: [ok(stats(12400))],
     [T.creators]: [creatorsPage([creator(ME, 'Me Myself'), creator(ADA, 'Adaeze O.'), creator(FUNMI, 'Funmi A.', { field: 'Accountant', verification: { creator: tick(false), professional: tick(true) } })])],
     [T.me]: [ok({ wawuUserId: ME })],
   };
@@ -115,14 +94,14 @@ function everyAnswer(): Record<string, Answer[]> {
 
 const clients: QueryClient[] = [];
 
-async function boot() {
+async function boot(props: import('../HomeScreen').HomeScreenProps = {}) {
   const { HomeScreen } = require('../HomeScreen') as typeof import('../HomeScreen');
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   return rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <HomeScreen />
+        <HomeScreen {...props} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
@@ -148,6 +127,7 @@ beforeAll(async () => {
 beforeEach(() => {
   answers = everyAnswer();
   sent = [];
+  mockSession = 'signedIn';
   mockPush.mockClear();
 });
 
@@ -217,14 +197,15 @@ describe('H1 · Today', () => {
     expect(gradients).toEqual(['today-balance-glow']);
   });
 
-  it("a user sees today's TGIF from the Hub and opens the reader from it", async () => {
+  it('Today draws no TGIF card and asks for no TGIF: it is on Explore and in the morning notification (R-59, DV2-RM)', async () => {
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    expect(screen.getByText('TGIF · FRIDAY 25 SEP')).toBeTruthy();
-    expect(screen.getByText('Sons, not slaves')).toBeTruthy();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-meta')).toHaveTextContent('5 cards · 12.4K reading today'));
-    await rtl.fireEvent.press(screen.getByTestId('today-tgif'));
-    expect(mockPush).toHaveBeenCalledWith('/tgif');
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
+    expect(screen.queryByTestId('today-tgif')).toBeNull();
+    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
+    expect(screen.queryByText(/TGIF/i)).toBeNull();
+    expect(screen.queryByText(/SPONSORED/i)).toBeNull();
+    expect(sent.filter((key) => /tgif/i.test(key))).toEqual([]);
   });
 
   it('a user sees creators to discover, never themselves, with the tick each has', async () => {
@@ -305,28 +286,10 @@ describe('H1 · Today', () => {
   it('draws no entry that leads to a screen not built yet', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    for (const label of ['Send', 'Add', 'Scan', 'Shop', 'See all']) {
+    for (const label of ['Scan', 'Shop', 'See all']) {
       expect(screen.queryByText(label)).toBeNull();
     }
     expect(screen.queryByRole('button', { name: /search|notifications|create/i })).toBeNull();
-  });
-});
-
-describe('H36 · Today with TGIF off', () => {
-  it('a user with TGIF off sees Today without the TGIF card, and the day is never asked for', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
-    expect(screen.queryByText(/SPONSORED/i)).toBeNull();
-    expect(sent).not.toContain(T.day);
-    expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy();
-  });
-
-  it('a TGIF switch that cannot be read leaves TGIF on, as the Hub does for nobody who turned it off', async () => {
-    answers[T.tgif] = ['offline'];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
   });
 });
 
@@ -341,6 +304,27 @@ describe('the balance card without a balance', () => {
     expect(sent).not.toContain(T.balance);
     await rtl.fireEvent.press(screen.getByTestId('today-open-wallet'));
     expect(mockPush).toHaveBeenCalledWith('/open-wallet');
+  });
+
+  it('A30: a user with no wallet sees the "Complete your account" flag above the card, and tapping it opens A31', async () => {
+    answers[T.wallet] = [ok({ state: 'not_open', account: null })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-complete-account')).toBeTruthy());
+    expect(screen.getByText('Complete your account')).toBeTruthy();
+    expect(screen.getByText('Verify your identity to get your account number')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByTestId('today-complete-account'));
+    expect(mockPush).toHaveBeenCalledWith('/open-wallet');
+  });
+
+  it('A30: the flag stays while the account is still opening, and is gone once it is open', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null }), walletOpen];
+    answers[T.balance] = [ok({ availableKobo: 0, asOf: '2026-10-07T10:00:00Z' })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    expect(screen.getByTestId('today-complete-account')).toBeTruthy();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Check again' }));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦0.00'));
+    expect(screen.queryByTestId('today-complete-account')).toBeNull();
   });
 
   it('a wallet still opening says so, and Check again asks about the wallet again', async () => {
@@ -363,29 +347,6 @@ describe('the balance card without a balance', () => {
     expect(screen.queryByTestId('today-balance')).toBeNull();
     await rtl.fireEvent.press(screen.getByTestId('today-balance-retry'));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦1.00'));
-  });
-});
-
-describe("today's TGIF that cannot be read", () => {
-  it('says so in its own card with Try again, and is not taken for TGIF switched off', async () => {
-    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }, ok(day)];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif-error')).toBeTruthy());
-    expect(screen.getByText("Today's TGIF didn't load.")).toBeTruthy();
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
-    expect(screen.getByTestId('today-balance')).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByTestId('today-tgif-retry'));
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
-  });
-
-  it('with TGIF off, neither the card nor its error shows', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    answers[T.day] = [{ status: 500, body: { statusCode: 500, message: 'Server error', data: null } }];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.queryByTestId('today-tgif-error')).toBeNull();
-    expect(screen.queryByTestId('today-tgif')).toBeNull();
   });
 });
 
@@ -415,98 +376,329 @@ describe('Today empty and in error', () => {
     expect(screen.getByText("Today didn't load")).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦485,250.75'));
-    await rtl.waitFor(() => expect(screen.getByTestId('today-tgif')).toBeTruthy());
+    await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
   });
 });
 
-describe('H1 · the Bills action on the balance card (BILLS-01, R-41)', () => {
-  it('a user can tap Bills on the balance card and land on Pay a bill (S2)', async () => {
+describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
+  it('draws Send and Add among the card actions, and no Bills (bills are off) and no Scan (it has no screen yet)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByText('Bills')).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByTestId('today-action-bills'));
-    expect(mockPush).toHaveBeenCalledWith('/bills');
+    expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Add' })).toHaveLength(1);
+    for (const id of ['today-action-send', 'today-action-add']) expect(screen.getByTestId(id)).toBeTruthy();
+    expect(screen.queryByTestId('today-action-bills')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
+    for (const label of ['Bills', 'Scan']) expect(screen.queryByText(label)).toBeNull();
   });
 
-  it('draws Bills and only Bills among the card actions: Send, Add and Scan have no screen yet', async () => {
+  it('a user can still tap Send on the balance card and land on Send money', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
-    for (const label of ['Send', 'Add', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    await rtl.fireEvent.press(screen.getByTestId('today-action-send'));
+    expect(mockPush).toHaveBeenCalledWith('/send');
+  });
+
+  it('a user can tap Add on the balance card and reach Add money (WALLET-05, W15)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByTestId('today-action-add'));
+    expect(mockPush).toHaveBeenCalledWith('/add-money');
   });
 });
 
-describe('H1 and H36 · the Events tile (EVENTS-01, R-41)', () => {
-  it('a user can tap Events under "What would you like to do today?" and land on Events (E1)', async () => {
+describe('H1 · no Events tile and no Pay bills tile (R-61, R-52, DV2-RM)', () => {
+  it('a user sees "What would you like to do today?" with no Events tile and no Pay bills tile, and no Shop (R-2)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getByRole('header', { name: 'What would you like to do today?' })).toBeTruthy();
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Events' }));
-    expect(mockPush).toHaveBeenCalledWith('/events');
-    // The canvas's fourth, Shop, is retired (R-2): Schools takes its place and nothing else is drawn.
-    expect(screen.queryByText('Shop')).toBeNull();
-  });
-
-  it('a user with TGIF off still has the Events tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-events')).toBeTruthy();
+    expect(screen.queryByTestId('today-service-events')).toBeNull();
+    expect(screen.queryByTestId('today-service-bills')).toBeNull();
+    for (const label of ['Events', 'Pay bills', 'Shop']) {
+      expect(screen.queryByRole('button', { name: label })).toBeNull();
+      expect(screen.queryByText(label)).toBeNull();
+    }
   });
 });
 
-describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11)', () => {
-  it('a user sees Pay bills first in the row, then Events, Legal and Schools, with no empty slot (BILLS-01)', async () => {
+describe('H1 and H11 · the services row packs from the left (EVENTS-01 round 7, U-H1, D11; R-61, DV2-01, DV2-RM)', () => {
+  it('a user sees Studio, Learn and Legal, packed from the left with no empty slot', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const column = screen.getByTestId('today-service-bills').parent!;
+    const column = screen.getByTestId('today-service-schools').parent!;
     const grid = column.parent!;
-    expect(grid.children).toHaveLength(4);
-    expect(grid.children[0]).toBe(column);
-    expect(grid.children[1]).toBe(screen.getByTestId('today-service-events').parent);
+    // POINTS-07 added Studio as the first tile (R-61): three tiles every account has, in the canvas's order.
+    expect(grid.children).toHaveLength(3);
+    expect(grid.children[0]).toBe(screen.getByTestId('today-service-studio').parent);
+    expect(grid.children[1]).toBe(column);
+    expect(grid.children[2]).toBe(screen.getByTestId('today-service-legal').parent);
+    // Monetize opens the Create hub, which is for creator accounts: this person is not one, so there is no tile to send them Home.
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
   });
 
-  it('a user can tap Pay bills, the first tile, and land on Pay a bill (S2, BILLS-01)', async () => {
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Pay bills' }));
-    expect(mockPush).toHaveBeenCalledWith('/bills');
-  });
-
-  it('a user with TGIF off still has the Pay bills tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
-    const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-bills')).toBeTruthy();
-  });
-
-  it('a user can tap Legal, the third tile, and land on the legal chat (S14, LEGAL-02)', async () => {
+  it('a user can tap Legal and land on the legal chat (S14, LEGAL-02)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Legal' }));
     expect(mockPush).toHaveBeenCalledWith('/legal');
   });
 
-  it('a user can tap Schools, the fourth tile, and land on the schools list (SC1, SCHOOLS-03)', async () => {
+  it('a user can tap Studio, the first tile, and land on Studio (PT1, POINTS-07)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    const grid = screen.getByTestId('today-service-events').parent!.parent!;
-    expect(grid.children[3]).toBe(screen.getByTestId('today-service-schools').parent);
-    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Schools' }));
+    const grid = screen.getByTestId('today-service-legal').parent!.parent!;
+    expect(grid.children[0]).toBe(screen.getByTestId('today-service-studio').parent);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Studio' }));
+    expect(mockPush).toHaveBeenCalledWith('/studio');
+  });
+
+  it('a user can tap Learn, the tile after Studio (Schools, renamed by R-61), and land on the schools list (SC1, SCHOOLS-03)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    const grid = screen.getByTestId('today-service-legal').parent!.parent!;
+    expect(grid.children[1]).toBe(screen.getByTestId('today-service-schools').parent);
+    expect(screen.queryByText('Schools')).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     expect(mockPush).toHaveBeenCalledWith('/schools');
   });
 
-  it('a user with TGIF off still has the Schools tile (H36)', async () => {
-    answers[T.tgif] = [ok({ show: false })];
+  it('the loading view draws one tile shape for each of the three tiles every account has, and no TGIF bar (H11)', async () => {
+    const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
+    await rtl.render(<TodayLoading />);
+    const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
+    expect(shapes).toHaveLength(3);
+  });
+});
+
+// DV2-01 (R-61, R-69): the drawn row is Studio, Learn, Monetize, Legal; Monetize opens the Create hub (M19), which is for
+// creator accounts, and the rail is called "Who Made This?".
+describe('H1 · Monetize, and the rail title (R-61, R-69)', () => {
+  const asCreator = () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+  };
+
+  it('a creator sees Monetize between Learn and Legal and taps it to land on the Create hub (M19)', async () => {
+    asCreator();
     const screen = await boot();
-    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
-    expect(screen.getByTestId('today-service-schools')).toBeTruthy();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
+    const grid = screen.getByTestId('today-service-schools').parent!.parent!;
+    const order = grid.children.map((column) => (column as { children: { props: { testID?: string } }[] }).children[0].props.testID);
+    expect(order).toEqual(['today-service-studio', 'today-service-schools', 'today-service-monetize', 'today-service-legal']);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Monetize' }));
+    expect(mockPush).toHaveBeenCalledWith('/create');
   });
 
-  it('the loading view draws one tile shape for each of the four tiles present (H11)', async () => {
-    const { TodayLoading } = require('../TodayLoading') as typeof import('../TodayLoading');
-    await rtl.render(<TodayLoading withTgif />);
-    const shapes = JSON.stringify(rtl.screen.toJSON()).match(/"height":60/g) ?? [];
-    expect(shapes).toHaveLength(4);
+  it('a person whose account type is not creator has no Monetize tile, so no tap sends them back Home', async () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'user' })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
+    expect(screen.queryByText('Monetize')).toBeNull();
+  });
+
+  it('a profile that cannot be read leaves Monetize out and Today still draws', async () => {
+    answers[T.me] = ['offline'];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    expect(screen.queryByTestId('today-service-monetize')).toBeNull();
+  });
+
+  it('titles the creators rail "Who Made This?" and no longer "Creators to discover"', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.getByText('Who Made This?')).toBeTruthy();
+    expect(screen.queryByText('Creators to discover')).toBeNull();
+  });
+});
+
+// HOME-18: the bell Explore's bar draws (ME-14) is also in Today's bar, with its dot read from `GET /me/counts`; and three spacings H1 draws.
+const counts = (unread: number) => ok({ purchases: 0, saved: 0, unreadNotifications: unread });
+const flat = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as object) as Record<string, unknown>;
+
+describe('H1 · the bell in Today\'s bar (HOME-18)', () => {
+  it('a user sees the bell with its dot when the Hub says something is unread, and the bell opens Notifications', async () => {
+    answers[T.counts] = [counts(3)];
+    const onOpenNotifications = jest.fn();
+    const screen = await boot({ onOpenNotifications });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    expect(sent).toContain(T.counts);
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Notifications, new ones waiting' }));
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the bell as H1 does: a 40 round button 8 from the search button, its dot 8 across, 9 from the top and 10 from the right', async () => {
+    answers[T.counts] = [counts(1)];
+    const screen = await boot({ onSearch: jest.fn(), onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    expect(flat(screen.getByTestId('today-bell'))).toMatchObject({ width: 40, height: 40 });
+    expect(flat(screen.getByTestId('today-search'))).toMatchObject({ width: 40, height: 40 });
+    expect(flat(screen.getByTestId('today-bell-dot'))).toMatchObject({ width: 8, height: 8, top: 9, right: 10 });
+    const buttons = screen.getByTestId('today-bar-buttons');
+    expect(flat(buttons)).toMatchObject({ flexDirection: 'row', gap: 8 });
+    type Kid = { props: { testID?: string }; children: Kid[] };
+    expect((buttons.children as unknown as Kid[]).map((c) => c.props.testID ?? c.children[0].props.testID)).toEqual(['today-search', 'today-bell']);
+  });
+
+  // SWEEP-APP-5 (HOME-18 L1): the dot's ring is part of the draw (8 across, ringed 2 in the card colour); a ring at 0 passed every test.
+  it('rings the dot 2 in the card colour, as the canvas draws it', async () => {
+    answers[T.counts] = [counts(1)];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    const { darkColors, lightColors } = require('@/theme/tokens.generated') as typeof import('@/theme/tokens.generated');
+    const ring = (flat(screen.getByTestId('today-bell-dot')).boxShadow as { color: string }[])[0];
+    expect(ring).toMatchObject({ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 2 });
+    expect([darkColors.surfaceCard, lightColors.surfaceCard]).toContain(ring.color);
+  });
+
+  // SWEEP-APP-5 (HOME-18 L1): Today's tab row is fitted to the room beside it (the 320 wide phone with the search and the bell). Dropping
+  // `fit` from Today's HomeTabs passed every test; the fit was proven only by the export. A narrow room now steps the row down.
+  it('fits the tab row to the room beside the buttons: a narrow room takes space from between the tabs', async () => {
+    const { tabFitSteps } = require('../HomeTabs') as typeof import('../HomeTabs');
+    const screen = await boot({ onSearch: jest.fn(), onOpenNotifications: jest.fn() });
+    const layout = (width: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height: 40 } } });
+    const gap = () => (flat(screen.getByTestId('home-tabs')) as { gap: number }).gap;
+    expect(gap()).toBe(tabFitSteps[0].gap);
+    await rtl.act(() => rtl.fireEvent(screen.getByTestId('home-tabs-room'), 'layout', layout(184)));
+    await rtl.act(() => rtl.fireEvent(screen.getByTestId('home-tabs'), 'layout', layout(223)));
+    expect(gap()).toBe(tabFitSteps[1].gap);
+    expect(tabFitSteps[1].gap).toBeLessThan(tabFitSteps[0].gap);
+  });
+
+  it('has no dot at 0 unread, but the bell is still there and still opens Notifications', async () => {
+    answers[T.counts] = [counts(0)];
+    const onOpenNotifications = jest.fn();
+    const screen = await boot({ onOpenNotifications });
+    await rtl.waitFor(() => expect(sent).toContain(T.counts));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    await rtl.fireEvent.press(screen.getByRole('button', { name: 'Notifications' }));
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no dot when the count cannot be read, and Today still draws', async () => {
+    answers[T.counts] = ['offline'];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.waitFor(() => expect(sent).toContain(T.counts));
+    expect(screen.getByTestId('today-bell')).toBeTruthy();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+  });
+
+  it('the dot is the Hub\'s count, never a literal: it follows the count when it changes', async () => {
+    answers[T.counts] = [counts(5), counts(0)];
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-bell-dot')).toBeTruthy());
+    await rtl.act(async () => {
+      await clients[0].invalidateQueries({ queryKey: ['me', 'counts'] });
+    });
+    await rtl.waitFor(() => expect(screen.queryByTestId('today-bell-dot')).toBeNull());
+  });
+
+  it('is drawn while Today loads (H11), without a dot, and the count is asked for with the rest', async () => {
+    answers = Object.fromEntries(Object.values(T).map((k) => [k, ['hold' as const]]));
+    const screen = await boot({ onOpenNotifications: jest.fn() });
+    expect(screen.getByTestId('today-loading')).toBeTruthy();
+    expect(screen.getByTestId('today-bell')).toBeTruthy();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+  });
+
+  it('is not drawn without a way to open Notifications (R-47): no bell, no dot, and the count is not asked for', async () => {
+    answers[T.counts] = [counts(4)];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    expect(screen.queryByTestId('today-bell')).toBeNull();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(sent).not.toContain(T.counts);
+  });
+
+  it('is not drawn when signed out, and nothing is asked of the Hub for it', async () => {
+    mockSession = 'signedOut';
+    answers[T.counts] = [counts(4)];
+    const screen = await boot({ onOpenNotifications: jest.fn(), onSearch: jest.fn() });
+    expect(screen.queryByTestId('today-bell')).toBeNull();
+    expect(screen.queryByTestId('today-bell-dot')).toBeNull();
+    expect(screen.getByTestId('today-search')).toBeTruthy();
+    expect(sent).toEqual([]);
+  });
+
+  it('is the same bell Explore draws: one component, so its label and dot read alike on both bars', async () => {
+    const { NotificationsBell, bellFits } = require('@/features/notifications/NotificationsBell') as typeof import('@/features/notifications/NotificationsBell');
+    expect(bellFits.today).toEqual({ size: 40, dotTop: 9, dotRight: 10 });
+    expect(bellFits.explore).toEqual({ size: 44, dotTop: 10, dotRight: 11 });
+    await rtl.render(<NotificationsBell variant="today" onPress={() => undefined} unread={2} testID="b" />);
+    expect(rtl.screen.getByRole('button', { name: 'Notifications, new ones waiting' })).toBeTruthy();
+    expect(rtl.screen.getByTestId('b-dot')).toBeTruthy();
+  });
+});
+
+describe('H1 · three spacings the board draws (HOME-18)', () => {
+  it('the money card ends 16 under its actions, as H1 draws it (it was 18)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-card')).toBeTruthy());
+    expect(flat(screen.getByTestId('today-balance-card'))).toMatchObject({ paddingTop: 18, paddingBottom: 16, paddingHorizontal: 18 });
+  });
+
+  it('the loading shape of the card is as tall as the card: the figure, 38, with the actions under it', async () => {
+    const { todayMetrics } = require('../look') as typeof import('../look');
+    const { canvasNormalLineHeight } = require('@/theme') as typeof import('@/theme');
+    // padding 18 and 16, the chip row 30, 14 to the figure (38), 18 to the actions, a 48 circle, 6, and its word's canvas line.
+    expect(todayMetrics.skeletonMoney).toBe(18 + 30 + 14 + 38 + 18 + 48 + 6 + canvasNormalLineHeight(12) + 16);
+  });
+
+  it('the services heading has the board\'s line height, 24 at 18.5 (it was 21.8)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-services')).toBeTruthy());
+    const heading = screen.getByRole('header', { name: 'What would you like to do today?' });
+    expect(flat(heading)).toMatchObject({ fontSize: 18.5, lineHeight: 24 });
+  });
+
+  it('a creator\'s Today ends 90 under the rail, so Create (58 across, 16 above the bar) never covers a card\'s Follow', async () => {
+    answers[T.me] = [ok({ wawuUserId: ME, accountType: 'creator' })];
+    const { createButtonMetrics } = require('@/components/CreateButton') as typeof import('@/components/CreateButton');
+    const screen = await boot({ onCreate: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-monetize')).toBeTruthy());
+    const bottom = flat({ props: { style: screen.getByTestId('today-scroll').props.contentContainerStyle } });
+    expect(bottom.paddingBottom).toBe(90);
+    expect(bottom.paddingBottom as number).toBeGreaterThanOrEqual(createButtonMetrics.bottom + createButtonMetrics.size + 16);
+  });
+
+  it('anyone else keeps the board\'s gap of 32 under the rail', async () => {
+    const screen = await boot({ onCreate: jest.fn() });
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const bottom = flat({ props: { style: screen.getByTestId('today-scroll').props.contentContainerStyle } });
+    expect(bottom.paddingBottom).toBe(32);
+  });
+});
+
+describe('FIX-106 · the Flix movies rail on Today when the Hub answers soon (R-80)', () => {
+  it('a user sees no rail, no title, no card and no note for a soon answer, exactly as for off', async () => {
+    answers['GET /movies'] = [ok({ enabled: false, soon: true, hero: null, rails: [] })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    // The soon answer is in the cache and Today has drawn; the Flix rail has not.
+    await rtl.waitFor(() => expect(clients.some((c) => c.getQueryData(['movies', 'home']) !== undefined)).toBe(true));
+    await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
+    expect(screen.queryByTestId('today-flix')).toBeNull();
+    expect(screen.queryByTestId('today-flix-soon')).toBeNull();
+    expect(screen.queryByTestId('today-flix-see-all')).toBeNull();
+    expect(screen.queryByTestId('today-flix-list')).toBeNull();
+    expect(screen.queryByText('Flix movies')).toBeNull();
+    expect(screen.queryByText(/switched on yet|movies here soon/i)).toBeNull();
+  });
+
+  it('a user sees no rail when the Hub says movies are off without soon', async () => {
+    answers['GET /movies'] = [ok({ enabled: false, hero: null, rails: [] })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(sent).toContain('GET /movies'));
+    expect(screen.queryByTestId('today-flix')).toBeNull();
+    expect(screen.queryByText('Flix movies')).toBeNull();
   });
 });

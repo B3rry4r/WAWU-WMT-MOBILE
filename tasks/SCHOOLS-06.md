@@ -7,7 +7,7 @@ order: 129
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, SCHOOLS-03, SCHOOLS-07, UI-02]
 decisions: [R-12, R-1, R-6, R-10, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -17,10 +17,20 @@ artboards: [SC4, SC5, SC6, SC7, SC11]
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): SCHOOLS-07.
-- **History:** none yet. Reports go to tasks/history/SCHOOLS-06.md.
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge after round 2 (the pending-then-failed medium F1 closed; FIX-58 closes F2); round 3 polish on the lead's diff read (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S5.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main. Built: Mobile `wmt/S5` from `origin/wmt/MERGE-9` 72bc8d6c with `origin/wmt/B2` (be8d9cb) merged; no backend change, no migration, no contract change (types are the merged ones).
+- **Built (all `src/features/schools/`):** SC4 `EnrolScreen` (details from `GET /users/me`, the classes not yet begun as a radio list, "<school> gets these details...", Continue holds a place with `POST /schools/enrolments`); SC5 and SC6 `EnrolmentScreen` over the shared `PaySheet` and `PinSheet` (a fresh `GET /money/payments/quote?kind=school_fee` per tap on Pay, one `Idempotency-Key` per attempt kept across a wrong PIN and a lost answer, written to the phone before it is sent: `enrolIntent.ts`, `useEnrolPay.ts`); SC7 the receipt (Share receipt opens the phone's share sheet with text and reference); SC11 class full on SC3's bar and on SC4 when Continue answers `409 class_full`. Also kept, undrawn on the boards: paid-still-confirming (Refresh, never pays again), a place that went back, a refunded enrolment, no wallet (Open your wallet), no PIN, short balance, over today's limit, price moved.
+- **Words from the 16 Oct boards:** "Bank charge" (never Fintava), "Who Made This?". SC5 button reads "Pay · ₦150,015.75" until the shared prop lands (SHARED-CHANGES SCHOOLS-06 #1). SC7 leaves out "within 2 working days" (G-850). "One payment" under the fee is added (G-626): drawn when the course has a fee and a class to join.
+- **Attacks, once each on the stack (`/tmp/claude-0/.../s5-b/logs/live-attacks.txt`, stack s5_test on ports 7700-7707, Nuvion stand-in):** double Continue 201 and 201, one order, seats 20 to 19; double Pay one key 409 `idempotency_in_progress` and 201, one debit; wrong PIN 403 `pin_incorrect`, no debit, same key right PIN 201; short balance 402 `insufficient_funds` with the bank figures, no debit, enrolment still reserved; lost answer then retry 201 and 201 `Idempotent-Replayed: true`, one payment, one debit, one My courses row; class filled between view and Continue 409 `class_full` with `nextIntake`, no debit, no enrolment; free course 201 `enrolled` at once, no PIN, no payment, no quote. All also in `enrolFlow.test.tsx`.
+- **Checks:** `tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest `src/features/schools`, `src/features/me` and `buyTickets` green (see the final log line in the hand-back); `npm run gates` EXIT 0 (0 fail, 0 accepted; the new PROVISIONAL(SCHOOL-ENROL-POLL) is a warn).
+- **Pictures** (390 px, light and dark, beside the boards as `board-SC*`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s5-b/pics` (SC3, SC4, SC5, SC5-short-balance, SC6, SC6-wrong-pin, SC7, SC11-course-full, SC11-on-SC4).
+- **Fee on the stack:** the stand-in's Bank charge is ₦0, so the pictures read "Bank charge ₦0"; the tests use the 16 Oct figure (₦15.75, total ₦150,015.75).
+- **NOT RUN:** the still-confirming and "place went back" screens on the stack (the stand-in settles at once and a place takes 30 minutes to go back): tests only; no real device or Fintava; the unit tests of the shared sheets are untouched.
+- **Open:** the sheet's logo tile (G-853) and the dot-less button (SHARED-CHANGES SCHOOLS-06 #1).
+- **Round 2 (17 Oct 2026, builder, from be5454f2; fixes the verifier's F1 medium and F2 low):** a payment the Hub answered `pending` that then FAILS now ends the "Paid, still confirming" wait. The phone keeps the payment id from the pay answer (and from `409 payment_in_progress` `reason.paymentId`; `enrolIntent.ts` `paymentId`, older entries read as none) and, while confirming, reads `GET /money/payments/{id}` beside the order. On `failed` or `reversed` it lets the attempt go, asks a fresh quote and draws the pay sheet's "Payment didn't go through" with the Hub's reason and "Your money is back in your wallet."; Pay then runs again with the new quote and a new key. A reload in between finds the id on the phone and tells the same. F2: a second phone is named the open payment when the Hub refuses the quote or the Pay (`payment_in_progress`) and draws "still confirming", no Pay; the Hub does not refuse the quote yet (G-SCHOOLS-06-1), so until it does the second phone meets it at the PIN tap. F3 and F5 stay with their SHARED rows.
+- **Round 2 checks:** `tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest `src/features/schools` 5 suites, 156 tests, EXIT 0 (5 new in `enrolFlow.test.tsx`: pending then failed, pending then paid, a reload in between, a second phone, a Pay refused as in progress). NOT RUN: the stand-in settling a transfer failed on a stack (tests only).
+- **Round 3 (17 Oct 2026, builder, from 309abf74; the two lows F6, F7):** a failed payment the Hub was confirming draws the Hub's reason alone when it gave one; "Your money is back in your wallet." (with "The payment didn’t go through.") only when it gave none (`enrolModel.ts` `failedLine`, new `enrolModel.test.ts`); the "second phone" test and the other round 2 Refresh presses wait for the settled button name. `tsc` EXIT 0, eslint EXIT 0, jest `src/features/schools` 6 suites, 159 tests, EXIT 0 five runs in a row.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S4 F2 / S5 F5, S4 F5 / S5 F3).
 
 ## Read first
 
@@ -108,13 +118,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SCHOOLS-06.md](history/SCHOOLS-06.md).
 
 ## Owner sign-off
 

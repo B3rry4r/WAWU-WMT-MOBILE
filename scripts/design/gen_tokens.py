@@ -157,7 +157,7 @@ def ms(value: str) -> int | None:
 
 
 COLOR_PREFIXES = ("surface-", "border-", "text-", "accent", "positive", "warning", "danger",
-                  "info", "success", "locked", "tick-", "cur-", "hue-", "brand-", "tgif-", "glow-")
+                  "info", "success", "locked", "tick-", "cur-", "hue-", "brand-", "tgif-", "glow-", "media-")
 TEXT_SIZES = ("text-display", "text-title", "text-h1", "text-h2", "text-h3", "text-body",
               "text-sec", "text-caption", "text-label", "text-tab")
 

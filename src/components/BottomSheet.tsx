@@ -4,7 +4,6 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { useFocusRing } from './focusRing';
-import { blackAt } from './shadow';
 
 /** design/_gen/kit.js `sheet`: a 40 by 5 grabber, 10 above it and 34 below the content (the home indicator). */
 export const sheetMetrics = {
@@ -14,10 +13,6 @@ export const sheetMetrics = {
   padTop: 10,
   padBottom: 34,
   between: 18,
-  /** `--shadow-sheet`: 0 -12px 40px at 50% black, the same in both themes. */
-  shadowY: -12,
-  shadowBlur: 40,
-  shadowAlpha: 0.5,
   /**
    * The top hairline, drawn as the kit does: `inset 0 1px 0 var(--border-hairline)`
    * inside the 10 px top padding, so the grabber sits 10 below the sheet's edge.
@@ -56,7 +51,7 @@ export function BottomSheet({
   children,
   testID,
 }: BottomSheetProps) {
-  const { colors } = useWawu();
+  const { colors, shadows } = useWawu();
   const ring = useFocusRing();
   const close = () => {
     if (dismissible) onClose();
@@ -84,7 +79,7 @@ export function BottomSheet({
               backgroundColor: colors.surfaceElevated,
               gap,
               boxShadow: [
-                { offsetX: 0, offsetY: sheetMetrics.shadowY, blurRadius: sheetMetrics.shadowBlur, color: blackAt(sheetMetrics.shadowAlpha) },
+                ...shadows.sheet,
                 { offsetX: 0, offsetY: sheetMetrics.edge, blurRadius: 0, color: colors.borderHairline, inset: true },
               ],
             },

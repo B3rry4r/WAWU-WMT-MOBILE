@@ -25,14 +25,14 @@ const unlock = {
   },
   amountKobo: 250000,
   details: [{ label: 'Yours', value: 'Forever, in My purchases' }],
-  fees: [{ label: "Fintava's charge", amountKobo: 2325 }],
+  fees: [{ label: 'Bank charge', amountKobo: 2325 }],
   walletName: 'Naira wallet',
   actionLabel: 'Unlock',
 } satisfies Partial<PaySheetProps>;
 
 const open = (balanceKobo: number) => ({ kind: 'open', balanceKobo }) as const;
 
-const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCancel'>> = {
+const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
   enough: { ...unlock, wallet: open(48525075), status: { kind: 'review' } },
   short: { ...unlock, wallet: open(120000), status: { kind: 'review' } },
   paying: { ...unlock, wallet: open(48525075), status: { kind: 'paying' } },
@@ -42,7 +42,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCanc
   loading: { ...unlock, wallet: { kind: 'loading' }, status: { kind: 'review' } },
   'zero-fee': {
     ...unlock,
-    fees: [{ label: "Fintava's charge", amountKobo: 0 }],
+    fees: [{ label: 'Bank charge', amountKobo: 0 }],
     wallet: open(48525075),
     status: { kind: 'review' },
   },
@@ -55,7 +55,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCanc
       { label: 'Account', value: '0123456789' },
     ],
     fees: [
-      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: 'Bank charge', amountKobo: 4000 },
       { label: "WAWU's fee", amountKobo: 2500 },
     ],
     notes: [{ label: 'Note', value: 'Rent contribution' }],
@@ -70,7 +70,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onAddMoney' | 'onCanc
     item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
     amountKobo: 2500000,
     fees: [
-      { label: "Fintava's charge", amountKobo: 4000 },
+      { label: 'Bank charge', amountKobo: 4000 },
       { label: "WAWU's fee", amountKobo: 2500 },
     ],
     walletName: 'Naira wallet',
@@ -94,7 +94,7 @@ export default function PaySheetPreview() {
       {...shown}
       item={{ ...shown.item, verified: shown.item.by !== undefined ? tickKind : undefined }}
       onPay={() => go('paying')}
-      onAddMoney={() => go('enough')}
+      onOpenWallet={() => router.push('/open-wallet')}
       onCancel={() => go('enough')}
       onRetry={() => go('paying')}
       onRefresh={() => go('enough')}

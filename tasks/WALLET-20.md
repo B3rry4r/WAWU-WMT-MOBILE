@@ -3,13 +3,13 @@ id: WALLET-20
 title: Scan to pay and my QR code
 owner: YOU
 area: WALLET
-order: 269
+order: 314
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
 status: todo
 depends_on: [WALLET-28, ME-01, HOME-01, WALLET-01]
-decisions: [R-37]
+decisions: [R-37, R-79]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [W24, W25]
 ---
@@ -21,6 +21,8 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): WALLET-28.
 - **History:** none yet. Reports go to tasks/history/WALLET-20.md.
+- **After launch (owner, 23 Oct 2026, R-79):** Scan to pay and My QR are on the designer's extra list and waits until after launch. Priority after-launch (already so), status todo; nothing of it is built or drawn for launch (R-47).
+- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
 
 ## Read first
 

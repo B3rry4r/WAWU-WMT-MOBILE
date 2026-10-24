@@ -1,4 +1,4 @@
-import type { NewWork } from './api';
+import type { NewWork, WorkDetail, WorkUpdate } from './api';
 import { WORK_LIMITS, type TextLimit } from './limits';
 
 /** A photo or video the person chose, ready to upload. */
@@ -76,12 +76,15 @@ export type Problems = Partial<Record<FormField, string>>;
 /** A year is four digits; the range it may sit in is the Hub's to say (its own sentence comes back on the field). */
 const YEAR = /^\d{4}$/;
 
-const LIMITED_FIELDS: readonly TextLimit[] = ['title', 'role', 'client', 'category', 'link'];
+const LIMITED_FIELDS: readonly TextLimit[] = ['title', 'role', 'client', 'category', 'link', 'description'];
 
-/** The length the Hub counts: trimmed, and for a line of words (not a link) a run of spaces counted as one. */
+/** The fields the Hub keeps as typed after the trim: a link, and the description (a paragraph keeps its runs of spaces and its line breaks). */
+const KEPT_AS_TYPED: readonly TextLimit[] = ['link', 'description'];
+
+/** The length the Hub counts: trimmed, and for a single line of words (title, role, client, category) a run of spaces counted as one. */
 export function lengthOf(field: TextLimit, value: string): number {
   const text = value.trim();
-  return (field === 'link' ? text : text.replace(/ {2,}/g, ' ')).length;
+  return (KEPT_AS_TYPED.includes(field) ? text : text.replace(/ {2,}/g, ' ')).length;
 }
 
 /** The app's own sentence for a field that is too long, said before anything is sent. */
@@ -146,4 +149,35 @@ const FIELD_WORDS: Record<string, FormField> = {
 export function fieldOfMessage(message: string): FormField | null {
   const first = message.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   return FIELD_WORDS[first] ?? null;
+}
+
+/** M36 in its edit form (FIX-113): the fields as the work holds them now. A missing optional one is an empty box. */
+export function formOf(work: Pick<WorkDetail, 'title' | 'role' | 'year' | 'client' | 'category' | 'link' | 'description'>): WorkForm {
+  return {
+    title: work.title,
+    role: work.role,
+    year: String(work.year),
+    client: work.client ?? '',
+    category: work.category ?? '',
+    link: work.link ?? '',
+    description: work.description ?? '',
+  };
+}
+
+const EDITABLE: readonly FormField[] = ['title', 'role', 'year', 'client', 'category', 'link', 'description'];
+
+/**
+ * What differs from the saved work, as `PATCH /users/me/featured-works/{id}` takes it. Only what changed is sent, and an optional
+ * field emptied is sent as `null` (the Hub clears it). `null` when nothing changed.
+ */
+export function changesOf(form: WorkForm, base: WorkForm): WorkUpdate | null {
+  const out: WorkUpdate = {};
+  for (const field of EDITABLE) {
+    const now = form[field].trim();
+    if (now === base[field].trim()) continue;
+    if (field === 'year') out.year = Number(now);
+    else if (field === 'title' || field === 'role') out[field] = now;
+    else out[field] = now === '' ? null : now;
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }

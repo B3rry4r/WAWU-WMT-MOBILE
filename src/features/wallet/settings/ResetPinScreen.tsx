@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { WRITE_TIMEOUT_MS } from '@/api/client';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { waitClock } from '@/components/pin-sheet/format';
@@ -9,7 +10,8 @@ import { Text } from '@/components/Text';
 import { layout, useWawu } from '@/theme';
 
 import { confirmPinReset, newRequestKey, startPinReset, type PinResetStarted } from '../api/settings';
-import { BELOW, CodeBoxes, CodeMiddle, PinDots, PinFrame, PinHead, StatusLine } from './PinFrame';
+import { BELOW, CodeBoxes, CodeMiddle, PinFrame, PinHead, StatusLine } from './PinFrame';
+import { PinDots } from '@/components/pin-sheet';
 import { CODE_LENGTH, CONFIRM_TITLE, NEW_PIN_LINE, NEW_PIN_TITLE, PIN_LENGTH, refusalOf, RESET_NAV, RESET_TITLE, sentToLine, stepLabel, UNKNOWN_RESET, type Refusal } from './pinFlow';
 import { useMonotonicCountdown } from './useMonotonicCountdown';
 
@@ -61,6 +63,10 @@ export type ResetPinScreenProps = {
  * then by Try again, with the same key and entries. If the first landed the server answers it again (a code works once,
  * so without the key it would be refused as a code already used); if it did not the repeat is the request. The screen never
  * judges by the PIN's `changedAt`, which moves for a change by anyone.
+ *
+ * A reset that got no answer is held until an answer comes, also after Back (SWEEP-MONEY-5b F1): Back to the new PIN or to the
+ * six boxes keeps the attempt, and the same code and the same two entries typed again (for the same reset) are sent under its
+ * key; other entries are another reset and take a new key. Memory in this screen only; dropped when an answer comes and on leaving.
  */
 export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPinScreenProps) {
   const { colors } = useWawu();
@@ -140,6 +146,8 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
       if (sentNew) {
         setDigits('');
         code.current = null;
+        // The old code stops working: an attempt held for the old reset is another reset now.
+        attempt.current = null;
         setSentNote(true);
       }
     } catch (error) {
@@ -154,9 +162,9 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
     }
   };
 
+  // Does not touch `attempt`: a reset with no answer outlives Back. An answer (`refused`, `finish`) is what drops it.
   const startAgainAt = (next: Stage, text: string | null, refused = false) => {
     first.current = null;
-    attempt.current = null;
     setDigits('');
     setStage(next);
     if (next === 'code') code.current = null;
@@ -172,11 +180,17 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
     onDone();
   };
 
-  /** The second entry is in: this is one attempt, with one key for as long as it goes unanswered. */
+  /**
+   * The second entry is in: this is one attempt, with one key for as long as it goes unanswered. The same reset, code and two
+   * entries as the one held are that attempt again, under its key; any other is a new attempt.
+   */
   const submit = (firstEntry: string, secondEntry: string) => {
     const sent = code.current;
     if (inFlight.current || sent === null || reset === null) return;
-    attempt.current = { key: newRequestKey(), resetId: reset.resetId, code: sent, newPin: firstEntry, newPinConfirmation: secondEntry };
+    const held = attempt.current;
+    const same =
+      held !== null && held.resetId === reset.resetId && held.code === sent && held.newPin === firstEntry && held.newPinConfirmation === secondEntry;
+    if (!same) attempt.current = { key: newRequestKey(), resetId: reset.resetId, code: sent, newPin: firstEntry, newPinConfirmation: secondEntry };
     void send();
   };
 
@@ -193,6 +207,7 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
     try {
       let unanswered: Refusal | null = null;
       for (let sends = 0; sends < REPEATS; sends += 1) {
+        const startedAt = Date.now();
         try {
           await confirmPinReset(held);
           if (!alive.current) return;
@@ -208,6 +223,8 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
           unanswered = refusal;
           // The server is still on the first one: it will answer it. Do not send a third.
           if (refusal.kind === 'in_progress') break;
+          // The Hub gave no answer for the whole wait (FIX-87): another send at once would only wait as long again. Try again is the person's.
+          if (Date.now() - startedAt >= WRITE_TIMEOUT_MS) break;
         }
       }
       setBusy('unsent');
@@ -287,7 +304,7 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
   const back = () => {
     if (waiting) return;
     if (stage === 'confirm') {
-      // Back from a reset that has no answer yet gives that attempt up and frees the keypad (D4's twin).
+      // Back from a reset that has no answer frees the keypad (D4's twin) and keeps the attempt: the same entries typed again are sent under its key (F1).
       setBusy('idle');
       startAgainAt('new', null);
     } else if (stage === 'new') startAgainAt('code', null);
@@ -377,7 +394,7 @@ export function ResetPinScreen({ onBack, onDone, onNoWallet, onNoPin }: ResetPin
       head={<PinHead title={stage === 'new' ? NEW_PIN_TITLE : CONFIRM_TITLE} line={NEW_PIN_LINE} testID="reset-pin-title" />}
       middle={
         <>
-          <PinDots filled={filled} missed={missed} testID="reset-pin-dots" />
+          <PinDots filled={filled} length={PIN_LENGTH} missed={missed} testID="reset-pin-dots" />
           {status}
         </>
       }

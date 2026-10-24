@@ -94,7 +94,7 @@ const clients: QueryClient[] = [];
 async function boot(props: { eventId?: string; onClose?: () => void } = {}) {
   const { DoorScreen } = require('../DoorScreen') as typeof import('../DoorScreen');
   const onClose = props.onClose ?? jest.fn();
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { gcTime: Infinity, retry: false } } });
   clients.push(client);
   await rtl.render(
     <QueryClientProvider client={client}>
@@ -941,6 +941,45 @@ describe('D5 · a verdict that arrives while the typing sheet is open is never l
     await rtl.fireEvent.press(rtl.screen.getByTestId('door-type-sheet-close'));
     expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
     expect(rtl.screen.getByTestId('door-problem-retry')).toBeTruthy();
+  });
+});
+
+describe('EVENTS-09 N2 · the two gaps the verifier named in round 3', () => {
+  it('a code typed over a problem nobody has seen does not replace it: the problem stays, and the code is checked when it is dismissed', async () => {
+    answers = [{ lost: true }, notValid];
+    await boot();
+    await checkUnderOpenSheet(SENT_CODE);
+    expect(await rtl.screen.findByText("We couldn't confirm")).toBeTruthy();
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('door-code-input'), OTHER_CODE);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-code-check'));
+    expect(calls).toHaveLength(1);
+    expect(rtl.screen.queryByTestId('door-code-input')).toBeNull();
+    // A problem has no hold: it is still there, with its own buttons, long after a verdict's 3 seconds.
+    await wait(RESULT_HOLD_MS * 2);
+    expect(calls).toHaveLength(1);
+    expect(rtl.screen.getByText("We couldn't confirm")).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('door-problem-dismiss'));
+    expect(calls.map((c) => c.body.code)).toEqual([SENT_CODE, OTHER_CODE]);
+    expect(calls[1].key).not.toBe(calls[0].key);
+    expect(await rtl.screen.findByText('NOT A VALID TICKET')).toBeTruthy();
+  });
+
+  it('a verdict cleared by a tap leaves no timer behind: the next scan inside 3 seconds is held for its own 3 seconds', async () => {
+    answers = [letIn, used];
+    await boot();
+    await see(SENT_CODE);
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('door-result'));
+    expect(rtl.screen.queryByTestId('door-result')).toBeNull();
+    await wait(1000);
+    await see(OTHER_CODE);
+    expect(await rtl.screen.findByText('ALREADY USED')).toBeTruthy();
+    // The first verdict's 3 seconds would end here (2 seconds after the second scan): the second is still up.
+    await wait(2100);
+    expect(rtl.screen.getByText('ALREADY USED')).toBeTruthy();
+    await wait(899);
+    expect(rtl.screen.getByText('ALREADY USED')).toBeTruthy();
+    await wait(1);
+    expect(rtl.screen.queryByTestId('door-result')).toBeNull();
   });
 });
 

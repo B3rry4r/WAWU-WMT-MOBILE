@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -14,6 +15,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
+import { setHubAccountType } from '@/features/after-signup/hubAccountType';
 import { canvasNormalLineHeight, font, radius, space, type, useWawu } from '@/theme';
 
 import { applyIn, fetchFields, fetchIsCreator, fetchMine, proKeys, refreshListings, type Application, type CredentialKind, type ProField } from './api';
@@ -30,7 +33,7 @@ import {
   type CredentialForm,
   type ServicesForm,
 } from './model';
-import { AddChip, ChipGroup, LongField, Note, PickedChip } from './parts';
+import { AddChip, ChipGroup, Note, PickedChip } from './parts';
 import { ProFrame } from './ProFrame';
 import { canPickDocument, pickDocument } from './pickDocument';
 import { uploadDocument } from './upload';
@@ -40,6 +43,10 @@ export const SCREEN_TITLE = 'Offer your services';
 /** design/_gen/kit.js line 67, `result`: an 88 circle with a 42 glyph at 2.2, 10 between the parts, the title 8 lower; pros.js line 35 sets `pt: 120`, `gap: 20`. */
 const RESULT = { circle: 88, stroke: 2.2, stack: 10, titleNudge: 8, line: 14.5, paragraphMax: 290, top: 120, between: 20 } as const;
 /** pros.js line 34: the file's card is 14 by 16, a 12 gap to its words, 18 round; its name at 15 and its state at 12.5. */
+/** P10's gate: the pill sits inside the board's block, 16 under the line (a 10 gap and a 6 margin) and with the block's 26 of room below it; the shared EmptyState keeps its 26 under its words instead (SWEEP-APP-4 row 130). */
+const GATE_GAP = 16;
+const GATE_EMPTY_ROOM = 26;
+
 const fileMetrics = { ten: 10, lead2words: 12, padV: 14, name: 15, state: 12.5, cross: 18, lead: 44 } as const;
 
 export type ApplyScreenProps = {
@@ -52,11 +59,37 @@ export type ApplyScreenProps = {
   initialField?: string;
 };
 
-/** P10: the gate for an account that is not a creator's. Its way on (Become a creator, A11) is added by AUTH-06. */
+/**
+ * P10: the gate for an account that is not a creator's. Become a creator (AUTH-06) records the creator type on the Hub (no wallet is
+ * opened, R-6), re-reads what depends on it, and opens A11 (Set up your account). A refusal leaves the gate as it was, with a line
+ * saying so.
+ */
 export function CreatorGate({ title, onBack }: { title: string; onBack: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const become = async () => {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await setHubAccountType('creator');
+      await queryClient.invalidateQueries();
+      router.push('/creator-setup');
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <ProFrame title={title} onBack={onBack} gap={space.lg} centered testID="pro-gate">
+    <ProFrame title={title} onBack={onBack} gap={0} centered testID="pro-gate">
       <EmptyState icon="UserCog" title="This needs a creator account" message="Setting one up is free." />
+      <Button label="Become a creator" size="md" onPress={() => void become()} loading={busy} style={styles.gateButton} testID="pro-become-creator" />
+      {failed ? (
+        <Text variant="secondary" tone="danger" accessibilityRole="alert" testID="pro-become-failed" style={styles.gateFailed}>
+          Couldn’t set up your account. Try again.
+        </Text>
+      ) : null}
     </ProFrame>
   );
 }
@@ -367,7 +400,8 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings, r
         maxLength={limits.headlineMax + 20}
         testID="pro-headline"
       />
-      <LongField
+      <TextField
+        multiline
         label="About your work"
         value={form.about}
         onChangeText={(about) => setForm((f) => ({ ...f, about }))}
@@ -492,6 +526,10 @@ function Sent({ labels, leftOut, onDone, onMyListings }: { labels: string[]; lef
 }
 
 const styles = StyleSheet.create({
+  // P10's button is the board's compact pill (Btn size md, full false): the frame's column would stretch it, so it centres itself.
+  // P10 puts the pill 16 under the line, inside the block that keeps 26 below it; the EmptyState keeps its 26 under its words, so the pill is pulled up by the difference and the room moves under it (SWEEP-APP-4 row 130).
+  gateButton: { alignSelf: 'center', marginTop: GATE_GAP - GATE_EMPTY_ROOM, marginBottom: GATE_EMPTY_ROOM },
+  gateFailed: { marginTop: space.sm },
   kinds: { gap: fileMetrics.ten },
   kindsLabel: { lineHeight: canvasNormalLineHeight(type.size.label) },
   file: { flexDirection: 'row', alignItems: 'center', gap: fileMetrics.lead2words, paddingVertical: fileMetrics.padV, paddingHorizontal: space.lg, borderRadius: radius.tile },

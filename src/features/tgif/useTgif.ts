@@ -31,16 +31,17 @@ function withCard(stats: TgifStats, card: TgifCard, next: (c: TgifCardStats) => 
 }
 
 /**
- * Counts this person as a reader once the cards are on screen. The Hub keeps one
- * reader per person per day, so opening the reader again changes nothing; a read
+ * Counts this person as a reader once the cards are on screen, and returns the day's readers as the Hub answered
+ * (once it has). The Hub keeps one reader per person per day, so opening the reader again changes nothing; a read
  * that cannot be sent is not shown to anyone, only the day's count misses one.
  */
-export function useCountRead(date: string, ready: boolean) {
+export function useCountRead(date: string, ready: boolean): number | null {
   const client = useQueryClient();
   const sent = useRef<string | null>(null);
   const read = useMutation({
     mutationFn: () => markRead(date),
-    // Marked old, not fetched again: the reader draws no reader count, and a fetch landing mid-tap would undo an Amen shown at once.
+    // Marked old, not fetched again: a fetch landing mid-tap would undo an Amen shown at once. The reader's read count is the
+    // higher of the numbers and this answer's (which includes this person), so a day's first read never shows one too few.
     onSuccess: () => client.invalidateQueries({ queryKey: statsKey(date), refetchType: 'none' }),
   });
   const { mutate } = read;
@@ -49,6 +50,7 @@ export function useCountRead(date: string, ready: boolean) {
     sent.current = date;
     mutate();
   }, [ready, date, mutate]);
+  return typeof read.data?.readers === 'number' ? read.data.readers : null;
 }
 
 export type AmenMove = { card: TgifCard; on: boolean };

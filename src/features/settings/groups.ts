@@ -37,7 +37,7 @@ export const NOTIFICATION_GROUPS: readonly SwitchGroup<NotificationKey>[] = [
     switches: [
       { key: 'contentReviews', title: 'Reviews', subtitle: 'Approved or sent back' },
       { key: 'newFollowers', title: 'New followers' },
-      { key: 'promotions', title: 'From Who Made This', subtitle: 'News and offers' },
+      { key: 'promotions', title: 'From Who Made This?', subtitle: 'News and offers' },
     ],
   },
 ];

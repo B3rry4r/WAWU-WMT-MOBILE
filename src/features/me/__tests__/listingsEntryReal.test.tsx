@@ -9,7 +9,7 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 const mockRouter = { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter, Redirect: () => null }));
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useIsFocused: () => true, Redirect: () => null }));
 
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const profile = {
@@ -51,7 +51,7 @@ async function openServices() {
   return screen.findByTestId('me-service-listing-l1-open');
 }
 
-describe('M2 on the real Me screen · the listing row (R-41, T1, T2)', () => {
+describe('M2 on the real Me screen · the listing row and the paid messages row (R-41, T1, T2, T3)', () => {
   beforeEach(() => mockRouter.push.mockClear());
 
   it('T1: a user can tap the listing row and Your listings opens', async () => {
@@ -60,10 +60,16 @@ describe('M2 on the real Me screen · the listing row (R-41, T1, T2)', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/professional-listings');
   });
 
-  it('T2: the listing row draws its chevron, the paid messages row draws none and is not a button', async () => {
+  it('T2: the listing row and the paid messages row both draw their chevron (INBOX-12 added the paid messages one)', async () => {
     const row = await openServices();
     expect(within(row).getByTestId('icon-ChevronRight', hiddenOk)).toBeTruthy();
-    expect(within(screen.getByTestId('me-service-paid')).queryByTestId('icon-ChevronRight', hiddenOk)).toBeNull();
-    expect(screen.queryByTestId('me-service-paid-open')).toBeNull();
+    expect(within(screen.getByTestId('me-service-paid')).getByTestId('icon-ChevronRight', hiddenOk)).toBeTruthy();
+    expect(screen.getByTestId('me-service-paid-open').props.accessibilityRole).toBe('button');
+  });
+
+  it('T3: a user can tap the paid messages row and the paid message settings open (I21, INBOX-12)', async () => {
+    await openServices();
+    await act(async () => fireEvent.press(screen.getByTestId('me-service-paid-open')));
+    expect(mockRouter.push).toHaveBeenCalledWith('/paid-message-settings');
   });
 });

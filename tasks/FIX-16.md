@@ -3,8 +3,8 @@ id: FIX-16
 title: The dashboard and the web catch up with admin takedowns
 owner: YOU
 area: FIX
-order: 187
-priority: launch
+order: 345
+priority: after-launch
 repo: wawu-dashboard, wawuafrica
 type: admin-screen
 status: todo
@@ -18,6 +18,7 @@ artboards: []
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/FIX-16.md.

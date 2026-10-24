@@ -19,6 +19,9 @@ export type FeedItem = components['schemas']['FeedItem'];
 export type FeedCreator = components['schemas']['FeedCreator'];
 export type MediaFrame = components['schemas']['MediaFrame'];
 export type ContentDetail = components['schemas']['ContentDetail'];
+export type CreatorCardData = components['schemas']['CreatorCard'];
+export type ProfessionalCardData = components['schemas']['ProfessionalCard'];
+export type CardWork = components['schemas']['CardWork'];
 export type FeedScope = 'for_you' | 'following';
 
 type Entries = operations['FeedController_mixed']['responses'][200]['content']['application/json'];
@@ -116,14 +119,3 @@ export async function fetchFollowingCount(): Promise<number> {
   return count;
 }
 
-const KOBO_PER_NAIRA = 100;
-
-/**
- * R-21: a content price comes from the Hub in whole naira (`ContentPiece.price`), and every
- * figure on screen is kobo. This is the one conversion for the feed's prices, in the data
- * layer, until the route serves kobo (BACKEND_GAPS G-219) and the helper moves to `src/api/`
- * (SHARED-CHANGES HOME-02 #3).
- */
-export function nairaToKobo(naira: number): number {
-  return Math.round(naira * KOBO_PER_NAIRA);
-}

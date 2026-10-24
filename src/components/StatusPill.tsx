@@ -25,18 +25,20 @@ export type StatusPillProps = {
   tone?: PillTone;
   /** A Lucide name from the icon set: Check, Clock, X, Snowflake. The label says the same thing, so the icon is hidden from screen readers. */
   icon?: IconName;
+  /** Fill the width of its column instead of hugging its words (the premiere pill on MV9, as the board draws it). */
+  stretch?: boolean;
   testID?: string;
 };
 
 /** A status or tag the user reads and cannot press ("Completed", "In review", "WAWU pick"). The tone is never the only signal: the label always says it. */
-export function StatusPill({ label, tone = 'positive', icon, testID }: StatusPillProps) {
+export function StatusPill({ label, tone = 'positive', icon, stretch = false, testID }: StatusPillProps) {
   const { colors } = useWawu();
   const { background, ink } = tones[tone];
   return (
     <View
       testID={testID}
       accessible
-      style={[styles.pill, { backgroundColor: colors[background] }]}
+      style={[styles.pill, stretch ? styles.stretch : null, { backgroundColor: colors[background] }]}
     >
       {icon ? (
         <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -51,6 +53,7 @@ export function StatusPill({ label, tone = 'positive', icon, testID }: StatusPil
 }
 
 const styles = StyleSheet.create({
+  stretch: { alignSelf: 'stretch' },
   pill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',

@@ -7,11 +7,12 @@ import type { LegalThread } from '../api';
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 let mockCanGoBack = true;
 let mockFocused = true;
 jest.mock('expo-router', () => ({
   useIsFocused: () => mockFocused,
-  useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
+  useRouter: () => ({ back: mockBack, replace: mockReplace, push: mockPush, canGoBack: () => mockCanGoBack }),
 }));
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
@@ -40,11 +41,22 @@ type Answer = { status: number; body: unknown } | 'offline' | 'hold';
 const appHandlers = new Set<(state: string) => void>();
 let answers: Record<string, Answer[]> = {};
 let sent: { key: string; body: unknown }[] = [];
+/** Requests asked and not yet answered (a held one never is, so it is not counted): a test that ends before they land leaks them into the next. */
+let unanswered = 0;
 
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const refuse = (status: number, code: string, message: string): Answer => ({ status, body: { statusCode: status, message, reason: { code, message } } });
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  unanswered += 1;
+  try {
+    return await answerFor(input, init);
+  } finally {
+    unanswered -= 1;
+  }
+}) as typeof fetch;
+
+async function answerFor(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   const key = `${request.method} ${url.pathname.replace(/^\/api\/hub/, '')}`;
@@ -54,10 +66,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const answer = queue?.[0];
   if (queue && queue.length > 1) queue.shift();
   if (!answer) throw new Error(`no answer for ${key}`);
-  if (answer === 'hold') return new Promise<Response>(() => undefined);
+  if (answer === 'hold') {
+    unanswered -= 1;
+    return new Promise<Response>(() => undefined);
+  }
   if (answer === 'offline') throw new TypeError('Network request failed');
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
-}) as typeof fetch;
+}
 
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { LegalChatScreen } = require('../LegalChatScreen') as typeof import('../LegalChatScreen');
@@ -162,6 +177,7 @@ beforeEach(() => {
   sent = [];
   mockBack.mockClear();
   mockReplace.mockClear();
+  mockPush.mockClear();
   mockCanGoBack = true;
   mockFocused = true;
   mockLive.clear();
@@ -178,6 +194,8 @@ beforeEach(() => {
 
 afterEach(async () => {
   await queryClient.cancelQueries();
+  // every request the test asked has been answered, so no later step of its chain (a thread is found with up to three asks) lands in the next test
+  await rtl.waitFor(() => expect(unanswered).toBe(0));
   await rtl.act(async () => {
     await settle();
   });
@@ -199,7 +217,7 @@ describe('S14 · the assistant opens', () => {
     await renderScreen();
     expect(await rtl.screen.findByText(OPENER)).toBeTruthy();
     expect(rtl.screen.getByText(NOT_CHARGED)).toBeTruthy();
-    expect(rtl.screen.getByText('WAWU Legal')).toBeTruthy();
+    expect(rtl.screen.getByText('Who Made This? Legal')).toBeTruthy();
     expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Assistant · a consultant takes over');
     for (const t of TOPICS) expect(rtl.screen.getByRole('button', { name: t.label })).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Type your message')).toBeTruthy();
@@ -372,12 +390,13 @@ describe('S17 · a consultant joins', () => {
     await renderScreen();
     expect(await rtl.screen.findByText("Hi Chidi, I've read your brief.")).toBeTruthy();
     expect(rtl.screen.getByText('Adaora Nnaji')).toBeTruthy();
-    expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Consultant · WAWU Legal');
+    expect(rtl.screen.getByTestId('legal-sub').props.children).toBe('Consultant · Who Made This? Legal');
     expect(rtl.screen.getByText('Adaora joined. The assistant has stopped replying.')).toBeTruthy();
     expect(rtl.screen.getByText('Adaora Nnaji · Consultant')).toBeTruthy();
     expect(rtl.screen.getByPlaceholderText('Message Adaora')).toBeTruthy();
     expect(rtl.screen.queryByTestId('legal-taps')).toBeNull();
-    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    // S17's card: LEGAL-04 builds it (it was absent until then); its taps are tested in "S17 · the card under the consultant's lines" below.
+    expect(rtl.screen.getByText('Book a consultation')).toBeTruthy();
   });
 
   it('a user can Message Adaora: the words go to the messages route and no assistant is waited on', async () => {
@@ -399,6 +418,8 @@ describe('S17 · a consultant joins', () => {
     await renderScreen();
     await rtl.screen.findByText("I've sent your brief to a consultant.");
     expect(rtl.screen.queryByText('Adaora joined. The assistant has stopped replying.')).toBeNull();
+    // the screen is listening for the live connection before the event is sent, and has no other read of the conversation on its way
+    await rtl.waitFor(() => expect(mockLive.size).toBeGreaterThan(0));
     await rtl.act(async () => {
       mockLive.forEach((listener) => listener({ type: 'legal.thread' }));
       await settle();
@@ -500,6 +521,73 @@ describe('S17 · a consultant joins', () => {
   });
 });
 
+describe("S17 · the card under the consultant's lines", () => {
+  it('Book on the card opens the booking screen for the request (S18)', async () => {
+    answers[OPEN] = [ok(withConsultant())];
+    await renderScreen();
+    await rtl.screen.findByText('Book a consultation');
+    expect(rtl.screen.getByText('Video, phone or in person')).toBeTruthy();
+    expect(rtl.screen.getByText('Book')).toBeTruthy();
+    await press('legal-matter-card-button');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-book', params: { requestId: 'r1' } });
+  });
+
+  it('once the consultation is booked the card is the way back to the matter, and Open opens it (S20)', async () => {
+    answers[OPEN] = [ok(withConsultant({ requestStatus: 'consultation_scheduled' }))];
+    await renderScreen();
+    await rtl.screen.findByText('See where your request stands');
+    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    await press('legal-matter-card-button');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-matter', params: { id: 'r1' } });
+  });
+
+  it('a request WAWU has closed draws no card, so there is nothing to tap', async () => {
+    answers[OPEN] = [ok(withConsultant({ requestStatus: 'cancelled' }))];
+    await renderScreen();
+    await rtl.screen.findByText("Hi Chidi, I've read your brief.");
+    expect(rtl.screen.queryByTestId('legal-matter-card')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+describe("S24 · the fixed-price card under the assistant's line", () => {
+  const CATALOGUE = 'GET /legal/catalogue';
+  const cac = { code: 'cac-registration', name: 'CAC business name registration', blurb: 'We register your business name with the CAC.', category: 'Business', path: 'simple', priceNaira: 35000, requiresDocuments: false };
+  const registering = () =>
+    asking({
+      matter: 'business_registration',
+      matterLabel: 'Register a business',
+      messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business'), line('a3', 'assistant', 'Is it a sole trader or a company?')],
+    });
+
+  it('shows the service and the price WAWU set, and Start this request opens the fixed-price screen for that service (S26)', async () => {
+    answers[OPEN] = [ok(registering())];
+    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [cac] })];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
+    expect(rtl.screen.getByText('CAC business name registration')).toBeTruthy();
+    expect(rtl.screen.getByText('₦35,000')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+    await press('legal-fixed-start');
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-fixed', params: { code: 'cac-registration' } });
+  });
+
+  it('draws no card for a service WAWU has not priced, so there is no Start to tap', async () => {
+    answers[OPEN] = [ok(registering())];
+    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [{ ...cac, priceNaira: null }] })];
+    await renderScreen();
+    await rtl.screen.findByText('Is it a sole trader or a company?');
+    await rtl.act(async () => {
+      await settle();
+    });
+    expect(rtl.screen.queryByTestId('legal-fixed-card-chat')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-fixed-start')).toBeNull();
+  });
+});
+
 describe('the matter before payment', () => {
   const intake = (id: string, status: string, legalRequestId: string | null) => ({ id, matter: 'property', matterLabel: 'Tenancy', status, answers: {}, documents: [], questions: [], outstandingRequired: [], brief: null, legalRequestId });
 
@@ -531,7 +619,8 @@ describe('the matter before payment', () => {
     answers[OPEN] = [ok(thread({ id: 'i2' }))];
     await renderScreen();
     expect(await rtl.screen.findByText(OPENER)).toBeTruthy();
-    expect(calls(OPEN)).toHaveLength(1);
+    await rtl.waitFor(() => expect(calls(OPEN)).toHaveLength(1));
+    expect(rtl.screen.queryByText("I've sent your brief to a consultant.")).toBeNull();
   });
 
   it('an unfinished conversation is picked up, an older form intake that answers 404 is passed over', async () => {
@@ -540,6 +629,7 @@ describe('the matter before payment', () => {
     answers[GET] = [ok(asking())];
     await renderScreen();
     expect(await rtl.screen.findByText('Does the lease say anything about rent reviews?')).toBeTruthy();
+    await rtl.waitFor(() => expect(calls(GET)).toHaveLength(1));
     expect(calls(OPEN)).toHaveLength(0);
   });
 

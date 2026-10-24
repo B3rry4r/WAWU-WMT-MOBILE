@@ -7,7 +7,7 @@ import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
 
 /** design/_gen/kit.js line 34, `nav`: a 56 px bar, 20 px sides, 12 gap, a 42 px round button, a 17 px bold title. */
-const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } as const;
+const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02, step: 12.5 } as const;
 /** design/_gen/kit.js line 38, `foot`: 12 px above the buttons, 10 between them. */
 const footGap = 10;
 
@@ -18,6 +18,10 @@ export type AuthFrameProps = {
   navTitle?: string;
   /** Shows the round back button. Left off when there is nowhere to go back to. */
   onBack?: () => void;
+  /** The step in the bar's right corner, "1 of 4" (kit.js `stepL`: 12.5 px, 600, muted). Left out, the corner is empty. */
+  navStep?: string;
+  /** A button in the bar's right corner instead of the step (A11's Later). Wins over `navStep`. */
+  navAction?: ReactNode;
   /** No bar at all (A24 has none). */
   bare?: boolean;
   /** Pinned under the content, above the keyboard: the screen's buttons. A screen with none (A2 until the sign-up screens exist) leaves it out. */
@@ -41,7 +45,7 @@ export type AuthFrameProps = {
  * case). Where the window is resized anyway nothing overlaps and it adds
  * nothing; the web has no keyboard events, the browser shrinks the viewport.
  */
-export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
+export function AuthFrame({ navTitle, navStep, navAction, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -56,7 +60,13 @@ export function AuthFrame({ navTitle, onBack, bare, footer, children, contentTop
           <Text variant="body" numberOfLines={1} style={[styles.navTitle, { fontSize: navMetrics.title, letterSpacing: navMetrics.titleTracking * navMetrics.title }]}>
             {navTitle ?? ''}
           </Text>
-          <View style={styles.side} />
+          <View style={styles.side}>
+            {navAction ?? (navStep ? (
+              <Text variant="meta" tone="textMuted" accessibilityLabel={`Step ${navStep}`} testID="auth-step" style={[font(600), styles.step]}>
+                {navStep}
+              </Text>
+            ) : null)}
+          </View>
         </View>
       )}
       <ScrollView
@@ -79,6 +89,7 @@ const styles = StyleSheet.create({
   nav: { height: navMetrics.height, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: layout.gutter },
   side: { width: navMetrics.button },
   navTitle: { ...font(700), flex: 1, textAlign: 'center' },
+  step: { fontSize: navMetrics.step, textAlign: 'right' },
   scroll: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: space.sm, paddingBottom: space.lg },
   footer: { paddingTop: space.md, paddingHorizontal: layout.gutter, gap: footGap },

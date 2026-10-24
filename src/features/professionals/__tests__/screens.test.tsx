@@ -355,7 +355,7 @@ describe('P2 · Profile and P3 · Not taking messages', () => {
     expect(rtl.screen.getByText('I help creators and small businesses file taxes, keep books and register with CAC.')).toBeTruthy();
     for (const s of PROFILE.services) expect(rtl.within(rtl.screen.getByTestId('pro-services')).getByText(s)).toBeTruthy();
     expect(rtl.screen.getByText('Practising licence')).toBeTruthy();
-    expect(rtl.screen.getByText('Issued by ICAN · checked by WAWU')).toBeTruthy();
+    expect(rtl.screen.getByText('Issued by ICAN · checked by Who Made This?')).toBeTruthy();
     expect(rtl.screen.getByTestId('tick-pro')).toBeTruthy();
     // Taking messages: not P3. The Ask button is INBOX-10's.
     expect(rtl.screen.queryByTestId('pro-closed')).toBeNull();
@@ -377,7 +377,7 @@ describe('P2 · Profile and P3 · Not taking messages', () => {
     await rtl.screen.findByText('Funmi Adeyemi');
     expect(rtl.screen.queryByTestId('pro-services')).toBeNull();
     expect(rtl.screen.getByText('Work samples')).toBeTruthy();
-    expect(rtl.screen.getByText('Checked by WAWU')).toBeTruthy();
+    expect(rtl.screen.getByText('Checked by Who Made This?')).toBeTruthy();
   });
 
   it('a listing that is gone (not listed, or blocked) says so, and offers the way back', async () => {

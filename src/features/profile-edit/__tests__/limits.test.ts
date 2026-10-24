@@ -1,4 +1,5 @@
 import contract from '../../../../contract/openapi.mobile.json';
+import { roleLimits } from '../experience';
 import { HANDLE_PATTERN, limits } from '../limits';
 
 type Schema = { properties: Record<string, { maxLength?: number; pattern?: string; items?: { maxLength?: number } }> };
@@ -20,6 +21,15 @@ describe('the limits M8 enforces are the Hub contract’s, not the canvas’s', 
     expect(limits.socialUrl).toBe(profile.youtubeUrl.maxLength);
     expect(limits.socialUrl).toBe(profile.facebookUrl.maxLength);
     expect(limits.socialUrl).toBe(profile.linkedinUrl.maxLength);
+  });
+
+  it('a user is held to the Hub’s own skill and role lengths (FIX-113)', () => {
+    const role = schemas.CreateProfileExperienceDto.properties;
+    expect(limits.skill).toBe(fields.skills.items?.maxLength);
+    expect(roleLimits.title).toBe(role.title.maxLength);
+    expect(roleLimits.company).toBe(role.company.maxLength);
+    expect(roleLimits.location).toBe(role.location.maxLength);
+    expect(roleLimits.description).toBe(role.description.maxLength);
   });
 
   it('a handle is checked with the contract’s pattern', () => {

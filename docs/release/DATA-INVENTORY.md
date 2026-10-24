@@ -136,7 +136,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-089 | `ApprovalChallenge` | deviceId, one-time challenge | MONEY-02, MONEY-14 | Nobody outside WAWU | AA-08 |
 | I-090 | `FintavaWallet` | customerId, walletId, account number, account name | KYC-04, MONEY-12 | Held by the wallet provider | FI-04 |
 | I-091 | `FintavaWalletOpening` | state, BVN keyed hash, verified phone, attempts | KYC-05, MONEY-12 | Wallet provider (the opening) | PI-13, PI-07 |
-| I-092 | `FintavaWebhookEvent` | provider webhook payload and raw body (names, account numbers, amounts) | MONEY-07 (done) | Received from the wallet provider | FI-04 |
+| I-092 | `FintavaWebhookEvent` | provider webhook payload and raw body (names, account numbers, amounts); a handled delivery's body is cleared after 90 days (FIX-20) | MONEY-07 (done) | Received from the wallet provider | FI-04 |
 | I-093 | `WalletIdentity` | BVN and NIN keyed hashes and last 4, verified phone, occupation, BVN name keys | KYC-01, KYC-05 | Nobody outside WAWU (the numbers themselves go to the wallet provider and are not kept) | PI-13, PI-12, PI-07 |
 | I-094 | `BvnCheckAttempt` | outcome and time of each BVN check | KYC-05 | Nobody outside WAWU | PI-13 |
 | I-095 | `SelfieMatchAttempt` | outcome, confidence, time (never the image) | KYC-02 (done) | Nobody outside WAWU (the selfie itself goes to the wallet provider) | PF-01 |
@@ -157,7 +157,7 @@ Legend for "Goes to": **WP†** is the wallet provider (Fintava† with Loma Ban
 | I-112 | `TgifReaction` | userWawuId, day, card, kind (an Amen), one per person per card per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
 | I-413 | `TgifRead` | userWawuId, day (a read), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
 | I-414 | `TgifShare` | userWawuId, day (a share tap), one per person per day | HOME-09, 10 | Nobody outside WAWU | AA-11 |
-| I-113 | `TgifPreference` | userWawuId, show (the TGIF on Home switch) | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
+| I-113 | `TgifPreference` | userWawuId, show (the TGIF each morning switch, Z2) | HOME-11, SETTINGS-01 | Nobody outside WAWU | AA-09 |
 | I-119 | `ProfileWork` | featured work: title, role, client, year, link, category, description, media, position | ME-11, ME-16 | Public on the profile | PI-16, PF-01, PF-02 |
 | I-415 | `ProfileEducation` | school, field, start and end year | ME-02, ME-16 | Public on the profile | PI-16 |
 | I-416 | `FeaturedCreator` | the featured creator's account id, position in Explore, and `featuredByAdminId` (the staff member who chose them): a staff placement about a person, deleted with the creator's account (`OWNED` in `account-data-map.ts`) and left out of the data export (`EXPORT_EXCLUDED`) | EXPLORE-03 (staff, from the dashboard) | Nobody outside WAWU; the creator appears in Explore, where the profile is public anyway | NX-02 |
@@ -268,7 +268,7 @@ Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 a
 | I-197 | HOME-09 | H29 H30 H31 H32 H34 H35 | picked | H29 to H34 Amen, Tap to continue, Share, Done | Nobody outside WAWU | AA-11 |
 | I-198 | HOME-09 | H29 H30 H31 H32 H34 H35 | device | H35 share the verse image (share sheet, Save) | The app the person picks | AA-11, NX-05 |
 | I-199 | HOME-10 | none | logged | TgifReaction, TgifRead and share counts per day | Nobody outside WAWU | AA-11 |
-| I-200 | HOME-11 | none | picked | TGIF on Home switch kept on the account | Nobody outside WAWU | AA-09 |
+| I-200 | HOME-11 | none | picked | TGIF each morning switch kept on the account | Nobody outside WAWU | AA-09 |
 | I-201 | HOME-12 | H14 H15 H16 H17 H18 | typed | H15 PIN to approve an unlock | Nobody outside WAWU | FI-04 |
 | I-202 | HOME-12 | H14 H15 H16 H17 H18 | logged | Purchase and ledger row | Nobody outside WAWU (wallet provider† moves the money) | FI-03, FI-04 |
 | I-203 | HOME-13 | H26 H27 H28 | typed | H26 tip amount and an optional note; H27 PIN | The creator sees the name and note; wallet provider† moves the money | FI-04, MS-01 |
@@ -349,7 +349,7 @@ Rows I-111, I-112, I-113, I-119 and I-412 to I-416 are the nine models train 1 a
 | I-278 | MONEY-03 | H14 W10 | none | The pay-from-wallet sheet (shows price, fee, total) | Nobody outside WAWU | FI-04 |
 | I-279 | MONEY-04 | none | none | Conventions and the wallet contract (no data) | Nobody outside WAWU | NX-03 |
 | I-280 | MONEY-06 | none | none | The wallet-provider client: sends what other tasks collect | Wallet provider† | FI-04 |
-| I-281 | MONEY-07 | none | logged | Provider webhook deliveries stored whole (payload and raw body) | Received from the wallet provider† | FI-04 |
+| I-281 | MONEY-07 | none | logged | Provider webhook deliveries stored whole (payload and raw body); a handled delivery's body is cleared after 90 days (FIX-20) | Received from the wallet provider† | FI-04 |
 | I-282 | MONEY-08 | none | logged | Status checks of pending transfers | Wallet provider† | FI-04 |
 | I-283 | MONEY-09 | none | logged | PIN hash, wrong-try count, lock time | Nobody outside WAWU | FI-04 |
 | I-284 | MONEY-10 | none | logged | Ledger rows: amounts, counterparty, notes, references | Wallet provider† | FI-04 |
@@ -501,7 +501,7 @@ Searches ran over the 183 launch task files on this branch and over `package.jso
 |---|---|---|---|
 | I-399 | A phone contacts or address book read | `address book|phone contacts|expo-contacts|READ_CONTACTS` over the 183 launch task files, 0 hits; `package.json` has no contacts package; recipients are found on the server (WALLET-08) | CL-02 |
 | I-400 | Precise or approximate location from the phone | `expo-location|geolocation|ACCESS_FINE_LOCATION|GPS|current location|near me`, 0 hits; no location package; a profile location and an event city are typed text (PI-12, PI-15) | CL-03 |
-| I-401 | Microphone or voice recording | `microphone|expo-audio|voice note|record audio|RECORD_AUDIO`: one hit, RELEASE-01 (this form); audio in the app is files a creator uploads (PF-03) | PF-03 |
+| I-401 | Microphone or voice recording | `microphone|expo-audio|voice note|record audio|RECORD_AUDIO`: RELEASE-01 (this form) and, from VERIFY-03, `src/features/verify/voiceRecorder.ts` (`expo-audio`), `app.json` (the `expo-audio` plugin's microphone text; `RECORD_AUDIO` no longer blocked). **The app now records the person's own voice** for the Voice Intro (VF9): one file up to 30 seconds, uploaded to the Hub's storage folder `voice/sample` and kept as `VoiceProfile.sampleKey`, with the consent line and its time (`consentLine`, `consentAt`) and the made audio (`audioKey`); sent to the AI voice provider only to make a one-run copy that is deleted after each try. Kept until replaced or the account is deleted; deleted by the account purge (`voice/sample` and `ai/voiceover`); no route yet to delete it on its own (G-VOICE-01-5). **OWNER SIGN-OFF** | PF-03, HK-08 |
 | I-402 | A crash or analytics SDK | `crashlytics|sentry|firebase|analytics sdk|segment|mixpanel|amplitude|posthog`: hits only in HOME-05, KYC-02, UI-01, UI-02, all false matches (the word segment in a picture-format or component sense, not an SDK); no such dependency in `package.json` | AP-01, AP-02 |
 | I-403 | The advertising ID | `advertising id|AD_ID|gaid`, 0 hits; no ads SDK | AA-07 |
 | I-404 | Reading SMS or mail from the phone | `READ_SMS|text messages|sms retriever|expo-sms`, 0 hits; sign-up codes are typed by the person | MS-02 |
@@ -512,6 +512,7 @@ Searches ran over the 183 launch task files on this branch and over `package.jso
 | I-409 | Data-safety overview answers (collects data, encrypted in transit, deletion path, deletion URL, security review, Families policy) | Answered from the code and the hosts, see the evidence in each row | OV-1, OV-2, OV-3, OV-4, OV-5, OV-6 |
 | I-410 | Where data is kept, shared and deleted (money and identity holder, what WAWU keeps, tokens, export, deletion, what deletion keeps, retention) | The facts rows of section 3 | HK-01, HK-02, HK-06, HK-07 |
 | I-411 | A bills hold (a recorded fact, not collected data) | `tasks/RELEASE-01.md`, Builder round 4, Recorded facts | FI-06 |
+| I-418 | Name and email shared with a movie partner (R-74, R-75, FLIX-01) | `hub:src/movies/movies.service.ts` `personOf` and `watch`, `hub:src/movie-partner/movie-partner.interface.ts` `PartnerPerson`. When a person first taps "Watch on Flixora", the Hub makes a signed link for the partner and gives the partner only the person's permanent WAWU id, email, first and last name and whether WAWU verified the email; never phone, BVN, NIN, ID documents or wallet data (a spec checks the seam's argument). The partner opens the person's account on its own site from that first link (its API has no call that opens or closes one). The Hub keeps a row per person (`MoviePartnerLink`: first and last link time, a count) and the agreement they gave (`MoviePartnerConsent`: time, and whether at sign-up or on the movie screen); no link is stored or logged. Off when `MOVIE_PARTNER` is `off` (the default). **OWNER SIGN-OFF** (the updated terms that name the partner are the owner's) | HK-09, PI-02 |
 
 ---
 

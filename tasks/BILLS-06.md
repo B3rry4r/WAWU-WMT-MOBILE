@@ -3,8 +3,8 @@ id: BILLS-06
 title: Bill reminders
 owner: YOU
 area: BILLS
-order: 128
-priority: launch
+order: 342
+priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
 status: todo
@@ -20,6 +20,7 @@ On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, 
 ## Current state
 
 As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-42 and R-52 (owner, 7 and 16 Oct 2026): bills are switched off at the Nuvion move, not deleted, and the app draws no bill entry.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below after these are done (or in review): BILLS-04.
 - **History:** none yet. Reports go to tasks/history/BILLS-06.md.

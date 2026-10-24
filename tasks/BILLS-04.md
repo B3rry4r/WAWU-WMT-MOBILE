@@ -7,7 +7,7 @@ order: 115
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [MONEY-17, MONEY-18, MONEY-19, MONEY-13, MONEY-16, WALLET-15]
 decisions: [R-10, R-19, R-20, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -20,9 +20,15 @@ On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, 
 ## Current state
 
 As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): MONEY-16.
-- **History:** none yet. Reports go to tasks/history/BILLS-04.md.
+- **Status:** live (backend main a5e48fc, PR #141). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/BILLS-04.md`): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`). Round 2 of the check; its lows are closed by FIX-40 and FIX-42.
+- **What is built** (backend `src/wallet-bills/`): `POST /bills/wallet` starts an electricity, airtime, data or cable bill and answers its quote (S5: the bill, the lines of the fee, the wallet payment's quote with the balance and shortfall for S11); `POST /bills/wallet/pay` pays it with the PIN; `GET /bills/wallet/{id}/quote`; `GET /bills/wallet/{id}` (S7's token, units and reference, or S12's failure with the money back). The web's Flutterwave bill routes are untouched.
+- **How a bill is paid:** a held `bill` payment moves the bill, Fintava's bill charge and WAWU's fee into WAWU's account in one transfer (R-31); then the purchase is made at Fintava out of it, once. Delivered: the hold is released. Failed: the hold is refunded by itself (S12). A bill under the company's minimum, a meter Fintava does not know and a price that changed are refused before any debit.
+- **Next:** a verifier. Passes V1, V2, V3, V4, V6, V7, V8, V9. The purchase checks NOT RUN against Fintava (question 17: payouts still refused in the sandbox); everything was run against the sandbox-shaped double, whose success bodies are guesses (G-647).
+- **Open for the lead or owner:** G-648 (bills cannot be paid from a Nuvion wallet: every bill route answers `target_not_payable` under `WALLET_PROVIDER=nuvion`; an owner ruling is needed before production moves to Nuvion, R-39, R-45); G-649 (Recent needs a list route, BILLS-02 or BILLS-03); G-462 (a refunded failed bill costs WAWU Fintava's charge on the refund move; the person loses Fintava's charge on the first transfer, R-10).
+- **Fences touched:** SHARED-CHANGES BILLS-04 #1 (schema and migration, `src/app.module.ts`, `contract/openapi.json`, two route inventories in specs, the purge map, and one change in the payment service: a bill is counted against the bill limits, not the purchase ones).
+- **Round 2 (16 Oct):** the verifier's medium (a lost purchase settled with another bill's record) and four lows fixed, each red then green; the fixes are in tasks/history/BILLS-04.md. Migration `20261023210000_wallet_bills` now also has two unique indexes (still unmerged). Next: a verifier for round 2 (the medium, then the lows).
+- **Sweep, not built here:** FIX-40, the daily limit counting a refunded payment (shared WALLET-23 code, `money-limits.service.ts`).
+- **History:** the builder reports are in tasks/history/BILLS-04.md.
 
 ## Read first
 
@@ -51,13 +57,9 @@ Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime
 - [ ] The same request twice charges once (V8).
 - [ ] The ledger and Fintava agree after the payment (MONEY-16).
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/BILLS-04.md](history/BILLS-04.md).
 
 ## Owner sign-off
 

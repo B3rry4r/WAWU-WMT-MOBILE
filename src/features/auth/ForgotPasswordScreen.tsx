@@ -8,7 +8,7 @@ import { useWawu } from '@/theme';
 
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
-import { Banner } from './Banner';
+import { Banner } from '@/components/Banner';
 import { describeExpiry } from './expiry';
 import { resetFailure, type Failure } from './signInFailure';
 

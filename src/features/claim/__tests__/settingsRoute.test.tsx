@@ -28,7 +28,7 @@ globalThis.fetch = jest.fn(async () => {
  */
 describe('Settings opens the access code screen (JOIN-03)', () => {
   it('the Access code row pushes /claim-code and nothing else', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { gcTime: Infinity, retry: false } } });
     await render(
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
         <QueryClientProvider client={client}>

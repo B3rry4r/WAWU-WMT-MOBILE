@@ -27,7 +27,7 @@ const tick = (creator: boolean, professional: boolean) => ({
 });
 
 function creator(wawuId: string, over: Partial<ExploreCreator> = {}): ExploreCreator {
-  return { wawuId, name: `Name ${wawuId}`, handle: wawuId, avatarUrl: null, field: null, pieceCount: 1, verification: tick(false, false), following: false, ...over };
+  return { wawuId, name: `Name ${wawuId}`, handle: wawuId, avatarUrl: null, field: null, pieceCount: 1, verification: tick(false, false), following: false, badge: null, ...over };
 }
 
 describe('X1 category tiles', () => {

@@ -270,6 +270,10 @@ export interface components {
             /** @description As typed: 0803..., +234... or 234... */
             phone: string;
             password: string;
+            /** @description First name (SIGNUP-NAMES, R-82). Optional here so every client that signs up without one keeps working; the app asks for it and sends it. */
+            firstName?: string;
+            /** @description Last name (SIGNUP-NAMES, R-82). Optional for the same reason as the first name. */
+            lastName?: string;
             occupation?: string;
             /**
              * @description The A2 pick: discover is `user`, earn is `creator`. Without it the sequence treats the account as `user`.
@@ -761,7 +765,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description EMAIL_NOT_VERIFIED, PHONE_NOT_CONFIRMED (a sign-up whose phone code was never entered: resume it). */
+            /** @description EMAIL_NOT_VERIFIED, PHONE_NOT_CONFIRMED (a sign-up whose phone code was never entered: resume it), ACCOUNT_DELETION_PERIOD_ENDED (the 30 days of a deletion are over, nothing is restored), ACCOUNT_DELETION_IN_PROGRESS (the purge has started; `message` is the Hub's own sentence, show it as it is). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -772,6 +776,15 @@ export interface operations {
             };
             /** @description USER_NOT_IN_WAWUID. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An account in its 30 days of deletion signed in, and cancelling the deletion was not settled: DELETION_CANCEL_UNAVAILABLE (the Hub did not answer; nothing changed, sign in again) or DELETION_CANCEL_BUSY (another sign-in is cancelling right now; sign in again in a moment). A right password during the 30 days cancels the deletion and answers as an ordinary sign-in. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

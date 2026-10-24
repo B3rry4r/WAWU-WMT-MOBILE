@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { mediaMetrics, MediaCard } from '@/components/MediaCard';
 import { Toast, toastMetrics } from '@/components/Toast';
 import { CreatorCard } from '@/features/explore/CreatorCard';
+import { hueFor } from '@/features/feed/model';
 import { CreatorRail } from '@/features/home/CreatorRail';
 import { radius, space } from '@/theme';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
@@ -146,7 +147,7 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
     expect(screen.getByText('@amaka').parent!.props.onLayout).toBeUndefined();
   });
 
-  it('a creator with no photo shows their initials on Home\'s rail and on Explore\'s card', async () => {
+  it('a creator with no photo shows the canvas\'s portrait tile in their hue, no initials, on Home\'s rail and on Explore\'s card (FIX-68 F-7)', async () => {
     const person = {
       wawuId: 'c1',
       name: 'Amaka Nwosu',
@@ -156,17 +157,23 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
       pieceCount: 2,
       verification: { creator: tick(true), professional: tick(false) },
       following: false,
+      badge: null,
     };
+    const hue = hueFor('c1');
+    const ground = darkColors[`hue${hue.charAt(0).toUpperCase()}${hue.slice(1)}` as keyof typeof darkColors];
     const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
     expect(screen.getByTestId('today-creator-c1-placeholder', hiddenOk)).toBeTruthy();
-    expect(screen.getByText('AN', hiddenOk)).toBeTruthy();
+    // A saturated ground from the hue token, filling the picture, not the pale sunken block with a circle on it.
+    expect(styleOf(screen.getByTestId('today-creator-c1-portrait', hiddenOk))).toMatchObject({ position: 'absolute', backgroundColor: ground });
+    expect(screen.queryByText('AN', hiddenOk)).toBeNull();
     await rail.unmount();
     await render(<CreatorCard creator={person} onToggleFollow={() => undefined} testID="explore-c1" />);
     expect(screen.getByTestId('explore-c1-placeholder', hiddenOk)).toBeTruthy();
-    expect(screen.getByText('AN', hiddenOk)).toBeTruthy();
+    expect(styleOf(screen.getByTestId('explore-c1-portrait', hiddenOk))).toMatchObject({ position: 'absolute', backgroundColor: ground });
+    expect(screen.queryByText('AN', hiddenOk)).toBeNull();
   });
 
-  it('a creator with a photo shows the photo, not the initials, on both', async () => {
+  it('a creator with a photo shows the photo, not the portrait tile, on both', async () => {
     const person = {
       wawuId: 'c1',
       name: 'Amaka Nwosu',
@@ -176,9 +183,11 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
       pieceCount: 2,
       verification: { creator: tick(true), professional: tick(false) },
       following: false,
+      badge: null,
     };
     const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
     expect(screen.queryByTestId('today-creator-c1-placeholder', hiddenOk)).toBeNull();
+    expect(screen.queryByTestId('today-creator-c1-portrait', hiddenOk)).toBeNull();
     await rail.unmount();
     await render(<CreatorCard creator={person} onToggleFollow={() => undefined} testID="explore-c1" />);
     expect(screen.queryByTestId('explore-c1-placeholder', hiddenOk)).toBeNull();
@@ -232,6 +241,7 @@ describe("THE creator-card Follow: Home and Explore draw it identically, through
     pieceCount: 2,
     verification: { creator: tick(true), professional: tick(false) },
     following,
+    badge: null,
   });
   const look = (testID: string, label: string) => ({
     button: styleOf(screen.getByTestId(testID)),

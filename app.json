@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Who Made This",
+    "name": "Who Made This?",
     "slug": "wawu-wmt",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "africa.wawu.wmt",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:wawuafrica.com"
+      ]
     },
     "android": {
       "package": "africa.wawu.wmt",
@@ -21,13 +24,59 @@
       },
       "predictiveBackGestureEnabled": false,
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.WRITE_SETTINGS",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "com.google.android.gms.permission.AD_ID"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/r/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/selfie"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/receipt/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/u/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/c/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/content/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
@@ -81,7 +130,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#9411C9"
+          "color": "#9411C9",
+          "defaultChannel": "default"
         }
       ],
       [
@@ -96,8 +146,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro.",
+          "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
       ],
@@ -111,7 +161,9 @@
     },
     "owner": "moxnafrica",
     "extra": {
-      "router": {},
+      "router": {
+        "sitemap": false
+      },
       "eas": {
         "projectId": "d07de585-f201-4b3e-989a-34f948d6e860"
       }

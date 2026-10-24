@@ -1,6 +1,8 @@
-import { api, unwrap } from '@/api/client';
+import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components, paths } from '@/api/schema.generated';
+import { presign } from '@/features/profile-edit/api';
+import type { PickedImage } from '@/features/profile-edit/pickImage';
 
 /**
  * The calls behind the community screens (I24, I25, I26), as the Hub's contract types them
@@ -11,7 +13,9 @@ import type { components, paths } from '@/api/schema.generated';
  *   most members first (INBOX-05, closes G-451);
  * - `GET /communities/:id/room`: one room as the person sees it: counts, link, their `role` there and what one
  *   message costs them (INBOX-05);
- * - `GET /communities/message-cost`: what one message costs a member, in WAWU Credits (INBOX-05, closes G-450);
+ * - `GET /communities/message-cost`: what each kind of message costs a member, in WAWU Credits (INBOX-05, closes G-450; by kind since
+ *   INBOX-22, R-62: `creditsByKind` text, photo, video, voice);
+ * - `POST /uploads/presign` (folder `community/message`), a PUT of the bytes and `POST /uploads/confirm`: a photo for a message (INBOX-23);
  * - `POST /communities/:id/join`;
  * - `GET` and `POST /communities/:id/messages`: history, newest first, a page at a time, and a send;
  * - `POST /communities/:id/read`: the room's read mark;
@@ -86,10 +90,25 @@ export async function fetchRoom(id: string): Promise<RoomView> {
   return room;
 }
 
-/** What one message costs a member, in WAWU Credits. A count, never naira (DECISIONS R-5). */
+/** What each kind of message costs a member, in WAWU Credits. A count, never naira (DECISIONS R-5). */
+export type CostsByKind = MessageCost['creditsByKind'];
+
+/** The kinds of message that cost credits, in the order they are written ("photos, video, voice"). */
+export const PAID_KINDS = ['photo', 'video', 'voice'] as const;
+export type PaidKind = (typeof PAID_KINDS)[number];
+
+const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+/**
+ * What each kind of message costs a member (R-62), as the Hub says: text and emoji, a photo, a video, a voice note. A price the Hub
+ * did not send as a count is no price, so the whole answer is refused rather than guessed at (R-47).
+ */
 export async function fetchMessageCost(): Promise<MessageCost> {
   const cost = dataOf<MessageCost>(await unwrap(api.GET('/api/hub/communities/message-cost')), 'message price');
-  if (typeof cost.creditsPerMessage !== 'number') throw unreadable('message price');
+  const kinds = cost.creditsByKind as Partial<CostsByKind> | undefined;
+  if (!isCount(cost.creditsPerMessage) || !kinds || !isCount(kinds.text) || !PAID_KINDS.every((kind) => isCount(kinds[kind]))) {
+    throw unreadable('message price');
+  }
   return cost;
 }
 
@@ -120,19 +139,50 @@ export function newMessageKey(): string {
   return `msg-${Date.now().toString(36)}-${keyCount.toString(36)}-${part()}${part()}`;
 }
 
+/** What one message carries: words, a photo the person already uploaded (its address), or both. */
+export type MessageBody = { text?: string; imageUrl?: string };
+
 /**
- * Sends one text message under the key made for it. The answer is the stored message; its `costInCredits` is what the server
- * charged. A repeat of the same key answers with the first message, so the caller may send it again until it hears an answer.
+ * Sends one message under the key made for it. The answer is the stored message; its `costInCredits` is what the server
+ * charged (nothing for text and emoji, R-62). A repeat of the same key answers with the first message, so the caller may send
+ * it again until it hears an answer; a repeat must carry the same words and the same photo address.
  */
-export async function sendMessage(id: string, text: string, key: string): Promise<CommunityMessage> {
+export async function sendMessage(id: string, body: MessageBody, key: string): Promise<CommunityMessage> {
   const message = dataOf<CommunityMessage>(
     await unwrap(
-      api.POST('/api/hub/communities/{id}/messages', { params: { path: { id }, header: { 'Idempotency-Key': key } }, body: { text } }),
+      api.POST('/api/hub/communities/{id}/messages', {
+        params: { path: { id }, header: { 'Idempotency-Key': key } },
+        body: { ...(body.text ? { text: body.text } : {}), ...(body.imageUrl ? { imageUrl: body.imageUrl } : {}) },
+        fetch: resendsUnderKey,
+      }),
     ),
     'message',
   );
   if (typeof message.id !== 'string') throw unreadable('message');
   return message;
+}
+
+/** The code of the error the photo's upload itself raises, so the screen knows its sentence is ready to show. */
+export const PHOTO_UPLOAD_FAILED = 'upload_failed';
+
+/**
+ * Uploads a photo for a message through the Hub's presign and confirm path and answers the address the send takes as `imageUrl`:
+ * `POST /uploads/presign` (folder `community/message`), a PUT of the bytes, then `POST /uploads/confirm`, which asks the storage
+ * host whether the file landed. A file the host says is not there (`abandoned`) is an upload that failed; the phone's own copy
+ * is left for the caller to delete once the message is settled, because the sending bubble still draws it.
+ */
+export async function uploadMessagePhoto(picked: PickedImage): Promise<string> {
+  const { uploadUrl, fileUrl } = await presign({ folder: 'community/message', contentType: picked.contentType, extension: picked.extension, contentLength: picked.blob.size });
+  let response: Response;
+  try {
+    response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': picked.contentType }, body: picked.blob });
+  } catch {
+    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+  }
+  if (!response.ok) throw new ApiError('server', response.status, 'Your photo did not upload. Try again.', PHOTO_UPLOAD_FAILED);
+  const settled = dataOf<{ status?: unknown }>(await unwrap(api.POST('/api/hub/uploads/confirm', { body: { key: fileUrl } })), 'upload');
+  if (settled.status === 'abandoned') throw new ApiError('server', 0, 'Your photo did not upload. Try again.', PHOTO_UPLOAD_FAILED);
+  return fileUrl;
 }
 
 export async function markRoomRead(id: string): Promise<void> {

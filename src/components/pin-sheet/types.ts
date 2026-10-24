@@ -44,16 +44,27 @@ export type BiometricKind = 'fingerprint' | 'face';
 
 /**
  * What became of a biometric approval (fingerprint or face). The server side
- * is MONEY-14's (`X-Device-Approval`, not declared yet; BACKEND_GAPS G-9).
+ * is MONEY-14's (`X-Device-Approval`, wawu-backend `docs/contract/CONVENTIONS.md`
+ * section 5; the phone's side is FIX-108's `features/device-approval`).
  *
  * - `approved`: the request went through.
- * - `failed`: not recognised, refused, or it went wrong. The sheet shows
- *   "<Name> failed. Use your PIN." (owner, 2 Oct 2026) and the keypad. It
- *   uses up no PIN try: the sheet counts nothing, and the owner's ruling is
- *   that the server must not either.
+ * - `failed`: not recognised, refused (`403 device_approval_refused`), the
+ *   phone's key is gone, or it went wrong. The sheet shows "<Name> failed.
+ *   Use your PIN." (owner, 2 Oct 2026) and the keypad. It uses up no PIN try:
+ *   the sheet counts nothing, and the Hub counts none for a refused approval.
  * - `cancelled`: the person closed the prompt. Back to the keypad, no message.
+ * - `unanswered`: no answer that proves anything (no connection, a timeout, a
+ *   5xx). The sheet says what it says for a PIN that got no answer
+ *   (`unansweredLine`) and the caller retries with the same Idempotency-Key.
+ * - `pin_locked`: the PIN is locked, and so a passed approval is refused too
+ *   (`423 pin_locked`, BACKEND_GAPS G-9). The sheet shows the lock.
  */
-export type BiometricResult = { code: 'approved' } | { code: 'failed' } | { code: 'cancelled' };
+export type BiometricResult =
+  | { code: 'approved' }
+  | { code: 'failed' }
+  | { code: 'cancelled' }
+  | { code: 'unanswered' }
+  | { code: 'pin_locked'; lockedUntil: string };
 
 /**
  * The line under "Enter your PIN". `totalKobo` is the TOTAL the payer pays,
@@ -61,11 +72,15 @@ export type BiometricResult = { code: 'approved' } | { code: 'failed' } | { code
  * price alone.
  *
  * With `payee`: "Approve ₦25,065 to Chidinma Okoro" (W11, H15).
- * With `purpose`: "₦2,023.25 for the professional tick" (M13).
+ * With `totalKobo` and `purpose`: "₦2,023.25 for the professional tick" (M13).
+ * With `purpose` alone: the purpose as the line, for a PIN that moves no money
+ * (W35 turning on fingerprint or face: "Turn on fingerprint for payments";
+ * SHARED-CHANGES WALLET-06 #1).
  */
 export type PinApproval =
   | { totalKobo: number; payee: string; purpose?: never }
-  | { totalKobo: number; purpose: string; payee?: never };
+  | { totalKobo: number; purpose: string; payee?: never }
+  | { totalKobo?: never; purpose: string; payee?: never };
 
 /**
  * The phone's biometric standing in for the PIN. The sheet reads which one the
@@ -96,4 +111,10 @@ export type PinSheetProps = {
    * `PinStateView.lockedUntil` (ISO 8601, null when not locked).
    */
   lockedUntil?: string | null;
+  /**
+   * The line for an answer that never arrived. Left out, it reads "We couldn't check your PIN. Try again." (right for a send,
+   * where the PIN was the thing in doubt). A sheet that pays passes `PAYMENT_UNANSWERED_LINE`: the payment may have gone
+   * through, and the retry goes with the same Idempotency-Key, so it happens once.
+   */
+  unansweredLine?: string;
 };
