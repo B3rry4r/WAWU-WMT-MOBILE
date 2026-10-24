@@ -8,13 +8,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 47 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 163 | 0 | 0 | 0 |
-| review | 33 | 0 | 0 | 0 |
+| review | 34 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [OPS-26](../tasks/OPS-26.md) Money oversight lists the Hub could not serve (earnings in review, stuck wallet openings, identity holds), read-only, and the dashboard sections for them (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [SIGNUP-NAMES](../tasks/SIGNUP-NAMES.md) Sign-up asks for a first name, a last name and a username (R-82) (You)
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
@@ -217,7 +218,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [OPS-26](../tasks/OPS-26.md) Money oversight lists the Hub could not serve (earnings in review, stuck wallet openings, identity holds), read-only, and the dashboard sections for them (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done

@@ -7,7 +7,7 @@ order: -153
 priority: launch
 repo: all
 type: backend-endpoint
-status: building
+status: review
 depends_on: []
 decisions: [R-1, R-6, R-11, R-47, R-55]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T2
 # OPS-26 · Money oversight lists
 
 ## Current state
+
+24 Oct 2026: the verifier's medium F1 (raw reason text) fixed in backend 2649c64; lead accepts on the diff read; F2-F4 go to SWEEP-DASH.
 
 **Verifier (24 Oct 2026, lean T2 check, a separate Sonnet agent): FIX.** One medium: `reason` on `GET /admin/money/earnings/in-review` sends the `discrepancy` column as written, so a crafted row puts a BVN-like string, phone, hash and name on the wire (F1 below). Everything else held: read-only (no row changed across the reads, no provider call), roles, paging with ties, the dashboard gate fix (comment only), all checks green. Status back to building for F1; lows F2 to F4 go to `tasks/SWEEP-APP.md`.
 
