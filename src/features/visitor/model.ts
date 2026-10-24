@@ -2,6 +2,7 @@ import { formatMoney } from '@/components/Money';
 import { nairaToKobo } from '@/api/kobo';
 import { memberSinceLine, ticksOf, yearsOf, type HeaderBadge } from '@/features/me/model';
 import { compactCount } from '@/features/feed/model';
+import { whereLine, type PlaceParts } from '@/features/geo/place';
 
 import type { Education, VisitorProfile } from './api';
 
@@ -35,14 +36,14 @@ export function headlineLine(profile: Pick<VisitorProfile['profile'], 'headline'
 
 /** M33's line under the title: what the person does, then where ("Filmmaker and brand strategist · Lagos, Nigeria"). */
 export function subtitleLine(view: Pick<VisitorProfile, 'profile' | 'fields'>): string | null {
-  const parts = [view.profile.headline, view.fields.location].map((part) => (part ?? '').trim()).filter(Boolean);
+  const parts = [view.profile.headline, whereLine(view.fields)].map((part) => (part ?? '').trim()).filter(Boolean);
   return parts.length ? parts.join(' · ') : null;
 }
 
 /** "Lagos, Nigeria · On Who Made This? since 2025": where, then how long they have been here. */
-export function placeLine(fields: Pick<VisitorProfile['fields'], 'location' | 'memberSince'>): string | null {
+export function placeLine(fields: Pick<VisitorProfile['fields'], 'location' | 'memberSince'> & PlaceParts): string | null {
   const since = memberSinceLine(fields.memberSince)?.replace(/ since [A-Za-z]+ (\d{4})$/, ' since $1') ?? null;
-  const parts = [(fields.location ?? '').trim(), since].filter((part): part is string => Boolean(part));
+  const parts = [whereLine(fields) ?? '', since].filter((part): part is string => Boolean(part));
   return parts.length ? parts.join(' · ') : null;
 }
 

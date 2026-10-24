@@ -28,15 +28,23 @@ export function AuthField({ scrollRef, onFocus, ...field }: AuthFieldProps) {
         {...field}
         onFocus={(event) => {
           onFocus?.(event);
-          const inner = scrollRef.current?.getInnerViewNode();
-          if (!spot.current || !inner) return;
-          spot.current.measureLayout(
-            inner,
-            (_x, y) => scrollRef.current?.scrollTo({ y: Math.max(0, y - FOCUS_MARGIN), animated: false }),
-            () => undefined,
-          );
+          scrollToSpot(scrollRef, spot);
         }}
       />
     </View>
+  );
+}
+
+/**
+ * Scrolls the form so the View in `spot` is on screen with room above it. Called from a field's focus: `AuthField` does it for
+ * itself, and the phone field (a shared component `AuthField` cannot wrap) is given the same call by the form that holds it.
+ */
+export function scrollToSpot(scrollRef: RefObject<ScrollView | null>, spot: RefObject<View | null>): void {
+  const inner = scrollRef.current?.getInnerViewNode();
+  if (!spot.current || !inner) return;
+  spot.current.measureLayout(
+    inner,
+    (_x, y) => scrollRef.current?.scrollTo({ y: Math.max(0, y - FOCUS_MARGIN), animated: false }),
+    () => undefined,
   );
 }

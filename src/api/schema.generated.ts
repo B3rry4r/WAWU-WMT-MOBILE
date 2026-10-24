@@ -1359,6 +1359,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/geo/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every country, A to Z by name. */
+        get: operations["GeoController_countries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/geo/countries/{code}/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One country's ISO 3166-2 regions, A to Z by name. `code` is the country's
+         *     ISO alpha-2 code in any case. 404 `country_not_found` for a code that is
+         *     not on the list; 200 with no items for a country ISO divides into nothing.
+         */
+        get: operations["GeoController_regions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tips": {
         parameters: {
             query?: never;
@@ -6558,6 +6596,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the signed-in person is (GEO-02, R-85): their country of residence
+         *     (what they chose, else the country WAWU ID holds, else their phone's),
+         *     with their region and city when they have set them. The app calls it
+         *     after sign-in; where the person has not chosen a country it records the
+         *     one WAWU ID gives, so the dashboard counts them.
+         */
+        get: operations["MeController_location"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/saved": {
         parameters: {
             query?: never;
@@ -10386,6 +10447,26 @@ export interface components {
         UpdateProfileFieldsDto: {
             /** @description Where the person is, free text ("Lagos, Nigeria"). null or "" clears it. */
             location?: string | null;
+            /**
+             * @description Country of residence, ISO 3166-1 alpha-2 from GET /geo/countries ("NG",
+             *     any case). null or "" clears it (and the region, which belonged to it).
+             *     Changing it clears a region that is not sent again.
+             */
+            countryCode?: string | null;
+            /**
+             * @description Region, the full ISO 3166-2 code from GET /geo/countries/{code}/regions
+             *     ("NG-LA"; its tail "LA" is accepted too). It must belong to the country
+             *     saved or sent with it. null or "" clears it.
+             */
+            regionCode?: string | null;
+            /**
+             * @description The region's name ("Lagos"). Beside a regionCode it must be that code's
+             *     name; alone it is looked up in the country's list; for a country with
+             *     no list it is saved as typed. null or "" clears it.
+             */
+            regionName?: string | null;
+            /** @description City, free text up to 80 characters ("Ikeja"). null or "" clears it. */
+            city?: string | null;
             /** @description Skills and expertise chips. [] clears them. */
             skills?: string[];
             /** @description What the person is open to, as chips. [] clears them. */
@@ -12356,6 +12437,27 @@ export interface components {
             content: components["schemas"]["AdminContentDetailView"];
             review: components["schemas"]["AdminContentReviewEntryView"];
         };
+        GeoCountryView: {
+            code: string;
+            name: string;
+            dialCode: string | null;
+            flag: string;
+            exampleNumber: string | null;
+            exampleNational: string | null;
+            hasRegions: boolean;
+        };
+        GeoCountryList: {
+            items: components["schemas"]["GeoCountryView"][];
+        };
+        GeoRegionView: {
+            code: string;
+            name: string;
+            type: string;
+        };
+        GeoRegionList: {
+            countryCode: string;
+            items: components["schemas"]["GeoRegionView"][];
+        };
         AdminKycMaskedIdentifiersView: {
             bvnMasked: string | null;
             ninMasked: string | null;
@@ -13813,6 +13915,28 @@ export interface components {
                 price: number | null;
             };
         };
+        AdminGeoRegionCount: {
+            regionCode: string | null;
+            regionName: string | null;
+            people: number;
+            creators: number;
+        };
+        AdminGeoCountryCount: {
+            countryCode: string;
+            countryName: string;
+            people: number;
+            creators: number;
+            regions: components["schemas"]["AdminGeoRegionCount"][];
+        };
+        AdminGeoCountsView: {
+            people: number;
+            creators: number;
+            unknown: {
+                people: number;
+                creators: number;
+            };
+            countries: components["schemas"]["AdminGeoCountryCount"][];
+        };
         AdminFinancePeriodView: {
             from: string;
             to: string;
@@ -14937,6 +15061,11 @@ export interface components {
         ProfileFieldsView: {
             wawuUserId: string;
             location: string | null;
+            countryCode: string | null;
+            countryName: string | null;
+            regionCode: string | null;
+            regionName: string | null;
+            city: string | null;
             skills: string[];
             openTo: string[];
             threadsHandle: string | null;
@@ -15703,6 +15832,17 @@ export interface components {
             unreadNotifications: number;
             enrolledCourses: number;
         };
+        MeLocationView: {
+            countryCode: string | null;
+            countryName: string | null;
+            /** @enum {string|null} */
+            countrySource: "phone" | "profile" | "wawu_id" | null;
+            regionCode: string | null;
+            regionName: string | null;
+            city: string | null;
+            wawuIdCountryCode: string | null;
+            phoneCountryCode: string | null;
+        };
         SavedContentView: {
             id: string;
             title: string;
@@ -15804,7 +15944,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "transaction" | "paid_question" | "profile";
+            kind: "community" | "content" | "transaction" | "profile" | "paid_question";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -19493,6 +19633,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LegalDeliverablesView"];
+                };
+            };
+        };
+    };
+    GeoController_countries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoCountryList"];
+                };
+            };
+        };
+    };
+    GeoController_regions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoRegionList"];
                 };
             };
         };
@@ -29947,6 +30127,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeCountsView"];
+                };
+            };
+        };
+    };
+    MeController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeLocationView"];
                 };
             };
         };
