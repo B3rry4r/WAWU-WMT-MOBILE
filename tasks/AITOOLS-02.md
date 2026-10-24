@@ -7,7 +7,7 @@ order: -125
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-79, R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,11 +17,20 @@ artboards: []
 
 ## Current state
 
-As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status: todo. Tier T2 (third-party, spends points). About 60 minutes of building; if it runs past that, push what is done and hand back what remains.
-- **Real prerequisites (not in `depends_on`):** AITOOLS-01 (backend) and POINTS-03 are merged to backend main. They sit at orders 267 and 213, and every order in the launch band below CHECK-3 is taken, so this task uses a negative order (like FIX-nn) and `depends_on` lists only the tasks cut with it. Both are on backend main as of 23 Oct 2026 (`src/ai-tools/`).
-- **Why first:** the other four backend tasks add one tool each to the pipeline this task opens up. Quick voice rides with it because it is the smallest tool (a fast, cheaper read-aloud: the same voices as VoiceOver on the provider's faster model, 125 points a minute, R-79) and proves the pipeline end to end.
-- **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
-- **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-02`; then a verifier.
+As of 24 Oct 2026, verifying (builder done; a verifier is next). Tier T2 (third-party, spends points).
+- **Branches:** backend `wmt/AITOOLS-02` `0a29c9a` on origin/main `b2f4df6`; mobile `wmt/AITOOLS-02` (this file, SHARED-CHANGES AITOOLS-02 #1 and #2, BACKEND_GAPS, the log line) on origin/main `dff9b30e`, merged not rebased. No PR. An earlier builder stopped at a usage limit with nothing committed; this builder judged its uncommitted work, kept it, added the migration spec and finished the checks.
+- **Before:** one tool (VoiceOver) hard-wired in `AiJobService.createVoiceover`; `GET /ai-tools` held one entry; a job view had `audioUrl` only; no list of a person's jobs (G-POINTS-08-3).
+- **After:** `AiJobService.createJob(tool, ...)` runs every tool through the one pipeline; a tool is one file in `src/ai-tools/tools/` plus one line in `tools/index.ts`. VoiceOver is the first entry, route and answer unchanged. Quick voice is the second.
+- **Routes added (2):** `POST /ai-tools/quick-voice/jobs` (text, `voiceId`, `quoteToken` for `quick_voice_per_min`, required `Idempotency-Key`; 202 working, 200 replay) and `GET /ai-tools/jobs` (the caller's own jobs, newest first, `{ items, nextCursor }`, `?cursor&limit`).
+- **Answer shapes (additive):** `GET /ai-tools` entries gain `input.kind` (`text`); an entry's `id` may be `quick-voice`; Quick voice is listed only when the provider can run it (VoiceOver stays listed `enabled: false`, as AITOOLS-01). A job view gains `outputs: [{ kind: audio | text | subtitles, url?, text? }]`; `audioUrl` is unchanged and equals the audio output. Contract regenerated: 2 operations, 3 schemas (`CreateQuickVoiceJobDto`, `AiJobOutputView`, `AiJobPage`), the `voiceover` enums gain `quick-voice`; nothing removed.
+- **Quick voice:** the seam method `speakQuick` (same voices, the faster model `AI_VOICE_QUICK_MODEL`, default `eleven_flash_v2_5`), 125 points a minute (`points.action.quick_voice_per_min`), a minute is `ai.quick_voice_chars_per_minute` = 900 (new, PROVISIONAL `AITOOLS-CHARS-PER-MINUTE`). The stand-in records `model_id` per call and answers from a route table.
+- **Migration:** `20261101100000_ai_tool_job_outputs`: nullable `outputs` (JSON), `providerRef`, `inputRef` on `AiToolJob`. Stamp sorts after every migration on backend main and on every `origin/wmt/*` backend branch (newest seen `20261031100000_flix_movies`, 24 Oct 2026). Rollback beside it loses no row and refuses while a column holds something only it keeps; `prisma migrate diff` after applying: empty.
+- **Admin settings:** every `points.action.<id>` `usedBy` now names the tool's route; one new setting above. Nothing else.
+- **Checks (backend, EXIT 0 each):** tsc; eslint on changed files; `src/ai-tools` specs in band 63/63 (AITOOLS-01 26, pipeline 20, provider 9, migration 8); plan-settings, admin plan-settings and voice-intro specs 101/101; `test:protected` 253/253 (244 required); `contract:build`; gates 0 fail (133 warn, 88 accepted); `check_baseline`. Mobile: `check_tasks` and gates below.
+- **Changed assertion (flag for the verifier):** AITOOLS-01's `ai-tools.contract.spec.ts` line 125 `toHaveLength(1)` is now `toHaveLength(2)`: this task's scope lists Quick voice in the same catalogue, so the count cannot stay 1. Every VoiceOver assertion is untouched.
+- **NOT RUN against the real provider** (G-AITOOLS-01-5): built and run against `scripts/dev/voice-standin.cjs`. Not run on the local test stack either: HTTP specs only, real database, real tokens, no payment provider.
+- **Not done / next:** a verifier; the other tools (AITOOLS-03 to -06) add a file each. The job list has no screen (G-POINTS-09-1), only the route.
+- **History:** tasks/history/AITOOLS-02.md.
 
 ## Read first
 
@@ -71,7 +80,11 @@ Every tool Studio lists runs through one job pipeline, so the next tools are a t
 
 ## History
 
-None yet. Reports go to tasks/history/AITOOLS-02.md.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/AITOOLS-02.md](history/AITOOLS-02.md).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/AITOOLS-02.md](history/AITOOLS-02.md).
 
 ## Owner sign-off
 
