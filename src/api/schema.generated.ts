@@ -11461,7 +11461,7 @@ export interface components {
             canStart: boolean;
         };
         AdminAddMoneyView: {
-            wawuUserId: string;
+            wawuUserId: string | null;
             provider: string;
             reference: string;
             providerRef: string | null;

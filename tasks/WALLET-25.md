@@ -142,6 +142,17 @@ Also found and fixed in this round: `src/money/tests/money-contract.spec.ts` (th
 
 **Still NOT RUN (unchanged):** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, F2 on a live Hub, the card route on the stack against the real Nuvion (the stack stand-in has no payment intents).
 
+### Round 2 (fix round, builder, 24 Oct 2026; backend `wmt/WALLET-25` `c60b59e`, mobile on the re-check's `311526f9`)
+
+Status verifying. The re-check found two coverage specs red on `66806bd`; the lead ruled each.
+
+| # | Finding | Fix | Proof |
+|---|---|---|---|
+| F8 | `account-data-map.spec`: `AddMoneySession.wawuUserId` and `wawuFeeKobo` unclassified | the attempt is a financial record, kept and anonymised on deletion (it links a ledger row to Nuvion's inflow): `ACCOUNT_DATA_MAP` has `AddMoneySession.wawuUserId` as ANONYMISED, `wawuFeeKobo` is in `NOT_A_USER_REFERENCE` (a fee, not a person); the column is nullable (schema and the still-unmerged migration `20261122090000_add_money`), and the purge, which reads the map, sets it to null and keeps the row | `account-data-map.spec` green; `add-money.contract.spec.ts` runs `AccountPurgeService.purge` on a settled attempt with an audit row: the row stays with `wawuUserId` null and its amounts, reference, ledger link and audit row intact (`deleted['AddMoneySession.wawuUserId (anonymised)']` 1, nothing failed); `prisma migrate deploy` on a fresh database and `migrate diff` against the schema: no difference |
+| F9 | `money-moving-coverage.spec`: quote and start did not run `FeesSetGuard` first; cancel unnamed | `GET /money/add-money/quote` and `POST /money/add-money` carry `@RequireFeesSet()` (the guard runs first, the add-money precheck after it, as for every money route); the spec's money-moving list has `POST money/add-money`; `POST money/add-money/:id/cancel` is in `NON_MONEY_WRITES` with "cancels an unpaid attempt; moves no money" | `money-moving-coverage.spec` green |
+
+Run to EXIT 0 on `c60b59e`: `account-data-map`, `data-export-map`, `wallet-gate-coverage`, `money-moving-coverage`, `money-contract` and the add-money specs (6 suites, 90 tests, one run), backend tsc, eslint (no --fix), `contract:build` (the contract changed: `AdminAddMoneyView.wawuUserId` is nullable), gates. No spec that imports the Fintava double was run. App: tsc, gates, check_tasks, jest add-money and pin-sheet (the generated types changed; nothing in the app did).
+
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
