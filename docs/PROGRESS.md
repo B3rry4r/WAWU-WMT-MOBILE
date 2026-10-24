@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 31 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 32 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -24,6 +24,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [FLIX-04](../tasks/FLIX-04.md) Flix movies show "not live yet" until business talks finish (You)
 - [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
+- [FIX-108](../tasks/FIX-108.md) A person can approve a payment with their fingerprint or face (W35 switch, W11 sheet) (You)
 - [FIX-106](../tasks/FIX-106.md) Flix movies draw nothing when the Hub does not answer enabled (a soon answer is treated as off; the "not switched on yet" note and card are removed) (You)
 - [FIX-105](../tasks/FIX-105.md) A person is told when a community they joined has new messages, grouped (the Z3 "Community messages" switch has a sender) (You)
 - [SWEEP-VOICE](../tasks/SWEEP-VOICE.md) Voice sweep: the low findings of the Voice Intro (VOICE-01, VERIFY-02, VERIFY-03, FIX-95) (You)
@@ -49,7 +50,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [FIX-108](../tasks/FIX-108.md) A person can approve a payment with their fingerprint or face (W35 switch, W11 sheet) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
