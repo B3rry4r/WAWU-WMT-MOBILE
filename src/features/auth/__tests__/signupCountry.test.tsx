@@ -165,6 +165,15 @@ describe('A3: the phone field has a country, and sign-up asks the country of res
     expect(screen.getByText(TEXT_REACH_LINE)).toBeTruthy();
   });
 
+  it.each([['email'], [null]] as const)('with the channel %s, a Ghanaian number is told nothing about texts (the line is only for a texted code)', async (channel) => {
+    await render(frame({ channel, region: 'NG' }));
+    await fireEvent.press(screen.getByTestId('sign-up-phone-country'));
+    await fireEvent.press(await screen.findByTestId('sign-up-phone-sheet-row-GH'));
+    // Ghana really is the phone's country now, so a hint that ignored the channel would show.
+    expect(screen.getByTestId('sign-up-phone-country')).toHaveTextContent(/\+233/);
+    expect(screen.queryByText(TEXT_REACH_LINE)).toBeNull();
+  });
+
   it('the Hub\'s refusals of a number say what the rule is, never "Nigerian number"', async () => {
     const refused = (code: string) => new ApiError('validation', 400, 'x', code);
     const notSupported = signupFailure(refused('PHONE_NOT_SUPPORTED'));

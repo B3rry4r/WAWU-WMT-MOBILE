@@ -45,3 +45,18 @@ Findings:
 - **Low (sweep):** (a) the region label is the Hub's `type` for the whole country, so a few read oddly (France "Metropolitan department", Austria "Federal länder", Libya "Popularate", Saint Helena "Geographical entity", the US Minor Outlying Islands "Islands, groups of islands"), and the region sheet's search label adds an "s" ("Search metropolitan departments", "islands, groups of islandss"); (b) the `PlaceBridge` comment says Edit profile "reads the same answer when it opens", but no screen calls `useMyPlace` (Edit profile reads profile-fields, which the Hub fills from that one call); (c) the text-reach hint would warn falsely once WAWU ID widens `SIGNUP_ALLOWED_PHONE_PREFIX` (already G-GEO-03-2); (d) the builder used `git checkout` on `AuthField.tsx` once (a never-rule, admitted in the report); the file now matches its intended diff and nothing else was lost.
 - **differs-for-recorded-reason:** A3's Country row, the phone's country button and sheet, and M8's three place rows have no board (G-GEO-03-4).
 
+
+## Builder report, round 1
+
+Sonnet builder, T1, 24 Oct 2026. Mobile `wmt/GEO-03` on `327771f0` (the verifier's report); no change to the app's behaviour except the three lows below.
+
+Files: `src/__tests__/auth-signup.test.tsx` (the suite answers `fetchCountries`, default no list, cache cleared each case; two new A3 cases, F1), `src/features/auth/__tests__/signupCountry.test.tsx` (channel `email` and `null`, F2), `src/features/geo/place.ts` and its test (a short plain region word), `src/features/profile-edit/EditProfileScreen.tsx` (the search label), `src/features/geo/PlaceBridge.tsx` (comment), `src/features/geo/useGeo.ts` (unused `useMyPlace` removed).
+
+Each new test was shown to fail without the code it guards: the `countryCode` spread in `signupFlow.startSignup` removed, both F1 cases fail; `channel === 'phone'` removed from A3's hint, both F2 cases fail. Both edits were made locally and put back from copies, and the committed files are the unmutated ones.
+
+Checks: see Current state (each EXIT 0). Not run: a phone, `settingsScreens.test.tsx` (names the Fintava double), the full suites.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/GEO-03.md](history/GEO-03.md).
+

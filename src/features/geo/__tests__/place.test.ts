@@ -26,6 +26,17 @@ describe('a region field uses the country\'s own word', () => {
     expect(regionWord(of('County', 47))).toBe('County');
     expect(regionWord([...of('Province', 10), ...of('Territory', 3)])).toBe('Province');
   });
+  it('a formal type reads as the plain word: France Department, Austria State, Libya District', () => {
+    expect(regionWord([...of('Metropolitan department', 96), ...of('Metropolitan region', 5)])).toBe('Department');
+    expect(regionWord(of('Federal länder', 9))).toBe('State');
+    expect(regionWord(of('Popularate', 22))).toBe('District');
+    expect(regionWord(of('Canton', 26))).toBe('Canton');
+  });
+  it('a long description for a type just says Region', () => {
+    expect(regionWord(of('Geographical entity', 1))).toBe('Region');
+    expect(regionWord(of('Islands, groups of islands', 9))).toBe('Region');
+    expect(regionWord(of('Autonomous region', 5))).toBe('Region');
+  });
   it('a country of several kinds in equal measure, or with none, just says Region', () => {
     expect(regionWord([...of('Country', 4), ...of('Unitary authority', 60), ...of('London borough', 33), ...of('Council area', 32)])).toBe('Region');
     expect(regionWord([])).toBe('Region');

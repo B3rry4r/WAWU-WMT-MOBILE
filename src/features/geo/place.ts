@@ -27,9 +27,19 @@ export function locationText(place: Pick<PlaceParts, 'city' | 'regionName' | 'co
   return [text(place.city), text(place.regionName), text(place.countryName)].filter(Boolean).join(', ') || null;
 }
 
+/** The Hub's `type` for a few countries is a formal ISO name; this is the word people use for it. */
+const PLAIN_REGION_WORD: Record<string, string> = {
+  'metropolitan department': 'Department',
+  'federal länder': 'State',
+  länder: 'State',
+  popularate: 'District',
+};
+
 /**
- * What a country calls its regions, as the Hub types them ("State", "Province", "County"): the one type most of them share.
- * A country whose regions are several kinds in about equal measure (the United Kingdom) just says "Region".
+ * What a country calls its regions, as a short plain word: the Hub's type when most of the country's regions share one ("State",
+ * "Province", "County"), the plain word for a formal one ("Metropolitan department" is "Department", Austria's "Federal länder"
+ * is "State", Libya's "Popularate" is "District"). A country of several kinds in about equal measure (the United Kingdom), or
+ * whose type is a long description ("Geographical entity", "Islands, groups of islands"), just says "Region".
  */
 export function regionWord(regions: readonly { type: string }[]): string {
   const counts = new Map<string, number>();
@@ -39,5 +49,8 @@ export function regionWord(regions: readonly { type: string }[]): string {
   }
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
   if (!top || top[1] / regions.length < 0.75) return 'Region';
-  return top[0].charAt(0).toUpperCase() + top[0].slice(1);
+  const type = top[0].toLowerCase();
+  const plain = PLAIN_REGION_WORD[type];
+  if (plain) return plain;
+  return /^[a-zà-ÿ]+$/.test(type) ? type.charAt(0).toUpperCase() + type.slice(1) : 'Region';
 }

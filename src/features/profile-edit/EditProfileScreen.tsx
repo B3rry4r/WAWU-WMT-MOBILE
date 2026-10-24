@@ -380,7 +380,7 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
         visible={picking === 'region'}
         onClose={() => setPicking(null)}
         title={`Choose your ${word.toLowerCase()}`}
-        searchLabel={`Search ${word.toLowerCase()}s`}
+        searchLabel="Search by name"
         items={regionItems}
         selected={form.regionCode}
         failed={regions.isError}
