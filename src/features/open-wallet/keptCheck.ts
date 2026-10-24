@@ -3,6 +3,8 @@ import { useSyncExternalStore } from 'react';
 import { onSessionEnd } from '@/api/session';
 import type { BvnCheck } from '@/api/walletIdentity';
 
+import type { FiatCode } from './api/world';
+
 /**
  * The answer to the BVN check that passed on A26, held for A5 (KYC-03): the
  * name, date of birth and gender the BVN gave (`prefill`) and the step's state
@@ -46,6 +48,13 @@ export type HeldPerson = { firstName: string; lastName: string; dateOfBirth: str
 export type HomeAddress = { street: string; city: string; state: string };
 
 /**
+ * WALLET-41 (R-87): a person who lives outside Nigeria opens without a BVN. The country they chose and the currency of
+ * their first account, held beside empty numbers (so every later step reads them as the review opening, with no BVN to
+ * send). In memory only, gone with every forget like the rest.
+ */
+export type HeldWorld = { country: string; currency: FiatCode };
+
+/**
  * The passed check as kept: the prefill and the step's state (last 4 digits
  * only), without the handle, which is kept beside it (`readHandle`).
  */
@@ -68,6 +77,8 @@ type Kept = {
   numbers: HeldNumbers | null;
   /** The review opening only (KYC-07): the name, date of birth and gender typed on the details step. */
   person: HeldPerson | null;
+  /** WALLET-41: the country and first currency of a person outside Nigeria; null for a Nigerian opening. */
+  world: HeldWorld | null;
 };
 
 let kept: Kept | null = null;
@@ -114,6 +125,7 @@ export function keepCheck(ticket: KeepTicket, check: BvnCheck): boolean {
     notice: null,
     numbers: null,
     person: null,
+    world: null,
   };
   changed();
   return true;
@@ -136,9 +148,39 @@ export function keepNumbers(ticket: KeepTicket, numbers: HeldNumbers): boolean {
     notice: null,
     numbers: { bvn: numbers.bvn, nin: numbers.nin },
     person: carried?.person ?? null,
+    world: null,
   };
   changed();
   return true;
+}
+
+/**
+ * Holds the country and first currency of a person outside Nigeria (WALLET-41). There are no numbers to send, so the
+ * numbers are held empty: the details step and the documents read it as the review opening. The name and address typed
+ * on an earlier try of the same account carry over.
+ */
+export function keepWorld(ticket: KeepTicket, world: HeldWorld): boolean {
+  if (ticket.era !== era) return false;
+  const carried = kept && kept.owner === ticket.owner ? kept : null;
+  kept = {
+    owner: ticket.owner,
+    check: null,
+    handle: null,
+    address: carried?.address ?? null,
+    occupation: null,
+    notice: null,
+    numbers: { bvn: '', nin: '' },
+    person: carried?.person ?? null,
+    world: { country: world.country, currency: world.currency },
+  };
+  changed();
+  return true;
+}
+
+/** The country and first currency held for this account, or null (none held, a Nigerian opening, or another person's). */
+export function readWorld(owner: string | undefined): HeldWorld | null {
+  if (!kept || !owner || kept.owner !== owner) return null;
+  return kept.world;
 }
 
 /** Holds the name, date of birth and gender (and the address) typed on the review opening's details step, beside the numbers. */
@@ -258,10 +300,10 @@ export function useCheckNotice(owner: string | undefined): { notice: string; add
 /** For the review opening's details step (KYC-07): the numbers, with the name and address typed so far, or null while no numbers are held. */
 export function useHeldReview(
   owner: string | undefined,
-): { numbers: HeldNumbers; person: HeldPerson | null; address: HomeAddress | null } | null {
+): { numbers: HeldNumbers; person: HeldPerson | null; address: HomeAddress | null; world: HeldWorld | null } | null {
   const current = useSyncExternalStore(subscribe, () => kept, () => kept);
   if (!current || !owner || current.owner !== owner || !current.numbers) return null;
-  return { numbers: current.numbers, person: current.person, address: current.address };
+  return { numbers: current.numbers, person: current.person, address: current.address, world: current.world };
 }
 
 /** For A5 and A6: the kept check, its handle and A5's details together for this account, or null without a check. */

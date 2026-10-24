@@ -158,17 +158,20 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
   return (
     <>
       {incomplete ? <CompleteAccountFlag onPress={() => router.push(OPEN_WALLET_PATH)} /> : null}
-      <MoneyCard
-        state={money}
-        masked={masked}
-        onToggleMask={onToggleMask}
-        onOpenWallet={() => router.push(OPEN_WALLET_PATH)}
-        onRetryWallet={() => void wallet.refetch()}
-        onRetryBalance={() => void balance.refetch()}
-        retrying={wallet.isFetching || balance.isFetching}
-        onSend={() => router.push('/send')}
-        onAdd={() => router.push('/add-money')}
-      />
+      {/* WALLET-41: a person who opened a wallet from outside Nigeria has no naira balance, so no card (R-47). */}
+      {money.kind === 'none' ? null : (
+        <MoneyCard
+          state={money}
+          masked={masked}
+          onToggleMask={onToggleMask}
+          onOpenWallet={() => router.push(OPEN_WALLET_PATH)}
+          onRetryWallet={() => void wallet.refetch()}
+          onRetryBalance={() => void balance.refetch()}
+          retrying={wallet.isFetching || balance.isFetching}
+          onSend={() => router.push('/send')}
+          onAdd={() => router.push('/add-money')}
+        />
+      )}
       {sponsored ? (
         <SponsoredSlot
           ad={sponsored}

@@ -12,7 +12,7 @@ import { cardInk, todayMetrics as m, todayWords } from './look';
 import type { MoneyCardState } from './model';
 
 export type MoneyCardProps = {
-  state: MoneyCardState;
+  state: Exclude<MoneyCardState, { kind: 'none' }>;
   /** The figure hidden behind dots (the eye). */
   masked: boolean;
   onToggleMask: () => void;

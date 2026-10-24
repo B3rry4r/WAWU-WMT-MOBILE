@@ -46,6 +46,9 @@ export function walletView(view: HomeView): WalletView {
       return { kind: 'loading' };
     case 'no_wallet':
       return { kind: 'clear', hasWallet: false };
+    // WALLET-41: no naira wallet to empty first; the Hub's own check of the person's accounts stands (BACKEND_GAPS G-WALLET-41-6).
+    case 'world':
+      return { kind: 'clear', hasWallet: false };
     case 'ready':
       return view.availableKobo > 0 ? { kind: 'money', kobo: view.availableKobo } : { kind: 'clear', hasWallet: true };
     default:

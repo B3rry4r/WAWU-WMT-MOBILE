@@ -32,6 +32,7 @@ import { WalletActions, type WalletAction } from './WalletActions';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { WalletBar } from './WalletBar';
+import { WorldHome } from '../world/WorldHome';
 import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
 /**
@@ -74,7 +75,8 @@ export function WalletScreen() {
 
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
   const state = wallet.data?.state;
-  const open = state === 'open' || state === 'frozen';
+  // WALLET-41: a person who opened from outside Nigeria has no naira account to read a balance or rows from.
+  const open = (state === 'open' || state === 'frozen') && !wallet.data?.world;
   const balance = useQuery(homeBalanceQuery(owner, open), queryClient);
   const recent = useQuery(recentTransactionsQuery(owner, open), queryClient);
   // The Passes card: drawn only when the Hub says the person has a pass (WALLET-38). A read that fails draws nothing here.
@@ -149,6 +151,7 @@ export function WalletScreen() {
               />
             ) : (
           <Body
+            owner={owner}
             view={view}
             hidden={hidden}
             onToggleHidden={() => setHidden((was) => !was)}
@@ -181,6 +184,7 @@ export function WalletScreen() {
 }
 
 type BodyProps = {
+  owner: string;
   view: HomeView;
   hidden: boolean;
   onToggleHidden: () => void;
@@ -201,7 +205,7 @@ type BodyProps = {
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ owner, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
@@ -261,6 +265,8 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
           />
         </StateCard>
       );
+    case 'world':
+      return <WorldHome owner={owner} />;
     case 'ready':
       return (
         <>

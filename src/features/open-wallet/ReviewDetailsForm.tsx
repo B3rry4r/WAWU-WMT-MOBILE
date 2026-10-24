@@ -9,7 +9,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 import { ChoiceField, ChoiceSheet } from './ChoiceField';
 import { ConsentBox } from './ConsentBox';
 import { CITY_MAX } from './details';
-import { keepPerson, ticketFor, ticketIsLive, type HeldNumbers, type HeldPerson, type HomeAddress } from './keptCheck';
+import { keepPerson, ticketFor, ticketIsLive, type HeldNumbers, type HeldPerson, type HeldWorld, type HomeAddress } from './keptCheck';
 import { GENDERS, groupBirth, isoToBirth, NAME_MAX, personProblems, tidyPerson, type Gender, type PersonProblems } from './reviewDetails';
 import { StateField, StateSheet } from './StatePicker';
 import { labelOf } from './documentFields';
@@ -22,7 +22,7 @@ const ROW_GAP = 10;
 
 export type ReviewDetailsFormProps = {
   owner: string;
-  held: { numbers: HeldNumbers; person: HeldPerson | null; address: HomeAddress | null };
+  held: { numbers: HeldNumbers; person: HeldPerson | null; address: HomeAddress | null; world?: HeldWorld | null };
   onBack: () => void;
   /** The details are kept: on to A26. */
   onContinue: () => void;
@@ -36,6 +36,8 @@ export type ReviewDetailsFormProps = {
  */
 export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDetailsFormProps) {
   const scrollRef = useRef<ScrollView>(null);
+  // WALLET-41: a person outside Nigeria types their own state or province (no Nigerian list), and the date as on their ID.
+  const abroad = Boolean(held.world);
   const [firstName, setFirstName] = useState(held.person?.firstName ?? '');
   const [lastName, setLastName] = useState(held.person?.lastName ?? '');
   const [birth, setBirth] = useState(held.person ? isoToBirth(held.person.dateOfBirth) : '');
@@ -73,7 +75,7 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
     const town = city.replace(/\s+/g, ' ').trim();
     if (!town) found.city = 'Enter your city or town.';
     else if (!/\p{L}/u.test(town)) found.city = 'Enter the name of your city or town.';
-    if (!state) found.state = 'Choose your state.';
+    if (!state?.trim()) found.state = abroad ? 'Enter your state, province or region.' : 'Choose your state.';
     if (!agreed) found.agreed = 'Tick the box to agree before you continue.';
     if (Object.values(found).some(Boolean) || !gender || !state) {
       setProblems(found);
@@ -81,7 +83,7 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
     }
     const ticket = ticketFor(owner);
     const person = tidyPerson({ firstName, lastName, birth, gender });
-    if (!keepPerson(ticket, person, { street: '', city: town, state })) {
+    if (!keepPerson(ticket, person, { street: '', city: town, state: state.trim() })) {
       // Something forgot the numbers while the form was open (the session ended): nothing is kept, and the form stays put.
       if (live.current && !ticketIsLive(ticket)) onBack();
       return;
@@ -137,7 +139,7 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
           value={birth}
           onChangeText={edit('birth', setBirth, groupBirth)}
           error={problems.birth}
-          hint="Day, month and year, as on your BVN"
+          hint={abroad ? 'Day, month and year, as on your ID' : 'Day, month and year, as on your BVN'}
           keyboardType="number-pad"
           inputMode="numeric"
           autoComplete="off"
@@ -167,7 +169,24 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
               autoCapitalize="words"
             />
           </View>
-          <StateField value={state} onPress={() => setPickingState(true)} error={problems.state} testID="open-wallet-state" />
+          {abroad ? (
+            <View style={styles.half}>
+              <AuthField
+                scrollRef={scrollRef}
+                label="State or province"
+                testID="open-wallet-state-text"
+                value={state ?? ''}
+                onChangeText={edit('state', (value) => setState(value), (value) => value.slice(0, CITY_MAX))}
+                error={problems.state}
+                maxLength={CITY_MAX}
+                autoComplete="postal-address-region"
+                textContentType="addressState"
+                autoCapitalize="words"
+              />
+            </View>
+          ) : (
+            <StateField value={state} onPress={() => setPickingState(true)} error={problems.state} testID="open-wallet-state" />
+          )}
         </View>
         <ConsentBox
           agreed={agreed}

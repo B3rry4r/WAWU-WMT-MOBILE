@@ -16,6 +16,7 @@ import { openingProgressQuery, PROGRESS_POLL_MS, type OpeningProgress } from './
 import { forgetSelfieDrop, useSelfieDropped } from './selfieDrop';
 import { useSessionAccount } from './sessionAccount';
 import { useDocumentsNext } from './useDocumentsNext';
+import { FirstAccountProblem, useFirstAccount } from './WorldFirstAccount';
 
 /**
  * design/_gen/auth.js line 67 (A28): an 88 ring, 6 thick, in the sunken
@@ -44,6 +45,8 @@ export type CheckingScreenProps = {
 /** Where A28 goes from what the Hub says, or null while it keeps waiting. Pure, for the tests. */
 export function checkingNext(progress: OpeningProgress): 'opened' | 'rejected' | 'documents' | null {
   if (progress.state === 'open' && progress.accountNumberStatus === 'active') return 'opened';
+  // WALLET-41: a person outside Nigeria has no account number; their wallet is open once the first account is.
+  if (progress.state === 'open' && progress.world?.state === 'open') return 'opened';
   if (progress.state === 'frozen') return 'opened';
   const stage = progress.review?.stage ?? null;
   if (stage === 'rejected' || stage === 'stopped' || stage === 'expired') return 'rejected';
@@ -69,6 +72,8 @@ export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onSelfi
     refetchInterval: (query) => (dropped && query.state.data && checkingNext(query.state.data) === 'documents' ? false : PROGRESS_POLL_MS),
   });
   const next = progress.data ? checkingNext(progress.data) : null;
+  // WALLET-41: a person outside Nigeria, approved: the Hub opens their first account, and is asked to (a notice may never come).
+  const first = useFirstAccount(progress.data, () => void progress.refetch());
   const documentsNext = useDocumentsNext(next === 'documents', owner, onSelfie !== undefined);
   const stuck = next === 'documents' && documentsNext === 'selfie' && dropped;
   useEffect(() => {
@@ -77,6 +82,10 @@ export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onSelfi
     else if (next === 'documents' && documentsNext === 'selfie' && !dropped) onSelfie?.();
     else if (next === 'documents' && documentsNext === 'documents') onNeedsDocuments();
   }, [next, documentsNext, dropped, onOpened, onRejected, onNeedsDocuments, onSelfie]);
+
+  if (progress.data?.world && first.problem !== null) {
+    return <FirstAccountProblem country={progress.data.world.country} problem={first.problem} busy={first.busy} onPick={first.pick} onLeave={onLeave} />;
+  }
 
   if (stuck) {
     return (
