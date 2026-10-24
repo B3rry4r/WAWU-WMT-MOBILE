@@ -9,12 +9,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 52 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
-| review | 22 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
+| review | 23 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [FLIX-04](../tasks/FLIX-04.md) Flix movies show "not live yet" until business talks finish (You)
 - [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
 - [SWEEP-VOICE](../tasks/SWEEP-VOICE.md) Voice sweep: the low findings of the Voice Intro (VOICE-01, VERIFY-02, VERIFY-03, FIX-95) (You)
@@ -40,7 +41,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)

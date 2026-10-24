@@ -7,7 +7,7 @@ order: -120
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [AITOOLS-02, AITOOLS-03]
 decisions: [R-79, R-78, R-43, R-61, R-68, R-47, R-27]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,7 +17,8 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, built, status verifying (builder: Sonnet, T1; mobile `wmt/POINTS-09` on `origin/main` `80828caf`; no PR). The Hub routes are on backend `wmt/AITOOLS-03` `542bc86` (not merged yet): the app's contract is synced from that branch (`contract/SOURCE_COMMIT` says so), so `npm run api -- --backend` once AITOOLS-02 and AITOOLS-03 are on backend main gives the same file.
+As of 24 Oct 2026, verified: PASS, status review (verifier: Sonnet, T1, built none of it; checked mobile `wmt/POINTS-09` `a44d2de6` against `origin/main` `606ced6a`, backend `wmt/AITOOLS-03` `542bc86`; the report is in tasks/history/POINTS-09.md). No blocker, high or medium finding. Three lows go to the POINTS sweep (SWEEP-POINTS is not in the repo yet; the lead files them): (1) tile order: the Hub lists Sound effect before Music track and the app follows it, PT1 draws Music track first (`StudioScreen.tsx` line 86, `list`; fix: order tiles by the board, or list Music first in backend `src/ai-tools/tools/index.ts`); (2) PT2a says "About a minute" for a Music track and a Sound effect, nothing in the system backs a time for them (G-POINTS-09-3, as filed); (3) test gap: no new test double-taps Run on a Quick voice, Sound effect or Music track (VoiceOver's `toolFlow` has it for the shared path; live, a double tap sent 1 request and took 75 once).
+- **Builder's account (unchanged):** built, mobile `wmt/POINTS-09` on `origin/main` `80828caf`; no PR. The Hub routes are on backend `wmt/AITOOLS-03` `542bc86` (not merged yet): the app's contract is synced from that branch (`contract/SOURCE_COMMIT` says so), so `npm run api -- --backend` once AITOOLS-02 and AITOOLS-03 are on backend main gives the same file. The branch is behind main (base `80828caf`); main has not touched `src/features/points` or `contract/` since.
 - **Before:** one tool had a screen (VoiceOver). `ToolScreen` took words and a voice only, `voiceoverApi.startVoiceover` posted to one route, `studioModel.LOOKS` was keyed by guessed ids (`quick_voice`, `sound_effect`) that the Hub never sends, StudioScreen drew a tile for every tool the Hub listed, `costLine` said "a track".
 - **After:** the three tools are catalogue entries on the same screen. `ToolScreen` branches on the entry's `input.kind` (a missing kind is `text`, so VoiceOver's entry and its 21 tests are untouched):
   - **Quick voice** (`text`): PT2 as drawn, titled from the entry: words box and counter, voice rows from the entry, "About N minutes", cost line from the quote ("This uses 125 points"), Run.
@@ -28,7 +29,7 @@ As of 24 Oct 2026, built, status verifying (builder: Sonnet, T1; mobile `wmt/POI
 - **Not drawn, filed (G-POINTS-09-1, -2, -3):** a length for a sound effect or a track, the instrumental switch, the play button on a voice row, Save and Use in a product, the clock icon's history, the "Bio" tag.
 - **Checks (EXIT 0 each):** tsc; eslint (no --fix) on the 9 changed `.ts`/`.tsx` files; jest `src/features/points` and `src/features/create` 11 suites 217/217 (198 before, plus `studioToolsFlow` 19; VoiceOver's `toolFlow` 21 and `voiceoverModel` 6 untouched; the 19 on a checkout of main: 16 fail, 3 pass); gates 0 fail, 18 warn, 0 accepted (as before), `check_baseline`; `check_tasks --write`.
 - **Live look (V9; local stack `pt09`, backend `542bc86` on the Nuvion and voice stand-ins, web export at 390 by 844, Chromium, dark and light):** one person with 3,000 points ran one job of each tool. Each showed "Making your {name}", then done with a player that played (Sound effect and Music track: the label went to "Pause", `currentTime` 0.97 s; Quick voice, on a long text: the same). The Hub's costs, 125 (a minute), 75 and 500, were held at once (balance 3,000 to 2,875 to 2,800 to 2,300) and kept. A job the stand-in failed (`[[fail]]`) said "That didn't work / No points were taken. Try again." for each tool and the balance went back to 2,300. A person with 60 points asked to run a Sound effect got "Not enough points" and nothing was started. Pictures: `scratchpad/points-09-b/pics/` (`studio`, `{tool}-1-empty` to `-5-playing`, `-4-failed`, `sound-effect-6-short`, each `-dark` and `-light`).
-- **Not done / for the verifier:** the Hub's list order (VoiceOver, Quick voice, Sound effect, Music track) sets the tile order, PT1 draws Music before Sound effect; the daily cap (PT7) is covered by tests, not run on the stack; no real provider (the audio is the stand-in's silent clips); PT2a's "About a minute" is the board's line and a real track may take longer (G-POINTS-09-3).
+- **Not done (verifier's outcome):** the Hub's list order sets the tile order (see low 1). PT7 (the daily cap) was not run on the stack: NOT RUN live, covered by the three `past the daily limit` tests in `studioToolsFlow` (pass). No real provider: the audio is the stand-in's silent clips.
 - **History:** tasks/history/POINTS-09.md.
 
 ## Read first
@@ -61,14 +62,14 @@ A person opens Quick voice, Sound effect or Music track from Studio, sees what i
 
 ## Capability checks
 
-- [ ] A person opens Quick voice from Studio, sees "125 a minute" from the Hub, types text, picks a voice, sees the cost, runs it and plays the audio.
-- [ ] A person describes a sound and a track and plays each result; the cost lines read 75 and 500 points from the quote.
-- [ ] A failed job shows that no points were taken and the balance is unchanged, for each tool.
+- [x] A person opens Quick voice from Studio, sees "125 a minute" from the Hub, types text, picks a voice, sees the cost, runs it and plays the audio.
+- [x] A person describes a sound and a track and plays each result; the cost lines read 75 and 500 points from the quote.
+- [x] A failed job shows that no points were taken and the balance is unchanged, for each tool.
 - [ ] With too few points the PT3 sheets appear for these tools and nothing runs until confirmed; past the daily cap PT7 names the reset time.
-- [ ] A tool the Hub lists that the app has no screen for is not drawn; a tool the Hub does not list is not drawn.
-- [ ] PT2, PT2a, PT2b and PT2c, as rendered for each tool, match the boards in light and dark, compared picture with picture (V5).
-- [ ] VoiceOver still passes its tests untouched.
-- [ ] Against the local backend on the stand-in, a real sign-in runs one job of each tool and reads the audio back (V9).
+- [x] A tool the Hub lists that the app has no screen for is not drawn; a tool the Hub does not list is not drawn.
+- [x] PT2, PT2a, PT2b and PT2c, as rendered for each tool, match the boards in light and dark, compared picture with picture (V5).
+- [x] VoiceOver still passes its tests untouched.
+- [x] Against the local backend on the stand-in, a real sign-in runs one job of each tool and reads the audio back (V9).
 
 ## History
 
