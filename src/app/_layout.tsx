@@ -171,6 +171,9 @@ export default function RootLayout() {
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="chat/send" />
           <Stack.Screen name="checkout" />
+          <Stack.Screen name="crypto-receive" />
+          <Stack.Screen name="crypto-send" />
+          <Stack.Screen name="fx-receipt" />
           <Stack.Screen name="community/[id]" />
           <Stack.Screen name="community/created/[id]" />
           <Stack.Screen name="community/new" />
@@ -253,6 +256,7 @@ export default function RootLayout() {
           <Stack.Screen name="settings/delete-account/scheduled" />
           <Stack.Screen name="studio" />
           <Stack.Screen name="studio-tool" />
+          <Stack.Screen name="swap" />
           <Stack.Screen name="tgif" />
           <Stack.Screen name="tier-done" />
           <Stack.Screen name="tiers" />

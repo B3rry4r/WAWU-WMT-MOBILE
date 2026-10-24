@@ -7,20 +7,40 @@ order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [WALLET-32, WALLET-33, WALLET-01]
-decisions: [R-16, R-37]
+decisions: [R-83, R-84, R-16, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W2, W3, W20, W21, W22, W23]
+tier: T2
 ---
 # WALLET-21 · Dollar and crypto accounts, swap
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-32, WALLET-33.
-- **History:** none yet. Reports go to tasks/history/WALLET-21.md.
+As of 24 Oct 2026, built by a Sonnet builder (bundle B19, T2), mobile `wmt/WALLET-21` on `origin/main` `7e65293b`; contract copied from backend `wmt/WALLET-21-HUB` `e44ea4c` (B18's routes, declared and served on the Nuvion adapter by B18's later pushes). Status: verifying. R-83 and R-84 replace this file's old brief (Cardex samples, 90 seconds, TRC-20 and BEP-20 are dead): the networks are Nuvion's, the hold is the quote's own `expiresAt`, the fees are the Hub's breakdown.
+
+| # | Before (`origin/main`) | After |
+|---|---|---|
+| 1 | W1 has no tabs (R-47: not built) | under the title, one tab for Naira, each currency the Hub says exists or can be opened (USD, EUR, GBP, CAD, AED, GHS), and Crypto; three tabs are the board's track, more scroll sideways. A person whose wallet is not open sees none and the existing Open your wallet path |
+| 2 | no foreign account anywhere | W2 for every currency: the account's own balance (the provider's), "USD account · issuing bank", the number masked with Copy, Add (opens Swap from naira) and the round Swap button, "Get paid from abroad" opening the details Nuvion issued (each with Copy, and Share), the account's statement, the opening and frozen states, "Open a ... account" only when the Hub allows it |
+| 3 | no crypto | W3: holdings grouped by coin (a stablecoin account is one chain's wallet), Receive, Send (only when the Hub has crypto send on and an account is open), Swap, the statement. No dollar total and no "≈ $" line: the Hub serves none (gap row) |
+| 4 | no swap | W20 and W21: from and to chosen from the accounts the person holds, keypad in the side's own decimals, the rate and the "Holds m:ss" pill counted from the quote's `expiresAt` (a new rate is asked for when it runs out), the fee as the Hub's breakdown, review sheet, PIN sheet (W11, with fingerprint or face as FIX-112), receipt |
+| 5 | no receive | W22: coins and networks from the Hub, address with QR (`events/qr`, nothing new), Copy, the undismissable warning; a network with no account is opened from here when the Hub lets it |
+| 6 | no crypto send | W23: coin, network (the account's), pasted address, amount with Max, balance, fees on top, review, PIN, receipt |
+| 7 | Idempotency | one key per swap (kept with its quote) and per send (kept with its body) in `money-attempt`, sent again unchanged on a wrong PIN and on a request that got no answer; a closed or refused fingerprint never rotates it (`notApproved`) |
+
+### Defaults (lead), owner may override
+
+- Add dollars (and the same on each currency) opens Swap from naira to that currency; the round button opens Swap from that currency to naira. W2's Send is not drawn: foreign sends are NUV-11 (R-84 item 4).
+- A swap or send the provider has not finished goes to its receipt as Pending and is read again by its id every 4 seconds; it is never done twice.
+- The review sheets (W21, W23) carry the fee rows as the Hub names them; a network fee the provider names only when it takes the send is written "Shown on your receipt".
+- Dollar value of crypto, minimum deposit per network and the send's arrival time are not drawn (the Hub serves none): see BACKEND_GAPS G-WALLET-21-A1 to A4.
+- Not built, no board: a history screen for a foreign account (the tab shows the newest 20), the scan icon (WALLET-20), W2/W3 inside Home.
+
+### Checks (EXIT lines in `scratchpad/wallet-21-b/logs/`)
+
+tsc 0; eslint on changed files 0 (0 warnings); jest: `fxModel` 18, `fxTabs` 16, `fxSwapFlow` 11, `fxCryptoFlow` 14, plus the existing `WalletScreen`, `walletTabFlow`, `route-guard`, `route-graph` (356) all pass; gates 0 fail, 18 warn (all older PROVISIONAL, none new), baseline 0; check_tasks 0. Pictures: `scratchpad/wallet-21-b/` (W1 with tabs, W2, W3, W20, W21, W22, W23, 390 px, light and dark, and each beside its board), taken from the web export against a stand-in Hub (ports 8330 to 8332), not the Nuvion dev key. NOT RUN: a live swap or send on Nuvion dev (the stand-in answers the shapes B18's contract gives; dev answers `provider_declined` for stablecoin sends and 503 for CAD and AED details, which the screens draw plainly and which the tests cover as a refusal), fingerprint on a real phone, the dark W12 receipt picture.
 
 ## Read first
 
@@ -121,7 +141,7 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 ## Builder report
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
+Files: `src/features/wallet/fx/` (api, amount, model, parts, FxBalanceCard, FxTabBody, FxDetailsSheet, FxReceiptScreen, ReceiveScreen, CryptoSendScreen, `swap/` SwapScreen, SwapReview, useSwapPay, model; `testing/fxHub.ts` is the tests' stand-in), routes `src/app/swap.tsx`, `crypto-receive.tsx`, `crypto-send.tsx`, `fx-receipt.tsx`, `WalletScreen.tsx` (tabs), `_layout.tsx` (four `Stack.Screen` lines, SHARED-CHANGES WALLET-21 #2), contract and generated types (#1). Four defects were found by the tests and fixed before the hand-back: a wrong PIN dropped the swap's key (now the same key, as Send), a decided swap re-asked for a rate, a hook that needed a provider the wallet screens do not use, and a duplicated test id on the receipt. Nothing is baselined.
 
 ## Verifier report
 
