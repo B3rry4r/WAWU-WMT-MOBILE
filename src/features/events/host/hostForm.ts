@@ -1,6 +1,6 @@
 import { formatMoney } from '@/components/Money';
 
-import type { EventCategory, EventKind, EventOptions, EventView } from '../api';
+import type { EventCategory, EventKind, EventOptions, EventView, TicketType } from '../api';
 import { toKobo, watOf } from '../format';
 
 /**
@@ -12,7 +12,19 @@ export type EventFormat = EventView['format'];
 export type TicketRules = EventOptions['tickets'];
 export type FieldLimits = EventOptions['fields'];
 
-export type TicketDraft = { key: string; name: string; price: string; quantity: string };
+/**
+ * One ticket type in the draft. A type the Hub already holds (edit mode) also keeps its `tier` and sales window, so sending it back
+ * unchanged is the same type to the Hub and nothing is rewritten.
+ */
+export type TicketDraft = {
+  key: string;
+  name: string;
+  price: string;
+  quantity: string;
+  tier?: TicketType['tier'];
+  salesStartAt?: string | null;
+  salesEndAt?: string | null;
+};
 
 export type HostDraft = {
   name: string;
@@ -125,10 +137,12 @@ export function basicsErrors(d: HostDraft, f: FieldLimits): Errors {
 export const needsAddress = (format: EventFormat) => format !== 'online';
 
 /** Step 2 (E14): when it starts and ends, where, and its category. */
-export function whenWhereErrors(d: HostDraft, f: FieldLimits, now: number): Errors {
+export function whenWhereErrors(d: HostDraft, f: FieldLimits, now: number, original?: Pick<HostDraft, 'day' | 'startTime'>): Errors {
   const e: Errors = {};
+  // An edit that leaves the start as it was is not asked for a start that is still ahead: an event already under way can still be renamed.
+  const startKept = original !== undefined && d.day === original.day && d.startTime === original.startTime;
   if (!d.day || !d.startTime) e.starts = 'Pick when it starts.';
-  else if (new Date(lagosInstant(d.day, d.startTime)).getTime() <= now) e.starts = 'Pick a time that has not passed.';
+  else if (!startKept && new Date(lagosInstant(d.day, d.startTime)).getTime() <= now) e.starts = 'Pick a time that has not passed.';
   if (!d.endTime) e.ends = 'Pick when it ends.';
   else if (d.startTime && d.endTime <= d.startTime) e.ends = 'It has to end after it starts.';
   e.address = addressError(d.address, d.format, f);
@@ -165,8 +179,8 @@ export function ticketErrors(tickets: readonly TicketDraft[], rules: TicketRules
   return e;
 }
 
-export const stepErrors = (step: Step, d: HostDraft, opts: EventOptions, now: number): Errors =>
-  step === 0 ? basicsErrors(d, opts.fields) : step === 1 ? whenWhereErrors(d, opts.fields, now) : ticketErrors(d.tickets, opts.tickets);
+export const stepErrors = (step: Step, d: HostDraft, opts: EventOptions, now: number, original?: Pick<HostDraft, 'day' | 'startTime'>): Errors =>
+  step === 0 ? basicsErrors(d, opts.fields) : step === 1 ? whenWhereErrors(d, opts.fields, now, original) : ticketErrors(d.tickets, opts.tickets);
 
 export const hasErrors = (e: Errors) => Object.keys(e).length > 0;
 
@@ -188,3 +202,82 @@ export function createBody(d: HostDraft, bannerUrl: string | null) {
     ticketTypes: d.tickets.map((t) => ({ name: t.name.trim(), priceNaira: Number(t.price), quantity: Number(t.quantity) })),
   };
 }
+
+/** The Lagos day and clock time an instant falls on, as the wizard's pickers hold them. */
+function lagosParts(iso: string): { day: string; time: string } {
+  const shifted = new Date(new Date(iso).getTime() + LAGOS_OFFSET_MS).toISOString();
+  return { day: shifted.slice(0, 10), time: shifted.slice(11, 16) };
+}
+
+/** A ticket type the Hub holds, as a draft row. */
+export const ticketDraftOf = (t: Pick<TicketType, 'id' | 'tier' | 'name' | 'priceNaira' | 'quantity' | 'salesStartAt' | 'salesEndAt'>): TicketDraft => ({
+  key: t.id,
+  name: t.name,
+  price: String(t.priceNaira),
+  quantity: String(t.quantity),
+  tier: t.tier,
+  salesStartAt: t.salesStartAt ?? null,
+  salesEndAt: t.salesEndAt ?? null,
+});
+
+/** The wizard's draft filled from an event the host already sent (edit mode), in the event's own Lagos day and clock times. */
+export function draftFromEvent(event: EventView): HostDraft {
+  const start = lagosParts(event.startsAt);
+  return {
+    name: event.name,
+    description: event.description,
+    hostOrg: event.hostOrg,
+    format: event.format,
+    kind: event.type,
+    day: start.day,
+    startTime: start.time,
+    endTime: event.endsAt ? lagosParts(event.endsAt).time : null,
+    address: event.address ?? '',
+    category: event.category,
+    tickets: [],
+  };
+}
+
+/** What an edit sends to `PATCH /events/{id}`: only the fields the host changed, so an edit that changes nothing sends nothing. */
+export function patchBody(d: HostDraft, original: HostDraft, bannerUrl: string | null) {
+  const body: Record<string, string> = {};
+  if (d.name.trim() !== original.name.trim()) body.name = d.name.trim();
+  if (d.description.trim() !== original.description.trim()) body.description = d.description.trim();
+  if (d.hostOrg.trim() !== original.hostOrg.trim()) body.hostOrg = d.hostOrg.trim();
+  if (d.format !== original.format) body.format = d.format;
+  if (d.kind && d.kind !== original.kind) body.type = d.kind;
+  if (d.day && d.startTime && d.endTime && (d.day !== original.day || d.startTime !== original.startTime || d.endTime !== original.endTime)) {
+    body.startsAt = lagosInstant(d.day, d.startTime);
+    body.endsAt = lagosInstant(d.day, d.endTime);
+  }
+  if (d.address.trim() !== original.address.trim()) body.address = d.address.trim();
+  if (d.category && d.category !== original.category) body.category = d.category;
+  if (bannerUrl) body.bannerUrl = bannerUrl;
+  return body;
+}
+
+/** The tier a row is sent as: a ₦0 price is `free`, a type the Hub holds keeps its own tier while it is paid, any other is `regular`. */
+const tierOf = (t: TicketDraft): TicketType['tier'] => (Number(t.price) === 0 ? 'free' : t.tier && t.tier !== 'free' ? t.tier : 'regular');
+
+/** The body of `PUT /events/{id}/tickets`: the whole list, each row with its tier and (kept as it was) its sales window. */
+export const tiersBody = (tickets: readonly TicketDraft[]) =>
+  tickets.map((t) => ({
+    tier: tierOf(t),
+    name: t.name.trim(),
+    priceNaira: Number(t.price),
+    quantity: Number(t.quantity),
+    ...(t.salesStartAt ? { salesStartAt: t.salesStartAt } : {}),
+    ...(t.salesEndAt ? { salesEndAt: t.salesEndAt } : {}),
+  }));
+
+const rowKey = (t: TicketDraft) => JSON.stringify([tierOf(t), t.name.trim(), Number(t.price), Number(t.quantity), t.salesStartAt ?? null, t.salesEndAt ?? null]);
+
+/** Whether the rows differ from the types the Hub holds (the same rule the Hub uses: a type sent exactly as it is stays as it is). */
+export function ticketsChanged(now: readonly TicketDraft[], original: readonly TicketDraft[]): boolean {
+  const left = now.map(rowKey).sort();
+  const right = original.map(rowKey).sort();
+  return left.length !== right.length || left.some((k, i) => k !== right[i]);
+}
+
+/** Whether any field of an edit differs from the event as it was. */
+export const eventChanged = (d: HostDraft, original: HostDraft, banner: boolean) => banner || Object.keys(patchBody(d, original, null)).length > 0;

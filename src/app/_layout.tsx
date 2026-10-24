@@ -186,12 +186,14 @@ export default function RootLayout() {
           <Stack.Screen name="events/[id]" />
           <Stack.Screen name="events/dashboard/[id]" />
           <Stack.Screen name="events/door/[id]" />
+          <Stack.Screen name="events/edit/[id]" />
           <Stack.Screen name="events/host" />
           <Stack.Screen name="events/index" />
           <Stack.Screen name="events/links/[id]" />
           <Stack.Screen name="events/mine" />
           <Stack.Screen name="events/orders/[orderId]" />
           <Stack.Screen name="events/sent-back/[id]" />
+          <Stack.Screen name="events/ticket-types/[id]" />
           <Stack.Screen name="events/tickets/[ticketId]" />
           <Stack.Screen name="events/tickets/index" />
           <Stack.Screen name="invite" />

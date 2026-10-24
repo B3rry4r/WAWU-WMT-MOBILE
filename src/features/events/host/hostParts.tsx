@@ -28,11 +28,11 @@ const noteMetrics = { padV: 14, icon: 19, iconStroke: 2.2, nudge: 1, inner: 3 } 
 const hintMetrics = { font: 12.5, icon: 15, iconStroke: 2.2, between: 6 } as const;
 
 /** Basics / When and where / Tickets, the current step's bar and name lit. */
-export function Stepper({ step }: { step: Step }) {
+export function Stepper({ step, steps = STEPS }: { step: Step; steps?: readonly string[] }) {
   const { colors } = useWawu();
   return (
-    <View style={styles.stepper} accessibilityLabel={`Step ${step + 1} of ${STEPS.length}, ${STEPS[step]}`} accessible>
-      {STEPS.map((name, i) => (
+    <View style={styles.stepper} accessibilityLabel={`Step ${step + 1} of ${steps.length}, ${steps[step]}`} accessible>
+      {steps.map((name, i) => (
         <View key={name} style={styles.stepCol}>
           <View style={[styles.bar, { backgroundColor: i <= step ? colors.accent : colors.surfaceSunken }]} />
           <Text

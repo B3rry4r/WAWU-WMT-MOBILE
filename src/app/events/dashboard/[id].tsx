@@ -22,7 +22,9 @@ export default function DashboardRoute() {
       id={eventId}
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/events/mine'))}
       onDoor={() => router.push({ pathname: '/events/door/[id]', params: { id: eventId } })}
+      onTickets={() => router.push({ pathname: '/events/ticket-types/[id]', params: { id: eventId } })}
       onLinks={() => router.push({ pathname: '/events/links/[id]', params: { id: eventId } })}
+      onEdit={() => router.push({ pathname: '/events/edit/[id]', params: { id: eventId } })}
       onCalledOff={() => router.replace('/events/mine')}
     />
   );

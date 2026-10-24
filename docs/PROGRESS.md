@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 53 | 0 | 0 | 0 |
+| todo | 52 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 20 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -38,6 +38,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -388,7 +389,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend), [EVENTS-14](../tasks/EVENTS-14.md) Edit a sent event from E18 (back to review; sold tiers keep their price and places), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes
+- **You:** [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked
@@ -397,6 +398,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · EVENTS-14 · Built (Sonnet builder, T1; backend `wmt/EVENTS-14` `84181d7` on `origin/main` `b2f4df6`, mobile `wmt/EVENTS-14` on `origin/main` `dff9b30e`; status verifying): a host can edit a sent event from E18 (R-79 (c)). Edit event opens the wizard's Basics and When and where filled from the event and saves changed fields with `PATCH /events/{id}`; Ticket types opens the Tickets step and saves with `PUT /events/{id}/tickets`; a sheet says the event goes back to review and off the calendar until approved again; once a ticket has sold every type is read-only with one line of why and a 409 that still arrives shows the Hub's message. Backend: only the sold 409's second sentence changed. Live walk 14 of 14 on the local stand-in stack.
 - 23 Oct 2026 · AITOOLS-CUT · Records, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT`, second commit): R-79 records the owner's four answers of 23 Oct 2026. (a) The Receptionist is left out for now: AITOOLS-06 (order 356) and POINTS-12 (357) are after launch, R-78's list notes it. (b) Quick voice is a fast, cheaper read-aloud, the same voices as VoiceOver on the provider's faster model, 125 points a minute: AITOOLS-02 and POINTS-09 say so, G-AITOOLS-02-1 closed. (c) Editing a sent event goes back to review and ticket price and places cannot change once a ticket is sold, today's Hub rules: G-833 closed as ruled; the app has no edit path for a sent event (the missing report's item 2), so EVENTS-14 (order -116, launch, todo, both repos) is cut to mount E18's Edit event and Ticket types rows on those rules; G-EVENTS-14-1 filed. (d) WALLET-19, WALLET-20, WALLET-25 and WALLET-26 stay after launch with a dated line each.
 - 23 Oct 2026 · AITOOLS-CUT · Records and plan, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT` on `origin/main` `573bb62a`; no PR): R-78 (every Studio tool the design draws is built for launch). `docs/elevenlabs/API-FACTS.md` (the provider's route, request, answer, async or not, limits and file types for each tool, read from its public documentation, with what free read calls showed: the key lacks `user_read` so the plan name is not known; models, voices, agents, dubbing, audio isolation and music finetunes read fine). Nine tasks at negative orders (no launch order below CHECK-3 was free): AITOOLS-02 (one job pipeline, job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, a person's file in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist), POINTS-09 to POINTS-12 (the app side). Every tool the design draws can be served by the provider. Gaps G-813 and G-POINTS-07-3 point at the tasks; new rows G-AITOOLS-02-1, -03-1, -05-1, -05-2, -06-1 and G-POINTS-09-1. Checks: `check_tasks.py --write` EXIT 0 (413 tasks), gates EXIT 0 (10 run, 1213 files, 0 fail, 18 warn as before).
 - 23 Oct 2026 · FIX-101 round 2 · The verifier's FIX built (Sonnet builder, T1; mobile `wmt/FIX-101` on `9eaf3c0f`; status verifying): a chat with a person who has no name opens (named as the feed names them, else "Someone"), a recipient with no name no longer fails the whole recipients list, and the racy movies loading tests hold the catalog read instead of racing it. App only.
@@ -411,4 +413,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · BRAND-MAIL · Built (Sonnet builder, T1, copy only; WAWU ID `wmt/BRAND-MAIL` `0a23dce` on `origin/main` `cdfa442`, backend `wmt/BRAND-MAIL` `ffe53ab` on `origin/main` `13e2753`, this record on mobile `wmt/BRAND-MAIL`; status verifying): every email a person receives names the product "Who Made This?" instead of WAWUAfrica (subjects, preheaders, text, page title, footer, header image alt) and the default sender is `Who Made This? <noreply@wawuafrica.com>`; no address, domain or link changed; DECISIONS R-76 added; five specs updated to the new words, one new `mail-brand.spec.ts`. Left: the CEO signature, "WAWU" alone, a dormant text message (see the task file).
 - 23 Oct 2026 · FIX-98 round 2 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `29f3cf6`, mobile `wmt/FIX-98`; status verifying): the FIX-85 path (a send reversed before its fee-back lands) leaves no ledger discrepancy (the sender's fee row is paired with Nuvion's successful fee transfer), a kept payee without a state or postal code is not used, and the history names the fee rows "WAWU's fee" and "WAWU's fee given back".
 - 23 Oct 2026 · FIX-98 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `a0426ac` on `origin/main` `dd00e85`, mobile `wmt/FIX-98` from `wmt/FIX-97`; status verifying): the counterparty carries the sender's state and postal code (a Hub bank send on a funded Nuvion DEV wallet runs end to end), and a refused send keeps the fee-collect row `completed` with the give-back as its own rows (no `ledger_discrepancy`). Gaps G-FIX-98-1 and G-FIX-98-2. FIX-97 back to review.
-- 23 Oct 2026 · FIX-97 round 2 · Lead ruling built (Sonnet builder, T2; backend `wmt/FIX-97` `e678f35`, mobile `wmt/FIX-97`; status verifying): the local stack's Nuvion stand-in (`scripts/dev/nuvion-standin.cjs`) and `scripts/nuvion/counterparty-lookup-check.ts` match dev: the lookup takes `issuer.code` and answers `details.name`, an unknown number is 404 `error_resource_not_found`, a counterparty without email and address is dev's 422, the entity read carries the address. On a local stack a name check answers "Forrest Green" and a bank send reaches the stand-in's counterparty, payment detail and transfer (201 each). One spec input (statements) given a contact.

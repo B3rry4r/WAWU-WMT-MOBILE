@@ -48,7 +48,7 @@ const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, 
 /** How far ahead a start can be picked, and the gap between the times offered. PROVISIONAL(HOST-PICKER, owner=DEV3, why=no ruling sizes them). */
 const PICKER = { days: 365, minutes: 30 } as const;
 
-type Sheet = 'kind' | 'category' | 'starts' | 'ends' | null;
+export type Sheet = 'kind' | 'category' | 'starts' | 'ends' | null;
 
 export type HostScreenProps = {
   onBack: () => void;
@@ -240,41 +240,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
               <Button testID="host-send" label="Send for review" full loading={sending} onPress={() => void send(opts)} />
             )}
           </View>
-          <ChoiceSheet
-            visible={sheet === 'kind'}
-            title="Kind"
-            items={opts.types}
-            value={draft.kind}
-            onPick={(kind) => {
-              set({ kind });
-              setSheet(null);
-            }}
-            onClose={() => setSheet(null)}
-            testID="host-kind-sheet"
-          />
-          <ChoiceSheet
-            visible={sheet === 'category'}
-            title="Category"
-            items={opts.categories}
-            value={draft.category}
-            onPick={(category) => {
-              set({ category });
-              setSheet(null);
-            }}
-            onClose={() => setSheet(null)}
-            testID="host-category-sheet"
-          />
-          <StartsSheet draft={draft} now={now()} visible={sheet === 'starts'} set={set} close={() => setSheet(null)} />
-          <WhenSheet
-            visible={sheet === 'ends'}
-            title="Ends"
-            times={TIMES}
-            time={draft.endTime}
-            onTime={(endTime) => set({ endTime })}
-            onClose={() => setSheet(null)}
-            footer={<Button testID="host-ends-done" label="Done" full onPress={() => setSheet(null)} />}
-            testID="host-ends-sheet"
-          />
+          <StepSheets sheet={sheet} setSheet={setSheet} draft={draft} options={opts} now={now()} set={set} />
         </>
       )}
     </View>
@@ -282,6 +248,63 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
 }
 
 const TIMES = timeChoices(PICKER.minutes);
+
+/** The four pickers the steps open (kind, category, starts, ends), shared by the wizard and the edit screens. */
+export function StepSheets({
+  sheet,
+  setSheet,
+  draft,
+  options,
+  now,
+  set,
+}: {
+  sheet: Sheet;
+  setSheet: (s: Sheet) => void;
+  draft: HostDraft;
+  options: EventOptions;
+  now: number;
+  set: (p: Partial<HostDraft>) => void;
+}) {
+  return (
+    <>
+      <ChoiceSheet
+        visible={sheet === 'kind'}
+        title="Kind"
+        items={options.types}
+        value={draft.kind}
+        onPick={(kind) => {
+          set({ kind });
+          setSheet(null);
+        }}
+        onClose={() => setSheet(null)}
+        testID="host-kind-sheet"
+      />
+      <ChoiceSheet
+        visible={sheet === 'category'}
+        title="Category"
+        items={options.categories}
+        value={draft.category}
+        onPick={(category) => {
+          set({ category });
+          setSheet(null);
+        }}
+        onClose={() => setSheet(null)}
+        testID="host-category-sheet"
+      />
+      <StartsSheet draft={draft} now={now} visible={sheet === 'starts'} set={set} close={() => setSheet(null)} />
+      <WhenSheet
+        visible={sheet === 'ends'}
+        title="Ends"
+        times={TIMES}
+        time={draft.endTime}
+        onTime={(endTime) => set({ endTime })}
+        onClose={() => setSheet(null)}
+        footer={<Button testID="host-ends-done" label="Done" full onPress={() => setSheet(null)} />}
+        testID="host-ends-sheet"
+      />
+    </>
+  );
+}
 
 function StartsSheet({ draft, now, visible, set, close }: { draft: HostDraft; now: number; visible: boolean; set: (p: Partial<HostDraft>) => void; close: () => void }) {
   const days = useMemo(() => dayChoices(now, PICKER.days).map((d) => ({ value: d, label: dayLabel(d, now) })), [now]);
@@ -302,10 +325,10 @@ function StartsSheet({ draft, now, visible, set, close }: { draft: HostDraft; no
   );
 }
 
-type StepProps = { draft: HostDraft; errors: Errors; options: EventOptions };
+export type StepProps = { draft: HostDraft; errors: Errors; options: EventOptions };
 
 /** E13 · Basics. */
-function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p: Partial<HostDraft>) => void; openKind: () => void }) {
+export function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p: Partial<HostDraft>) => void; openKind: () => void }) {
   const kind = options.types.find((t) => t.value === draft.kind)?.label ?? null;
   return (
     <>
@@ -343,7 +366,7 @@ function Basics({ draft, errors, options, set, openKind }: StepProps & { set: (p
 }
 
 /** E14 · When and where. */
-function WhenWhere({
+export function WhenWhere({
   draft,
   errors,
   options,
@@ -408,15 +431,16 @@ function WhenWhere({
   );
 }
 
-/** E15 · Tickets. */
-function Tickets({
+/** E15 · Tickets. With `locked` (a ticket has sold) every type is read-only and nothing that would be refused is offered: no add, no remove. */
+export function Tickets({
   draft,
   errors,
   options,
   setTicket,
   add,
   remove,
-}: StepProps & { setTicket: (key: string, p: Partial<TicketDraft>) => void; add: () => void; remove: (key: string) => void }) {
+  locked = false,
+}: StepProps & { setTicket: (key: string, p: Partial<TicketDraft>) => void; add: () => void; remove: (key: string) => void; locked?: boolean }) {
   const { colors } = useWawu();
   const rules = options.tickets;
   return (
@@ -430,6 +454,7 @@ function Tickets({
             onChangeText={(name) => setTicket(t.key, { name })}
             error={errors[`${t.key}.name`]}
             maxLength={rules.nameMaxLength}
+            disabled={locked}
           />
           <View style={styles.pair}>
             <View style={styles.half}>
@@ -440,6 +465,7 @@ function Tickets({
                 value={priceShown(t.price)}
                 onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
                 error={errors[`${t.key}.price`]}
+                disabled={locked}
               />
             </View>
             <View style={styles.half}>
@@ -450,10 +476,11 @@ function Tickets({
                 value={t.quantity}
                 onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
                 error={errors[`${t.key}.quantity`]}
+                disabled={locked}
               />
             </View>
           </View>
-          {draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}
+          {!locked && draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}
         </View>
       ))}
       {errors.tickets ? (
@@ -461,10 +488,12 @@ function Tickets({
           {errors.tickets}
         </Text>
       ) : null}
-      {draft.tickets.length < rules.maxTypes ? <AddTicket onPress={add} /> : null}
-      <Text variant="muted" testID="host-ticket-note">
-        {ticketNote(rules)}
-      </Text>
+      {!locked && draft.tickets.length < rules.maxTypes ? <AddTicket onPress={add} /> : null}
+      {locked ? null : (
+        <Text variant="muted" testID="host-ticket-note">
+          {ticketNote(rules)}
+        </Text>
+      )}
     </>
   );
 }
