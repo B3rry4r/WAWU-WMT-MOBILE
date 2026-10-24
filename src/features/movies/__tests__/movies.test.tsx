@@ -168,7 +168,8 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
   });
 
   // FIX-101 (FLIX-04 L1): the test that stood here pinned MV11's Search button while the Hub had not answered; a cold open of a Hub
-  // that says "soon" or "off" flashed the catalog shapes and the button before swapping them out.
+  // that says "soon" or "off" flashed the catalog shapes and the button before swapping them out. FIX-106 (R-80): soon is off, so the
+  // answer leaves nothing drawn at all.
   it('a cold open draws the title and a plain wait, with no catalog shapes and no Search, until the Hub answers; MV12 has no Search either', async () => {
     let answer: (value: unknown) => void = () => undefined;
     // Only the catalog read is held: a read of the genres (asked for while the Hub has not said "soon") answers at once.
@@ -188,9 +189,11 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     await act(async () => {
       answer(ok({ enabled: false, soon: true, hero: null, rails: [] }));
     });
-    expect(await screen.findByTestId('movies-soon')).toBeTruthy();
-    expect(screen.queryByTestId('movies-loading')).toBeNull();
+    await waitFor(() => expect(screen.queryByTestId('movies-loading')).toBeNull());
+    expect(screen.queryByTestId('movies-soon')).toBeNull();
+    expect(screen.queryByText(/switched on yet|movies here soon/i)).toBeNull();
     expect(screen.queryByTestId('movies-search')).toBeNull();
+    expect(screen.queryByTestId('flix-hero')).toBeNull();
     await unmount();
     queryClient.clear();
     mockGet.mockRejectedValue(new ApiError('network', 0, 'No connection'));

@@ -8,7 +8,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
-import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } from '@/theme';
 
 import { STEPS, type Step } from './hostForm';
 
@@ -28,11 +28,11 @@ const noteMetrics = { padV: 14, icon: 19, iconStroke: 2.2, nudge: 1, inner: 3 } 
 const hintMetrics = { font: 12.5, icon: 15, iconStroke: 2.2, between: 6 } as const;
 
 /** Basics / When and where / Tickets, the current step's bar and name lit. */
-export function Stepper({ step }: { step: Step }) {
+export function Stepper({ step, steps = STEPS }: { step: Step; steps?: readonly string[] }) {
   const { colors } = useWawu();
   return (
-    <View style={styles.stepper} accessibilityLabel={`Step ${step + 1} of ${STEPS.length}, ${STEPS[step]}`} accessible>
-      {STEPS.map((name, i) => (
+    <View style={styles.stepper} accessibilityLabel={`Step ${step + 1} of ${steps.length}, ${steps[step]}`} accessible>
+      {steps.map((name, i) => (
         <View key={name} style={styles.stepCol}>
           <View style={[styles.bar, { backgroundColor: i <= step ? colors.accent : colors.surfaceSunken }]} />
           <Text
@@ -185,6 +185,32 @@ export function AreaField({ label, value, onChangeText, error, maxLength, testID
         />
       </View>
       <FieldError message={error} testID={`${testID}-error`} />
+    </View>
+  );
+}
+
+export type LockedFieldProps = { label: string; value: string; testID: string };
+
+/**
+ * A value the host can read and not change (Ticket types once a ticket has sold). It keeps the field's size and the sunken surface
+ * a disabled field has, but reads in the secondary text colour: the theme's disabled text colour is 1.8 to 1 on that surface in
+ * both themes, too dim to read, and this pair is 6.7 to 1 in dark and 6.0 to 1 in light (checked in editEvent.test.tsx).
+ */
+export function LockedField({ label, value, testID }: LockedFieldProps) {
+  const { colors } = useWawu();
+  return (
+    <View style={styles.fieldRoot}>
+      <FieldLabel>{label}</FieldLabel>
+      <View style={[styles.box, { backgroundColor: colors.surfaceSunken, borderColor: colors.borderHairline, borderWidth: StyleSheet.hairlineWidth }]}>
+        <TextInput
+          testID={testID}
+          accessibilityLabel={label}
+          accessibilityState={{ disabled: true }}
+          editable={false}
+          value={value}
+          style={[styles.lockedValue, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textSecondary }]}
+        />
+      </View>
     </View>
   );
 }
@@ -415,6 +441,7 @@ const styles = StyleSheet.create({
     gap: PICKER_GAP,
   },
   value: { flex: 1, fontSize: fieldMetrics.value },
+  lockedValue: { ...text.body, ...font(500), flex: 1, fontSize: fieldMetrics.value, paddingVertical: 0 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: hintMetrics.between, marginTop: space.sm },
   area: { minHeight: areaMetrics.minHeight, borderRadius: fieldMetrics.radius, paddingVertical: areaMetrics.padV, paddingHorizontal: space.lg },
   areaInput: {

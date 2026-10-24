@@ -5,14 +5,14 @@ import { presign } from '@/features/profile-edit/api';
 import type { PickedImage } from '@/features/profile-edit/pickImage';
 
 import type { EventView } from '../api';
-import type { createBody } from './hostForm';
+import type { createBody, patchBody } from './hostForm';
 import { hostUnwrap } from './hostTier';
 
 /**
  * The host wizard's calls (E13 to E16, E21, E22), typed by the Hub's contract:
  * - `GET /verification/me`: the person's ticks (a live tick still hosts; the tier is `GET /me/tier`, read by the screen; E21 opens for neither),
  * - `POST /events`: the event and its ticket types in one submit (EVENTS-02); `403 tier_required` is E21 (EVENTS-12),
- * - `PATCH /events/{id}`: a sent-back event, fixed and sent again (E22),
+ * - `PATCH /events/{id}`: a sent-back event, fixed and sent again (E22), and a live one edited from E18 (EVENTS-14). Either way the Hub puts the event back in review,
  * - `POST /uploads/presign` (folder `event/banner`, EVENTS-04): the banner image (E14).
  * The Hub's success body is `{ statusCode, message, data }`; the contract types only `data`
  * (SHARED-CHANGES.md row 11), so each call reads the envelope itself.
@@ -50,8 +50,8 @@ export function createEvent(body: ReturnType<typeof createBody>): Promise<EventV
   return readEvent(api.POST('/api/hub/events', { body: body as CreateEventBody }));
 }
 
-export function updateEvent(id: string, body: UpdateEventBody): Promise<EventView> {
-  return readEvent(api.PATCH('/api/hub/events/{id}', { params: { path: { id } }, body }));
+export function updateEvent(id: string, body: UpdateEventBody | ReturnType<typeof patchBody>): Promise<EventView> {
+  return readEvent(api.PATCH('/api/hub/events/{id}', { params: { path: { id } }, body: body as UpdateEventBody }));
 }
 
 /** Uploads the banner to the Hub's storage and answers the address `bannerUrl` takes. */
