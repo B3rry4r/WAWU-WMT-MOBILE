@@ -17,7 +17,7 @@ import type { MoneyRequest } from './api';
  * inside; its label 12.5 / 600 at 75%, the amount 26 eight under it, the note 13.5 six under that and the status 12 / 600 ten under.
  * The request bubble is 240 wide, a 22 corner, 14 by 16 inside, 8 between its rows, a 1.5 ring (positive once paid).
  */
-const bubbleMetrics = { maxWidth: '78%', padV: 10, padH: 14, corner: 20, tail: 6, body: 15, line: 1.4, timeGap: 4, time: 11.5 } as const;
+export const bubbleMetrics = { maxWidth: '78%', padV: 10, padH: 14, corner: 20, tail: 6, body: 15, line: 1.4, timeGap: 4, time: 11.5 } as const;
 const moneyMetrics = { width: 230, corner: 22, padV: 14, padH: 16, label: 12.5, amount: 26, amountTop: 8, note: 13.5, noteTop: 6, status: 12, statusTop: 10, glyph: 14, statusGlyph: 13, ring: 1, labelGap: 6, statusGap: 5 } as const;
 const requestMetrics = { width: 240, corner: 22, padV: 14, padH: 16, rows: 8, label: 12.5, glyph: 15, amount: 26, note: 13.5, ring: 1.5, buttonsTop: 4, payGrow: 1.4 } as const;
 
@@ -31,11 +31,30 @@ export function DayLabel({ label }: { label: string }) {
   );
 }
 
-function Time({ iso, mine }: { iso: string; mine: boolean }) {
+export function Time({ iso, mine }: { iso: string; mine: boolean }) {
   return (
     <Text variant="caption" tone="textMuted" style={[{ fontSize: bubbleMetrics.time }, mine ? styles.timeMine : null]}>
       {clockTime(iso)}
     </Text>
+  );
+}
+
+export type PendingState = { status: 'sending' | 'failed'; error?: string; onRetry: () => void; onDiscard: () => void };
+
+/** What sits under a message the Hub has not confirmed: "Sending", or why it was not sent with Try again and Delete. */
+export function PendingNote({ id, pending }: { id: string; pending: PendingState }) {
+  return (
+    <View style={styles.pending}>
+      <Text variant="caption" tone={pending.status === 'failed' ? 'danger' : 'textMuted'} style={{ fontSize: bubbleMetrics.time }}>
+        {pending.status === 'failed' ? (pending.error ?? 'Not sent.') : 'Sending'}
+      </Text>
+      {pending.status === 'failed' ? (
+        <View style={styles.pendingButtons}>
+          <Button testID={`bubble-${id}-retry`} label="Try again" size="sm" variant="secondary" onPress={pending.onRetry} />
+          <Button testID={`bubble-${id}-discard`} label="Delete" size="sm" variant="secondary" onPress={pending.onDiscard} />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -48,7 +67,7 @@ export type TextBubbleProps = {
   /** A line under the bubble in place of its time ("09:51 · ₦1,500 paid", a paid question, INBOX-10). */
   stamp?: string;
   /** A message the Hub has not confirmed: dimmed, with its state under it. */
-  pending?: { status: 'sending' | 'failed'; error?: string; onRetry: () => void; onDiscard: () => void };
+  pending?: PendingState;
 };
 
 /** One text message: the person's own on the right in the accent, theirs on the left on a card. */
@@ -71,17 +90,7 @@ export function TextBubble({ id, text, mine, at, stamp, pending }: TextBubblePro
         </Text>
       </View>
       {pending ? (
-        <View style={styles.pending}>
-          <Text variant="caption" tone={pending.status === 'failed' ? 'danger' : 'textMuted'} style={{ fontSize: bubbleMetrics.time }}>
-            {pending.status === 'failed' ? (pending.error ?? 'Not sent.') : 'Sending'}
-          </Text>
-          {pending.status === 'failed' ? (
-            <View style={styles.pendingButtons}>
-              <Button testID={`bubble-${id}-retry`} label="Try again" size="sm" variant="secondary" onPress={pending.onRetry} />
-              <Button testID={`bubble-${id}-discard`} label="Delete" size="sm" variant="secondary" onPress={pending.onDiscard} />
-            </View>
-          ) : null}
-        </View>
+        <PendingNote id={id} pending={pending} />
       ) : stamp ? (
         <Text variant="caption" tone="textMuted" style={[{ fontSize: bubbleMetrics.time }, mine ? styles.timeMine : null]} testID={`bubble-${id}-stamp`}>
           {stamp}
