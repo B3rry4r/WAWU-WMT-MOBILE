@@ -3813,8 +3813,8 @@ export interface paths {
          *     quote is `409 quote_expired`; a frozen person `423 account_frozen`. The
          *     same key and body answer the first result again
          *     (`Idempotent-Replayed: true`) without checking the PIN. WAWU's fee, when
-         *     set, is taken after the provider takes the send: from the naira wallet, or
-         *     (a world wallet, which has none) from the foreign account the money left.
+         *     set, is taken after the provider takes the send, from the account the money
+         *     leaves: the naira fee from the naira wallet, a foreign account's fee from it.
          */
         post: operations["AbroadController_send"];
         delete?: never;
@@ -4170,6 +4170,27 @@ export interface paths {
         };
         /** One send as it stands now. Only the owner reads it. */
         get: operations["FxController_sendById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/admin/money/fx/currencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The currencies and the three product switches as they stand, with WAWU's
+         *     fee and daily limit for each and the places a coin counts (task OPS-27).
+         *     Read only.
+         */
+        get: operations["FxAdminController_currencies"];
         put?: never;
         post?: never;
         delete?: never;
@@ -13197,6 +13218,38 @@ export interface components {
             items: components["schemas"]["AbroadSendView"][];
             nextCursor: string | null;
         };
+        AdminFxCurrencyView: {
+            /** @enum {string} */
+            currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            swapFeeMinor: number;
+            sendFeeMinor: number;
+            dailyLimitMinor: number | null;
+            /** @enum {string} */
+            code: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
+            name: string;
+            /** @enum {string} */
+            kind: "fiat" | "stablecoin";
+            decimals: number;
+            chains: ("eth" | "base" | "matic" | "sol")[];
+            enabled: boolean;
+        };
+        FxProductsView: {
+            openAccount: boolean;
+            swap: boolean;
+            cryptoSend: boolean;
+        };
+        AdminFxCurrenciesView: {
+            currencies: components["schemas"]["AdminFxCurrencyView"][];
+            products: components["schemas"]["FxProductsView"];
+            naira: {
+                /** @enum {string} */
+                code: "NGN";
+                /** @enum {integer} */
+                decimals: 2;
+                swapFeeKobo: number;
+                dailyLimitKobo: number | null;
+            };
+        };
         FxBalanceView: {
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
@@ -13289,11 +13342,6 @@ export interface components {
             decimals: number;
             chains: ("eth" | "base" | "matic" | "sol")[];
             enabled: boolean;
-        };
-        FxProductsView: {
-            openAccount: boolean;
-            swap: boolean;
-            cryptoSend: boolean;
         };
         FxCurrenciesView: {
             currencies: components["schemas"]["FxCurrencyView"][];
@@ -13481,6 +13529,13 @@ export interface components {
                 currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
                 amountMinor: number;
             };
+        };
+        AdminCardSettingsView: {
+            enabled: boolean;
+            providerFeeKobo: number | null;
+            wawuFeeKobo: number;
+            maxActive: number;
+            maxPerDay: number;
         };
         AdminCardView: {
             id: string;
@@ -18254,6 +18309,14 @@ export interface components {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
             event: string | null;
+        };
+        AdminCapitalSettingsView: {
+            enabled: boolean;
+            minKobo: number | null;
+            maxKobo: number | null;
+            dailyMaxKobo: number | null;
+            feeFlatKobo: number;
+            feeBasisPoints: number;
         };
         AdminCapitalOrderView: {
             id: string;
@@ -27895,6 +27958,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    FxAdminController_currencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminFxCurrenciesView"];
                 };
             };
         };

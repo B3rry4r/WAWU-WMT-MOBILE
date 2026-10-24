@@ -3,6 +3,7 @@ import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 import { OPEN_WALLET_KEY, type WalletState } from './account';
+import { readWorld, type FiatCode, type WorldProgress } from './world';
 
 /**
  * Where the bank's review of the person stands (KYC-06, NUV-02): the part of
@@ -39,6 +40,8 @@ export type OpeningProgress = {
   flow: 'check' | 'review' | null;
   accountNumberStatus: 'none' | 'on_its_way' | 'active';
   review: OpeningReview | null;
+  /** WALLET-41: the world part of the wallet, for a person who opened from outside Nigeria; null otherwise. */
+  world?: WorldProgress | null;
 };
 
 const walletStates: readonly WalletState[] = ['not_open', 'opening', 'open', 'frozen'];
@@ -76,7 +79,7 @@ export async function fetchOpeningProgress(): Promise<OpeningProgress> {
   if (!view || typeof view !== 'object' || !walletStates.includes(view.state)) throw unreadable();
   const number = numberStates.includes(view.accountNumberStatus as never) ? view.accountNumberStatus : 'none';
   const flow = view.openingFlow === 'review' || view.openingFlow === 'check' ? view.openingFlow : null;
-  return { state: view.state, flow, accountNumberStatus: number, review: readReview(view.review) };
+  return { state: view.state, flow, accountNumberStatus: number, review: readReview(view.review), world: readWorld(view.world) };
 }
 
 /** How often A28 asks the Hub where the check stands, while it waits. */
@@ -115,6 +118,12 @@ export type ReviewOpening = {
   proofOfAddressType?: 'utility_bill' | 'bank_statement';
   bvn?: string;
   nin?: string;
+  /** WALLET-41 (R-87): a person who lives outside Nigeria sends their country and no BVN or NIN. */
+  countryCode?: string;
+  /** The currency of the first account, the person's pick or the country's own. */
+  firstCurrency?: FiatCode;
+  /** WALLET-41 round 3: the country that issued the passport, which the Hub requires with one (a licence or national ID sends none). */
+  nationality?: string;
 };
 
 async function send(request: Promise<Answer>): Promise<unknown> {
@@ -141,5 +150,6 @@ export async function openForReview(details: ReviewOpening): Promise<OpeningProg
     flow: view.openingFlow === 'review' || view.openingFlow === 'check' ? view.openingFlow : null,
     accountNumberStatus: numberStates.includes(view.accountNumberStatus as never) ? view.accountNumberStatus : 'none',
     review: readReview(view.review),
+    world: readWorld(view.world),
   };
 }

@@ -14685,7 +14685,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Sends at a held quote: the Idempotency-Key and the PIN (or the device\napproval) are required, the quote is used once, and the recipient and the\namounts are the quote's. Answers 201 with the send: `sending` or `pending`\nuntil the provider delivers (poll `GET /money/abroad/sends/{id}`),\n`failed` when the provider refused and nothing moved. An expired or used\nquote is `409 quote_expired`; a frozen person `423 account_frozen`. The\nsame key and body answer the first result again\n(`Idempotent-Replayed: true`) without checking the PIN. WAWU's fee, when\nset, is taken after the provider takes the send: from the naira wallet, or\n(a world wallet, which has none) from the foreign account the money left.",
+    "summary": "Sends at a held quote: the Idempotency-Key and the PIN (or the device\napproval) are required, the quote is used once, and the recipient and the\namounts are the quote's. Answers 201 with the send: `sending` or `pending`\nuntil the provider delivers (poll `GET /money/abroad/sends/{id}`),\n`failed` when the provider refused and nothing moved. An expired or used\nquote is `409 quote_expired`; a frozen person `423 account_frozen`. The\nsame key and body answer the first result again\n(`Idempotent-Replayed: true`) without checking the PIN. WAWU's fee, when\nset, is taken after the provider takes the send, from the account the money\nleaves: the naira fee from the naira wallet, a foreign account's fee from it.",
     "tags": [
      "Abroad"
     ],
@@ -16090,6 +16090,29 @@
      "Fx"
     ],
     "x-wawu-built-by": "WALLET-21"
+   }
+  },
+  "/api/hub/admin/money/fx/currencies": {
+   "get": {
+    "operationId": "FxAdminController_currencies",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminFxCurrenciesView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The currencies and the three product switches as they stand, with WAWU's\nfee and daily limit for each and the places a coin counts (task OPS-27).\nRead only.",
+    "tags": [
+     "FxAdmin"
+    ],
+    "x-wawu-built-by": "OPS-27"
    }
   },
   "/api/hub/admin/money/fx/people/{wawuUserId}/accounts": {
@@ -45241,6 +45264,157 @@
      "nextCursor"
     ]
    },
+   "AdminFxCurrencyView": {
+    "type": "object",
+    "properties": {
+     "currency": {
+      "type": "string",
+      "enum": [
+       "USD",
+       "EUR",
+       "GBP",
+       "CAD",
+       "AED",
+       "GHS",
+       "USDT",
+       "USDC",
+       "RLUSD"
+      ]
+     },
+     "swapFeeMinor": {
+      "type": "integer"
+     },
+     "sendFeeMinor": {
+      "type": "integer"
+     },
+     "dailyLimitMinor": {
+      "type": "integer",
+      "nullable": true
+     },
+     "code": {
+      "type": "string",
+      "enum": [
+       "USD",
+       "EUR",
+       "GBP",
+       "CAD",
+       "AED",
+       "GHS",
+       "USDT",
+       "USDC",
+       "RLUSD"
+      ]
+     },
+     "name": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "fiat",
+       "stablecoin"
+      ]
+     },
+     "decimals": {
+      "type": "integer"
+     },
+     "chains": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "eth",
+        "base",
+        "matic",
+        "sol"
+       ]
+      }
+     },
+     "enabled": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "currency",
+     "swapFeeMinor",
+     "sendFeeMinor",
+     "dailyLimitMinor",
+     "code",
+     "name",
+     "kind",
+     "decimals",
+     "chains",
+     "enabled"
+    ]
+   },
+   "FxProductsView": {
+    "type": "object",
+    "properties": {
+     "openAccount": {
+      "type": "boolean"
+     },
+     "swap": {
+      "type": "boolean"
+     },
+     "cryptoSend": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "openAccount",
+     "swap",
+     "cryptoSend"
+    ]
+   },
+   "AdminFxCurrenciesView": {
+    "type": "object",
+    "properties": {
+     "currencies": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminFxCurrencyView"
+      }
+     },
+     "products": {
+      "$ref": "#/components/schemas/FxProductsView"
+     },
+     "naira": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string",
+        "enum": [
+         "NGN"
+        ]
+       },
+       "decimals": {
+        "type": "integer",
+        "enum": [
+         2
+        ]
+       },
+       "swapFeeKobo": {
+        "type": "integer"
+       },
+       "dailyLimitKobo": {
+        "type": "integer",
+        "nullable": true
+       }
+      },
+      "required": [
+       "code",
+       "decimals",
+       "swapFeeKobo",
+       "dailyLimitKobo"
+      ]
+     }
+    },
+    "required": [
+     "currencies",
+     "products",
+     "naira"
+    ]
+   },
    "FxBalanceView": {
     "type": "object",
     "properties": {
@@ -45700,25 +45874,6 @@
      "decimals",
      "chains",
      "enabled"
-    ]
-   },
-   "FxProductsView": {
-    "type": "object",
-    "properties": {
-     "openAccount": {
-      "type": "boolean"
-     },
-     "swap": {
-      "type": "boolean"
-     },
-     "cryptoSend": {
-      "type": "boolean"
-     }
-    },
-    "required": [
-     "openAccount",
-     "swap",
-     "cryptoSend"
     ]
    },
    "FxCurrenciesView": {
@@ -46613,6 +46768,34 @@
      "suggested",
      "choices",
      "openFee"
+    ]
+   },
+   "AdminCardSettingsView": {
+    "type": "object",
+    "properties": {
+     "enabled": {
+      "type": "boolean"
+     },
+     "providerFeeKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "wawuFeeKobo": {
+      "type": "integer"
+     },
+     "maxActive": {
+      "type": "number"
+     },
+     "maxPerDay": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "enabled",
+     "providerFeeKobo",
+     "wawuFeeKobo",
+     "maxActive",
+     "maxPerDay"
     ]
    },
    "AdminCardView": {
@@ -67218,6 +67401,40 @@
     "required": [
      "outcome",
      "event"
+    ]
+   },
+   "AdminCapitalSettingsView": {
+    "type": "object",
+    "properties": {
+     "enabled": {
+      "type": "boolean"
+     },
+     "minKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "maxKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "dailyMaxKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "feeFlatKobo": {
+      "type": "integer"
+     },
+     "feeBasisPoints": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "enabled",
+     "minKobo",
+     "maxKobo",
+     "dailyMaxKobo",
+     "feeFlatKobo",
+     "feeBasisPoints"
     ]
    },
    "AdminCapitalOrderView": {
