@@ -41,7 +41,8 @@ The app says what the provider's terms say (rate, term, what leaving early costs
 
 - Backend: `src/capital/tests/capital.contract.spec.ts` 17 tests (browse, reserve once, PIN, replay, two taps, expiry, short balance before the PIN, lost answer settled by the sweep, portfolio, share offering, early liquidation, locked product refused before the PIN, switch off, no provider, limits and fee, admin acts and roles); `src/nuvion/tests/nuvion-capital.spec.ts` 7 (the area over a socket, with dev's shapes); `src/nuvion/tests/nuvion-capital-handler.contract.spec.ts` 6; money-contract, plan-settings, publishing-gate-coverage (one NOT_GATED entry added, `POST capital/orders` carries a yes, not a file) and hub-rate-limits all pass; `npm run test:protected` 253 pass on a seeded database; tsc, eslint, gates and check_baseline pass; rollback proved (refuses with a confirmed order, runs when empty).
 - Mobile: `src/features/capital/__tests__` 8 flow tests and 5 model tests; the 48 Wallet tab tests pass with the new row test; tsc, eslint, gates pass.
-- NOT RUN: a phone (V10); an order from a person's own (child) entity against Nuvion dev (no funded child entity: the call path is proven on the stand-in, G-NUV-12-3); Nuvion's Capital webhooks (dev endpoint blacklisted); the full backend suite and `npm run check` (CI and the merge agent run them); the Fintava specs (rule).
+- Pictures (390 px, light and dark, from the web export with the Hub's answers stood in by fixtures, so they show the screens, not a live Hub): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/nuv-12-b/shots/` `wallet-row`, `capital-home-invest`, `capital-home-mine`, `capital-product`, `capital-review`, `capital-holding`, `capital-withdraw`, each `-light.png` and `-dark.png`. No board draws Capital, so there is no artboard to set beside them (R-29, G-NUV-12-1). The PIN sheet over the review and the result views are covered by the flow tests, not pictured.
+- NOT RUN: a live stack and a real sign-in (V9; the local stand-in now serves Capital, `scripts/dev/stack.sh`); a phone (V10); an order from a person's own (child) entity against Nuvion dev (no funded child entity: the call path is proven on the stand-in, G-NUV-12-3); Nuvion's Capital webhooks (dev endpoint blacklisted); the full backend suite and `npm run check` (CI and the merge agent run them); the Fintava specs (rule).
 
 ### Open
 
@@ -74,7 +75,7 @@ Backend: `src/capital/**`, `src/wallet-provider/wallet-provider-capital.ts` and 
 - [x] A user can see the portfolio, their investments and the ended ones, one investment's figures and movements, and withdraw a fixed return early with the PIN once.
 - [x] An admin (superadmin or finance) can list orders, hold, release and cancel a reservation, each with an audit row; support and reviewers are refused.
 - [ ] On a phone: NOT RUN (no device in this session).
-- [ ] V9 on the stack with a real sign-in: see the pictures section of the history.
+- [ ] V9 on the stack with a real sign-in: NOT RUN (the pictures use fixtures); the verifier runs it on the stack.
 
 ## History
 
