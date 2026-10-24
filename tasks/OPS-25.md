@@ -7,7 +7,7 @@ order: -152
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-1, R-6, R-11, R-47, R-55]
 passes: [V1, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B15), dashboard `wmt/OPS-23` on `origin/main` `c1dfca6`, Hub read at `origin/main` `3d33a05`. Status verifying. The pictures are at 1440 px under `dash-b15/` in the builder's scratchpad (light and dark), taken against a local stack (Nuvion stand-in, seeded test rows). No Hub change, and no new money route: the screen reads and acts only on routes the Hub already serves to admins. Nothing on it moves a naira.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B15), dashboard `wmt/OPS-23` on `origin/main` `c1dfca6`, Hub read at `origin/main` `3d33a05`. Status review: verifier PASS on 24 Oct 2026 (Sonnet verifier, dashboard `ca16990`, Hub `origin/main` `b69aa7f`), see the verifier report. The pictures are at 1440 px under `dash-b15/` in the builder's scratchpad (light and dark), taken against a local stack (Nuvion stand-in, seeded test rows). No Hub change, and no new money route: the screen reads and acts only on routes the Hub already serves to admins. Nothing on it moves a naira.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -31,6 +31,8 @@ Gaps, as rows in `BACKEND_GAPS.md` (nothing built, nothing drawn for them, R-47)
 Default (lead), owner may override: the three missing lists are gap rows, not built. If the owner allows read-only admin routes over money state, each is a small additive `GET` with the same guard as the routes above, and a section here.
 
 Not done: a real release of a hold (the stand-in has no hold to let go of: the live run shows the Hub's own "no wallet opening with a hold" answer); sales in review.
+
+Verified (24 Oct 2026, live as each of the four admin roles, 1440 px light and dark): a hold is let go (as superadmin and as support) and the Hub's refusals show in its words; finance reads the older sales and cannot release; nothing moves money and no new route exists. Open: F1 (not this task's), F2 to F5 are lows for the sweep.
 
 ## Read first
 
@@ -55,3 +57,8 @@ Finance sees which old sales the sweep will not pay, and support lets go of an i
 - [x] Nothing on the screen moves money or marks a sale paid.
 - [ ] A role refused on a section sees a plain refusal for that section only: NOT RUN live (only a superadmin was signed in); each section gates on its own route's role list.
 - [ ] On a phone: NOT RUN (no device in this session).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-25.md](history/OPS-25.md).
+

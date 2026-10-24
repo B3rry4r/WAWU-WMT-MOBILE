@@ -7,7 +7,7 @@ order: -150
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-30, R-47]
 passes: [V1, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B15), dashboard `wmt/OPS-23` on `origin/main` `c1dfca6`, Hub read at `origin/main` `3d33a05`. Status verifying. The pictures are at 1440 px under `dash-b15/` in the builder's scratchpad (light and dark), taken against a local stack (Nuvion stand-in, seeded test rows). No Hub change: the three routes were already served.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B15), dashboard `wmt/OPS-23` on `origin/main` `c1dfca6`, Hub read at `origin/main` `3d33a05`. Status review: verifier PASS on 24 Oct 2026 (Sonnet verifier, dashboard `ca16990`, Hub `origin/main` `b69aa7f`), see the verifier report. The pictures are at 1440 px under `dash-b15/` in the builder's scratchpad (light and dark), taken against a local stack (Nuvion stand-in, seeded test rows). No Hub change: the three routes were already served.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -33,6 +33,8 @@ Wire types are derived, never written: `src/lib/api/contract/oversight.generated
 Default (lead), owner may override: the thread list polls every 30 seconds and an open thread every 20 seconds; there is no "resolved" mark because the Hub has none (a thread leaves "Waiting" when support's reply is its last message).
 
 Not done, for `tasks/SWEEP-APP.md`: (a) attachments in a reply (the Hub refuses them); (b) the list and thread do not mark a message read for the person (the Hub's read route is the person's own); (c) NOT RUN on a phone: that the person's app shows the reply live (the Hub's chat service is the one the app uses).
+
+Verified (24 Oct 2026, live as each of the four admin roles, 1440 px light and dark): reply lands and the thread moves tabs; a refused role sends no request; a too-long reply keeps its draft. Open: F1 (not this task's), F2 to F5 are lows for the sweep.
 
 ## Read first
 
@@ -56,3 +58,8 @@ Staff read and answer the support threads from the dashboard.
 - [ ] A role the Hub refuses sees a plain refusal and no request is made: NOT RUN live (only a superadmin was signed in); the screen gates on the handler's role list (`routeAllowsRole`).
 - [ ] A reply the Hub refuses (too long) shows the Hub's words and keeps the draft: NOT RUN live; the error toast shows `serverMessageOf` and the draft is cleared only on success (code read).
 - [ ] On a phone: NOT RUN (no device in this session).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-23.md](history/OPS-23.md).
+
