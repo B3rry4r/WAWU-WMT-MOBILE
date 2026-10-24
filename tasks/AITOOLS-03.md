@@ -7,7 +7,7 @@ order: -124
 priority: launch
 repo: wawu-backend
 type: third-party
-status: building
+status: verifying
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,26 +17,20 @@ artboards: []
 
 ## Current state
 
-As of 24 Oct 2026, building (verifier FIX on round 2: 1 medium, 3 lows). Tier T2. Builder and verifier reports of every round: [history/AITOOLS-03.md](history/AITOOLS-03.md).
-- **Heads:** backend `wmt/AITOOLS-03` `207fabf` (merged `wmt/AITOOLS-02` `79435c2`, new commits only). Mobile `wmt/AITOOLS-03` carries this file. No migration. Nothing was changed on the backend by the verifier.
-- **Round 2 checked (verifier, own worktree and database `ait03v2_test`, stand-in only, nothing Fintava, no live host):**
+As of 24 Oct 2026, verifying (builder fix round 3 done). Tier T2. Builder report and verifier reports of every round: [history/AITOOLS-03.md](history/AITOOLS-03.md).
+- **Heads:** backend `wmt/AITOOLS-03` `9d50fc6` (on `207fabf`, new commit only). Mobile `wmt/AITOOLS-03` carries this file. No migration, no new column. Round 3 touched 6 .ts files and the README.
 
-| r2 row | Result |
-|--------|--------|
-| 1 Music wait | passed. Real 330 s case on the stand-in: default 600000 ms gives `done` in 330.7 s (hold committed, balance 0, one file); `AI_VOICE_MUSIC_TIMEOUT_MS=300000` gives `failed provider_unavailable` in 300.5 s, hold released, 500 points back, no file. Wire compared with the `fetch` call: same method, path, query, body bytes, `content-type`, `accept`, `xi-api-key`, `host`, `content-length`; every status, empty, not-audio, cut-off and refused answer maps the same; a silent server and a body that never stops both end at the timeout (1.50 s for 1.5 s), sockets closed, an abort sends nothing. Local TLS (SNI and Host right, an untrusted certificate refused) |
-| 2 providerRef | **medium finding F1 below** |
-| 3 two old assertions | passed. Both pin the new rule honestly; the real off state (no host or key) is still asserted |
-| 4 texts and the shared cap text | passed. Only a cap of 1 changes ("1 minute") for every caller; no em-dash, price, provider or model name in the new texts |
-| 5 listing without voices | passed (provider spec on real config; contract case) |
+| r3 row | Fix | Proof |
+|--------|-----|-------|
+| F1 medium | `fail()` no longer writes `providerRef`; the provider's status stays in the log line (`ai job <id> (...) answered 402`) only. A failed job leaves `providerRef` as it was and does not block the AITOOLS-02 rollback | `round 3: a provider refusal's HTTP status ...` (both tools, 401 and 402): the log line carries the status, every failed job has `providerRef` null, and the `DO` check of `rollback.sql`, run as written on those jobs, passes (and refuses once one has a provider id, so the check is live). `round 3: a provider id set on a working job ...` sets `providerRef` on a working job, fails it by 402 and by 500, both tools, and reads it back unchanged. A mutant (`fail()` writing `http_402`) fails both. The round 2 assertions that pinned `http_NNN` now assert the log line and null (lead ruling: they pinned the round's own defect) |
+| F2 low | The Music call sends `user-agent: node`, the value `fetch` sends (the repo has none of its own) | provider spec on a capture server: the Music call's `user-agent` equals the one a `fetch` call sends |
+| F3 low | The Music call follows up to 3 redirects (301, 302, 303, 307, 308) inside the one deadline: 307 and 308 repeat the POST with the same body and headers; 301, 302 and 303 become a GET with no body, as `fetch` does; a fourth, a redirect with no `location` or to a scheme other than http(s) fails as a 3xx answer did before (`rejected`, status kept) | provider spec on the capture server: each status compared with the `fetch` call on the same server; a chain of 3 is followed, a chain of 4 stops after 4 requests; no `location` and `ftp://` fail; two hops of 700 ms fail against a 1 s deadline and finish inside 5 s |
+| F4 low | The shared cap text reads "One job can run up to 1 minute. This one is 2 minutes." (singular for 1, "up to 0 minutes. This one is 1 minute.") | `points-spend-rules.spec.ts` `capStop` case. Callers: `capStop` is called twice in `points-spend.service.ts` (quote and hold) and nothing else builds the text; `prompt-limits.ts` already ends "seconds"; no spec or mobile file pinned the old text |
 
-- **Checks (EXIT 0 each):** tsc; eslint (no --fix) on the 11 round-2 .ts files; 11 suites of `src/ai-tools` and `src/points`, 194/194 in band (six `src/points` specs that use the Fintava double or a Fintava table were NOT RUN, by rule); `test:protected` 253/253 after `db:seed`; contract:build, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base); check_baseline (124 entries).
-- **Open findings (fix round 3):**
-  - **F1 medium.** `providerRef` holds `http_<status>` on a failed job. A failed job now stops the AITOOLS-02 rollback (`rollback.sql` refuses on any `providerRef`), and `fail()` writes `providerRef` (null or `http_<n>`) on every failure, which wipes the provider ids AITOOLS-05 keeps there while a dub works. Round 1 asked only for a log line, which is in. Fix: do not write the status to `providerRef`; leave `providerRef` untouched in `fail()`.
-  - **F2 low.** The Music call sends no `User-Agent` or `Accept-Encoding` (the `fetch` call sent `user-agent: node`). Unproven against a real host.
-  - **F3 low.** The Music call does not follow a redirect (the `fetch` call did); a 3xx fails the job, points back.
-  - **F4 low, before this round.** The shared cap text reads "up to 1 minute. This one is 2." with no unit for the second number.
+- **Checks (backend, own worktree and database `ait03r3_wawu_hub_test`, mock on 7867, stand-in only, nothing Fintava):** tsc `EXIT 0`; eslint (no --fix) on the 6 changed .ts files `EXIT 0`; `src/ai-tools` 7 suites 118/118 in band `EXIT 0`; `points-spend-rules.spec.ts` with the provider spec 32/32 `EXIT 0` (the six Fintava-double `src/points` specs NOT RUN, by rule); contract:build `EXIT 0`, no diff; gates 0 fail, 133 warn, 88 accepted (same as the base) `EXIT 0`; check_baseline (124 entries) `EXIT 0`. Mobile: `check_tasks.py --write` `EXIT 0` (415 tasks); gates `EXIT 0` (10 run, 1215 files, 0 fail, 18 warn, same as before).
+- **Not done:** `test:protected` was not re-run (no route, DTO or contract change this round). TLS and a real host were not run (no live host by rule). The key header goes on every redirect hop, as `fetch` sends it.
 - **Owner question G-AITOOLS-03-1** (Music terms, per plan) stays open for the owner.
-- **Next:** a builder fixes F1 (F2 to F4 go to the POINTS sweep); a verifier re-runs the rollback case from the report.
+- **Next:** a verifier re-checks the rollback case with a failed 402 job (`rollback.sql` through psql) and the three lows on a capture server.
 
 ## Read first
 
