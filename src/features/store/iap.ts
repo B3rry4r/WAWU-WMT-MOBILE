@@ -37,7 +37,7 @@ export type StoreTransaction = {
   pending: boolean;
   /** Google Play: the store already acknowledged it. */
   acknowledged: boolean | null;
-  /** The room a pass was bought for, which the buy put in the purchase (Google's profile id, the App Store's account token). */
+  /** The room a pass was bought for, which the buy put in the purchase (Google's profile id). Always null on the App Store, whose field carries the account token. */
   communityId: string | null;
   native: unknown;
 };
@@ -46,9 +46,12 @@ export type BuyRequest = {
   storeProductId: string;
   subscription: boolean;
   offerToken: string | null;
-  /** The signed-in account, handed to Google Play as its obfuscated account id. */
-  accountId: string | null;
-  /** The room, for a pass. */
+  /**
+   * The person's account token (`GET /store/products` `accountToken`, a stable UUID the Hub gives each person, never the user id). It binds the
+   * purchase to the person: Google Play's obfuscated account id and the App Store's app account token. The Hub refuses a purchase with another's or none.
+   */
+  accountToken: string | null;
+  /** The room, for a pass (Google Play's obfuscated profile id; the App Store's field holds the account token, so the room is kept on the phone, `./roomIntent`). */
   communityId: string | null;
   /** A running subscription of the same kind the new one replaces (an upgrade): Google Play needs the old token and product. */
   replace: { productId: string; purchaseToken: string } | null;
@@ -181,7 +184,7 @@ export async function fetchPrices(ids: { packs: string[]; subscriptions: string[
 
 function transactionOf(p: Purchase): StoreTransaction {
   const android = p as Purchase & { isAcknowledgedAndroid?: boolean | null; obfuscatedProfileIdAndroid?: string | null };
-  const ios = p as Purchase & { appAccountToken?: string | null; transactionId?: string | null };
+  const ios = p as Purchase & { transactionId?: string | null };
   const isIos = Platform.OS === 'ios';
   return {
     productId: p.productId,
@@ -189,7 +192,7 @@ function transactionOf(p: Purchase): StoreTransaction {
     transactionId: isIos ? (ios.transactionId ?? p.id ?? null) : null,
     pending: p.purchaseState === 'pending',
     acknowledged: isIos ? null : (android.isAcknowledgedAndroid ?? null),
-    communityId: isIos ? (ios.appAccountToken ?? null) : (android.obfuscatedProfileIdAndroid ?? null),
+    communityId: isIos ? null : (android.obfuscatedProfileIdAndroid ?? null),
     native: p,
   };
 }
@@ -225,10 +228,11 @@ export async function buy(request: BuyRequest): Promise<BuyResult> {
         settle({ ok: false, cause: causeOf(e.code) });
       }),
     );
-    const owner = request.accountId ?? undefined;
+    // The person's account token goes to BOTH stores on every purchase; the room of a pass rides in Google's profile id only.
+    const token = request.accountToken ?? undefined;
     const room = request.communityId ?? undefined;
-    const apple = { sku: request.storeProductId, ...(room ? { appAccountToken: room } : {}) };
-    const google = { skus: [request.storeProductId], obfuscatedAccountId: owner, obfuscatedProfileId: room };
+    const apple = { sku: request.storeProductId, ...(token ? { appAccountToken: token } : {}) };
+    const google = { skus: [request.storeProductId], obfuscatedAccountId: token, obfuscatedProfileId: room };
     const args = request.subscription
       ? {
           type: 'subs' as const,

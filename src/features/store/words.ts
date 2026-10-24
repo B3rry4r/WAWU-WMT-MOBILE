@@ -7,6 +7,8 @@ export type Said = { tone: 'neutral' | 'warning' | 'danger'; line: string };
 
 export const STILL_CONFIRMING = 'The store has taken your payment and we are still confirming it. Do not buy again. It is added as soon as we have it: open this screen again in a moment.';
 
+export const GRANT_FAILED = 'The store has your payment and we could not finish adding it yet. It is safe: open this screen again in a moment and we will finish it. Do not buy again.';
+
 /** The sentence for a result that is not a grant. `subscription` is true for a tier or a pass, which Restore purchases brings back. */
 export function said(result: PurchaseResult, os: Os | null, subscription: boolean): Said | null {
   switch (result.kind) {
@@ -32,7 +34,11 @@ export function said(result: PurchaseResult, os: Os | null, subscription: boolea
     case 'unreachable':
       return { tone: 'warning', line: STILL_CONFIRMING };
     case 'taken':
-      return { tone: 'danger', line: 'This purchase is already used on another account.' };
+      return { tone: 'danger', line: 'Another WAWU account already uses this store purchase or subscription. Sign in to that account, or cancel it in the store.' };
+    case 'update_app':
+      return { tone: 'danger', line: 'This version of the app can not take this purchase. Update the app, then try again.' };
+    case 'grant_failed':
+      return { tone: 'warning', line: GRANT_FAILED };
     case 'pass_unavailable':
       return { tone: 'danger', line: result.message };
     case 'unknown_product':

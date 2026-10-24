@@ -90,7 +90,7 @@ const creditProduct = (n: number, credits: number) => ({
   subscription: false,
   grants: { points: null, credits, tierId: null, days: null },
 });
-const STORE_PRODUCTS = ok({ platform: 'ios', available: true, reason: null, products: [creditProduct(1, 50), creditProduct(2, 120), creditProduct(3, 300)] });
+const STORE_PRODUCTS = ok({ platform: 'ios', available: true, reason: null, accountToken: '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6', products: [creditProduct(1, 50), creditProduct(2, 120), creditProduct(3, 300)] });
 
 function serve(over: Record<string, Answer[]> = {}) {
   answers = {

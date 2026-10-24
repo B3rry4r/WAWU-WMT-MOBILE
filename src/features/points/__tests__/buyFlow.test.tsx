@@ -93,6 +93,9 @@ describe('PT4 · Buy points in the store sheet', () => {
     expect(rtl.screen.getByTestId('buy-added-title').props.children).toBe('2,750 points added');
     expect(hub.bodies).toEqual([{ platform: 'ios', productId: 'africa.wawu.points.2750', transactionId: '1001' }]);
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.points.2750', isConsumable: true }]);
+    // The store binds the purchase to the person with the Hub's account token, not the user id.
+    expect(JSON.stringify(fakeStore.requests[0])).toContain(hub.accountToken);
+    expect(JSON.stringify(fakeStore.requests[0])).not.toContain('"me"');
     expect(await rtl.screen.findByTestId('buy-added-balance')).toBeTruthy();
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('buy-done')));
     expect(props.onDone).toHaveBeenCalledTimes(1);
@@ -145,6 +148,36 @@ describe('PT4 · Buy points in the store sheet', () => {
     await renderSignedIn(<BuyScreen onBack={jest.fn()} onDone={jest.fn()} />);
     await rtl.screen.findByTestId('buy-packs');
     expect((await rtl.screen.findAllByText('Founding +10%')).length).toBe(3);
+  });
+});
+
+describe('PT4 · the Hub’s newer answers, by cause', () => {
+  it('"update the app" says so plainly, and nothing is finished', async () => {
+    await boot();
+    await rtl.screen.findByTestId('buy-packs');
+    hub.answer = 'store_account_token_missing';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('buy-pay')));
+    expect(await rtl.screen.findByText('This version of the app can not take this purchase. Update the app, then try again.')).toBeTruthy();
+    expect(fakeStore.finished).toEqual([]);
+  });
+
+  it('a payment the store has and the Hub could not finish adding yet says so, stays open, and is finished when the screen opens again', async () => {
+    await boot();
+    await rtl.screen.findByTestId('buy-packs');
+    hub.answer = 'store_grant_failed';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('buy-pay')));
+    expect(await rtl.screen.findByText(/we could not finish adding it yet/)).toBeTruthy();
+    expect(fakeStore.finished).toEqual([]);
+    expect(rtl.screen.queryByTestId('buy-added')).toBeNull();
+  });
+
+  it('another person already holding the purchase is said by that cause', async () => {
+    await boot();
+    await rtl.screen.findByTestId('buy-packs');
+    hub.answer = 'store_purchase_taken';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('buy-pay')));
+    expect(await rtl.screen.findByText(/Another WAWU account already uses this store purchase or subscription/)).toBeTruthy();
+    expect(fakeStore.finished).toEqual([]);
   });
 });
 

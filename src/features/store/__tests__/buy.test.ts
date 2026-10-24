@@ -12,6 +12,12 @@ import { fakeStore } from '../testing/fakeIap';
  * cause, with the store transaction left open unless the Hub answered 201.
  */
 jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMock);
+const mockVault = new Map<string, string>();
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
+  setItemAsync: jest.fn(async (key: string, value: string) => void mockVault.set(key, value)),
+  deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
+}));
 
 const buyModule = () => require('../buy') as typeof import('../buy');
 const iapModule = () => require('../iap') as typeof import('../iap');
@@ -46,9 +52,12 @@ const passProduct = (platform: 'android' | 'ios'): HubProduct => ({
 });
 const itemOf = (product: HubProduct, offerToken: string | null = null): StoreItem => ({ product, price: '₦2,500.00', offerToken });
 const ROOM = '3f2b1c9e-7a44-4d0e-9a55-0c6d9f1b2a77';
+const TOKEN = '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6';
+const USER_ID = 'user-me-0001';
 
 let os: 'ios' | 'android' = 'ios';
 beforeEach(() => {
+  mockVault.clear();
   fakeStore.reset();
   hub.reset();
   installHub();
@@ -72,7 +81,7 @@ describe('a pack bought on the App Store', () => {
     moduleMock.finishTransaction.mockImplementationOnce(async () => {
       order.push(`finish after ${hub.bodies.length} hub call`);
     });
-    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' });
+    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN });
     expect(result).toMatchObject({ kind: 'granted', finished: true, purchase: { alreadyGranted: false, grant: { points: 1000 } } });
     // The App Store gets the transaction id, never a token; the Hub is asked once.
     expect(hub.bodies).toEqual([{ platform: 'ios', productId: 'africa.wawu.points.1000', transactionId: '1001' }]);
@@ -84,10 +93,10 @@ describe('a pack bought on the App Store', () => {
     const product = pack('ios');
     hub.products = [product];
     fakeStore.finishFails = true;
-    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' });
+    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN });
     expect(result).toMatchObject({ kind: 'granted', finished: false });
     fakeStore.finishFails = false;
-    await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' });
+    await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN });
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.points.1000', isConsumable: true }]);
   });
 
@@ -95,7 +104,7 @@ describe('a pack bought on the App Store', () => {
     const product = pack('ios');
     hub.products = [product];
     fakeStore.next = { kind: 'error', code: 'user-cancelled' };
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'cancelled' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'cancelled' });
     expect(hub.bodies).toEqual([]);
     expect(fakeStore.finished).toEqual([]);
   });
@@ -104,7 +113,7 @@ describe('a pack bought on the App Store', () => {
     const product = pack('ios');
     hub.products = [product];
     fakeStore.next = { kind: 'pending' };
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'store_pending' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'store_pending' });
     expect(hub.bodies).toEqual([]);
   });
 
@@ -112,12 +121,12 @@ describe('a pack bought on the App Store', () => {
     const product = pack('ios');
     hub.products = [product];
     fakeStore.next = { kind: 'error', code: 'network-error' };
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'network' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'network' });
     fakeStore.next = { kind: 'reject', code: 'item-unavailable' };
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'item_unavailable' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'item_unavailable' });
     fakeStore.connectOk = false;
     iapModule().resetIapForTests();
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'store_unavailable' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'store_unavailable' });
     expect(hub.bodies).toEqual([]);
   });
 
@@ -125,9 +134,9 @@ describe('a pack bought on the App Store', () => {
     const product = pack('ios');
     hub.products = [product];
     fakeStore.next = { kind: 'error', code: 'already-owned' };
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'already_owned' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'already_owned' });
     fakeStore.owned = [{ id: 'tx-old', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '777' }];
-    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' });
+    const result = await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN });
     expect(result).toMatchObject({ kind: 'granted', finished: true });
     expect(hub.bodies.at(-1)).toMatchObject({ transactionId: '777' });
   });
@@ -146,6 +155,8 @@ describe('what the Hub can answer, and what the store transaction does then', ()
     ['network', { kind: 'unreachable' }],
     ['server', { kind: 'unreachable' }],
     ['store_purchase_taken', { kind: 'taken' }],
+    ['store_account_token_missing', { kind: 'update_app' }],
+    ['store_grant_failed', { kind: 'grant_failed' }],
     ['store_product_unknown', { kind: 'unknown_product' }],
     ['store_purchase_invalid', { kind: 'invalid', message: 'The Hub said so.' }],
     ['store_pass_not_available', { kind: 'pass_unavailable', message: 'The Hub said so.' }],
@@ -153,7 +164,7 @@ describe('what the Hub can answer, and what the store transaction does then', ()
     const product = pack('ios');
     hub.products = [product];
     hub.answer = answer;
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual(expected);
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual(expected);
     expect(fakeStore.finished).toEqual([]);
   });
 
@@ -161,7 +172,7 @@ describe('what the Hub can answer, and what the store transaction does then', ()
     const product = pack('ios');
     hub.products = [product];
     hub.answer = 'network';
-    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'unreachable' });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'unreachable' });
     // The store still holds it (nothing was finished).
     fakeStore.owned = [{ id: 'tx-1', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '1001' }];
     hub.answer = 'ok';
@@ -185,7 +196,7 @@ describe('a subscription bought on Google Play', () => {
     const product = tier('android');
     hub.products = [product];
     fakeStore.next = { kind: 'buy', purchase: { purchaseToken: 'play-token-1', isAcknowledgedAndroid: false } };
-    const result = await buyModule().purchase(itemOf(product, 'offer-abc'), { platform: 'android', accountId: 'me' });
+    const result = await buyModule().purchase(itemOf(product, 'offer-abc'), { platform: 'android', accountToken: TOKEN });
     expect(result).toMatchObject({ kind: 'granted', purchase: { grant: { tierId: 'verify' } } });
     expect(hub.bodies).toEqual([{ platform: 'android', productId: 'africa.wawu.tier.verify', purchaseToken: 'play-token-1' }]);
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.tier.verify', isConsumable: false }]);
@@ -197,7 +208,7 @@ describe('a subscription bought on Google Play', () => {
   it('an upgrade names the tier it replaces, so Google Play changes the subscription instead of adding another', async () => {
     const product = tier('android');
     hub.products = [product];
-    await buyModule().purchase(itemOf(product, 'offer-abc'), { platform: 'android', accountId: 'me', replace: { productId: 'africa.wawu.tier.old', purchaseToken: 'old-token' } });
+    await buyModule().purchase(itemOf(product, 'offer-abc'), { platform: 'android', accountToken: TOKEN, replace: { productId: 'africa.wawu.tier.old', purchaseToken: 'old-token' } });
     const asked = JSON.stringify(fakeStore.requests[0]);
     expect(asked).toContain('old-token');
     expect(asked).toContain('africa.wawu.tier.old');
@@ -207,7 +218,7 @@ describe('a subscription bought on Google Play', () => {
   it('a pass carries its room to the Hub and to the store, so a payment taken but not delivered still knows its room', async () => {
     const product = passProduct('android');
     hub.products = [product];
-    const result = await buyModule().purchase(itemOf(product, 'offer-pass'), { platform: 'android', accountId: 'me', communityId: ROOM });
+    const result = await buyModule().purchase(itemOf(product, 'offer-pass'), { platform: 'android', accountToken: TOKEN, communityId: ROOM });
     expect(result).toMatchObject({ kind: 'granted', purchase: { grant: { communityId: ROOM } } });
     expect(hub.bodies[0]).toMatchObject({ communityId: ROOM });
     expect(JSON.stringify(fakeStore.requests[0])).toContain(ROOM);
@@ -245,24 +256,103 @@ describe('a subscription bought on Google Play', () => {
   });
 });
 
+/** What the purchase call hands the store, as the module takes it. */
+const asked = (n = 0) => fakeStore.requests[n] as { type: string; request: { apple: { sku: string; appAccountToken?: string }; google: { obfuscatedAccountId?: string; obfuscatedProfileId?: string } } };
+
+describe('the account token binds every purchase to the person', () => {
+  it('on the App Store the token is the app account token of a pack, a tier and a pass; never the user id', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    hub.products = [pack('ios'), tier('ios'), passProduct('ios')];
+    for (const product of hub.products) await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM });
+    expect(fakeStore.requests).toHaveLength(3);
+    for (let i = 0; i < 3; i += 1) expect(asked(i).request.apple.appAccountToken).toBe(TOKEN);
+    expect(JSON.stringify(fakeStore.requests)).not.toContain(USER_ID);
+    // The room does not ride in the App Store's field: it holds the token.
+    expect(JSON.stringify(asked(2).request.apple)).not.toContain(ROOM);
+  });
+
+  it('on Google Play the token is the obfuscated account id of a pack, a tier and a pass, and the room is the pass\'s profile id', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    hub.products = [pack('android'), tier('android'), passProduct('android')];
+    for (const product of hub.products) await buyModule().purchase(itemOf(product, 'offer'), { platform: 'android', accountToken: TOKEN, communityId: ROOM });
+    for (let i = 0; i < 3; i += 1) expect(asked(i).request.google.obfuscatedAccountId).toBe(TOKEN);
+    expect(asked(0).request.google.obfuscatedProfileId).toBeUndefined();
+    expect(asked(2).request.google.obfuscatedProfileId).toBe(ROOM);
+    expect(JSON.stringify(fakeStore.requests)).not.toContain(USER_ID);
+  });
+
+  it('with no token from the Hub the app sends none (and never falls back to the user id)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    hub.products = [pack('ios')];
+    await buyModule().purchase(itemOf(pack('ios')), { platform: 'ios', accountToken: null });
+    expect(asked().request.apple.appAccountToken).toBeUndefined();
+    expect(asked().request.google.obfuscatedAccountId).toBeUndefined();
+  });
+
+  it('a pass bought on the App Store whose payment was taken before the Hub was told is finished with the room this phone kept, once', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    hub.answer = 'network';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toEqual({ kind: 'unreachable' });
+    fakeStore.owned = [{ id: 'tx-1', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '1001' }];
+    hub.answer = 'ok';
+    const found = await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(found.granted).toHaveLength(1);
+    expect(hub.bodies.at(-1)).toMatchObject({ transactionId: '1001', communityId: ROOM });
+    // Granted: what the phone kept is let go, so a running pass nobody is owed for is left alone from here on.
+    hub.bodies = [];
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(0);
+    expect(hub.bodies).toEqual([]);
+  });
+
+  it('a tier bought on the App Store whose payment was taken before the Hub was told is finished by the next recovery; a running tier nobody is owed for is not sent', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = tier('ios');
+    hub.products = [product];
+    fakeStore.owned = [{ id: 'run', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '900' }];
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(0);
+    expect(hub.bodies).toEqual([]);
+    hub.answer = 'network';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'unreachable' });
+    hub.answer = 'ok';
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(1);
+  });
+
+  it('"update the app" and "paid but not granted yet" leave the transaction open; the second is finished by the next recovery', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = pack('ios');
+    hub.products = [product];
+    hub.answer = 'store_account_token_missing';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'update_app' });
+    hub.answer = 'store_grant_failed';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'grant_failed' });
+    expect(fakeStore.finished).toEqual([]);
+    fakeStore.owned = [{ id: 'tx-2', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '1002' }];
+    hub.answer = 'ok';
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(1);
+    expect(fakeStore.finished).toEqual([{ productId: product.storeProductId, isConsumable: true }]);
+  });
+});
+
 describe('a phone with no store', () => {
   it('the web build says the store is unavailable and opens nothing', async () => {
     jest.replaceProperty(Platform, 'OS', 'web');
     iapModule().resetIapForTests();
     expect(iapModule().storeOs()).toBeNull();
-    expect(await buyModule().purchase(itemOf(pack('ios')), { platform: 'ios', accountId: 'me' })).toEqual({ kind: 'store_unavailable' });
+    expect(await buyModule().purchase(itemOf(pack('ios')), { platform: 'ios', accountToken: TOKEN })).toEqual({ kind: 'store_unavailable' });
     expect(hub.bodies).toEqual([]);
   });
 
   it('a build without the module reads as "the store is not available", not a crash', async () => {
     jest.replaceProperty(Platform, 'OS', 'ios');
+    // A module that will not load (it is read when first needed). This runs last: the registry is reset, so the shared stand-in is not the one the other tests hold.
     jest.resetModules();
     jest.doMock('expo-iap', () => {
       throw new Error('Cannot find native module ExpoIap');
     });
     const fresh = require('../iap') as typeof import('../iap');
     expect(await fresh.connect()).toBe(false);
-    expect(await fresh.buy({ storeProductId: 'x', subscription: false, offerToken: null, accountId: null, communityId: null, replace: null })).toEqual({ ok: false, cause: 'store_unavailable' });
-    jest.dontMock('expo-iap');
+    expect(await fresh.buy({ storeProductId: 'x', subscription: false, offerToken: null, accountToken: null, communityId: null, replace: null })).toEqual({ ok: false, cause: 'store_unavailable' });
   });
 });

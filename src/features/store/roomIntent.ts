@@ -1,0 +1,54 @@
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+
+import { bounded } from '@/features/claim/localStore';
+
+/**
+ * A subscription being bought, and the room if it is a pass, kept on the phone until the Hub has the purchase (IAP-02).
+ *
+ * The App Store's one account field carries the person's account token, so a pass bought there can not carry its room, and the store does not
+ * say whether a running subscription was ever handed to the Hub. If the app is closed after the store took the payment and before the Hub was
+ * told, the recovery that finishes it later reads here that this person owes the Hub this product, and which room. Google Play keeps the room
+ * in the purchase itself (its profile id) and says whether it was acknowledged, so it needs this only for the room's absence. One entry per
+ * person (their account token, which is not the user id); an entry nobody finished is not trusted after a month. Every call is bounded and never throws.
+ */
+type Entry = { productId: string; communityId: string | null; at: number };
+
+const KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+const onWeb = Platform.OS === 'web';
+const keyOf = (token: string) => `wmt.store.room.${token}`;
+
+const read = (key: string): Promise<string | null> => bounded(async () => (onWeb ? (globalThis.localStorage?.getItem(key) ?? null) : SecureStore.getItemAsync(key)), null);
+const write = (key: string, value: string | null): Promise<boolean> =>
+  bounded(async () => {
+    if (onWeb) {
+      if (value === null) globalThis.localStorage?.removeItem(key);
+      else globalThis.localStorage?.setItem(key, value);
+    } else if (value === null) await SecureStore.deleteItemAsync(key);
+    else await SecureStore.setItemAsync(key, value);
+    return true;
+  }, false);
+
+/** Remembers the subscription (and its room) before the store sheet opens. */
+export async function rememberBuy(token: string | null, productId: string, communityId: string | null): Promise<void> {
+  if (!token) return;
+  await write(keyOf(token), JSON.stringify({ productId, communityId, at: Date.now() } satisfies Entry));
+}
+
+/** What this person was buying of this product, if one was kept and is still trusted: its room (null for a tier). Null when nothing is owed. */
+export async function pendingBuy(token: string | null, productId: string, now: number = Date.now()): Promise<{ communityId: string | null } | null> {
+  if (!token) return null;
+  try {
+    const raw = await read(keyOf(token));
+    const e = raw ? (JSON.parse(raw) as Partial<Entry>) : null;
+    if (!e || e.productId !== productId || typeof e.at !== 'number' || now - e.at > KEEP_MS) return null;
+    return { communityId: typeof e.communityId === 'string' ? e.communityId : null };
+  } catch {
+    return null;
+  }
+}
+
+/** The Hub has the purchase: the entry is not needed. */
+export async function forgetBuy(token: string | null): Promise<void> {
+  if (token) await write(keyOf(token), null);
+}

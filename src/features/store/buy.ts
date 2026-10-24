@@ -3,6 +3,7 @@ import { sendPurchase } from './api';
 import * as iap from './iap';
 import type { StoreCause, StoreTransaction } from './iap';
 import type { StoreItem } from './model';
+import { forgetBuy, pendingBuy, rememberBuy } from './roomIntent';
 
 /**
  * Buying through the store sheet, from tap to grant (IAP-02, R-86). The order is the point:
@@ -30,6 +31,10 @@ export type PurchaseResult =
   /** The store took the payment and the Hub could not confirm it yet. The transaction is left open and goes again (Restore, the next open). */
   | { kind: 'unreachable' }
   | { kind: 'taken' }
+  /** The Hub says the purchase carried no account token: this version of the app can not take it. */
+  | { kind: 'update_app' }
+  /** The store has the payment and the Hub could not finish giving it yet. The transaction is left open and goes again. */
+  | { kind: 'grant_failed' }
   | { kind: 'pass_unavailable'; message: string }
   | { kind: 'unknown_product' }
   | { kind: 'invalid'; message: string }
@@ -38,8 +43,8 @@ export type PurchaseResult =
 
 export type BuyOptions = {
   platform: Platform;
-  /** The signed-in account (Google Play's obfuscated account id). */
-  accountId: string | null;
+  /** The person's account token from `GET /store/products` (never the user id): Google Play's obfuscated account id and the App Store's app account token. */
+  accountToken: string | null;
   /** The room, for a pass. */
   communityId?: string | null;
   /** A running subscription this one replaces (an upgrade). */
@@ -106,11 +111,13 @@ function fromOutcome(outcome: SendOutcome & { finished?: boolean }): PurchaseRes
 export async function purchase(item: StoreItem, options: BuyOptions): Promise<PurchaseResult> {
   const { product } = item;
   const communityId = product.kind === 'pass' ? (options.communityId ?? null) : null;
+  // The App Store's account field is taken by the token, so a subscription (and a pass's room) is kept on the phone until the Hub has the purchase.
+  if (product.subscription) await rememberBuy(options.accountToken, product.storeProductId, communityId);
   const bought = await iap.buy({
     storeProductId: product.storeProductId,
     subscription: product.subscription,
     offerToken: item.offerToken,
-    accountId: options.accountId,
+    accountToken: options.accountToken,
     communityId,
     replace: options.replace ?? null,
   });
@@ -120,9 +127,15 @@ export async function purchase(item: StoreItem, options: BuyOptions): Promise<Pu
     const found = (await iap.owned()).find((t) => t.productId === product.storeProductId);
     if (!found) return { kind: 'already_owned' };
     const outcome = await hand(options.platform, product, found, communityId ?? found.communityId);
-    return outcome.kind === 'granted' ? fromOutcome(outcome) : outcome.kind === 'unreachable' ? { kind: 'unreachable' } : { kind: 'already_owned' };
+    if (outcome.kind === 'granted') {
+      if (product.subscription) await forgetBuy(options.accountToken);
+      return fromOutcome(outcome);
+    }
+    return outcome.kind === 'unreachable' || outcome.kind === 'grant_failed' ? { kind: outcome.kind } : { kind: 'already_owned' };
   }
-  return fromOutcome(await hand(options.platform, product, bought.transaction, communityId));
+  const outcome = await hand(options.platform, product, bought.transaction, communityId);
+  if (outcome.kind === 'granted' && product.subscription) await forgetBuy(options.accountToken);
+  return fromOutcome(outcome);
 }
 
 export type Recovery = {
@@ -141,19 +154,27 @@ export type Recovery = {
  * acknowledged (Restore purchases). Without it only what is still open at the store: a pack not yet consumed, a purchase not yet
  * acknowledged. A transaction of a product the Hub does not sell, or a pass whose room is not known, is left alone.
  */
-export async function recover(products: readonly StoreProductView[], options: { platform: Platform; all: boolean; transactions?: StoreTransaction[] }): Promise<Recovery> {
+export async function recover(
+  products: readonly StoreProductView[],
+  options: { platform: Platform; all: boolean; transactions?: StoreTransaction[]; accountToken?: string | null },
+): Promise<Recovery> {
   const result: Recovery = { granted: [], already: 0, left: 0, notOpen: false };
   const held = options.transactions ?? (await iap.owned());
   for (const t of held) {
     const product = products.find((p) => p.storeProductId === t.productId);
     if (!product || t.pending) continue;
-    if (!options.all && product.subscription && t.acknowledged !== false) continue;
-    const communityId = product.kind === 'pass' ? t.communityId : null;
+    // A running subscription the store already acknowledged is handed over only by Restore, or when this phone remembers it owes the Hub this
+    // product (the App Store never says whether the Hub was told).
+    const owed = product.subscription ? await pendingBuy(options.accountToken ?? null, product.storeProductId) : null;
+    if (!options.all && product.subscription && t.acknowledged !== false && !owed) continue;
+    // A pass needs its room: Google Play kept it in the purchase; on the App Store it is the one this phone remembered for this product.
+    const communityId = product.kind === 'pass' ? (t.communityId ?? owed?.communityId ?? null) : null;
     if (product.kind === 'pass' && !communityId) continue;
     const outcome = await hand(options.platform, product, t, communityId);
     if (outcome.kind === 'granted') {
       if (outcome.purchase.alreadyGranted) result.already += 1;
       else result.granted.push(outcome.purchase);
+      if (product.subscription) await forgetBuy(options.accountToken ?? null);
     } else if (outcome.kind === 'not_open') result.notOpen = true;
     else if (outcome.kind !== 'taken') result.left += 1;
   }

@@ -5,6 +5,7 @@ import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
+import { Banner } from '@/components/Banner';
 import { Button, IconButton } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow, ListRow } from '@/components/ListRow';
@@ -22,7 +23,7 @@ import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchHostHandle, fetchPass, hostKey, passKey, type PassView } from './api';
-import { BLOCKED_LINE, endedLine, GATE_LINE, joinedLine, runningLine } from './model';
+import { BLOCKED_LINE, CANCEL_IN_STORE_LINE, endedLine, GATE_LINE, joinedLine, runningLine } from './model';
 
 const GAP = 16;
 const BODY_TOP = 26;
@@ -143,7 +144,12 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
     body = <Joined headline="You host this room" line="You are always inside, and members pay you for each pass." pill={false} />;
     footer = <Button label="Open the room" full onPress={enter} testID="pass-open" />;
   } else if (blocked) {
-    body = <EmptyState testID="pass-blocked" icon="Lock" title="Removed by the host" message={BLOCKED_LINE} />;
+    body = (
+      <>
+        <EmptyState testID="pass-blocked" icon="Lock" title="Removed by the host" message={BLOCKED_LINE} />
+        {pass.cancelInStore ? <Banner testID="pass-cancel-in-store" tone="warning" title="Cancel it in the store" body={CANCEL_IN_STORE_LINE} /> : null}
+      </>
+    );
     footer = null;
   } else if (pass.active) {
     // I31 reopened: a running pass. The store renews it until the person cancels there; Restore brings it back on a new phone.

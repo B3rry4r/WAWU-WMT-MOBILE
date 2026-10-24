@@ -158,6 +158,7 @@ describe('VF6 · checkout in the store sheet', () => {
     expect(hub.bodies).toEqual([{ platform: 'android', productId: 'africa.wawu.tier.plus', purchaseToken: 'token-1' }]);
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.tier.plus', isConsumable: false }]);
     expect(JSON.stringify(fakeStore.requests[0])).toContain('offer-plus');
+    expect((fakeStore.requests[0] as { request: { google: { obfuscatedAccountId?: string } } }).request.google.obfuscatedAccountId).toBe(hub.accountToken);
   });
 
   it('an upgrade replaces the running tier in the store instead of adding another', async () => {

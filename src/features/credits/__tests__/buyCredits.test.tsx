@@ -82,6 +82,7 @@ describe('I28 · Buy WAWU Credits in the store sheet', () => {
     expect(rtl.screen.getByTestId('credits-added-title').props.children).toBe('300 credits added');
     expect(hub.bodies).toEqual([{ platform: 'android', productId: 'africa.wawu.credits.300', purchaseToken: 'token-1' }]);
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.credits.300', isConsumable: true }]);
+    expect((fakeStore.requests[0] as { request: { google: { obfuscatedAccountId?: string } } }).request.google.obfuscatedAccountId).toBe(hub.accountToken);
     expect(await rtl.screen.findByText('You have 170 credits.')).toBeTruthy();
     await tap('credits-added-done');
     expect(props.onClose).toHaveBeenCalled();

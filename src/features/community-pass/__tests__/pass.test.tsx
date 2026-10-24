@@ -82,6 +82,7 @@ describe('I30 · Private, pay to join, in the store sheet', () => {
     // A subscription is acknowledged, never consumed.
     expect(fakeStore.finished).toEqual([{ productId: 'africa.wawu.pass.month', isConsumable: false }]);
     expect(JSON.stringify(fakeStore.requests[0])).toContain('offer-month');
+    expect((fakeStore.requests[0] as { request: { google: { obfuscatedAccountId?: string; obfuscatedProfileId?: string } } }).request.google).toMatchObject({ obfuscatedAccountId: hub.accountToken, obfuscatedProfileId: ID });
     expect(rtl.screen.getByTestId('pass-joined-line').props.children).toMatch(/runs to 1 December/);
   });
 
@@ -131,6 +132,19 @@ describe('I30 · Private, pay to join, in the store sheet', () => {
     expect(await rtl.screen.findByTestId('pass-blocked')).toBeTruthy();
     expect(rtl.screen.getByText('The host has removed you from this room. Ask the host to let you back in.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
+  });
+
+  it('a removed member who still holds the store subscription is told to cancel it in the store', async () => {
+    await boot({ ...newMember, active: true, canBuy: false, canRenew: false, passUntil: '2026-11-16T12:00:00.000Z', cancelInStore: true });
+    expect(await rtl.screen.findByTestId('pass-cancel-in-store')).toBeTruthy();
+    expect(rtl.screen.getByText(/keeps billing you until you cancel it there/)).toBeTruthy();
+    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
+  });
+
+  it('a removed member with no store subscription is not told to cancel anything', async () => {
+    await boot({ ...newMember, active: true, canBuy: false, canRenew: false, passUntil: '2026-11-16T12:00:00.000Z', cancelInStore: false });
+    expect(await rtl.screen.findByTestId('pass-blocked')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('pass-cancel-in-store')).toBeNull();
   });
 
   it('the Hub not open for Google Play yet says plainly that buying is not open yet', async () => {

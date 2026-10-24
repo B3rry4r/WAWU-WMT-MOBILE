@@ -8385,7 +8385,11 @@ export interface paths {
          *     `available` is false (with a `reason`) when the Hub has no credentials for
          *     that store yet or an admin has switched it off, and then no product is
          *     listed. A price is never here: the app shows the store's own, in the
-         *     person's own currency.
+         *     person's own currency. `accountToken` is the signed-in person's own id
+         *     for the stores: the app MUST pass it to Google Play Billing as
+         *     `obfuscatedAccountIdAndroid` and to StoreKit as `appAccountToken` when it
+         *     starts a purchase; a purchase that carries another person's token, or none,
+         *     is refused.
          */
         get: operations["StoreController_products"];
         put?: never;
@@ -8416,8 +8420,8 @@ export interface paths {
          *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
          *     `store_product_unknown` (404), `store_receipt_missing` (400),
          *     `store_purchase_invalid` (422), `store_purchase_pending`,
-         *     `store_purchase_taken` (the transaction belongs to another account),
-         *     `store_pass_not_available` and `store_unreachable` (503, safe to repeat).
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
          */
         post: operations["StoreController_buy"];
         delete?: never;
@@ -15404,6 +15408,7 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
+            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;
@@ -16112,6 +16117,8 @@ export interface components {
             takenBack: {
                 [key: string]: unknown;
             } | null;
+            flag: string | null;
+            flaggedAt: string | null;
         };
         AdminStorePurchasePageView: {
             items: components["schemas"]["AdminStorePurchaseView"][];
@@ -16131,6 +16138,7 @@ export interface components {
         StoreProductListView: {
             /** @enum {string} */
             platform: "android" | "ios";
+            accountToken: string;
             available: boolean;
             /** @enum {string|null} */
             reason: "store_not_configured" | "store_disabled" | null;
@@ -16156,6 +16164,7 @@ export interface components {
             grant: components["schemas"]["StoreGrantedView"];
             purchasedAt: string;
             expiresAt: string | null;
+            flag: string | null;
         };
         StoreWebhookAck: {
             received: boolean;

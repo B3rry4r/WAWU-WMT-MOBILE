@@ -115,17 +115,19 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
   }, []);
 
   const products = catalog?.available ? catalog.products : null;
+  // The person's account token from the Hub: the stores bind every purchase to it (never the user id).
+  const token = catalog?.accountToken ? catalog.accountToken : null;
   useEffect(() => {
     if (!products || !os || !owner || products.length === 0) return;
     const once = `${owner}:${products.map((p) => p.storeProductId).join(',')}`;
     if (recovering.current === once) return;
     recovering.current = once;
-    void recover(products, { platform: os, all: false }).then((found) => {
+    void recover(products, { platform: os, all: false, accountToken: token }).then((found) => {
       if (!alive.current || found.granted.length === 0) return;
       setRecovered(found.granted);
       refreshAfterGrant();
     });
-  }, [products, os, owner]);
+  }, [products, os, owner, token]);
 
   const buy = useCallback<StoreBuyer['buy']>(
     async (item, options) => {
@@ -135,14 +137,14 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
       setLine(null);
       setGranted(null);
       try {
-        const result = await purchase(item, { platform: os, accountId: owner ?? null, communityId: options?.communityId ?? null, replace: options?.replace ?? null });
+        const result = await purchase(item, { platform: os, accountToken: token, communityId: options?.communityId ?? null, replace: options?.replace ?? null });
         if (!alive.current) return result;
         if (result.kind === 'granted') {
           setGranted(result.purchase);
           refreshAfterGrant();
         } else {
           setLine(said(result, os, item.product.subscription));
-          if (result.kind === 'unreachable') refreshAfterGrant();
+          if (result.kind === 'unreachable' || result.kind === 'grant_failed') refreshAfterGrant();
         }
         return result;
       } finally {
@@ -150,7 +152,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
         if (alive.current) setBusy(false);
       }
     },
-    [os, owner],
+    [os, token],
   );
 
   const restore = useCallback(async () => {
@@ -161,7 +163,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     setLine(null);
     try {
       const transactions = await iap.restore();
-      const found = await recover(products, { platform: os, all: true, transactions });
+      const found = await recover(products, { platform: os, all: true, transactions, accountToken: token });
       if (!alive.current) return;
       if (found.notOpen) setLine(said({ kind: 'not_open', why: 'not_configured' }, os, true));
       else setRestoreLine(found.left > 0 ? said({ kind: 'unreachable' }, os, true)?.line ?? null : restoredLine(found.granted.length, found.already));
@@ -175,7 +177,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
       running.current = false;
       if (alive.current) setRestoring(false);
     }
-  }, [os, products]);
+  }, [os, products, token]);
 
   const clear = useCallback(() => {
     setLine(null);

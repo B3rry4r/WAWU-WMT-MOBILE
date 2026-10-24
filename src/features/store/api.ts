@@ -37,7 +37,8 @@ export function readCatalog(value: unknown, platform: Platform): StoreCatalog {
     return p as StoreProductView;
   });
   const reason = v.reason === 'store_not_configured' || v.reason === 'store_disabled' ? v.reason : null;
-  return { platform, available: v.available, reason, products };
+  // The person's account token, which every purchase must carry. An answer without one is still drawn: the Hub decides what it accepts.
+  return { platform, available: v.available, reason, accountToken: filled(v.accountToken) ? v.accountToken : '', products };
 }
 
 /** GET /store/products for this phone's store. */
@@ -61,8 +62,12 @@ export type SendOutcome =
   | { kind: 'store_pending' }
   /** The Hub, or the Hub's call to the store, could not be reached (no connection, a 5xx, `store_unreachable`, a 201 that cannot be read). Safe to send again. */
   | { kind: 'unreachable' }
-  /** `store_purchase_taken`: another WAWU account has already used this store purchase. */
+  /** `store_purchase_taken`: another person already uses this store purchase or subscription, or it was made with another person's token. */
   | { kind: 'taken' }
+  /** `store_account_token_missing` (422): the purchase carries no account token, so this version of the app did not bind it to the person. Update the app. */
+  | { kind: 'update_app' }
+  /** `store_grant_failed` (500): the store has the payment and the Hub could not finish giving it. The transaction stays open and goes again. */
+  | { kind: 'grant_failed' }
   /** `store_pass_not_available`: the room cannot be joined with a pass (not sold, you host it, removed). The Hub's sentence. */
   | { kind: 'pass_unavailable'; message: string }
   /** `store_product_unknown`: the Hub no longer sells this product. */
@@ -104,6 +109,10 @@ export async function sendPurchase(input: SendInput): Promise<SendOutcome> {
         return { kind: 'unreachable' };
       case 'store_purchase_taken':
         return { kind: 'taken' };
+      case 'store_account_token_missing':
+        return { kind: 'update_app' };
+      case 'store_grant_failed':
+        return { kind: 'grant_failed' };
       case 'store_pass_not_available':
         return { kind: 'pass_unavailable', message };
       case 'store_product_unknown':

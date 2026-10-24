@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B28, T2, a native module), mobile `wmt/IAP-02` on `origin/main` `b1e6681f`, with the Hub's contract copied from backend `wmt/IAP-01` `8e7e16a` (`GET /store/products`, `POST /store/purchases`; not merged yet, the lead merges the two together). Status verifying. This ships in the next STORE build, not over the air: `expo-iap` 6.1.1 is a new native module, so the runtime fingerprint changed (Android `2e0e4d99`, iOS `240378f1`).
+As of 24 Oct 2026, built by a Sonnet builder (bundle B28, T2, a native module), mobile `wmt/IAP-02` on `origin/main` `b1e6681f`, with the Hub's contract copied from backend `wmt/IAP-01` `6e92cd2` (follow-up, 24 Oct 2026; first built on `8e7e16a`) (`GET /store/products`, `POST /store/purchases`; not merged yet, the lead merges the two together). Status verifying. This ships in the next STORE build, not over the air: `expo-iap` 6.1.1 is a new native module, so the runtime fingerprint changed (Android `2e0e4d99`, iOS `240378f1`).
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -29,6 +29,8 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B28, T2, a native module), 
 | 5 | A community pass was paid from the wallet with the host's naira price | the pass is a store subscription at the store's price; the room is carried to the Hub and to the store |
 | 6 | No way to bring back a purchase | Restore purchases on the pass screen and the checkout; anything the store holds that the Hub was never given is handed over and finished when a buy screen opens |
 | 7 | the Hub not open for buying showed nothing special | `store_not_configured` says plainly "Buying is not open yet"; `store_disabled` says it is paused; no store on the phone (or the web) says buying happens in the app |
+| 8 | Purchases were not bound to the person (the user id went to Google, a pass's room to Apple) | every purchase carries the Hub's `accountToken` (`GET /store/products`, a stable UUID per person, never the user id): Google's obfuscated account id and Apple's app account token, on packs, tiers and passes. A pass's room rides in Google's profile id; on Apple the room, and any subscription bought, is kept on the phone until the Hub has it (`roomIntent.ts`) because Apple never says whether the Hub was told, so a tier or pass paid for before the Hub was told is finished by the next recovery with its room. New Hub answers by cause: `store_purchase_taken` (another person holds it), `store_account_token_missing` ("Update the app, then try again"), `store_grant_failed` (paid, not granted yet: left unfinished, finished by the next recovery). A removed member whose pass answers `cancelInStore` is told to cancel it in the store |
+
 
 ### The order of a purchase (`src/features/store`)
 

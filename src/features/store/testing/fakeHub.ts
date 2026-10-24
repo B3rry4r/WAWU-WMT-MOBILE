@@ -15,6 +15,8 @@ export type HubProduct = {
 
 export const hub = {
   open: true,
+  /** The person's account token the catalog hands the app (a stable UUID, never the user id). */
+  accountToken: '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6',
   reason: null as 'store_not_configured' | 'store_disabled' | null,
   products: [] as HubProduct[],
   /** What the next purchases answer: 'ok' grants; any other is a refusal code or 'network' / 'server'. */
@@ -48,6 +50,8 @@ const STATUS: Record<string, number> = {
   store_purchase_taken: 409,
   store_pass_not_available: 409,
   store_unreachable: 503,
+  store_account_token_missing: 422,
+  store_grant_failed: 500,
 };
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -77,7 +81,7 @@ export function installHub(): void {
       return json(200, {
         statusCode: 200,
         message: 'OK',
-        data: { platform, available: hub.open, reason: hub.open ? null : hub.reason, products: hub.open ? hub.products.filter((p) => p.platform === platform) : [] },
+        data: { platform, available: hub.open, reason: hub.open ? null : hub.reason, accountToken: hub.accountToken, products: hub.open ? hub.products.filter((p) => p.platform === platform) : [] },
       });
     }
     if (request.method === 'POST' && path === '/store/purchases') {

@@ -10,6 +10,9 @@ export const GATE_LINE = 'Members pay the host to join. Reading inside is free.'
 /** The same sentence the Hub gives when a member the host removed tries to buy a pass (`store_pass_not_available`). */
 export const BLOCKED_LINE = 'The host has removed you from this room. Ask the host to let you back in.';
 
+/** For a member the host removed who still holds the store subscription: the store keeps billing them, and a renewal gives them nothing. */
+export const CANCEL_IN_STORE_LINE = 'You still have this pass in the store, and it keeps billing you until you cancel it there. Cancel it in the store.';
+
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
 
 /** "16 November", on the phone's own clock, with the year when it is not this year. Empty when the date cannot be read. */
