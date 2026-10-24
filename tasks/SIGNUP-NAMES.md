@@ -7,7 +7,7 @@ order: -126
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: building
+status: verifying
 depends_on: []
 decisions: [R-6, R-29, R-47, R-82]
 passes: [V1, V6, V7, V9]
@@ -18,10 +18,17 @@ tier: T2
 
 ## Current state
 
-Verifier, 24 Oct 2026 (Sonnet, T2, heads: mobile `949ab60b`, Hub `0b9939e`, WAWU ID `00b9f8e`): **FIX**. Two medium findings and lows below; everything else passed (web replay identical, race one winner, live walk dark and light, full jest 5500 of 5501 with the one failure a load flake that passes alone). Open for the next round:
-- M1 (defect, Hub `src/user-profile/signup-identity.service.ts` lines 54 and 112): the "taken" test uses `equals` with `mode: 'insensitive'`, which Prisma sends as `ILIKE`, so an underscore in a typed name matches any one character. Repro: hold `sg_wXild`, then `GET /users/handle-available?handle=sg_wXil_` answers taken, and a second person claiming it gets 409 "That username is taken". Compare with `lower(handle) = lower($1)` (raw) or an exact lower-case match.
-- M2 (unclear, needs a lead ruling, PATCH is a protected route): `PATCH /users/me` (Edit profile) has neither the case-insensitive rule nor the reserved words. Repro: person A holds `Pat1`; person B `PATCH /users/me {handle:"pat1"}` answers 200, two holders. A reserved word such as `wawu` passes the same way (code reading: `UpdateUserProfileDto.handle` checks characters and length only).
-- Lows: see the Verifier report in `history/SIGNUP-NAMES.md`.
+Round 3 (24 Oct 2026, Sonnet builder, T2; mobile and Hub `wmt/SIGNUP-NAMES`, each with `origin/main` merged first; Hub `e547602`; WAWU ID not touched, still `00b9f8e`): the verifier's two mediums and lows, built. Status verifying.
+
+| # | Verifier found | Round 3 |
+|---|---|---|
+| r3-1 | M1: `mode: 'insensitive'` is `ILIKE`, so `_` matched any one character (`sg_wXild` held, `sg_wXil_` refused) | The check and the claim compare `lower(handle) = lower($1)` (raw, parameter bound). Spec: holding `sgu<stamp>_wXild` leaves `sgu<stamp>_wXil_` free and claimable (fails with the `ILIKE` form, passes now), the held name is taken in any case, and `Ada`/`ada` still collide on the check and the claim. Live on a local stack: the same. |
+| r3-2 | M2 (lead ruling): Edit profile's `PATCH /users/me` has no case-blind rule and no reserved words | `PATCH /users/me` is exactly as on main (`test:protected` 253 of 253). New `PUT /users/me/handle` beside `PUT /users/me/identity` (one rule set: the same `checkHandleShape`, `claim` and lock; it differs only in letting a person who has a username take another). The app's Edit profile no longer sends `handle` in `PATCH`: `changesOf` returns it apart, Save sends the username first (so a refusal leaves nothing half saved), then the profile, then the details, and a username already saved is not sent again on a retry. A 409 or 400 shows the Hub's sentence under the field. Specs: the app path refuses `pat1` while `Pat1` is held (409) and a reserved word (400), changes and frees the old name, two at once give one winner. Gap G-SIGNUP-NAMES-1: until the web follows after launch it can still make case-variant duplicates through `PATCH`. |
+| r3-3 | Lows (new routes only) | Reserved list gains `me`, `root`, `login`, `logout`, `signup`, `settings`, `www` (still PROVISIONAL; `admin`, `support`, `help`, `wawu`, `wawuafrica`, `whomadethis`, `api` were there); a username needs a letter or a number (`.`, `..`, `_` refused); a first or last name with a control character (NUL, tab, line break, DEL) is a 400 "Your name has a character that cannot be saved. Remove it and try again." and nothing is saved (a NUL byte was a 502). New specs for these, for an underscore in a name, and for the 60 a minute limit on `GET /users/handle-available` (the app's real throttlers behind the global guard: 60 answered, the 61st a 429 with `Retry-After`). |
+
+Assertions changed (sweep rule: a finding that names the defect is the ruling; these tests pinned the username going through `PATCH /users/me`): `form.test.ts` "sends only the fields that changed" (the username moved out of the PATCH body), `editProfile.test.tsx` "a user can edit their handle" (the PATCH body became a `PUT /users/me/handle`) and "a user who picks a handle another account has" (a PATCH 400 "handle is already taken" became a PUT 409 in the Hub's words). `serve()` gained the `PUT` default. Nothing else in a test the task did not write was touched.
+
+Verifier, 24 Oct 2026 (Sonnet, T2, heads: mobile `949ab60b`, Hub `0b9939e`, WAWU ID `00b9f8e`): **FIX**. Two medium findings and lows; the round 3 table above answers them. Everything else passed (web replay identical, race one winner, live walk dark and light, full jest 5500 of 5501 with the one failure a load flake that passes alone). L2, L4, L5 and L6 (WAWU ID's 400 for a bad name, a renamed wallet owner, the unsigned existence check, the Hub answering before WAWU ID) were not in this round's brief and are unchanged; the history file has them.
 
 As of 24 Oct 2026, built by a Sonnet builder (T2) on `origin/main` (mobile `fcbf81d4`, backend `0cd8f8e`, wawu-id `a642eea`), finished in round 2 (merged with `origin/main`: mobile `e4d88d68`, backend `21cba57`, wawu-id unchanged): mobile, backend and wawu-id `wmt/SIGNUP-NAMES`. Status verifying. Round 2 closed what round 1 left open (see Open); the live walk ran on a local stack (web export 390 x 844, Chromium).
 
@@ -47,7 +54,7 @@ Live walk (local stack: Hub, WAWU ID, web export, Nuvion stand-in and a mail sta
 
 Where the username lives: the Hub profile's `handle` (the @handle the app already shows and links to). One home, one set of rules, no second account. Unique ignoring case is kept by a lock on the lowercase name inside one short transaction (no migration: the column's index is case sensitive and old rows may already differ only by case).
 
-Routes added: Hub `GET /users/handle-available`, Hub `PUT /users/me/identity`. WAWU ID: `SignupDto` gains optional `firstName`, `lastName`. No migration. `PATCH /users/me` is unchanged; no protected route changed behaviour.
+Routes added: Hub `GET /users/handle-available`, Hub `PUT /users/me/identity`, and in round 3 Hub `PUT /users/me/handle` (Edit profile's username). WAWU ID: `SignupDto` gains optional `firstName`, `lastName`. No migration. `PATCH /users/me` is unchanged; no protected route changed behaviour.
 
 Open: (a) Closed in round 2 (r2-1). (b) Closed in round 2 (r2-2). (c) Closed in round 2 (r2-3). (d) Designer rows: DESIGN-SIGNUP-NAMES-1. (e) The reserved-word list is PROVISIONAL. (f) The walk did not drive Open your wallet's BVN step to reach "Confirm your details" on screen (a deep link to it lands on the BVN step, which comes first): the prefill is proved by the token claims the form reads (`namesOfToken`) and by its unit test, not by a picture. (g) `src/protected-routes` on a stack with the mock WAWU ID: 245 of 253 pass; the 8 that fail are verification and professional routes whose answer is a 502 from the mock's missing tick route, in code this branch does not touch; the Hub's own CI runs the suite.
 

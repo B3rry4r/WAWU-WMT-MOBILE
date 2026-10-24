@@ -16,10 +16,10 @@ import { Banner } from '@/components/Banner';
 import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
+import { changeHandle, fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
 import { ScreenFrame } from '@/components/ScreenFrame';
-import { PICK_FAILED, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
+import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
@@ -136,7 +136,16 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
 
   const save = useMutation({
     mutationFn: async () => {
-      const { profile, fields } = changesOf(form, base);
+      const { handle, profile, fields } = changesOf(form, base);
+      // The username first: it is the part another account can take, so a refusal leaves nothing else half saved.
+      if (handle) {
+        try {
+          await changeHandle(handle);
+        } catch (error) {
+          throw handleFailure(error);
+        }
+        rebaseDraft((b, f) => rebased(b, f, 'handle'));
+      }
       if (profile) {
         await patchMe(profile);
         rebaseDraft((b, f) => rebased(b, f, 'profile'));

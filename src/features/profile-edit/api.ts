@@ -12,6 +12,8 @@ import type { FieldsUpdate, MyProfile, ProfileFields, ProfileUpdate } from './fo
  *   LinkedIn);
  * - `GET` and `PATCH /users/me/profile-fields` (ME-05): location, the Threads handle and
  *   the order the social links show in;
+ * - `PUT /users/me/handle` (SIGNUP-NAMES round 3): the username (the profile's handle). It is not sent in
+ *   `PATCH /users/me`, which the web calls and which keeps its old rules;
  * - `POST /uploads/presign` for a new picture.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only
@@ -59,6 +61,11 @@ export async function fetchFields(): Promise<ProfileFields> {
 
 export async function patchMe(body: ProfileUpdate): Promise<void> {
   await unwrap(api.PATCH('/api/hub/users/me', { body }));
+}
+
+/** `PUT /users/me/handle`: the Hub's own rules for a username (unique ignoring case, words kept back). A refusal is a 409 or 400 whose message is the Hub's sentence. */
+export async function changeHandle(handle: string): Promise<void> {
+  await unwrap(api.PUT('/api/hub/users/me/handle', { body: { handle } }));
 }
 
 export async function patchFields(body: FieldsUpdate): Promise<ProfileFields> {
