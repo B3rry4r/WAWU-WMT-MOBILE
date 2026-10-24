@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B26), mobile `wmt/GEO-03` on `origin/main` `b1e6681f`. App only: no backend or WAWU ID change. The Hub side is read from backend `wmt/GEO-02` `10857b8` and WAWU ID `wmt/GEO-01` `7fb7dea` (neither merged; the contracts are copied from those commits, SHARED-CHANGES GEO-03 #4). `depends_on` is empty because the GEO-01 and GEO-02 task files are on other branches; this task needs both. Status verifying.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B26), mobile `wmt/GEO-03` on `origin/main` `b1e6681f`. App only: no backend or WAWU ID change. The Hub side is read from backend `wmt/GEO-02` `28634ce` and WAWU ID `wmt/GEO-01` `1e0faf1` (neither merged; the contracts are copied from those commits, SHARED-CHANGES GEO-03 #4). `depends_on` is empty because the GEO-01 and GEO-02 task files are on other branches; this task needs both. Status verifying.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -36,8 +36,8 @@ As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B26), mobile `wmt/GEO-0
 - **Existing assertions changed, each pinned a behaviour this task replaces:** `auth-signup.test.tsx` A3's POST body now carries `+2348031234412` (was the text as typed); `editProfile.test.tsx` four cases type into `edit-city` where they typed into `edit-location`, and the PATCH body is `{ city, location }`; `settings/logic.test.ts` `maskPhone('+447911123456')` is `+44 ••• 3456` (was `••• 3456`); `form.test.ts` fixture gains the five place keys the contract now requires (no assertion).
 - **Not drawn, filed:** G-GEO-03-4 (no board draws the country button, the sheet, A3's Country or M8's three rows), G-GEO-03-1 (the Hub's `city` limit 80 against the DTO's 100), G-GEO-03-2 (a person outside the texted countries cannot sign up while codes are texted; the app cannot offer them the mailed code), G-GEO-03-3 (recipient search by a foreign number), G-GEO-03-5 (old free text is not matched to a region).
 - **Open (blocker, high, medium):** none known. Lows go to the sweep.
-- **Checks (each EXIT line in the builder report, `history/GEO-03.md`):** __CHECKS__
-- **Pictures (390 px, light and dark):** __PICS__
+- **Checks (each EXIT line in the builder report, `history/GEO-03.md`):** tsc EXIT 0; eslint (no --fix) on the 33 changed `.ts`/`.tsx` files EXIT 0; jest, the folders and files this touches: 41 suites, 715 tests, EXIT 0 (`src/features/geo`, `auth`, `profile-edit`, `me`, `visitor`, three `settings` files, `schools` `enrolFlow`, and `auth-signup`, `auth-signup-channel`, `auth-guard`, `identity-contract`, `route-graph`, `components`, `textFieldTapBox`, `kit-components`, `hubSharedProps`, `session`), then after the last contract sync 13 suites, 146 tests, EXIT 0, and `placeBridge` 3 tests EXIT 0; gates 0 fail, 18 warn, 0 accepted, `check_baseline` EXIT 0; `check_tasks --write` EXIT 0.
+- **Pictures (390 px, light and dark):** `scratchpad/geo-03-b/pics/` (390 by 844, drawn at 2x, Chromium, dark then light): the phone field closed `phone-field-closed-<theme>.png`, open `phone-field-open-<theme>.png` and searched `phone-field-search-<theme>.png`; sign-up with Country `signup-country-<theme>.png`; Edit profile `edit-location-<theme>.png` and the region list `edit-region-open-<theme>.png`; each beside its board in `cmp-signup-<theme>.png` (A3) and `cmp-edit-profile-<theme>.png` (M8). A3 and M8 draw no country button, sheet or Country row (G-GEO-03-4); M8's board does draw Location as a tap-to-choose row with a chevron, which Country, State and City follow.
 - **Not run:** a phone; the real Hub and WAWU ID (pictures use a local stand-in that serves the Hub's own country and region data); `settingsScreens.test.tsx` (it names the Fintava double; CI runs it); the full suites.
 
 ## Read first
@@ -68,3 +68,4 @@ A person from any country signs up with their number and its country code, says 
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/GEO-03.md](history/GEO-03.md).
+

@@ -39009,43 +39009,6 @@
      "withTick"
     ]
    },
-   "AdminPlaceView": {
-    "type": "object",
-    "properties": {
-     "countryCode": {
-      "type": "string",
-      "nullable": true
-     },
-     "regionCode": {
-      "type": "string",
-      "nullable": true
-     },
-     "regionName": {
-      "type": "string",
-      "nullable": true
-     },
-     "city": {
-      "type": "string",
-      "nullable": true
-     },
-     "countrySource": {
-      "type": "string",
-      "enum": [
-       "profile",
-       "wawu_id",
-       "phone"
-      ],
-      "nullable": true
-     }
-    },
-    "required": [
-     "countryCode",
-     "regionCode",
-     "regionName",
-     "city",
-     "countrySource"
-    ]
-   },
    "AdminContentCreatorView": {
     "type": "object",
     "properties": {
@@ -39068,10 +39031,6 @@
       "type": "string",
       "nullable": true
      },
-     "place": {
-      "$ref": "#/components/schemas/AdminPlaceView",
-      "nullable": true
-     },
      "slotsUsed": {
       "type": "number",
       "nullable": true
@@ -39086,7 +39045,6 @@
      "handle",
      "accountType",
      "kycStatus",
-     "place",
      "slotsUsed",
      "slotsTotal"
     ]
@@ -44722,9 +44680,9 @@
      "medium": {
       "type": "string",
       "enum": [
-       "phone",
        "zoom",
-       "physical"
+       "physical",
+       "phone"
       ]
      },
      "label": {
@@ -44807,9 +44765,9 @@
      "medium": {
       "type": "string",
       "enum": [
-       "phone",
        "zoom",
-       "physical"
+       "physical",
+       "phone"
       ]
      },
      "label": {
@@ -44852,10 +44810,10 @@
      "medium": {
       "type": "string",
       "enum": [
-       "phone",
        "chat",
        "zoom",
-       "physical"
+       "physical",
+       "phone"
       ],
       "nullable": true
      },
@@ -44962,10 +44920,10 @@
      "medium": {
       "type": "string",
       "enum": [
-       "phone",
        "chat",
        "zoom",
-       "physical"
+       "physical",
+       "phone"
       ]
      },
      "label": {
@@ -45698,9 +45656,6 @@
      "gates": {
       "$ref": "#/components/schemas/AdminCreatorGatesView"
      },
-     "place": {
-      "$ref": "#/components/schemas/AdminPlaceView"
-     },
      "createdAt": {
       "type": "string",
       "format": "date-time"
@@ -45711,7 +45666,6 @@
      "handle",
      "accountType",
      "gates",
-     "place",
      "createdAt"
     ]
    },
@@ -54113,9 +54067,9 @@
      "countrySource": {
       "type": "string",
       "enum": [
+       "phone",
        "profile",
-       "wawu_id",
-       "phone"
+       "wawu_id"
       ],
       "nullable": true
      },
@@ -54608,10 +54562,10 @@
      "kind": {
       "type": "string",
       "enum": [
-       "profile",
        "community",
        "content",
        "transaction",
+       "profile",
        "paid_question"
       ]
      },

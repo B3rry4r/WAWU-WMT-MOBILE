@@ -11523,21 +11523,12 @@ export interface components {
             free: components["schemas"]["AllowanceLevelView"];
             withTick: components["schemas"]["AllowanceLevelView"];
         };
-        AdminPlaceView: {
-            countryCode: string | null;
-            regionCode: string | null;
-            regionName: string | null;
-            city: string | null;
-            /** @enum {string|null} */
-            countrySource: "profile" | "wawu_id" | "phone" | null;
-        };
         AdminContentCreatorView: {
             wawuUserId: string;
             handle: string | null;
             /** @enum {string|null} */
             accountType: "creator" | "user" | null;
             kycStatus: string | null;
-            place: components["schemas"]["AdminPlaceView"];
             slotsUsed: number | null;
             slotsTotal: number | null;
         };
@@ -12866,7 +12857,7 @@ export interface components {
         };
         ConsultationOptionView: {
             /** @enum {string} */
-            medium: "phone" | "zoom" | "physical";
+            medium: "zoom" | "physical" | "phone";
             label: string;
             minutes: number | null;
             priceKobo: number | null;
@@ -12886,7 +12877,7 @@ export interface components {
         };
         ConsultationSlotsView: {
             /** @enum {string} */
-            medium: "phone" | "zoom" | "physical";
+            medium: "zoom" | "physical" | "phone";
             label: string;
             minutes: number;
             timeZone: string;
@@ -12897,7 +12888,7 @@ export interface components {
             requestId: string;
             status: string;
             /** @enum {string|null} */
-            medium: "phone" | "chat" | "zoom" | "physical" | null;
+            medium: "chat" | "zoom" | "physical" | "phone" | null;
             label: string | null;
             minutes: number | null;
             priceKobo: number | null;
@@ -12921,7 +12912,7 @@ export interface components {
         };
         AdminConsultationPriceView: {
             /** @enum {string} */
-            medium: "phone" | "chat" | "zoom" | "physical";
+            medium: "chat" | "zoom" | "physical" | "phone";
             label: string;
             priceKobo: number | null;
             minutes: number | null;
@@ -13063,7 +13054,6 @@ export interface components {
             /** @enum {string} */
             accountType: "creator" | "user";
             gates: components["schemas"]["AdminCreatorGatesView"];
-            place: components["schemas"]["AdminPlaceView"];
             /** Format: date-time */
             createdAt: string;
         };
@@ -15026,7 +15016,7 @@ export interface components {
             countryCode: string | null;
             countryName: string | null;
             /** @enum {string|null} */
-            countrySource: "profile" | "wawu_id" | "phone" | null;
+            countrySource: "phone" | "profile" | "wawu_id" | null;
             regionCode: string | null;
             regionName: string | null;
             city: string | null;
@@ -15134,7 +15124,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "profile" | "community" | "content" | "transaction" | "paid_question";
+            kind: "community" | "content" | "transaction" | "profile" | "paid_question";
             id: string;
             title: string | null;
             deadlineAt: string | null;
