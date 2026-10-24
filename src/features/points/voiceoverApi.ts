@@ -62,7 +62,7 @@ export const JOB_POLL_MS = 2000;
 /**
  * How often a working job is read again, by the tool and how long the job has been going (POINTS-11). Every tool is read each 2 seconds. A dub
  * takes minutes, so after its first minute the reads slow: every 5 seconds until the fifth minute, then every 10. The age is the Hub's
- * `createdAt` against the phone's clock; a time that cannot be read, or one in the future, counts as a job that has just started.
+ * `createdAt` against the phone's clock; a time that cannot be read, or one ahead of the phone's clock, counts as a job that has just started.
  */
 export function pollMsFor(toolId: string, createdAt: string | null | undefined, now: number = Date.now()): number {
   if (toolId !== 'dubbing') return JOB_POLL_MS;
