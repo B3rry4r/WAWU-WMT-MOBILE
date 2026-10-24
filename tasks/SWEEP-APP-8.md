@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B17), mobile `wmt/SWEEP-APP-8` from `origin/main` `48bd75a9`. The brief called this task SWEEP-APP-6; that id is already the stack-rows part of `tasks/SWEEP-APP.md` (branch `wmt/SWEEP-APP-6`, merged in batch 22), so this one is SWEEP-APP-8. App only: no backend change (the Hub's rules were read from backend `origin/main` `b69aa7f`). Status verifying.
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B17), mobile `wmt/SWEEP-APP-8` from `origin/main` `48bd75a9`. The brief called this task SWEEP-APP-6; that id is already the stack-rows part of `tasks/SWEEP-APP.md` (branch `wmt/SWEEP-APP-6`, merged in batch 22), so this one is SWEEP-APP-8. App only: no backend change (the Hub's rules were read from backend `origin/main` `b69aa7f`). Status review. Round 2 (24 Oct 2026, Sonnet T1): `origin/main` `d9b70d20` merged in, then row 6 and the two name lows from the verifier's report done (rows 6, a, b below).
 
 | # | Low (source) | Before (`origin/main`) | After |
 |---|---|---|---|
@@ -29,14 +29,14 @@ As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B17), mobile `wmt/SWEEP
 | 5a | Profile works: description counts collapse spaces the Hub keeps (FIX-113, `works/form.ts`) | `lengthOf` collapsed runs of spaces for every field but a link | only title, role, client and category collapse (the Hub's `cleanText` collapses single-line fields and keeps the paragraph as typed); a description counts its spaces and line breaks |
 | 5b | A typed but un-added skill is dropped silently on M8 Save (FIX-113, `AboutSections.tsx`) | Save sent the list without it, and was off when only that was typed | Save is on as soon as a skill is typed; Save adds it and sends it with the rest. A skill that cannot be added (a repeat, over 40 characters, a full list) is said in words under the box and nothing is saved; Back asks before discarding it |
 | 5c | `/add-work` for another person's work opens Edit (FIX-113) | the route drew the edit form for any work; Save would be refused by the Hub | the form is drawn only once the signed-in person is known to be the work's owner; for another person's work the route opens the work's own page (M35); with no way to do that the screen says "This is not your work"; a failed read of who is signed in is "The work did not load" with Try again |
-| 6 | M24 price step asks sale terms on every keystroke (FIX-110, `PriceScreen.tsx`) | **not done:** that code is on `wmt/FIX-110`, not on `origin/main` `48bd75a9` (see below) | waiting for FIX-110 to merge |
-| 7 | W39 earnings sweep delay line; G-FIX-99-1 search community count | not in the app | **not done.** G-FIX-99-1 needs the Hub's protected list re-recorded (BACKEND_GAPS); the W39 sweep delay line has no app code to change (no sweep wording exists in `src/features/earnings`) |
+| 6 | M24 price step asks sale terms on every keystroke (FIX-110, `PriceScreen.tsx`) | five digits typed fast made five reads of `GET /content/sale-terms` (100, 1200, 12300, 123400, 1234500 kobo), each for a half-typed price | **done (round 2):** the Hub is asked when the typed price has rested for 400 ms (`SALE_TERMS_DELAY_MS`, `useDebounced`, as the wallet history search and the paid-message earn line use it), once, for the price that is there; the first read (no price) goes at once. "You earn per sale" already says "..." until the answer is for the price typed, so nothing stale shows meanwhile. A quick price tapped in settles the same way (400 ms) |
+| a | `MoneyMoveInboxRow` draws a blank name for a person with no name (FIX-114, verifier low) | `move.other.name` for the row and the avatar | **done (round 2):** `rowNameOf(move.other)` and `avatarNameOf(move.other)`: the name, else the `@handle`, else "Someone"; the avatar takes the handle's first letter |
+| b | `PaidInboxRow` (the creator's side of a paid question, INBOX-18) draws a blank name (row 1's leftover) | `dm.other.name` for the row and the avatar | **done (round 2):** the same `rowNameOf` and `avatarNameOf` |
+| 7 | W39 earnings sweep delay line; G-FIX-99-1 search community count | not in the app | **not app work.** G-FIX-99-1 needs the Hub's protected list re-recorded (BACKEND_GAPS); the W39 sweep delay line has no app code to change (no sweep wording exists in `src/features/earnings`) |
 
 Row 2's trade-off, for the verifier: on the web a reload while on W10 loses the in-memory token; the send then goes without it and the Hub answers with its own refusal, so the person goes back one step and checks the account again. Before, the token survived the reload in the address. A phone never showed the address, so nothing changes there.
 
-Row 6 (not done): `PriceScreen.tsx` on `origin/main` has no sale-terms query. It arrives with FIX-110 (`src/features/create/api.ts`, `details.ts`, `saleTerms.test.tsx`). The fix is to pause the query while the person is typing (about 400 ms after the last key, and not for a price that has not changed), then ask once. Do it on the merged code; a test types five digits fast and counts one call.
-
-Not done in row 1: `PaidInboxRow.tsx` (the creator's side of a paid question, INBOX-18) has the same blank name; it was not named, so it was left alone for the branches merging now.
+Round 2 merge: `origin/main` `d9b70d20` conflicted in `PROGRESS.md` and `INDEX.md` (main's side, then `check_tasks.py --write`), `ChatInboxRow.tsx` (both blocks kept: `rowNameOf`/`avatarNameOf` and main's `moveLine`) and `content-detail/Parts.tsx` (row 4 re-applied on FIX-107's `mark` as `{mark ? <View style={styles.lessonEnd}>{mark}</View> : null}`). No other conflict.
 
 Merge notes: `LessonList` in `Parts.tsx` is rewritten by FIX-107 (play marks); the one-line change here is the wrapper `<View style={styles.lessonEnd}>` around the mark and `lessonEnd: { alignSelf: 'center' }`. The new test (`lessonRow.test.tsx`) renders `LessonList` on its own, so it holds after FIX-107.
 
@@ -55,13 +55,15 @@ Merge notes: `LessonList` in `Parts.tsx` is rewritten by FIX-107 (play marks); t
 | 5a | `works/__tests__/form.test.ts` (1 new) | yes |
 | 5b | `profile-edit/__tests__/aboutSections.test.tsx` (3 new) | yes, 3 of 3 |
 | 5c | `works/__tests__/editReorder.test.tsx` (3 new) | yes, 3 of 3 |
+| 6 | `create/__tests__/saleTerms.test.tsx` (1 new: five digits typed fast, one read after the 400 ms rest, none before) | yes (five reads) |
+| a, b | `chat/__tests__/rowName.test.tsx` (4 new: a send and a paid question asked of the person, each with a handle and with none) | yes, 4 of 4 |
 
 Two existing tests in `editReorder.test.tsx` ("a user can edit a work", "a change the Hub refuses stays on the form") gained one stand-in answer each, `GET /users/me` as the owner, because the edit form now waits to know who is signed in; no assertion in them changed.
 
 ### Verifier, 24 Oct 2026: PASS, status review (full report in `tasks/history/SWEEP-APP-8.md`)
 
 Merging `origin/main` `d9b70d20` conflicts in `ChatInboxRow.tsx` (keep `rowNameOf`/`avatarNameOf` and main's `moveLine`) and `content-detail/Parts.tsx` (re-apply row 4 around FIX-107's `mark`: `{mark ? <View style={styles.lessonEnd}>{mark}</View> : null}`); `PROGRESS.md` and `INDEX.md` are generated. With that, tsc, eslint, gates and check_tasks are EXIT 0 and 44 suites / 760 tests pass. The 19 new tests fail on `48bd75a9`. Row 2 holds, and a web reload on W10 shows the Hub's refusal.
-Open low, for the merge or the sweep: `MoneyMoveInboxRow` (new on main) still draws a blank name (`rowNameOf(move.other)`, one test). Still not done: rows 6 and 7, and `PaidInboxRow.tsx`.
+Open lows from that report are closed in round 2 (rows 6, a, b above). Row 7 is not app work.
 
 ## Read first
 
@@ -74,7 +76,7 @@ Seven small lows from the sweep list are fixed in the app, each with a test that
 
 ## Scope
 
-`wawu-wmt-mobile` only: `src/features/chat/ChatInboxRow.tsx`, `src/features/paid-ask/PaidFanRow.tsx`, `src/features/send/model.ts`, `src/features/points/ToolScreen.tsx`, `src/features/points/FileParts.tsx`, `src/features/content-detail/Parts.tsx`, `src/features/works/form.ts`, `src/features/works/EditWorkScreen.tsx`, `src/app/add-work.tsx`, `src/features/profile-edit/AboutSections.tsx`, `src/features/profile-edit/EditProfileScreen.tsx`, and their tests.
+`wawu-wmt-mobile` only: `src/features/chat/ChatInboxRow.tsx`, `src/features/paid-ask/PaidFanRow.tsx`, `src/features/send/model.ts`, `src/features/points/ToolScreen.tsx`, `src/features/points/FileParts.tsx`, `src/features/content-detail/Parts.tsx`, `src/features/works/form.ts`, `src/features/works/EditWorkScreen.tsx`, `src/app/add-work.tsx`, `src/features/profile-edit/AboutSections.tsx`, `src/features/profile-edit/EditProfileScreen.tsx`, `src/features/paid-answers/PaidInboxRow.tsx`, `src/features/create/PriceScreen.tsx`, and their tests.
 
 ## Capability checks
 
@@ -85,7 +87,8 @@ Seven small lows from the sweep list are fixed in the app, each with a test that
 - [x] A user's description counts as the Hub counts it.
 - [x] A user who types a skill and presses Save has it saved, or is told why not.
 - [x] A user who opens `/add-work` for somebody else's work lands on the work's page, not on an edit form.
-- [ ] M24's sale terms ask once after the price stops changing (waits for FIX-110).
+- [x] M24's sale terms ask once after the price stops changing.
+- [x] A user sees a person with no name by their @handle in a money send row and in a creator's paid question row.
 
 ## History
 

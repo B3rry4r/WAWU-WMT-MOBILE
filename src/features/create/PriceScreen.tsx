@@ -17,6 +17,7 @@ import { formatMoney } from '@/components/Money';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
+import { useDebounced } from '@/features/schools/useDebounced';
 import { font, space, text, useWawu } from '@/theme';
 
 import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
@@ -61,6 +62,9 @@ export function lessonInputs(lessons: readonly DraftLesson[]): LessonInput[] {
 export const lessonsFailure = (error: unknown): string =>
   `Your course is in review, but its lessons did not save. ${error instanceof ApiError && error.message ? error.message : 'Check your connection and try again.'}`;
 
+/** How long M24 waits after the last key before it asks the Hub about the price typed. */
+export const SALE_TERMS_DELAY_MS = 400;
+
 export type PriceScreenProps = {
   format: FormatId;
   onBack: () => void;
@@ -90,7 +94,11 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   // The price being typed, in whole kobo, for the Hub to work out what the creator keeps of it.
   const typed = free ? null : priceOf(details.price);
   const asked = typed === null ? null : typed * 100;
-  const terms = useQuery({ queryKey: saleTermsKey(asked), queryFn: () => fetchSaleTerms(asked), placeholderData: keepPreviousData });
+  // The Hub is asked once the typing rests, about the price that is there, never about the half-typed ones on the way (FIX-110 follow-up).
+  // The card says "..." for "You earn per sale" until the answer is for the price typed, so nothing stale is shown meanwhile.
+  const { settled } = useDebounced(asked === null ? '' : String(asked), SALE_TERMS_DELAY_MS);
+  const settledKobo = settled === '' ? null : Number(settled);
+  const terms = useQuery({ queryKey: saleTermsKey(settledKobo), queryFn: () => fetchSaleTerms(settledKobo), placeholderData: keepPreviousData });
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
