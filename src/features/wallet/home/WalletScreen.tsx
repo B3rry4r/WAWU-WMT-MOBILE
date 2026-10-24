@@ -1,59 +1,40 @@
-import { useQuery } from "@tanstack/react-query";
-import { useIsFocused, useRouter } from "expo-router";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from '@tanstack/react-query';
+import { useIsFocused, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { isApiError } from "@/api/errors";
-import { queryClient } from "@/api/query";
-import { onSessionEnd } from "@/api/session";
-import { Card } from "@/components/Card";
-import { Skeleton } from "@/components/Skeleton";
-import { EmptyState, ErrorState } from "@/components/StateViews";
-import {
-  OPEN_WALLET_ACCOUNT_PATH,
-  useOpenWalletEntry,
-} from "@/features/open-wallet/entry";
-import { useSessionAccount } from "@/features/open-wallet/sessionAccount";
-import { layout, radius, useWawu } from "@/theme";
+import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
+import { onSessionEnd } from '@/api/session';
+import { Card } from '@/components/Card';
+import { Skeleton } from '@/components/Skeleton';
+import { EmptyState, ErrorState } from '@/components/StateViews';
+import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
+import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { layout, radius, useWawu } from '@/theme';
 
-import { availabilityQuery } from "@/features/capital/api";
-import { CapitalWalletRow } from "@/features/capital/WalletRow";
-import { myPointsQuery, type MyPoints } from "@/features/points/api";
+import { availabilityQuery } from '@/features/capital/api';
+import { CapitalWalletRow } from '@/features/capital/WalletRow';
+import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
-import {
-  homeBalanceQuery,
-  recentTransactionsQuery,
-  walletHomeQuery,
-} from "../api/home";
-import { myPassQuery, type MyPass } from "../api/pass";
-import { PassesTile } from "../pass/PassesTile";
-import { BalanceCard, ACCT } from "./BalanceCard";
-import { PointsTile } from "./PointsTile";
-import { WalletActions, type WalletAction } from "./WalletActions";
-import { homeView, stateWords, type HomeView } from "./model";
-import { RecentTransactions } from "./RecentTransactions";
-import { WalletBar } from "./WalletBar";
-import { BODY_GAP, WalletSkeleton } from "./WalletSkeleton";
+import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
+import { myPassQuery, type MyPass } from '../api/pass';
+import { PassesTile } from '../pass/PassesTile';
+import { BalanceCard, ACCT } from './BalanceCard';
+import { PointsTile } from './PointsTile';
+import { WalletActions, type WalletAction } from './WalletActions';
+import { homeView, stateWords, type HomeView } from './model';
+import { RecentTransactions } from './RecentTransactions';
+import { WalletBar } from './WalletBar';
+import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
 /**
  * design/_gen/wallet.js lines 44 and 65 to 67: the body starts 4 down (the title bar is `WalletBar`), and
  * kit.js line 35 (`body`) leaves 120 under it over a tab bar that overlays it; here the bar is its own box.
  * W6's card (line 67) is padded 10 by 16 with a 28 corner.
  */
-const HOME = {
-  bodyTop: 4,
-  bodyBottom: 120 - layout.tabbarH,
-  statePadV: 10,
-  statePadH: 16,
-  infoGap: 10,
-} as const;
+const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16, infoGap: 10 } as const;
 /** The Points card's stand-in while its read is out: as high as the card (12 + the head, the count and the line + 12). */
 const INFO_SKELETON = 86;
 
@@ -87,7 +68,7 @@ export function WalletScreen() {
 
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
   const state = wallet.data?.state;
-  const open = state === "open" || state === "frozen";
+  const open = state === 'open' || state === 'frozen';
   const balance = useQuery(homeBalanceQuery(owner, open), queryClient);
   const recent = useQuery(recentTransactionsQuery(owner, open), queryClient);
   // The Passes card: drawn only when the Hub says the person has a pass (WALLET-38). A read that fails draws nothing here.
@@ -95,10 +76,7 @@ export function WalletScreen() {
   // The Points card: the Hub's balance as a count. Nothing is drawn for a read that failed (never a 0 the Hub did not say).
   const points = useQuery(myPointsQuery(owner), queryClient);
   // The Capital row: drawn when the Hub says Capital is on and served, or the person holds something (the way out stays open when it is switched off, NUV-12). A failed read draws nothing.
-  const capital = useQuery(
-    { ...availabilityQuery(owner), enabled: Boolean(owner) && open },
-    queryClient,
-  );
+  const capital = useQuery({ ...availabilityQuery(owner), enabled: Boolean(owner) && open }, queryClient);
 
   const view = homeView(wallet, balance);
   const [hidden, setHidden] = useState(false);
@@ -106,13 +84,7 @@ export function WalletScreen() {
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];
-    if (open)
-      asked.push(
-        balance.refetch(),
-        recent.refetch(),
-        pass.refetch(),
-        points.refetch(),
-      );
+    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch(), points.refetch());
     await Promise.all(asked);
   }, [wallet, balance, recent, pass, points, open]);
 
@@ -124,19 +96,10 @@ export function WalletScreen() {
   }, [focused, refreshAll]);
 
   const actions = builtActions(router);
-  const openWallet = useLeadToOpenWallet(
-    view.kind === "no_wallet",
-    focused,
-    entry.open,
-  );
+  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
   // The account opened and no PIN is set (it landed while the tab said "Your account is opening", or while the app was closed): the
   // board's step after the account is "Create your transaction PIN", so the person is led there once, never left on W1 unasked (U3b).
-  useLeadToCreatePin(
-    owner,
-    open && wallet.data?.pinIsSet === false,
-    focused,
-    () => router.push(OPEN_WALLET_ACCOUNT_PATH),
-  );
+  useLeadToCreatePin(owner, open && wallet.data?.pinIsSet === false, focused, () => router.push(OPEN_WALLET_ACCOUNT_PATH));
 
   const onRefresh = useCallback(async () => {
     setPulled(true);
@@ -148,26 +111,14 @@ export function WalletScreen() {
   }, [refreshAll]);
 
   return (
-    <View
-      testID="wallet-screen"
-      style={[
-        styles.root,
-        { backgroundColor: colors.surfacePage, paddingTop: insets.top },
-      ]}
-    >
+    <View testID="wallet-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <WalletBar />
       <ScrollView
         testID="wallet-scroll"
         style={styles.scroll}
         contentContainerStyle={styles.body}
         refreshControl={
-          view.kind === "loading" ? undefined : (
-            <RefreshControl
-              refreshing={pulled}
-              onRefresh={() => void onRefresh()}
-              tintColor={colors.accent}
-            />
-          )
+          view.kind === 'loading' ? undefined : <RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />
         }
       >
         {owner === null ? (
@@ -179,20 +130,12 @@ export function WalletScreen() {
             onToggleHidden={() => setHidden((was) => !was)}
             onOpenWallet={openWallet}
             actions={actions}
-            points={
-              points.isSuccess
-                ? points.data
-                : points.isPending && points.isFetching
-                  ? "loading"
-                  : null
-            }
-            onOpenPoints={() => router.push("/points")}
+            points={points.isSuccess ? points.data : points.isPending && points.isFetching ? 'loading' : null}
+            onOpenPoints={() => router.push('/points')}
             pass={pass.data ?? null}
-            onOpenPass={() => router.push("/pass")}
-            capital={
-              capital.data?.available === true || capital.data?.holding === true
-            }
-            onOpenCapital={() => router.push("/capital")}
+            onOpenPass={() => router.push('/pass')}
+            capital={capital.data?.available === true || capital.data?.holding === true}
+            onOpenCapital={() => router.push('/capital')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -200,14 +143,9 @@ export function WalletScreen() {
               pending: recent.isFetching,
               failed: recent.isError,
               onRetry: () => void recent.refetch(),
-              onSeeAll: () => router.push("/transactions"),
-              onOpen: (id: string) =>
-                router.push({ pathname: "/transactions/[id]", params: { id } }),
-              onOpenGroup: (key: string) =>
-                router.push({
-                  pathname: "/transactions",
-                  params: { group: key },
-                }),
+              onSeeAll: () => router.push('/transactions'),
+              onOpen: (id: string) => router.push({ pathname: '/transactions/[id]', params: { id } }),
+              onOpenGroup: (key: string) => router.push({ pathname: '/transactions', params: { group: key } }),
             }}
           />
         )}
@@ -224,7 +162,7 @@ type BodyProps = {
   /** The actions that are built, in the board's order. */
   actions: readonly WalletAction[];
   /** The Hub's points, `'loading'` while the first read is out, or null when it has none to show (a failed read draws nothing). */
-  points: MyPoints | "loading" | null;
+  points: MyPoints | 'loading' | null;
   onOpenPoints: () => void;
   /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
   pass: MyPass | null;
@@ -234,112 +172,70 @@ type BodyProps = {
   onOpenCapital: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
-  recent: Pick<
-    Parameters<typeof RecentTransactions>[0],
-    | "rows"
-    | "pending"
-    | "failed"
-    | "onRetry"
-    | "onSeeAll"
-    | "onOpen"
-    | "onOpenGroup"
-  >;
+  recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({
-  view,
-  hidden,
-  onToggleHidden,
-  onOpenWallet,
-  actions,
-  points,
-  onOpenPoints,
-  pass,
-  onOpenPass,
-  capital,
-  onOpenCapital,
-  onRetryWallet,
-  onRetryBalance,
-  recent,
-}: BodyProps) {
+function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
-    case "loading":
+    case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
-    case "wallet_error":
+    case 'wallet_error':
       return (
         <StateCard>
           <ErrorState
             testID="wallet-error"
             {...stateWords(view)}
-            icon={
-              isApiError(view.error) && view.error.kind === "network"
-                ? "WifiOff"
-                : "TriangleAlert"
-            }
+            icon={isApiError(view.error) && view.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
             onRetry={onRetryWallet}
           />
         </StateCard>
       );
-    case "no_wallet":
+    case 'no_wallet':
       return (
         <StateCard>
           <EmptyState
             testID="wallet-none"
             icon="Wallet"
             {...stateWords(view)}
-            action={{ label: "Open your wallet", onPress: onOpenWallet }}
+            action={{ label: 'Open your wallet', onPress: onOpenWallet }}
           />
         </StateCard>
       );
-    case "opening":
+    case 'opening':
       return (
         <StateCard>
           <EmptyState
             testID="wallet-opening"
             icon="Clock"
             {...stateWords(view)}
-            action={{ label: "Check again", onPress: onRetryWallet }}
+            action={{ label: 'Check again', onPress: onRetryWallet }}
           />
         </StateCard>
       );
-    case "unreachable":
+    case 'unreachable':
       return (
         <StateCard>
-          <ErrorState
-            testID="wallet-unreachable"
-            icon="CloudOff"
-            {...stateWords(view)}
-            onRetry={onRetryBalance}
-          />
+          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} onRetry={onRetryBalance} />
         </StateCard>
       );
-    case "frozen":
+    case 'frozen':
       return (
         <StateCard>
-          <ErrorState
-            testID="wallet-frozen"
-            icon="Snowflake"
-            {...stateWords(view)}
-            onRetry={onRetryBalance}
-          />
+          <ErrorState testID="wallet-frozen" icon="Snowflake" {...stateWords(view)} onRetry={onRetryBalance} />
         </StateCard>
       );
-    case "balance_error":
+    case 'balance_error':
       return (
         <StateCard>
           <ErrorState
             testID="wallet-balance-error"
             {...stateWords(view)}
-            icon={
-              isApiError(view.error) && view.error.kind === "network"
-                ? "WifiOff"
-                : "TriangleAlert"
-            }
+            icon={isApiError(view.error) && view.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
             onRetry={onRetryBalance}
           />
         </StateCard>
       );
-    case "ready":
+    case 'ready':
       return (
         <>
           <BalanceCard
@@ -351,33 +247,18 @@ function Body({
           />
           {points !== null || pass ? (
             <View testID="wallet-info-row" style={styles.infoRow}>
-              {points === "loading" ? (
-                <Skeleton
-                  testID="wallet-points-loading"
-                  height={INFO_SKELETON}
-                  radius={radius.card}
-                  style={styles.half}
-                />
+              {points === 'loading' ? (
+                <Skeleton testID="wallet-points-loading" height={INFO_SKELETON} radius={radius.card} style={styles.half} />
               ) : points ? (
-                <PointsTile
-                  points={points}
-                  now={new Date()}
-                  onPress={onOpenPoints}
-                />
+                <PointsTile points={points} now={new Date()} onPress={onOpenPoints} />
               ) : null}
               {pass ? <PassesTile pass={pass} onPress={onOpenPass} /> : null}
-              {(points !== null ? 1 : 0) + (pass ? 1 : 0) === 1 ? (
-                <View style={styles.half} />
-              ) : null}
+              {(points !== null ? 1 : 0) + (pass ? 1 : 0) === 1 ? <View style={styles.half} /> : null}
             </View>
           ) : null}
           {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
-          <RecentTransactions
-            {...recent}
-            accountNumber={view.account.accountNumber}
-            now={new Date()}
-          />
+          <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
   }
@@ -394,37 +275,11 @@ function StateCard({ children }: { children: ReactNode }) {
  */
 function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
   return [
-    {
-      key: "add-money",
-      icon: "Plus",
-      label: "Add money",
-      onPress: () => router.push("/add-money"),
-      accent: true,
-    },
-    {
-      key: "send",
-      icon: "ArrowUpRight",
-      label: "Send",
-      onPress: () => router.push("/send"),
-    },
-    {
-      key: "withdraw",
-      icon: "Landmark",
-      label: "Withdraw",
-      onPress: () => router.push("/withdraw"),
-    },
-    {
-      key: "buy-points",
-      icon: "Sparkles",
-      label: "Buy points",
-      onPress: () => router.push("/points-buy"),
-    },
-    {
-      key: "to-cash",
-      icon: "Banknote",
-      label: "To cash",
-      onPress: () => router.push("/points-convert"),
-    },
+    { key: 'add-money', icon: 'Plus', label: 'Add money', onPress: () => router.push('/add-money'), accent: true },
+    { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
+    { key: 'withdraw', icon: 'Landmark', label: 'Withdraw', onPress: () => router.push('/withdraw') },
+    { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
+    { key: 'to-cash', icon: 'Banknote', label: 'To cash', onPress: () => router.push('/points-convert') },
   ];
 }
 
@@ -435,11 +290,7 @@ function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
  * on the tab (its way in is drawn there), so Back never loops. Coming back from another tab is a new visit
  * and opens A26 again.
  */
-export function useLeadToOpenWallet(
-  noWallet: boolean,
-  focused: boolean,
-  openFlow: () => void,
-): () => void {
+export function useLeadToOpenWallet(noWallet: boolean, focused: boolean, openFlow: () => void): () => void {
   const led = useRef(false);
   const wasFocused = useRef(focused);
   const open = useCallback(() => {
@@ -468,12 +319,7 @@ onSessionEnd(() => ledToPin.clear());
  * A10), once per session for each account. A person who goes back from it is on the tab as before: Settings (W36) still creates the PIN
  * and every payment sheet still leads to it.
  */
-export function useLeadToCreatePin(
-  owner: string | null,
-  noPin: boolean,
-  focused: boolean,
-  lead: () => void,
-): void {
+export function useLeadToCreatePin(owner: string | null, noPin: boolean, focused: boolean, lead: () => void): void {
   const leadRef = useRef(lead);
   useEffect(() => {
     leadRef.current = lead;
@@ -488,19 +334,9 @@ export function useLeadToCreatePin(
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
-  body: {
-    flexGrow: 1,
-    gap: BODY_GAP,
-    paddingTop: HOME.bodyTop,
-    paddingHorizontal: layout.gutter,
-    paddingBottom: HOME.bodyBottom,
-  },
-  infoRow: { flexDirection: "row", gap: HOME.infoGap },
+  body: { flexGrow: 1, gap: BODY_GAP, paddingTop: HOME.bodyTop, paddingHorizontal: layout.gutter, paddingBottom: HOME.bodyBottom },
+  infoRow: { flexDirection: 'row', gap: HOME.infoGap },
   // One card of the two, when the other is not drawn: it keeps the half it has beside the other.
   half: { flex: 1, minWidth: 0 },
-  state: {
-    borderRadius: ACCT.radius,
-    paddingVertical: HOME.statePadV,
-    paddingHorizontal: HOME.statePadH,
-  },
+  state: { borderRadius: ACCT.radius, paddingVertical: HOME.statePadV, paddingHorizontal: HOME.statePadH },
 });

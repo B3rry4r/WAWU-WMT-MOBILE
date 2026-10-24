@@ -1,8 +1,8 @@
-import { GroupedList } from "@/components/Card";
-import { IconTile } from "@/components/IconTile";
-import { ListRow } from "@/components/ListRow";
+import { GroupedList } from '@/components/Card';
+import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
 
-import { WORDS } from "./model";
+import { WORDS } from './model';
 
 /**
  * The one row on the Wallet tab that leads to Capital (NUV-12, R-84), under the Points and Passes cards. No board draws it (R-29,
@@ -13,13 +13,7 @@ import { WORDS } from "./model";
 export function CapitalWalletRow({ onPress }: { onPress: () => void }) {
   return (
     <GroupedList testID="wallet-capital-card">
-      <ListRow
-        testID="wallet-capital"
-        lead={<IconTile icon="TrendingUp" tone="accent" size={44} />}
-        title={WORDS.rowTitle}
-        subtitle={WORDS.rowLine}
-        onPress={onPress}
-      />
+      <ListRow testID="wallet-capital" lead={<IconTile icon="TrendingUp" tone="accent" size={44} />} title={WORDS.rowTitle} subtitle={WORDS.rowLine} onPress={onPress} />
     </GroupedList>
   );
 }
