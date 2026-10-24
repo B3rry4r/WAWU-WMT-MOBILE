@@ -7,7 +7,7 @@ order: -1270
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: building
 depends_on: []
 decisions: [R-86, R-5, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status verifying. Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
+As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-01` on `origin/main` `38be72e`, mobile records `wmt/IAP-01` on `origin/main` `546db77e`. Status building (verifier round 1: FIX, see below). Not run against Google or Apple: no credentials exist (see "What the owner sets up"); the tests use a stand-in for each store, and the real Google adapter is tested against a local HTTP server that plays Google.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -28,6 +28,11 @@ As of 24 Oct 2026, built by a Sonnet builder (T2, bundle B27): backend `wmt/IAP-
 | 4 | no dashboard view | `admin/store`: products, per-store on/off and cut, purchases, refunds (superadmin and finance) |
 | 5 | credits and passes split 85/15 on the price paid | worked on WAWU's net after the store's share: the credit lot's gross, and the pass row's `netKobo` and the host's `creatorShareKobo`, use `reference - store cut` |
 | 6 | store keys: none | every store route answers `store_not_configured` (503) until the keys are set |
+
+**Verifier round 1 (24 Oct 2026): FIX.** Backend `ec50365` against `origin/main` `38be72e`. One high, four low; everything else in the brief held. Open for the fix round:
+
+1. **High** (other person's subscription): a renewed order of a subscription the Hub already holds for person A is granted to person B if B presents it first (201, tier or pass), and every later renewal then goes to B while A gets `store_purchase_taken`. `store-purchase.service.ts:155` (the only once-only key is the transaction id) and `store-notification.service.ts:293` (`latestOf` follows the newest row). Needed: refuse when a purchase with the same `(platform, subscriptionKey)` belongs to someone else, and bind a first purchase to the person (Google `obfuscatedExternalAccountId`, Apple `appAccountToken`, read from the store's answer; IAP-02 sets them).
+2. Lows 2 to 5 are in the verifier report (history file); they go to `tasks/SWEEP-IAP.md` if the lead agrees.
 
 ### Routes (all under `/api/hub`, in `contract/openapi.json`, additive)
 
@@ -75,3 +80,4 @@ A person in the app can buy points, credits, a tick or tier and a community pass
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/IAP-01.md](history/IAP-01.md).
+
