@@ -7,7 +7,7 @@ order: -10801
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-3]
 passes: [V1]
@@ -41,4 +41,5 @@ CI's "Expo SDK health" step passes again.
 ## Capability checks
 
 - [x] `npx expo-doctor` exits 0 with 21 of 21 checks passed.
+- Verifier (24 Oct 2026): `npm ci` clean, `expo-doctor` 21/21, `expo export --platform web` EXIT 0, full jest 328 suites with 5 load failures that pass alone. PASS.
 - [ ] The full `npm run check` and a device build on the new patch versions: NOT RUN here (the merge agent runs the full check once per batch).
