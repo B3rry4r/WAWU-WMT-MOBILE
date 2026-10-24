@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 164 | 0 | 0 | 0 |
+| building | 4 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 51 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -69,9 +69,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
-- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
-- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
 - [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
@@ -236,6 +233,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
+- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
+- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
