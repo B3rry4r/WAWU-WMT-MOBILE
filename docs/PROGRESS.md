@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 360.**
+**Launch tasks done: 176 of 361.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 26 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -44,6 +44,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
