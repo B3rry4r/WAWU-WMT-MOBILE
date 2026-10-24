@@ -3535,6 +3535,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/add-money/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AddMoneyReturnController_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The ways to add money and whether each can be used now, with the reason in
+         *     plain words when it cannot (switched off, not set up, or not switched on
+         *     for naira at the provider yet). `cardPublicKey` is what the phone encrypts
+         *     a card with. Reads our own settings only; it never calls the provider.
+         */
+        get: operations["MoneyAddMoneyController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the person pays and what the wallet gets for one amount by one way:
+         *     the provider's charge plus WAWU's (R-10, both from config). `409
+         *     add_money_unavailable` when the way cannot be used; `503 fees_not_set`
+         *     while the provider's charge for it is not set.
+         */
+        get: operations["MoneyAddMoneyController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's attempts, newest first, in cursor pages. */
+        get: operations["MoneyAddMoneyController_list"];
+        put?: never;
+        /**
+         * Starts adding money. Answers 201 with the attempt: `awaiting_user` with a
+         *     `checkoutUrl` to open in the browser (3-D Secure, Apple Pay, the bank
+         *     checkout) or a prompt to answer on the phone (USSD), `processing` (paid,
+         *     being added to the wallet), or `failed` with the reason in plain words
+         *     (a declined card, or a way the provider has not switched on for naira).
+         *     The wallet is credited by the provider's inflow, once; poll `GET
+         *     /money/add-money/{id}`. The same Idempotency-Key and body answer the first
+         *     result again (`Idempotent-Replayed: true`) without checking the PIN.
+         *     Before the PIN, changing nothing: `409 add_money_unavailable`, `503
+         *     fees_not_set`, `422 below_minimum`, `403 limit_reached`, `409
+         *     quote_changed`, `409 wallet_not_open`. A card is sent already encrypted on
+         *     the phone; the Hub passes it on and never keeps it.
+         */
+        post: operations["MoneyAddMoneyController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One attempt as it stands, asked of the provider when it is still open. Only
+         *     its owner reads it; another person's and an id nobody holds are the same
+         *     `404 not_found`.
+         */
+        get: operations["MoneyAddMoneyController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels an attempt that is not paid yet. One the provider has taken, or
+         *     that is already credited, is `409 add_money_unavailable`.
+         */
+        post: operations["MoneyAddMoneyController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/fx/currencies": {
         parameters: {
             query?: never;
@@ -9076,6 +9208,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/store/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The products on sale in one store, from the product map an admin keeps.
+         *     `available` is false (with a `reason`) when the Hub has no credentials for
+         *     that store yet or an admin has switched it off, and then no product is
+         *     listed. A price is never here: the app shows the store's own, in the
+         *     person's own currency. `accountToken` is the signed-in person's own id
+         *     for the stores: the app MUST pass it to Google Play Billing as
+         *     `obfuscatedAccountIdAndroid` and to StoreKit as `appAccountToken` when it
+         *     starts a purchase; a purchase that carries another person's token, or none,
+         *     is refused.
+         */
+        get: operations["StoreController_products"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/store/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hands the Hub a purchase the store has just completed. The Hub asks the
+         *     store's own server about it (the app's word is never taken), then gives
+         *     what was bought, once per store transaction: the same call again, a
+         *     restore, or the store's own notice arriving first all answer the same
+         *     purchase with `alreadyGranted: true`. Send `purchaseToken` on `android`,
+         *     `transactionId` on `ios`, and `communityId` for a pass.
+         *
+         *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
+         *     `store_product_unknown` (404), `store_receipt_missing` (400),
+         *     `store_purchase_invalid` (422), `store_purchase_pending`,
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
+         */
+        post: operations["StoreController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9798,7 +9987,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10148,6 +10337,43 @@ export interface components {
             kind: "virtual" | "single_use";
             /** @description What the person calls it; a default is used when absent. 30 characters at most. */
             name?: string;
+        };
+        AddMoneyBillingDto: {
+            line1: string;
+            city: string;
+            state: string;
+            postalCode?: string;
+        };
+        AddMoneyDeviceDto: {
+            language?: string;
+            screenWidth?: string;
+            screenHeight?: string;
+            colorDepth?: string;
+            /** @description Minutes from UTC, as the phone says, for example -60. */
+            timezoneOffset?: string;
+        };
+        AddMoneyCardDto: {
+            /** @description The card encrypted on the phone with the provider public key (RSA-OAEP, SHA-256, base64). */
+            encrypted: string;
+            billing: components["schemas"]["AddMoneyBillingDto"];
+            device?: components["schemas"]["AddMoneyDeviceDto"];
+        };
+        AddMoneyUssdDto: {
+            /** @description The paying phone in international form; left out, the phone on the account is used. */
+            msisdn?: string;
+        };
+        AddMoneyDto: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            amountKobo: number;
+            /** @description What the person was shown they pay. If the quote changed, 409 quote_changed and nothing is charged. */
+            chargeKobo: number;
+            /** @description Required for rail card. */
+            card?: components["schemas"]["AddMoneyCardDto"];
+            ussd?: components["schemas"]["AddMoneyUssdDto"];
+        };
+        AdminAddMoneyActDto: {
+            reason?: string;
         };
         OpenFxAccountDto: {
             /** @enum {string} */
@@ -11555,6 +11781,67 @@ export interface components {
             /** @enum {string} */
             type: "view" | "tap" | "skip";
         };
+        StorePurchaseDto: {
+            /**
+             * @description The store the purchase was made in.
+             * @enum {string}
+             */
+            platform: "android" | "ios";
+            /** @description The id the store sold it under (`storeProductId` from `GET /store/products`). */
+            productId: string;
+            /** @description Google Play: the purchase token the billing library returned. Required on `android`. */
+            purchaseToken?: string;
+            /** @description App Store: the StoreKit transaction id. Required on `ios`. */
+            transactionId?: string;
+            /**
+             * Format: uuid
+             * @description The room a community pass is bought for. Required for a pass product, refused for any other.
+             */
+            communityId?: string;
+        };
+        StoreProductGrantsDto: {
+            /** @description points: a pack of the live plan, by id. */
+            packId?: string;
+            /**
+             * @description credits: starter, popular or pro.
+             * @enum {string}
+             */
+            pack?: "starter" | "popular" | "pro";
+            /** @description tier: a tier of the live plan, by id. */
+            tierId?: string;
+            /** @description pass: the days one period runs. */
+            days?: number;
+        };
+        CreateStoreProductDto: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            /** @description The id the store sells it under. Fixed once created. */
+            storeProductId: string;
+            /**
+             * @description Fixed once created.
+             * @enum {string}
+             */
+            kind: "points" | "credits" | "tier" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsDto"];
+            /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStoreProductDto: {
+            title?: string;
+            grants?: components["schemas"]["StoreProductGrantsDto"];
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStorePlatformDto: {
+            /** @description Switch purchases from this store on or off. */
+            enabled?: boolean;
+            /** @description The store's cut in basis points (1500 = 15%), 0 to 10000. Send `-1` to go back to the config's. */
+            storeFeeBps?: number;
+        };
         FintavaWebhookAck: {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
@@ -12119,6 +12406,101 @@ export interface components {
             startedAt: string | null;
             canStart: boolean;
         };
+        AdminAddMoneyView: {
+            wawuUserId: string | null;
+            provider: string;
+            reference: string;
+            providerRef: string | null;
+            frozen: boolean;
+            failureCode: string | null;
+            reviewNote: string | null;
+            feeCollectedAt: string | null;
+            audits: {
+                action: string;
+                reason: string | null;
+                fromStatus: string;
+                toStatus: string;
+                actedByAdminEmail: string;
+                actedAt: string;
+            }[];
+            id: string;
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            status: "failed" | "expired" | "created" | "awaiting_user" | "processing" | "settled" | "cancelled";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            chargeKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            checkoutUrl: string | null;
+            message: string;
+            failureMessage: string | null;
+            cardLast4: string | null;
+            cardBrand: string | null;
+            expiresAt: string | null;
+            createdAt: string;
+            creditedAt: string | null;
+        };
+        AdminAddMoneyPage: {
+            items: components["schemas"]["AdminAddMoneyView"][];
+            nextCursor: string | null;
+        };
+        AddMoneyRailView: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            available: boolean;
+            reason: string | null;
+            hosted: boolean;
+        };
+        AddMoneyOptionsView: {
+            /** @enum {string} */
+            currency: "NGN";
+            rails: components["schemas"]["AddMoneyRailView"][];
+            cardPublicKey: string | null;
+            limits: {
+                minKobo: number | null;
+                maxKobo: number | null;
+                dailyMaxKobo: number | null;
+            };
+        };
+        AddMoneyQuoteView: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            feeKobo: number;
+            chargeKobo: number;
+        };
+        AddMoneyView: {
+            id: string;
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            status: "failed" | "expired" | "created" | "awaiting_user" | "processing" | "settled" | "cancelled";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            chargeKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            checkoutUrl: string | null;
+            message: string;
+            failureMessage: string | null;
+            cardLast4: string | null;
+            cardBrand: string | null;
+            expiresAt: string | null;
+            createdAt: string;
+            creditedAt: string | null;
+        };
+        AddMoneyPage: {
+            items: components["schemas"]["AddMoneyView"][];
+            nextCursor: string | null;
+        };
         FxBalanceView: {
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
@@ -12173,9 +12555,9 @@ export interface components {
             status: "pending" | "completed" | "failed";
             wawuUserId: string;
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string|null} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN" | null;
+            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | null;
             amountFromMinor: number;
             amountToMinor: number | null;
             providerFeeMinor: number | null;
@@ -12250,9 +12632,9 @@ export interface components {
         };
         FxConversionView: {
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             rate: string;
             fromMinor: number;
             toMinor: number;
@@ -12282,9 +12664,9 @@ export interface components {
         FxQuoteView: {
             id: string;
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -12303,9 +12685,9 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "completed" | "failed";
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "NGN" | "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -12525,7 +12907,7 @@ export interface components {
         };
         PlansView: {
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             currencyFixed: boolean;
             tiers: components["schemas"]["PlanTierView"][];
             extraProducts: components["schemas"]["PlanExtraProductsView"];
@@ -13324,7 +13706,7 @@ export interface components {
             flutterwaveTxRef: string;
             responseWindowHours: number;
             /** @enum {string} */
-            refundStatus: "failed" | "owed" | "not_owed" | "submitted" | "settled";
+            refundStatus: "failed" | "settled" | "owed" | "not_owed" | "submitted";
             refundReference: string | null;
             /** Format: date-time */
             refundedAt: string | null;
@@ -13551,7 +13933,7 @@ export interface components {
         ShopOrderView: {
             id: string;
             /** @enum {string} */
-            status: "pending" | "failed" | "refunded" | "paid" | "cancelled";
+            status: "pending" | "failed" | "refunded" | "cancelled" | "paid";
             subtotalNaira: number;
             deliveryNaira: number;
             totalNaira: number;
@@ -14402,7 +14784,7 @@ export interface components {
             amountKobo: number;
             memo: string | null;
             /** @enum {string} */
-            status: "pending" | "paid" | "cancelled" | "declined";
+            status: "pending" | "cancelled" | "paid" | "declined";
             paying: boolean;
             createdAt: string;
             resolvedAt: string | null;
@@ -14502,7 +14884,7 @@ export interface components {
             recapText: string | null;
             featured: boolean;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             lastDecisionReason: string | null;
             goingCount: number;
             speakers: components["schemas"]["EventSpeakerView"][];
@@ -14547,7 +14929,7 @@ export interface components {
             recapText: string | null;
             featured: boolean;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             lastDecisionReason: string | null;
             goingCount: number;
             speakers: components["schemas"]["EventSpeakerView"][];
@@ -14563,9 +14945,9 @@ export interface components {
             /** @enum {string} */
             action: "approved" | "rejected" | "removed" | "featured" | "unfeatured" | "restored";
             /** @enum {string} */
-            previousStatus: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            previousStatus: "pending" | "rejected" | "cancelled" | "removed" | "published";
             /** @enum {string} */
-            newStatus: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            newStatus: "pending" | "rejected" | "cancelled" | "removed" | "published";
             previousFeatured: boolean;
             newFeatured: boolean;
             reason: string | null;
@@ -14602,7 +14984,7 @@ export interface components {
             recapText: string | null;
             featured: boolean;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             lastDecisionReason: string | null;
             goingCount: number;
             speakers: components["schemas"]["EventSpeakerView"][];
@@ -14638,7 +15020,7 @@ export interface components {
             recapText: string | null;
             featured: boolean;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             lastDecisionReason: string | null;
             goingCount: number;
             speakers: components["schemas"]["EventSpeakerView"][];
@@ -15764,7 +16146,7 @@ export interface components {
             recapText: string | null;
             featured: boolean;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             goingCount: number;
             userGoing: boolean;
             userSaved: boolean;
@@ -15929,7 +16311,7 @@ export interface components {
             moneyRequest: {
                 amountKobo: number;
                 /** @enum {string} */
-                status: "pending" | "paid" | "cancelled" | "declined";
+                status: "pending" | "cancelled" | "paid" | "declined";
             } | null;
         };
         InboxPerson: {
@@ -15971,7 +16353,7 @@ export interface components {
             amountKobo: number;
             memo: string | null;
             /** @enum {string} */
-            status: "pending" | "paid" | "cancelled" | "declined";
+            status: "pending" | "cancelled" | "paid" | "declined";
             paying: boolean;
             canMessage: boolean;
         };
@@ -16240,7 +16622,7 @@ export interface components {
             fromTierId: string | null;
             bump: boolean;
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             planMinor: number;
             bumpMinor: number;
             bumpPoints: number;
@@ -16253,7 +16635,7 @@ export interface components {
             kind: "points_pack";
             packId: string;
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             packMinor: number;
             points: number;
             bonusPercent: number;
@@ -16268,7 +16650,7 @@ export interface components {
             /** @enum {string} */
             kind: "extra_products";
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             extraMinor: number;
             products: number;
             productsAllowed: number;
@@ -16299,7 +16681,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             amountMinor: number;
             /** @enum {string} */
             status: "pending" | "failed" | "reversed" | "refunded" | "paid";
@@ -16331,7 +16713,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer";
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             amountMinor: number;
             /** @enum {string} */
             status: "pending" | "failed" | "expired" | "awaiting_transfer";
@@ -16356,7 +16738,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             amountMinor: number;
             points: number;
             bonusPoints: number;
@@ -16381,7 +16763,7 @@ export interface components {
             /** @enum {string} */
             method: "transfer" | "wallet";
             /** @enum {string} */
-            currency: "USD" | "NGN";
+            currency: "NGN" | "USD";
             amountMinor: number;
             products: number;
             /** @enum {string} */
@@ -16484,6 +16866,7 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
+            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;
@@ -16617,7 +17000,7 @@ export interface components {
             ticketCount: number;
             ticketsKobo: number;
             /** @enum {string} */
-            status: "failed" | "paid" | "processing" | "awaiting_payment";
+            status: "failed" | "processing" | "paid" | "awaiting_payment";
             paymentId: string | null;
             /** @enum {string|null} */
             paymentStatus: "pending" | "completed" | "failed" | "reversed" | null;
@@ -17325,6 +17708,130 @@ export interface components {
             netPayoutKobo: number;
             daysHeld: number;
         };
+        StoreProductGrantsConfig: {
+            packId: string | null;
+            /** @enum {string|null} */
+            pack: "starter" | "popular" | "pro" | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        StoreGrantsView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        AdminStoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsConfig"];
+            resolved: components["schemas"]["StoreGrantsView"];
+            referenceKobo: number | null;
+            active: boolean;
+            sortOrder: number;
+            updatedBy: string | null;
+            updatedAt: string;
+        };
+        AdminStoreProductListView: {
+            items: components["schemas"]["AdminStoreProductView"][];
+        };
+        AdminStorePlatformView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            enabled: boolean;
+            configured: boolean;
+            storeFeeBps: number;
+            storeFeeOverridden: boolean;
+            updatedAt: string | null;
+        };
+        AdminStorePlatformListView: {
+            items: components["schemas"]["AdminStorePlatformView"][];
+        };
+        AdminStorePurchaseView: {
+            id: string;
+            wawuUserId: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            environment: string;
+            storeTransactionId: string;
+            communityId: string | null;
+            currency: string | null;
+            priceMicros: string | null;
+            referenceKobo: number | null;
+            storeFeeBps: number;
+            netKobo: number | null;
+            creatorWawuUserId: string | null;
+            creatorShareKobo: number | null;
+            purchasedAt: string;
+            expiresAt: string | null;
+            endedAt: string | null;
+            endReason: string | null;
+            takenBack: {
+                [key: string]: unknown;
+            } | null;
+            flag: string | null;
+            flaggedAt: string | null;
+        };
+        AdminStorePurchasePageView: {
+            items: components["schemas"]["AdminStorePurchaseView"][];
+            nextCursor: string | null;
+        };
+        StoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            subscription: boolean;
+            grants: components["schemas"]["StoreGrantsView"];
+        };
+        StoreProductListView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            accountToken: string;
+            available: boolean;
+            /** @enum {string|null} */
+            reason: "store_not_configured" | "store_disabled" | null;
+            products: components["schemas"]["StoreProductView"][];
+        };
+        StoreGrantedView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            until: string | null;
+            communityId: string | null;
+        };
+        StorePurchaseView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            alreadyGranted: boolean;
+            grant: components["schemas"]["StoreGrantedView"];
+            purchasedAt: string;
+            expiresAt: string | null;
+            flag: string | null;
+        };
+        StoreWebhookAck: {
+            received: boolean;
+            outcome: string;
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;
@@ -17338,7 +17845,7 @@ export interface components {
             id: string;
             name: string;
             /** @enum {string} */
-            status: "pending" | "rejected" | "removed" | "cancelled" | "published";
+            status: "pending" | "rejected" | "cancelled" | "removed" | "published";
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -17444,7 +17951,7 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "ended" | "paused" | "updated" | "scheduled" | "created" | "resumed" | "deleted";
+            action: "created" | "ended" | "paused" | "updated" | "scheduled" | "resumed" | "deleted";
             /** @enum {string|null} */
             previousStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             /** @enum {string|null} */
@@ -24882,6 +25389,343 @@ export interface operations {
                 };
             };
             /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    AddMoneyReturnController_page: {
+        parameters: {
+            query?: {
+                id?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page that opens the app. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyOptionsView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_quote: {
+        parameters: {
+            query: {
+                rail: "card" | "apple_pay" | "ussd" | "open_banking";
+                amountKobo: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyQuoteView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, add_money_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyPage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_start: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMoneyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, add_money_unavailable, email_not_verified */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: below_minimum */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, add_money_unavailable */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -35394,6 +36238,51 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    StoreController_products: {
+        parameters: {
+            query: {
+                /** @description The store the app runs on: `android` (Google Play) or `ios` (App Store). */
+                platform: "android" | "ios";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreProductListView"];
+                };
+            };
+        };
+    };
+    StoreController_buy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorePurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorePurchaseView"];
                 };
             };
         };
