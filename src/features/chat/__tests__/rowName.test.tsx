@@ -1,9 +1,10 @@
 import * as rtl from '@testing-library/react-native';
 
 import type { InboxItem } from '@/features/inbox/api';
+import { PaidInboxRow } from '@/features/paid-answers/PaidInboxRow';
 import { PaidFanRow } from '@/features/paid-ask/PaidFanRow';
 
-import { ChatInboxRow, MoneyRequestInboxRow, rowNameOf } from '../ChatInboxRow';
+import { ChatInboxRow, MoneyMoveInboxRow, MoneyRequestInboxRow, rowNameOf } from '../ChatInboxRow';
 
 /*
  * SWEEP-APP-8 L1 (FIX-101 F1 follow-up): the Hub gives a person with no name `name: ""`. The Inbox rows used to draw that as a blank line;
@@ -39,6 +40,28 @@ const paid = (other: ReturnType<typeof unnamed>): InboxItem =>
     moneyRequest: null,
   }) as unknown as InboxItem;
 
+const move = (other: ReturnType<typeof unnamed>): InboxItem =>
+  ({
+    ...base,
+    id: 'money_move:t1',
+    kind: 'money_move',
+    preview: null,
+    chat: null,
+    paidDm: null,
+    moneyRequest: null,
+    moneyMove: { transferId: 't1', chatId: 'c1', direction: 'incoming', other, amountKobo: 500_000, note: null, status: 'completed', canMessage: true },
+  }) as unknown as InboxItem;
+const paidAsked = (other: ReturnType<typeof unnamed>): InboxItem =>
+  ({
+    ...base,
+    id: 'p2',
+    kind: 'paid_dm',
+    preview: { text: 'Thanks', mine: false, attachment: null, moneyRequest: null },
+    chat: null,
+    paidDm: { side: 'creator', other, questionCount: 1, waitingCount: 0, nextDeadlineAt: null },
+    moneyRequest: null,
+  }) as unknown as InboxItem;
+
 describe('an Inbox row for a person with no name', () => {
   it('rowNameOf: the name, else the @handle, else Someone', () => {
     expect(rowNameOf({ name: 'Kemi Okafor', handle: 'kemi' })).toBe('Kemi Okafor');
@@ -69,5 +92,29 @@ describe('an Inbox row for a person with no name', () => {
   it('a fan\'s paid question row draws the @handle', async () => {
     await rtl.render(<PaidFanRow item={paid(unnamed('kemi'))} />);
     expect(await rtl.screen.findByText('@kemi')).toBeTruthy();
+  });
+
+  it('a send between two people draws the @handle, and its avatar the handle\'s first letter (FIX-114)', async () => {
+    await rtl.render(<MoneyMoveInboxRow item={move(unnamed('kemi'))} />);
+    expect(await rtl.screen.findByText('@kemi')).toBeTruthy();
+    const hidden = { includeHiddenElements: true };
+    expect(rtl.screen.getByText('K', hidden)).toBeTruthy();
+  });
+
+  it('a send with no handle either draws Someone', async () => {
+    await rtl.render(<MoneyMoveInboxRow item={move(unnamed(null))} />);
+    expect(await rtl.screen.findByText('Someone')).toBeTruthy();
+  });
+
+  it('a paid question asked of the person draws the asker\'s @handle (INBOX-18)', async () => {
+    await rtl.render(<PaidInboxRow item={paidAsked(unnamed('kemi'))} />);
+    expect(await rtl.screen.findByText('@kemi')).toBeTruthy();
+    const hidden = { includeHiddenElements: true };
+    expect(rtl.screen.getByText('K', hidden)).toBeTruthy();
+  });
+
+  it('a paid question from a person with no handle draws Someone', async () => {
+    await rtl.render(<PaidInboxRow item={paidAsked(unnamed(null))} />);
+    expect(await rtl.screen.findByText('Someone')).toBeTruthy();
   });
 });

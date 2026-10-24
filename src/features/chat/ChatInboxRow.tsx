@@ -132,13 +132,13 @@ export function MoneyMoveInboxRow({ item }: { item: InboxItem }) {
   return (
     <ConversationRow
       testID={`row-${item.id}`}
-      name={move.other.name}
+      name={rowNameOf(move.other)}
       preview={line.text}
       kind={line.kind}
       time={rowTime(item.lastActivityAt)}
       unread={0}
       tick={rowTick(move.other)}
-      lead={<Avatar name={move.other.name} hue={hueFor(move.other.wawuId)} size={ROW_AVATAR} source={move.other.avatarUrl ?? undefined} decorative />}
+      lead={<Avatar name={avatarNameOf(move.other)} hue={hueFor(move.other.wawuId)} size={ROW_AVATAR} source={move.other.avatarUrl ?? undefined} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: move.chatId } })}
     />
   );
