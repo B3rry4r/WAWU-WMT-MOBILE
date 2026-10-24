@@ -79,3 +79,57 @@ Route note. `PUT /events/{id}/tickets` is stricter than R-79 (c): it refuses any
 Checks. Backend: tsc EXIT 0, eslint (no fix) on the 4 changed files EXIT 0, event specs in band 11 suites 194 of 194 EXIT 0 (none imports the Fintava double; run on a spec database with the suite's own mock WAWU ID, the stack's mock gave 5 door-staff and held-ticket failures from its own seeded names, none touch this change), test:protected 253 of 253 EXIT 0 after `db:seed`, contract:build EXIT 0 with no diff, gates 0 fail 133 warn 88 accepted EXIT 0, check_baseline EXIT 0. App (own `npm ci` from the lockfile): tsc EXIT 0, eslint (no fix) on the 6 changed files EXIT 0, jest `src/features/events` plus `appLinkRoutes`, `route-graph` and `route-guard` 29 suites 724 tests EXIT 0, gates 0 fail 18 warn (1223 files) plus the 56 gate unit tests EXIT 0, check_tasks `--write` EXIT 0. Live: walk and contrast logs and pictures in the builder's `events-14-r2/` scratch folder.
 
 Not run. A sold event's Edit event was not walked live again (round 1 walked it; this round did not touch that path). The full mobile suite is the merge agent's.
+
+## Verifier report, round 2
+
+Verifier, 24 Oct 2026 (a Sonnet session that built none of EVENTS-14). Under check: mobile `562e9332..0c18a982`, backend `84181d7..96530d2`. Local stack `ev14v2` (Hub 7900, app web export 7903, 390 x 844, Playwright, real sign-in through the app's form, host the seeded creator with a live tick). Logs and pictures in `events-14-v2/` (`logs/walk.log`, `pics/`).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | Backend: tsc EXIT 0; eslint (no fix) on the 4 changed files EXIT 0; 14 event suites in band, 217 of 217, EXIT 0 (none greps as Fintava); `test:protected` after `db:seed` 253 of 253 EXIT 0; gates 0 fail 133 warn 88 accepted (1747 files) EXIT 0; check_baseline EXIT 0. App (own `npm ci`): tsc EXIT 0; eslint (no fix) on the 6 changed files EXIT 0; gates (with the 56 gate tests) EXIT 0; check_tasks EXIT 0 (415 tasks); FULL jest `--ci --maxWorkers=2`: first run 319 of 320 suites, 5452 of 5453 tests, EXIT 1 (one suite outside this branch's diff, `referral/__tests__/RulesScreen.test.tsx`, timed out on a loading-state assertion while my browser walks loaded the machine; 3 of 3 alone EXIT 0); second run on a quiet machine 320 of 320, 5453 of 5453, EXIT 0 (`logs/app-jest2.log`). |
+| V3 Regression | passed | `test:protected` 253 of 253; the backend diff is one string constant and three spec lines; no route, DTO or contract change. |
+| V7 Flow walk | passed | 17 live walks from a cold deep link to E18 in each of dark (run twice, the second with the `PATCH` bodies captured) and light (`logs/walk.log`): see M1 below. |
+| V6 States | passed | The one-day event with its start moved past its end clock time: "It has to end after it starts." under Ends, nothing sent, event still published (`pics/late-Cone-err-dark.png`). |
+| V5 Picture | passed with one low | Locked Ticket types, both themes (`pics/locked-ticket-types-*.png`); Ends field with an end day (`pics/day-A3day-dark.png`): see L-A. |
+
+### M1 (the medium fix), live
+
+Events made through `POST /events` and approved by an admin: a 3-day (Tue 3 Nov 09:00 to Thu 5 Nov 16:00), a no-end, a one-day (09:00 to 16:00) and a 3-day ending 07:00 on day 3 (end clock earlier than the start). Each edit opened from E18 (Edit event), saved through the review sheet, and the Hub read back. Request bodies were taken from the page's own `PATCH` (fetch wrapper), Hub values from `GET /events/{id}`.
+
+| Edit from E18 | Sent | Hub after |
+|---|---|---|
+| rename only, all four events | `{"name": ...}` and nothing else | `pending`; start and end exactly as before (the no-end event still has none; the 07:00 event saved, round 1 refused it) |
+| start day Tue 3 to Fri 6 Nov, 3-day | start and end | Fri 6 Nov 09:00 to Sun 8 Nov 16:00 (still 3 days) |
+| start day moved, 07:00 event | start and end | Fri 6 to Sun 8 Nov 07:00 |
+| start day moved, no-end event | start only | start moved, still no end |
+| start day moved, one-day | start and end | Fri 6 Nov 09:00 to 16:00 (as round 1) |
+| start time 09:00 to 10:00, 3-day, no-end, one-day, 07:00 event | start only | start 10:00, every end untouched (3-day still ends Thu 5 Nov 16:00) |
+| end moved (3-day to 18:00, 07:00 event to 08:00) | end only | start untouched, end on its own day |
+| no-end event given an end 12:00 | end only | ends 12:00 on the start day |
+| one-day, start moved to 17:00 (end 16:00) | nothing | refused in the app as in round 1, event stays published |
+| sold event (1 free ticket), rename | name only | `pending`, start and end as before (dark and light) |
+
+The one-day event behaves as in round 1 (same Hub values; the only difference is the unmoved field is no longer sent). Every `PATCH` left the event `pending`.
+
+### The changed assertion
+
+"a host who moves the end sends both the start and the end" became "sends the end alone". It pinned the mechanism of M1, not a rule a user relies on: `patchBody` sent a start and an end whenever either moved and put the end on the start's day, which is what rewrote a multi-day end. The new expectation is the right value for that fixture (end 04:00 Lagos is `03:00Z`), the case it used to cover (start day moved on a one-day event sends both) has its own new test, and the live walk shows the Hub accepts an end sent alone and checks it against the stored start. It does not hide a defect. On round 1's source with the round 2 tests copied in: 16 failed of 41, EXIT 1 (`logs/r1-source-r2tests.log`); on the built branch all pass inside the full jest. Three of the new tests pass on both (a one-day start-day move, a plain three-day rename at form level, "still told when an end falls on or before its start"): they are guards for what must not change, as intended.
+
+### The 409 sentence
+
+Live `PUT /events/{id}/tickets` on the sold event answers 409 `Tickets have already sold for "Open door". Ticket types cannot change once a ticket is sold.` (no em-dash). The service diff is the constant and its comment; the three specs take the same string; the app's line (`SOLD_LINE`, "A ticket has sold, so ticket types cannot change.") and its test constant say the same. No em-dash in any added line of either repo.
+
+### LockedField contrast
+
+Measured in the browser on the sold event's Ticket types: dark 6.73 to 1 (text `rgb(169,165,180)` on `rgb(34,31,41)`), light 5.99 to 1 (`rgb(90,87,102)` on `rgb(238,236,242)`); name, price and places all read-only, same size as the field they replace. Matches the builder's figures. Both pictures are legible. I did not open the builder's scratch folder (the brief names no file in it), so there is no side-by-side with its pictures; the figures agree.
+
+### Findings
+
+**Low** (to the EVENTS sweep)
+
+- **L-A (defect, cosmetic).** `src/features/events/host/HostScreen.tsx:~401` (the Ends `PickerField`, not `half`) with `hostForm.ts` `endShown`: a multi-day end is clipped at 390 px, "Sun 8 Nov, 16..." (and "Thu 5 Nov, 16..." before a move), so the end's minutes can only be read by opening the sheet. The Starts field next to it, in the half-width style, shows "Fri 6 Nov, 09:00" in full. Data is right; the saved end is correct. Repro: open Edit event on a 3-day event, Continue (`pics/day-A3day-dark.png`). Test that would kill it: none today (a layout assertion on the Ends value at 390 px).
+- L3 from round 1 still open (E14 address hint), and G-EVENTS-14-1, as recorded.
+
+NOT RUN: surviving-mutant runs; the E16 and E17 boards (unchanged by round 2). Sold-event Ticket types in the app was seen locked; the "sale between read and save" state was covered in round 1 and is untouched.
+
+**Verdict: PASS.** M1 is fixed on every event shape tried; nothing medium or worse is open. L-A goes to the EVENTS sweep.
