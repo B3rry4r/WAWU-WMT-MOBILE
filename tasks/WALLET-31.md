@@ -107,7 +107,7 @@ Repro: `npm run test:contract -- src/account-purge/tests/account-data-map.spec.t
 
 Not run by this verifier, on purpose: Fintava specs (`webhook-retention`, and `wallet-gate.contract.spec.ts` was run once by mistake: it imports the in-process Fintava double, no network, no sandbox); a fingerprint approval (no device on the web export); real dev webhooks.
 
-### Round 1 (24 Oct 2026, a Sonnet builder, T2; backend `wmt/WALLET-31` `bf9f85b`, mobile branch of the same name; status verifying)
+### Round 1 (24 Oct 2026, a Sonnet builder, T2; backend `wmt/WALLET-31` `169de6d`, mobile branch of the same name; status verifying)
 
 | Finding | Fix | Proof (EXIT lines in the hand-back) |
 |---|---|---|
@@ -125,7 +125,7 @@ Not run by this verifier, on purpose: Fintava specs (`webhook-retention`, and `w
 | L6 admin repeats | a repeated unfreeze, cancel or admin freeze is a no-op with no second audit row | spec: three audit rows for three changes and a repeated cancel |
 | L7 W29 spacing | the fee card uses `Card padded` (its rows style had overridden the padding), so the top and bottom room are the same | typecheck; picture not remade (no stack this round) |
 
-Branch checks on `bf9f85b` (run 40105092641): contract, netns, shards 1 and 3, Gates and Protected routes are green; shard 2 has one red, `webhook-retention.contract.spec` (FIX-20, "a cleared delivery sent again is refused as a repeat", Nuvion case). That red is this branch's: the spec registers its own handler for `cards.deleted` and sends it for a wallet that has no row, and the card handler (which now claims `cards.deleted`) answers `wait`, so the delivery reads `waiting` instead of `processed`. Branch checks of IAP-01, WALLET-21-HUB and NUV-11 do not show it. Not touched, by the lead's order; the fix is the same kind as H1d (the spec's default sample event `cards.deleted`, its handler's `events` and the one test title move to an event no handler claims, such as `payment_dispute.created`), for the lead to rule.
+Branch checks on `bf9f85b` (run 40105092641): everything green except `webhook-retention.contract.spec` (FIX-20, Nuvion repeat case). That red was this branch's: the spec registered its own handler for `cards.deleted` and sent it for a wallet with no row, and the card handler, which now claims `cards.deleted`, answered `wait`, so the delivery read `waiting`. Lead ruling (same kind as H1d): in `src/webhook-retention/tests/webhook-retention.contract.spec.ts` only the sample event moved, `cards.deleted` to `payment_dispute.created`, in four places (the `nuvionBody` default, the stored row's `event`, the F20-SPEC handler's `events`, the other-body delivery); no assertion, title or intent changed. `payment_dispute.*` is listed in `nuvion.interface.ts` and no handler claims it on `origin/wmt/WALLET-21-HUB`, `WALLET-25`, `NUV-11`, `NUV-12`, `IAP-01`, `WALLET-41`, `GEO-02` or this branch (searched `src`). Backend head `169de6d`. That spec imports the Fintava double (`test/fintava/fintava-double`), so by the owner rule it was NOT run locally (the lead's "check first" found the import); tsc, eslint (no fix) and the gates are EXIT 0, and CI's Branch checks prove it.
 
 Not done: M2 (the live Nuvion dev pass through the app, a funded dev wallet); pictures of round 1; the full app check. `plan-settings-round2` and `-readers` (14 tests) fail on a clean `origin/main` too. Five app wallet tests (W1, W35 x2, W26, W36) time out at 20 s on a cold, loaded machine and pass with `--testTimeout=120000`; three of them fail the same on the untouched checkout.
 
