@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 
-import { ChatInboxRow, MoneyRequestInboxRow } from '@/features/chat/ChatInboxRow';
+import { ChatInboxRow, MoneyMoveInboxRow, MoneyRequestInboxRow } from '@/features/chat/ChatInboxRow';
 import { CommunityInboxRow } from '@/features/communities/CommunityInboxRow';
 import { drawsPaidRow, PaidInboxRow } from '@/features/paid-answers/PaidInboxRow';
 import { drawsPaidFanRow, PaidFanRow } from '@/features/paid-ask/PaidFanRow';
@@ -11,7 +11,7 @@ import type { InboxItem, InboxKind, InboxUnread } from './api';
  * How each kind of inbox row is drawn. A kind is drawn by the task that builds the screen its row opens
  * (docs/WORKFLOW.md section 7), which adds its renderer here, as drawn:
  *   chat: INBOX-19 (opens the chat), paid_dm: INBOX-18 (a creator's side) and INBOX-10 (a fan's side), community: INBOX-05,
- *   money_request: INBOX-20 (the Money view only).
+ *   money_request: INBOX-20 and money_move: FIX-114 (the Money view only; each opens the chat of the two people).
  * Until a kind has a renderer its rows are not drawn (R-47): a row with nowhere to go would be a dead button.
  * What is drawn decides what is counted: the tab's badge adds up only the rows that are drawn (`drawnUnread`),
  * and an inbox whose rows are all undrawn shows the same empty state as an inbox with none. The list's order
@@ -31,6 +31,7 @@ export const inboxRowRenderers: InboxRowRenderers = {
     { draws: (item: InboxItem) => drawsPaidRow(item) || drawsPaidFanRow(item) },
   ),
   money_request: (item) => <MoneyRequestInboxRow item={item} />,
+  money_move: (item) => <MoneyMoveInboxRow item={item} />,
 };
 
 /** The rows of `items` that have a renderer, in the server's order. */
@@ -43,7 +44,7 @@ export function drawableRows(items: readonly InboxItem[], renderers: InboxRowRen
 
 /**
  * Which of the Hub's unread counts belongs to which kind of row. A money request row has none: the chat already counts the request
- * message, so its row's own count is always 0 (INBOX-15) and counting it again would show it twice.
+ * message, so its row's own count is always 0 (INBOX-15) and counting it again would show it twice. A send's row has none either (FIX-114).
  */
 const unreadField = { chat: 'chats', paid_dm: 'paidDms', community: 'communities' } as const satisfies Partial<Record<InboxKind, keyof InboxUnread>>;
 

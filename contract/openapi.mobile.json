@@ -23020,14 +23020,15 @@
       "name": "kind",
       "required": false,
       "in": "query",
-      "description": "Only rows of this kind (the Paid DMs, Communities and Money chips; the\nMoney chip is `money_request`). All kinds when left out.",
+      "description": "Only rows of this kind (the Paid DMs, Communities and Money chips). The\nMoney chip is `money`: requests and sends between two WAWU people\ntogether (FIX-114). `money_request` stays what it was, requests only.\nSends are served only under `money`; the unfiltered list never holds\nthem. All kinds when left out.",
       "schema": {
        "type": "string",
        "enum": [
         "chat",
         "paid_dm",
         "community",
-        "money_request"
+        "money_request",
+        "money"
        ]
       }
      }
@@ -51943,6 +51944,55 @@
      "canMessage"
     ]
    },
+   "InboxMoneyMove": {
+    "type": "object",
+    "properties": {
+     "transferId": {
+      "type": "string"
+     },
+     "chatId": {
+      "type": "string"
+     },
+     "direction": {
+      "type": "string",
+      "enum": [
+       "outgoing",
+       "incoming"
+      ]
+     },
+     "other": {
+      "$ref": "#/components/schemas/InboxPerson"
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "note": {
+      "type": "string",
+      "nullable": true
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "completed",
+       "reversed"
+      ]
+     },
+     "canMessage": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "transferId",
+     "chatId",
+     "direction",
+     "other",
+     "amountKobo",
+     "note",
+     "status",
+     "canMessage"
+    ]
+   },
    "InboxItem": {
     "type": "object",
     "properties": {
@@ -51955,7 +52005,8 @@
        "paid_dm",
        "community",
        "chat",
-       "money_request"
+       "money_request",
+       "money_move"
       ]
      },
      "lastActivityAt": {
@@ -52001,6 +52052,14 @@
       "allOf": [
        {
         "$ref": "#/components/schemas/InboxMoneyRequest"
+       }
+      ],
+      "nullable": true
+     },
+     "moneyMove": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/InboxMoneyMove"
        }
       ],
       "nullable": true

@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 365.**
+**Launch tasks done: 176 of 366.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 49 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
+| verifying | 161 | 0 | 0 | 0 |
 | review | 31 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -49,6 +49,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
