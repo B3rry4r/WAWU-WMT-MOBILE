@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, View } from 'react-native';
 
 import { Banner } from '@/components/Banner';
@@ -11,7 +11,7 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
 
-import { fetchWork, updateWork, workKey, worksRoot, type WorkDetail } from './api';
+import { fetchMyId, fetchWork, myIdKey, updateWork, workKey, worksRoot, type WorkDetail } from './api';
 import { readFailure, saveFailure, type SaveFailure } from './failure';
 import { changesOf, formOf, hasProblems, isComplete, problemsOf, type FormField, type WorkForm } from './form';
 import { WorkFields } from './WorkFields';
@@ -26,6 +26,11 @@ export type EditWorkScreenProps = {
   onBack: () => void;
   /** After the change is saved: the route goes back to M35, which has already been told to read again. */
   onSaved: () => void;
+  /**
+   * The work is somebody else's (SWEEP-APP-8 L5): the route sends the person to the work's page (M35) instead. Without it the screen says
+   * the work is not theirs to change. The form is never drawn for another person's work.
+   */
+  onNotOwner?: () => void;
 };
 
 /**
@@ -33,15 +38,30 @@ export type EditWorkScreenProps = {
  * and Save sends only what changed (`PATCH /users/me/featured-works/{id}`; an optional field emptied is cleared). A work's photos and
  * videos are not changed here: the box that picks them is left out (R-47) and the work keeps the ones it has.
  */
-export function EditWorkScreen({ wawuId, workId, onBack, onSaved }: EditWorkScreenProps) {
+export function EditWorkScreen({ wawuId, workId, onBack, onSaved, onNotOwner }: EditWorkScreenProps) {
   const work = useQuery({ queryKey: workKey(wawuId, workId), queryFn: () => fetchWork(wawuId, workId) });
+  // Whose work this is decides whether the form is drawn: only the person who made it may change it. Until that is known (or if it cannot be read) it is not.
+  const me = useQuery({ queryKey: myIdKey, queryFn: fetchMyId });
+  const theirs = work.data !== undefined && me.data !== undefined && me.data !== work.data.owner.wawuId;
+  useEffect(() => {
+    if (theirs) onNotOwner?.();
+  }, [theirs, onNotOwner]);
 
-  if (work.data) return <EditForm work={work.data} workId={workId} onBack={onBack} onSaved={onSaved} />;
+  if (work.data && me.data !== undefined && !theirs) return <EditForm work={work.data} workId={workId} onBack={onBack} onSaved={onSaved} />;
 
-  if (work.isError) {
+  if (theirs && !onNotOwner) {
     return (
       <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit work" onBack={onBack} gap={BODY_GAP} testID="edit-work-problem">
-        <ErrorState testID="edit-work-error" title="The work did not load" message={readFailure(work.error)} onRetry={() => void work.refetch()} />
+        <ErrorState testID="edit-work-not-yours" icon="Lock" title="This is not your work" message="Only the person who made a work can change it." />
+      </ScreenFrame>
+    );
+  }
+
+  if (work.isError || (work.data && me.isError)) {
+    const failed = work.isError ? work : me;
+    return (
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit work" onBack={onBack} gap={BODY_GAP} testID="edit-work-problem">
+        <ErrorState testID="edit-work-error" title="The work did not load" message={readFailure(failed.error)} onRetry={() => void failed.refetch()} />
       </ScreenFrame>
     );
   }

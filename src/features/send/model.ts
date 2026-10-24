@@ -54,8 +54,27 @@ export const BANK_CHARGE = 'Bank charge';
 
 export const payeeOf = (r: Recipient): Payee => ({ wawuUserId: r.wawuUserId, name: r.displayName, handle: r.handle, avatarUrl: r.avatarUrl, tick: r.tick });
 
-/** The route params that carry a payee (strings only). */
+/**
+ * The name tokens of the bank accounts picked on this phone, kept in memory by the account's key. A name token is the Hub's proof that
+ * the person saw the bank's name for the account; it rides with the send, never in a route (on the web a route is the address in the
+ * bar, the history and a shared link). A few at a time: the newest stay, and a restart of the app forgets them (the Hub's tokens are
+ * short-lived anyway).
+ */
+const MAX_NAME_TOKENS = 8;
+const nameTokens = new Map<string, string>();
+
+/** Keeps a picked account's name token for the screens after it (W14 to W9 to W10). */
+export function rememberNameToken(bank: Pick<BankPayee, 'bankCode' | 'accountNumber' | 'nameToken'>): void {
+  const key = bankKey(bank.bankCode, bank.accountNumber);
+  nameTokens.delete(key);
+  if (!bank.nameToken) return;
+  nameTokens.set(key, bank.nameToken);
+  while (nameTokens.size > MAX_NAME_TOKENS) nameTokens.delete(nameTokens.keys().next().value as string);
+}
+
+/** The route params that carry a payee (strings only). A bank account's name token is not one: it is kept in memory (`rememberNameToken`). */
 export function payeeParams(p: Payee): Record<string, string> {
+  if (p.bank) rememberNameToken(p.bank);
   return {
     id: p.wawuUserId,
     name: p.name,
@@ -63,7 +82,7 @@ export function payeeParams(p: Payee): Record<string, string> {
     ...(p.avatarUrl ? { avatar: p.avatarUrl } : {}),
     ...(p.tick ? { tick: p.tick } : {}),
     ...(p.bank
-      ? { bankCode: p.bank.bankCode, bankName: p.bank.bankName, accountNumber: p.bank.accountNumber, saved: p.bank.saved ? '1' : '0', ...(p.bank.nameToken ? { nameToken: p.bank.nameToken } : {}) }
+      ? { bankCode: p.bank.bankCode, bankName: p.bank.bankName, accountNumber: p.bank.accountNumber, saved: p.bank.saved ? '1' : '0' }
       : {}),
   };
 }
@@ -80,10 +99,11 @@ export function payeeFromParams(params: Record<string, Param>): Payee | null {
   const bankCode = one(params.bankCode);
   const bankName = one(params.bankName);
   const accountNumber = one(params.accountNumber);
+  const saved = one(params.saved) === '1';
   // A bank account needs all three, or it is not a bank account (the screen then goes back to W7).
   const bank: BankPayee | undefined =
     bankCode && bankName && accountNumber && /^[0-9]{3,6}$/.test(bankCode) && /^[0-9]{10}$/.test(accountNumber)
-      ? { bankCode, bankName, accountNumber, nameToken: one(params.nameToken) || null, saved: one(params.saved) === '1' }
+      ? { bankCode, bankName, accountNumber, nameToken: (saved ? null : nameTokens.get(bankKey(bankCode, accountNumber))) ?? null, saved }
       : undefined;
   if (id.startsWith('bank:') && !bank) return null;
   return {

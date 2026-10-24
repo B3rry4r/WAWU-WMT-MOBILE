@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Avatar } from '@/components/Avatar';
 import { ConversationRow, type ConversationKind } from '@/components/ConversationRow';
 import { tickOf } from '@/features/chat/api';
+import { avatarNameOf, rowNameOf } from '@/features/chat/ChatInboxRow';
 import { rowTime } from '@/features/communities/format';
 import { hueFor } from '@/features/feed/model';
 import type { InboxItem } from '@/features/inbox/api';
@@ -35,13 +36,13 @@ export function PaidInboxRow({ item }: { item: InboxItem }) {
   return (
     <ConversationRow
       testID={`row-${item.id}`}
-      name={dm.other.name}
+      name={rowNameOf(dm.other)}
       preview={text}
       kind={kind}
       time={rowTime(item.lastActivityAt)}
       unread={item.unreadCount}
       tick={tickOf(dm.other)}
-      lead={<Avatar name={dm.other.name} hue={hueFor(dm.other.wawuId)} size={52} source={dm.other.avatarUrl ?? undefined} decorative />}
+      lead={<Avatar name={avatarNameOf(dm.other)} hue={hueFor(dm.other.wawuId)} size={52} source={dm.other.avatarUrl ?? undefined} decorative />}
       onPress={() => router.push(paidThreadHref(dm.other.wawuId))}
     />
   );

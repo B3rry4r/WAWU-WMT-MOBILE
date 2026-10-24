@@ -388,6 +388,18 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   };
 
   const typing = view === 'input' || view === 'done' || view === 'failed';
+  // Under the row: the Hub's types and limits while a recording is to be chosen, its length once one is ready. A settled job (PT2b) shows
+  // what was heard and how long it was, never the limits; a failed one shows nothing, its banner is next (SWEEP-APP-8 L3, POINTS-10).
+  const fileMetaLine =
+    !fileRule
+      ? ''
+      : ended
+        ? view === 'done' && fileQuote
+          ? lengthLine(units)
+          : ''
+        : shownRecording?.phase === 'ready' && fileQuote
+          ? lengthLine(units)
+          : limitsLine(fileRule);
   const failed = failedWords(job.data?.message);
   const foot =
     view === 'input' ? (
@@ -413,10 +425,10 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
     <PointsFrame title={tool.name} subtitle={`Points: ${formatPointsCount(balance)}`} onBack={onBack} gap={BODY_GAP} foot={foot} testID="tool-screen">
       {kind === 'file' && fileRule ? (
         <View style={styles.boxGroup}>
-          <RecordingBox recording={shownRecording} onChoose={() => void choose()} enabled={typing && !starting && !check.checking} />
+          <RecordingBox recording={shownRecording} onChoose={() => void choose()} enabled={typing && !starting && !check.checking} settled={view === 'done'} />
           <View style={styles.meta}>
             <Text variant="body" tone="textMuted" testID="tool-length" style={[styles.metaText, styles.metaWide]}>
-              {shownRecording?.phase === 'ready' && fileQuote && !ended ? lengthLine(units) : limitsLine(fileRule)}
+              {fileMetaLine}
             </Text>
           </View>
         </View>

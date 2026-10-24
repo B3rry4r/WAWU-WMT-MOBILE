@@ -78,10 +78,13 @@ const YEAR = /^\d{4}$/;
 
 const LIMITED_FIELDS: readonly TextLimit[] = ['title', 'role', 'client', 'category', 'link', 'description'];
 
-/** The length the Hub counts: trimmed, and for a line of words (not a link) a run of spaces counted as one. */
+/** The fields the Hub keeps as typed after the trim: a link, and the description (a paragraph keeps its runs of spaces and its line breaks). */
+const KEPT_AS_TYPED: readonly TextLimit[] = ['link', 'description'];
+
+/** The length the Hub counts: trimmed, and for a single line of words (title, role, client, category) a run of spaces counted as one. */
 export function lengthOf(field: TextLimit, value: string): number {
   const text = value.trim();
-  return (field === 'link' ? text : text.replace(/ {2,}/g, ' ')).length;
+  return (KEPT_AS_TYPED.includes(field) ? text : text.replace(/ {2,}/g, ' ')).length;
 }
 
 /** The app's own sentence for a field that is too long, said before anything is sent. */

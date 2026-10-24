@@ -286,7 +286,8 @@ export function LessonList({
                 </Text>
               ) : null}
             </View>
-            {mark}
+            {/* The pill hugs the top of any row it sits in (its own alignSelf); this box is what the row centres. */}
+            {mark ? <View style={styles.lessonEnd}>{mark}</View> : null}
           </>
         );
         const line = [styles.lesson, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderHairline }];
@@ -432,6 +433,7 @@ const styles = StyleSheet.create({
   lessons: { paddingHorizontal: space.lg },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: m.lessonRow },
   lessonNo: { width: m.lessonNo, fontSize: 13 },
+  lessonEnd: { alignSelf: 'center' },
   lessonWords: { flex: 1, gap: m.lessonSpace, paddingVertical: space.sm },
   lessonLength: { marginTop: 0 },
   comment: { flexDirection: 'row', gap: m.commentGap },

@@ -172,6 +172,11 @@ function pathname(): string {
   const { store } = jest.requireActual('expo-router/build/global-state/router-store') as { store: { getRouteInfo: () => { pathname: string } } };
   return store.getRouteInfo().pathname;
 }
+/** The address the app is at, query and all (what the web shows in the browser's bar). */
+function withParams(): string {
+  const { store } = jest.requireActual('expo-router/build/global-state/router-store') as { store: { getRouteInfo: () => { pathnameWithParams: string } } };
+  return store.getRouteInfo().pathnameWithParams;
+}
 const tokenFor = (sub: string) => {
   const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
   return `${part({ alg: 'RS256' })}.${part({ sub })}.signature`;
@@ -443,6 +448,24 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     await waitFor(() => expect(hub.savedPosts).toEqual([{ kind: 'bank_account', bankCode: GTB.code, accountNumber: ACCOUNT.accountNumber }]));
     await fireEvent.press(screen.getByTestId('receipt-done'));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
+  });
+
+  it('SWEEP-APP-8 L2: the name token is not in the address of any screen on the way (W14, W9, W10), and the send still carries it', async () => {
+    await toResolved();
+    await screen.findByText(ACCOUNT.accountName);
+    await fireEvent.press(screen.getByTestId('send-bank-continue'));
+    await screen.findByTestId('send-amount-screen');
+    expect(withParams()).not.toContain(NAME_TOKEN);
+    expect(withParams()).not.toContain('nameToken');
+    for (const k of '25000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await fireEvent.press(screen.getByTestId('send-continue'));
+    await screen.findByTestId('send-review-screen');
+    await screen.findByText(/^Send ₦/);
+    expect(withParams()).not.toContain(NAME_TOKEN);
+    expect(withParams()).not.toContain('nameToken');
+    await pay();
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    expect(hub.sends[0].body).toMatchObject({ nameToken: NAME_TOKEN });
   });
 
   it('a saved account is sent with no name token, because the Hub compares it with the name it holds', async () => {

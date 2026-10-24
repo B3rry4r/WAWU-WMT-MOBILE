@@ -112,6 +112,7 @@ describe('changing a work (G-252)', () => {
   it('a user can edit a work: the form holds it, Save stays off until something differs, then one PATCH for that work', async () => {
     answers = {
       [`GET ${LIST}/w1`]: ok({ ...work('w1', 'Brand film', 0), owner }),
+      'GET /api/hub/users/me': ok({ wawuUserId: 'u1' }),
       'PATCH /api/hub/users/me/featured-works/w1': ok(work('w1', 'Brand film', 0, { description: 'Better words.' })),
     };
     const onSaved = jest.fn();
@@ -132,6 +133,7 @@ describe('changing a work (G-252)', () => {
   it('a change the Hub refuses stays on the form with the Hub\'s sentence under the field', async () => {
     answers = {
       [`GET ${LIST}/w1`]: ok({ ...work('w1', 'Brand film', 0), owner }),
+      'GET /api/hub/users/me': ok({ wawuUserId: 'u1' }),
       'PATCH /api/hub/users/me/featured-works/w1': refusal(400, 'Year must be a year from 1950 to 2027'),
     };
     const onSaved = jest.fn();
@@ -141,6 +143,30 @@ describe('changing a work (G-252)', () => {
     await fireEvent.press(screen.getByTestId('work-save'));
     expect(await screen.findByText('Year must be a year from 1950 to 2027')).toBeTruthy();
     expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('SWEEP-APP-8 L5 (FIX-113): /add-work for somebody else\'s work does not open the edit: the form is never drawn and the route is told', async () => {
+    answers = { [`GET ${LIST}/w1`]: ok({ ...work('w1', 'Brand film', 0), owner }), 'GET /api/hub/users/me': ok({ wawuUserId: 'u2' }) };
+    const onNotOwner = jest.fn();
+    await render(frame(<EditWorkScreen wawuId="u1" workId="w1" onBack={jest.fn()} onSaved={jest.fn()} onNotOwner={onNotOwner} />));
+    await waitFor(() => expect(onNotOwner).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('edit-work')).toBeNull();
+    expect(screen.queryByTestId('work-title')).toBeNull();
+    expect(sent.filter((s) => s.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('SWEEP-APP-8 L5 (FIX-113): with nobody to tell, somebody else\'s work says it is not theirs to change', async () => {
+    answers = { [`GET ${LIST}/w1`]: ok({ ...work('w1', 'Brand film', 0), owner }), 'GET /api/hub/users/me': ok({ wawuUserId: 'u2' }) };
+    await render(frame(<EditWorkScreen wawuId="u1" workId="w1" onBack={jest.fn()} onSaved={jest.fn()} />));
+    expect(await screen.findByTestId('edit-work-not-yours')).toBeTruthy();
+    expect(screen.queryByTestId('edit-work')).toBeNull();
+  });
+
+  it('SWEEP-APP-8 L5 (FIX-113): the form waits for the signed-in person to be known, and a failed read of them is an error with Try again, not a form', async () => {
+    answers = { [`GET ${LIST}/w1`]: ok({ ...work('w1', 'Brand film', 0), owner }), 'GET /api/hub/users/me': refusal(500, 'Server error') };
+    await render(frame(<EditWorkScreen wawuId="u1" workId="w1" onBack={jest.fn()} onSaved={jest.fn()} />));
+    expect(await screen.findByTestId('edit-work-error')).toBeTruthy();
+    expect(screen.queryByTestId('edit-work')).toBeNull();
   });
 
   it('M35 offers Edit to the owner only, and it opens the edit', async () => {

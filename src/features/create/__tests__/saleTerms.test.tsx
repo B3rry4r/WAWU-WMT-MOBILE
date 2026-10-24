@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
 import { allowance, hub, installFetch, ok, renderFrame } from '../__helpers__/harness';
 
@@ -13,6 +13,7 @@ installFetch();
 const { queryClient: appClient } = require('@/api/query') as typeof import('@/api/query');
 const { PriceScreen } = require('../PriceScreen') as typeof import('../PriceScreen');
 const { ReviewScreen } = require('../ReviewScreen') as typeof import('../ReviewScreen');
+const api = require('../api') as typeof import('../api');
 const draft = require('../draft') as typeof import('../draft');
 const details = require('../details') as typeof import('../details');
 
@@ -91,6 +92,34 @@ describe('M24 · the Hub\'s terms on the price step', () => {
     expect(screen.getByText('₦2,500')).toBeTruthy();
     expect(screen.queryByText('₦1,000.50')).toBeNull();
     expect(screen.queryByText('₦1,001')).toBeNull();
+  });
+
+  it('asks once when the typing rests (SWEEP-APP-8): five digits typed fast are one read, not five', async () => {
+    serve();
+    // The reads are counted at the app's own call, with the price (whole kobo) each one asked about.
+    const asked = jest.spyOn(api, 'fetchSaleTerms');
+    const termsAsked = () => asked.mock.calls.map(([priceKobo]) => priceKobo);
+    try {
+      await open();
+      expect(await screen.findByTestId('price-terms')).toBeTruthy();
+      // The first read is for no price at all.
+      expect(termsAsked()).toEqual([null]);
+
+      hub.answers[`GET ${TERMS}`] = ok(terms(1234500));
+      for (const typed of ['1', '12', '123', '1234', '12345']) await fireEvent.changeText(screen.getByTestId('price-input'), typed);
+      // Five keys in, the Hub has not been asked about any of them.
+      expect(termsAsked()).toEqual([null]);
+
+      // Once the typing rests the Hub is asked, for the price that is there, once.
+      await waitFor(() => expect(termsAsked()).toEqual([null, 1234500]));
+      expect(await screen.findByText('₦10,493')).toBeTruthy();
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+      });
+      expect(termsAsked()).toEqual([null, 1234500]);
+    } finally {
+      asked.mockRestore();
+    }
   });
 
   it('draws the presets and the card on Paid only', async () => {

@@ -26,8 +26,11 @@ export type Recording = { name: string; bytes: number; phase: RecordingPhase; sh
 const statusOf = (r: Recording): string =>
   r.phase === 'uploading' ? `${FILE_WORDS.uploading} ${Math.round(Math.min(1, Math.max(0, r.share)) * 100)}%` : r.phase === 'checking' ? FILE_WORDS.checking : r.bytes > 0 ? formatBytes(r.bytes) : FILE_WORDS.ready;
 
-/** The row where PT2 has the text box: "Choose a recording" until one is chosen, then its name and where it is. */
-export function RecordingBox({ recording, onChoose, enabled }: { recording: Recording | null; onChoose: () => void; enabled: boolean }) {
+/**
+ * The row where PT2 has the text box: "Choose a recording" until one is chosen, then its name and where it is. Once its job is done
+ * (`settled`, PT2b) the row stays the way to a new recording, and says so to a screen reader, but does not write "Choose another" above the result.
+ */
+export function RecordingBox({ recording, onChoose, enabled, settled = false }: { recording: Recording | null; onChoose: () => void; enabled: boolean; settled?: boolean }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const empty = recording === null || recording.phase === 'refused';
@@ -58,7 +61,7 @@ export function RecordingBox({ recording, onChoose, enabled }: { recording: Reco
           {empty ? '' : statusOf(recording)}
         </Text>
       </View>
-      {empty ? null : (
+      {empty || settled ? null : (
         <Text variant="body" tone="accentFg" style={[font(600), { fontSize: BOX.line, lineHeight: canvasNormalLineHeight(BOX.line) }]}>
           {label}
         </Text>

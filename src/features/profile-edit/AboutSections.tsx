@@ -91,19 +91,39 @@ function AddRow({ label, testID, onPress, disabled }: { label: string; testID: s
   );
 }
 
+/** What is typed in the skills box and not yet added, and the words that say why it could not be. */
+export type SkillInput = {
+  typed: string;
+  setTyped: (typed: string) => void;
+  problem: string | undefined;
+  setProblem: (problem: string | undefined) => void;
+};
+
+export function useSkillInput(): SkillInput {
+  const [typed, setTyped] = useState('');
+  const [problem, setProblem] = useState<string | undefined>();
+  return { typed, setTyped, problem, setProblem };
+}
+
 export type SkillsSectionProps = {
   skills: readonly string[];
   onChange: (skills: string[]) => void;
   disabled?: boolean;
+  /**
+   * The screen's own hold on the box (SWEEP-APP-8 L5): M8's Save adds a skill that was typed and not added, or says why it cannot be.
+   * Without it the section keeps what is typed itself.
+   */
+  input?: SkillInput;
 };
 
 /**
  * M8's Skills and expertise (FIX-113, G-292; built from the kit's field and M4's skill chips: R-29, BACKEND_GAPS). Typing a skill and
- * pressing return adds it as a chip, and a chip taps off. They are saved with M8's Save (`PATCH /users/me/profile-fields`).
+ * pressing return adds it as a chip, and a chip taps off. They are saved with M8's Save (`PATCH /users/me/profile-fields`); a skill typed
+ * and not yet added when Save is pressed is added by the screen (it is never dropped silently).
  */
-export function SkillsSection({ skills, onChange, disabled }: SkillsSectionProps) {
-  const [typed, setTyped] = useState('');
-  const [problem, setProblem] = useState<string | undefined>();
+export function SkillsSection({ skills, onChange, disabled, input }: SkillsSectionProps) {
+  const own = useSkillInput();
+  const { typed, setTyped, problem, setProblem } = input ?? own;
   const add = () => {
     if (typed.trim() === '') return;
     const next = addSkill(skills, typed);

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Avatar } from '@/components/Avatar';
 import { ConversationRow, type ConversationKind } from '@/components/ConversationRow';
 import { formatMoney } from '@/components/Money';
-import { hueFor } from '@/features/feed/model';
+import { hueFor, UNNAMED_CREATOR } from '@/features/feed/model';
 import { firstName, rowTime } from '@/features/communities/format';
 import type { InboxItem } from '@/features/inbox/api';
 
@@ -35,6 +35,20 @@ export function requestLine({ asker, amountKobo, status, memo, other }: RequestL
   }
 }
 
+/**
+ * What an Inbox row calls a person: their name, else their @handle, else "Someone". The Hub gives a person with no name `name: ""`
+ * (every new account starts so), and a row used to draw that as a blank line.
+ */
+export function rowNameOf(person: Pick<ChatPerson, 'name' | 'handle'>): string {
+  const name = person.name?.trim();
+  if (name) return name;
+  const handle = person.handle?.trim().replace(/^@/, '');
+  return handle ? `@${handle}` : UNNAMED_CREATOR;
+}
+
+/** The name an avatar takes its initial from: the row's name without the "@" (so "@kemi" gives "K", not "@"). */
+export const avatarNameOf = (person: Pick<ChatPerson, 'name' | 'handle'>): string => rowNameOf(person).replace(/^@/, '');
+
 export type MoveLook = { outgoing: boolean; amountKobo: number; status: 'pending' | 'completed' | 'reversed'; note: string | null };
 
 /**
@@ -64,7 +78,7 @@ export function ChatInboxRow({ item }: { item: InboxItem }) {
   let kind: ConversationKind | undefined;
   if (preview) {
     if (preview.moneyRequest) {
-      const line = requestLine({ asker: preview.mine, amountKobo: preview.moneyRequest.amountKobo, status: preview.moneyRequest.status, memo: preview.text, other: chat.other.name });
+      const line = requestLine({ asker: preview.mine, amountKobo: preview.moneyRequest.amountKobo, status: preview.moneyRequest.status, memo: preview.text, other: rowNameOf(chat.other) });
       text = line.text;
       kind = line.kind;
     } else {
@@ -75,14 +89,14 @@ export function ChatInboxRow({ item }: { item: InboxItem }) {
   return (
     <ConversationRow
       testID={`row-${item.id}`}
-      name={chat.other.name}
+      name={rowNameOf(chat.other)}
       preview={text}
       kind={kind}
       time={rowTime(item.lastActivityAt)}
       unread={item.unreadCount}
       tick={rowTick(chat.other)}
       // The support thread (SUPPORT-01) is the app's own row: its mark on the sunken surface, as the board draws "Who Made This?".
-      lead={<Avatar name={chat.other.name} hue={hueFor(chat.other.wawuId)} size={ROW_AVATAR} source={chat.other.avatarUrl ?? undefined} brand={chat.other.support === true} testID={`row-${item.id}-avatar`} decorative />}
+      lead={<Avatar name={avatarNameOf(chat.other)} hue={hueFor(chat.other.wawuId)} size={ROW_AVATAR} source={chat.other.avatarUrl ?? undefined} brand={chat.other.support === true} testID={`row-${item.id}-avatar`} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } })}
     />
   );
@@ -93,17 +107,17 @@ export function MoneyRequestInboxRow({ item }: { item: InboxItem }) {
   const router = useRouter();
   const request = item.moneyRequest;
   if (!request) return null;
-  const line = requestLine({ asker: request.direction === 'outgoing', amountKobo: request.amountKobo, status: request.status, memo: request.memo, other: request.other.name });
+  const line = requestLine({ asker: request.direction === 'outgoing', amountKobo: request.amountKobo, status: request.status, memo: request.memo, other: rowNameOf(request.other) });
   return (
     <ConversationRow
       testID={`row-${item.id}`}
-      name={request.other.name}
+      name={rowNameOf(request.other)}
       preview={request.paying && request.status === 'pending' ? `Payment on its way · ${naira(request.amountKobo)}` : line.text}
       kind={line.kind}
       time={rowTime(item.lastActivityAt)}
       unread={0}
       tick={rowTick(request.other)}
-      lead={<Avatar name={request.other.name} hue={hueFor(request.other.wawuId)} size={ROW_AVATAR} source={request.other.avatarUrl ?? undefined} decorative />}
+      lead={<Avatar name={avatarNameOf(request.other)} hue={hueFor(request.other.wawuId)} size={ROW_AVATAR} source={request.other.avatarUrl ?? undefined} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: request.chatId } })}
     />
   );
@@ -118,13 +132,13 @@ export function MoneyMoveInboxRow({ item }: { item: InboxItem }) {
   return (
     <ConversationRow
       testID={`row-${item.id}`}
-      name={move.other.name}
+      name={rowNameOf(move.other)}
       preview={line.text}
       kind={line.kind}
       time={rowTime(item.lastActivityAt)}
       unread={0}
       tick={rowTick(move.other)}
-      lead={<Avatar name={move.other.name} hue={hueFor(move.other.wawuId)} size={ROW_AVATAR} source={move.other.avatarUrl ?? undefined} decorative />}
+      lead={<Avatar name={avatarNameOf(move.other)} hue={hueFor(move.other.wawuId)} size={ROW_AVATAR} source={move.other.avatarUrl ?? undefined} decorative />}
       onPress={() => router.push({ pathname: '/chat/[id]', params: { id: move.chatId } })}
     />
   );

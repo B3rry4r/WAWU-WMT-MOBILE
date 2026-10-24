@@ -134,6 +134,50 @@ describe('skills typed on M8 (G-292)', () => {
   });
 });
 
+describe('a skill typed and not added when Save is pressed (SWEEP-APP-8 L5, FIX-113)', () => {
+  it('is added and saved with the rest: Save is on as soon as something is typed, and the PATCH carries the skill', async () => {
+    answers = { [`GET ${ME}`]: ok(profile([])), [`GET ${FIELDS}`]: ok(details(['Pricing'])), [`PATCH ${FIELDS}`]: ok(details(['Pricing', 'Pitch decks'])) };
+    const onSaved = jest.fn();
+    await render(frame(<EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={onSaved} ownNotice={false} />));
+    const input = await screen.findByTestId('edit-skill-input');
+    expect(screen.getByTestId('edit-save').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.changeText(input, '  Pitch   decks ');
+    expect(screen.getByTestId('edit-save').props.accessibilityState?.disabled).toBeFalsy();
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    const patch = sent.filter((s) => s.method === 'PATCH');
+    expect(patch).toHaveLength(1);
+    expect(patch[0].body).toEqual({ skills: ['Pricing', 'Pitch decks'] });
+  });
+
+  it('is added beside another change too, in the one PATCH of each part', async () => {
+    answers = { [`GET ${ME}`]: ok(profile([])), [`GET ${FIELDS}`]: ok(details([])), [`PATCH ${FIELDS}`]: ok(details(['Pitch decks', 'Colour grading'])) };
+    const onSaved = jest.fn();
+    await render(frame(<EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={onSaved} ownNotice={false} />));
+    const input = await screen.findByTestId('edit-skill-input');
+    await fireEvent.changeText(input, 'Pitch decks');
+    await fireEvent(input, 'submitEditing');
+    await fireEvent.changeText(input, 'Colour grading');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    const patch = sent.filter((s) => s.method === 'PATCH');
+    expect(patch).toHaveLength(1);
+    expect(patch[0].body).toEqual({ skills: ['Pitch decks', 'Colour grading'] });
+  });
+
+  it('that cannot be added (a repeat) is asked about in words and nothing is saved', async () => {
+    answers = { [`GET ${ME}`]: ok(profile([])), [`GET ${FIELDS}`]: ok(details(['Pricing'])) };
+    const onSaved = jest.fn();
+    await render(frame(<EditProfileScreen onBack={jest.fn()} onOpenSocial={jest.fn()} onSaved={onSaved} ownNotice={false} />));
+    const input = await screen.findByTestId('edit-skill-input');
+    await fireEvent.changeText(input, 'pricing');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByText('That skill is already on your list.')).toBeTruthy();
+    expect(sent.filter((s) => s.method === 'PATCH')).toHaveLength(0);
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+});
+
 describe('Experience on M8 (G-292)', () => {
   it('lists the person\'s roles and "Add a role", and each opens the role screen', async () => {
     answers = { [`GET ${ME}`]: ok(profile([role('r1'), role('r2', { title: 'Brand strategist', company: 'Noah Agency', location: 'Lagos', startedOn: '2018-01', endedOn: '2021-02', current: false })])), [`GET ${FIELDS}`]: ok(details([])) };
