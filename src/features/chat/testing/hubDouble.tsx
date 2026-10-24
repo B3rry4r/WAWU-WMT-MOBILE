@@ -48,9 +48,11 @@ export const hub = {
   requestReads: 0,
   holdQuote: null as null | Promise<void>,
   /** FIX-104: what a chat takes, and how the Hub answers a photo, video or file. */
-  attachmentMode: 'ok' as 'ok' | 'bad_type' | 'too_large' | 'storage_full' | 'upload_fails' | 'send_refused_once',
+  attachmentMode: 'ok' as 'ok' | 'bad_type' | 'too_large' | 'storage_full' | 'upload_fails' | 'send_refused_once' | 'send_not_found_once',
   presigns: [] as { contentType: string; contentLength: number }[],
   puts: [] as { key: string; contentType: string; bytes: number }[],
+  /** The keys the app gave back (`POST /uploads/release`). A key signed and not given back is one the Hub still counts. */
+  releases: [] as string[],
   sentFiles: [] as { key: string; name: string | null; clientMessageId: string | null }[],
   linkReads: [] as string[],
   linkMode: 'ok' as 'ok' | 'fails',
@@ -84,6 +86,7 @@ export function resetHub() {
     attachmentMode: 'ok',
     presigns: [],
     puts: [],
+    releases: [],
     sentFiles: [],
     linkReads: [],
     linkMode: 'ok',
@@ -274,6 +277,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     uploadTypes.set(key, { contentType: body.contentType, bytes: body.contentLength });
     return ok({ uploadUrl: `https://storage.test/${key}?X-Amz-Signature=x`, key });
   }
+  if (path === '/uploads/release' && method === 'POST') {
+    const body = (await request.json()) as { key: string };
+    hub.releases.push(body.key);
+    return ok({ released: true });
+  }
   if (path === '/uploads/confirm' && method === 'POST') {
     const body = (await request.json()) as { key: string };
     return ok({ key: body.key, status: 'confirmed' });
@@ -291,6 +299,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const body = (await request.json()) as { text: string; clientMessageId: string | null; attachment?: { key: string; name?: string } };
     if (body.attachment) {
       hub.sentFiles.push({ key: body.attachment.key, name: body.attachment.name ?? null, clientMessageId: body.clientMessageId });
+      if (hub.attachmentMode === 'send_not_found_once' && hub.sentFiles.length === 1) return refuse(400, { message: 'That file did not finish uploading. Try sending it again.' });
       if (hub.attachmentMode === 'send_refused_once' && hub.sentFiles.length === 1) return refuse(403, { message: 'You can no longer message this person.', code: 'chat_blocked' });
       const knownFile = hub.messages.find((m) => m.clientMessageId === body.clientMessageId);
       if (knownFile) return created(knownFile);

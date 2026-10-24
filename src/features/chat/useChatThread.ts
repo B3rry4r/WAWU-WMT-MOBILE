@@ -5,7 +5,7 @@ import { isApiError } from '@/api/errors';
 import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { refreshInbox } from '@/features/inbox/unread';
 
-import { kindOfType, sendChatFile, uploadChatFile, type ChatFile } from './attachments';
+import { kindOfType, releaseChatUpload, sendChatFile, uploadChatFile, type ChatFile } from './attachments';
 import {
   chatKey,
   chatMessagesKey,
@@ -23,8 +23,12 @@ import {
 export type OutgoingText = {
   localId: string;
   text: string;
-  /** A photo, video or file on its way (FIX-104). `key` is where it landed once uploaded, so a retry after a refused send does not upload it again. */
-  file?: ChatFile & { key?: string };
+  /**
+   * A photo, video or file on its way (FIX-104). `key` is where it landed once uploaded, so a retry after a refused send does not upload it again.
+   * `reserved` is an upload the Hub counted that never landed (a failed upload, or a send that did not find the file): it is given back before
+   * the next try asks for a new one, so one message is charged once.
+   */
+  file?: ChatFile & { key?: string; reserved?: string };
   /** The message's own id for the Hub: made when it is composed and sent again unchanged on every retry, so a lost answer never posts it twice. */
   clientMessageId: string;
   status: 'sending' | 'failed';
@@ -191,23 +195,40 @@ export function useChatThread(chatId: string, looking: boolean) {
       filesRunning.current.add(entry.localId);
       setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId ? { ...candidate, status: 'sending', error: undefined } : candidate)));
       let uploadedKey = file.key;
+      let reserved = file.reserved;
+      const mark = (patch: { key?: string; reserved?: string }) =>
+        setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId && candidate.file ? { ...candidate, file: { ...candidate.file, ...patch } } : candidate)));
       try {
+        if (!uploadedKey && reserved) {
+          // Try again after an upload that failed: the dead reservation is given back first, so the new one is the only one charged.
+          await releaseChatUpload(reserved);
+          reserved = undefined;
+          mark({ reserved: undefined });
+        }
         if (!uploadedKey) {
-          uploadedKey = await uploadChatFile(chatId, file);
-          const key = uploadedKey;
-          setOutgoing((held) => held.map((candidate) => (candidate.localId === entry.localId && candidate.file ? { ...candidate, file: { ...candidate.file, key } } : candidate)));
+          uploadedKey = await uploadChatFile(chatId, file, (key) => {
+            reserved = key;
+            mark({ reserved: key });
+          });
+          reserved = undefined;
+          mark({ key: uploadedKey, reserved: undefined });
         }
         const message = await sendChatFile(chatId, uploadedKey, kindOfType(file.contentType) === 'file' ? file.name : null, entry.clientMessageId);
         file.discard?.();
         confirm(entry.localId, message);
       } catch (error) {
         const refused = isApiError(error) ? error : null;
-        // A refused send (the Hub did not find the file) means the next try uploads it again.
-        const lost = refused?.status === 400;
+        // A refused send (the Hub did not find the file) means the next try uploads it again, after giving back the one it did not find.
+        const lost = refused?.status === 400 && uploadedKey !== undefined;
         setOutgoing((held) =>
           held.map((candidate) =>
             candidate.localId === entry.localId
-              ? { ...candidate, status: 'failed', error: refused?.message ?? 'Something went wrong. Try again.', file: lost && candidate.file ? { ...candidate.file, key: undefined } : candidate.file }
+              ? {
+                  ...candidate,
+                  status: 'failed',
+                  error: refused?.message ?? 'Something went wrong. Try again.',
+                  file: candidate.file ? { ...candidate.file, key: lost ? undefined : candidate.file.key, reserved: lost ? uploadedKey : reserved } : candidate.file,
+                }
               : candidate,
           ),
         );
@@ -275,7 +296,11 @@ export function useChatThread(chatId: string, looking: boolean) {
 
   const discard = useCallback(
     (localId: string) => {
-      outgoing.find((entry) => entry.localId === localId)?.file?.discard?.();
+      const file = outgoing.find((entry) => entry.localId === localId)?.file;
+      file?.discard?.();
+      // Delete on a failed bubble gives its upload back: it was counted, and no message will carry it.
+      const held = file?.key ?? file?.reserved;
+      if (held) void releaseChatUpload(held);
       setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
     },
     [outgoing],

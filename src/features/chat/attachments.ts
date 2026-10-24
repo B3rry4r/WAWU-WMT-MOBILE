@@ -13,6 +13,8 @@ import { readMessage, type ChatMessage } from './api';
  * 2. a PUT of the bytes to that address;
  * 3. `POST /uploads/confirm`: the storage host's own word that the file landed;
  * 4. `POST /chats/{chatId}/messages` with `attachment.key`, once per `clientMessageId`.
+ * A file that is reserved (step 1) and never sent is counted until it is given back: `POST /uploads/release` with its key (a failed upload that is tried
+ * again, a failed bubble that is deleted). The Hub gives back what is still left a day on.
  * To open a file: `GET /chats/{chatId}/messages/{messageId}/attachment`, a fresh link that only the two people in the chat get.
  * What a chat takes (types and sizes) is the Hub's: `GET /chats/attachment-rules`.
  */
@@ -74,7 +76,7 @@ const noConnection = () => new ApiError('network', 0, 'No connection. Check your
  * Steps 1 to 3: asks the Hub where to upload, sends the bytes, and asks the Hub to confirm they landed. Answers the key the send takes.
  * The Hub's own sentence travels with a refusal (a type a chat cannot hold, a file over the size, storage full, a block).
  */
-export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob' | 'contentType'>): Promise<string> {
+export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob' | 'contentType'>, onReserved?: (key: string) => void): Promise<string> {
   const body = (await unwrap(
     api.POST('/api/hub/chats/{chatId}/attachments', {
       params: { path: { chatId } },
@@ -83,6 +85,8 @@ export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob'
   )) as unknown as Envelope<{ uploadUrl?: string; key?: string }>;
   const target = body?.data;
   if (!target || !filled(target.uploadUrl) || !filled(target.key)) throw unreadable('upload address');
+  // The Hub counts the file from here: whoever called knows which key to give back if the rest fails.
+  onReserved?.(target.key as string);
   let response: Response;
   try {
     response = await fetch(target.uploadUrl as string, { method: 'PUT', headers: { 'content-type': file.contentType }, body: file.blob });
@@ -93,6 +97,18 @@ export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob'
   const settled = (await unwrap(api.POST('/api/hub/uploads/confirm', { body: { key: target.key as string } }))) as unknown as Envelope<{ status?: unknown }>;
   if (settled?.data?.status === 'abandoned') throw new ApiError('server', 0, 'That file did not upload. Try again.', ATTACHMENT_UPLOAD_FAILED);
   return target.key as string;
+}
+
+/**
+ * POST /uploads/release: gives back a chat upload that will not be sent (a failed upload being tried again, a failed bubble deleted), so it stops
+ * counting toward the person's storage. Never throws: a key the Hub no longer holds, or one a message already carries, needs nothing from here.
+ */
+export async function releaseChatUpload(key: string): Promise<void> {
+  try {
+    await unwrap(api.POST('/api/hub/uploads/release', { body: { key } }));
+  } catch {
+    // Left for the Hub: a reservation that never landed is settled after 15 minutes, a landed file that no message carries is given back a day on.
+  }
 }
 
 /** Step 4: POST /chats/{chatId}/messages with the uploaded file; the same `clientMessageId` again answers the message already stored. */

@@ -20,6 +20,17 @@ import type { ChatFileKind } from './attachments';
  */
 const mediaMetrics = { size: 224, play: 52, filePad: 12, fileTile: 40, fileGap: 12, fileWordsGap: 2, fileName: 15, fileMeta: 12.5, captionPadV: 10, captionPadH: 14, spinner: 28 } as const;
 
+/**
+ * A size in words. A file that was refused is rounded UP to one decimal, so a 21,000,009 byte PDF reads "20.1 MB" beside the Hub's "up to 20 MB"
+ * and never "20.0 MB" (FIX-104 round 2); every other size is `formatBytes`'.
+ */
+function sizeWords(bytes: number, refused: boolean): string {
+  const mb = bytes / (1024 * 1024);
+  if (!refused || mb < 1 || mb >= 1024) return formatBytes(bytes);
+  const up = Math.ceil(mb * 10) / 10;
+  return `${Number.isInteger(up) ? up : up.toFixed(1)} MB`;
+}
+
 const FILE_WORDS: Record<string, string> = { 'application/pdf': 'PDF' };
 
 export type AttachmentBubbleProps = {
@@ -47,7 +58,7 @@ const kindWord = (kind: ChatFileKind) => (kind === 'image' ? 'Photo' : kind === 
 
 export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes, caption, at, onOpen, opening, pending }: AttachmentBubbleProps) {
   const { colors } = useWawu();
-  const size = bytes && bytes > 0 ? formatBytes(bytes) : null;
+  const size = bytes && bytes > 0 ? sizeWords(bytes, pending?.status === 'failed') : null;
   const fileKind = FILE_WORDS[contentType] ?? 'File';
   const title = kind === 'file' ? (name?.trim() || 'File') : kindWord(kind);
   const label = `${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : ''}, ${title}${kind === 'file' && size ? `, ${size}` : ''}${caption ? `, ${caption}` : ''}`;
@@ -61,7 +72,14 @@ export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes
   if (kind === 'file') {
     content = (
       <View style={styles.file}>
-        <IconTile icon="FileText" tone={mine ? 'accent' : 'neutral'} size={mediaMetrics.fileTile} />
+        {mine ? (
+          // The person's own file sits on the accent: the mark is the bubble's on-colour with the accent glyph, so it shows in both themes.
+          <View aria-hidden style={[styles.ownMark, { backgroundColor: colors.textOnAccent }]} testID={`bubble-${id}-mark`}>
+            <Icon name="FileText" size={Math.round(mediaMetrics.fileTile * 0.45)} color={colors.accent} strokeWidth={2} />
+          </View>
+        ) : (
+          <IconTile icon="FileText" tone="neutral" size={mediaMetrics.fileTile} />
+        )}
         <View style={styles.fileWords}>
           <Text variant="body" tone={tone} numberOfLines={2} style={[font(600), { fontSize: mediaMetrics.fileName }]} testID={`bubble-${id}-name`}>
             {title}
@@ -129,6 +147,7 @@ const styles = StyleSheet.create({
   media: { width: mediaMetrics.size, height: mediaMetrics.size },
   tile: { alignItems: 'center', justifyContent: 'center', gap: space.sm },
   file: { flexDirection: 'row', alignItems: 'center', gap: mediaMetrics.fileGap, padding: mediaMetrics.filePad, minWidth: mediaMetrics.size },
+  ownMark: { width: mediaMetrics.fileTile, height: mediaMetrics.fileTile, borderRadius: mediaMetrics.fileTile / 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   fileWords: { flexShrink: 1, gap: mediaMetrics.fileWordsGap },
   spinner: { alignItems: 'center', justifyContent: 'center' },
   caption: { paddingVertical: mediaMetrics.captionPadV, paddingHorizontal: mediaMetrics.captionPadH, fontSize: bubbleMetrics.body, lineHeight: bubbleMetrics.body * bubbleMetrics.line },

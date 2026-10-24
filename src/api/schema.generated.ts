@@ -596,11 +596,13 @@ export interface paths {
         /**
          * POST /uploads/release: takes back an upload the caller reserved and no
          *     listing has claimed yet (a file removed or replaced in an unfinished
-         *     draft). Deletes the object and frees its space in one step. Only the
-         *     caller's own upload in content/preview or content/full; another person's
-         *     key, an unknown key and a key in any other folder all get the same 404,
-         *     and a key a listing already uses gets a 409. Calling it again for a key
-         *     already released answers the same 200.
+         *     draft), or a chat upload no message carries (FIX-104 round 2: a failed or
+         *     deleted bubble). Deletes the object and frees its space in one step. Only
+         *     the caller's own upload in content/preview, content/full, chat/media or
+         *     chat/file; another person's key, an unknown key and a key in any other
+         *     folder all get the same 404, and a key a listing or a message already
+         *     uses gets a 409. Calling it again for a key already released answers the
+         *     same 200.
          */
         post: operations["StorageController_release"];
         delete?: never;
@@ -3377,6 +3379,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/chats/attachment-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a chat takes: types and sizes, from the Hub's own limits. */
+        get: operations["ChatController_attachmentRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/chats/{chatId}": {
         parameters: {
             query?: never;
@@ -3404,6 +3423,23 @@ export interface paths {
         get: operations["ChatController_messages"];
         put?: never;
         post: operations["ChatController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/chats/{chatId}/messages/{messageId}/attachment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A fresh link to one message's photo, video or file. Only the two people in the chat get one. */
+        get: operations["ChatController_attachmentLink"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7941,40 +7977,6 @@ export interface paths {
          *     its window) is a plain 404, the same for all of them.
          */
         post: operations["AdsEventsController_record"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/attachment-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What a chat takes: types and sizes, from the Hub's own limits. */
-        get: operations["ChatController_attachmentRules"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/hub/chats/{chatId}/messages/{messageId}/attachment": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A fresh link to one message's photo, video or file. Only the two people in the chat get one. */
-        get: operations["ChatController_attachmentLink"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -12688,9 +12690,23 @@ export interface components {
             items: components["schemas"]["ChatSummary"][];
             nextCursor: string | null;
         };
+        ChatAttachmentRule: {
+            contentTypes: string[];
+            maxBytes: number;
+        };
+        ChatAttachmentRules: {
+            media: components["schemas"]["ChatAttachmentRule"];
+            file: components["schemas"]["ChatAttachmentRule"];
+        };
         ChatMessagePage: {
             items: components["schemas"]["ChatMessage"][];
             nextCursor: string | null;
+        };
+        ChatAttachmentLink: {
+            url: string;
+            expiresAt: string;
+            contentType: string;
+            name: string | null;
         };
         ChatReadMark: {
             chatId: string;
@@ -15424,20 +15440,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        ChatAttachmentRule: {
-            contentTypes: string[];
-            maxBytes: number;
-        };
-        ChatAttachmentRules: {
-            media: components["schemas"]["ChatAttachmentRule"];
-            file: components["schemas"]["ChatAttachmentRule"];
-        };
-        ChatAttachmentLink: {
-            url: string;
-            expiresAt: string;
-            contentType: string;
-            name: string | null;
         };
     };
     responses: never;
@@ -22388,6 +22390,25 @@ export interface operations {
             };
         };
     };
+    ChatController_attachmentRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAttachmentRules"];
+                };
+            };
+        };
+    };
     ChatController_get: {
         parameters: {
             query?: never;
@@ -22456,6 +22477,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+        };
+    };
+    ChatController_attachmentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAttachmentLink"];
                 };
             };
         };
@@ -30725,47 +30768,6 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
-                };
-            };
-        };
-    };
-    ChatController_attachmentRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatAttachmentRules"];
-                };
-            };
-        };
-    };
-    ChatController_attachmentLink: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                chatId: string;
-                messageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatAttachmentLink"];
                 };
             };
         };

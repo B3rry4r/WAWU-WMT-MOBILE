@@ -239,6 +239,81 @@ describe('a send that is refused or lost', () => {
     expect(await rtl.screen.findByTestId(/^bubble-m\d+-open$/)).toBeTruthy();
   });
 
+  /** What the Hub still counts: every key it signed that the app did not give back. */
+  const charged = () => {
+    const signed = hub.puts.length === 0 ? [] : [...new Set(hub.puts.map((put) => put.key))];
+    return signed.filter((key) => !hub.releases.includes(key));
+  };
+
+  it('Try again after a failed upload gives the dead upload back first: one message, one charge (round 2)', async () => {
+    hub.attachmentMode = 'upload_fails';
+    await sendPdf();
+    expect(await rtl.screen.findByText('That file did not upload. Try again.')).toBeTruthy();
+    const dead = hub.puts[0].key;
+    expect(charged()).toEqual([dead]);
+    hub.attachmentMode = 'ok';
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-retry$/)[0]);
+    await rtl.waitFor(() => expect(hub.sentFiles).toHaveLength(1));
+    expect(hub.releases).toEqual([dead]);
+    expect(hub.presigns).toHaveLength(2);
+    expect(hub.sentFiles[0].key).not.toBe(dead);
+    expect(charged()).toEqual([hub.sentFiles[0].key]);
+    expect(hub.messages.filter((m) => m.kind === 'file')).toHaveLength(1);
+  });
+
+  it('a send that did not find the file gives that upload back before it uploads again (round 2)', async () => {
+    hub.attachmentMode = 'send_not_found_once';
+    await sendPdf();
+    expect(await rtl.screen.findByText('That file did not finish uploading. Try sending it again.')).toBeTruthy();
+    const dead = hub.sentFiles[0].key;
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-retry$/)[0]);
+    await rtl.waitFor(() => expect(hub.sentFiles).toHaveLength(2));
+    expect(hub.releases).toEqual([dead]);
+    expect(hub.sentFiles[1].key).not.toBe(dead);
+    expect(hub.sentFiles[1].clientMessageId).toBe(hub.sentFiles[0].clientMessageId);
+    expect(hub.messages.filter((m) => m.kind === 'file')).toHaveLength(1);
+  });
+
+  it('Delete on a failed bubble gives its upload back, whether it landed or not (round 2)', async () => {
+    // Landed, the send refused: the file is the Hub's to count until it is given back.
+    hub.attachmentMode = 'send_refused_once';
+    await sendPdf();
+    expect(await rtl.screen.findByText('You can no longer message this person.')).toBeTruthy();
+    const landed = hub.sentFiles[0].key;
+    expect(charged()).toEqual([landed]);
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-discard$/)[0]);
+    await rtl.waitFor(() => expect(hub.releases).toEqual([landed]));
+    expect(charged()).toEqual([]);
+    expect(hub.messages.filter((m) => m.kind === 'file')).toHaveLength(0);
+  });
+
+  it('Delete on a failed upload gives the reserved key back, and Delete on a refused type calls nothing (round 2)', async () => {
+    hub.attachmentMode = 'upload_fails';
+    await sendPdf();
+    expect(await rtl.screen.findByText('That file did not upload. Try again.')).toBeTruthy();
+    const reserved = hub.puts[0].key;
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-discard$/)[0]);
+    await rtl.waitFor(() => expect(hub.releases).toEqual([reserved]));
+
+    hub.attachmentMode = 'bad_type';
+    picks.pickChatFile.mockResolvedValue({ ...pdf('notes.zip'), contentType: 'application/zip' });
+    await openSheet();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('attach-file'));
+    expect(await rtl.screen.findByText('A chat can hold a photo (PNG, JPEG or WebP), a video (MP4 or MOV) or a PDF.')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-discard$/)[0]);
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('notes.zip')).toBeNull());
+    expect(hub.releases).toEqual([reserved]);
+  });
+
+  it('a refused 21,000,009 byte PDF is drawn visibly over the 20 MB the Hub names (round 2)', async () => {
+    hub.attachmentMode = 'too_large';
+    const big = { blob: new Blob([new Uint8Array(21_000_009)], { type: 'application/pdf' }), name: 'Big.pdf', contentType: 'application/pdf', discard: jest.fn() };
+    await sendPdf(big);
+    expect(await rtl.screen.findByText('A file in a chat can be up to 20 MB.')).toBeTruthy();
+    expect(rtl.screen.getByText('PDF · 20.1 MB')).toBeTruthy();
+    expect(rtl.screen.queryByText('PDF · 20.0 MB')).toBeNull();
+  });
+
   it('a send the Hub refuses after the upload is tried again with the same message id and the same upload', async () => {
     hub.attachmentMode = 'send_refused_once';
     await sendPdf();
