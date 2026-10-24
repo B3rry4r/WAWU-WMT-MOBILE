@@ -7,7 +7,7 @@ order: -1212
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: building
 depends_on: []
 decisions: [R-84, R-83, R-39, R-20, R-10, R-29, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status verifying. No PR.
+As of 24 Oct 2026, built by a Sonnet builder (bundle B22, T2): backend `wmt/NUV-12` on `origin/main` `38be72e`, mobile `wmt/NUV-12` on `origin/main` `7e65293b`. Status building: the verifier (24 Oct) found one high and one medium, see "Verifier report". No PR.
 
 | # | Before (`origin/main`) | After |
 |---|---|---|
@@ -47,6 +47,32 @@ The app says what the provider's terms say (rate, term, what leaving early costs
 ### Open
 
 Blocker: none. High: none. Medium: none known. Lows: G-NUV-12-3 and G-NUV-12-4 in `BACKEND_GAPS.md` (notifications for payouts; dev webhooks). Default (lead), owner may override: Capital is on; WAWU's fee is 0; no daily limit of ours. Shared-file rows: SHARED-CHANGES NUV-12 #1 to #4. Next: a verifier (T2, full) runs V8 on the stack (`scripts/dev/stack.sh`, the stand-in now serves Capital) and checks the pictures.
+
+## Verifier report (24 Oct 2026, T2 lean check, backend `26107b6`, mobile `6e8c7a11`): FIX
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V3 protected routes | passed | `npm run test:protected` 253 pass on a seeded DB (EXIT 0). Contract: 13 new paths, 0 changed, none removed; `contract:emit` and `enrich` reproduce the committed file byte for byte. Rollback refuses with 9 confirmed orders stored, drops both tables when none. |
+| V4 gates | passed | backend gates 9 run, 1850 files, 0 fail; baseline 124 entries EXIT 0; app gates 10 run, 1317 files, 0 fail, 56 unit tests; check_tasks 433 EXIT 0; tsc both EXIT 0; eslint (no --fix) on the 29 changed backend files EXIT 0 |
+| Specs | FAILED | 7 specs, 6 pass, 107 of 108 tests; `money-contract.spec.ts` fails (finding 1). App: jest `src/features/wallet` and `src/features/capital` 28 suites, 388 tests pass |
+| V8 money (stand-in Hub, real sign-in) | passed | reserve twice with one key: one order, nothing taken; no PIN 403, wrong PIN 403 (4 tries left), nothing taken; confirm twice at once with one key: 201 and 409 in progress, one debit (₦50,000 to ₦48,000); same key again: the same order; new key on a confirmed order: no second debit; withdraw twice at once: one payout, balance back; expired reservation: refused plainly, nothing taken; reserve over the balance: 402 with the shortfall; below or above a setting's limit refused; daily limit refused; fee 2,500 flat + 1% on ₦2,000 = ₦45, debit ₦2,045, fee paid once; `capital.enabled` 0 refuses every route within seconds and the Wallet row goes |
+| Admin | passed | support and reviewer 403 on list and freeze; finance and superadmin list, freeze, unfreeze, cancel a reservation; cancel of an invested order 409; frozen order refuses withdraw; 3 audit rows (none for the refused calls) |
+| V9 live seam | partly | Real sign-in through the app's login screen (web export 390 x 844) on the local Hub. Nuvion DEV (`api.nuvion.dev` only): a wallet opened through the Hub (entity submitted, approved, naira account active; Nuvion's webhooks do not reach a local Hub, so the verifier signed `entities.updated` and `accounts.created` locally with the stack's own secret); `GET /capital/availability`, `products` (11 real products) and `products/{id}` answered through the child entity; an order with no money is refused plainly (402, ₦50.00 more). NOT RUN: funding that wallet (EUR session needs the Plaid browser steps; no steps left), so reserve, confirm, withdraw and the 15 minute expiry were not seen against dev. Nothing was put into dev, so nothing to withdraw. |
+| V10 phone | NOT RUN | no device |
+
+Pictures (390 px, light and dark, from the real app on a local Hub and stand-in; the builder's are fixtures): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/nuv-12-v/shots/` `wallet`, `capital-invest`, `capital-mine`, `capital-product`, `capital-review`, `capital-pin`, `capital-result`, `capital-holding`, `capital-withdraw`. No board draws Capital (G-NUV-12-1). Not pictured against live dev (the export points at the local Hub).
+
+### Findings
+
+1. **high** `defect`: the money contract spec is red. `src/capital/capital.dto.ts:78-81` types `amountKobo` with `@IsInt()` only, so `contract/openapi.json` says `CapitalReserveDto.amountKobo: number`, and `src/money/tests/money-contract.spec.ts` "types every field and parameter whose name ends in Kobo as an integer" fails (`/components/schemas/CapitalReserveDto/amountKobo: number`). The builder's report said money-contract passes. Repro: `npm run test:contract -- src/money/tests/money-contract.spec.ts` on the backend branch. Fix: `@ApiProperty({ type: 'integer' })` on that field (as `src/money/dto/money-error.dto.ts` does), then `npm run contract:build`.
+2. **medium** `defect`: a promised return reaches the screen. The app draws the provider's own product description (`src/features/capital/ProductScreen.tsx:120-122`, passed through at backend `src/capital/capital-mapping.ts:263`). Nuvion dev's "30 Days Fixed Returns" reads "Earn a guaranteed fixed return on your investment ... both your capital and returns are paid out at maturity ... grow your money with confidence", on the same screen family whose footer says the figures "are not a promise of a return". The task's Words rule is that the app promises no return. Repro: a person with an open wallet on the dev Hub, `GET /capital/products`, open that product. Fix: do not draw the free-text description (keep the structured terms), or strip it, and say which in the task; a rule on any other free text the provider sends.
+3. **low**: migration stamp `20261110120000` is earlier than `20261112090000_fx_accounts` on `origin/wmt/WALLET-21-HUB` (pushed 13:36, after this branch's 13:04 stamp commit). `prisma migrate deploy` still applies both; the lead's stamp registry should rule on the order at merge.
+4. **low**: an admin-cancelled reservation answers a confirm with "This investment is on hold. Contact support to continue." (`src/capital/capital.service.ts` `assertMayConfirm`, `row.state === 'cancelled'` uses the hold message). It is a cancelled reservation, not an investment on hold.
+5. **low**: with `capital.enabled` 0 a person who already holds an investment cannot read or withdraw it either (`GET /capital/orders` 409 on the stack). Matches the capability check as written; flagged so the owner knows switching it off also closes the exit.
+6. **low**: the Wallet transaction list names the fee row after WAWU's own account ("Who Made This", "Transfer") and the purchase "Transfer" under "Capital . 90 Days Treasury Bills" (picture `wallet-dark`); no "Capital fee" label.
+7. **low**: the PIN sheet reads "₦2,000 for Invest in 90 Days Treasury Bills" (picture `capital-pin-*`).
+8. **low** (dev, not code): the first `GET /capital-portfolio` after the wallet opened timed out at Nuvion dev and the Hub answered 503 "Payments are not available right now" (retries 200 in about 1.2 s). The app's Capital home was not seen on that path.
+9. note: `npm run money:check` on the stack reports one mismatch, `wawu-account` 100,000,000 kobo, which equals the stand-in's `STANDIN_OPERATIONAL_KOBO` opening for WAWU's operational account, not a Capital movement. The Hub's balance (which it reads from the provider) moved by exactly the amounts in the V8 row; the money check's account list was not read further.
 
 ## Read first
 
