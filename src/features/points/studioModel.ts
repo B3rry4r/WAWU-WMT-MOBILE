@@ -48,23 +48,24 @@ export const CAP_WORDS = {
   back: 'Back to AI tools',
 } as const;
 
-/** The mark on a tool's tile, by the Hub's id for it. A tool this build has no mark for keeps the star that stands for points. */
+/**
+ * The mark on a tool's tile, by the Hub's id for it (`GET /ai-tools`), as PT1 draws it. These are the tools the app has a screen for
+ * (R-47): a tool the Hub lists that is not here is not drawn, and the task that builds its screen adds its mark.
+ */
 const LOOKS: Record<string, IconName> = {
   voiceover: 'Mic',
-  quick_voice: 'Zap',
-  captions: 'Captions',
-  clean_audio: 'AudioLines',
+  'quick-voice': 'Zap',
   music: 'Music',
-  sound_effect: 'Volume2',
-  dubbing: 'Languages',
-  receptionist: 'Headset',
+  'sound-effect': 'Volume2',
 };
+/** True when the app has a screen for the tool. */
+export const isBuiltTool = (tool: Pick<AiTool, 'id'>): boolean => Object.prototype.hasOwnProperty.call(LOOKS, tool.id);
 export const toolIcon = (tool: Pick<AiTool, 'id'>): IconName => LOOKS[tool.id] ?? 'Sparkles';
 
-/** "250 a minute": the Hub's cost for one unit and the unit it counts in. A unit this build does not know is the count alone. */
+/** "250 a minute": the Hub's cost for one unit and the unit it counts in. A flat price (a use, a track) is the count alone, as PT1 draws "75" and "500". */
 export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'>): string {
   const n = formatPointsCount(tool.costPointsPerUnit);
-  const per: Record<string, string> = { minute: 'a minute', track: 'a track', message: 'a message', use: '' };
+  const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '' };
   const word = per[tool.unit as string];
   return word ? `${n} ${word}` : n;
 }

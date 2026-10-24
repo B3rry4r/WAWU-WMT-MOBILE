@@ -7281,6 +7281,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/quick-voice/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Quick voice job (PT1 "Quick voice", AITOOLS-02): a fast read of
+         *     the words in one of the same voices as VoiceOver, priced by
+         *     `quick_voice_per_min`. The request, the answer, the `Idempotency-Key`
+         *     rule and every refusal are exactly those of `POST /ai-tools/voiceover/jobs`;
+         *     the `quoteToken` is one for the action `quick_voice_per_min`.
+         */
+        post: operations["AiToolsController_createQuickVoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/sound-effect/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Sound effect job (PT1 "Sound effect", AITOOLS-03): a `prompt`
+         *     describing the sound, an optional `durationSeconds` and the `quoteToken`
+         *     of the `POST /points/quote` for the action `sfx`. Priced flat, one use,
+         *     whatever the length. The request, the answer, the `Idempotency-Key` rule
+         *     and the refusals are those of `POST /ai-tools/voiceover/jobs`, plus
+         *     `422 ai_prompt_too_long` and `422 ai_length_too_long`, each naming its
+         *     limit, and `400 ai_prompt_empty`. Nothing is held when a job is refused.
+         */
+        post: operations["AiToolsController_createSoundEffect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/music/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Music track job (PT1 "Music track", AITOOLS-03): a `prompt`
+         *     describing the track, an optional `lengthSeconds`, an optional
+         *     `instrumental` switch and the `quoteToken` of the `POST /points/quote`
+         *     for the action `music_per_track`. Priced flat, one track, whatever the
+         *     length. A track can take minutes to make, so the app polls `GET
+         *     /ai-tools/jobs/{id}`. The request, the answer, the `Idempotency-Key` rule
+         *     and the refusals are those of `POST /ai-tools/sound-effect/jobs`.
+         */
+        post: operations["AiToolsController_createMusic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own jobs of every tool, newest first, in cursor pages
+         *     (`?cursor&limit`, `{ items, nextCursor }`; CONVENTIONS section 6). Each
+         *     item is the same shape as `GET /ai-tools/jobs/{id}`: the tool, the state,
+         *     the points taken, the times and its outputs. A cursor this list did not
+         *     give is a plain `400`.
+         */
+        get: operations["AiToolsController_listJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ai-tools/jobs/{id}": {
         parameters: {
             query?: never;
@@ -7289,10 +7385,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * One job as it stands now: `working`, `done` with `audioUrl`, or `failed`
-         *     with the words "No points were taken" (PT2c). Only the person who ran it
-         *     reads it; another person's job and one that is not there are the same
-         *     `404 not_found`.
+         * One job as it stands now: `working`, `done` with `audioUrl` and its
+         *     `outputs`, or `failed` with the words "No points were taken" (PT2c). Only
+         *     the person who ran it reads it; another person's job and one that is not
+         *     there are the same `404 not_found`.
          */
         get: operations["AiToolsController_readJob"];
         put?: never;
@@ -9932,6 +10028,32 @@ export interface components {
             text: string;
             /** @description A voice id from `GET /ai-tools`. */
             voiceId: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreateQuickVoiceJobDto: {
+            /** @description The words to speak. Never stored: the job keeps only how long it was. */
+            text: string;
+            /** @description A voice id from `GET /ai-tools`. */
+            voiceId: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreateSoundEffectJobDto: {
+            /** @description What the sound is, in words. */
+            prompt: string;
+            /** @description How long the sound is, in seconds, from 0.5 up to the longest `GET /ai-tools` lists. Left out: the tool chooses. The price is the same whatever the length. */
+            durationSeconds?: number;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreateMusicJobDto: {
+            /** @description What the track is like, in words. */
+            prompt: string;
+            /** @description How long the track is, in whole seconds, from 3 up to the longest `GET /ai-tools` lists. Left out: the tool chooses. The price is the same whatever the length. */
+            lengthSeconds?: number;
+            /** @description True for a track without singing. */
+            instrumental?: boolean;
             /** @description `quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`. */
             quoteToken: string;
         };
@@ -14768,17 +14890,20 @@ export interface components {
         };
         AiToolView: {
             /** @enum {string} */
-            id: "voiceover";
+            id: "music" | "voiceover" | "quick-voice" | "sound-effect";
             action: string;
             name: string;
             description: string;
             /** @enum {string} */
-            unit: "minute";
+            unit: "use" | "minute" | "track";
             costPointsPerUnit: number;
             enabled: boolean;
             input: {
+                /** @enum {string} */
+                kind: "text" | "prompt";
                 maxCharacters: number;
                 charactersPerUnit: number;
+                instrumental?: boolean | null;
             };
             voices: components["schemas"]["AiVoiceView"][];
         };
@@ -14791,10 +14916,16 @@ export interface components {
             tools: components["schemas"]["AiToolView"][];
             caps: components["schemas"]["AiToolCapsView"];
         };
+        AiJobOutputView: {
+            /** @enum {string} */
+            kind: "audio" | "text" | "subtitles";
+            url?: string | null;
+            text?: string | null;
+        };
         AiJobView: {
             id: string;
             /** @enum {string} */
-            tool: "voiceover";
+            tool: "music" | "voiceover" | "quick-voice" | "sound-effect";
             /** @enum {string} */
             state: "failed" | "done" | "working";
             voiceId: string;
@@ -14802,9 +14933,14 @@ export interface components {
             units: number;
             costPoints: number;
             audioUrl: string | null;
+            outputs: components["schemas"]["AiJobOutputView"][];
             message: string | null;
             createdAt: string;
             finishedAt: string | null;
+        };
+        AiJobPage: {
+            items: components["schemas"]["AiJobView"][];
+            nextCursor: string | null;
         };
         MovieCardView: {
             id: string;
@@ -29670,6 +29806,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createQuickVoice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuickVoiceJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createSoundEffect: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSoundEffectJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createMusic: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMusicJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_listJobs: {
+        parameters: {
+            query?: {
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page. */
+                cursor?: string;
+                /** @description Jobs per page, 1 to 100. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobPage"];
                 };
             };
         };

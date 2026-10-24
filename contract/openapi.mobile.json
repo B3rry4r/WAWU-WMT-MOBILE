@@ -26921,6 +26921,202 @@
     "x-wawu-built-by": "AITOOLS-01"
    }
   },
+  "/api/hub/ai-tools/quick-voice/jobs": {
+   "post": {
+    "operationId": "AiToolsController_createQuickVoice",
+    "parameters": [
+     {
+      "name": "Idempotency-Key",
+      "in": "header",
+      "description": "8 to 128 of letters, digits, - or _: one per job.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateQuickVoiceJobDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AiJobView"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "Starts a Quick voice job (PT1 \"Quick voice\", AITOOLS-02): a fast read of\nthe words in one of the same voices as VoiceOver, priced by\n`quick_voice_per_min`. The request, the answer, the `Idempotency-Key`\nrule and every refusal are exactly those of `POST /ai-tools/voiceover/jobs`;\nthe `quoteToken` is one for the action `quick_voice_per_min`.",
+    "tags": [
+     "AiTools"
+    ],
+    "x-wawu-built-by": "AITOOLS-02"
+   }
+  },
+  "/api/hub/ai-tools/sound-effect/jobs": {
+   "post": {
+    "operationId": "AiToolsController_createSoundEffect",
+    "parameters": [
+     {
+      "name": "Idempotency-Key",
+      "in": "header",
+      "description": "8 to 128 of letters, digits, - or _: one per job.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateSoundEffectJobDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AiJobView"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "Starts a Sound effect job (PT1 \"Sound effect\", AITOOLS-03): a `prompt`\ndescribing the sound, an optional `durationSeconds` and the `quoteToken`\nof the `POST /points/quote` for the action `sfx`. Priced flat, one use,\nwhatever the length. The request, the answer, the `Idempotency-Key` rule\nand the refusals are those of `POST /ai-tools/voiceover/jobs`, plus\n`422 ai_prompt_too_long` and `422 ai_length_too_long`, each naming its\nlimit, and `400 ai_prompt_empty`. Nothing is held when a job is refused.",
+    "tags": [
+     "AiTools"
+    ],
+    "x-wawu-built-by": "AITOOLS-03"
+   }
+  },
+  "/api/hub/ai-tools/music/jobs": {
+   "post": {
+    "operationId": "AiToolsController_createMusic",
+    "parameters": [
+     {
+      "name": "Idempotency-Key",
+      "in": "header",
+      "description": "8 to 128 of letters, digits, - or _: one per job.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateMusicJobDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AiJobView"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "Starts a Music track job (PT1 \"Music track\", AITOOLS-03): a `prompt`\ndescribing the track, an optional `lengthSeconds`, an optional\n`instrumental` switch and the `quoteToken` of the `POST /points/quote`\nfor the action `music_per_track`. Priced flat, one track, whatever the\nlength. A track can take minutes to make, so the app polls `GET\n/ai-tools/jobs/{id}`. The request, the answer, the `Idempotency-Key` rule\nand the refusals are those of `POST /ai-tools/sound-effect/jobs`.",
+    "tags": [
+     "AiTools"
+    ],
+    "x-wawu-built-by": "AITOOLS-03"
+   }
+  },
+  "/api/hub/ai-tools/jobs": {
+   "get": {
+    "operationId": "AiToolsController_listJobs",
+    "parameters": [
+     {
+      "name": "cursor",
+      "required": false,
+      "in": "query",
+      "description": "`nextCursor` from the previous page. Opaque: send it back as given. Absent for the first page.",
+      "schema": {
+       "minLength": 1,
+       "maxLength": 200,
+       "type": "string"
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "Jobs per page, 1 to 100.",
+      "schema": {
+       "minimum": 1,
+       "maximum": 100,
+       "default": 20,
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AiJobPage"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "The caller's own jobs of every tool, newest first, in cursor pages\n(`?cursor&limit`, `{ items, nextCursor }`; CONVENTIONS section 6). Each\nitem is the same shape as `GET /ai-tools/jobs/{id}`: the tool, the state,\nthe points taken, the times and its outputs. A cursor this list did not\ngive is a plain `400`.",
+    "tags": [
+     "AiTools"
+    ],
+    "x-wawu-built-by": "AITOOLS-02"
+   }
+  },
   "/api/hub/ai-tools/jobs/{id}": {
    "get": {
     "operationId": "AiToolsController_readJob",
@@ -26951,7 +27147,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "One job as it stands now: `working`, `done` with `audioUrl`, or `failed`\nwith the words \"No points were taken\" (PT2c). Only the person who ran it\nreads it; another person's job and one that is not there are the same\n`404 not_found`.",
+    "summary": "One job as it stands now: `working`, `done` with `audioUrl` and its\n`outputs`, or `failed` with the words \"No points were taken\" (PT2c). Only\nthe person who ran it reads it; another person's job and one that is not\nthere are the same `404 not_found`.",
     "tags": [
      "AiTools"
     ],
@@ -33919,6 +34115,91 @@
     "required": [
      "text",
      "voiceId",
+     "quoteToken"
+    ]
+   },
+   "CreateQuickVoiceJobDto": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string",
+      "description": "The words to speak. Never stored: the job keeps only how long it was.",
+      "minLength": 1,
+      "maxLength": 200000
+     },
+     "voiceId": {
+      "type": "string",
+      "description": "A voice id from `GET /ai-tools`.",
+      "pattern": "^[a-z0-9_-]{1,40}$"
+     },
+     "quoteToken": {
+      "type": "string",
+      "description": "`quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`.",
+      "minLength": 1,
+      "maxLength": 1024
+     }
+    },
+    "required": [
+     "text",
+     "voiceId",
+     "quoteToken"
+    ]
+   },
+   "CreateSoundEffectJobDto": {
+    "type": "object",
+    "properties": {
+     "prompt": {
+      "type": "string",
+      "description": "What the sound is, in words.",
+      "minLength": 1,
+      "maxLength": 20000
+     },
+     "durationSeconds": {
+      "type": "number",
+      "description": "How long the sound is, in seconds, from 0.5 up to the longest `GET /ai-tools` lists. Left out: the tool chooses. The price is the same whatever the length.",
+      "minimum": 0.5,
+      "maximum": 3600
+     },
+     "quoteToken": {
+      "type": "string",
+      "description": "`quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`.",
+      "minLength": 1,
+      "maxLength": 1024
+     }
+    },
+    "required": [
+     "prompt",
+     "quoteToken"
+    ]
+   },
+   "CreateMusicJobDto": {
+    "type": "object",
+    "properties": {
+     "prompt": {
+      "type": "string",
+      "description": "What the track is like, in words.",
+      "minLength": 1,
+      "maxLength": 20000
+     },
+     "lengthSeconds": {
+      "type": "integer",
+      "description": "How long the track is, in whole seconds, from 3 up to the longest `GET /ai-tools` lists. Left out: the tool chooses. The price is the same whatever the length.",
+      "minimum": 3,
+      "maximum": 3600
+     },
+     "instrumental": {
+      "type": "boolean",
+      "description": "True for a track without singing."
+     },
+     "quoteToken": {
+      "type": "string",
+      "description": "`quoteToken` from the `POST /points/quote` the person saw. A different cost now is `409 quote_changed`.",
+      "minLength": 1,
+      "maxLength": 1024
+     }
+    },
+    "required": [
+     "prompt",
      "quoteToken"
     ]
    },
@@ -54645,7 +54926,10 @@
      "id": {
       "type": "string",
       "enum": [
-       "voiceover"
+       "music",
+       "voiceover",
+       "quick-voice",
+       "sound-effect"
       ]
      },
      "action": {
@@ -54660,7 +54944,9 @@
      "unit": {
       "type": "string",
       "enum": [
-       "minute"
+       "use",
+       "minute",
+       "track"
       ]
      },
      "costPointsPerUnit": {
@@ -54672,14 +54958,26 @@
      "input": {
       "type": "object",
       "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "text",
+         "prompt"
+        ]
+       },
        "maxCharacters": {
         "type": "number"
        },
        "charactersPerUnit": {
         "type": "number"
+       },
+       "instrumental": {
+        "type": "boolean",
+        "nullable": true
        }
       },
       "required": [
+       "kind",
        "maxCharacters",
        "charactersPerUnit"
       ]
@@ -54740,6 +55038,30 @@
      "caps"
     ]
    },
+   "AiJobOutputView": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "audio",
+       "text",
+       "subtitles"
+      ]
+     },
+     "url": {
+      "type": "string",
+      "nullable": true
+     },
+     "text": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "kind"
+    ]
+   },
    "AiJobView": {
     "type": "object",
     "properties": {
@@ -54749,7 +55071,10 @@
      "tool": {
       "type": "string",
       "enum": [
-       "voiceover"
+       "music",
+       "voiceover",
+       "quick-voice",
+       "sound-effect"
       ]
      },
      "state": {
@@ -54776,6 +55101,12 @@
       "type": "string",
       "nullable": true
      },
+     "outputs": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AiJobOutputView"
+      }
+     },
      "message": {
       "type": "string",
       "nullable": true
@@ -54797,9 +55128,29 @@
      "units",
      "costPoints",
      "audioUrl",
+     "outputs",
      "message",
      "createdAt",
      "finishedAt"
+    ]
+   },
+   "AiJobPage": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AiJobView"
+      }
+     },
+     "nextCursor": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "items",
+     "nextCursor"
     ]
    },
    "MovieCardView": {

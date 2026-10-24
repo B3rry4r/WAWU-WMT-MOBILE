@@ -18,8 +18,12 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
  * The Hub's refusals carry more than a code (`reason.triesLeft`), and the shared `ApiError` keeps only the code, so the purchase reads its
  * own answer and hands the screen one of `ShortfallOutcome` (as Send, Convert and Buy points do).
  */
-export type AiTool = components['schemas']['AiToolView'];
-export type AiTools = components['schemas']['AiToolsView'];
+/**
+ * One tool of `GET /ai-tools`. The entry's `input.kind` says what the tool takes (`text` or `prompt`); an entry that does not say is a
+ * tool that takes words, as every entry was before AITOOLS-03, so the app reads a missing kind as `text` and never requires one.
+ */
+export type AiTool = Omit<components['schemas']['AiToolView'], 'input'> & { input: Omit<components['schemas']['AiToolView']['input'], 'kind'> & { kind?: components['schemas']['AiToolView']['input']['kind'] } };
+export type AiTools = Omit<components['schemas']['AiToolsView'], 'tools'> & { tools: AiTool[] };
 export type JobQuote = components['schemas']['PointsQuoteView'];
 export type JobCap = components['schemas']['PointsCapView'];
 export type Shortfall = components['schemas']['PointsShortfallView'];
@@ -48,7 +52,7 @@ export function readAiTools(value: unknown): AiTools {
       unit: t.unit as AiTool['unit'],
       costPointsPerUnit: t.costPointsPerUnit,
       enabled: t.enabled,
-      input: t.input ?? { maxCharacters: 0, charactersPerUnit: 0 },
+      input: t.input ?? { kind: 'text', maxCharacters: 0, charactersPerUnit: 0 },
       voices: Array.isArray(t.voices) ? t.voices : [],
     };
   });

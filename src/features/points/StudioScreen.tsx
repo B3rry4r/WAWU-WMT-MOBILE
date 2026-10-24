@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { aiToolsQuery, type AiTool } from './studioApi';
-import { costLine, STUDIO_WORDS, toolIcon } from './studioModel';
+import { costLine, isBuiltTool, STUDIO_WORDS, toolIcon } from './studioModel';
 import { PointsFrame } from './PointsFrame';
 import { BalanceCard } from './parts';
 
@@ -42,6 +42,8 @@ export type StudioScreenProps = {
  * nothing the Hub does not list. A tool the Hub lists as not enabled is not drawn as usable: it is dimmed and says so. The balance is
  * the Hub's (`GET /me/points`), a count of points, never naira. A person with no points sees the board's note and every tile dimmed,
  * and the accent Buy points; costs, the daily limit and what a job takes are the Hub's settings (R-65), never the board's.
+ *
+ * A tile is drawn only for a tool the app has a screen for; a tool the Hub lists that the app does not know is left out (R-47).
  *
  * The line under the bar is the board's caption with the outside name taken out (R-68). The history button opens Your points (PT5);
  * Buy points opens PT4 (POINTS-06). A read that fails is the error view with Try again.
@@ -80,7 +82,8 @@ export function StudioScreen({ onBack, onHistory, onBuy, onOpenTool }: StudioScr
 
   const balance = points.data.balance;
   const none = balance === 0;
-  const list = tools.data.tools;
+  // A tile is drawn for a tool the Hub lists AND the app has a screen for (R-47).
+  const list = tools.data.tools.filter(isBuiltTool);
   return (
     <PointsFrame title={STUDIO_WORDS.title} onBack={onBack} action={action} gap={BODY_GAP} testID="studio-screen">
       <Text variant="secondary" tone="textSecondary" testID="studio-line">

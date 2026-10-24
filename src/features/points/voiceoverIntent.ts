@@ -7,7 +7,7 @@ import { bounded } from '@/features/claim/localStore';
 /**
  * A job the person started, kept on the phone until they have seen its end (V8: the same Run sent twice makes one job).
  *
- * One intent is one `Idempotency-Key` and one request body (the words, the voice and the quote's token). If the app does not hear the
+ * One intent is one `Idempotency-Key` and one request body (the words or the description, the voice if the tool has one, and the quote's token). If the app does not hear the
  * Hub's answer (no network, a timeout, a server fault, the same key still running) points may be held, so the only safe next step is to
  * send the SAME request again: the Hub answers a key it knows with the first job, before it looks at the quote. Once the Hub has
  * answered, the job's id is all that is needed and the job is read by it ("You can leave this screen" is true: the job is found again
@@ -17,14 +17,17 @@ import { bounded } from '@/features/claim/localStore';
  * - `jobId` set: the Hub has the job. Read it by id; never send it again.
  *
  * Removed when the person has seen the job's end (done or failed), or the Hub refused the key outright (nothing exists for it). One
- * intent per account: a person makes one job at a time. Every call is bounded and never throws: a store that fails reads as "nothing
+ * intent per account and per tool: a person makes one job at a time in each tool, and a job left running in one tool is never
+ * written over by a Run in another. VoiceOver's record stays where it always was; every other tool's sits beside it under its own id. Every call is bounded and never throws: a store that fails reads as "nothing
  * remembered", and this run's memory still holds it.
  */
 export type JobIntent = {
   key: string;
   toolId: string;
   action: string;
+  /** The voice of a tool that reads words aloud; empty for a tool that takes a description (Sound effect, Music track). */
   voiceId: string;
+  /** The words to speak, or the description of the sound or track: the person's own, kept on this phone only. */
   text: string;
   units: number;
   characters: number;
@@ -39,7 +42,8 @@ export const UNKNOWN_KEEP_MS = 23 * 60 * 60 * 1000;
 
 const onWeb = Platform.OS === 'web';
 
-export const jobIntentKey = (owner: string) => `wmt.points.job.${owner}`;
+/** VoiceOver's record keeps the key it has always had (a job left running before an update is still found); every other tool adds its id. */
+export const jobIntentKey = (owner: string, toolId: string = 'voiceover') => (toolId === 'voiceover' ? `wmt.points.job.${owner}` : `wmt.points.job.${owner}.${toolId}`);
 
 const filled = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
@@ -48,7 +52,7 @@ const positive = (value: unknown): value is number => typeof value === 'number' 
 export function readJobIntent(value: unknown): JobIntent | null {
   const v = value as Partial<JobIntent> | null;
   if (!v || typeof v !== 'object') return null;
-  if (!filled(v.key) || !filled(v.toolId) || !filled(v.action) || !filled(v.voiceId) || !filled(v.text) || !filled(v.quoteToken)) return null;
+  if (!filled(v.key) || !filled(v.toolId) || !filled(v.action) || typeof v.voiceId !== 'string' || !filled(v.text) || !filled(v.quoteToken)) return null;
   if (!positive(v.units) || !positive(v.characters) || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
   return { key: v.key, toolId: v.toolId, action: v.action, voiceId: v.voiceId, text: v.text, units: v.units, characters: v.characters, quoteToken: v.quoteToken, jobId: filled(v.jobId) ? v.jobId : null, at: v.at };
 }
@@ -70,6 +74,7 @@ const writeRaw = (key: string, value: string | null): Promise<boolean> =>
     return true;
   }, false);
 
+/** By the store's key: one record per account and tool. */
 const memory = new Map<string, JobIntent | null>();
 let writes: Promise<unknown> = Promise.resolve();
 
@@ -79,48 +84,51 @@ export function forgetJobIntentInMemory(): void {
   writes = Promise.resolve();
 }
 
-/** The unresolved job for this account, if the phone holds one that can still be trusted. */
-export async function findJobIntent(owner: string): Promise<JobIntent | null> {
-  if (memory.has(owner)) return memory.get(owner) ?? null;
+/** The unresolved job for this account in this tool, if the phone holds one that can still be trusted. */
+export async function findJobIntent(owner: string, toolId: string = 'voiceover'): Promise<JobIntent | null> {
+  const slot = jobIntentKey(owner, toolId);
+  if (memory.has(slot)) return memory.get(slot) ?? null;
   let found: JobIntent | null = null;
   try {
-    const raw = await readRaw(jobIntentKey(owner));
+    const raw = await readRaw(slot);
     found = raw ? readJobIntent(JSON.parse(raw)) : null;
   } catch {
     found = null;
   }
-  if (found && !jobIntentAlive(found, Date.now())) found = null;
+  if (found && (found.toolId !== toolId || !jobIntentAlive(found, Date.now()))) found = null;
   // Whatever this run put in memory while the phone was being asked is newer than the store.
-  if (!memory.has(owner)) memory.set(owner, found);
-  return memory.get(owner) ?? null;
+  if (!memory.has(slot)) memory.set(slot, found);
+  return memory.get(slot) ?? null;
 }
 
 /** Writes are one after another, so an older write never lands over a newer one. */
-function persist(owner: string, intent: JobIntent | null): Promise<boolean> {
-  const done = writes.then(() => writeRaw(jobIntentKey(owner), intent === null ? null : JSON.stringify(intent)));
+function persist(slot: string, intent: JobIntent | null): Promise<boolean> {
+  const done = writes.then(() => writeRaw(slot, intent === null ? null : JSON.stringify(intent)));
   writes = done;
   return done;
 }
 
 /** Keeps the intent. The memory changes at once, so a retry in this run is the same request even if the store is slow or refuses. */
 export async function putJobIntent(owner: string, intent: JobIntent): Promise<boolean> {
-  memory.set(owner, intent);
-  return persist(owner, intent);
+  const slot = jobIntentKey(owner, intent.toolId);
+  memory.set(slot, intent);
+  return persist(slot, intent);
 }
 
 /** Lets the intent go: the person has seen the job's end, or the Hub refused the key. */
-export async function dropJobIntent(owner: string, key: string): Promise<void> {
-  const known = memory.has(owner) ? (memory.get(owner) ?? null) : await findJobIntent(owner);
+export async function dropJobIntent(owner: string, key: string, toolId: string = 'voiceover'): Promise<void> {
+  const slot = jobIntentKey(owner, toolId);
+  const known = memory.has(slot) ? (memory.get(slot) ?? null) : await findJobIntent(owner, toolId);
   if (!known || known.key !== key) return;
-  memory.set(owner, null);
-  await persist(owner, null);
+  memory.set(slot, null);
+  await persist(slot, null);
 }
 
 /** Sign-out keeps only what is still unresolved: nothing of this run's memory outlives the session. */
 onSessionEnd(() => {
   const now = Date.now();
-  for (const [owner, intent] of [...memory.entries()]) {
-    if (intent && !jobIntentAlive(intent, now)) void persist(owner, null);
+  for (const [slot, intent] of [...memory.entries()]) {
+    if (intent && !jobIntentAlive(intent, now)) void persist(slot, null);
   }
   memory.clear();
 });

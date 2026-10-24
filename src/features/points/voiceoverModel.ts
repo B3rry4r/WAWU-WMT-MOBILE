@@ -1,11 +1,15 @@
 import { formatPointsCount } from '@/components/PointsFigure';
 
+import { isBuiltTool } from './studioModel';
 import type { AiTool } from './studioApi';
 import type { VoiceJob } from './voiceoverApi';
 
 /** The copy of PT2, PT2a, PT2b and PT2c that is the design's own words. Every figure in a line is the Hub's, and no outside name is in any of it (R-68). */
 export const TOOL_WORDS = {
   placeholder: 'Type or paste the words to speak',
+  /** The box's name for a screen reader, by what it takes. */
+  boxLabel: 'Words to speak',
+  promptBoxLabel: 'Description',
   voice: 'Voice',
   run: 'Run',
   tryAgain: 'Try again',
@@ -67,7 +71,16 @@ export function failedWords(message: string | null | undefined): { title: string
   return { title: said.slice(0, cut).replace(/[.!?]+$/, ''), body: said.slice(cut + 1).trim() };
 }
 
-/** What a tool's screen can run: the Hub lists it as on, with a length for a minute and voices to pick from. */
+/** What a tool takes in: the words to speak (`text`, the default of an entry that does not say) or a description of a sound or track (`prompt`). */
+export type InputKind = 'text' | 'prompt';
+export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.input.kind === 'prompt' ? 'prompt' : 'text');
+
+/**
+ * What a tool's screen can run: the app has its screen, and the Hub lists it as on with a limit for what it takes. A tool that reads
+ * words aloud also needs the characters that make a minute and voices to pick from; a tool that takes a description is a flat price (a
+ * use, a track), with no voices and no length.
+ */
 export function toolReady(tool: AiTool | undefined): tool is AiTool {
-  return Boolean(tool && tool.enabled && tool.input.maxCharacters > 0 && tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
+  if (!tool || !tool.enabled || !isBuiltTool(tool) || !(tool.input.maxCharacters > 0)) return false;
+  return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }

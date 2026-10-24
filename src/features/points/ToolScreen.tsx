@@ -23,9 +23,9 @@ import { useJobCheck } from './JobCheck';
 import { PointsFrame } from './PointsFrame';
 import { ResultPlayer } from './ResultPlayer';
 import { aiToolsQuery, fetchJobQuote, type AiTool, type JobAction } from './studioApi';
-import { charactersOf, clampText, countLine, failedWords, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
+import { charactersOf, clampText, countLine, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine } from './voiceoverModel';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent } from './voiceoverIntent';
-import { JOB_POLL_MS, startVoiceover, voiceJobQuery, type VoiceJob } from './voiceoverApi';
+import { JOB_POLL_MS, startJob, voiceJobQuery, type VoiceJob } from './voiceoverApi';
 
 /** design/_gen/points.js line 90, `pt2Body`: the parts stand 14 apart; the box and its count line 8 apart. */
 const BODY_GAP = 14;
@@ -58,6 +58,11 @@ export type ToolScreenProps = {
  * the longest text it takes and how many characters make a minute, the cost of a minute and the voices to pick from, all the Hub's, so
  * the next tool the Hub lists is a catalogue entry with its own runner, not a new screen. A tool the Hub lists as off, or with no voices, is
  * not drawn as usable.
+ *
+ * A tool that reads words aloud (VoiceOver, Quick voice: `input.kind` text) is PT2 as drawn: the words, "About N minutes", the voices.
+ * A tool that takes a description (Sound effect, Music track: `input.kind` prompt) is PT2's layout with the description box and its
+ * count against the entry's limit, and no voice rows and no length line, because its price is flat (a use, a track): the cost line
+ * reads the quote either way.
  */
 export function ToolScreen(props: ToolScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -97,7 +102,7 @@ export function ToolScreen(props: ToolScreenProps) {
       </PointsFrame>
     );
   }
-  return <Tool {...props} owner={owner} tool={tool} balance={points.data.balance} />;
+  return <Tool key={tool.id} {...props} owner={owner} tool={tool} balance={points.data.balance} />;
 }
 
 type ToolProps = ToolScreenProps & { owner: string | null; tool: AiTool; balance: number };
@@ -107,8 +112,9 @@ type View_ = 'input' | 'working' | 'done' | 'failed' | 'unsent';
 
 function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotPin, onSetPin, onLeave }: ToolProps) {
   const { colors } = useWawu();
+  const kind = inputKindOf(tool);
   const [text, setText] = useState('');
-  const [voiceId, setVoiceId] = useState(tool.voices[0]?.id ?? '');
+  const [voiceId, setVoiceId] = useState(kind === 'text' ? (tool.voices[0]?.id ?? '') : '');
   const [jobId, setJobId] = useState<string | null>(null);
   const [unsent, setUnsent] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -122,7 +128,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   const activeKey = useRef<string | null>(null);
 
   const characters = charactersOf(text);
-  const units = unitsFor(characters, tool.input.charactersPerUnit);
+  // A flat price is one use or one track whatever the length of the description; a read-aloud is billed in minutes.
+  const units = kind === 'prompt' ? 1 : unitsFor(characters, tool.input.charactersPerUnit);
 
   const job = useQuery({
     ...voiceJobQuery(owner, jobId),
@@ -155,7 +162,12 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
       pending.current = intent;
       try {
         await putJobIntent(owner, intent);
-        const outcome = await startVoiceover({ text: intent.text, voiceId: intent.voiceId, quoteToken: intent.quoteToken, key: intent.key });
+        const outcome = await startJob({
+          toolId: intent.toolId,
+          request: kind === 'prompt' ? { kind: 'prompt', prompt: intent.text } : { kind: 'text', text: intent.text, voiceId: intent.voiceId },
+          quoteToken: intent.quoteToken,
+          key: intent.key,
+        });
         if (outcome.kind === 'started') {
           await putJobIntent(owner, { ...intent, jobId: outcome.job.id });
           queryClient.setQueryData(voiceJobQuery(owner, outcome.job.id).queryKey, outcome.job);
@@ -168,7 +180,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         } else {
           pending.current = null;
           activeKey.current = null;
-          await dropJobIntent(owner, intent.key);
+          await dropJobIntent(owner, intent.key, intent.toolId);
           setRefusal(outcome.message);
           void queryClient.invalidateQueries({ queryKey: ['points', 'job-quote'] });
         }
@@ -177,7 +189,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         setStarting(false);
       }
     },
-    [owner],
+    [owner, kind],
   );
 
   const check = useJobCheck({
@@ -192,7 +204,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         key: newRequestKey(),
         toolId: tool.id,
         action: tool.action,
-        voiceId,
+        voiceId: kind === 'text' ? voiceId : '',
         text: text.trim(),
         units: input.units,
         characters: input.characters ?? characters,
@@ -212,10 +224,10 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   useEffect(() => {
     if (!owner) return;
     let alive = true;
-    void findJobIntent(owner).then((found) => {
+    void findJobIntent(owner, tool.id).then((found) => {
       if (!alive || !found || found.toolId !== tool.id || sending.current) return;
       setText(found.text);
-      setVoiceId(found.voiceId);
+      if (kind === 'text') setVoiceId(found.voiceId);
       activeKey.current = found.key;
       if (found.jobId) setJobId(found.jobId);
       else void send(found);
@@ -223,25 +235,25 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
     return () => {
       alive = false;
     };
-  }, [owner, tool.id, send]);
+  }, [owner, tool.id, kind, send]);
 
   // The Hub does not know this job: its record goes, so the app does not look for it again on the next visit (SWEEP-APP-3 row 167).
   const gone = isApiError(job.error) && job.error.status === 404;
   useEffect(() => {
     if (!owner || !gone || !activeKey.current) return;
-    void dropJobIntent(owner, activeKey.current);
+    void dropJobIntent(owner, activeKey.current, tool.id);
     activeKey.current = null;
-  }, [owner, gone]);
+  }, [owner, gone, tool.id]);
 
   // The person has seen the job's end: its record goes, and the Hub's balance is read again (points were kept, or came back).
   const ended = job.data?.state === 'failed' || (job.data?.state === 'done' && Boolean(job.data.audioUrl));
   useEffect(() => {
     if (!owner || !ended) return;
-    if (activeKey.current) void dropJobIntent(owner, activeKey.current);
+    if (activeKey.current) void dropJobIntent(owner, activeKey.current, tool.id);
     activeKey.current = null;
     void queryClient.invalidateQueries({ queryKey: ['points', 'job-quote'] });
     void queryClient.fetchQuery({ ...myPointsQuery(owner), staleTime: 0 }).then((fresh) => setBalanceAfter(fresh.balance), () => undefined);
-  }, [owner, ended]);
+  }, [owner, ended, tool.id]);
 
   const run = () => {
     if (characters === 0 || starting || check.checking) return;
@@ -284,10 +296,18 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   return (
     <PointsFrame title={tool.name} subtitle={`Points: ${formatPointsCount(balance)}`} onBack={onBack} gap={BODY_GAP} foot={foot} testID="tool-screen">
       <View style={styles.boxGroup}>
-        <WordsBox value={text} onChange={edit} editable={typing} tall={view === 'input'} max={tool.input.maxCharacters} />
+        <WordsBox
+          value={text}
+          onChange={edit}
+          editable={typing}
+          tall={view === 'input'}
+          max={tool.input.maxCharacters}
+          placeholder={kind === 'prompt' ? tool.description || TOOL_WORDS.placeholder : TOOL_WORDS.placeholder}
+          label={kind === 'prompt' ? TOOL_WORDS.promptBoxLabel : TOOL_WORDS.boxLabel}
+        />
         <View style={styles.meta}>
           <Text variant="body" tone="textMuted" testID="tool-length" style={styles.metaText}>
-            {characters > 0 ? lengthLine(units) : ''}
+            {kind === 'text' && characters > 0 ? lengthLine(units) : ''}
           </Text>
           <Text variant="body" tone="textMuted" testID="tool-count" style={styles.metaText}>
             {countLine(characters, tool.input.maxCharacters)}
@@ -295,7 +315,7 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
         </View>
       </View>
       {view === 'input' && refusal ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.refusedTitle} body={refusal} testID="tool-refused" /> : null}
-      {view === 'input' ? <VoiceList voices={tool.voices} value={voiceId} onChange={setVoiceId} /> : null}
+      {view === 'input' && kind === 'text' ? <VoiceList voices={tool.voices} value={voiceId} onChange={setVoiceId} /> : null}
       {view === 'working' ? <Working name={tool.name} /> : null}
       {view === 'done' && job.data?.audioUrl ? (
         <View style={styles.done}>
@@ -319,8 +339,8 @@ function Tool({ owner, tool, balance, onBack, onBuyPoints, onAddMoney, onForgotP
   );
 }
 
-/** The words to speak: a multi-line box on the input colour; the ring is the accent while typing. */
-function WordsBox({ value, onChange, editable, tall, max }: { value: string; onChange: (next: string) => void; editable: boolean; tall: boolean; max: number }) {
+/** The words to speak, or the description of a sound or track: a multi-line box on the input colour; the ring is the accent while typing. */
+function WordsBox({ value, onChange, editable, tall, max, placeholder, label }: { value: string; onChange: (next: string) => void; editable: boolean; tall: boolean; max: number; placeholder: string; label: string }) {
   const { colors } = useWawu();
   // The box grows with the words (a browser's text area would scroll inside a fixed height).
   const [grown, setGrown] = useState(0);
@@ -334,12 +354,12 @@ function WordsBox({ value, onChange, editable, tall, max }: { value: string; onC
     >
       <TextInput
         testID="tool-text"
-        accessibilityLabel="Words to speak"
+        accessibilityLabel={label}
         multiline
         editable={editable}
         value={value}
         onChangeText={onChange}
-        placeholder={TOOL_WORDS.placeholder}
+        placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         maxLength={max > 0 ? max * 2 : undefined}
         textAlignVertical="top"
