@@ -7,7 +7,7 @@ order: -174
 priority: launch
 repo: wawu-backend
 type: mobile-screen
-status: verifying
+status: building
 depends_on: []
 decisions: [R-84, R-83, R-39, R-10, R-20, R-29, R-47]
 passes: [V1, V3, V4, V5, V6, V7, V8, V9]
@@ -96,7 +96,35 @@ Backend `src/money/abroad/`, `src/nuvion/areas/abroad.ts`, `src/nuvion/handlers/
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). The round 0 report (FIX, F1 to F8) is in [history/NUV-11.md](history/NUV-11.md); round 1 is checked against it. One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+The round 0 report (FIX, F1 to F8) is in [history/NUV-11.md](history/NUV-11.md). Round 1 below.
+
+### Round 1 (24 Oct 2026, Sonnet verifier, T2; built none of it). Verdict: FIX (one medium, four low)
+
+Backend `ddad361` against `b937df0` (judged on NUV-11's own commits `6c3558e` and `ddad361`; WALLET-21's `51a8aa8` not judged), mobile `7346f93b` against `69952a3c`. Own DB `vn11r_test`, own worktrees; no spec that imports the Fintava double was run.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Backend types, lint | passed | tsc EXIT 0; eslint (no --fix) on the 15 changed ts files EXIT 0 |
+| Backend specs | passed | abroad service, admin roles, settings, `money-contract`, `money-moving-coverage`, `wallet-gate-coverage`, `account-data-map`, `data-export-map`: 8 suites 127 tests EXIT 0; `publishing-gate-coverage`, `nuvion-abroad`, `hub-rate-limits`: 3 suites 62 tests EXIT 0 |
+| Contract | passed | `contract:build` EXIT 0, `contract/openapi.json` unchanged (git status clean); the app's copy is byte-identical; `sync_contract.py` leaves `openapi.mobile.json` and `schema.generated.ts` unchanged |
+| Gates | passed | backend 0 fail (135 warn, 88 accepted) and baseline EXIT 0; app 0 fail (18 warn, 0 accepted) and baseline EXIT 0; `check_tasks` EXIT 0 |
+| App | passed | tsc EXIT 0; jest abroad, send, dev (8 suites 122 tests) EXIT 0 and the two route-guard specs (273 tests) EXIT 0, `--maxWorkers=2` |
+| F1 | closed, one residual (R1-3) | a probe of mine on the spec's harness: fee taken, send fails, one `-fee-back` for the amount the leg moved, never marked before the provider completed it, a failed one replaced by `-2`, held after three references or a day; a reversed-after-completed send gives back; no give-back when no fee was taken |
+| F2 | closed, but see R1-1 | quote carries the configured figure; a send holding exactly the amount is refused at the quote with the shortfall; `feeDiffers` true for a real fee that differs and false when equal; the app shows "Partner fee" and the total on the amount and review screens, none drawn when no figure is configured (the 3 app tests pass) |
+| F3 | closed for the sequential case, one residual (R1-2) | min age of a minute, row lock, cancel stays cancelled when the provider takes it later |
+| F4 | closed | real HTTP through the guard chain: five routes, 401 with no token, 403 for support and reviewer with the service never called, 200 or 201 for finance and superadmin (25 of 25) |
+| F5 | closed | `expo export --platform web` of both trees: the gallery's canned names ("Danielle Brooks", "Bank of America") are in the old bundle (1 file) and in 0 files of the new one; a control string ("Partner fee") is in the new one |
+| F6, F7, F8 | closed | no `WALLET_FEE_NOTE` anywhere in `src`; F7 spec passes (before the PIN and at the send); PROGRESS current |
+
+Findings:
+
+- **R1-1 medium, defect (the contract lies).** The quote still raises `402 insufficient_funds` (`abroad.service.ts` `assertFunds`, the amount, the partner's fee and, from naira, WAWU's fee against the provider's balance) but the builder took the code off the quote's `@MoneyErrors` list to get `money-moving-coverage` green. Result: `contract/openapi.json` lists 201, 400, 403, 404, 409, 422, 423, 503 for `POST /money/abroad/quotes`, no 402, while its own description (and `schema.generated.ts`) says "`402 insufficient_funds`". The spec's rule: a route that documents any code only a debit answers (everything in `DEBIT_GATE_ERRORS` outside `ANSWERED_WITHOUT_MOVING`) counts as money-moving and must then document `limit_reached` too; the allowance list names only the gate's codes, `provider_unreachable`, `amount_out_of_range`, `fees_not_set` and `pin_not_set`. The house pattern is that a quote answers none of them (`GET /money/payments/quote` and `POST /money/fx/quotes` have no 402 and check no balance; the debit does). Dropping the check is not the honest fix: F2's repro is a refusal BEFORE the PIN for a person holding exactly the amount. Honest fix: the lead names the abroad quote in `money-moving-coverage.spec.ts` as a quote that reads the balance and moves nothing (an allowance for `insufficient_funds` keyed to `POST money/abroad/quotes`, with the reason; a gate edit, so the lead's, never the builder's), and the quote lists `insufficient_funds` again so `contract:build` publishes the 402. The other way (a 201 that carries a shortfall and a 402 only from the send) is a bigger change to the app and the contract. No runtime harm: the app maps the 402 by its body code. Fix round: small, no migration.
+- **R1-2 low, residual race (F3).** `apply` judges `cancelled` on a row it loaded earlier and then writes with `update where {id}`. A probe that lets the admin cancel commit between that load and that write ends with the row `pending` again (cancelled row reopened). The window is milliseconds and needs the provider to take a send exactly as finance cancels it after a full search found nothing. Fix: write with a condition (`status != cancelled`, or lock the row in `apply`).
+- **R1-3 low, money, rare (F1).** If WAWU's fee leg is `pending` at the provider (a slow book transfer, which `book.ts` says happens) when the send fails, `wawuFeeTaken` is still false, `apply` skips the give-back, `takeFee` skips failed rows and the sweep only looks at `pending` and `completed` sends. When the leg then completes the person is charged the fee, nothing marks it taken and nothing gives it back; the admin list shows `wawuFeeOwed: true` (the opposite of the truth). Probe: send with the fee leg pending, fail the send, complete the leg, sweep twice: 0 give-backs, row `failed`, `wawuFeeTaken` false. Fix: let the sweep read (never make) the fee leg of a failed or reversed send whose fee is not marked taken, and give back if it completed. Also `takeFee` should skip `reversed` as it skips `failed` (today a send found already reversed has its fee taken and at once given back: two transfers, net zero, seen in a probe).
+- **R1-4 low (deletion hold has no exit).** The new `payment_in_progress` count for sends is right for a send in flight, but it also holds for a completed send whose fee was never taken (five tries used up, for example an empty naira wallet) and for a give-back held for a person. No admin route clears either (the five admin routes are list, one, cancel, freeze, unfreeze), so such a person cannot delete the account and is told a payment is in progress. Latent while `abroad.wawu_fee_kobo` is 0. Fix: an admin action that settles or forgives the fee, or let those two states not hold.
+- **R1-5 note, for the merge: the Fx* rows duplicate BATCH-FX-A's.** `origin/wmt/BATCH-FX-A` (`5569140`) adds the same `FxAccount`, `FxQuote`, `FxOperation`, `FxMovement` OWNED rows, `FxAdminAudit` AUDIT row and the two `wawuFeeMinor` NOT_A_USER_REFERENCE rows to `account-data-map.ts`. A merge of NUV-11 into it conflicts in `account-data-map.ts` (the NOT_A_USER_REFERENCE block) and, outside the conflict, silently keeps both copies of the OWNED and AUDIT rows (no spec rejects a duplicate). Keep FX-A's copy and NUV-11's Abroad rows only. NUV-11's `Fx*` entries in `data-export-sections.ts` have no counterpart on FX-A (it has none), so they merge clean; keep them or FX-A's `data-export-map` goes red. The same merge also conflicts in `contract/openapi.json` (rebuild with `contract:build`), `CONVENTIONS.md`, `money-enums.ts`, `money-contract.ts` and `plan-settings.defaults.json` (both sides add error codes and settings).
+
+Not run: a real failed or reversed transfer, the fingerprint path, a phone, a stack with Nuvion DEV (the F1 to F3 proofs are on a fake provider, as the builder's are).
 
 ## History
 
