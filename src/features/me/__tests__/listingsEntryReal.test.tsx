@@ -9,7 +9,7 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(async () => undefined),
 }));
 const mockRouter = { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter, Redirect: () => null }));
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useIsFocused: () => true, Redirect: () => null }));
 
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const profile = {

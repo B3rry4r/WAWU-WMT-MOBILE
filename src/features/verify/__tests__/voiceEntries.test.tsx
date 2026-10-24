@@ -14,6 +14,7 @@ const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn(), canGoBack: () => false }),
   Redirect: () => null,
+  useIsFocused: () => true,
 }));
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),

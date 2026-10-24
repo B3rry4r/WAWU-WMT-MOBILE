@@ -207,7 +207,7 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
     expect(screen.queryByTestId('me-tier-error')).toBeNull();
   });
 
-  it('draws no Voice Intro player, Bio label or AI voice tag: the Hub serves no voiceIntro yet (R-47, G-800)', async () => {
+  it('draws no Voice Intro player, Bio label or AI voice tag for a person with no Voice Intro made (R-47)', async () => {
     answers = base();
     await boot();
     await screen.findByTestId('me-products');

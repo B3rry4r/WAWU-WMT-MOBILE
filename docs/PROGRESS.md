@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 359.**
+**Launch tasks done: 176 of 360.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 53 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 160 | 0 | 0 | 0 |
-| review | 21 | 0 | 0 | 0 |
+| review | 22 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -18,6 +18,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FLIX-04](../tasks/FLIX-04.md) Flix movies show "not live yet" until business talks finish (You)
 - [BRAND-MAIL](../tasks/BRAND-MAIL.md) Emails say Who Made This? (WAWU ID's mail and the Hub's campaign sender) (You)
 - [SWEEP-VOICE](../tasks/SWEEP-VOICE.md) Voice sweep: the low findings of the Voice Intro (VOICE-01, VERIFY-02, VERIFY-03, FIX-95) (You)
+- [FIX-103](../tasks/FIX-103.md) A person can hear a creator's Voice Intro on the creator's profile (the Bio player on M1 and M5) (You)
 - [FIX-102](../tasks/FIX-102.md) Tapping a notification opens its screen (every kind the Hub writes, in the list and from a push), and the TGIF reader goes back on a left tap (You)
 - [FIX-101](../tasks/FIX-101.md) The last app items before the Android test build (unlock with no creator name, bank send wait, Create Event tile, called-off ticket, category outside the taxonomy, Flix cold open) (You)
 - [FIX-100](../tasks/FIX-100.md) The app findings of the pre-build re-walk (ask a professional, enrolment price problem, setup row, created screen, genre chips, Who Made This? empty state, PIN after the account lands) (You)
@@ -398,6 +399,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 24 Oct 2026 · FIX-103 · Built (Sonnet builder, T1; mobile `wmt/FIX-103` on `origin/main` `c47c9c84`; status verifying): a person can hear a creator's Voice Intro on the profile. M1 and M5 draw the Bio player (Play, bars, length, "Bio", "AI voice") under the bio: M1 plays `audioUrl` from `GET /me/voice-intro`, M5 plays `url` from `GET /users/{wawuId}/voice-intro`; no intro draws no control (R-47); the clip stops when the tab is not in front. Reuses `VoicePlayer` and the feed's `AudioSource`, no native module. 18 new tests. Live look NOT RUN. No backend change.
 - 23 Oct 2026 · AITOOLS-CUT · Records, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT`, second commit): R-79 records the owner's four answers of 23 Oct 2026. (a) The Receptionist is left out for now: AITOOLS-06 (order 356) and POINTS-12 (357) are after launch, R-78's list notes it. (b) Quick voice is a fast, cheaper read-aloud, the same voices as VoiceOver on the provider's faster model, 125 points a minute: AITOOLS-02 and POINTS-09 say so, G-AITOOLS-02-1 closed. (c) Editing a sent event goes back to review and ticket price and places cannot change once a ticket is sold, today's Hub rules: G-833 closed as ruled; the app has no edit path for a sent event (the missing report's item 2), so EVENTS-14 (order -116, launch, todo, both repos) is cut to mount E18's Edit event and Ticket types rows on those rules; G-EVENTS-14-1 filed. (d) WALLET-19, WALLET-20, WALLET-25 and WALLET-26 stay after launch with a dated line each.
 - 23 Oct 2026 · AITOOLS-CUT · Records and plan, no product code (Sonnet agent; mobile `wmt/AITOOLS-CUT` on `origin/main` `573bb62a`; no PR): R-78 (every Studio tool the design draws is built for launch). `docs/elevenlabs/API-FACTS.md` (the provider's route, request, answer, async or not, limits and file types for each tool, read from its public documentation, with what free read calls showed: the key lacks `user_read` so the plan name is not known; models, voices, agents, dubbing, audio isolation and music finetunes read fine). Nine tasks at negative orders (no launch order below CHECK-3 was free): AITOOLS-02 (one job pipeline, job list, Quick voice), AITOOLS-03 (Sound effect, Music track), AITOOLS-04 (Captions, Clean audio, a person's file in), AITOOLS-05 (Dubbing), AITOOLS-06 (Receptionist), POINTS-09 to POINTS-12 (the app side). Every tool the design draws can be served by the provider. Gaps G-813 and G-POINTS-07-3 point at the tasks; new rows G-AITOOLS-02-1, -03-1, -05-1, -05-2, -06-1 and G-POINTS-09-1. Checks: `check_tasks.py --write` EXIT 0 (413 tasks), gates EXIT 0 (10 run, 1213 files, 0 fail, 18 warn as before).
 - 23 Oct 2026 · FIX-102 · Built (Sonnet builder, T1; mobile `wmt/FIX-102` on `origin/main` `573bb62a`; status verifying): every notification kind the Hub writes (25) opens a screen of the app, from the list and from a push, through one map (`src/features/push/routes.ts`); a sale and a tip open Earnings; a kind the Hub adds later opens the screen its target or category names; a Top up row opens the sheet. The TGIF reader's left 30% goes back a card (nothing on the first), the right goes forward, buttons keep their taps, the sponsored card's left edge goes back. Tests fail on main, pass built.
@@ -412,4 +414,3 @@ From `docs/LOG.md`, newest first.
 - 23 Oct 2026 · BRAND-MAIL fix round · The verifier's FIX built (Sonnet builder, T1; WAWU ID `wmt/BRAND-MAIL` `603f09b`, backend `07a0ba7`, this record on mobile `wmt/BRAND-MAIL`; status review): the local script's login-alert pattern escapes the question mark again (`Who Made This\?`), the campaign logo alt says "Who Made This?", a stale comment fixed, the paid-consultation legal prompt names the assistant "Who Made This? Legal assistant" like the chat line (lead ruling; no spec pins it); the task file says four em-dashes and lists where.
 - 23 Oct 2026 · BRAND-MAIL · Built (Sonnet builder, T1, copy only; WAWU ID `wmt/BRAND-MAIL` `0a23dce` on `origin/main` `cdfa442`, backend `wmt/BRAND-MAIL` `ffe53ab` on `origin/main` `13e2753`, this record on mobile `wmt/BRAND-MAIL`; status verifying): every email a person receives names the product "Who Made This?" instead of WAWUAfrica (subjects, preheaders, text, page title, footer, header image alt) and the default sender is `Who Made This? <noreply@wawuafrica.com>`; no address, domain or link changed; DECISIONS R-76 added; five specs updated to the new words, one new `mail-brand.spec.ts`. Left: the CEO signature, "WAWU" alone, a dormant text message (see the task file).
 - 23 Oct 2026 · FIX-98 round 2 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `29f3cf6`, mobile `wmt/FIX-98`; status verifying): the FIX-85 path (a send reversed before its fee-back lands) leaves no ledger discrepancy (the sender's fee row is paired with Nuvion's successful fee transfer), a kept payee without a state or postal code is not used, and the history names the fee rows "WAWU's fee" and "WAWU's fee given back".
-- 23 Oct 2026 · FIX-98 · Built (Sonnet builder, T2; backend `wmt/FIX-98` `a0426ac` on `origin/main` `dd00e85`, mobile `wmt/FIX-98` from `wmt/FIX-97`; status verifying): the counterparty carries the sender's state and postal code (a Hub bank send on a funded Nuvion DEV wallet runs end to end), and a refused send keeps the fee-collect row `completed` with the give-back as its own rows (no `ledger_discrepancy`). Gaps G-FIX-98-1 and G-FIX-98-2. FIX-97 back to review.
