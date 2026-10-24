@@ -5,11 +5,12 @@ import { onSessionEnd, useSession } from '@/api/session';
 
 import { fetchInboxUnread, inboxKey, inboxUnreadKey } from './api';
 import { onLiveEvent, onLiveSynced, retainLive } from './live';
+import { drawnUnread } from './rows';
 
 /**
- * The Inbox tab's unread count (G-4). It is the server's `GET /inbox/unread` total, which equals the
- * sum of every row's unread count. It starts at zero, so the badge stays hidden until real data
- * arrives, and it is zero again when the session ends.
+ * The Inbox tab's unread count (G-4). It is the server's `GET /inbox/unread` count for the kinds of row
+ * the Inbox draws (`drawnUnread`), so the badge never counts a row nobody can see (R-47). It starts at
+ * zero, so the badge stays hidden until real data arrives, and it is zero again when the session ends.
  */
 let unread = 0;
 const listeners = new Set<() => void>();
@@ -41,8 +42,8 @@ let pending: ReturnType<typeof setTimeout> | null = null;
 /** Reads the count again and refetches every inbox list that is on screen. */
 export async function refreshInbox() {
   try {
-    const { total } = await queryClient.fetchQuery({ queryKey: inboxUnreadKey, queryFn: fetchInboxUnread, staleTime: 0 });
-    setInboxUnread(total);
+    const unread = await queryClient.fetchQuery({ queryKey: inboxUnreadKey, queryFn: fetchInboxUnread, staleTime: 0 });
+    setInboxUnread(drawnUnread(unread));
   } catch {
     // The badge keeps its last number; the next event or return to the foreground reads it again.
   }

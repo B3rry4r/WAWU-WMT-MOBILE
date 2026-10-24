@@ -22,7 +22,7 @@ const initialsTracking = -0.02;
 const fallbackInitials = 'W';
 /**
  * inbox.js line 8, `wawuAv`: the app's own avatar is its mark on the sunken surface,
- * 30 wide in a 52 circle. R-37 swaps the WAWU icon for the Who Made This submark.
+ * 30 wide in a 52 circle. R-37 swaps the WAWU icon for the Who Made This? submark.
  */
 const brandScale = 30 / 52;
 
@@ -57,7 +57,8 @@ export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decora
   const { colors } = useWawu();
   const fontSize = Math.round(size * initialsScale);
   const a11y = decorative
-    ? ({ accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const)
+    ? // react-native-web reads only `aria-hidden`; the two native props hide it on iOS and Android.
+      ({ 'aria-hidden': true, accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const)
     : ({ accessible: true, accessibilityRole: 'image', accessibilityLabel: name ?? APP_NAME } as const);
 
   return (

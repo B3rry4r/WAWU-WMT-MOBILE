@@ -1,5 +1,4 @@
 import type { FeedScope } from '@/features/feed/api';
-import type { TgifPreference } from '@/features/settings/api/hub';
 import type { TgifDay } from '@/features/tgif/api/tgif';
 import { cardOrder, cardText, compactCount, dateText } from '@/features/tgif/model';
 import { stateWords, type HomeView as WalletHomeView } from '@/features/wallet/home/model';
@@ -43,16 +42,6 @@ export function tgifMeta(day: TgifDay, readers: number | null | undefined): stri
   const parts = [`${count} ${count === 1 ? 'card' : 'cards'}`];
   if (typeof readers === 'number' && readers > 0) parts.push(`${compactCount(readers)} reading today`);
   return parts.join(' · ');
-}
-
-/**
- * Whether Today shows the TGIF card. The person's own switch (Z2, `GET /settings/tgif`) decides.
- * While it cannot be read the Hub's own default stands (shown: nobody has turned it off until
- * they do, HOME-11), so a failed read never hides TGIF from someone who wants it.
- */
-export function showsTgif(preference: TgifPreference | undefined, failed: boolean): boolean {
-  if (preference) return preference.show;
-  return failed;
 }
 
 /** The people the rail offers: the Hub's list without the viewer, who can never follow themselves. */
@@ -114,15 +103,15 @@ export type ReadState = { pending: boolean; failed: boolean };
 
 /**
  * Where the page as a whole stands:
- * - `loading` (H11) until the first answer of each read Today draws from has come: the balance,
- *   the TGIF switch and, when TGIF shows, the day, and the creators;
+ * - `loading` (H11) until the first answer of each read Today draws from has come: the balance and the creators;
  * - `error` when every one of them failed and none of the failures is the wallet's own answer
  *   (no wallet, opening, unreachable): nothing on the page can be drawn, which is a lost
  *   connection or a Hub that is down;
  * - `ready` otherwise: each part draws what it has, and a part that failed says so in place.
+ * Today reads no TGIF (R-59: TGIF is on Explore and in the morning notification).
  */
-export function todayPhase(reads: { balance: ReadState & { walletAnswer: boolean }; tgifSwitch: ReadState; tgifDay: ReadState | null; creators: ReadState }) {
-  const all: ReadState[] = [reads.balance, reads.tgifSwitch, reads.creators, ...(reads.tgifDay ? [reads.tgifDay] : [])];
+export function todayPhase(reads: { balance: ReadState & { walletAnswer: boolean }; creators: ReadState }) {
+  const all: ReadState[] = [reads.balance, reads.creators];
   if (all.some((read) => read.pending)) return 'loading' as const;
   if (all.every((read) => read.failed) && !reads.balance.walletAnswer) return 'error' as const;
   return 'ready' as const;

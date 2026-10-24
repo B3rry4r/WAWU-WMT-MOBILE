@@ -1,19 +1,37 @@
 ---
 id: LEGAL-06
 title: Legal: quote, pay to start, delivery, fixed price
-owner: DEV3
+owner: YOU
 area: LEGAL
 order: 120
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, LEGAL-02, LEGAL-04, LEGAL-05, UI-02]
 decisions: [R-14, R-6, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S21, S22, S23, S24, S26]
 ---
 # LEGAL-06 · Legal: quote, pay to start, delivery, fixed price
+
+## Current state
+
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: the S4 medium F1 closed end to end by the backend guard (B3a round 2, checked in B3a.md) and the app round 2; round 3 (signature written for the quote read) on the lead's diff read (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S4.md` and `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/B3a.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main. Built: Same branch as LEGAL-04: mobile `wmt/S4` (on `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/B1` merged). No backend change, no migration, no PR.
+- **Built** (`src/features/legal/matter`, `fixed`, `cards.tsx`; routes `legal-matter.tsx`, `legal-fixed.tsx`): **S21** (the quote, Read letter in a sheet from `GET /legal/requests/{id}/contract`, "Type your full name to sign", "Sign this agreement"); **S22** (page: Signed as, Price, "Bank charge", Total, Pay from wallet, "Pay ₦X to start", then the PIN sheet); **S23** (every delivered file with its pages, tap opens it); **S24** (the fixed-price card in the chat); **S26** (what the service is, Price, Bank charge, Total, "First name choice", "Continue · ₦X").
+- **S24 and S26 are built and not reachable yet** (G-LEGAL-06-2): the Hub refuses a business name registration without documents, and S26 asks for none, so the card shows only for a fixed-price service the Hub lists as priced and needing no documents. None qualifies today. G-LEGAL-06-1 (the thread names no fixed-price service; the app holds the one matter-to-service join, `PROVISIONAL(LEGAL-FIXED-MATTERS)`).
+- **Order differs from the board** (G-LEGAL-06-4): Continue starts the request and opens its matter at S21, then S22 pays, because the Hub refuses a fee until the letter is signed.
+- **Attacks:** the pay path is LEGAL-04's (same hook, same screens): double tap, wrong PIN, short balance, lost answer then retry, a changed quote, a request cancelled before paying (live on the stack: PAY TO START debited the quote total once; the service quote before signing was refused `target_not_payable`). S26: Continue tapped twice starts one request (test).
+- **Differs from the board, on purpose:** "Fee" is "Price" and the totals are the Hub's (BRIEF S22, S26); "Takes", "You'll need" are not drawn (G-LEGAL-06-3); S22's wallet card is drawn on the page by a local copy until the shared one is exported (SHARED-CHANGES LEGAL-06 #1).
+- **Filed:** BACKEND_GAPS G-LEGAL-06-1, G-LEGAL-06-2, G-LEGAL-06-3, G-LEGAL-06-4. SHARED-CHANGES LEGAL-06 #1.
+- **NOT RUN:** a live S24 and S26 (no service qualifies, so they were drawn from a stubbed catalogue in the browser); V10 is not in this task's passes.
+- **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s4-b/pics/`.
+- **Round 2 (17 Oct 2026, Sonnet builder; verify/S4.md F1, F4):** when the Hub's request changes under an open S22 (a new quote, status or "no fee due"), the stale price card and "Pay ₦X to start" are dropped, the matter is read again, and the page shows the Hub's sentence ("Nothing to pay right now"); a Pay that cannot work is never drawn, not even greyed (`useLegalFeePay`: `unpayable`, `reload`; `MatterScreen`). A new quote the Hub still takes is shown with "The price changed." Tests: 3 new in `LegalPayments.test.tsx`; the cancelled-S22 test now expects no `legal-pay-start` (its title already said no Pay). Backend half (guard the ops quote on a signed matter) is a separate round. S24's Start is tapped in `LegalChatScreen.test.tsx`.
+- **Backend half of verifier finding F1 (bundle B3a round 2, 17 Oct 2026):** backend `wmt/B3a` `242ce9d`, `src/legal/legal.service.ts` `quote()`. Once the engagement letter is signed, or the work is paid or under way (`contractSignedAt` or `servicePaidAt` set, or the status is `contract_signed`, `awaiting_service_payment`, `in_progress` or `delivered`), ops' quote is refused with `409` and a clear sentence, and the write itself carries the same condition so a client signing at the same moment cannot slip between the check and the update. It never moves a paid matter back to `quoted`; a quote before signing still works. Spec: `legal-ops.contract.spec.ts` (3 new tests, 2 fail on `ed45009`). The app half of F1 (drop the stale price card after a failed ask) is not here.
+- **Round 3 (verifier F1 and its low, 17 Oct 2026):** backend `wmt/B3a` `d89e47c`. `signContract` writes the signature only if the matter is still unsigned at the status, amount and note it read (`updateMany`, 409 "changed while you were signing" otherwise, nothing signed), so a re-quote, a cancel or another signature that lands between the read and the write can no longer leave a letter at the old price. `quote()` also refuses a cancelled request (409). Specs in `legal-ops.contract.spec.ts` (5 new, 4 fail on `242ce9d`; the read is held with a spy, the other writer commits, then the signature goes through).
+- **History:** `tasks/history/LEGAL-06.md`.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B3a L4, L5) and SWEEP-APP (S4 F5).
 
 ## Read first
 
@@ -90,13 +108,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 - S26: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 - S26: “From the code: it starts with a chat. The assistant profiles the problem and writes a brief. When a consultant replies, the assistant stops for good. No price until a consultant has read it. Fees are placeholders ⚠.” Answered: R-14. Show the admin-set price; do not stop.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-06.md](history/LEGAL-06.md).
 
 ## Owner sign-off
 

@@ -7,7 +7,8 @@ import type { components, operations } from '@/api/schema.generated';
  * - `GET /explore/categories`: the creator categories, in the order the chips and tiles show them;
  * - `GET /explore/featured-creators`: the creators an admin featured, in the admin's order;
  * - `GET /explore/creators`: every creator, or one category's, a page at a time;
- * - `POST` and `DELETE /creators/{wawuId}/follow`: the viewer follows or unfollows a creator.
+ * - `POST` and `DELETE /creators/{wawuId}/follow`: the viewer follows or unfollows a creator;
+ * - `GET /me/counts`: how many notifications are unread, for the bell's dot on X1 (ME-10).
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only
  * `data` (SHARED-CHANGES.md row 11), so each call reads `data` itself.

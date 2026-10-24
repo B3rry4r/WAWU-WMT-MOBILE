@@ -1,0 +1,66 @@
+# FLIX-03 · round history
+
+Moved out of [tasks/FLIX-03.md](../FLIX-03.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Files: `src/features/movies/` (api, model, look, parts, FlixRail, MoviesGate, MoviesScreen, AllMoviesScreen, FilterSheet, SearchScreen, MovieScreen, TrailerScreen, WatchFlow, routes, 2 test files), `src/app/movies/` (index, all, search, `[id]/index`, `[id]/trailer`), the rail wired in `TodayScreen.tsx`, `ExploreScreen.tsx`, `(tabs)/explore.tsx`, `ScreenFrame` gains an optional `right`, contract copied from `wmt/FLIX-01` `312f16c`. SHARED-CHANGES FLIX-03 #1 to #3 and R1.
+Checks (logs under the builder's scratchpad folder): tsc EXIT 0; eslint on changed files EXIT 0; new tests 20 passed; Home, Explore and route-graph suites pass; route-guard fails only on the five new route files until R1 is applied; gates: no finding in the new files (the only gate run left 0 findings in them after fixes).
+Capability checks: rail and every Flix screen are drawn only for `enabled: true` (tested: false and an unreadable answer draw nothing; `MoviesGate` leaves a screen when the Hub says off); See all on the rails opens MV1 (the board's entry map says MV1; the task text says MV6, which MV1's rails reach in one tap); MV1/MV6/MV7/MV8 read browse, filters and search with the Hub total; MV10 for a real empty answer, MV11 loading, MV12 failure; MV2 shows the Hub movie, a `file` trailer plays through `VideoSurface`, a `youtube` one opens outside the app; MV4 draws A3's ConsentBox only for `mustAgreeTerms`, Open Flixora waits for the tick and sends `agreeToTerms: true`; each tap asks for a fresh link and opens it in the system browser without showing or keeping it; a 409 and a 503 each show one plain sentence; MV9 shows the trailer only until `premierDate`.
+Differs from the board, and why: no tab bar on the Flix screens (they are stack routes above the tabs); no share button on MV2 (the Hub serves no address to share); no full-screen icon on MV3 (nothing behind it); the trailer card says where it plays instead of "2:14 · free" (no length in the Hub's answer); MV10 from search says "Clear search" and "Try another word." (search has no filters); MV12's button is the shared ErrorState secondary "Try again"; the search bar is the shared SearchField (44 high, board 46); MV6's search pill is a plain pill that opens MV8; the star is the warning token (board #FFB020).
+Not done: side-by-side screenshots of every artboard (NOT RUN); G-FLIX-1 and G-FLIX-3 in BACKEND_GAPS still read as "not drawn": the Hub now serves `mustAgreeTerms` and the trailer kind, so both are drawn here and the rows can close.
+
+## Verifier report
+
+_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+
+
+## Verifier report
+
+Verifier: a Sonnet agent that built none of it. Head `0969f72b` against `origin/main` `c951ec40`; Hub from backend `wmt/FLIX-01` `a71a70d` with `MOVIE_PARTNER=standin` (only a spec file differs from `b5913a1`), app exported from this head on a local stack (ports 7870 to 7877). Own captures (390 px, light and dark, MV1, MV2, MV4 with and without the box and ticked, MV6, MV7, MV9) match the builder's pictures, so the builder's pairs are of this head. Lead rulings (route lines, "See all" to MV1, trailer line, "Clear search", SearchField height, no share and no full-screen icon) were applied as rulings, not findings.
+
+**Verdict: FIX** (3 medium, 4 low).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 gates | passed | tsc EXIT 0; eslint on the 27 changed source files EXIT 0; jest movies, Home, Explore, exploreRoute, TodaySponsored, route-guard, route-graph: 15 suites, 494 tests, EXIT 0; gates 10 run, 1202 files, 0 fail, 18 warn (none in the movies files); check_baseline EXIT 0 (0 entries); check_tasks EXIT 0. Logs in the verifier's scratchpad flix-03-v/logs |
+| V4 light and dark | failed | MV7 clipped text, MV12 button (findings 1 and 2) |
+| V5 picture | failed | all 15 light pairs and the dark MV1, MV7, MV9, MV12 pairs read; own captures in flix-03-v/pics; findings 1 to 5 |
+| V6 states | passed with finding 4 | movies off (real Hub answer from a second Hub on `MOVIE_PARTNER=off`): no rail on Today or Explore, no empty space, every Flix route (MV1, MV6, MV8, MV2, MV3) leaves for Home, 0 Flix elements, light and dark; MV10, MV11, MV12 from real answers (builder's pairs); 409 and 503 each give one plain sentence |
+| V9 live seam | passed (not through the sign-in screen) | titles, hero, rails, the total (14), genres and languages all from the Hub; the session came from the mock ID's login call and was placed in storage, so the sign-in screen itself was not walked |
+
+Per check: gates on what is shown, passed. MV4 consent, passed (box only for `mustAgreeTerms`; "Open Flixora" disabled and no request before the tick; the tap sent `{"agreeToTerms":true}`; the same person on another title sees no box and the body is `{}`). Watch link, passed (opened in a new browser tab; never in the page text, storage or console). Trailers, passed (`file` plays through `VideoSurface` on `/movies/<id>/trailer`; `youtube` opened outside the app from MV2 and from the trailer route, which then leaves). MV9, passed for the page (no "Watch on Flixora", "Watch the trailer" only) and failed for the hero (finding 3). Values from the Hub, em-dashes (none added), "Who Made This?", shared components, tokens (no hex in the feature), the SHARED-CHANGES rows #1 (movie paths and schemas equal the backend's), #2, #3, #4 (a request row, nothing applied, matches "not drawn") and R1 (five lines in `_layout.tsx`): passed.
+
+Findings:
+1. **medium, defect.** MV7's sort control shows "Most watc..." where the board wraps "Most watched" onto two lines. `src/features/movies/FilterSheet.tsx:72`; the cause is `numberOfLines={1}` in the shared `src/components/SegmentedTabs.tsx:44`. Repro: MV6, tap the filter button, read the Sort row (flix-03-v/pics/MV7-light.png). The fix is a prop on the shared control (SHARED-CHANGES row) that lets the label wrap.
+2. **medium, defect.** MV12 draws the shared secondary "Try again" with a refresh icon where the board draws a purple primary button with no icon, and the block sits near the top where the board centres it vertically (icon at 42 percent of the screen on the board, 14 percent built). `src/features/movies/MoviesScreen.tsx:115` uses `ErrorState`, whose action is fixed to `variant="secondary"` (`src/components/StateViews.tsx:43`). The shared `Button` has a primary variant (its default), so this is a defect, not a missing variant. Repro: stop the Hub and open `/movies` (flix-03-v/../flix-03-b/proof/cmp/cmp-MV12-light.png and the dark pair).
+3. **medium, defect.** The hero's "Watch on Flixora" opens MV4 over a title that has not premiered. `src/features/movies/MoviesScreen.tsx:68` always draws the button and `src/features/movies/MovieScreen.tsx:151` opens the sheet from `watch=1` whether or not the premiere is ahead. On the stand-in catalog the Hub's hero is "The Last Griot", premiering 12 Nov (the Hub picks the newest title with a backdrop, so a premiering hero is ordinary). Repro: open `/movies`, tap the hero's "Watch on Flixora": MV4 sits over MV9 ("Premieres Thu 12 Nov", foot "Only the trailer is out until the premiere"), and "Open Flixora" gets a link (the Hub answers 200 to `POST /movies/standin-009/watch`). It contradicts the capability check "MV9 plays the trailer only until the premiere date" (flix-03-v/pics/hero-watch-premiering-light.png). Fix: no hero "Watch on Flixora" while the premiere is ahead (the board's hero would show the trailer), and the sheet never opens while `premiereAhead`.
+4. **low, defect.** MV11 omits the search button the board draws in its header. `src/features/movies/MoviesScreen.tsx:148` (`right={data ? ...}`). Repro: hold the `/movies` answer and look at the header (cmp-MV11-light.png).
+5. **low, defect.** MV9's "Premieres ..." pill hugs its text where the board stretches it across the column. `src/features/movies/MovieScreen.tsx:63`. Repro: open a premiering title (cmp-MV9-light.png).
+6. **low, defect.** A 409 says "Tick the box to agree to the terms, then try again." but nothing refetches the movie, so if the cached answer said no box was needed, no box ever appears. `src/features/movies/WatchFlow.tsx:32` and the catch in `open`. Repro: force a 409 on a title whose cached `mustAgreeTerms` is false (flix-03-v/pics/MV4-error-409-light.png shows the sentence with no box). Rare; a refetch of the detail on a 409 would draw the box.
+7. **low, defect.** MV1's hero "Trailer" button is drawn for a hero with no trailer (the card carries no trailer flag), and lands on "No trailer yet". `src/features/movies/MoviesScreen.tsx:69`. Repro: a catalog whose newest titled backdrop has no trailer (stand-in "Harmattan Hearts", `/movies/standin-006/trailer`).
+
+Not findings (recorded): MV2 and MV9 trailer line, the posters and backdrops (the stand-in's addresses end in `.invalid`, so the placeholder block shows where the board shows a photo), MV1's missing Inbox count, MV10's "Clear search", MV8's SearchField (plain close icon on the board, ringed on the built), the "You're" apostrophe, the selected states in MV7 (a state, not a layout), and the open SHARED-CHANGES rows #1 (re-copy from main after FLIX-01 merges) and #4. Test-gap notes: no test pins the hero Watch button against a premiering title (finding 3); no test pins MV7's label wrap.
+
+
+## Verifier report (re-check, round 3)
+
+Verifier: a Sonnet agent that built none of it. Head `2ba310e0` (on `eb15429d`), Hub from backend `wmt/FLIX-01` `a71a70d` (`MOVIE_PARTNER=standin`), app exported from this head on a local stack. Own captures of MV7, MV9, MV12 and the "The Last Griot" hero, light and dark, in the verifier's scratchpad flix-03-v2/pics.
+
+**Verdict: PASS.**
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| M1 MV7 "Most watched" | fixed | wraps to two lines in the same 83 high track as the board (MV7 light and dark) |
+| M2 MV12 | fixed | purple primary Try again, block centred (icon at 39 percent of the screen, the board's at 42), light and dark; the retry icon stays (see below) |
+| M3 hero Watch on a premiering title | fixed | the stand-in hero "The Last Griot" (premieres 12 Nov) shows its premiere pill and Trailer only, no Watch; `/movies/standin-009?watch=1` opens no sheet; a released title with `watch=1` still opens MV4 |
+| Low: MV11 search | fixed | the search button shows while loading, none on MV12 (test) |
+| Low: MV9 pill | fixed | spans its column as the board draws it |
+| Low: 409 with no box | fixed | the box is drawn on a 409 and the next tap sends `agreeToTerms: true`; no line about a missing box |
+| Low: hero Trailer | fixed | drawn only when the movie has a trailer (read from the movie's own answer) |
+| New tests both ways | passed | on `eb15429d` code with the new test files copied in: 11 tests fail (M1, M2, M3 on the hero and on MV2 with `watch=1`, the three lows and the 409, the three shared-prop tests); on `2ba310e0` all pass |
+| Shared props #5 to #7 | defaults unchanged | `wrapLabels = false` gives one line, `actionVariant` left out gives the secondary button, `stretch = false` adds no style (diff read, plus `shared.test.tsx`); every suite that depends on SegmentedTabs, StateViews or StatusPill (146 suites, 3110 tests, `--findRelatedTests`) passes |
+| Gates | passed | tsc EXIT 0; eslint on the changed source files EXIT 0; movies, Home, Explore, exploreRoute, TodaySponsored, route-guard, route-graph: 16 suites, 506 tests, EXIT 0; gates 1203 files, 0 fail, 18 warn (none in the movies files), EXIT 0; check_baseline EXIT 0; check_tasks EXIT 0 |
+
+Judged: MV12's retry icon is not a finding. `ErrorState` draws the refresh icon on every screen that uses it, the button is now the board's purple primary in the board's place, and removing the icon for one board would need a fourth shared prop for a 17 px glyph; if the designer wants it gone it is a design-system change for every error state, not this task's. Recorded, not findings: the hero's premiere pill has no board (the board's hero never shows a premiering title), and it reuses MV9's pill so the two read alike; the hero's Trailer button appears once the movie's answer arrives (Watch is drawn at once on a released title); MV7's two-line label has slightly more line gap than the board (21 against 18 px) and still fits the track.
+

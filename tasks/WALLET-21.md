@@ -3,7 +3,7 @@ id: WALLET-21
 title: Dollar and crypto accounts, swap
 owner: YOU
 area: WALLET
-order: 246
+order: 321
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -14,6 +14,13 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W2, W3, W20, W21, W22, W23]
 ---
 # WALLET-21 · Dollar and crypto accounts, swap
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-32, WALLET-33.
+- **History:** none yet. Reports go to tasks/history/WALLET-21.md.
 
 ## Read first
 

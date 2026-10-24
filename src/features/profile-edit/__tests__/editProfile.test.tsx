@@ -13,6 +13,10 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
 }));
+// The phone's photo library (SHARED-04): nothing here opens it, so it only keeps jest away from the native side.
+jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
+jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jest.fn() }, SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' } }));
+jest.mock('expo-file-system', () => ({ File: jest.fn(), Directory: jest.fn(), Paths: { cache: { uri: 'file:///cache/' } } }));
 
 type Answer = { status: number; body: unknown } | 'offline' | 'hang';
 type Sent = { method: string; path: string; body: unknown };
@@ -41,6 +45,7 @@ const refusal = (statusCode: number, message: string) => ({ status: statusCode, 
 
 const ME = '/api/hub/users/me';
 const FIELDS = '/api/hub/users/me/profile-fields';
+const HANDLE = '/api/hub/users/me/handle';
 
 const profile = {
   wawuUserId: 'u1',
@@ -66,7 +71,7 @@ const { SocialLinksScreen } = require('../SocialLinksScreen') as typeof import('
 const draft = require('../draft') as typeof import('../draft');
 
 function serve(overrides: Record<string, Answer | Answer[]> = {}) {
-  answers = { [`GET ${ME}`]: ok(profile), [`GET ${FIELDS}`]: ok(details), [`PATCH ${ME}`]: ok(profile), [`PATCH ${FIELDS}`]: ok(details), ...overrides };
+  answers = { [`GET ${ME}`]: ok(profile), [`GET ${FIELDS}`]: ok(details), [`PATCH ${ME}`]: ok(profile), [`PATCH ${FIELDS}`]: ok(details), [`PUT ${HANDLE}`]: ok({ handle: 'lennox_films' }), ...overrides };
 }
 
 function frame(children: React.ReactNode) {
@@ -102,6 +107,7 @@ beforeEach(() => {
 });
 
 const patches = () => sent.filter((s) => s.method === 'PATCH');
+const handleCalls = () => sent.filter((s) => s.method === 'PUT' && s.path === HANDLE);
 
 describe('M8 · Edit profile', () => {
   it('opened from anywhere but the Me tab, a user who saves sees M8\'s own "Profile saved", once, then is handed back', async () => {
@@ -158,26 +164,68 @@ describe('M8 · Edit profile', () => {
     await boot();
     const field = await screen.findByTestId('edit-handle');
     expect(field.props.value).toBe('@lennox');
-    expect(screen.getByText('wawu/lennox')).toBeTruthy();
+    expect(screen.getByText('wawuafrica.com/u/lennox')).toBeTruthy();
     await fireEvent.changeText(field, '@lennox_films');
-    expect(screen.getByText('wawu/lennox_films')).toBeTruthy();
+    expect(screen.getByText('wawuafrica.com/u/lennox_films')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('edit-save'));
     await saveLands();
-    expect(patches()[0].body).toEqual({ handle: 'lennox_films' });
+    // The username goes through the Hub's username route, never `PATCH /users/me` (SIGNUP-NAMES round 3, M2: the web calls
+    // that route, so it keeps its old rules; this route holds the case-blind and reserved-word rules).
+    expect(handleCalls().map((s) => s.body)).toEqual([{ handle: 'lennox_films' }]);
+    expect(patches()).toEqual([]);
   });
 
-  it('a user who picks a handle another account has is told on the handle, and can pick another', async () => {
-    serve({ [`PATCH ${ME}`]: refusal(400, 'handle is already taken') });
+  it('a user who changes the handle and the bio at once: the handle goes first, then only the bio goes to the profile', async () => {
+    serve();
     await boot();
-    await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@adaeze');
-    await fireEvent.press(screen.getByTestId('edit-save'));
-    expect(await screen.findByText('That handle is taken. Try another.')).toBeTruthy();
-    expect(lastSaved).not.toHaveBeenCalled();
-    answers[`PATCH ${ME}`] = ok(profile);
-    await fireEvent.changeText(screen.getByTestId('edit-handle'), '@adaeze_films');
-    expect(screen.queryByText('That handle is taken. Try another.')).toBeNull();
+    await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@lennox_films');
+    await fireEvent.changeText(screen.getByTestId('edit-bio'), 'New bio');
     await fireEvent.press(screen.getByTestId('edit-save'));
     await saveLands();
+    expect(sent.filter((s) => s.method !== 'GET').map((s) => `${s.method} ${s.path}`)).toEqual([`PUT ${HANDLE}`, `PATCH ${ME}`]);
+    expect(patches()[0].body).toEqual({ bio: 'New bio' });
+  });
+
+  it('a user who picks a handle another account has (in any case) is told on the handle in the Hub’s words, nothing else is saved, and can pick another', async () => {
+    serve({ [`PUT ${HANDLE}`]: refusal(409, 'That username is taken. Try another.') });
+    await boot();
+    await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@Adaeze');
+    await fireEvent.changeText(screen.getByTestId('edit-bio'), 'New bio');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByText('That username is taken. Try another.')).toBeTruthy();
+    expect(lastSaved).not.toHaveBeenCalled();
+    // The refusal came first, so the profile and the details were not sent half way.
+    expect(patches()).toEqual([]);
+    answers[`PUT ${HANDLE}`] = ok({ handle: 'adaeze_films' });
+    await fireEvent.changeText(screen.getByTestId('edit-handle'), '@adaeze_films');
+    expect(screen.queryByText('That username is taken. Try another.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await saveLands();
+    expect(patches().map((s) => s.body)).toEqual([{ bio: 'New bio' }]);
+  });
+
+  it('a user who picks a word the Hub keeps back is told on the handle in the Hub’s words', async () => {
+    serve({ [`PUT ${HANDLE}`]: refusal(400, 'That username is not available. Try another.') });
+    await boot();
+    await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@wawu');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByText('That username is not available. Try another.')).toBeTruthy();
+    expect(lastSaved).not.toHaveBeenCalled();
+    expect(patches()).toEqual([]);
+  });
+
+  it('a username saved before a later part failed is not sent again on the retry', async () => {
+    serve({ [`PATCH ${ME}`]: ['offline', ok(profile)] });
+    await boot();
+    await fireEvent.changeText(await screen.findByTestId('edit-handle'), '@lennox_films');
+    await fireEvent.changeText(screen.getByTestId('edit-bio'), 'New bio');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(patches()).toHaveLength(1));
+    expect(lastSaved).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await saveLands();
+    expect(handleCalls()).toHaveLength(1);
+    expect(patches()).toHaveLength(2);
   });
 
   it('a user cannot save a handle with a space, a name with one word, or a bio over the Hub’s limit', async () => {
@@ -307,12 +355,12 @@ describe('M8 · Edit profile', () => {
     expect(patches().map((p) => p.body)).toEqual([{ bio: 'Hello' }]);
   });
 
-  it('a phone build without a photo picker draws no camera buttons', async () => {
+  it('a phone build, with the photo library (expo-image-picker, SHARED-04), draws the avatar and cover camera buttons', async () => {
     serve();
     await boot();
     await screen.findByTestId('edit-profile');
-    expect(screen.queryByTestId('edit-avatar-pick')).toBeNull();
-    expect(screen.queryByTestId('edit-cover-pick')).toBeNull();
+    expect(screen.getByTestId('edit-avatar-pick')).toBeTruthy();
+    expect(screen.getByTestId('edit-cover-pick')).toBeTruthy();
   });
 });
 

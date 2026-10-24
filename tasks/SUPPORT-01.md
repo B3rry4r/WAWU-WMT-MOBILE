@@ -1,19 +1,32 @@
 ---
 id: SUPPORT-01
 title: Support chat that opens with the payment or piece it is about
-owner: DEV2
+owner: YOU
 area: SUPPORT
 order: 174
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: [INBOX-06, INBOX-19, HOME-12, WALLET-04, WALLET-06]
 decisions: [R-30]
 passes: [V1, V2, V3, V4, V6, V7, V9]
 artboards: []
 ---
 # SUPPORT-01 · Support chat that opens with the payment or piece it is about
+
+## Current state
+
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 13.
+- **Status:** merging (lead). Verdict: FIX FIRST (one high: the staff reply took an attachment and TIER-02's publishing-gate-coverage spec was red); closed in round 2 (backend 1068bb8: the staff reply has its own text-only body, the spec untouched) on the lead's diff read, branch CI 39064627925 green (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SUPPORT-01.md`). Stacked in batch 13 by MERGE-13 (backend `wmt/MERGE-13`, mobile `wmt/MERGE-13`); not on main. Built: Builder done (Sonnet, T1). No PR (the lead merges).
+- **Branches:** backend `wmt/SUPPORT-01` `1068bb8` (round 2 on `757db70`) on `origin/wmt/MERGE-10` `3cf5a4b`; mobile `wmt/SUPPORT-01` on `origin/wmt/MERGE-10` `4b854ee4` with `origin/wmt/S1` `9d221172` merged (HOME-12's unlock screen holds H18; conflicts in BACKEND_GAPS.md and SHARED-CHANGES.md kept both sides, `docs/PROGRESS.md` rebuilt, `contract/SOURCE_COMMIT` re-pointed).
+- **Built:** a support thread is the person's free chat with a fixed support account, so the inbox row (I1), unread count, read marks and live updates come from the chat. `POST /support/thread` opens it with a payment or wallet transaction of the caller written as the first message, once per reference; staff reply through `/admin/support/threads` (superadmin, support). No table, no migration.
+- **Entries:** H18 Contact support (payment), W27 Report a problem (transaction), W35 Help with a payment (nothing attached); the chat is I12's, the row is I1's "Who Made This?" with the app's mark.
+- **Not built (R-47, gaps filed):** a board for the support chat (G-SUPPORT-01-1), who replied (G-SUPPORT-01-2), a dashboard screen for staff (G-SUPPORT-01-3).
+- **Shared changes asked:** SUPPORT-01 #1 (`app.module.ts`), #2 (contract and generated types), #3 (assertions that said the entries were left out).
+- **Round 2 (17 Oct):** the verifier's high (CI Branch checks red on TIER-02's `publishing-gate-coverage.spec.ts`: the staff reply took `ChatSendMessageDto`, so its body could carry a file) and its low (that attachment always answered 400) are fixed together. The reply has its own text-only `AdminSupportReplyDto` (text, same 2000-character rule as a chat message, plus `clientMessageId`); a body with an attachment is 400 by the whitelist. The coverage spec is untouched and passes (18 of 18). Support spec 16 of 16. Contract rebuilt (one `$ref` changed, one schema added).
+- **Open findings:** none known.
+- **Next:** the batch 13 pull request (the lead). No low is left open.
 
 ## Read first
 
@@ -46,13 +59,9 @@ three entry points to the screens that draw them, exactly as drawn (docs/WORKFLO
 - [ ] A staff reply reaches the user's chat, and the thread shows on I1 as the WAWU thread.
 - [ ] Another user can never read this thread.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SUPPORT-01.md](history/SUPPORT-01.md).
 
 ## Owner sign-off
 

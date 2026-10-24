@@ -7,7 +7,7 @@ order: 127
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-15, UI-02, HOME-02]
 decisions: [R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -15,8 +15,14 @@ artboards: [H14, H15, H16, H17, H18]
 ---
 # HOME-12 · Unlock from the feed
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 12.
+- **Status:** merging (lead). Verdict: merge (every attack pays once) (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/S1.md`). Stacked in batch 12 by MERGE-12 (backend `wmt/MERGE-12`, mobile `wmt/MERGE-12`); not on main. Built: Mobile `wmt/S1` (from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/B1` merged). Backend: none changed; used `wmt/B1` `e41210e` (HOME-15).
+- **Built:** the offer bar (H3, H4, H5) opens H14; H15 (shared PIN sheet); H16 (Unlocked, Paid, From, Reference, Watch now plays the whole piece in place); H17 (Not enough, shared pay sheet); H18 (Paid, still opening, Refresh) and Still confirming. Files: `src/features/unlock/`, `src/features/feedpay/` (shared with HOME-13), the offer bar in `src/features/feed/parts.tsx`.
+- **Not drawn (R-47):** H18's Contact support (SUPPORT-01). H14's "Yours" row (G-1723). H17's Add leads to the Wallet tab, as the ticket checkout's does (W15 is WALLET-05's).
+- **Open for the lead:** SHARED-CHANGES HOME-12 #1 (a `confirming` title on the pay sheet; `StatusSheet` stands in for H18); BACKEND_GAPS G-1722, G-1723, G-1724.
+- **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (3 rows, S1 L1 to L3, shared with HOME-13).
 
 ## Read first
 
@@ -102,13 +108,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-12.md](history/HOME-12.md).
 
 ## Owner sign-off
 

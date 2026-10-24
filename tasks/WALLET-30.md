@@ -3,7 +3,7 @@ id: WALLET-30
 title: Remove the Flutterwave payment paths
 owner: YOU
 area: WALLET
-order: 241
+order: 316
 priority: after-launch
 repo: wawu-backend
 type: removal
@@ -14,6 +14,13 @@ passes: [V1, V3, V4, V7, V9]
 artboards: []
 ---
 # WALLET-30 · Remove the Flutterwave payment paths
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-29.
+- **History:** none yet. Reports go to tasks/history/WALLET-30.md.
 
 ## Read first
 

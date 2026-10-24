@@ -9,7 +9,7 @@ import { Icon, type IconName } from './icon';
 export const pressScale = 0.98;
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'white' | 'glass' | 'veil';
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'profile' | 'card';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'profile' | 'card' | 'pill';
 
 /**
  * `veil`: a fill drawn as its own layer at an opacity, for a colour the tokens hold only at full strength (white at
@@ -36,6 +36,8 @@ const labelTracking = 0.01;
  * line 20, `nameBlock`, M1 and M5), 38 high, 16 in, the label 14 at 600; it draws no icon, so its icon size is `sm`'s.
  * `card` is not the kit's either: it is a creator card's Follow (design/_gen/explore.js and home.js `cCard`), 32 high,
  * the label 13 at 700 with no letter-spacing; the side padding and icon are `sm`'s.
+ * `pill` is not the kit's either: the controls over a card in the TGIF reader (design/_gen/home.js, H29 to H34: Amen, Share),
+ * 40 high, 14 across, the label 13.5 at 600, a 17 icon.
  */
 const sizes: Record<ButtonSize, { height: number; padX: number; fontSize: number; icon: number; weight: 600 | 700; tracking?: number }> = {
   sm: { height: 34, padX: 14, fontSize: 13.5, icon: 15, weight: 700 },
@@ -43,6 +45,7 @@ const sizes: Record<ButtonSize, { height: number; padX: number; fontSize: number
   lg: { height: 54, padX: 24, fontSize: 16, icon: 19, weight: 700 },
   profile: { height: 38, padX: 16, fontSize: 14, icon: 15, weight: 600 },
   card: { height: 32, padX: 14, fontSize: 13, icon: 15, weight: 700, tracking: 0 },
+  pill: { height: 40, padX: 14, fontSize: 13.5, icon: 17, weight: 600 },
 };
 
 /** The kit's `gap:7px` between a button's icon and its label. */
@@ -60,6 +63,10 @@ export type ButtonProps = {
   disabled?: boolean;
   /** Shows a spinner and ignores presses until it clears, so a slow request can't be sent twice. */
   loading?: boolean;
+  /** A toggle that is on (Amen said): told to a screen reader as selected, not by colour alone. */
+  selected?: boolean;
+  /** A figure after the label at 70% strength ("Amen 2.1K"); a screen reader reads it with the label. */
+  count?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -75,6 +82,8 @@ export function Button({
   full,
   disabled,
   loading,
+  selected,
+  count,
   style,
   testID,
 }: ButtonProps) {
@@ -90,8 +99,8 @@ export function Button({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: blocked, busy: Boolean(loading) }}
+      accessibilityLabel={count ? `${label} ${count}` : label}
+      accessibilityState={{ disabled: blocked, busy: Boolean(loading), ...(selected === undefined ? {} : { selected }) }}
       disabled={blocked}
       onPress={onPress}
       {...ring.handlers}
@@ -132,6 +141,7 @@ export function Button({
         ) : null}
         <NativeText numberOfLines={1} style={[font(dims.weight), { color: fg, fontSize: dims.fontSize, letterSpacing: -(dims.tracking ?? labelTracking) * dims.fontSize }]}>
           {label}
+          {count ? <NativeText style={styles.count}>{` ${count}`}</NativeText> : null}
         </NativeText>
         {iconRight && !loading ? <Icon name={iconRight} size={dims.icon} color={fg} strokeWidth={2.2} /> : null}
       </View>
@@ -144,8 +154,8 @@ export type IconButtonProps = {
   /** What a screen reader says. An icon alone says nothing. */
   label: string;
   onPress: () => void;
-  /** `glass` sits over a cover photo. */
-  tone?: 'card' | 'glass';
+  /** `glass` sits over a cover photo; `lift` is a 16% white disc over a coloured card. */
+  tone?: 'card' | 'glass' | 'lift';
   size?: number;
   disabled?: boolean;
   testID?: string;
@@ -155,7 +165,7 @@ export type IconButtonProps = {
 export function IconButton({ icon, label, onPress, tone = 'card', size = 42, disabled, testID }: IconButtonProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const glass = tone === 'glass';
+  const glass = tone === 'glass' || tone === 'lift';
   const fg = colors[disabled ? 'textDisabled' : glass ? 'textOnAccent' : 'textPrimary'];
   return (
     <Pressable
@@ -172,7 +182,7 @@ export function IconButton({ icon, label, onPress, tone = 'card', size = 42, dis
         {
           width: size,
           height: size,
-          backgroundColor: colors[glass ? 'surfaceScrim' : pressed ? 'surfaceSunken' : 'surfaceCard'],
+          backgroundColor: colors[tone === 'lift' ? 'borderGlass' : glass ? 'surfaceScrim' : pressed ? 'surfaceSunken' : 'surfaceCard'],
           borderColor: colors.borderHairline,
           borderWidth: glass ? 0 : StyleSheet.hairlineWidth,
           transform: [{ scale: pressed && !disabled ? pressScale : 1 }],
@@ -190,5 +200,6 @@ const styles = StyleSheet.create({
   full: { alignSelf: 'stretch' },
   veil: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: radius.button },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: iconGap },
+  count: { opacity: 0.7 },
   round: { borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
 });

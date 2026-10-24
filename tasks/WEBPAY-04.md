@@ -3,8 +3,8 @@ id: WEBPAY-04
 title: Buy a tier on the website
 owner: YOU
 area: WEB
-order: 219
-priority: launch
+order: 350
+priority: after-launch
 repo: wawuafrica
 type: web-port
 status: todo
@@ -14,6 +14,14 @@ passes: [V1, V3, V4, V5, V6, V7, V8, V9]
 artboards: []
 ---
 # WEBPAY-04 · Buy a tier on the website
+
+## Current state
+
+As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): TIER-02, TIER-04, TIER-05, WEBPAY-02, WEBPAY-03.
+- **History:** none yet. Reports go to tasks/history/WEBPAY-04.md.
 
 ## Read first
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Who Made This",
+    "name": "Who Made This?",
     "slug": "wawu-wmt",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "africa.wawu.wmt",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:wawuafrica.com"
+      ]
     },
     "android": {
       "package": "africa.wawu.wmt",
@@ -19,7 +22,62 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.WRITE_SETTINGS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "com.google.android.gms.permission.AD_ID"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/r/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/selfie"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "path": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/receipt/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/u/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/c/"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
+              "pathPrefix": "/content/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "single",
@@ -34,7 +92,7 @@
         {
           "backgroundColor": "#0B0A0D",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 96
+          "imageWidth": 128
         }
       ],
       "expo-image",
@@ -44,7 +102,58 @@
         {
           "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID to approve payments."
         }
-      ]
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use your camera to take the selfie that opens your wallet.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to open your photos so you can choose a profile picture or add photos and videos to your works.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save a picture to your photos when you choose Save.",
+          "granularPermissions": [],
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#9411C9",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "writeOnlyAccess": true,
+          "writeOnlyCalendarPermission": "Allow $(PRODUCT_NAME) to add an event you have a ticket for to your calendar.",
+          "calendarPermission": "Allow $(PRODUCT_NAME) to add an event you have a ticket for to your calendar.",
+          "remindersPermission": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro.",
+          "recordAudioAndroid": true,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-video",
+      "expo-sharing",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -52,7 +161,9 @@
     },
     "owner": "moxnafrica",
     "extra": {
-      "router": {},
+      "router": {
+        "sitemap": false
+      },
       "eas": {
         "projectId": "d07de585-f201-4b3e-989a-34f948d6e860"
       }

@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Image, Linking, Pressable, ScrollView, Share, StyleSheet, Text as NativeText, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { darkColors } from '@/theme/tokens.generated';
@@ -30,10 +30,25 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
 
+/*
+ * The first tests in this file used to pay for loading the reader's modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 12 to 14 s each of a test's 20 s
+ * on a cold transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no
+ * timeout applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+const { TgifReader } = require('../TgifReader') as typeof import('../TgifReader');
+void [ActivityIndicator, Animated, Image, Linking, Pressable, ScrollView, NativeText, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
+
 const clients: QueryClient[] = [];
 
 async function render(child: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  // No garbage-collection timer on a mutation either: its default is five minutes, and a timer left running keeps jest from exiting.
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
   clients.push(client);
   await rtl.render(
     <QueryClientProvider client={client}>
@@ -69,10 +84,9 @@ const statsOf = (amen: Partial<Record<(typeof cardOrder)[number], number>>, mine
   sharedByMe: false,
 });
 
-async function boot(props: { onClose?: () => void; onOpenInbox?: () => void; now?: Date } = {}) {
-  const { TgifReader } = require('../TgifReader') as typeof import('../TgifReader');
+async function boot(props: { onClose?: () => void; now?: Date } = {}) {
   const onClose = props.onClose ?? jest.fn();
-  await render(<TgifReader onClose={onClose} onOpenInbox={props.onOpenInbox} now={props.now ?? opened} />);
+  await render(<TgifReader onClose={onClose} now={props.now ?? opened} />);
   return { onClose };
 }
 
@@ -280,16 +294,63 @@ describe('H30 to H34 · tap to continue', () => {
 
   it('a tap on the words, or on "Tap to continue", moves on too, and a tap on the last card does not leave it', async () => {
     const { onClose } = await boot();
-    await rtl.fireEvent.press(await rtl.screen.findByTestId('tgif-card-verse'));
+    // FIX-102: where the card is tapped now matters (the left goes back), so these taps are on its right; the test's own default tap is at x 0, the left edge.
+    const right = { nativeEvent: { pageX: 0.8 * Dimensions.get('window').width } };
+    await rtl.screen.findByTestId('tgif-card-verse');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-verse'), right);
     expect(label()).toBe('THE REALITY');
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-hint'));
     expect(label()).toBe('REMEMBER');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-remember'));
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-prayer'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-remember'), right);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-prayer'), right);
     expect(label()).toBe('TAKEAWAY');
-    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-takeaway'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-card-takeaway'), right);
     expect(label()).toBe('TAKEAWAY');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // FIX-102: the way stories readers work. The left 30% of the screen is back, the rest is forward; a tap is placed by its share of the width.
+  const LEFT = 0.1;
+  const RIGHT = 0.8;
+  const tapAt = async (testID: string, share: number) =>
+    rtl.fireEvent.press(rtl.screen.getByTestId(testID), { nativeEvent: { pageX: share * Dimensions.get('window').width } });
+
+  it('a tap on the left of the card goes back to the previous card, and a tap on the right goes forward', async () => {
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await tapAt('tgif-card-verse', RIGHT);
+    await tapAt('tgif-card-reality', RIGHT);
+    expect(label()).toBe('REMEMBER');
+    await tapAt('tgif-card-remember', LEFT);
+    expect(label()).toBe('THE REALITY');
+    expect(rtl.screen.getByLabelText('Card 2 of 5')).toBeTruthy();
+    await tapAt('tgif-card-reality', LEFT);
+    expect(label()).toBe("TODAY'S VERSE");
+    await tapAt('tgif-card-verse', RIGHT);
+    expect(label()).toBe('THE REALITY');
+  });
+
+  it('a tap on the left of the first card does nothing', async () => {
+    const { onClose } = await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await tapAt('tgif-card-verse', LEFT);
+    expect(label()).toBe("TODAY'S VERSE");
+    expect(rtl.screen.getByLabelText('Card 1 of 5')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the buttons on the card working: Amen on the prayer says Amen and does not turn the card', async () => {
+    answers[`POST /tgif/${DATE}/amen`] = [ok({ card: 'prayer', amen: 1, amenByMe: true })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    for (let i = 0; i < 3; i += 1) await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    expect(label()).toBe('PRAYER');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-amen-inline'), { nativeEvent: { pageX: 5 } });
+    expect(label()).toBe('PRAYER');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
+    expect(label()).toBe('TAKEAWAY');
+    await tapAt('tgif-card-takeaway', LEFT);
+    expect(label()).toBe('PRAYER');
   });
 
   it('fills the progress bar up to the card on screen', async () => {
@@ -374,13 +435,130 @@ describe('States', () => {
     expect(rtl.screen.queryByTestId('tgif-text')).toBeNull();
   });
 
-  it('opens the share sheet from any card', async () => {
+  // DV2-01, R-58 a: Share opens the phone's own share sheet with the verse as text (it was H35's in-app sheet, built by HOME-09).
+  it("opens the phone's share sheet from any card, with the verse, where it is from and the link, and no in-app sheet", async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
     await boot();
     await rtl.screen.findByTestId('tgif-text');
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-next'));
-    expect(rtl.screen.queryByTestId('tgif-share-sheet')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
-    expect(await rtl.screen.findByTestId('tgif-share-sheet')).toBeTruthy();
+    expect(share).toHaveBeenCalledTimes(1);
+    expect((share.mock.calls[0][0] as { message: string }).message).toBe(`\u201c${day.verse}\u201d\nPsalm 118:24 (KJV)\nwawu/tgif`);
+    expect(rtl.screen.queryByTestId('tgif-share-sheet')).toBeNull();
+    share.mockRestore();
+  });
+
+  it('counts a share once the phone has sent something, and not when the sheet was closed without sending', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    const share = jest.spyOn(Share, 'share').mockResolvedValueOnce({ action: Share.dismissedAction }).mockResolvedValueOnce({ action: Share.sharedAction });
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.act(async () => undefined);
+    expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull();
+    share.mockRestore();
+  });
+
+  // SWEEP-APP DV2-01 L1: on the web the share resolves with nothing when it went out.
+  it('counts a share when the phone answers with nothing at all (the web), and shows no problem', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    const share = jest.spyOn(Share, 'share').mockResolvedValue(undefined as never);
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull();
+    share.mockRestore();
+  });
+
+  // SWEEP-APP DV2-01 L4: three quick taps opened three sheets and sent three counts.
+  it('opens one sheet however fast Share is tapped, and counts one share', async () => {
+    answers[`POST /tgif/${DATE}/share`] = [ok({ shares: 1, counted: true })];
+    let finish: (value: { action: typeof Share.sharedAction }) => void = () => undefined;
+    const share = jest.spyOn(Share, 'share').mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect(share).toHaveBeenCalledTimes(1);
+    await rtl.act(async () => finish({ action: Share.sharedAction }));
+    await rtl.waitFor(() => expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(1));
+    // Once the sheet is closed the next tap opens a new one.
+    share.mockResolvedValue({ action: Share.dismissedAction });
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect(share).toHaveBeenCalledTimes(2);
+    share.mockRestore();
+  });
+
+  it('says so when the phone could not open its share sheet, and clears it on the next try', async () => {
+    const share = jest.spyOn(Share, 'share').mockRejectedValueOnce(new Error('no sheet')).mockResolvedValueOnce({ action: Share.dismissedAction });
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    expect((await rtl.screen.findByTestId('tgif-share-problem')).props.children).toBe('The verse could not be shared. Try again.');
+    expect(calls(`POST /tgif/${DATE}/share`)).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('tgif-share'));
+    await rtl.waitFor(() => expect(rtl.screen.queryByTestId('tgif-share-problem')).toBeNull());
+    share.mockRestore();
+  });
+});
+
+// DV2-01, H29 to H34: the middle pill reads "N read today" with the eye, between Amen and Share.
+describe('the read count pill', () => {
+  const inRow = () => rtl.within(rtl.screen.getByTestId('tgif-controls'));
+
+  it('reads "N read today" with the Hub\'s count, in the compact form the Amen count uses, between Amen and Share', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({ verse: 2149 }), readers: 3412 })];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('3.4K read today');
+    expect(rtl.screen.getByLabelText('3.4K read today')).toBeTruthy();
+    const order = (JSON.stringify(rtl.screen.toJSON()).match(/"testID":"tgif-(amen|readers|share)"/g) ?? []).map((m) => m.slice(15, -1));
+    expect(order).toEqual(['amen', 'readers', 'share']);
+    expect(inRow().queryByRole('button', { name: /read today/ })).toBeNull();
+  });
+
+  it("shows the Hub's answer to this person's own read when it is higher than the numbers it gave earlier (which lacked them)", async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 41 })];
+    answers[`POST /tgif/${DATE}/read`] = [ok({ readers: 42, counted: true })];
+    await boot();
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('42 read today');
+  });
+
+  // SWEEP-APP DV2-01 L3: the pill was the latest answer, so a lower later answer took it down.
+  it('never goes down while the reader is open: a later, lower count from the Hub leaves the pill where it was', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 10 })];
+    answers[`POST /tgif/${DATE}/read`] = [refused(500, 'Server error')];
+    await boot();
+    expect((await rtl.screen.findByTestId('tgif-readers-words')).props.children).toBe('10 read today');
+    answers[`GET /tgif/${DATE}/stats`] = [ok({ ...statsOf({}), readers: 4 })];
+    await rtl.act(async () => {
+      await clients[clients.length - 1].refetchQueries({ predicate: (q) => JSON.stringify(q.queryKey).includes('stats') });
+    });
+    expect(calls(`GET /tgif/${DATE}/stats`)).toHaveLength(2);
+    // The refetch's re-render lands a tick after the call returns: flush it, or this reads the old pill even without the fix.
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const refetched = clients[clients.length - 1].getQueriesData<{ readers?: number }>({ predicate: (q) => JSON.stringify(q.queryKey).includes('stats') });
+    expect(refetched.some(([, data]) => data?.readers === 4)).toBe(true);
+    expect(rtl.screen.getByTestId('tgif-readers-words').props.children).toBe('10 read today');
+  });
+
+  it('is not drawn while the Hub has given no count', async () => {
+    answers[`GET /tgif/${DATE}/stats`] = ['offline'];
+    answers[`POST /tgif/${DATE}/read`] = [refused(500, 'Server error')];
+    await boot();
+    await rtl.screen.findByTestId('tgif-text');
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(rtl.screen.queryByTestId('tgif-readers')).toBeNull();
+    expect(rtl.screen.queryByText(/read today/)).toBeNull();
   });
 });
 

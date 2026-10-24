@@ -1,19 +1,32 @@
 ---
 id: INBOX-19
 title: Chat and send money in a chat
-owner: DEV2
+owner: YOU
 area: INBOX
 order: 142
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-06, WALLET-07, WALLET-02, UI-02, UI-03, INBOX-04]
 decisions: [R-13, R-6, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
 artboards: [I12, I13, I14, I15]
 ---
 # INBOX-19 · Chat and send money in a chat
+
+## Current state
+
+As of 17 Oct 2026.
+- **Status:** merging (lead). Verified by an independent verifier (verdict merge); stacked in batch 10 by MERGE-10 inside FIX-55 (S2 `6957df6b`). Built by a Sonnet builder in the S2 bundle: mobile `wmt/S2` from `origin/wmt/MERGE-8` `cc436a53`, `origin/wmt/INBOX-15` merged in. No backend change, no migration. Routes `/chat/[id]` and `/chat/send` added (no layout edit).
+- **Built:** I12 (header, thread newest at the bottom and live, composer, text sent once per `clientMessageId`), I13 (Add to chat: Send money and Request money), I14 (W9's keypad, balance, note, the Bank charge + WAWU's fee, Total, "Femi gets ₦25,000", "Send ₦25,025.75", then the PIN), I15 ("You sent" with the note and "Delivered to Femi", read from the Hub's record of the send by id). The Inbox draws chat rows (preview, time, unread, tick) that open the chat. A person with no wallet is led to Open your wallet.
+- **Not drawn (R-47), G-882:** Photo or video and File (nothing sends them yet), the "..." button, compose (no board for the person picker). "instant" and "PDF, up to 20 MB" are not printed. I15's bubble is kept on the sender's phone by the send's id (G-880): the person who got the money sees no bubble.
+- **Decisions the builder took:** the line under the name reads "@handle · on Who Made This?" (R-69, the board); the provider's part is "Bank charge" (R-53); a send and a W10 review share one kept intent per person and amount (`send/intent`), so neither can send twice.
+- **Attacks in tests:** double tap on Send (one fresh quote, one PIN sheet, one payment), wrong PIN, short wallet before and after the PIN (the shared pay sheet), a lost answer then the same request (same key and body, also after leaving the screen), no wallet, a send the provider has not confirmed (kept pending, not sent again), a failed send.
+- **Attacks on the stack, once each:** the same key twice at once 201 and 409, one debit; the same key again 201, no second debit; wrong PIN 403, nothing moved; a send of ₦50,000 with ₦10,000 402 `insufficient_funds` with the shortfall. In the browser: A sent B ₦25,000 with a note through I14 and the PIN, and the chat showed I15's bubble.
+- **Stack (backend `wmt/INBOX-15` `c803256` on the Nuvion stand-in, name `s2_test`, ports 7760 to 7767, taken down after):** the web export of `wmt/S2` ran against the real Hub with two funded wallets; pictures in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-b/pics/` (`beside-<board>-<light|dark>.png`, board left, built right); the attacks below were run once each, results in `.../s2-b/logs/live-attacks.txt`.
+- **Open:** G-880, G-882, G-883 (the stack's send took ₦100.00 where the quote said ₦110.00, WAWU's fee not collected); SHARED-CHANGES INBOX-19 #1. Flipped four assertions that pinned chat rows' and Money's absence in `InboxScreen.test.tsx` (chip list, two "no row nobody draws" tests now use a paid question as the undrawn kind).
+- **Next:** the batch 10 pull request. Passes the task needs: V1, V4, V5, V6, V7, V8, V9, V10. NOT RUN: V10.
 
 ## Read first
 
@@ -96,13 +109,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/INBOX-19.md](history/INBOX-19.md).
 
 ## Owner sign-off
 

@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { Appearance } from 'react-native';
+import { ActivityIndicator, Animated, Appearance, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -22,6 +22,7 @@ jest.mock('@/api/session', () => ({
   refreshAccessToken: async () => null,
   isCurrentSessionToken: () => true,
   adoptSession: (pair: { accessToken: string; refreshToken: string }) => mockAdopt(pair),
+  replaceTokens: (pair: { accessToken: string; refreshToken: string }) => mockAdopt(pair),
   signOut: () => mockSignOut(),
 }));
 
@@ -94,7 +95,9 @@ const page = (rows: unknown[], total = rows.length): Answer => ({
 
 const clients: QueryClient[] = [];
 function frame(child: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { retry: false } } });
+  // A mutation's own gcTime defaults to 5 minutes and sets a timer when its screen unmounts; `clear()` does not cancel it, so
+  // without `gcTime: Infinity` here Jest stays up about 5 minutes after the last test passes (FIX-14).
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false }, mutations: { gcTime: Infinity, retry: false } } });
   clients.push(client);
   return (
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
@@ -104,9 +107,32 @@ function frame(child: ReactElement) {
 }
 
 const mod = <T,>(path: string) => require(path) as T;
+
+/*
+ * The first test in this file used to pay for loading the screens' modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 18 s of a test's 20 s on a cold
+ * transform cache, which is what a fresh checkout has. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+void [
+  mod('../BlockedScreen'),
+  mod('../ChangePasswordScreen'),
+  mod('../NotificationsScreen'),
+  mod('../PrivacyScreen'),
+  mod('../SettingsScreen'),
+  mod('../devicePrefs'),
+];
+void [ActivityIndicator, Animated, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await render(<View />);
+  warm.unmount();
+});
 const checked = (testID: string) => Boolean(screen.getByTestId(testID).props.accessibilityState?.checked);
 const bodiesOf = (method: string, path: string) => sent.filter((s) => s.method === method && s.path === path).map((s) => s.body);
 const tap = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
+/** A switch flips at once and is busy, ignoring presses, until the Hub has answered: a second tap is for after that. */
+const idle = (testID: string) => waitFor(() => expect(screen.getByTestId(testID).props.accessibilityState?.busy).toBe(false));
 
 beforeEach(() => {
   answers = {};
@@ -140,7 +166,7 @@ describe('Z3 · Notifications', () => {
     expect(checked('notify-contentReviews')).toBe(true);
     expect(checked('notify-newFollowers')).toBe(true);
     expect(checked('notify-promotions')).toBe(false);
-    for (const word of ['Money', 'Messages', 'Content', 'Money in', 'Tips, sales, transfers', 'Refunds', 'Paid questions', 'Including reply deadlines', 'Community messages', 'Reviews', 'Approved or sent back', 'New followers', 'From Who Made This', 'News and offers']) {
+    for (const word of ['Money', 'Messages', 'Content', 'Money in', 'Tips, sales, transfers', 'Refunds', 'Paid questions', 'Including reply deadlines', 'Community messages', 'Reviews', 'Approved or sent back', 'New followers', 'From Who Made This?', 'News and offers']) {
       expect(screen.getByText(word)).toBeTruthy();
     }
   });
@@ -252,7 +278,7 @@ describe('Z3 · Notifications', () => {
 
 describe('a switch row', () => {
   it('ignores a press while its own save is in flight, and reports the value asked for otherwise', async () => {
-    const { SwitchRow } = mod<typeof import('../SwitchRow')>('../SwitchRow');
+    const { SwitchRow } = mod<typeof import('@/components/SwitchRow')>('@/components/SwitchRow');
     const onChange = jest.fn();
     await render(frame(<SwitchRow testID="row" title="Refunds" on={false} busy onChange={onChange} />));
     await tap('row');
@@ -481,7 +507,7 @@ describe('Z2 · Settings', () => {
     await boot();
     await screen.findByText('Lennox Emmanuel');
     expect(JSON.stringify(screen.toJSON())).not.toMatch(/Tier|WAWU|Fintava|—/);
-    expect(screen.getByText('About Who Made This')).toBeTruthy();
+    expect(screen.getByText('About Who Made This?')).toBeTruthy();
   });
 
   it('a user can open Notifications, Privacy, Password, About, Terms and Privacy policy, and their own details', async () => {
@@ -504,6 +530,19 @@ describe('Z2 · Settings', () => {
     expect(p.onOpenProfile).toHaveBeenCalledTimes(1);
   });
 
+  it('DV2-06 · the switch reads "TGIF each morning" with the notification line, names no time, and keeps writing /settings/tgif', async () => {
+    serve({ [TGIF_SET]: ok({ show: false }) });
+    await boot();
+    await screen.findByTestId('settings-tgif');
+    expect(screen.getByText('TGIF each morning')).toBeTruthy();
+    expect(screen.getByText('Daily verse and prayer, as a notification')).toBeTruthy();
+    expect(screen.queryByText('TGIF on Home')).toBeNull();
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/\d{1,2}:\d{2}|\d\s?(am|pm)\b/i);
+    await tap('settings-tgif');
+    await waitFor(() => expect(checked('settings-tgif')).toBe(false));
+    expect(bodiesOf('PATCH', '/api/hub/settings/tgif')).toEqual([{ show: false }]);
+  });
+
   it('a user can switch TGIF off and on: the Hub holds it, and the switch follows the answer', async () => {
     serve({ [TGIF_SET]: [ok({ show: false }), ok({ show: true })] });
     await boot();
@@ -511,8 +550,10 @@ describe('Z2 · Settings', () => {
     expect(checked('settings-tgif')).toBe(true);
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(false));
+    await idle('settings-tgif');
     await tap('settings-tgif');
     await waitFor(() => expect(checked('settings-tgif')).toBe(true));
+    await idle('settings-tgif');
     expect(bodiesOf('PATCH', '/api/hub/settings/tgif')).toEqual([{ show: false }, { show: true }]);
   });
 
@@ -529,9 +570,9 @@ describe('Z2 · Settings', () => {
     serve({ [TGIF]: [refusal(500, 'The server is having trouble.'), ok({ show: false })] });
     await boot();
     expect(screen.getByTestId('settings-tgif-pending')).toBeTruthy();
-    await waitFor(() => expect(screen.getByLabelText('TGIF on Home did not load. Try again')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('TGIF each morning did not load. Try again')).toBeTruthy());
     expect(screen.queryByTestId('settings-tgif')).toBeNull();
-    await act(async () => fireEvent.press(screen.getByLabelText('TGIF on Home did not load. Try again')));
+    await act(async () => fireEvent.press(screen.getByLabelText('TGIF each morning did not load. Try again')));
     await screen.findByTestId('settings-tgif');
     expect(checked('settings-tgif')).toBe(false);
   });
@@ -977,5 +1018,75 @@ describe('no screen shows the server\'s own words', () => {
       'Your privacy settings could not be read. Try again.',
     );
     expect(sentenceOf(new Error('Network request failed'), 'That did not save. Try again.')).toBe('That did not save. Try again.');
+  });
+});
+
+const POINTS_SETTINGS = 'GET /api/hub/me/points/settings';
+const POINTS_SETTINGS_SET = 'PUT /api/hub/me/points/settings';
+
+describe('G-POINTS-07-1 · Use wallet for AI tools', () => {
+  const boot = async () => {
+    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
+    await render(
+      frame(
+        <SettingsScreen
+          onBack={jest.fn()}
+          onOpenProfile={jest.fn()}
+          onOpenNotifications={jest.fn()}
+          onOpenPrivacy={jest.fn()}
+          onOpenPassword={jest.fn()}
+          onOpenAbout={jest.fn()}
+          onOpenTerms={jest.fn()}
+          onOpenPolicy={jest.fn()}
+          onSignedOut={jest.fn()}
+        />,
+      ),
+    );
+  };
+  const serve = (over: Record<string, Answer | Answer[]> = {}) => {
+    answers = { [ME]: ok(me), [TGIF]: ok({ show: true }), [POINTS_SETTINGS]: ok({ useWallet: false }), ...over };
+  };
+
+  it('a person sees the row off, as the Hub holds it, in the same group as the other switches', async () => {
+    serve();
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    expect(screen.getByText('Use wallet for AI tools')).toBeTruthy();
+    expect(screen.getByText('Pay for missing points from your wallet')).toBeTruthy();
+    expect(checked('settings-use-wallet')).toBe(false);
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/Fintava|—/);
+  });
+
+  it('a person can switch it on and off: one request carrying the value, and the switch shows the Hub’s answer', async () => {
+    serve({ [POINTS_SETTINGS_SET]: [ok({ useWallet: true }), ok({ useWallet: false })] });
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    await tap('settings-use-wallet');
+    await waitFor(() => expect(checked('settings-use-wallet')).toBe(true));
+    await idle('settings-use-wallet');
+    await tap('settings-use-wallet');
+    await waitFor(() => expect(checked('settings-use-wallet')).toBe(false));
+    await idle('settings-use-wallet');
+    expect(bodiesOf('PUT', '/api/hub/me/points/settings')).toEqual([{ useWallet: true }, { useWallet: false }]);
+  });
+
+  it('puts the switch back and says why when the Hub refuses', async () => {
+    serve({ [POINTS_SETTINGS_SET]: refusal(500, 'The server is having trouble.') });
+    await boot();
+    await screen.findByTestId('settings-use-wallet');
+    await tap('settings-use-wallet');
+    expect(await screen.findByTestId('settings-problem-use-wallet')).toBeTruthy();
+    expect(checked('settings-use-wallet')).toBe(false);
+  });
+
+  it('never guesses the switch: it is a retry while the Hub has not answered, and the row appears when it does', async () => {
+    serve({ [POINTS_SETTINGS]: [refusal(500, 'The server is having trouble.'), ok({ useWallet: true })] });
+    await boot();
+    await screen.findByTestId('settings-use-wallet-pending');
+    await waitFor(() => expect(screen.getByLabelText('Use wallet for AI tools did not load. Try again')).toBeTruthy());
+    expect(screen.queryByTestId('settings-use-wallet')).toBeNull();
+    await act(async () => fireEvent.press(screen.getByLabelText('Use wallet for AI tools did not load. Try again')));
+    await screen.findByTestId('settings-use-wallet');
+    expect(checked('settings-use-wallet')).toBe(true);
   });
 });

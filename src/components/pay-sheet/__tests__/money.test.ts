@@ -3,11 +3,11 @@ import { feesTotalKobo, formatNaira, payTotalKobo, shortfallKobo } from '../mone
 describe('pay sheet money', () => {
   it('adds the price and every fee line in kobo to make the total', () => {
     // ₦2,500 price + ₦23.25 Fintava charge (brief example values).
-    expect(payTotalKobo(250000, [{ label: "Fintava's charge", amountKobo: 2325 }])).toBe(252325);
+    expect(payTotalKobo(250000, [{ label: "Bank charge", amountKobo: 2325 }])).toBe(252325);
     // A bank send: ₦25,000 + ₦40 + ₦25.
     expect(
       payTotalKobo(2500000, [
-        { label: "Fintava's charge", amountKobo: 4000 },
+        { label: "Bank charge", amountKobo: 4000 },
         { label: "WAWU's fee", amountKobo: 2500 },
       ]),
     ).toBe(2506500);
@@ -19,7 +19,7 @@ describe('pay sheet money', () => {
   });
 
   it('keeps the total equal to the price when a fee line is ₦0', () => {
-    expect(payTotalKobo(150000, [{ label: "Fintava's charge", amountKobo: 0 }])).toBe(150000);
+    expect(payTotalKobo(150000, [{ label: "Bank charge", amountKobo: 0 }])).toBe(150000);
     expect(payTotalKobo(150000, [])).toBe(150000);
   });
 

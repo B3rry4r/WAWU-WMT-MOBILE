@@ -80,21 +80,22 @@ export type RailProps = {
   onLike: () => void;
   onSave: () => void;
   onFollow: () => void;
+  /** Opens the tip sheet (H26). Left out, the rail has no ₦ Tip (its entry is not drawn until the flow is wired, R-47), and never on the viewer's own post. */
+  onTip?: () => void;
   /** The post measures where the rail starts, to keep other things clear of it on a short phone. */
   onLayout?: (e: LayoutChangeEvent) => void;
 };
 
 /**
- * The right rail (H2 to H6): the creator, likes, comments and saves. The avatar's profile
- * (M5) is ME-02's to open, the comments (H21) HOME-03's, and the ₦ Tip button (H26)
- * HOME-13's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
+ * The right rail (H2 to H6): the creator, likes, comments, saves and ₦ Tip (H26, HOME-13). The avatar's profile
+ * (M5) is ME-02's to open and the comments (H21) HOME-03's: each adds its press as drawn. The saves count is not served (BACKEND_GAPS
  * G-215), so the bookmark has no figure under it.
  */
-export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow, onLayout }: RailProps) {
+export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onFollow, onTip, onLayout }: RailProps) {
   const name = creatorName(item.creator) ?? undefined;
   const ring = useFocusRing();
   return (
-    <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + metrics.tipSlot }]} testID={`rail-${item.id}`}>
+    <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + (onTip ? 0 : metrics.tipSlot) }]} testID={`rail-${item.id}`}>
       <View style={styles.avatarRing}>
         <Avatar name={name} hue={hueFor(item.creatorWawuId)} source={item.creator?.avatarUrl ?? undefined} size={metrics.avatar} />
         {canFollow ? (
@@ -120,17 +121,30 @@ export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onF
       <RailButton testID={`save-${item.id}`} label={saved ? 'Saved' : 'Save'} selected={saved} onPress={onSave}>
         <RailCount icon="Bookmark" count={null} filled={saved} />
       </RailButton>
+      {onTip ? (
+        <RailButton testID={`tip-${item.id}`} label={name ? `Tip ${name}` : 'Tip'} onPress={onTip}>
+          <View style={[styles.tipPlate, { backgroundColor: media.glass }]}>
+            <Text style={[words.tipGlyph, { color: media.ink }]}>₦</Text>
+          </View>
+          <Text style={[words.count, { color: media.ink }]}>Tip</Text>
+        </RailButton>
+      ) : null}
     </View>
   );
 }
 
-/** The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". */
-export function Pill({ icon, text, testID }: { icon: IconName; text: string; testID?: string }) {
+/**
+ * The pill above the name: "Video · 1:50", "Locked · 18 min", "PDF · 84 pages". `light` is H10's white pill
+ * with dark words; every other pill is dark glass with white ones. `flush` drops the space under it, for a pill
+ * that is not followed by a name (the one on a piece's own picture).
+ */
+export function Pill({ icon, text, testID, light = false, flush = false }: { icon: IconName; text: string; testID?: string; light?: boolean; flush?: boolean }) {
+  const ink = light ? media.inkOnLight : media.ink;
   return (
-    <View style={styles.pillRow}>
-      <View testID={testID} style={[styles.pill, { backgroundColor: media.pill }]}>
-        <Icon name={icon} size={metrics.pillIcon} color={media.ink} strokeWidth={ICON_STROKE.button} />
-        <Text numberOfLines={1} style={[words.pill, { color: media.ink }]}>
+    <View style={flush ? styles.pillRowFlush : styles.pillRow}>
+      <View testID={testID} style={[styles.pill, { backgroundColor: light ? media.ink : media.pill }]}>
+        <Icon name={icon} size={metrics.pillIcon} color={ink} strokeWidth={ICON_STROKE.button} />
+        <Text numberOfLines={1} style={[words.pill, { color: ink }]}>
           {text}
         </Text>
       </View>
@@ -138,10 +152,16 @@ export function Pill({ icon, text, testID }: { icon: IconName; text: string; tes
   );
 }
 
-/** The name, its tick, "· Following" (H6), then the caption. */
-export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) {
+/** The name, its tick, "· Following" (H6), then the caption. The caption opens the piece's own page (H19) when `onOpen` is given. */
+export function Byline({ item, follows, onOpen }: { item: FeedItem; follows: boolean; onOpen?: () => void }) {
   const name = creatorName(item.creator);
   const tick = tickKind(item.creator);
+  const ring = useFocusRing();
+  const captionText = (
+    <Text numberOfLines={3} style={[words.caption, styles.captionText, { color: media.ink }]} testID={`caption-${item.id}`}>
+      {caption(item)}
+    </Text>
+  );
   return (
     <View>
       {name ? (
@@ -153,9 +173,20 @@ export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) 
           {follows ? <Text style={[words.following, { color: media.ink }]}>· Following</Text> : null}
         </View>
       ) : null}
-      <Text numberOfLines={3} style={[words.caption, styles.captionText, { color: media.ink }]} testID={`caption-${item.id}`}>
-        {caption(item)}
-      </Text>
+      {onOpen ? (
+        <Pressable
+          testID={`open-${item.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${item.title}`}
+          onPress={onOpen}
+          {...ring.handlers}
+          style={ring.style}
+        >
+          {captionText}
+        </Pressable>
+      ) : (
+        captionText
+      )}
     </View>
   );
 }
@@ -166,25 +197,57 @@ export function Byline({ item, follows }: { item: FeedItem; follows: boolean }) 
  * lines), so nothing is cut at a small width or a long price; pressing it opens the unlock sheet (H14), which HOME-12 adds as drawn. Until then
  * it starts nothing: no payment can begin from the feed.
  */
-export function OfferBar({ offer, priceKobo, compact = false, testID }: { offer: Offer; priceKobo: number; compact?: boolean; testID?: string }) {
+export function OfferBar({
+  offer,
+  priceKobo,
+  compact = false,
+  onPress,
+  busy = false,
+  testID,
+}: {
+  offer: Offer;
+  priceKobo: number;
+  compact?: boolean;
+  /** Opens the unlock sheet (H14). Left out, the bar only shows the offer (its press is not drawn until the flow is wired, R-47). */
+  onPress?: () => void;
+  /** The price is being asked for: a second press does nothing until it is answered. */
+  busy?: boolean;
+  testID?: string;
+}) {
+  const ring = useFocusRing();
+  const press = onPress
+    ? ({
+        accessibilityRole: 'button' as const,
+        accessibilityLabel: `${offer.title}. ${offer.subtitle}`,
+        accessibilityState: { busy },
+        onPress: busy ? undefined : onPress,
+        ...ring.handlers,
+      } as const)
+    : null;
+  const Wrap = onPress ? Pressable : View;
   return (
-    <View
+    <Wrap
       testID={testID}
+      {...(press ?? {})}
       style={[
         styles.offer,
         compact && { gap: metrics.offerGapCompact, paddingLeft: metrics.offerLeftCompact, paddingRight: metrics.offerRightCompact },
         { backgroundColor: media.glass, borderColor: media.glassEdge },
+        busy && styles.busy,
+        onPress ? ring.style : null,
       ]}
     >
       <Icon name={offer.icon} size={compact ? metrics.offerIconCompact : metrics.offerIcon} color={media.ink} />
       <View style={styles.offerWords}>
-        <Text style={[words.offerTitle, { color: media.ink }]}>{offer.title}</Text>
+        <Text numberOfLines={1} style={[words.offerTitle, { color: media.ink }]}>
+          {offer.title}
+        </Text>
         <Text style={[words.offerSub, { color: media.ink }]}>{offer.subtitle}</Text>
       </View>
       <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>
         <Money minorUnits={priceKobo} decimals={false} size={compact ? metrics.priceTextCompact : metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
       </View>
-    </View>
+    </Wrap>
   );
 }
 
@@ -233,10 +296,13 @@ export function Seekable({
   );
 }
 
-/** H2's scrubber and H4's reading bar: a thin track, its filled share, and the words beside it. */
-export function TrackBar({ share, label, testID }: { share: number; label: string; testID?: string }) {
+/**
+ * H2's scrubber and H4's reading bar: a thin track, its filled share, and the words beside it. It keeps clear of the
+ * rail by `barRight`; `inset={false}` leaves that to the box around it (a Seekable's own margin, so its hit area ends there too).
+ */
+export function TrackBar({ share, label, testID, inset = true }: { share: number; label: string; testID?: string; inset?: boolean }) {
   return (
-    <View style={styles.trackRow} pointerEvents="box-none">
+    <View style={[styles.trackRow, inset && styles.trackInset]} pointerEvents="box-none">
       <View style={styles.trackHit}>
         <View style={[styles.track, { backgroundColor: media.track }]}>
           <View testID={testID} style={[styles.trackFill, { width: `${Math.round(share * 1000) / 10}%`, backgroundColor: media.ink }]} />
@@ -253,9 +319,12 @@ const styles = StyleSheet.create({
     right: metrics.railRight,
     alignItems: 'center',
     gap: metrics.railGap,
-    zIndex: 6,
+    // Above the foot (6): a rail button wins every tap inside its own box, whatever else overlaps it (FIX-68 F-1).
+    zIndex: 7,
   },
   railItem: { alignItems: 'center', gap: metrics.railCountGap },
+  tipPlate: { width: metrics.tipCircle, height: metrics.tipCircle, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
+  busy: { opacity: 0.6 },
   avatarRing: {
     borderRadius: radius.chip,
     borderWidth: metrics.avatarRing,
@@ -274,6 +343,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillRow: { flexDirection: 'row', marginBottom: metrics.pillBelow },
+  pillRowFlush: { flexDirection: 'row' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -306,7 +376,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trackRow: { flexDirection: 'row', alignItems: 'center', gap: metrics.trackGap, marginRight: metrics.barRight },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: metrics.trackGap },
+  trackInset: { marginRight: metrics.barRight },
   trackHit: { flex: 1, height: metrics.trackHit, justifyContent: 'center' },
   track: { height: metrics.track, borderRadius: metrics.trackRadius, overflow: 'hidden' },
   trackFill: { height: '100%', borderRadius: metrics.trackRadius },

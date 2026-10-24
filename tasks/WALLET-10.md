@@ -7,13 +7,17 @@ order: 150
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [MONEY-07, MONEY-10, MONEY-12, INBOX-03, SETTINGS-07]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # WALLET-10 · Money in: bank transfers to the account
+
+## Current state
+
+live: money in by bank transfer, backend PR #137 (3797fb2), batch 2 with POINTS-04 and FIX-20.
 
 ## Read first
 
@@ -40,13 +44,9 @@ Money in comes from the ledger (MONEY-10): MONEY-10 marks `account_funded` deliv
 - [ ] A sandbox transfer into the account appears in history and as a notification once.
 - [ ] With "Money in" turned off in Z3, no notification is sent.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-10.md](history/WALLET-10.md).
 
 ## Owner sign-off
 

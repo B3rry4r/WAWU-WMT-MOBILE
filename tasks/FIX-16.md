@@ -3,8 +3,8 @@ id: FIX-16
 title: The dashboard and the web catch up with admin takedowns
 owner: YOU
 area: FIX
-order: 187
-priority: launch
+order: 345
+priority: after-launch
 repo: wawu-dashboard, wawuafrica
 type: admin-screen
 status: todo
@@ -14,6 +14,14 @@ passes: [V1, V6, V7, V9]
 artboards: []
 ---
 # FIX-16 · The dashboard and the web catch up with admin takedowns
+
+## Current state
+
+As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/FIX-16.md.
 
 ## Read first
 
@@ -28,7 +36,7 @@ FIX-06 makes an admin's unlist hold. Two surfaces still say otherwise: the dashb
 
 ## Scope
 
-Dashboard: the professional's panel reads the admin visibility route and shows Listed, Hidden by them, or Taken down (with the date); a "List again" action calls relist (same roles as unlist), with a confirm; the unlist toast says the listing stays hidden until an admin lists it again. Web: the listings page shows a plain sentence for `listing_taken_down` and the pill reads the real state. No em-dashes. Ship together with or right after FIX-06's backend deploy.
+Dashboard: the professional's panel reads the admin visibility route and shows Listed, Hidden by them, or Taken down (with the date); a "List again" action calls relist (same roles as unlist), with a confirm; the unlist toast says the listing stays hidden until an admin lists it again. Web: the listings page shows a plain sentence for `listing_taken_down` and the pill reads the real state. On the web's apply form, a field whose listing an admin took down says so (from the owner's visibility read), instead of main's 409 sentence "You are already listed as a professional in this category." No em-dashes. Ship together with or right after FIX-06's backend deploy.
 
 ## Capability checks
 

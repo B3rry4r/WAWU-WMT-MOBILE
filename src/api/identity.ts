@@ -42,7 +42,7 @@ async function call<A>(method: 'GET' | 'POST', path: string, body?: unknown, tok
     throw networkError();
   }
   const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw toApiError(response.status, payload);
+  if (!response.ok) throw toApiError(response.status, payload, response.headers);
   return payload as Partial<A> | null;
 }
 
@@ -57,6 +57,25 @@ function readTokenPair(payload: { data?: Partial<TokenPair> } | null): TokenPair
     throw new ApiError('unknown', 0, 'Sign-in gave an unexpected answer. Try again.');
   }
   return { accessToken, refreshToken };
+}
+
+/**
+ * POST /auth/change-password (SETTINGS-03's route) with the signed-in access token. Resolves with the new token pair
+ * the caller must keep (every other device's refresh token stops working); rejects with an ApiError
+ * (`CURRENT_PASSWORD_WRONG`, `PASSWORD_UNCHANGED`, `RATE_LIMITED`, ...).
+ */
+export async function changePassword(token: string, currentPassword: string, newPassword: string): Promise<TokenPair> {
+  const payload = await call<Answer<'changePassword'>>('POST', '/auth/change-password', { currentPassword, newPassword }, token);
+  const pair = (payload as { data?: Partial<TokenPair> } | null)?.data;
+  if (typeof pair?.accessToken !== 'string' || typeof pair?.refreshToken !== 'string') {
+    throw new ApiError('unknown', 200, 'Your password was changed but the answer could not be read. Sign in again.');
+  }
+  return { accessToken: pair.accessToken, refreshToken: pair.refreshToken };
+}
+
+/** POST /auth/logout: ends this device's refresh token on the server. The server answers the same for a live, dead or unknown token. */
+export async function logoutRequest(refreshToken: string): Promise<void> {
+  await post<'logout'>('/auth/logout', { refreshToken });
 }
 
 /** Email or phone, plus password. Rejects with an ApiError (unauthorized, EMAIL_NOT_VERIFIED, ...). */
@@ -92,6 +111,9 @@ export async function forgotPasswordRequest(identifier: string): Promise<ResetLi
 type Schemas = components['schemas'];
 export type SignupStarted = Schemas['SignupStartedSchema'];
 export type PhoneCodeSent = Schemas['PhoneCodeSentSchema'];
+export type EmailSignupCodeSent = Schemas['EmailSignupCodeSentSchema'];
+/** Which way WAWU ID sends the sign-up code: `phone` (texted, the default) or `email` (mailed). */
+export type SignupChannel = Schemas['SignupChannelSchema']['channel'];
 export type SignupResume = Schemas['SignupResumeSchema'];
 export type SignupProgress = Schemas['SignupProgressSchema'];
 export type EmailCodeSent = Schemas['EmailCodeSentSchema'];
@@ -104,7 +126,18 @@ function readStarted(data: Partial<SignupStarted> | undefined): SignupStarted {
   if (!data || typeof data.phone !== 'string' || typeof data.attempt !== 'string' || !isNumber(data.expiresIn) || !isNumber(data.resendIn)) {
     throw unexpected();
   }
-  return { phone: data.phone, attempt: data.attempt, expiresIn: data.expiresIn, resendIn: data.resendIn, emailCodeRequired: data.emailCodeRequired === true };
+  return {
+    phone: data.phone,
+    attempt: data.attempt,
+    expiresIn: data.expiresIn,
+    resendIn: data.resendIn,
+    emailCodeRequired: data.emailCodeRequired === true,
+    // AUTH-07: present only when the code was mailed; a texted sign-up's answer has neither.
+    ...(data.channel === 'email' ? { channel: 'email' as const } : {}),
+    ...(typeof data.maskedEmail === 'string' ? { maskedEmail: data.maskedEmail } : {}),
+    // AUTH-07 round 3: present only when the number typed was not saved because another account holds it.
+    ...(data.phoneNotSaved === true ? { phoneNotSaved: true as const } : {}),
+  };
 }
 
 function readCodeSent<T extends { expiresIn: number; resendIn: number }>(data: Partial<T> | undefined): T {
@@ -117,7 +150,7 @@ function readProgress(data: Partial<SignupProgress> | undefined): SignupProgress
   return data as SignupProgress;
 }
 
-/** A3 Continue: starts a sign-up and texts the code. `attempt` in the answer is the secret every later call needs. */
+/** A3 Continue: starts a sign-up and sends the code (texted by default, mailed when WAWU ID's SIGNUP_VERIFY_CHANNEL is email; AUTH-07). `attempt` in the answer is the secret every later call needs. */
 export async function signupRequest(body: Request<'signup'>): Promise<SignupStarted> {
   const payload = await call<Schemas['SignupStartedAnswer']>('POST', '/auth/signup', body);
   return readStarted(payload?.data);
@@ -132,6 +165,27 @@ export async function phoneVerifyStartRequest(body: Request<'phoneVerifyStart'>)
 /** A4: the right code proves the phone and issues the first session. */
 export async function phoneVerifyConfirmRequest(body: Request<'phoneVerifyConfirm'>): Promise<TokenPair> {
   return readTokenPair(await call<Schemas['SessionAnswer']>('POST', '/auth/phone/verify/confirm', body));
+}
+
+/** A4 Resend when the code was mailed (AUTH-07, SIGNUP_VERIFY_CHANNEL=email): another code for the same sign-up. */
+export async function signupEmailCodeStartRequest(body: Request<'signupEmailCodeStart'>): Promise<EmailSignupCodeSent> {
+  const payload = await call<Schemas['EmailSignupCodeSentAnswer']>('POST', '/auth/signup/email-code/start', body);
+  return readCodeSent<EmailSignupCodeSent>(payload?.data);
+}
+
+/** A4 when the code was mailed (AUTH-07): the right code proves the email and issues the first session. */
+export async function signupEmailCodeConfirmRequest(body: Request<'signupEmailCodeConfirm'>): Promise<TokenPair> {
+  return readTokenPair(await call<Schemas['SessionAnswer']>('POST', '/auth/signup/email-code/confirm', body));
+}
+
+/**
+ * A3, before anything is typed: which way WAWU ID will send the sign-up code, so the line under the heading can name it
+ * (AUTH-07 round 3). Needs no sign-in. Null when the answer is not one the app knows, which draws no line rather than a guess.
+ */
+export async function signupChannelRequest(): Promise<SignupChannel | null> {
+  const payload = await call<Schemas['SignupChannelAnswer']>('GET', '/auth/signup/channel');
+  const channel: unknown = payload?.data?.channel;
+  return channel === 'phone' || channel === 'email' ? channel : null;
 }
 
 /** Where a sign-up stands before its code, for an app that was closed after A3. */

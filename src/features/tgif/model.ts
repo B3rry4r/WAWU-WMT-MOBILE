@@ -13,15 +13,30 @@ export const cardLabels: Record<TgifCard, string> = {
 };
 
 /**
- * One step of the reader. Today every step is one of the five cards; a sponsored
- * card (ADS-01) is another kind of step that joins this list, so the progress
- * bar, the tap to continue and the Done on the last step need no change.
+ * One step of the reader: one of the five cards, or the sponsored card (ADS-01, H33), which sits before the
+ * takeaway. It is another kind of step in this list, so the progress bar, the tap to continue and the Done on the
+ * last step need no change.
  */
-export type ReaderStep = { kind: 'card'; card: TgifCard };
+export type ReaderStep = { kind: 'card'; card: TgifCard } | { kind: 'sponsored' };
 
-export function readerSteps(): ReaderStep[] {
-  return cardOrder.map((card) => ({ kind: 'card', card }));
+/** The steps of a reading: the five cards, and the sponsored card before the takeaway when there is one to show. */
+export function readerSteps(sponsored = false): ReaderStep[] {
+  return cardOrder.flatMap((card): ReaderStep[] => {
+    const step: ReaderStep = { kind: 'card', card };
+    return sponsored && card === 'takeaway' ? [{ kind: 'sponsored' }, step] : [step];
+  });
 }
+
+/** How much of the card, from its left edge, is the back tap (FIX-102): the way stories readers split a card, a left third back and the rest forward. */
+export const backZone = 0.3;
+
+/** Whether a tap at `x` (the screen's own x, from the left edge) on a card `width` wide goes back. A tap with no place (a button, a key) goes forward. */
+export function tapGoesBack(x: number | undefined, width: number): boolean {
+  return typeof x === 'number' && Number.isFinite(x) && width > 0 && x < width * backZone;
+}
+
+/** Where the sponsored card sits: the place the takeaway has when there is none. A person already there or past it is never sent back to it. */
+export const sponsoredSlot = cardOrder.indexOf('takeaway');
 
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 const months = [
@@ -47,6 +62,30 @@ const two = (n: number) => String(n).padStart(2, '0');
  */
 export function localDay(now: Date = new Date()): string {
   return `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}`;
+}
+
+const DAY_MS = 86_400_000;
+
+/** A `YYYY-MM-DD` that is a real calendar day, as written; anything else is null. */
+function realDay(raw: unknown): number | null {
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [y, m, d] = raw.split('-').map(Number);
+  const at = new Date(Date.UTC(y, m - 1, d));
+  return at.getUTCFullYear() === y && at.getUTCMonth() === m - 1 && at.getUTCDate() === d ? at.getTime() : null;
+}
+
+/**
+ * The day the reader opens on (HOME-16). A person who taps the morning TGIF notice arrives with the
+ * day it was made for: that day when it is yesterday, today or tomorrow on the phone (the days the Hub
+ * takes a read, an Amen or a share for, G-163), otherwise today. Anything that is not a real day
+ * (a link someone typed, a notice with no day) is today as well.
+ */
+export function readerDay(requested: unknown, now: Date = new Date()): string {
+  const today = localDay(now);
+  const asked = realDay(requested);
+  const here = realDay(today);
+  if (asked === null || here === null) return today;
+  return Math.abs(asked - here) <= DAY_MS ? (requested as string) : today;
 }
 
 /** "Friday 26 September" for a `YYYY-MM-DD` day. Written out here, not by the phone's locale, so every phone reads the same. */
@@ -153,12 +192,14 @@ export function fitSize(card: TgifCard, text: string, room: WordRoom): number {
 }
 
 /**
- * The line under the share sheet's title: what each way of sending really does. The Hub's
- * drawn card goes into a chat as a picture; WhatsApp takes the verse as text (a picture needs
- * the phone's share module, G-242). The link is named only while the Hub has one to send
- * (`TGIF_SHARE_LINK`); with none, nothing is said about a link.
+ * The line under the share sheet's title: what each way of sending really does. On a phone with a
+ * share sheet (`asPicture`) the Hub's drawn card goes out as a picture from WhatsApp, Story and Chat,
+ * and only Chat adds the link under it. Where there is no share sheet (the web build) the card goes to
+ * Chat as a picture and WhatsApp takes the verse as text. The link is named only while the Hub has one to
+ * send (`TGIF_SHARE_LINK`); with none, nothing is said about a link.
  */
-export function shareLine(shareLink: string | null | undefined): string {
+export function shareLine(shareLink: string | null | undefined, asPicture = false): string {
+  if (asPicture) return shareLink ? 'The card goes out as an image. Chat adds the link under it.' : 'The card goes out as an image.';
   const base = 'The card goes to Chat as an image. WhatsApp gets the verse as text.';
   return shareLink ? `${base} Both carry the link.` : base;
 }

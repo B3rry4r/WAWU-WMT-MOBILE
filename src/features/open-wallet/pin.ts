@@ -73,6 +73,15 @@ export const ALREADY_SET = {
 } as const;
 
 /**
+ * A10's end for a person who reset the PIN from it (W37, WALLET-06 round 2, D5). The earlier PIN no longer approves:
+ * the reset replaced it, so the words name the new one and say nothing of an earlier one.
+ */
+export const ALREADY_SET_AFTER_RESET = {
+  title: ALREADY_SET.title,
+  message: 'Your PIN was reset. The new PIN you just chose is the one that approves payments.',
+} as const;
+
+/**
  * A10 when the set got no answer and the wallet read that would say whether
  * it was set got none either: the read's own words (for example "No
  * connection. Check your internet and try again.") after what is not known.

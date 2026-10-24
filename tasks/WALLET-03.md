@@ -7,13 +7,27 @@ order: 147
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [WALLET-02, WALLET-09, WALLET-14, MONEY-19]
 decisions: [R-10, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W8, W13, W14]
 ---
 # WALLET-03 · Send to a bank, not enough money, failed send
+
+## Current state
+
+As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `origin/wmt/MERGE-8` `cc436a53`; the backend (WALLET-09, MONEY-19) is served on MERGE-8, so no backend change, no migration). Status: merging (lead). Verified (app MERGE after round 2); stacked in batch 10 by MERGE-10 inside FIX-55 (WA `2c5e1bc2`). The verifier's high F1 is backend (a bank send marked completed on Nuvion's acceptance) and is task FIX-54 (not in this batch); F2 is G-883, fixed by FIX-52 (in this batch). Order 147 kept.
+- **Built (`src/features/send/`, routes `src/app/send/{bank,failed}.tsx`):** W7 draws the Bank account tab beside Who Made This? user; W8 (`BankRecipientScreen`): the bank (`GET /money/banks`, the A21 sheet), ten digits, the BANK's name for them (`POST /money/banks/name-check`, with its `nameToken`) before Continue opens, a refused account or a wait for the hour's checks in the Hub's words, Try again when the bank did not answer, then "Saved": My payout account (tagged withdraw) and each saved bank account (a tap goes straight to W9, no name check). W9 is W13: an amount over the bank's balance is drawn in danger with "Over your balance of ₦485,250.75" and Continue stays off; the board's Add money is WALLET-05's (R-47).
+- **W10 and W11 for a bank:** `ReviewScreen` takes the bank as a payee: the fee quote is `kind=bank_transfer`, the parts are "Bank charge" and "WAWU's fee" with Fees and Total, the button is the total ("Send ₦25,065"), "They get ₦25,000", the bank and number as rows. One request on one `Idempotency-Key`, kept on the phone with its `nameToken` (`intent.ts`): a wrong PIN, a lost answer and a second tap send the same request. A saved account sends no name token.
+- **W12:** the receipt names the account, prints "Bank charge", and "Save as a beneficiary" saves the BANK account (the Hub keeps the bank's name). **W14 (`FailedScreen`):** a transfer the Hub accepted and the bank did not take. "Reversed to your wallet", "Returned to your wallet" (the Hub's `returnedKobo`), "Charge kept" (its `keptKobo`), the reference, the date, "Your money is back / ₦25,025 is back in your Naira wallet.". No reversal on record yet: the Failed pill, no word about the money, read again every 4 seconds. Try again starts from W8 with the bank, the number and the amount (a new name check, quote and key).
+- **Tests changed:** `sendFlow.test.tsx` one assertion (the tab is now drawn; SHARED-CHANGES WALLET-03 #1). New `bankSendFlow.test.tsx` (18 cases).
+- **On the stack** (backend `wmt/MERGE-8` `8495423` plus the STACK-NUV files, Nuvion stand-in, `wa_test`, 7780 to 7787; each once, with the Hub's own balance read before and after): wrong PIN then right: 403 then 201, nothing debited by the wrong one, one debit; double tap on Send: one request, one debit; an answer lost on the way (the request reached the Hub, the browser saw it fail) then a retry: two requests on one key, one debit; a quote that changed (the request carried a total the Hub no longer quotes): 409, nothing debited, "The fees changed" shown. Short balance: W13 on screen (amount over the balance, Continue off). **NOT RUN on the stack:** a failed bank send (the stand-in settles every bank send as completed after 1.5 s; W14 is shown from a recorded failed transfer, and by the flow tests).
+- **W13 differs:** the board draws neither the quick amounts nor the note on the over-balance state and draws an Add money pill; W9's own parts stay and the pill is WALLET-05's.
+- **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wa-b/pics/` W7, W8, W9, W10, W12, W13, W14, each light and dark with `side-<ID>-<theme>.png` beside the board (W12 light only).
+- **Gaps:** G-WALLET-03-1. **Not drawn:** W13's Add money (WALLET-05).
+- **Round 2 (verifier F3, F4):** W8's unreachable-name line on Send reads "We could not check the name now." (nothing about saving; A21 keeps its "Saving checks it" line; `nameLineHint(line, 'send')`). W10's not-enough notice no longer draws "Add ₦X" (`onAddMoney` optional on `PaySheet` and `ReviewScreen`, `send/review.tsx` passes none until WALLET-05; SHARED-CHANGES WALLET-02 #4). New cases in `bankSendFlow.test.tsx` and `PaySheet.test.tsx`. F1 and F2 are backend, not changed here.
+- **Next:** the batch 10 pull request; FIX-54 for F1.
 
 ## Read first
 
@@ -94,13 +108,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-03.md](history/WALLET-03.md).
 
 ## Owner sign-off
 

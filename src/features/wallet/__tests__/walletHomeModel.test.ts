@@ -1,7 +1,7 @@
 import { ApiError } from '@/api/errors';
 
 import type { WalletTransaction } from '../api/home';
-import { bankLine, fitFigureSize, fundingLine, homeView, recentRow, rowTime } from '../home/model';
+import { bankLine, fitFigureSize, fundingLine, homeView, recentRow, recentView, rowTime } from '../home/model';
 
 const ACCOUNT = { accountNumber: '8100000417', accountName: 'Ada Eze', bankName: 'Ekiti Trial MFB' };
 const read = <T>(data: T | undefined, error: unknown = null, isPending = data === undefined) => ({ data, error, isPending });
@@ -61,10 +61,37 @@ describe('the Wallet tab picks its state from its reads', () => {
   });
 });
 
+describe('the recent-transactions region picks its state from its read (round 2, defect 2)', () => {
+  const rows = [row()];
+
+  it('is the loading shapes until the read answers, however long that takes, so nothing is drawn as if there were rows', () => {
+    expect(recentView({ rows: undefined, failed: false, pending: true })).toBe('loading');
+    // Not asked yet counts as waiting too: nobody knows there are no rows.
+    expect(recentView({ rows: undefined, failed: false, pending: false })).toBe('loading');
+  });
+
+  it('is W5 when the read answered with nothing, and W1 when it answered with rows', () => {
+    expect(recentView({ rows: [], failed: false, pending: false })).toBe('none');
+    expect(recentView({ rows, failed: false, pending: false })).toBe('some');
+  });
+
+  it('keeps the rows it has while it asks again, even after an earlier failure', () => {
+    expect(recentView({ rows, failed: false, pending: true })).toBe('some');
+    expect(recentView({ rows: [], failed: false, pending: true })).toBe('none');
+    expect(recentView({ rows, failed: true, pending: false })).toBe('some');
+  });
+
+  it('is W1’s layout with the rows’ own message when the read failed, and the shapes again while it is retried', () => {
+    expect(recentView({ rows: undefined, failed: true, pending: false })).toBe('failed');
+    expect(recentView({ rows: undefined, failed: true, pending: true })).toBe('loading');
+  });
+});
+
 describe('the words the card and the empty state use', () => {
-  it('names the bank the server sends after "WAWU · "', () => {
-    expect(bankLine('Loma Bank')).toBe('WAWU · Loma Bank');
-    expect(bankLine('Ekiti Trial MFB')).toBe('WAWU · Ekiti Trial MFB');
+  it('names the bank the Hub sends after "Who Made This? · "', () => {
+    expect(bankLine('Loma Bank')).toBe('Who Made This? · Loma Bank');
+    expect(bankLine('Ekiti Trial MFB')).toBe('Who Made This? · Ekiti Trial MFB');
+    expect(bankLine('Nuvion')).toBe('Who Made This? · Nuvion');
   });
 
   it('puts the account’s own number in W5’s line', () => {
@@ -83,7 +110,25 @@ describe('a recent row', () => {
     expect(shown.lead).toEqual({ kind: 'icon', icon: 'ArrowUpRight', tone: 'neutral' });
   });
 
-  it('shows money in as a plus, with the person’s avatar when they are on Who Made This', () => {
+  it('carries a grouped row\u2019s group key, so W1 can open the list of movements the row stands for', () => {
+    const grouped = recentRow(
+      row({
+        direction: 'in',
+        category: 'earning',
+        amountKobo: 750_000,
+        fee: { providerFeeKobo: 0, wawuFeeKobo: 0, totalFeeKobo: 0 },
+        totalKobo: 750_000,
+        description: 'Unlock \u00b7 Test piece \u00b7 3 buyers',
+        counterparty: null,
+        group: { key: 'g2.test-key', count: 3, firstAt: '2026-10-07T10:00:00.000Z', lastAt: '2026-10-07T10:24:00.000Z' },
+      }),
+      now,
+    );
+    expect(grouped.groupKey).toBe('g2.test-key');
+    expect(recentRow(row(), now).groupKey).toBeUndefined();
+  });
+
+  it('shows money in as a plus, with the person’s avatar when they are on Who Made This?', () => {
     const shown = recentRow(
       row({
         direction: 'in',

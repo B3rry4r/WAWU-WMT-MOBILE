@@ -5,10 +5,17 @@ import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
 import { layout, space } from '@/theme';
 
+import type { SignupChannel } from '@/api/identity';
+import { bareHandle } from '@/features/profile-edit/social';
+import { limits } from '@/features/profile-edit/limits';
+
 import { AuthField } from './AuthField';
 import { AuthFrame } from './AuthFrame';
-import { Banner } from './Banner';
+import { Banner } from '@/components/Banner';
+import type { UsernameAnswer } from './identityApi';
 import { signupFailure, type SignupFailure } from './signupFailure';
+import { UsernameRefused, usernameProblem, useUsernameCheck } from './username';
+import { ConsentBox } from '@/features/open-wallet/ConsentBox';
 
 /** The shortest password WAWU ID takes (`contract/identity/openapi.json`, `SignupDto.password.minLength`); A3's hint "At least 8 characters". */
 export const MIN_PASSWORD = 8;
@@ -16,42 +23,76 @@ export const MIN_PASSWORD = 8;
 const MIN_PHONE = 7;
 
 /** design/_gen/auth.js line 54: the heading is `h1` at 24 px, the form `gap: 14`; kit.js line 41, h1 tracking -0.03em, line 1.15. */
-const TITLE = { size: 24, tracking: -0.03, leading: 1.15, apart: 6 } as const;
-const BODY_GAP = 14;
+export const TITLE = { size: 24, tracking: -0.03, leading: 1.15, apart: 6 } as const;
+export const BODY_GAP = 14;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export type SignUpValues = { email: string; phone: string; password: string };
+/** The line under A3's heading, by where the code will go (BRIEF, A3 and A4). */
+const CHANNEL_LINE: Record<SignupChannel, string> = {
+  // MECHANISM: WAWU ID mails the 6-digit code through Resend (EmailSignupService) when its SIGNUP_VERIFY_CHANNEL is email, R-39.
+  email: "We'll email you a code to confirm your address.",
+  // MECHANISM: WAWU ID texts the 6-digit code (PhoneSignupService) while its SIGNUP_VERIFY_CHANNEL is phone, the default.
+  phone: "We'll text a code to your phone.",
+};
+
+export type SignUpValues = { firstName: string; lastName: string; username: string; email: string; phone: string; password: string };
 
 export type SignUpScreenProps = {
-  /** Starts the sign-up. Resolves when the code has been texted (the route opens A4); rejects with an ApiError. */
+  /** Starts the sign-up. Resolves when the code has been sent (the route opens A4); rejects with an ApiError. */
   onContinue: (values: SignUpValues) => Promise<void>;
   onBack?: () => void;
   /** A sign-up is waiting for its code: A3 offers to go back and enter it. */
   onEnterSentCode?: () => void;
+  /**
+   * Which way WAWU ID will send the code (`GET /auth/signup/channel`), so the line under the heading names the channel
+   * A4 will then name. Null or left out while it is not known: the line is not drawn, never guessed.
+   */
+  channel?: SignupChannel | null;
+  /**
+   * Asks whether a username is free (`GET /users/handle-available`). The line under the field follows it while the
+   * person types, after a pause; left out, the field checks nothing until Continue.
+   */
+  checkUsername?: (username: string) => Promise<UsernameAnswer>;
+  /** The terms and the privacy policy behind the consent line's two words (public screens, readable before sign-up). */
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
   /** What the fields start with (a preview, never the app). */
   initial?: Partial<SignUpValues>;
   /** A refusal to show at first (a preview, never the app). */
   initialFailure?: SignupFailure;
 };
 
-type Missing = { email?: string; phone?: string; password?: string };
+type Missing = { firstName?: string; lastName?: string; username?: string; email?: string; phone?: string; password?: string; agreed?: string };
+
+/** A3's consent line is required: the sign-up goes ahead only with it ticked (R-67). */
+const AGREE_NEEDS = 'Tick the box to agree before you continue.';
 
 /**
- * A3: Email, Phone number, Password and Continue. No BVN and no NIBSS line:
+ * A3: First name, Last name, Username, Email, Phone number, Password, the terms line and Continue. The three name fields
+ * are not on the artboard (SIGNUP-NAMES, R-82; BACKEND_GAPS DESIGN-SIGNUP-NAMES-1): they are the same fields in the order Edit
+ * profile uses, the name and then the @handle. No BVN and no NIBSS line:
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms, onOpenPrivacy, checkUsername, channel, initial, initialFailure }: SignUpScreenProps) {
+  const [firstName, setFirstName] = useState(initial?.firstName ?? '');
+  const [lastName, setLastName] = useState(initial?.lastName ?? '');
+  const [username, setUsername] = useState(initial?.username ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [password, setPassword] = useState(initial?.password ?? '');
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<SignupFailure | null>(initialFailure ?? null);
   const [missing, setMissing] = useState<Missing>({});
   const inFlight = useRef(false);
+  const lastNameInput = useRef<TextInput>(null);
+  const usernameInput = useRef<TextInput>(null);
+  const emailInput = useRef<TextInput>(null);
   const phoneInput = useRef<TextInput>(null);
   const passwordInput = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const check = useUsernameCheck(username, checkUsername);
 
   const edit = (setter: (value: string) => void) => (value: string) => {
     setter(value);
@@ -61,13 +102,17 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
 
   const submit = async () => {
     if (inFlight.current) return;
-    const typed = { email: email.trim(), phone: phone.trim(), password };
+    const typed = { firstName: firstName.trim(), lastName: lastName.trim(), username: bareHandle(username), email: email.trim(), phone: phone.trim(), password };
     const gaps: Missing = {
+      firstName: !typed.firstName ? 'Enter your first name.' : typed.firstName.length > limits.namePart ? `Use at most ${limits.namePart} characters.` : undefined,
+      lastName: !typed.lastName ? 'Enter your last name.' : typed.lastName.length > limits.namePart ? `Use at most ${limits.namePart} characters.` : undefined,
+      username: usernameProblem(typed.username) ?? (check.phase === 'refused' ? check.message : undefined),
       email: !typed.email ? 'Enter your email.' : EMAIL_SHAPE.test(typed.email) ? undefined : 'Enter a valid email.',
       phone: typed.phone.replace(/\D/g, '').length < MIN_PHONE ? 'Enter your phone number.' : undefined,
       password: typed.password.length < MIN_PASSWORD ? `Use at least ${MIN_PASSWORD} characters.` : undefined,
+      agreed: agreed ? undefined : AGREE_NEEDS,
     };
-    if (gaps.email || gaps.phone || gaps.password) {
+    if (gaps.firstName || gaps.lastName || gaps.username || gaps.email || gaps.phone || gaps.password || gaps.agreed) {
       setMissing(gaps);
       return;
     }
@@ -77,7 +122,9 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
     try {
       await onContinue(typed);
     } catch (error) {
-      setFailure(signupFailure(error));
+      // A name taken since the line under the field last said "free": the Hub's sentence goes under that field.
+      if (error instanceof UsernameRefused) setMissing({ username: error.message });
+      else setFailure(signupFailure(error));
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -104,15 +151,67 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
       <View style={styles.body}>
         <View style={styles.titleBlock}>
           <Text variant="h1" style={{ fontSize: TITLE.size, lineHeight: TITLE.size * TITLE.leading, letterSpacing: TITLE.tracking * TITLE.size }}>
-            {"Let's get you started"}
+            Create your account
           </Text>
-          <Text variant="muted">{"We'll text a code to your phone."}</Text>
+          <Text variant="muted">Free. Takes a minute.</Text>
+          {/* MECHANISM: WAWU ID POST /auth/signup sends the 6-digit code the way its SIGNUP_VERIFY_CHANNEL says (GET /auth/signup/channel): texted by default, mailed through Resend with `email` (EmailSignupService, R-39). */}
+          {channel ? <Text variant="muted">{CHANNEL_LINE[channel]}</Text> : null}
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="sign-up-banner" /> : null}
         <AuthField
           scrollRef={scrollRef}
+          label="First name"
+          testID="sign-up-first-name"
+          value={firstName}
+          onChangeText={edit(setFirstName)}
+          error={missing.firstName}
+          autoCapitalize="words"
+          autoComplete="given-name"
+          textContentType="givenName"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => lastNameInput.current?.focus()}
+        />
+        <AuthField
+          scrollRef={scrollRef}
+          label="Last name"
+          testID="sign-up-last-name"
+          inputRef={lastNameInput}
+          value={lastName}
+          onChangeText={edit(setLastName)}
+          error={missing.lastName}
+          autoCapitalize="words"
+          autoComplete="family-name"
+          textContentType="familyName"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => usernameInput.current?.focus()}
+        />
+        <AuthField
+          scrollRef={scrollRef}
+          label="Username"
+          testID="sign-up-username"
+          inputRef={usernameInput}
+          // The "@" is part of what is drawn, not of what is kept (Edit profile's handle field).
+          value={`@${bareHandle(username)}`}
+          onChangeText={edit((typed) => setUsername(bareHandle(typed)))}
+          error={missing.username ?? (check.phase === 'refused' ? check.message : undefined)}
+          hint={check.phase === 'free' ? 'That username is free.' : check.phase === 'checking' ? 'Checking the username' : undefined}
+          tone={check.phase === 'free' ? 'ok' : undefined}
+          announce
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="username"
+          textContentType="username"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => emailInput.current?.focus()}
+        />
+        <AuthField
+          scrollRef={scrollRef}
           label="Email"
           testID="sign-up-email"
+          inputRef={emailInput}
           value={email}
           onChangeText={edit(setEmail)}
           error={missing.email}
@@ -158,6 +257,18 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, initial, ini
           textContentType="newPassword"
           returnKeyType="go"
           onSubmitEditing={() => void submit()}
+        />
+        <ConsentBox
+          testID="sign-up-consent"
+          agreed={agreed}
+          busy={busy}
+          problem={missing.agreed}
+          onOpenTerms={onOpenTerms}
+          onOpenPrivacy={onOpenPrivacy}
+          onToggle={() => {
+            setAgreed((now) => !now);
+            setMissing((now) => ({ ...now, agreed: undefined }));
+          }}
         />
       </View>
     </AuthFrame>

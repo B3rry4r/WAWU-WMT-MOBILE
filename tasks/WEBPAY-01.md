@@ -3,17 +3,30 @@ id: WEBPAY-01
 title: Open your wallet on the website
 owner: YOU
 area: WEB
-order: 216
-priority: launch
+order: 347
+priority: after-launch
 repo: wawuafrica
 type: web-port
 status: todo
-depends_on: [NUV-02, NUV-03, NUV-04, NUV-09, MONEY-09]
+depends_on: [NUV-02, NUV-03, NUV-04, MONEY-09]
 decisions: [R-44, R-42, R-39, R-6]
 passes: [V1, V3, V4, V5, V6, V7, V8, V9]
 artboards: []
 ---
 # WEBPAY-01 · Open your wallet on the website
+
+## Current state
+
+As of 16 Oct 2026, from the branch. Web work is paused (R-49); the lead's log does not mention this task.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-49 (owner, 10 Oct 2026): website tasks are paused until the owner says otherwise; the site serves only the registration link.
+- **Status:** building on its branches (verifier: one blocker). This file on main still says todo.
+- **Branches:** mobile `wmt/WEBPAY-01` c49b7b1. Web `wmt/WEBPAY-01` 511095f.
+- **Merged and live:** nothing of this task.
+- **Open findings:** blocker: D1 (the account's country is ignored: a person outside Nigeria is asked for BVN and NIN and wallet routes are called for them).
+  - Called "should fix" by the verifier and not graded: D2 (errors not tied to their fields), D3 (targets under 44 px), D4 (words that do not fit), D5 (the page does not know NUV-02 round 3's answers; NUV-02 merged since), D8 (the CLAUDE.md wallet note dropped R-10). Unknown, ask the lead.
+  - Notes D6, D7, D9 to D12 are in tasks/SWEEP-WEB.md.
+- **Next:** parked while web work is paused (R-49). The next step is taken when the owner reopens web; D1 is the open blocker.
+- **Records:** on the branch, `wmt/WEBPAY-01`, in tasks/WEBPAY-01.md there (37 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py WEBPAY-01`; the history goes to tasks/history/WEBPAY-01.md.
 
 ## Read first
 
@@ -41,6 +54,8 @@ here (the `no_wallet` answer, MONEY-13). Boards to compare with once exported: t
 - The web's CLAUDE.md wallet note follows R-39 and R-42 (Nuvion; WAWU's operational account holds held money).
 
 **V5 (picture):** the round 2 boards this screen follows are not in `design/` yet (R-43: tasks are cut from the new boards once exported). Build from the round 2 brief's text in the web's design system; V5 compares with the boards once the export lands, and is NOT RUN until `design/canvas-inventory.json` lists the ids named in the Goal. The backend runs locally with Nuvion stood in (no wawuafrica.com host, no Nuvion host).
+
+**R-45 (8 Oct 2026):** naira first; NUV-09 (dollar wallets) is no longer needed before this task. The wallet page sends a person with no wallet into these steps.
 
 ## Capability checks
 

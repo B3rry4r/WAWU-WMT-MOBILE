@@ -5,7 +5,7 @@ import { Icon, MISSING, VerifiedTick, brands, icons, type IconName } from '../in
 describe('Icon', () => {
   it('has every icon the canvas names', () => {
     expect(Object.keys(icons).length).toBeGreaterThan(150);
-    expect(Object.keys(brands)).toEqual(['Facebook', 'Instagram']);
+    expect(Object.keys(brands)).toEqual(['Facebook', 'Instagram', 'Threads', 'TikTok', 'XTwitter', 'YouTube']);
     expect(MISSING).toEqual([]);
   });
 

@@ -1,19 +1,35 @@
 ---
 id: SCHOOLS-11
 title: Pay schools their share of course fees
-owner: DEV3
+owner: YOU
 area: SCHOOLS
 order: 146
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [SCHOOLS-07, WALLET-09]
 decisions: [R-12, R-10, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # SCHOOLS-11 · Pay schools their share of course fees
+
+## Current state
+
+As of 17 Oct 2026.
+- **Status:** merging (lead). Checked by an independent verifier (verdict merge after round 2); stacked in batch 10 by MERGE-10 (backend B2 `be8d9cb`, migration `20261025131000_school_settlement` kept, no stamp clash in this batch). Its lows are in SWEEP-MONEY. Backend `wmt/B2` (from `origin/wmt/MERGE-7` 432f017), SCHOOLS-11 at 9b41f13 on top of SCHOOLS-09 (1ba6884); round 2 at be8d9cb. Mobile `wmt/B2` carries the records, the contract copy and the API types only. Migration `20261025131000_school_settlement` (`CourseIntake.cancelledAt`, tables `SchoolPayee` and `SchoolSettlement`).
+- **Built** (backend `src/schools/settlement/`): at a class's start (Lagos date, per enrolment) the school's 85% is sent from WAWU's merchant account to its bank account through the seam (`provider.bankTransfer` from `{ kind: 'merchant' }`, reference `wawu-bank-sch-<id>`); a class called off sends the whole fee back to the student's wallet through the hold (`holds.refund`; the charge on the original payment is not returned, R-10). The bank's charge on the payout is WAWU's, from its 15% (R-31). `SchoolPayee` is saved only after the bank's name check confirms the account (`PUT /admin/schools/{id}/payee`, holder's name kept, a miss saves nothing). Dashboard routes for finance and the superadmin: payee get and put, `GET /admin/school-settlements`, `POST /admin/school-intakes/{id}/cancel`, `POST /admin/school-enrolments/{id}/refund`.
+- **One decision per enrolment:** `SchoolSettlement.enrolmentId` is unique and decisions run under a lock on the enrolment. A payout not yet handed to the provider can become a refund; one handed over cannot (409). A payout is leased (`sentAt`), confirmed only from the provider's record (`reconcileSend`), asked about and never re-sent on an unknown outcome, retried once under `-2` only after the provider's record says failed, and a second failure goes to review with the money held. The ledger `out` row is written `pending` in the transaction that takes the lease and completes as the same row on the provider's confirmation; then the hold is released (no WAWU payee, nothing moves), then the settlement is `paid`.
+- **Attack results (spec `school-settlement.contract.spec.ts`, 21 tests green after round 2):** five parallel sweeps pay three enrolments once each; a failed payout is retried once and never doubles (balance and send count asserted), twice failed goes to review; a lost answer is never re-sent; a refund after the payout is refused with nothing moved; cancel and payout racing leave each fee one way only; school share + WAWU's 15 = fee to the kobo on odd fees (database CHECK too); the ledger's completed payouts equal the stand-in's successful bank sends after each.
+- **Checks:** `tsc --noEmit` 0; eslint 0 on touched files; `wallet-hold-nuvion.contract.spec.ts` (11) still green on the extended stand-in; account purge and export map specs green. Contract additive (five admin routes, nothing changed). CI on 9b41f13: Branch checks run 39040062677, Gates 39040062651 (green), Protected routes 39040062684 (green).
+- **NOT RUN:** a real Nuvion call or sandbox (stood in at the seam, `test/payments/nuvion-seam-standin.ts` gains bank sends); the real adapter's bank send over HTTP in this task's specs (NUV-06's own specs cover it); the app. Nothing Fintava was run.
+- **Defaults I set:** a payout is due on the class's start date (Lagos), as enrolment closes after it; payee rests and review bound are the hold sweep's (1 to 60 minutes, PAYMENT_REVIEW_AFTER_HOURS); a school is paid by bank transfer only (schools are not WAWU users, so there is no wallet path).
+- **Fences touched:** SHARED-CHANGES SCHOOLS-11 #1 (schema, contract, purge map not-a-user row, `AdminSchoolsModule` import).
+- **Round 2 (be8d9cb, fixes the verifier's M1 and two lows):** (1) the ledger now equals the provider's balance for WAWU's account at every moment of a slow payout, a lost answer and a failed one: `pending` row at the lease (same transaction), the provider's own charge replaces the quote on it (`LedgerService.restatePendingCharge`), a payout the provider says failed or the bank returned reverses its row, a send the provider never took reverses it and revives as the same row when taken later, a retry under `-2` has its own row and only one row per settlement is ever live. (2) `GET /admin/school-settlements` is a cursor page (`limit`, `cursor`, `nextCursor`, newest first; a cursor not ours is 400); contract and API types follow. (3) SCHOOLS-09: a report whose token gave no name, email or phone is given up only when the account is really gone (`wawuUserId` null); otherwise the school is told what exists.
+- **Round 2 specs:** `school-settlement.contract.spec.ts` 21 tests (six new in-flight ledger specs fail before and pass after; one cursor page spec); `school-report.contract.spec.ts` 12 (one new, fails before, passes after). tsc 0, eslint 0 on changed files. One existing SCHOOLS-09 spec (`a relay that is down`) can fail under load: it reads `nextAttemptAt` as soon as `attempts` is 1; not changed here.
+- **Next:** the batch 10 pull request. Passes V1, V2, V3, V4, V6, V7, V8, V9.
+- **History:** reports go to tasks/history/SCHOOLS-11.md.
 
 ## Read first
 
@@ -42,13 +58,9 @@ Payouts out of Fintava don't work in the sandbox yet: bank sends and the airtime
 - [ ] After an enrolment, the school's settlement equals the ruled amount and the ledger shows WAWU's share.
 - [ ] V8: a replayed settlement does not pay twice.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SCHOOLS-11.md](history/SCHOOLS-11.md).
 
 ## Owner sign-off
 

@@ -34,6 +34,8 @@ class FakeSocket {
 (globalThis as unknown as { WebSocket: unknown }).WebSocket = FakeSocket;
 
 let unreadTotals: number[] = [];
+/** When set, the whole answer of `GET /inbox/unread`, instead of one made from `unreadTotals`. */
+let unreadAnswer: { total: number; chats: number; paidDms: number; communities: number } | null = null;
 let catchUpAnswers: unknown[] = [];
 const requests: string[] = [];
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -44,7 +46,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     new Response(JSON.stringify({ statusCode: 200, message: 'OK', data }), { status: 200, headers: { 'content-type': 'application/json' } });
   if (url.pathname.endsWith('/inbox/unread')) {
     const total = unreadTotals.length > 1 ? (unreadTotals.shift() as number) : (unreadTotals[0] ?? 0);
-    return body({ total, chats: total, paidDms: 0, communities: 0 });
+    return body(unreadAnswer ?? { total, chats: total, paidDms: 0, communities: 0 });
   }
   if (url.pathname.endsWith('/live/catch-up')) return body(catchUpAnswers.shift() ?? { events: [], cursor: 'x', hasMore: false });
   if (url.pathname.endsWith('/inbox')) return body({ items: [], nextCursor: null });
@@ -55,6 +57,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 const { adoptSession, resetSessionForTests, signOut } = require('@/api/session') as typeof import('@/api/session');
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { setInboxUnread, useInboxUnread } = require('../unread') as typeof import('../unread');
+const { inboxRowRenderers } = require('../rows') as typeof import('../rows');
 
 const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
 const token = `${b64({ alg: 'none' })}.${b64({ sub: 'me', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
@@ -76,10 +79,21 @@ async function connect(cursor = 'c0') {
   return socket;
 }
 
+/** The badge counts the kinds of row the Inbox draws (R-47); each test says which, so none depends on what the app draws today. */
+const appDraws = { community: inboxRowRenderers.community, paid_dm: inboxRowRenderers.paid_dm };
+const drawChats = () => {
+  // The app draws community rows (INBOX-05) and paid questions, a creator's (INBOX-18) and a fan's (INBOX-10); these tests are about the counting rule, so only chats are drawn here.
+  delete inboxRowRenderers.community;
+  delete inboxRowRenderers.paid_dm;
+  inboxRowRenderers.chat = () => <Text>chat row</Text>;
+};
+
 beforeEach(async () => {
+  drawChats();
   FakeSocket.all = [];
   requests.length = 0;
   unreadTotals = [3];
+  unreadAnswer = null;
   catchUpAnswers = [];
   setInboxUnread(0);
   queryClient.clear();
@@ -88,6 +102,9 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  delete inboxRowRenderers.chat;
+  if (appDraws.community) inboxRowRenderers.community = appDraws.community;
+  if (appDraws.paid_dm) inboxRowRenderers.paid_dm = appDraws.paid_dm;
   await rtl.act(async () => signOut());
   rtl.cleanup();
   queryClient.clear();
@@ -163,6 +180,22 @@ describe('the Inbox tab badge', () => {
     await connect('c9');
     await rtl.waitFor(() => expect(requests).toContain('/live/catch-up?cursor=c0&limit=100'));
     await rtl.waitFor(() => expect(shown()).toBe(5), { timeout: 3000 });
+  });
+
+  it('a user whose unread rows are of a kind nobody draws yet sees no badge', async () => {
+    delete inboxRowRenderers.chat;
+    await adoptSession({ accessToken: token, refreshToken: 'r' });
+    await rtl.render(<Badge />);
+    await rtl.waitFor(() => expect(requests).toContain('/inbox/unread'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(shown()).toBe(0);
+  });
+
+  it('counts the unread of a drawn kind and not the Hub total, which also holds rows nobody can see', async () => {
+    unreadAnswer = { total: 9, chats: 2, paidDms: 3, communities: 4 };
+    await adoptSession({ accessToken: token, refreshToken: 'r' });
+    await rtl.render(<Badge />);
+    await rtl.waitFor(() => expect(shown()).toBe(2));
   });
 
   it('shows nothing once the user signs out, and the socket stays closed', async () => {

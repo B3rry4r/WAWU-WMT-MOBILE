@@ -113,7 +113,8 @@ describe('filter chips', () => {
     await render(<Filters />);
     const chip = flat(screen.getByRole('radio', { name: 'Money in' }).props.style);
     expect(chip.height).toBe(36);
-    expect(chip.paddingHorizontal).toBe(15);
+    // FIX-14 R1: the canvas draws the outline inside the 15, so the padding is 15 less the border.
+    expect(Number(chip.paddingHorizontal) + Number(chip.borderWidth)).toBe(15);
     expect(chipMetrics.font).toBe(14);
   });
 });
@@ -169,7 +170,7 @@ describe('segment and sheet shadows', () => {
       />,
     );
     const lift = within(screen.getByRole('tab', { name: 'Today' })).getByTestId('segment-lift', hiddenOk);
-    expect(flat(lift.props.style).boxShadow).toEqual([{ offsetX: 0, offsetY: 1, blurRadius: 3, color: 'rgba(0, 0, 0, 0.08)' }]);
+    expect(flat(lift.props.style).boxShadow).toEqual([{ offsetX: 0, offsetY: 1, blurRadius: 3, spreadDistance: 0, color: 'rgba(0, 0, 0, 0.08)' }]);
     expect(within(screen.getByRole('tab', { name: 'For you' })).queryByTestId('segment-lift', hiddenOk)).toBeNull();
   });
 
@@ -182,7 +183,7 @@ describe('segment and sheet shadows', () => {
     );
     const sheet = flat(screen.getByTestId('sheet').props.style);
     expect(sheet.boxShadow).toEqual([
-      { offsetX: 0, offsetY: -12, blurRadius: 40, color: 'rgba(0, 0, 0, 0.5)' },
+      { offsetX: 0, offsetY: -12, blurRadius: 40, spreadDistance: 0, color: 'rgba(0, 0, 0, 0.5)' },
       // kit.js line 64: the top hairline is `inset 0 1px 0 var(--border-hairline)`, inside the padding.
       { offsetX: 0, offsetY: 1, blurRadius: 0, color: (scheme === 'dark' ? darkColors : lightColors).borderHairline, inset: true },
     ]);

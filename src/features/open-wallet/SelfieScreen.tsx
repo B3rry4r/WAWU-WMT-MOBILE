@@ -4,9 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Ellipse } from 'react-native-svg';
+import Svg, { Ellipse, Path } from 'react-native-svg';
 
-import { isApiError } from '@/api/errors';
+import { isApiError, retryAfterOf } from '@/api/errors';
 import { selfieProblem, fetchSelfieMatch } from '@/api/walletIdentity';
 import { Button, IconButton } from '@/components/Button';
 import { Text } from '@/components/Text';
@@ -15,7 +15,6 @@ import { darkColors, lightColors } from '@/theme/tokens.generated';
 
 import { fetchWalletState, OPEN_WALLET_KEY } from './api/account';
 import { checksLeftOf, matchSelfie, openWallet, type OpeningInput } from './api/opening';
-import { waitOf } from './api/check';
 import { addressLine, openingName } from './details';
 import { ticketFor, ticketIsLive, useKeptOpening, type KeepTicket } from './keptCheck';
 import { OpenWalletEnd } from './OpenWalletEnd';
@@ -63,6 +62,9 @@ const NAV_TITLE = 'Selfie';
 const FIT_TITLE = 'Fit your face in the oval';
 /** BRIEF A6: no "Then blink slowly". The match is with the BVN record's photo (contract CONVENTIONS section 8); nothing here is a liveness check. */
 const FIT_LINE = 'It must match your BVN photo.';
+/** The person turned the camera off for this app and the phone will not ask again (not drawn; written in the canvas's tone). */
+const CAMERA_OFF_TITLE = 'Allow your camera';
+const CAMERA_OFF_LINE = "Turn on the camera for this app in your phone's settings, then take your selfie.";
 
 type Note = { title: string; body: string };
 type Ring = 'idle' | 'matched' | 'refused';
@@ -297,7 +299,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
         onClose={close}
         ring="idle"
         testID="open-wallet-selfie-no-camera"
-        words={<Words title="We can't open your camera" line="Taking a selfie isn't available in this version of the app." live />}
+        words={<Words title="We can't open your camera" line="Your phone's camera did not start. Go back and try again." live />}
         foot={<Button label="Go back" variant="white" full onPress={onBack} testID="open-wallet-selfie-back" />}
       />
     );
@@ -305,7 +307,20 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
 
   switch (shown.kind) {
     case 'ready':
-    case 'matching':
+    case 'matching': {
+      // The camera is off for this app: the way back is the phone's settings, offered in place of the capture button.
+      const settings = shown.kind === 'ready' && camera.kind === 'ready' ? camera.settings : undefined;
+      if (settings) {
+        return (
+          <CameraPage
+            onClose={close}
+            ring="idle"
+            testID="open-wallet-selfie"
+            words={<Words title={CAMERA_OFF_TITLE} line={CAMERA_OFF_LINE} live />}
+            foot={<Button label="Open settings" variant="white" full onPress={settings} testID="open-wallet-selfie-settings" />}
+          />
+        );
+      }
       return (
         <CameraPage
           onClose={close}
@@ -318,6 +333,7 @@ function Selfie({ owner, camera, alreadyMatched, opening, onBack, onLeave, onRes
           }
         />
       );
+    }
     case 'not_matched':
       return (
         <CameraPage
@@ -414,7 +430,7 @@ function afterSelfieRefusal(error: unknown): Phase | Restart | 'open' {
     case 'not_matched':
       return { kind: 'not_matched', ...headed(message, NOT_MATCHED_TITLE), checksLeft: checksLeftOf(error) };
     case 'limit': {
-      const wait = waitOf(error);
+      const wait = retryAfterOf(error);
       return { kind: 'limit', message: wait === null ? message : `Try again ${waitPhrase(wait)}.` };
     }
     case 'already_matched':
@@ -429,7 +445,7 @@ function afterSelfieRefusal(error: unknown): Phase | Restart | 'open' {
       break;
   }
   if (isApiError(error) && error.kind === 'network') return { kind: 'ready', note: { title: 'No connection', body: message } };
-  if (isApiError(error) && error.kind === 'rate_limited') return { kind: 'ready', note: { title: 'Too many tries', body: `Try again ${waitPhrase(waitOf(error))}.` } };
+  if (isApiError(error) && error.kind === 'rate_limited') return { kind: 'ready', note: { title: 'Too many tries', body: `Try again ${waitPhrase(retryAfterOf(error))}.` } };
   return { kind: 'ready', note: { title: "We couldn't check your selfie", body: message } };
 }
 
@@ -471,10 +487,24 @@ function CameraPage({ onClose, ring, words, foot, Preview, testID }: { onClose: 
 
 type SelfieCaptureReady = Extract<SelfieCapture, { kind: 'ready' }>;
 
+/**
+ * The page colour over the corners of the camera's rectangle, leaving an
+ * ellipse of `rx` by `ry` open in the middle of a `width` by `height` box: the
+ * live picture shows only inside the oval (the even-odd rule cuts the ellipse
+ * out of the rectangle).
+ */
+export function ovalMask(width: number, height: number, rx: number, ry: number): string {
+  const cx = width / 2;
+  const cy = height / 2;
+  return `M0 0H${width}V${height}H0Z M${cx - rx} ${cy}A${rx} ${ry} 0 1 0 ${cx + rx} ${cy}A${rx} ${ry} 0 1 0 ${cx - rx} ${cy}Z`;
+}
+
 /** The oval the face goes in: the live camera inside it where the platform has one, the ring's colour saying how the match went. */
 function Oval({ ring, Preview }: { ring: Ring; Preview?: SelfieCaptureReady['Preview'] }) {
   const color = ring === 'matched' ? CAMERA.matched : ring === 'refused' ? CAMERA.refused : CAMERA.idle;
   const outer = { width: OVAL.width + 2 * OVAL.ring, height: OVAL.height + 2 * OVAL.ring };
+  const rx = OVAL.width / 2 + OVAL.ring / 2;
+  const ry = OVAL.height / 2 + OVAL.ring / 2;
   return (
     <View testID={`open-wallet-oval-${ring}`} style={outer} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {Preview ? (
@@ -483,11 +513,12 @@ function Oval({ ring, Preview }: { ring: Ring; Preview?: SelfieCaptureReady['Pre
         </View>
       ) : null}
       <Svg width={outer.width} height={outer.height} style={StyleSheet.absoluteFill}>
+        {Preview ? <Path testID="open-wallet-oval-mask" d={ovalMask(outer.width, outer.height, rx, ry)} fill={CAMERA.page} fillRule="evenodd" /> : null}
         <Ellipse
           cx={outer.width / 2}
           cy={outer.height / 2}
-          rx={OVAL.width / 2 + OVAL.ring / 2}
-          ry={OVAL.height / 2 + OVAL.ring / 2}
+          rx={rx}
+          ry={ry}
           fill={Preview ? 'transparent' : CAMERA.frame}
           stroke={color}
           strokeWidth={OVAL.ring}

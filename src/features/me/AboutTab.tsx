@@ -21,7 +21,7 @@ import { readableLink } from './model';
  * 14 under each role but the last, 14.5 at 600 and 13 muted 2 under. Skills: 30 high outlined chips, 12 in,
  * 13 at 600, 6 apart (the chip's ring is a 1 border here, so 11 of the 12 is padding).
  */
-const aboutMetrics = {
+export const aboutMetrics = {
   between: 10,
   padV: 14,
   padH: 16,
@@ -202,7 +202,7 @@ function WebsiteFact({ url, onPress }: { url: string; onPress: () => void }) {
   );
 }
 
-function RoleRow({ role, last }: { role: RoleLine; last: boolean }) {
+export function RoleRow({ role, last }: { role: RoleLine; last: boolean }) {
   const { colors } = useWawu();
   return (
     <View style={styles.role} testID={`me-role-${role.id}`}>
@@ -224,7 +224,7 @@ function RoleRow({ role, last }: { role: RoleLine; last: boolean }) {
   );
 }
 
-function SkillChip({ label }: { label: string }) {
+export function SkillChip({ label }: { label: string }) {
   const { colors } = useWawu();
   return (
     <View style={[styles.chip, { borderColor: colors.borderStrong }]}>

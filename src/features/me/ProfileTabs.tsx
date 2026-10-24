@@ -12,10 +12,15 @@ import { PROFILE_TABS, type ProfileTab } from './model';
  */
 const tabMetrics = { between: 24, fontSize: 15, under: 12, line: 2, hairline: 1, above: 4 } as const;
 
-export type ProfileTabsProps = { value: ProfileTab; onChange: (tab: ProfileTab) => void };
+export type ProfileTabsProps = {
+  value: ProfileTab;
+  onChange: (tab: ProfileTab) => void;
+  /** M33 draws the line under the tab on show in the accent; M1 and M5 draw it in the text colour. */
+  accent?: boolean;
+};
 
 /** Content · Services · About (R-9: no Shop tab). A screen reader hears a tab list and which tab is on. */
-export function ProfileTabs({ value, onChange }: ProfileTabsProps) {
+export function ProfileTabs({ value, onChange, accent }: ProfileTabsProps) {
   const { colors } = useWawu();
   return (
     <View
@@ -24,13 +29,13 @@ export function ProfileTabs({ value, onChange }: ProfileTabsProps) {
       style={[styles.row, { boxShadow: [{ offsetX: 0, offsetY: -tabMetrics.hairline, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] }]}
     >
       {PROFILE_TABS.map((tab) => (
-        <TabWord key={tab.value} label={tab.label} selected={tab.value === value} onPress={() => onChange(tab.value)} testID={`me-tab-${tab.value}`} />
+        <TabWord key={tab.value} label={tab.label} selected={tab.value === value} accent={accent} onPress={() => onChange(tab.value)} testID={`me-tab-${tab.value}`} />
       ))}
     </View>
   );
 }
 
-function TabWord({ label, selected, onPress, testID }: { label: string; selected: boolean; onPress: () => void; testID: string }) {
+function TabWord({ label, selected, accent, onPress, testID }: { label: string; selected: boolean; accent?: boolean; onPress: () => void; testID: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -42,7 +47,7 @@ function TabWord({ label, selected, onPress, testID }: { label: string; selected
       accessibilityLabel={label}
       onPress={onPress}
       {...ring.handlers}
-      style={[styles.tab, { borderBottomColor: selected ? colors.textPrimary : 'transparent' }, ring.style]}
+      style={[styles.tab, { borderBottomColor: selected ? (accent ? colors.accent : colors.textPrimary) : 'transparent' }, ring.style]}
     >
       <Text variant="body" tone={selected ? 'textPrimary' : 'textMuted'} style={styles.label}>
         {label}

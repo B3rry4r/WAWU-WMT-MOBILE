@@ -13,7 +13,7 @@ const placeholderIcon = 28;
 
 export type WorkCoverProps = {
   media: WorkMedia | null;
-  /** Plays the video where the build can (the web build today); a card shows its first frame instead. */
+  /** Plays the video; a card that is not playing shows its first frame. */
   playing?: boolean;
   onEnded?: () => void;
   testID?: string;
@@ -21,7 +21,7 @@ export type WorkCoverProps = {
 
 /**
  * What fills a work's picture frame: its photo, the first frame of its video where this build can play one,
- * or a quiet block (with the kind of file it holds) where it cannot, and where a picture fails to load. The frame's size and corners belong to the
+ * or a quiet block (with the kind of file it holds) where the build cannot play one, and where a picture fails to load. The frame's size and corners belong to the
  * parent, which clips this to them.
  */
 export function WorkCover({ media, playing = false, onEnded, testID }: WorkCoverProps) {

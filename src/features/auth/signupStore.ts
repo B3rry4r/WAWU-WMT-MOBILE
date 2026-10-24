@@ -2,7 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 /**
- * The sign-up that is waiting for its texted code: the phone WAWU ID stored
+ * The sign-up that is waiting for its code (texted by default, mailed when WAWU
+ * ID's `SIGNUP_VERIFY_CHANNEL` is `email`, AUTH-07): the phone WAWU ID stored
  * and the `attempt` secret `POST /auth/signup` returned (SHARED-CHANGES
  * AUTH-05 F1). Both live in the secure store, so quitting the app between A3 and A4 does
  * not lose them; the `attempt` is never written to a log, a URL or a route
@@ -12,10 +13,16 @@ import { Platform } from 'react-native';
  * Cleared when the code is confirmed, when the server says the sign-up is gone,
  * when a new sign-up starts, and when someone signs in (`clearSignup`).
  */
-export type HeldSignup = { phone: string; attempt: string };
+export type HeldSignup = {
+  phone: string;
+  attempt: string;
+  /** The username chosen on the form (SIGNUP-NAMES, R-82): kept until the code is right, then claimed on the Hub. Not a secret. */
+  username?: string;
+};
 
 export const SIGNUP_PHONE_KEY = 'wawu.signup.phone';
 export const SIGNUP_ATTEMPT_KEY = 'wawu.signup.attempt';
+export const SIGNUP_USERNAME_KEY = 'wawu.signup.username';
 
 const onWeb = Platform.OS === 'web';
 /** The browser build keeps the secret for the tab only (sessionStorage): it survives a reload, not a closed tab, and is not shared with other tabs. */
@@ -35,14 +42,18 @@ async function remove(key: string): Promise<void> {
 }
 
 export async function saveSignup(held: HeldSignup): Promise<void> {
-  await Promise.all([write(SIGNUP_PHONE_KEY, held.phone), write(SIGNUP_ATTEMPT_KEY, held.attempt)]);
+  await Promise.all([
+    write(SIGNUP_PHONE_KEY, held.phone),
+    write(SIGNUP_ATTEMPT_KEY, held.attempt),
+    held.username ? write(SIGNUP_USERNAME_KEY, held.username) : remove(SIGNUP_USERNAME_KEY),
+  ]);
   memory = held;
 }
 
 export async function loadSignup(): Promise<HeldSignup | null> {
   try {
-    const [phone, attempt] = await Promise.all([read(SIGNUP_PHONE_KEY), read(SIGNUP_ATTEMPT_KEY)]);
-    memory = phone && attempt ? { phone, attempt } : null;
+    const [phone, attempt, username] = await Promise.all([read(SIGNUP_PHONE_KEY), read(SIGNUP_ATTEMPT_KEY), read(SIGNUP_USERNAME_KEY)]);
+    memory = phone && attempt ? { phone, attempt, ...(username ? { username } : {}) } : null;
   } catch {
     memory = null;
   }
@@ -53,7 +64,7 @@ export async function clearSignup(): Promise<void> {
   memory = null;
   startedState = null;
   try {
-    await Promise.all([remove(SIGNUP_PHONE_KEY), remove(SIGNUP_ATTEMPT_KEY)]);
+    await Promise.all([remove(SIGNUP_PHONE_KEY), remove(SIGNUP_ATTEMPT_KEY), remove(SIGNUP_USERNAME_KEY)]);
   } catch {
     // The vault refused: the memory copy is already gone, and the next start's resume call ends a sign-up the server no longer holds.
   }
@@ -61,14 +72,29 @@ export async function clearSignup(): Promise<void> {
 
 let memory: HeldSignup | null = null;
 
-/** What the code screen needs besides the secret: the server's figures at the moment it answered. */
-export type StartedState = { emailCodeRequired: boolean; resendIn: number; expiresIn: number; at: number };
+/**
+ * Where the sign-up's code went (WAWU ID's `channel`): an email address (SIGNUP_VERIFY_CHANNEL=email) or a text message
+ * (the default). `sms` is the texted code: WAWU ID's answer then carries no `channel` field.
+ */
+export type CodeChannel = 'email' | 'sms';
+
+/** What the code screen needs besides the secret: the server's figures at the moment it answered, and where the code went (`maskedEmail` is WAWU ID's own mask, n•••@example.com). */
+export type StartedState = {
+  channel: CodeChannel;
+  maskedEmail: string | null;
+  /** A mailed sign-up that was made without the number typed, because another account holds it (A4 says so). */
+  phoneNotSaved: boolean;
+  emailCodeRequired: boolean;
+  resendIn: number;
+  expiresIn: number;
+  at: number;
+};
 let startedState: StartedState | null = null;
 
 export function heldSignup(): HeldSignup | null {
   return memory;
 }
-export function setStarted(next: { emailCodeRequired: boolean; resendIn: number; expiresIn: number }) {
+export function setStarted(next: Omit<StartedState, 'at'>) {
   startedState = { ...next, at: Date.now() };
 }
 export function started(): StartedState | null {

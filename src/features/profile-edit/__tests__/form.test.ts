@@ -39,6 +39,7 @@ const fields: ProfileFields = {
   threadsHandle: null,
   socialOrder: ['tiktok', 'instagram'],
   memberSince: '2026-10-04T00:00:00.000Z',
+  badge: null,
 };
 
 describe('M8 form from the profile', () => {
@@ -75,7 +76,16 @@ describe('what Save sends', () => {
 
   it('sends only the fields that changed, to the route that holds each', () => {
     const form = { ...base, bio: 'New bio', location: 'Abuja', handle: 'lennox_e' };
-    expect(changesOf(form, base)).toEqual({ profile: { bio: 'New bio', handle: 'lennox_e' }, fields: { location: 'Abuja' } });
+    // The username is not in the PATCH body: it goes to its own route (SIGNUP-NAMES round 3, M2).
+    expect(changesOf(form, base)).toEqual({ handle: 'lennox_e', profile: { bio: 'New bio' }, fields: { location: 'Abuja' } });
+  });
+
+  it('never sends the username with the profile, and never sends an emptied one', () => {
+    expect(changesOf({ ...base, handle: 'lennox_e' }, base)).toEqual({ handle: 'lennox_e', profile: null, fields: null });
+    expect(changesOf({ ...base, handle: '' }, base)).toEqual({ profile: null, fields: null });
+    expect(isDirty({ ...base, handle: '' }, base)).toBe(true);
+    expect(isDirty({ ...base, handle: 'lennox_e' }, base)).toBe(true);
+    expect(changesOf({ ...base, handle: 'lennox_e', bio: 'x' }, base).profile).toEqual({ bio: 'x' });
   });
 
   it('splits one name into first, middle and last', () => {
@@ -117,6 +127,23 @@ describe('what Save sends', () => {
     const after = rebased(base, form, 'profile');
     expect(changesOf(form, after)).toEqual({ profile: null, fields: { location: 'Abuja' } });
     expect(changesOf(form, rebased(after, form, 'fields'))).toEqual({ profile: null, fields: null });
+  });
+});
+
+describe('a save of three parts', () => {
+  const base = formFrom(me, fields);
+
+  it('after the username reached the Hub, a retry sends only the rest', () => {
+    const form = { ...base, handle: 'lennox_e', bio: 'New bio', location: 'Abuja' };
+    const after = rebased(base, form, 'handle');
+    expect(after.handle).toBe('lennox_e');
+    expect(after.bio).toBe(base.bio);
+    expect(changesOf(form, after)).toEqual({ profile: { bio: 'New bio' }, fields: { location: 'Abuja' } });
+  });
+
+  it('the profile part never moves the saved username', () => {
+    const form = { ...base, handle: 'lennox_e', bio: 'New bio' };
+    expect(rebased(base, form, 'profile').handle).toBe(base.handle);
   });
 });
 

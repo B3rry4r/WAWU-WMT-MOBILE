@@ -33,7 +33,8 @@ ask for one; don't pick work yourself.
 8. Every blocker names the fact that unblocks it. Adding something also
    removes what it replaces.
 9. Report what ran and what didn't. NOT RUN is a valid result; leaving it out
-   is not. The task file on the branch IS the report: NOT RUN items, owner
+   is not. The task file on the branch IS the report (its Current state, and
+   the rounds in `tasks/history/<ID>.md`): NOT RUN items, owner
    questions and findings go there and nowhere else. Never address the owner
    in chat or in a hand-back; the lead reads every branch and carries owner
    asks to the progress page.
@@ -48,6 +49,8 @@ ask for one; don't pick work yourself.
   `SHARED-CHANGES.md`.
 - The app is "Who Made This" (R-37). Its logo is drawn only with
   `<BrandMark>`; the canvas's WAWU logo images are never used.
+- Show only what is built (R-47): an entry whose screen is not built yet is not drawn; the task that
+  builds that screen adds it, as drawn.
 - No em-dashes in anything a user reads. No "Flutterwave" in the app. Links
   are written `wawu/...`. WAWU Credits are a count, never naira.
 - Never `git stash`, `git reset --hard`, `git checkout -- .`, or force-push.

@@ -1,6 +1,7 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { font, space } from '@/theme';
+import { createButtonMetrics } from '@/components/CreateButton';
+import { canvasNormalLineHeight, font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 /**
@@ -14,14 +15,23 @@ const metricsBase = {
   headTop: 6,
   headBottom: 14,
   headRow: 40,
+  /** `todayHead`'s buttons: the search and the bell are 40 round, `gap:8px`; the tab row keeps at least 8 clear of them (HOME-18). */
+  barButton: 40,
+  barButtonsApart: space.sm,
+  barClear: space.sm,
   /** `body(...)` on Today: 8 above the first card, 20 between parts, 20 at the sides. */
   bodyTop: 8,
   between: 20,
   bodyBottom: 32,
+  /**
+   * A creator's body ends higher: the Create button sits `createButtonMetrics.bottom` above the screen's foot and is 58 across, so the last
+   * row ends that far, and 16 more, above it, which keeps a card's Follow clear of the button at the end of the scroll (HOME-18).
+   */
+  bodyBottomCreator: createButtonMetrics.bottom + createButtonMetrics.size + space.lg,
   /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row (the shared fitted figure keeps 10 of it itself). */
   moneyPadTop: 18,
   moneyPadX: 18,
-  moneyPadBottom: 18,
+  moneyPadBottom: 16,
   figureTop: 14,
   figure: 38,
   /** The Naira chip: 30 high, `padding:0 10px 0 4px`, `gap:6px`, the flag 22, the words 13 at 600. */
@@ -31,6 +41,20 @@ const metricsBase = {
   chipGap: 6,
   flag: 22,
   chipWords: 13,
+  /**
+   * `balanceCard`'s action row (Send, Add, Scan): the figure's `margin:14px 0 18px` leaves 18 under it, then each
+   * action is a 64 column holding a 48 circle (the glass colour; the first, Send, is the accent), a 20 icon at 2.2, 6, and
+   * the word at 12 semi-bold at 85%. Only Send is built (no Bills: bills are off, R-52); the others are added by their tasks (R-41), and the
+   * present actions pack from the left as the services row's tiles do (U-H1).
+   */
+  actionsTop: 18,
+  actionWidth: 64,
+  action: 48,
+  actionIcon: 20,
+  actionStroke: 2.2,
+  actionGap: 6,
+  actionWord: 12,
+  actionWordFaint: 0.85,
   /** A wallet answer in place of the figure: words 15, then the button 14 under them. */
   noticeTop: 12,
   noticeGap: 14,
@@ -64,8 +88,8 @@ const metricsBase = {
   cardTick: 13,
   /**
    * `todayLoading` (H11): the heading 70% by 20 at 8, the cards 146 by 196. Its money card (203)
-   * and TGIF bar (64) are drawn for a card with Send, Add, Bills and Scan and a shorter TGIF row;
-   * "skeletons match the real layout" (H11's note), so here they take the built cards' heights.
+   * is drawn for a card with Send, Add and Scan; "skeletons match the real layout" (H11's note), so here
+   * it takes the built card's height. Today has no TGIF card (R-59, DV2-RM), so no TGIF bar is drawn.
    */
   skeletonHeading: 20,
   skeletonHeadingCorner: 8,
@@ -73,8 +97,17 @@ const metricsBase = {
 
 export const todayMetrics = {
   ...metricsBase,
-  /** The built money card's height with a figure: its padding, the chip row and the figure. */
-  skeletonMoney: metricsBase.moneyPadTop + metricsBase.chipHeight + metricsBase.figureTop + metricsBase.figure + metricsBase.moneyPadBottom,
+  /** The built money card's height with a figure: its padding, the chip row, the figure and the action row. */
+  skeletonMoney:
+    metricsBase.moneyPadTop +
+    metricsBase.chipHeight +
+    metricsBase.figureTop +
+    metricsBase.figure +
+    metricsBase.actionsTop +
+    metricsBase.action +
+    metricsBase.actionGap +
+    canvasNormalLineHeight(metricsBase.actionWord) +
+    metricsBase.moneyPadBottom,
 } as const;
 
 /** White at a strength: the canvas's Naira chip (12%) over the money card. */
@@ -104,6 +137,7 @@ export const todayWords = StyleSheet.create({
   tgifTitle: type(todayMetrics.tgifTitle, 700, { letterSpacing: todayMetrics.tgifTitle * todayMetrics.tgifTitleTracking }),
   tgifMeta: type(todayMetrics.tgifMeta, 400, { opacity: todayMetrics.tgifMetaFaint }),
   tgifProblem: type(todayMetrics.tgifMeta, 600),
+  action: type(todayMetrics.actionWord, 600, { lineHeight: canvasNormalLineHeight(todayMetrics.actionWord), opacity: todayMetrics.actionWordFaint }),
 });
 
 /** The page's side gutter, as every body on the canvas has it. */

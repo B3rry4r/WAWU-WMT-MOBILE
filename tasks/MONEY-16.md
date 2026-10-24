@@ -5,15 +5,19 @@ owner: YOU
 area: MONEY
 order: 100
 priority: launch
-repo: wawu-backend
+repo: wawu-backend, wawu-id
 type: money-path
-status: todo
+status: done
 depends_on: [MONEY-10, MONEY-11, MONEY-17, MONEY-18]
 decisions: [R-10, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # MONEY-16 · Nightly check against Fintava
+
+## Current state
+
+live: nightly check against Fintava, backend PR #133 (22bb2cc), deploy run 38903733016; WAWU ID PR #15 (7869c95).
 
 ## Read first
 
@@ -48,13 +52,9 @@ Compare against `GET /txn?customerId=` per customer, `GET /txn/merchant` for WAW
 - [ ] A hold that is not in the ledger is reported.
 - [ ] A transfer whose merchant charge didn't land in WAWU's wallet is reported.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/MONEY-16.md](history/MONEY-16.md).
 
 ## Owner sign-off
 

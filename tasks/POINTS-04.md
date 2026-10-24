@@ -7,13 +7,17 @@ order: 214
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [POINTS-01, TIER-01, MONEY-18]
 decisions: [R-43, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # POINTS-04 · Convert points to cash
+
+## Current state
+
+live: convert points to cash, backend PR #137 (3797fb2), batch 2 with WALLET-10 and FIX-20.
 
 ## Read first
 
@@ -36,6 +40,13 @@ spending on AI is worth more). Below the minimum, they are told so and nothing c
 - `GET /points/convert/quote` and `POST /points/convert` (points, PIN, Idempotency-Key): consumes lots soonest-expiring first; pays the cash from WAWU's operational account into the person's wallet in their currency through MONEY-18's release path (purpose `points_cash_out`); WAWU pays the provider's charge on it (R-31).
 - Default (agent), owner may override: points from any source convert; the minimum is config's (TIER-01).
 
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Never time out a `cash_out` hold while the payout's outcome is unknown:** reconcile with the provider first, then commit or release. An unknown outcome is reconciled, never released blindly.
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
+
 ## Capability checks
 
 - [ ] A person converts points at the config rate: the points leave the soonest-expiring lots once and the cash lands in their wallet once.
@@ -44,8 +55,8 @@ spending on AI is worth more). Below the minimum, they are told so and nothing c
 - [ ] A person without a wallet gets `no_wallet` and keeps their points.
 - [ ] The cash leaves WAWU's operational account, and the ledger shows it as WAWU's movement.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-04.md](history/POINTS-04.md).
 
 ## Owner sign-off

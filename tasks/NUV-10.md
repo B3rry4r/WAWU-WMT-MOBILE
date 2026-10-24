@@ -8,12 +8,19 @@ priority: launch
 repo: wawu-backend
 type: ops
 status: todo
-depends_on: [NUV-01, NUV-02, NUV-03, NUV-04, NUV-05, NUV-06, NUV-07, NUV-08, NUV-09]
+depends_on: [NUV-01, NUV-02, NUV-03, NUV-04, NUV-05, NUV-06, NUV-07, NUV-08]
 decisions: [R-39, R-42, R-25]
 passes: []
 artboards: []
 ---
 # NUV-10 · Nuvion on the production backend: live key, webhook, operational account, fees and limits
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): NUV-06 and NUV-08 (NUV-09 is after launch, R-16, R-64, R-65, so it is not a dependency).
+- **History:** none yet. Reports go to tasks/history/NUV-10.md.
 
 ## Read first
 
@@ -43,7 +50,7 @@ fees and limits.
 
 ## Capability checks
 
-- [ ] Every (key) check in NUV-01 to NUV-09 has been run against the sandbox and recorded in its task file.
+- [ ] Every (key) check in NUV-01 to NUV-09 has been run against the sandbox and recorded in its task file. Partial, 23 Oct 2026 (NUV-KEYS): 13 passed, 4 failed, 2 need the server on dev keys, 13 not run (docs/nuvion/DEV-RESULTS.md); the dev webhook endpoint is `blacklisted` and the live server answered 401. Not ticked.
 - [ ] Every fee and limit setting is filled from Nuvion's written answer, cited in this file.
 - [ ] The production webhook is registered, and a `POST /webhook-tests` delivery is stored once on the droplet.
 - [ ] Rollback rehearsed on the droplet: `WALLET_PROVIDER=fintava` and a restart boots, health 200, and no Nuvion row is touched.

@@ -7,13 +7,21 @@ order: 137
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [MONEY-17, WALLET-15, SETTINGS-04]
 decisions: [R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # WALLET-07 · Send money to a WAWU user
+
+## Current state
+
+live: send money to a WAWU user, backend PR #135 (43a923a), deploy run 38909832332.
+
+## Lead note (11 Oct 2026): from MONEY-19's verification
+
+- A send this task builds that the wallet cannot cover must answer MONEY-19's `402 insufficient_funds` with `balanceKobo`, `totalKobo` and `shortfallKobo` (G-481); today `walletProviderErrorToHttp('insufficient_funds')` builds a 402 with no figures.
 
 ## Read first
 
@@ -39,13 +47,9 @@ Transfer between two Fintava accounts with a note, PIN and Idempotency-Key; a re
 - [ ] A user with ₦10,000 sends ₦2,000 to @amaka: their balance drops by ₦2,033.25 (₦2,000 + Fintava's ₦23.25 + WAWU's ₦10, the quoted total); Amaka's rises by exactly ₦2,000.
 - [ ] Sending to a blocked user is refused.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WALLET-07.md](history/WALLET-07.md).
 
 ## Owner sign-off
 

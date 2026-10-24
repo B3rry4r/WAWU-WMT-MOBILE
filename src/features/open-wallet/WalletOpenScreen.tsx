@@ -127,7 +127,6 @@ function AccountOpened({ wallet, onCreatePin, onDone }: { wallet: OpenedWallet; 
       message={account.bankName}
       // A PIN set before (BACKEND_GAPS G-41) has nothing to create: the flow ends here.
       actionLabel={wallet.pinIsSet ? 'Done' : 'Create your transaction PIN'}
-      actionIcon={wallet.pinIsSet ? undefined : 'ArrowRight'}
       onAction={wallet.pinIsSet ? onDone : onCreatePin}
       top={A8.top}
       between={A8.between}

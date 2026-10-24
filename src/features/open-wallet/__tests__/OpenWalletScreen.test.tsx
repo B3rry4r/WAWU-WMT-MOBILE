@@ -2,12 +2,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-// The first test in this file also pays for loading the screen's modules,
-// which took over 5 s (jest's default) on a loaded machine in 4 runs of
-// 3 Oct. A longer limit keeps that cold start from failing a correct test.
-jest.setTimeout(20000);
 
 const mockVault = new Map<string, string>();
 const mockStored: string[] = [];
@@ -90,6 +86,21 @@ function serve(extra: Record<string, Answer> = {}) {
 
 installFetch();
 
+/*
+ * The first test in this file used to pay for loading the screen's modules and React Native's components (loaded on
+ * first use, by babel-preset-expo's lazy imports) and for the renderer's own start: 25 s on a cold transform cache,
+ * which is what a fresh checkout has, against a test's 20 s. They load here, with the fetch in place, where no timeout
+ * applies, and the first render of anything is paid in a hook with a budget of its own.
+ */
+const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
+const kept = require('../keptCheck') as typeof import('../keptCheck');
+void [ActivityIndicator, Animated, Image, Pressable, ScrollView, NativeText, TextInput, View];
+
+beforeAll(async () => {
+  const warm = await rtl.render(<View />);
+  warm.unmount();
+});
+
 const clients: QueryClient[] = [];
 
 /** A token shaped as WAWU ID's: only its `sub` claim is read by the app. */
@@ -105,8 +116,6 @@ const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: fa
  * the app has one cache for every account that signs in on the phone.
  */
 async function boot(shared?: QueryClient) {
-  const { OpenWalletScreen } = require('../OpenWalletScreen') as typeof import('../OpenWalletScreen');
-  const kept = require('../keptCheck') as typeof import('../keptCheck');
   const onClose = jest.fn();
   const onContinue = jest.fn();
   // No garbage-collection timer: a cache timer left running keeps jest from exiting.
@@ -161,7 +170,7 @@ beforeEach(() => {
   mockVault.set('wawu.session.access', tokenFor(OWNER));
   mockVault.set('wawu.session.refresh', 'refresh-1');
   serve();
-  (require('../keptCheck') as typeof import('../keptCheck')).forgetKeptCheck();
+  kept.forgetKeptCheck();
   (require('@/api/session') as typeof import('@/api/session')).resetSessionForTests();
 });
 
@@ -175,7 +184,7 @@ afterEach(async () => {
 });
 
 describe('A26 · Open your wallet: BVN and NIN', () => {
-  it('a user sees a loading view first, then their account phone as A3 draws it, and empty BVN and NIN fields', async () => {
+  it('a user sees a loading view first, then A31 as drawn: "Complete your account" and "1 of 4", the hints, the lock line, empty BVN and NIN fields and no phone field', async () => {
     routes['GET /money/wallet'] = ['hold'];
     let app = await boot();
     expect(app.screen.getByTestId('open-wallet-loading')).toBeTruthy();
@@ -183,10 +192,16 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
 
     routes = {};
     app = await boot();
-    const phone = await app.screen.findByTestId('open-wallet-phone');
-    expect(phone.props.value).toBe('0803 123 4412');
-    expect(phone.props.readOnly).toBe(true);
-    expect(app.screen.getByText('Must be the number on your BVN')).toBeTruthy();
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
+    expect(app.screen.getByText('Complete your account')).toBeTruthy();
+    expect(app.screen.getByTestId('auth-step').props.children).toBe('1 of 4');
+    expect(app.screen.getByText('Verify your identity')).toBeTruthy();
+    expect(app.screen.getByText('Needed for your account number. Your phone number must match your BVN record.')).toBeTruthy();
+    expect(app.screen.getByText('Dial *565*0# to get it')).toBeTruthy();
+    expect(app.screen.getByText('Dial *346# to get it')).toBeTruthy();
+    expect(app.screen.getByText('Never shown on your profile.')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-phone')).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-no-bvn')).toBeNull();
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('');
     expect(app.screen.getByTestId('open-wallet-nin').props.value).toBe('');
   });
@@ -239,22 +254,35 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.onContinue).not.toHaveBeenCalled();
   });
 
-  it('A14: a user whose BVN is registered to another phone sees the server’s sentence on the phone, can correct the number and continue', async () => {
+  it('A14: a user whose BVN is registered to another phone sees the board’s banner over the form, can correct the number and continue', async () => {
     routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 }), ok({ identity: passedIdentity, prefill, checkHandle: HANDLE })];
     const app = await boot();
     await typeNumbers(app, '22190000222');
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
 
-    expect(await app.screen.findByText(A14)).toBeTruthy();
-    expect(app.screen.getByTestId('open-wallet-phone').props.accessibilityHint).toBe(A14);
+    expect(await app.screen.findByTestId('open-wallet-phone-mismatch')).toBeTruthy();
+    expect(app.screen.getByText("Your phone doesn't match your BVN record")).toBeTruthy();
+    expect(app.screen.getByText('Use the number on your BVN, or update it with your bank.')).toBeTruthy();
     expect(app.screen.getByTestId('open-wallet-bvn').props.value).toBe('2219 0000 222');
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
 
     await typeInto(app.screen.getByTestId('open-wallet-bvn'), BVN);
-    expect(app.screen.queryByText(A14)).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet-phone-mismatch')).toBeNull();
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
     expect(await app.screen.findByTestId('open-wallet-confirmed')).toBeTruthy();
     expect(checksSent().map((s) => JSON.parse(s.body).bvn)).toEqual(['22190000222', BVN]);
+  });
+
+  it('DV2-05: under A14 the BVN field draws its own hint as its error line (red, with the alert), as the board does, and edits take it back to a plain hint', async () => {
+    routes['POST /money/identity/bvn'] = [refusal(422, 'bvn_phone_mismatch', A14, { checksLeft: 2 })];
+    const app = await boot();
+    await typeNumbers(app, '22190000222');
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBeUndefined();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
+    await app.screen.findByTestId('open-wallet-phone-mismatch');
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBe('alert');
+    await typeInto(app.screen.getByTestId('open-wallet-bvn'), BVN);
+    expect(app.screen.getByText('Dial *565*0# to get it').props.accessibilityRole).toBeUndefined();
   });
 
   it('a user whose BVN is not found sees the server’s sentence under the BVN', async () => {
@@ -267,24 +295,18 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(app.screen.getByTestId('open-wallet-bvn').props.accessibilityHint).toBe(said);
   });
 
-  it('a user without a Nigerian BVN reaches a clear "Not available yet" end, from the link or from the server, not an error', async () => {
-    let app = await boot();
-    await app.fireEvent.press(await app.screen.findByTestId('open-wallet-no-bvn'));
-    expect(app.screen.getByTestId('open-wallet-not-available')).toBeTruthy();
-    expect(app.screen.getByText('Not available yet')).toBeTruthy();
-    expect(checksSent()).toHaveLength(0);
-    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
-    expect(app.onClose).toHaveBeenCalledTimes(1);
-    await app.screen.unmount();
-
+  it('a user without a Nigerian phone number reaches a clear "Not available yet" end from the server, not an error (A31 draws no link for it)', async () => {
     const said = 'A Naira wallet needs a Nigerian phone number on your account.';
     routes['POST /money/identity/bvn'] = [refusal(422, 'phone_not_nigerian', said)];
-    app = await boot();
+    const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
     expect(await app.screen.findByTestId('open-wallet-not-available')).toBeTruthy();
     expect(app.screen.getByText(new RegExp(said))).toBeTruthy();
+    expect(app.screen.getByText('Not available yet')).toBeTruthy();
     expect(app.screen.queryByRole('alert')).toBeNull();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-end-action'));
+    expect(app.onClose).toHaveBeenCalledTimes(1);
   });
 
   it('a user who has used today’s checks, or whose check could not run, is told so above the form and keeps what they typed', async () => {
@@ -351,7 +373,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     expect(await app.screen.findByTestId('open-wallet-error')).toBeTruthy();
     expect(app.screen.getByText('No connection. Check your internet and try again.')).toBeTruthy();
     await app.fireEvent.press(app.screen.getByText('Try again'));
-    expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
   });
 
   it('a user who pastes a BVN or NIN with spaces, dashes or dots round the digits keeps all 11 digits', async () => {
@@ -422,7 +444,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     serve({ 'GET /money/identity': ok(passedIdentity) });
     kept.keepCheck(kept.ticketFor(OWNER), { identity: { ...passedIdentity, bvn: { last4: '9999', verifiedAt: '2026-10-02T10:00:00.000Z' } }, prefill, checkHandle: HANDLE });
     let app = await boot();
-    expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
     await app.screen.unmount();
 
@@ -504,7 +526,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     kept.keepAddress(kept.ticketFor(OWNER), { street: '14 Admiralty Way', city: 'Lekki', state: 'Lagos' });
     kept.expireKeptCheck(null);
     const app = await boot();
-    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.findByTestId('open-wallet-bvn');
     expect(app.screen.queryByTestId('open-wallet-check-again')).toBeNull();
     // Kept for this account across A26's mount; gone when A26 goes.
     expect(app.kept.readAddress(OWNER)).not.toBeNull();
@@ -523,7 +545,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
 
     app.kept.keepCheck(app.kept.ticketFor('someone-else'), { identity: passedIdentity, prefill, checkHandle: HANDLE });
     app = await boot();
-    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.findByTestId('open-wallet-bvn');
     expect(app.kept.readKeptCheck('someone-else')).toBeNull();
   });
 
@@ -551,7 +573,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
 
     serve({ 'GET /money/identity': ok(passedIdentity) });
     app = await boot();
-    expect(await app.screen.findByTestId('open-wallet-phone')).toBeTruthy();
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-confirmed')).toBeNull();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
   });
@@ -590,7 +612,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const kept = require('../keptCheck') as typeof import('../keptCheck');
     const ticket = kept.ticketFor(OWNER);
     const app = await boot();
-    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.findByTestId('open-wallet-bvn');
     await app.screen.unmount();
     expect(kept.keepCheck(ticket, { identity: passedIdentity, prefill, checkHandle: HANDLE })).toBe(false);
     expect(kept.readKeptCheck(OWNER)).toBeNull();
@@ -631,7 +653,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     routes['GET /money/wallet'] = [{ gate: walletGate, then: { status: 200, body: { statusCode: 200, message: 'OK', data: { state: 'not_open' } } } }];
     app = await boot(shared);
     expect(app.screen.getByTestId('open-wallet-loading')).toBeTruthy();
-    expect(app.screen.queryByDisplayValue('0803 123 4412')).toBeNull();
+    expect(app.screen.queryByTestId('open-wallet')).toBeNull();
     expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
     // B's account answers; B's wallet read is still held: nothing of A's wallet shows meanwhile.
     await app.act(async () => {
@@ -644,7 +666,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
       releaseWallet();
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0809 999 0001');
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-already-open')).toBeNull();
   });
 
@@ -665,7 +687,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     mockVault.set('wawu.session.access', `${part({ alg: 'RS256', typ: 'JWT' })}.${payload}.MEUCIQDx-_sig`);
     serve({ 'GET /users/me': ok({ ...me, wawuUserId: claims.sub, firstName: 'Ngozi', lastName: 'Ọ̀kọ̀' }) });
     const app = await boot();
-    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 123 4412');
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.screen.getByTestId('open-wallet')).toBeTruthy();
   });
 
@@ -682,7 +704,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
 
   it('A26’s reads are dropped when the session ends while it is open', async () => {
     const app = await boot();
-    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.findByTestId('open-wallet-bvn');
     expect(app.client.getQueryCache().findAll({ queryKey: ['open-wallet'] }).length).toBeGreaterThan(0);
     const session = require('@/api/session') as typeof import('@/api/session');
     await app.act(async () => {
@@ -707,7 +729,7 @@ describe('A26 · Open your wallet: BVN and NIN', () => {
     const app = await boot();
     await typeNumbers(app);
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
-    await app.screen.findByText(A14);
+    await app.screen.findByTestId('open-wallet-phone-mismatch');
     await app.fireEvent.press(app.screen.getByTestId('open-wallet-continue'));
     await app.screen.findByTestId('open-wallet-confirmed');
     spies.forEach((spy) => spy.mockRestore());
@@ -836,8 +858,29 @@ describe('the kept BVN details end with the session, on every way it ends (FIX-0
       await session.refreshAccessToken((await session.getAccessToken()) as string);
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
-    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 999 0077');
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.kept.readKeptCheck(OWNER)).toBeNull();
+    await settle(app);
+  });
+
+  it('the numbers one account typed are never shown to the next: B’s BVN and NIN boxes are empty after a switch (KYC-07 L5)', async () => {
+    const app = await boot();
+    await typeNumbers(app);
+    // Control: A's own numbers are on screen before the switch (the box groups the digits).
+    expect(app.screen.getAllByDisplayValue(/^2219/)).not.toHaveLength(0);
+    expect(app.screen.getAllByDisplayValue(/^7019/)).not.toHaveLength(0);
+    const session = require('@/api/session') as typeof import('@/api/session');
+    routes['GET /users/me'] = [ok({ ...me, wawuUserId: B, phone: '+2348039990077' })];
+    routes['POST /auth/refresh'] = [pair(B, 'b')];
+    await app.act(async () => {
+      await session.refreshAccessToken((await session.getAccessToken()) as string);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
+    expect(app.screen.queryAllByDisplayValue(/2219/)).toHaveLength(0);
+    expect(app.screen.queryAllByDisplayValue(/7019/)).toHaveLength(0);
+    expect(app.screen.getByTestId('open-wallet-bvn').props.value ?? '').toBe('');
+    expect(app.screen.getByTestId('open-wallet-nin').props.value ?? '').toBe('');
     await settle(app);
   });
 });
@@ -889,7 +932,7 @@ describe('an answer from an ended session writes nothing, and a gone A26 hears n
       { status: 422, body: { statusCode: 422, message: said, data: null, reason: { code: 'phone_not_nigerian', message: said } } },
       ok({ ...me, wawuUserId: B, phone: '+2348039990088' }),
     );
-    expect((await app.screen.findByTestId('open-wallet-phone')).props.value).toBe('0803 999 0088');
+    expect(await app.screen.findByTestId('open-wallet-bvn')).toBeTruthy();
     expect(app.screen.queryByTestId('open-wallet-not-available')).toBeNull();
     expect(app.screen.queryByText(said)).toBeNull();
     await settle(app);
@@ -899,7 +942,7 @@ describe('an answer from an ended session writes nothing, and a gone A26 hears n
     const { createQueryClient } = require('@/api/query') as typeof import('@/api/query');
     const client = createQueryClient();
     const app = await boot(client);
-    await app.screen.findByTestId('open-wallet-phone');
+    await app.screen.findByTestId('open-wallet-bvn');
     const removeSpy = jest.spyOn(client, 'removeQueries');
     await app.screen.unmount();
     const afterUnmount = removeSpy.mock.calls.length;
@@ -929,7 +972,7 @@ describe('an answer from an ended session writes nothing, and a gone A26 hears n
     try {
       for (let i = 0; i < 20; i += 1) {
         const app = await boot();
-        await app.screen.findByTestId('open-wallet-phone');
+        await app.screen.findByTestId('open-wallet-bvn');
         await app.screen.unmount();
       }
     } finally {

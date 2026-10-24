@@ -3,7 +3,7 @@ id: WALLET-28
 title: Scan to pay and my QR (backend)
 owner: YOU
 area: WALLET
-order: 238
+order: 313
 priority: after-launch
 repo: wawu-backend
 type: money-path
@@ -14,6 +14,13 @@ passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # WALLET-28 · Scan to pay and my QR (backend)
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-07.
+- **History:** none yet. Reports go to tasks/history/WALLET-28.md.
 
 ## Read first
 

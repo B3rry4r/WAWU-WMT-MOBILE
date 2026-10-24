@@ -12,10 +12,23 @@ depends_on: [ADS-06, ADS-05]
 decisions: [R-15]
 passes: [V1, V6, V7, V9]
 artboards: []
+tier: T1
 ---
 # ADS-02 · Admin screens: ads
 
-Taken over by the lead's agents on 8 Oct 2026 (owner: carry on with the tasks of developers who are delaying; Developer 2 had not pushed for 17 hours).
+## Current state
+
+As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B13), dashboard branch `wmt/ADS-02` `0d16895` (wawu-dashboard, on the ADS-02 branch `95e1085`), mobile `wmt/ADS-02` (records). Status verifying; nothing is merged or live.
+
+| # | Before (dashboard `95e1085`, contract at backend `965280e`) | After (contract at backend `8fca5dd`) |
+|---|---|---|
+| 1 | a booking could be saved with no picture | R-59: a picture is required on a new booking and on an edit; the form names "a picture" as missing and the server's 422 is shown in its words |
+| 2 | Schedule and Resume were offered on a booking with no picture | not offered when the server says `needsArtwork`; the Actions card says why and what to do (edit it, or pause it then edit it) |
+| 3 | the Explore slider placement was unknown (a type error against the new contract) | "Explore slider" is a placement with its own label and hint |
+| 4 | no way to find bookings with no picture | a "Picture" filter (`artwork=missing`), a "Needs a picture" badge on the row and the booking page, and a count under the figures (`needingArtwork`) |
+
+Live look (local stack `b13dash`, Hub on backend `8fca5dd`, dashboard production build): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/dash-b13/` `ads-1` to `ads-9` at 1440 px (list empty, create empty, create held for the missing picture, create filled, booking page, edit, list with data, list filtered to "Needs a picture", booking page of a booking with no picture). Nothing else about the task changed: G-332 stands, and the earlier verifier-free state (13 of 13 spec, 7 mutants) is in the builder report below.
+- **Next:** a verifier session.
 
 ## Read first
 
@@ -52,6 +65,10 @@ Built by the lead's agents, 8 Oct 2026. Dashboard branch `wmt/ADS-02` (wawu-dash
 - **Defaults (agent), owner may override:** times are typed in the browser's zone (Lagos for the team) and the UTC instant to be sent is printed under each field; the report's range is picked in UTC days, as the counts are kept; the event picker lists published events (the first page of 100 by latest start), keeps those not over and sorts them soonest first, and a booking's current event stays listed, marked, if it has closed; an edit sends only what changed and is held when nothing has; Schedule and End ask first (on air, final), Pause and Resume are one press (reversible); a new booking is sent with weight 1 unless changed; the tap rate reads "No views yet" with no views, and no per-day rate is computed (the server sends none); the preview draws only what the team types, not the app's fixed words; no Overview tile (ads are not a queue waiting on a person); the contract is pinned to backend commit 965280e so its check is reproducible.
 - **Filed, not done here:** G-332 (the protected list, an owner re-lock). SHARED-CHANGES ADS-02 F1 (19 controls in four other dashboard screens have labels tied to nothing, the pattern this task's first form had) and F2 (`Skeleton` heights passed as `className` do not apply, 34 call sites). G-195 stands: there is no admin upload, so the picture is a link the form checks is https.
 - **NOT RUN:** a card preview with a real picture: no https image host is reachable from this sandbox, so every picture shows "No picture"; unblocked by an https image the browser can load (for example one stored through the admin upload G-195 asks for). The dashboard's own font: Alan Sans from cdn.jsdelivr.net is refused here, so the shots use the fallback; unblocked by the browser reaching that CDN. The app's side of the card: ADS-01 is not built, so the served card was checked through `GET /ads` only; unblocked by ADS-01. Backend gates, protected suite and `npm run api`: not applicable, no backend file changed.
+
+### Round 2 (24 Oct 2026, bundle B13, Sonnet builder, T1)
+
+R-59 and the contract drift since `965280e` (ADS-07 landed: `explore_slider`, `needsArtwork`, the `artwork=missing` filter, `needingArtwork`, a 422 for no picture). Files (dashboard): `scripts/generate-contract-types.mjs` (a `(typeof ARTWORK_FILTERS)[number]` resolution, the global prefix read from `src/hub-app-config.ts` where `setGlobalPrefix` moved), the regenerated contract, `src/lib/api/admin-ads.ts` (the `artwork` filter on the list and the summary), `src/components/ads/AdBadges.tsx`, `AdCampaignForm.tsx`, `AdActionPanel.tsx`, `AdCampaignDetail.tsx`, `src/app/(app)/ads/page.tsx`. Checks: see SCHOOLS-05's report for the bundle's dashboard checks (`npm run check` exit 0, `npm run build` exit 0, `npm test` 6 of 6). The earlier 13-check spec and mutants were not re-run (their harness is under `scratchpad/bad02/`, not part of this bundle); the new states were each reached by their real cause in the browser, and the booking with no picture was made the way R-59 says they exist: saved with a picture, then the picture removed in the database.
 
 ## Verifier report
 

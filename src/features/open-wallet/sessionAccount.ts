@@ -22,6 +22,25 @@ export function accountOfToken(token: string | null): string | null {
   }
 }
 
+/**
+ * The first and last name the access token carries (WAWU ID puts the account's name in it, SIGNUP-NAMES, R-82): what "Confirm
+ * your details" starts with. Null when the token has neither part. Read, never verified.
+ */
+export function namesOfToken(token: string | null): { firstName: string; lastName: string } | null {
+  const json = payloadOf(token);
+  if (json === null) return null;
+  try {
+    const claims: unknown = JSON.parse(json);
+    if (typeof claims !== 'object' || claims === null) return null;
+    const part = (value: unknown) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '');
+    const firstName = part((claims as { firstName?: unknown }).firstName);
+    const lastName = part((claims as { lastName?: unknown }).lastName);
+    return firstName || lastName ? { firstName, lastName } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** base64url: the JWT alphabet, `-` and `_` in place of `+` and `/`, padding optional. */
 const BASE64URL = /^[A-Za-z0-9_-]+={0,2}$/;
 
@@ -45,6 +64,23 @@ function payloadOf(token: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+/** The signed-in account's own name, or null while it is being read or when the account has none. */
+export function useAccountNames(): { firstName: string; lastName: string } | null {
+  const { status } = useSession();
+  const [names, setNames] = useState<{ firstName: string; lastName: string } | null>(null);
+  useEffect(() => {
+    let current = true;
+    if (status !== 'signedIn') return undefined;
+    void getAccessToken().then((token) => {
+      if (current) setNames(namesOfToken(token));
+    });
+    return () => {
+      current = false;
+    };
+  }, [status]);
+  return status === 'signedIn' ? names : null;
 }
 
 /**

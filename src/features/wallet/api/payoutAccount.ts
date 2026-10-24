@@ -146,3 +146,22 @@ export function failureMessage(error: unknown): string {
 export function isUnconfirmedAccount(error: unknown): boolean {
   return isApiError(error) && error.code === 'name_check_failed';
 }
+
+/** The wait ahead after a refusal for the hour's name check limit, in seconds; null for any other error. */
+export function nameCheckWait(error: unknown): number | null {
+  if (!isApiError(error) || error.code !== 'name_check_rate_limited') return null;
+  // The Hub always names it; if it ever does not, the shortest wait it names is one minute.
+  return typeof error.retryAfterSeconds === 'number' && error.retryAfterSeconds > 0 ? error.retryAfterSeconds : 60;
+}
+
+/**
+ * A refusal the person fixes by changing the account, read on the account number field (R-51, WALLET-37):
+ * - 422 `name_check_failed`: the bank did not confirm the account;
+ * - 409 `account_not_in_your_name`: the account is not in the name on their wallet (the sentence names both);
+ * - 429 `name_check_rate_limited`: too many name checks this hour (the sentence gives the minutes left; the form
+ *   opens again when that wait has passed, `nameCheckWait`).
+ * Each carries its own sentence written for people, so the screen shows `message` as it is.
+ */
+export function isRefusedAccount(error: unknown): boolean {
+  return isUnconfirmedAccount(error) || (isApiError(error) && (error.code === 'account_not_in_your_name' || error.code === 'name_check_rate_limited'));
+}

@@ -9,7 +9,7 @@ import { Text } from '@/components/Text';
 import { font, radius, useWawu } from '@/theme';
 
 import { fetchPolicy, policyKey, type Policy, type PolicySlug } from './api';
-import { AboutFrame } from './AboutFrame';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { paragraphsOf, updatedLine } from './format';
 
 /**
@@ -41,7 +41,7 @@ export function PolicyScreen({ slug, onBack, onOpenOther }: PolicyScreenProps) {
   const title = TITLES[slug];
   const offline = isApiError(policy.error) && policy.error.kind === 'network';
   return (
-    <AboutFrame title={title} onBack={onBack} gap={docMetrics.between} testID={`policy-${slug}`}>
+    <ScreenFrame idPrefix="about" title={title} onBack={onBack} gap={docMetrics.between} testID={`policy-${slug}`}>
       {policy.data && policy.data.available ? (
         <Document policy={policy.data} />
       ) : policy.data ? (
@@ -76,7 +76,7 @@ export function PolicyScreen({ slug, onBack, onOpenOther }: PolicyScreenProps) {
       {onOpenOther ? (
         <Button label="Read the privacy policy" variant="secondary" size="md" onPress={onOpenOther} testID="policy-open-privacy" />
       ) : null}
-    </AboutFrame>
+    </ScreenFrame>
   );
 }
 

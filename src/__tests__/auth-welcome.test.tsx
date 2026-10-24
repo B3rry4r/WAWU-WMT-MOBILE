@@ -89,8 +89,27 @@ describe('A1: welcome', () => {
     expect(screen.getByText('Sell your work and answer paid questions.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    expect(screen.getByRole('image', { name: 'Who Made This' })).toBeTruthy();
+    expect(screen.getByRole('image', { name: 'Who Made This?' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it.each(['light', 'dark'] as const)('a user sees the website picture as the cover, under the shade, in the %s theme (BRAND-01)', async (scheme) => {
+    mockScheme = scheme;
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    const cover = native.getByTestId('welcome-cover', { includeHiddenElements: true });
+    expect([cover.props.source].flat()[0]).toEqual(require('../../assets/images/welcome-cover.jpg'));
+    expect(cover.props.contentFit).toBe('cover');
+    const style = StyleSheet.flatten(cover.props.style);
+    expect(style).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 });
+    // The picture is the first thing drawn in the screen, so the shade, the words and the buttons are over it.
+    const root = native.getByTestId('welcome');
+    const layers = [...root.props.children]
+      .flat()
+      .filter(Boolean)
+      .map((child: { props: { testID?: string; colors?: unknown } }) => child.props.testID ?? (child.props.colors ? 'shade' : 'other'))
+      .filter((layer: string) => layer !== 'other');
+    expect(layers.slice(0, 2)).toEqual(['welcome-cover', 'shade']);
   });
 
   it('says nothing that no source backs: no bank claim', async () => {

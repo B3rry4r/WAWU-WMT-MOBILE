@@ -32,7 +32,7 @@ describe('Z3 switch values', () => {
   it('names the app, not WAWU, where it names the sender (R-37), and writes no em-dash', () => {
     const words = JSON.stringify([NOTIFICATION_GROUPS, PRIVACY_GROUPS]);
     expect(words).not.toMatch(/WAWU|—/);
-    expect(words).toContain('From Who Made This');
+    expect(words).toContain('From Who Made This?');
   });
 });
 

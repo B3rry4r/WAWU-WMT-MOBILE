@@ -32,6 +32,7 @@ export function IconTile({ icon, tone = 'neutral', size = 44, strokeWidth = glyp
   const look = tones[tone];
   return (
     <View
+      aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors[look.bg] }]}

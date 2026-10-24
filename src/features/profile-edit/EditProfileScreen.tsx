@@ -9,20 +9,20 @@ import { Icon } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { fieldMetrics } from '@/components/TextField';
+import { TextField, fieldMetrics } from '@/components/TextField';
 import { Toast } from '@/components/Toast';
 import { AuthField } from '@/features/auth/AuthField';
-import { Banner } from '@/features/auth/Banner';
+import { Banner } from '@/components/Banner';
+import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
-import { BioField } from './BioField';
+import { changeHandle, fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
-import { EditFrame } from './EditFrame';
-import { readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
+import { ScreenFrame } from '@/components/ScreenFrame';
+import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
-import { HANDLE_PATTERN, PROFILE_LINK_PREFIX, limits } from './limits';
-import { canPickImage, pickImage } from './pickImage';
+import { HANDLE_PATTERN, limits } from './limits';
+import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { PictureHeader } from './PictureHeader';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
@@ -69,7 +69,7 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
   if (me.isError || fields.isError) {
     const error = me.error ?? fields.error;
     return (
-      <EditFrame title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-problem">
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-problem">
         <ErrorState
           testID="edit-error"
           title="Your profile did not load"
@@ -79,13 +79,13 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
             if (fields.isError) void fields.refetch();
           }}
         />
-      </EditFrame>
+      </ScreenFrame>
     );
   }
 
   if (!me.data || !fields.data) {
     return (
-      <EditFrame title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-loading">
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1} title="Edit profile" onBack={props.onBack} gap={BODY_GAP} testID="edit-loading">
         <LoadingView label="Loading your profile">
           <View style={styles.skeleton}>
             <Skeleton height={COVER_SKELETON_H} radius={radius.media} />
@@ -98,7 +98,7 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
             <Skeleton height={BIO_SKELETON_H} radius={fieldMetrics.radius} />
           </View>
         </LoadingView>
-      </EditFrame>
+      </ScreenFrame>
     );
   }
 
@@ -136,7 +136,16 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
 
   const save = useMutation({
     mutationFn: async () => {
-      const { profile, fields } = changesOf(form, base);
+      const { handle, profile, fields } = changesOf(form, base);
+      // The username first: it is the part another account can take, so a refusal leaves nothing else half saved.
+      if (handle) {
+        try {
+          await changeHandle(handle);
+        } catch (error) {
+          throw handleFailure(error);
+        }
+        rebaseDraft((b, f) => rebased(b, f, 'handle'));
+      }
       if (profile) {
         await patchMe(profile);
         rebaseDraft((b, f) => rebased(b, f, 'profile'));
@@ -163,14 +172,23 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
   };
 
   const choose = async (kind: 'avatar' | 'cover') => {
-    const picked = await pickImage();
+    let picked: PickedImage | null;
+    try {
+      picked = await pickImage();
+    } catch {
+      // The photo library failed, or the chosen photo could not be read: said plainly. A cancel stays silent.
+      setUploadError(PICK_FAILED);
+      return;
+    }
     if (!picked) return;
     const folder: PictureFolder = kind === 'avatar' ? 'avatars' : 'profile/cover';
     setUploadError(null);
     setUploading(kind);
     try {
       const url = await uploadPicture(folder, picked);
-      setPreviews((current) => ({ ...current, [kind]: picked.previewUri }));
+      // On a phone the app's own copy is deleted once it is up (SHARED-04, F3), so the preview is the uploaded picture.
+      const preview = picked.discard ? url : picked.previewUri;
+      setPreviews((current) => ({ ...current, [kind]: preview }));
       edit((current) => ({ ...current, [kind === 'avatar' ? 'avatarUrl' : 'coverUrl']: url }));
     } catch (error) {
       setUploadError(uploadFailure(error));
@@ -189,7 +207,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
 
   return (
     <>
-      <EditFrame
+      <ScreenFrame idPrefix="edit" keyboard titleLines={1}
         testID="edit-profile"
         title="Edit profile"
         onBack={back}
@@ -226,13 +244,15 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           // The "@" is part of what is drawn, not of what is kept.
           value={`@${form.handle}`}
           onChangeText={(typed) => edit((current) => ({ ...current, handle: bareHandle(typed) }))}
-          hint={form.handle !== '' && HANDLE_PATTERN.test(form.handle) ? `${PROFILE_LINK_PREFIX}${form.handle}` : undefined}
+          hint={form.handle !== '' && HANDLE_PATTERN.test(form.handle) ? readableLink(profileLink(form.handle)) : undefined}
           error={handleError}
           autoCapitalize="none"
           autoCorrect={false}
           disabled={busy}
         />
-        <BioField
+        <TextField
+          multiline
+          label="Bio"
           testID="edit-bio"
           value={form.bio}
           onChangeText={(bio) => edit((current) => ({ ...current, bio }))}
@@ -261,7 +281,7 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           ))}
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
-      </EditFrame>
+      </ScreenFrame>
       <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">
         <Text variant="sheetTitleSm">Discard your changes?</Text>

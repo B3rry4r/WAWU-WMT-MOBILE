@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { Linking, Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -30,6 +30,8 @@ function installFetch() {
 
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const refusal = (statusCode: number, message: string) => ({ status: statusCode, body: { statusCode, message, data: null } });
+
+jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'u1' }));
 
 installFetch();
 const { MeScreen } = require('../MeScreen') as typeof import('../MeScreen');
@@ -104,18 +106,42 @@ function frame(children: React.ReactNode) {
   );
 }
 
-async function boot() {
+async function boot(creatorRows = false) {
   const onEditProfile = jest.fn();
   const onAddWork = jest.fn();
   const onOpenWork = jest.fn();
-  await render(frame(<MeScreen onEditProfile={onEditProfile} onAddWork={onAddWork} onOpenWork={onOpenWork} />));
-  return { onEditProfile, onAddWork, onOpenWork };
+  const onOpenSettings = jest.fn();
+  const onOpenDashboard = jest.fn();
+  const onOpenLibrary = jest.fn();
+  await render(
+    frame(
+      <MeScreen
+        onEditProfile={onEditProfile}
+        onAddWork={onAddWork}
+        onOpenWork={onOpenWork}
+        onOpenSettings={onOpenSettings}
+        onOpenDashboard={creatorRows ? onOpenDashboard : undefined}
+        onOpenLibrary={creatorRows ? onOpenLibrary : undefined}
+      />,
+    ),
+  );
+  return { onEditProfile, onAddWork, onOpenWork, onOpenSettings, onOpenDashboard, onOpenLibrary };
 }
 
 beforeEach(() => {
+  // Every wait goes through `findBy` or `waitFor`; a bare `await` of a fetch answer hangs behind a timer.
+  // After a wait on the cache that should show on screen, move the clock too: React draws the cache on a timer of this clock.
   answers = {};
   asked = [];
   clearProfileSaved();
+  // The grid is asked for only once the profile has landed (two answers in a row), and a `findBy` waits one second of wall time for the
+  // second. On the test's clock that wait is a fixed number of turns, so a stall in a loaded run cannot spend it. `queueMicrotask` stays
+  // real: React's `act` queues its "was it awaited?" check on it.
+  jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 describe('M1 · Me', () => {
@@ -145,13 +171,13 @@ describe('M1 · Me', () => {
     expect(screen.queryByText('Shop')).toBeNull();
   });
 
-  it('draws no entry that leads to a screen not built yet: QR, Menu, the tick prompt and Create are added by their tasks', async () => {
+  it('does not yet draw QR, the tick prompt or Create (the tasks that build them add them, R-47); the Menu button is drawn (BRAND-01)', async () => {
     answers = header();
     await boot();
     await screen.findByTestId('me-name');
     expect(screen.queryByText('Get your professional tick')).toBeNull();
     expect(screen.queryByLabelText(/qr/i)).toBeNull();
-    expect(screen.queryByLabelText(/menu/i)).toBeNull();
+    expect(screen.getByLabelText('Menu')).toBeTruthy();
     expect(screen.queryByLabelText(/create/i)).toBeNull();
     // The tick is shown, but it is not a button until ME-12 adds Verification.
     expect(screen.getByLabelText('Creator tick').props.accessibilityRole).toBe('image');
@@ -164,13 +190,13 @@ describe('M1 · Me', () => {
     expect(onEditProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('a user can tap Share: the share sheet gets their name and wawu/ link; when it cannot open they are told', async () => {
+  it('a user can tap Share: the share sheet gets their name and https profile link; when it cannot open they are told', async () => {
     answers = header();
     const share = jest.spyOn(Share, 'share').mockResolvedValueOnce({ action: 'sharedAction' });
     await boot();
     await screen.findByTestId('me-name');
     await fireEvent.press(screen.getByTestId('me-share'));
-    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This\nwawu/lennox' });
+    expect(share).toHaveBeenCalledWith({ message: 'Lennox Emmanuel on Who Made This?\nhttps://wawuafrica.com/u/lennox' });
 
     share.mockRejectedValueOnce(new Error('no share sheet'));
     await fireEvent.press(screen.getByTestId('me-share'));
@@ -218,7 +244,7 @@ describe('M1 · Me', () => {
     expect(screen.getByTestId('me-works-room-0')).toBeTruthy();
     expect(screen.getByTestId('me-works-room-1')).toBeTruthy();
     expect(screen.getByTestId('me-about-location')).toHaveTextContent('Lagos, Nigeria');
-    expect(screen.getByTestId('me-about-since')).toHaveTextContent('On Who Made This since March 2025');
+    expect(screen.getByTestId('me-about-since')).toHaveTextContent('On Who Made This? since March 2025');
     expect(screen.getByTestId('me-about-website')).toHaveTextContent('lennoxfilms.com');
     expect(screen.getByText('Lennox Films · 2021 to now')).toBeTruthy();
     expect(screen.getByText('Pricing')).toBeTruthy();
@@ -247,6 +273,80 @@ describe('M1 · Me', () => {
     expect(screen.queryByTestId('me-facts')).toBeNull();
     expect(screen.queryByTestId('me-experience')).toBeNull();
     expect(screen.queryByTestId('me-skills')).toBeNull();
+  });
+});
+
+/** The rows Z1 draws above Settings (BRAND-01); each is drawn by the task that builds its screen (R-47), so none is drawn today. */
+const NOT_BUILT_ROWS = ['dashboard', 'content', 'purchases', 'courses', 'saved', 'notifications', 'verification'];
+const NOT_BUILT_TITLES = ['Creator dashboard', 'My content', 'My purchases', 'My courses', 'Saved', 'Notifications', 'Verification'];
+
+describe('Z1 · the Me menu (BRAND-01)', () => {
+  it('a signed-in user can tap Menu, see Settings, the one row whose screen is built, and tap it to open Z2', async () => {
+    answers = header();
+    const { onOpenSettings } = await boot();
+    await screen.findByTestId('me-name');
+    expect(screen.queryByTestId('me-menu')).toBeNull();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    expect(await screen.findByTestId('me-menu')).toBeTruthy();
+    expect(screen.getByTestId('me-menu-settings')).toHaveTextContent('Settings');
+    await fireEvent.press(screen.getByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+  });
+
+  it('draws none of the seven rows whose screens are not built, and every row it draws is a button that opens something (R-47)', async () => {
+    answers = header();
+    const { onOpenSettings, onEditProfile } = await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    for (const id of NOT_BUILT_ROWS) expect(screen.queryByTestId(`me-menu-${id}`)).toBeNull();
+    for (const title of NOT_BUILT_TITLES) expect(within(screen.getByTestId('me-menu')).queryByText(title)).toBeNull();
+    const list = within(screen.getByTestId('me-menu-list'));
+    expect(list.getAllByRole('button').map((row) => row.props.testID)).toEqual(['me-menu-settings']);
+    expect(screen.getByTestId('me-menu-settings').props.accessibilityRole).toBe('button');
+    await fireEvent.press(screen.getByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    expect(onEditProfile).not.toHaveBeenCalled();
+  });
+
+  it('draws no figure the Hub has not served: the sheet holds the one title and no naira amount, count or tick state', async () => {
+    answers = header();
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    const list = await screen.findByTestId('me-menu-list');
+    expect(list).toHaveTextContent(/^Settings$/);
+  });
+
+  it('a person can reach Settings while the profile is still loading', async () => {
+    answers = { [`GET ${ME}`]: 'hang', [`GET ${FIELDS}`]: 'hang', [`GET ${STATS}`]: 'hang' };
+    const { onOpenSettings } = await boot();
+    expect(await screen.findByTestId('me-loading')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('a person can reach Settings when the profile did not load (the page error is showing)', async () => {
+    answers = { ...header(), [`GET ${STATS}`]: refusal(500, 'Internal server error') };
+    const { onOpenSettings } = await boot();
+    expect(await screen.findByTestId('me-error')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-settings'));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('the sheet closes from its grabber and Menu opens it again', async () => {
+    answers = header();
+    await boot();
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    await fireEvent.press(screen.getByTestId('me-menu-close'));
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    expect(await screen.findByTestId('me-menu')).toBeTruthy();
   });
 });
 
@@ -318,16 +418,23 @@ describe('M1 · round 2', () => {
     await render(
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
         <QueryClientProvider client={client}>
-          <MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} />
+          <MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} onOpenSettings={jest.fn()} />
         </QueryClientProvider>
       </SafeAreaProvider>,
     );
     expect(await screen.findByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
     // What a save on M8 does: every profile query reads again; this time the counts fail.
     await act(async () => {
-      await client.invalidateQueries({ queryKey: ['profile'] });
+      void client.invalidateQueries({ queryKey: ['profile'] });
     });
     await waitFor(() => expect(asked.filter((line) => line === `GET ${STATS}`)).toHaveLength(2));
+    // The reads are on the test's clock, so the test waits for them to end the same way (an `await` on the invalidation would not move it).
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+    // The cache has the failure; React draws it on a timer of the test's clock, which a wait on the cache does not move. Move it, so the
+    // check below reads the screen after the failed refresh, not before it (a screen that swaps the profile for the page error fails here).
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
     expect(screen.queryByTestId('me-error')).toBeNull();
     expect(screen.getByTestId('me-name')).toHaveTextContent('Lennox Emmanuel');
     expect(screen.getByTestId('me-count-followers')).toHaveTextContent('12.5K followers');
@@ -398,5 +505,58 @@ describe('M10 · Profile saved', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('Z1 · Creator dashboard and My content (ME-07)', () => {
+  const EARNINGS = '/api/hub/money/earnings';
+  const ALLOWANCE = '/api/hub/uploads/allowance';
+  const earned = {
+    month: '2026-09',
+    walletOpen: true,
+    allTime: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    thisMonth: { earnedKobo: 12_840_000, sales: 31, streams: [] },
+    waiting: { count: 0, amountKobo: 0 },
+    held: { count: 0, amountKobo: 0 },
+  };
+  const room = { tickHeld: false, uploads: { used: 4, allowed: 5, remaining: 1 }, storage: { usedBytes: 0, limitBytes: 1, remainingBytes: 1 }, free: { uploads: 5, storageBytes: 1 }, withTick: { uploads: 25, storageBytes: 1 } };
+
+  it('a creator sees both rows first, each with the Hub\u2019s own line, and each opens its screen and closes the menu', async () => {
+    answers = { ...header(), [`GET ${EARNINGS}`]: ok(earned), [`GET ${ALLOWANCE}`]: ok(room) };
+    const { onOpenDashboard, onOpenLibrary } = await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    const list = within(await screen.findByTestId('me-menu-list'));
+    expect(list.getAllByRole('button').map((row) => row.props.testID)).toEqual(['me-menu-dashboard', 'me-menu-content', 'me-menu-settings']);
+    expect(await screen.findByText('\u20a6128,400 this month')).toBeTruthy();
+    expect(await screen.findByText('4 of 5 uploads')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('me-menu-dashboard'));
+    expect(onOpenDashboard).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByTestId('me-menu')).toBeNull());
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-content'));
+    expect(onOpenLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it('an account that is not a creator is shown neither row, whatever the screen was given', async () => {
+    answers = { ...header(), [`GET ${ME}`]: ok(profile({ accountType: 'user' })) };
+    await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await screen.findByTestId('me-menu');
+    expect(screen.queryByTestId('me-menu-dashboard')).toBeNull();
+    expect(screen.queryByTestId('me-menu-content')).toBeNull();
+    expect(asked).not.toContain(`GET ${EARNINGS}`);
+  });
+
+  it('still opens both screens when their lines cannot be read, and draws no line it was not given', async () => {
+    answers = { ...header(), [`GET ${EARNINGS}`]: 'offline', [`GET ${ALLOWANCE}`]: 'offline' };
+    const { onOpenDashboard } = await boot(true);
+    await screen.findByTestId('me-name');
+    await fireEvent.press(screen.getByTestId('me-menu-button'));
+    await fireEvent.press(await screen.findByTestId('me-menu-dashboard'));
+    expect(onOpenDashboard).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/this month/)).toBeNull();
+    expect(screen.queryByText(/uploads/)).toBeNull();
   });
 });

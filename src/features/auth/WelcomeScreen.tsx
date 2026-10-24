@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -18,6 +19,12 @@ const WORDS = { side: 24, between: 14, title: 34, tracking: -0.04, leading: 1.05
  * stand 180 - 118 - 34 = 28 above the buttons.
  */
 const BUTTONS = { between: 10, wordsAbove: 28 } as const;
+/**
+ * The cover picture (BRAND-01): the creators picture from the website's landing page
+ * (wawuafrica `public/wawu-hero-mobile-creators.png`), cropped to the five people, faded out where the
+ * website's dashboard drawing starts, and laid on the brand purple. A video replaces it later.
+ */
+export const WELCOME_COVER = require('../../../assets/images/welcome-cover.jpg') as number;
 /** design/_gen/auth.js line 8: the shade over the cover, page colour at 20%, 35% at 40% down, solid at 78%. */
 const SHADE = { opacities: [0.2, 0.35], locations: [0, 0.4, 0.78] } as const;
 
@@ -37,8 +44,8 @@ export type WelcomeScreenProps = {
 /**
  * A1: the screen a signed-out user first sees. The cover is always dark, so its
  * words, logo and status bar are always light, whatever the phone's theme. The
- * canvas's cover photo is a stand-in picture; the app draws the brand colour
- * under the same shade until the owner supplies a photo (BACKEND_GAPS G-35).
+ * canvas's cover photo is a stand-in picture; the app shows the website's creators
+ * picture under the same shade until a video replaces it (BRAND-01, BACKEND_GAPS G-35).
  * "and bank it all in one app" is left out of the line under the title: it
  * implies a bank account for everyone, which nothing backs (G-34).
  */
@@ -49,6 +56,7 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
   return (
     <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.accent }]}>
       {focused ? <StatusBar style="light" /> : null}
+      <Image testID="welcome-cover" source={WELCOME_COVER} contentFit="cover" accessible={false} style={StyleSheet.absoluteFill} />
       <LinearGradient
         pointerEvents="none"
         colors={[...SHADE.opacities.map(shadeAt), darkColors.surfacePage] as [string, string, string]}

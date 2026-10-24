@@ -7,13 +7,28 @@ order: 140
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: done
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-06, WALLET-07, WALLET-08, WALLET-14, UI-02, UI-03]
 decisions: [R-10, R-26, R-33, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W7, W9, W10, W11, W12]
 ---
 # WALLET-02 · Send to a WAWU user
+
+## Current state
+
+As of 16 Oct 2026, round 3. Status: live (backend main a5e48fc, PR #141). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-02.md`, round 3): verdict merge, nothing medium or worse. Stacked in batch 5 (backend and mobile `wmt/MERGE-5`).
+- **Where:** mobile `wmt/WALLET-02` (from `wmt/MERGE-4` `74b1edb`), backend `wmt/WALLET-02` `577c35e` (from `wmt/EXPLORE-05` `649187a`, the batch 4 head). wawu-id unchanged. Migration: none (the stamp `20261023220000` is not used).
+- **Built (app):** W7 `/send` (search by name, @handle or phone with a 350 ms rest, Recent, results with the purple or blue tick), W9 `/send/amount` (the shared amount keypad, kobo typed whole, the bank's balance beneath, the Hub's quick amounts, a note), W10 `/send/review` (PaySheet's send variant: Fintava's charge, WAWU's fee, Fees, Total, "They get", the total on the button), W11 (the PIN sheet over it), W12 `/send/receipt` (reference with copy, Lagos date, charges, Total paid, save as beneficiary, Share receipt through the phone's share sheet, Done to the Wallet tab). Send is added on W1 (`WalletActions`) and on H1's balance card, as drawn (R-41).
+- **Built (backend, additive):** `GET /money/transfers/presets` (quick amounts from `TRANSFER_AMOUNT_PRESETS_KOBO`, PROVISIONAL(TRANSFER-PRESETS); the note's length). No new money-out route, so WALLET-23's limit check is the existing one on `POST /money/transfers/wawu`; the review reads the quote's `withinDailyLimit` and `remainingTodayKobo` and never sends a send the Hub would refuse.
+- **One key per intent, kept on the phone** (round 2): a wrong PIN, no answer and a retyped PIN send the SAME `Idempotency-Key`; a changed quote, or Try again after a failure, takes a new one. Each intent (key, person, amount, note, quote, state) is written to the secure store (`src/features/send/intent.ts`) before the request leaves and let go only when the Hub gives a final answer, so Back, a reload, a re-mounted screen or the app closed and opened finds it. `pending` (G-710) is "still confirming": the review for the same person and amount shows it pending, reads it by id every 4 s and never offers Send for it; Back from it goes to the wallet. A request with no answer is sent again as it was (same key, same body, no new quote) by the next Send; only the Hub's own `quote_changed` (no payment exists for the key) lets the app take a new key and the quote it gave. An intent with no answer is not trusted past 23 hours (the Hub keeps a key at least a day). `402` shows the bank's figures; `409 pin_not_set` opens A9 and comes back; `409 wallet_not_open` opens A26.
+- **Not built, and why:** fingerprint or face on W11 (needs SHARED-CHANGES WALLET-06 #1 and a W35 switch that registers a phone key; G-43, G-788; the sheet's `biometric` prop is left out, R-47). W7's Bank account tab (WALLET-03). W14 (not this task's artboard).
+- **Decisions (Default (agent), owner may override; round 2 rulings are the lead's, 16 Oct 2026):** (1) the beneficiary switch on W12 starts ON as the canvas draws it (lead ruling, round 2) and the person is saved when the receipt opens; turning it off takes them back out; a failed save leaves it off with the Hub's words. (2) The canvas's "On WAWU" list under Recent is not built: the Hub serves no suggestions list, so with nothing typed the screen shows Recent, or what to type (BACKEND_GAPS G-789; R-47). (3) A send over today's limit is a review-owned blocked state (a warning mark, "Over today's limit", the Hub's own figure, Cancel only; SHARED-CHANGES WALLET-02 #7), not a failed payment. (4) The not-enough state's "Add" button takes the person to the Wallet tab (their account number and Copy) until Add money (WALLET-05) exists (SHARED-CHANGES WALLET-02 #4). (5) Amount text is at most 9 whole digits and 2 decimals. (6) "Still confirming" points to Wallet activity and promises no notice: the Hub sends the sender none when a send is decided (it notifies only the receiver, `money_in`). (7) `src/components/amount-entry/amount.ts` parses typed digits to whole kobo and writes kobo back as text with integer math (`* 100`, `/ 100`, `%`): input parsing and formatting of what the person typed, not arithmetic on a balance or a total, so R-21 is kept (accepted, no change; the verifier's finding 9).
+- **Shared changes filed:** WALLET-02 #1 to #8 (the route, the contract copy, the amount keypad, PaySheet's optional `onAddMoney`, the biometric hold-back, the three existing tests that asserted Send was absent, PaySheet's `blocked` state, and round 3's `confirming.line` with the send page's status footer). Gaps: G-785 to G-789.
+- **Round 2 (verifier's FIX, nine findings):** the intent kept on the phone (high, money); no new key before the old one is resolved (medium, money); over the limit as a blocked review (medium); "still confirming" reworded (medium); the "On WAWU" list filed as G-789 (medium); the switch starts ON; one tap after the quote runs out goes on to the PIN when the total is unchanged; one message on a pending review and Back goes to the wallet; the fee quote is asked once per review (not again on focus or reconnect). Each has a test that failed on `47b76d5` first (`sendFlow.test.tsx`, `intent.test.ts`, `PaySheet.test.tsx`, `model.test.tsx`) and the same states were run in the web export (history, Builder report round 2).
+- **Round 3 (verifier's round 2, FIX on 1 medium; the lead's rulings, 16 Oct 2026, the owner may override):** (1) an old stored `pending` intent no longer takes over the next send for the same person and amount: when a review opens on one and the Hub's first answer is already completed or failed, the intent is dropped, one line says "Your earlier send of ₦25,000 to Amaka went through. See Wallet activity." (or "did not go through"), and the person sends fresh with a new key (no receipt, no auto-save for the old send); the review goes to the receipt only when it started the send or saw the Hub say pending; an intent the Hub still has pending keeps blocking. (2) Sign-out keeps only unresolved intents: a decided intent is dropped the moment the review or a receipt sees the Hub's answer, and sign-out writes out the ones that ran out (unknown past 23 h); unknown and pending ones stay under the account's own key so signing back in cannot pay twice (a pending one the app never saw decided is checked by (1) on the next review). (3) At Send the store is read again (`rereadIntent`), so a second web tab opened before the first send takes the key that tab wrote (a pending one is shown pending and not sent). (4) W10's still-confirming sheet points to Wallet activity like W12 (PaySheet `confirming.line`). (5) If the secure store cannot keep the new intent (a throw or no answer in 1.5 s) nothing is sent and the toast says "We could not get this payment ready. Try again." (6) In the blocked, still-confirming and failed states the send page pins the buttons to the foot, as the not-enough state and the canvas's W14 and SH14 do (SHARED-CHANGES WALLET-02 #8). Accepted, no change: matching by person and amount; a second device on the same account (the Hub's quote token is not single use).
+- **Next:** the lead merges it with batch 5. Backend unchanged (`577c35e`). Mobile CI cannot run (billing), so the full mobile check ran locally (see the Builder report).
+- **History:** the builder report is in [history/WALLET-02.md](history/WALLET-02.md).
 
 ## Read first
 
@@ -62,6 +77,7 @@ section 7, R-27). The verifier reports their checks as belonging to that task.
 
 ## Capability checks
 
+- [ ] **From W1:** a user on the Wallet tab taps Send and lands on W7 (this task replaces `unbuilt('WALLET-02')` in `src/features/wallet/home/` with the real navigation; COMPLETE-05).
 - [ ] **W7**: a user can type name/@handle/phone; pick a recent; pick a result.
 - [ ] **W9**: a user can enter amount; tap quick amount; add note; Continue.
 - [ ] **W10**: a user sending ₦25,000 to a WAWU user sees ₦15.75 + ₦10 = ₦25.75, a total of ₦25,025.75 on the button and "They get ₦25,000".
@@ -95,18 +111,6 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 ## Designer notes (⚠, unresolved)
 
 - None.
-
-## Builder report
-
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 and WALLET-01 hubs were built before this task, so the entries on them that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
 
 ## Owner sign-off
 

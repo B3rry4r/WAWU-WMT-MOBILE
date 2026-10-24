@@ -7,16 +7,28 @@ order: 148
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [HOME-04, HOME-05, PROS-02, UI-02, UI-03, HOME-08, HOME-12, PROS-01, EXPLORE-02]
-decisions: [R-18]
+decisions: [R-18, R-69]
 passes: [V1, V4, V5, V6, V9]
 artboards: [H7, H8, H9, H10, H12, H13]
 ---
 # HOME-07 · Feed: course, template, creator and professional cards, empty and error
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacked in batch 14.
+- **Status:** merging (lead). Verdict: MERGE (every figure is the Hub's; protected suite 253/253; branch CI red only on the Fintava earnings spec, same on the base); 3 lows (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-07.md`). Stacked in batch 14 by MERGE-14 (backend `wmt/MERGE-14`, mobile `wmt/MERGE-14`); not on main. Built: Mobile `wmt/HOME-07` on `origin/wmt/S1b` `94843a09`; backend `wmt/HOME-07` `61b6743` on `b5f5538` (additive, no migration).
+- **Built:** H7 a course post (its free lesson plays, "Course · lesson 1 free", "VFX for Beginners · 12 lessons · Pay from wallet · price"; the lessons come from `GET /content/{id}/detail`); H8 a template post (cover, "Template", name and price in the bar); H9 the creator card (name, tick, headline, followers, posts, rating, "Followed by Amaka and 12 people you know", a swipeable strip of their latest work with lock and price, Follow, a piece opens `/content/<id>`); H10 the professional card (rating, reviews, usual reply, services, "No reply in 24 hours and your ₦1,500 comes back.", Profile opens `/professionals/<id>`; no Trust Score, R-18); H12 an empty Following (the card, "Find people to follow" opens All creators, the "Who Made This?" rail with Follow in place); H13 the feed error with Try again (HOME-02's, kept).
+- **Backend:** the feed's `ProfessionalCard` gains `city` and `usualReplyMinutes` (the directory's own figures, one shared query). Spec added to `feed-cards.contract.spec.ts`.
+- **Not drawn, by R-47:** H9 Profile (ME-02, M5); H10 Message and its price (INBOX-10, I3); H13's second sentence "Anything you've bought is still in My purchases." (ME-14 builds My purchases). Not drawn, nothing backs it: "Online now", "near you", "Template · 9 patterns" (G-HOME-07-1, G-HOME-07-2, G-100, G-101).
+- **Decisions (agent, owner may override):** a course plays only its public preview in the feed (the creator's first lesson; the full file is the whole course); a course or template unlocked from the feed ends the sheet on "Done" (no player to open into; SHARED-CHANGES HOME-07 #2); a professional card shows at most four service chips (`CARD_SERVICE_CHIPS`).
+- **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (HOME-07 F1 to F3).
+- **History:** reports go to tasks/history/HOME-07.md.
+
+## Design v2 update (16 Oct 2026)
+
+- Copy only: the rail under "You're not following anyone yet" is titled "Who Made This?" with the question mark (R-69). Nothing else on H12 changed.
 
 ## Read first
 
@@ -101,17 +113,9 @@ Do not hard-code any of these. Show what the API returns, or leave the figure ou
 
 - None.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
-
-## Hub entries this task adds (R-41)
-
-The HOME-01 hub was built before this task, so the entries on it that lead to this task's screens are left out until now. This task adds each one exactly as the hub's artboard draws it, and the verifier checks it opens the right screen. The hub task's builder report names the entries.
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HOME-07.md](history/HOME-07.md).
 
 ## Owner sign-off
 

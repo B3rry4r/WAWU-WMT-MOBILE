@@ -7,13 +7,22 @@ order: 206
 priority: launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: [NUV-04, NUV-05, NUV-06, NUV-07]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # NUV-08 · Reconciliation with Nuvion: missed deliveries, statements and the nightly figures
+
+## Current state
+
+17 Oct 2026. Round 2 (fix of the verifier's findings 1 to 4, 6, 7) pushed: backend `wmt/NUV-08` `37a49f5` on `wmt/MERGE-7` `0be61a4`. No PR.
+- **Status:** merging (lead). Checked by an independent verifier over two rounds (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/NUV-08.md`, round 2 verdict merge; findings 1, 2, 3 and 7 closed). Stacked in batch 9 by MERGE-9 (backend `37a49f5`, migration `20261025050000_nuvion_reconcile_findings` kept: no stamp clash). Nuvion stood in everywhere; no real host called.
+- **Migration:** `20261025050000_nuvion_reconcile_findings` (one new table, `NuvionReconcileFinding`; the lead may rename at merge).
+- **Next:** a verifier (not the builder). The (key) check waits for the sandbox key and must also confirm that a statement's `transaction_id` is the transfer id, and ask Nuvion for a fee-reading call (see the fee check).
+- **Sweep list (lows, not fixed):** 5 (the extra day after the window asks next month), 8 (the schema comment names old finding kinds), the sweep's `seen` keyed on transfer id alone.
+- **History:** reports go to tasks/history/NUV-08.md.
 
 ## Read first
 
@@ -42,8 +51,8 @@ papered over.
 ## Scope
 
 - `src/nuvion/areas/reconcile.ts`: `listTransactions` from `GET /accounts/{id}/statements` (month by month, `include_pending`) and `GET /transfers`; a sweep every `PROVISIONAL(NUVION-SWEEP-MINUTES, ...)` minutes that re-fetches pending sends and reads the last day's statement lines of every Nuvion account with movement, and feeds any inflow or outflow with no stored delivery into the same handlers a webhook would (deduplicated on Nuvion's transfer id).
-- The webhook subscription is renewed before its `expires_in` runs out; a failed renewal is reported.
-- `POST /fee-simulations` per kind, compared with NUV-07's setting; a difference is reported with both figures and the setting is never changed automatically.
+- The webhook subscription is read, not renewed (round 2): Nuvion's docs give no renewal call, so a missing or inactive subscription is reported.
+- The fee check says once "fee check not available" (round 2): Nuvion's docs describe no fee simulation, so none is called and the settings are not compared.
 - Not in scope: the nightly job and its email (MONEY-16).
 
 **Stand-in, not the sandbox.** The Nuvion sandbox key does not work yet (401). Every spec runs against the Nuvion stand-in that NUV-01 builds (`test/nuvion/nuvion-standin.ts`, from the docs' own request and response examples). No spec or run calls `api.nuvion.dev`, `api.nuvion.co`, any Fintava host or any wawuafrica.com host. Checks marked **(key)** need the sandbox: until a lead brief allows `api.nuvion.dev` and `GET https://api.nuvion.dev/bank-codes/NG` answers 200 with the key in the local `.env`, the verifier reports them NOT RUN with that fact. Everything else is built and verified now.
@@ -53,12 +62,12 @@ papered over.
 - [ ] An inflow whose delivery never arrived is found by the sweep and credited once; when the late delivery then arrives, nothing changes (V8).
 - [ ] A bank send or book transfer whose outcome delivery was lost is settled by the sweep once.
 - [ ] `listTransactions` returns every movement of a month across pages, with fee and running balance, for a person and for the operational account.
-- [ ] A webhook subscription about to expire is renewed; a renewal failure is reported, not silent.
-- [ ] A difference between `/fee-simulations` and the fee setting is reported with both figures, and the setting is unchanged.
-- [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run.
+- [ ] A webhook subscription that is missing, inactive or unreadable is reported, not silent; nothing is renewed (round 2).
+- [ ] The fee check reports once that it is not available and calls no fee route (round 2).
+- [ ] (key) One sandbox month's statement matches the transfers made in the sandbox run. NOT RUN 23 Oct 2026 (NUV-KEYS): no transfer could be made; the statement route answers 200 and `money:check` finished clean on 1 wallet.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/NUV-08.md](history/NUV-08.md).
 
 ## Owner sign-off

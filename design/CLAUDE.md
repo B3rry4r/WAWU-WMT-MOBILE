@@ -1,11 +1,21 @@
-# WAWU mobile screen design — standing rules
+# Who Made This? mobile screen design (formerly WAWU) — standing rules
+- The app is called "Who Made This?" in all copy. Keep the existing logo image. Links stay wawu/…, emails @wawu.africa.
+- Home: advert space where TGIF was. Services row: Studio (AI tools, Flow PT), Learn (Schools, Flow SC), Monetize (Create hub, M19), Legal. Shop is removed. The creators rail on Home is titled "Who Made This?" and mixes creator and professional accounts.
+- TGIF lives on Explore and arrives as a daily in-app notification. Explore slider mixes featured events and adverts; adverts only when no events. Creators rail is titled "Who Made This?".
+- Sign-up asks only email, phone, password, code. KYC (BVN, NIN, selfie, ID, address) starts from the "Complete your account" flag on Home.
+- Communities: open rooms free; text and emoji free; photos, video and voice notes use credits. Private rooms are paid to join (host sets a monthly price), no approval.
+- Tips and prices can be set in Naira, Dollar or USDT. The voice intro tag reads "Bio", never "AI voice".
 - The "Start here" map's phone is the ENTRY SCREEN the user taps from to open the flow (e.g. Explore scrolled to the doors for Professionals), with the tap targets visible on it — never the flow's own first screen.
 - Every flow board must have: a "Start here" entry map (root screen with numbered hotspot markers + legend linking to each journey), journeys laid out left→right with the tap written on each arrow, "Starts from" / "Then" chips on each row, and an "Other states" row with "From Wxx" tags. All screens dark on top, light underneath.
-- Payments: Fintava wallet only ("Pay from wallet"). No Flutterwave, no hosted checkout.
-- Sign-up is free for everyone. Free accounts: 5 uploads. More uploads, library space and wider reach come with a paid verification tick (creator or professional, ₦2,000/yr). Content can be marked Free.
+- Wallet runs on Nuvion. Money comes in by bank transfer only, into the person's own wallet account number. No card or USSD top-up. Pay from wallet or bank transfer.
+- Sign-up is free. Anyone can build a profile and draft products. Publishing, or uploading any file, needs a paid tier (Verify ₦1,000 / 30 days / 3 products, Verify Plus ₦3,000 / 6 months / 6, Founding Maker ₦5,000 / 12 months / 10; $3 / $9 / $15 outside Nigeria). Add 5 products for ₦1,500 ($3). Drafts with no files are free. Flow VF.
+- Points are the in-app currency for AI tools. Always "points", never naira or dollars. Studio (AI tools) opens from the Home Studio tile and the Create button, never a tab. Flow PT. Referral rewards are points (Flow RF).
+- People outside Nigeria pay in dollars; currency is set at first purchase.
+- Bills are off at launch (Nuvion has no bill payments). No Bills entries on screens; bills boards stay, marked "Off at launch".
+- No em-dashes in copy. Figures are example values from one config file; label them so.
 - Links are wawu/… (never wawu.africa/…). Emails stay @wawu.africa.
 - Schools: Explore door "Find a school" (Flow SC). Enroll + pay from wallet, or apply via the school's tracked WAWU link.
-- Ads run on TGIF (sponsored card) and take TGIF's slot on Today when TGIF is off.
 - After any board change, rebuild WAWU Dark/Light with _gen/buildAll.js.
+- Flix movies (Flow MV): Flixora partner catalog. Rails on Explore (below "Who Made This?") and Home (below creators). Browse, trailer, filters in-app; "Watch on Flixora" hands off signed in (Chrome/Edge on a computer). No sign-up screens for it.
 - Professionals: paid DMs only. No booking or escrow.
 - Build boards with _gen/build.js (static HTML sections in <Flow>.sections.json, painted by the DC). No x-imports in boards (too slow).

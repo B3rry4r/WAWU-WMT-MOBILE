@@ -3,8 +3,8 @@ id: OPS-09
 title: Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
 owner: YOU
 area: OPS
-order: 33
-priority: launch
+order: 339
+priority: after-launch
 repo: fintava-dashboard
 type: ops
 status: todo
@@ -14,6 +14,14 @@ passes: []
 artboards: []
 ---
 # OPS-09 · Set WAWU's fees as merchant charges in the Fintava sandbox dashboard
+
+## Current state
+
+As of 16 Oct 2026.
+- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-39 and R-45: wallets run on Nuvion and Fintava is out of the launch money path (NUV-10 takes the place of OPS-10).
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
+- **History:** none yet. Reports go to tasks/history/OPS-09.md.
 
 ## Read first
 

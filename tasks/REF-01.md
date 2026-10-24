@@ -7,13 +7,21 @@ order: 215
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: done
 depends_on: [POINTS-01, TIER-03]
 decisions: [R-43]
 passes: [V1, V2, V3, V4, V9]
 artboards: []
 ---
 # REF-01 · Referral points
+
+## Current state
+
+As of 16 Oct 2026, from the lead's log (14 Oct) and the lead's answers (16 Oct).
+- **Status:** done (the lead, 16 Oct 2026). Live since 14 Oct. This file holds no builder or verifier report; the record is the lead's log.
+- **Merged and live:** mobile record in main 77b7943. Backend PR #130 (26d2fd4), deployed 14 Oct. Web PR #31 (8ce31c7), Vercel production ready. Referral codes on /join work: LOGOART applies (₦1,200, the first 4,000), an unknown code answers 404, /admin/referrals answers 200.
+- **Open findings:** blocker 0, high 0, medium 0. D1 and D2 were fixed in round 2 (web 4d0ab7f). Round 2 fixed /join's phone-width overflow and hid write controls from read-only admins. Lows are in tasks/SWEEP-JOIN.md: D3 (held places can be spammed on a limited code), D4 (a guessable free code can be found with the public check), D5 and the 320 px number.
+- **Next:** nothing for this task itself; the sweep takes the lows.
 
 ## Read first
 
@@ -35,6 +43,12 @@ tier and is verified, after the hold days, with the levels and milestones from c
 - New `src/referrals/`: one code per person; `POST /me/referrals/claim` (`code`), once per new person within `PROVISIONAL(REFERRAL-CLAIM-DAYS, ...)` days of sign-up, never their own code, one level only.
 - On the invited person's first paid tier (TIER-03 success; paying needs an open wallet, so they are verified): a pending reward of the config base points for that tier times the referrer's level multiplier, available after the hold days, cancelled if the purchase is refunded inside the hold. Only a referrer with an active tier earns. Milestones from config granted once each. Grants go through POINTS-01 (source `referral`, idempotent on the referral).
 - `GET /me/referrals`: link, code, brought, verified, points earned, pending, level, multiplier, next milestone.
+
+## Lead note (8 Oct 2026)
+
+From POINTS-01's verification (`tasks/POINTS-01.md`, "Lead rulings after the verifier"):
+
+- **Every caller of the points service:** call `PointsService.grant` or `hold` last in your own transaction, and never wait on a provider while you hold a person's points lock. The service's own transactions use Prisma's 5 s default timeout, so any other points call for that person would fail meanwhile (POINTS-01 verifier, X3; backend `docs/contract/CONVENTIONS.md` section 16).
 
 ## Capability checks
 

@@ -71,7 +71,7 @@ export function useFollow() {
 
   const { mutate } = mutation;
   const toggle = useCallback(
-    (creator: ExploreCreator) => {
+    (creator: Pick<ExploreCreator, 'wawuId' | 'following' | 'handle' | 'name'>) => {
       if (pending.current.has(creator.wawuId)) return;
       pending.current.add(creator.wawuId);
       setNotice(null);

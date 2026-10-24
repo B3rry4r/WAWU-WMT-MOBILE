@@ -7,7 +7,7 @@ order: 175
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: [MONEY-06, MONEY-11]
 decisions: [R-17, R-11, R-19]
 passes: [V1, V2, V3, V4, V9]
@@ -15,8 +15,26 @@ artboards: []
 ---
 # SETTINGS-06 · Delete account in the Hub: empty wallet first, freeze, restore on cancel
 
-Taken over by the lead's agents on 7 Oct 2026 (Developer 1 at their usage limit; owner's instruction).
+## Current state
 
+As of 17 Oct 2026, builder round 9 done (verifier round 8 said FIX: 3 medium, 2 low; round 7 said FIX: 1 medium, 4 low; round 6 said FIX: 1 medium, 4 low; round 5 said FIX: 1 high, 1 medium, 2 low; round 4 said FIX: 1 medium, 4 low; round 3 said FIX: 1 medium, 4 low; round 2 said FIX: 1 medium, 3 low; round 1 said FIX: 2 high, 1 medium, 3 low).
+- **Status:** merging (lead). Checked by an independent verifier (report `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/SETTINGS-06.md`, Round 9 section): verdict merge, nothing medium or worse. Stacked in batch 7 (backend and mobile `wmt/MERGE-7`). Backend branch `wmt/SETTINGS-06` @ 9cbd159 (code; origin/main a5e48fc merged in; CI: see the lead's check). Mobile branch `wmt/SETTINGS-06` (this file, history, SWEEP-MONEY, LOG). No mobile `src/` change: the delete-account screen is another task.
+- **Built (backend):**
+  - `DELETE /account` refuses with `409 account_deletion_blocked` (`reason.blockers`, `balanceKobo` from the provider, `openHolds`, `waitingEarnings`) while the wallet holds money, a hold is open, earnings wait, a payment is unsettled, a cash-out holds points or the wallet is opening. `503 provider_unreachable` when the balance cannot be read, never a guess. Nothing is frozen before this check passes.
+  - Then the deletion is recorded (`freezing`) before the wallet is frozen through the provider seam (optional `freezeWallet`/`unfreezeWallet`; Fintava adapter); on success the row is `scheduled`, content is hidden piece by piece, push stops, the date is 30 days out, WAWU ID is told. Asking again keeps the date. A `DELETE` on a `purged` row answers its due date and schedules nothing.
+  - `POST /account/cancel-deletion` (the person's own token) unfreezes first (a provider that does not answer: `503`, nothing changed), restores exactly the hidden pieces, resumes push; idempotent. `walletUnfrozen` is true only when the provider confirmed it after the cancel. From `purging` on it answers `200 { cancelled: false, deletionInProgress: true, message }`, never "restored".
+  - **Round 5 rule (R-1 wallet safety), one function:** `AccountDeletionMoneyService.reconcileWallet` reads the person's row and drives the provider to match: frozen for `freezing`, `scheduled`, `purging`, `purged`; unfrozen for `cancelled` and for a wallet a request dropped its own row for. Idempotent, only for the running provider's wallets (R-39: the row's, the named one and the person's current one, so a wallet opened during the 30 days is frozen too), never throws. Round 6: it holds no transaction, no pooled connection and no lock while the provider answers (read the row, ask the provider, read again, act again if it changed, 3 rounds at most). Its writes: a `freezing` row when a no-row unfreeze was not answered, and `walletSyncedAt` on a cancelled row. Every request and every sweep step that can change the row or the wallet ends with it in a `finally`, a repeat cancel and a `DELETE` refused with 409 included.
+  - One request at a time owns a `freezing` row: a second `DELETE` meeting a row younger than 10 minutes answers `503` "Your request is already being processed. Try again in a moment." and undoes nothing; an older row is a dead request's (its wallet is let go if it is the running provider's, the row taken over).
+  - Hourly sweep `account-deletion-purge` after the 30 days: lets go of `freezing` rows older than 10 minutes; freezes the wallet, then re-checks the money (kept, with `purgeBlockedBy`, if any or if the wallet cannot be frozen); claims the row (`purging`), releases held points, purges the Hub's data (points first), asks WAWU ID to anonymise only after the Hub side fully worked, marks `purged` only then. Content a buyer paid for is kept for the buyers, hidden from everything public and without its creator (`purgeNote`, round 7). Then it reconciles every row in `freezing`, `scheduled` or `purging` whatever its age, and every cancelled row until one reconcile was confirmed for it (`walletSyncedAt`; a confirmed cancelled row costs no provider call), so a lost answer heals within the hour however long the outage was.
+- **Migrations:** `20261024150000_account_deletion`, `20261024160000_account_deletion_states` (restamped in round 7, after every folder on main) and, new in round 7, `20261024170000_account_deletion_pass_claim` (`reconcileClaimedUntil`, the pass's claim on a row) and, new in round 9, `20261024180000_account_deletion_piece_index` (an index on `AccountDeletionContent.contentPieceId`) Batch 7 merge (17 Oct 2026): the four account-deletion folders were restamped again, to `20261024150000_account_deletion`, `20261024160000_account_deletion_states`, `20261024170000_account_deletion_pass_claim` and `20261024180000_account_deletion_piece_index`, because the earlier stamps sorted before batch 6's folders and the last one shared a stamp with TIER-06's `20261024060000_plan_settings`; nothing was applied anywhere, so the names above are the final ones.
+  (earlier stamps: `20261022050000` and `20261022051000`) (adds `purgeNote` and, round 6, `walletSyncedAt`; both additive, each with `rollback.sql`; the lead renames the stamps at merge if needed). Contract regenerated. CONVENTIONS section 25 (main took 24, merged in round 8). Round 8 adds no migration (round 9 adds the index above); the `rollback.sql` of `20261024150000` and `20261024160000` now also refuse while a cancelled deletion still owes an unfreeze.
+- **Shared changes filed:** SHARED-CHANGES SETTINGS-06 #1 (schema), #2 (contract), #3 (round 2: second migration, two optional contract fields, `AccountPurgeService.purge` result; round 6: the `walletSyncedAt` column; round 8: behaviour and rollbacks, no schema change; #1 now names the current stamp). BACKEND_GAPS G-10 updated.
+- **Open findings:** no blocker, high or medium (round 8's three mediums are fixed in round 9: no 404 for a completed buyer at the instant of the purge or of a cancel (the mark is read by the piece alone and moves to `deleted-account` with the piece), the contact-detail scrub reads one number at a time in linear time, and a deletion never undoes a takedown: buyers keep only pieces that were live when it started; SWEEP-MONEY L13 stays a note and L14 is new). Earlier: round 7's medium R7-1 is fixed in round 8: a completed buyer opens a piece a deletion hid from the moment of DELETE; R7-2 to R7-5 are fixed, SWEEP-MONEY L11 partly and L13 a note). Owner ruling applied: buyers keep the content they paid for when its creator deletes their account (hidden, readable in their library, no creator name); the old line below that said buyers lose the files is retired. Lows L4 to L9 are rows in `tasks/SWEEP-MONEY.md`. Residual: a cancelled row confirmed more than 10 minutes after its cancel is not asked again by the hourly pass; and the pass makes one provider call per deletion in force per hour (the lead's ruling). Sold content was the owner's question (R2-3) and is ruled: buyers keep it (round 7).
+- **Open for the lead / next tasks:**
+  - SETTINGS-08 (WAWU ID): call `POST /account/cancel-deletion` with the person's new token on sign-in; its 30-day clock should equal the Hub's `purgeAfter`; its anonymize route should answer ok when already anonymised; show `message` when `deletionInProgress` is true.
+  - Under Nuvion nothing is frozen (no freeze method yet); the up-front checks and the final re-check are the guard.
+  - Money that becomes due during the window keeps the final purge back until an operator looks (`purgeBlockedBy`).
+- **Records:** round reports and the verifier's report are in tasks/history/SETTINGS-06.md.
 
 ## Read first
 
@@ -39,19 +57,20 @@ route SETTINGS-08 calls). Content stays restorable for the 30 days.
 
 BACKEND_GAPS G-10: a frozen Fintava wallet can neither send nor receive, so money due to a frozen wallet (earnings, refunds) waits in WAWU's merchant wallet and is paid on unfreeze.
 
+## Lead note (8 Oct 2026): points
+
+POINTS-01 (the points ledger) adds `purgePersonPoints` (`src/points/points-purge.ts`), and `AccountPurgeService.purge` calls it first. Account deletion here must reach that purge, so a deleted person's points lots, holds and ledger rows go with the account (POINTS-01 round 1 verifier, U3). Two rules from POINTS-01 apply: the points ledger refuses any other delete (a database trigger), and a hold still `held` at deletion (an AI job or a cash-out in flight) must be settled or released before the purge, never left to fail it. Add a capability check that a deleted person has no points rows left and that another person's are untouched.
+
 ## Capability checks
 
 - [ ] A user with money in their wallet, an open hold or waiting earnings is told to move it first.
 - [ ] A user who cancels within 30 days gets their wallet unfrozen and their content back.
 
-## Builder report
+## History
 
-_Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and how it was tested, gate counts before and after, gaps and shared-change requests filed, anything not done and why._
-
-## Verifier report
-
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/SETTINGS-06.md](history/SETTINGS-06.md).
 
 ## Owner sign-off
 
 _Owner: date, and "screenshots and evidence pack reviewed"._
+

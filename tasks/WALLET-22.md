@@ -3,7 +3,7 @@ id: WALLET-22
 title: WAWU card
 owner: YOU
 area: WALLET
-order: 243
+order: 318
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
@@ -14,6 +14,14 @@ passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [W29, W30, W31, W32, W33, W34]
 ---
 # WALLET-22 · WAWU card
+
+## Current state
+
+As of 16 Oct 2026.
+- **Status:** todo. No branch, no code, nothing merged, no findings.
+- **Next:** a builder starts from the brief below after these are done (or in review): WALLET-31.
+- **History:** none yet. Reports go to tasks/history/WALLET-22.md.
+- **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
 
 ## Read first
 

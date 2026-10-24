@@ -3,10 +3,11 @@ import { AccessibilityInfo, ActivityIndicator, Pressable, StyleSheet, View } fro
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
-import { radius, space, useWawu } from '@/theme';
+import { space, useWawu } from '@/theme';
 
 import { approvalLine, lockedLine, msUntil, wrongPinLine } from './format';
 import { ALERT, DOTS, HEADING, SHEET } from './kit';
+import { PinDots } from './PinDots';
 import { Keypad } from './Keypad';
 import { biometricFailedLine, biometricLook, useBiometricKind } from './biometric';
 import type { BiometricKind, BiometricResult, PinCheckResult, PinSheetProps } from './types';
@@ -17,6 +18,8 @@ export const PIN_LENGTH = 4;
 const TICK_MS = 1000;
 const ALERT_ICON = ALERT.icon;
 const UNANSWERED_LINE = "We couldn't check your PIN. Try again.";
+/** For a sheet that pays (SWEEP-APP rows POINTS-05 L3, LEGAL-04 S4 F5, ME-12 S7 F4): the answer did not arrive, so the PIN may have been right. */
+export const PAYMENT_UNANSWERED_LINE = "We didn't get an answer. Try again: it will only happen once.";
 
 /**
  * - entering: the keypad is live (with or without a message from the last try)
@@ -50,6 +53,7 @@ export function PinEntry({
   biometric,
   onForgotPin,
   lockedUntil,
+  unansweredLine = UNANSWERED_LINE,
   onBusyChange,
 }: PinEntryProps) {
   const { colors } = useWawu();
@@ -137,7 +141,7 @@ export function PinEntry({
         return;
       }
       case 'unanswered':
-        say(UNANSWERED_LINE);
+        say(unansweredLine);
         return;
     }
   };
@@ -191,7 +195,6 @@ export function PinEntry({
   const submitting = phase.kind === 'submitting';
   const filled = submitting || phase.kind === 'approved' ? pinLength : pin.length;
   const missed = phase.kind === 'entering' && phase.message?.wrongPin === true && pin.length === 0;
-  const ring = missed ? colors.danger : colors.borderStrong;
 
   let status: React.ReactNode = null;
   if (submitting) {
@@ -220,23 +223,7 @@ export function PinEntry({
         </Text>
       </View>
 
-      <View
-        style={styles.dots}
-        accessible
-        accessibilityLabel={`${filled} of ${pinLength} digits entered`}
-      >
-        {Array.from({ length: pinLength }, (_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              i < filled
-                ? { backgroundColor: locked ? colors.textDisabled : colors.textPrimary }
-                : { borderColor: locked ? colors.borderHairline : ring, borderWidth: DOTS.ring },
-            ]}
-          />
-        ))}
-      </View>
+      <PinDots filled={filled} length={pinLength} missed={missed} locked={locked} style={styles.dots} />
 
       {status}
 
@@ -273,8 +260,7 @@ const styles = StyleSheet.create({
   body: { gap: SHEET.stack },
   heading: { gap: HEADING.stack },
   center: { textAlign: 'center' },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: DOTS.apart, paddingVertical: DOTS.padY },
-  dot: { width: DOTS.size, height: DOTS.size, borderRadius: radius.chip },
+  dots: { paddingVertical: DOTS.padY },
   status: { alignItems: 'center' },
   alert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ALERT.apart },
   forgot: { alignSelf: 'center' },

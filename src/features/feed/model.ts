@@ -1,7 +1,10 @@
 import { hues, type AvatarHue } from '@/components/Avatar';
 import type { IconName } from '@/components/icon';
 
-import type { ContentDetail, FeedCreator, FeedEntry, FeedItem } from './api';
+import { nairaToKobo } from '@/api/kobo';
+import { formatMoney } from '@/components/Money';
+
+import type { CardWork, ContentDetail, CreatorCardData, FeedCreator, FeedEntry, FeedItem, ProfessionalCardData } from './api';
 
 /**
  * What the feed decides from the Hub's data, kept apart from the drawing so each rule is
@@ -9,31 +12,77 @@ import type { ContentDetail, FeedCreator, FeedEntry, FeedItem } from './api';
  * made up when a field is missing (the element around it stays, the figure is left out).
  */
 
-/** The four post layouts this task draws: H2 and H5 (video), H3, H4 and H6. */
-export type PostKind = 'video' | 'photos' | 'pdf' | 'audio';
+/** The post layouts: H2 and H5 (video), H3, H4, H6, H7 (a course) and H8 (a template). */
+export type PostKind = 'video' | 'photos' | 'pdf' | 'audio' | 'course' | 'template';
 
 const kindByType: Partial<Record<FeedItem['contentType'], PostKind>> = {
   video: 'video',
   image: 'photos',
   pdf: 'pdf',
   audio: 'audio',
+  course: 'course',
+  template: 'template',
 };
 
-/**
- * The layout a piece takes, or null for one this task does not draw: a course (H7) or a
- * template (H8) post is HOME-07's, as are the creator (H9) and professional (H10) cards.
- */
+/** The layout a piece takes, or null for a kind the feed has no layout for. */
 export function postKind(item: Pick<FeedItem, 'contentType'>): PostKind | null {
   return kindByType[item.contentType] ?? null;
 }
 
-/** The posts of a page this task draws, in the Hub's order. */
+/** The posts of a page the feed draws, in the Hub's order. */
 export function drawablePosts(entries: readonly FeedEntry[]): FeedItem[] {
   const posts: FeedItem[] = [];
   for (const entry of entries) {
     if (entry.kind === 'content' && postKind(entry.content)) posts.push(entry.content);
   }
   return posts;
+}
+
+/** One screen of the feed: a post, or an interstitial card among them (H9 creator, H10 professional). */
+export type FeedRow =
+  | { kind: 'post'; key: string; item: FeedItem }
+  | { kind: 'creator'; key: string; card: CreatorCardData }
+  | { kind: 'professional'; key: string; card: ProfessionalCardData };
+
+const named = (name: string | null | undefined) => Boolean(name?.trim());
+
+/**
+ * The screens of the pages read so far, in the Hub's order and with nothing twice (a page read
+ * again can bring a piece or a card the list already has). A card with no name is left out:
+ * nobody is offered as a bare id.
+ */
+export function feedRows(entries: readonly FeedEntry[]): FeedRow[] {
+  const seen = new Set<string>();
+  const rows: FeedRow[] = [];
+  const add = (row: FeedRow) => {
+    if (seen.has(row.key)) return;
+    seen.add(row.key);
+    rows.push(row);
+  };
+  for (const entry of entries) {
+    if (entry.kind === 'content') {
+      if (postKind(entry.content)) add({ kind: 'post', key: `post-${entry.content.id}`, item: entry.content });
+    } else if (entry.kind === 'creator') {
+      if (named(entry.creator.displayName)) add({ kind: 'creator', key: `creator-${entry.creator.wawuId}`, card: entry.creator });
+    } else if (entry.kind === 'professional') {
+      if (named(entry.professional.displayName)) add({ kind: 'professional', key: `professional-${entry.professional.id}`, card: entry.professional });
+    }
+  }
+  return rows;
+}
+
+const PICTURE_FILE = /\.(?:jpe?g|png|webp|gif|avif|heic|bmp)$/i;
+
+/** Whether an address is a still picture (by its file type, whatever signs it): else a video or a document. */
+export function isPicture(url: string | null | undefined): boolean {
+  if (!url) return false;
+  let path = url;
+  try {
+    path = new URL(url).pathname;
+  } catch {
+    path = url.split('?')[0] ?? url;
+  }
+  return PICTURE_FILE.test(path);
 }
 
 /** Paid and not yet bought (or not the viewer's own): the full file is held back. */
@@ -107,10 +156,20 @@ export function minutesAdjective(label: string | null | undefined): string | nul
 }
 
 /** The name on a post: the person's name from WAWU ID, else their handle. */
-export function creatorName(creator: FeedCreator | null | undefined): string | null {
+export function creatorName(creator: Pick<FeedCreator, 'displayName' | 'handle'> | null | undefined): string | null {
   if (!creator) return null;
   return creator.displayName?.trim() || creator.handle?.trim() || null;
 }
+
+/** What a piece's page calls a creator who has neither a name nor a handle (every new creator starts with no name). */
+export const UNNAMED_CREATOR = 'Someone';
+
+/**
+ * A person the Hub names with a plain name and handle (a chat's other person, a recipient): the name, else the handle, else
+ * "Someone", as the feed and a piece's page name a creator. A person with no name is a valid person, never an unreadable one.
+ */
+export const nameOrSomeone = (name: string | null | undefined, handle: string | null | undefined): string =>
+  creatorName({ displayName: name ?? null, handle: handle ?? null }) ?? UNNAMED_CREATOR;
 
 /** Which tick follows the name: a creator tick (purple), else a professional tick (blue). */
 export function tickKind(creator: FeedCreator | null | undefined): 'creator' | 'pro' | null {
@@ -126,8 +185,24 @@ export function caption(item: Pick<FeedItem, 'description' | 'title'>): string {
 
 const join = (parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 
-/** The pill above the name: what the post is and how long or how big it is. */
-export function pillFor(item: FeedItem, kind: PostKind): { icon: IconName; text: string } {
+/** What a course's post reads from its detail: how many lessons, and how many of them are free. */
+export type CourseDetail = Pick<ContentDetail, 'lessons' | 'freePreview'>;
+
+/** "lesson 1 free", "lessons 1–3 free": how much of a course is open before paying (what the creator declared). Null when none. */
+export function freeLessonsText(detail: Pick<CourseDetail, 'freePreview'> | null | undefined): string | null {
+  const n = detail?.freePreview?.lessons;
+  if (!n || n <= 0) return null;
+  return n === 1 ? 'lesson 1 free' : `lessons 1–${n} free`;
+}
+
+/** "12 lessons", from the lessons the Hub lists. Null until the detail is read, or when there are none. */
+export function lessonCountText(detail: Pick<CourseDetail, 'lessons'> | null | undefined): string | null {
+  const n = detail?.lessons?.length ?? 0;
+  return n > 0 ? `${n} ${n === 1 ? 'lesson' : 'lessons'}` : null;
+}
+
+/** The pill above the name: what the post is and how long or how big it is. A course also reads its detail. */
+export function pillFor(item: FeedItem, kind: PostKind, detail?: CourseDetail | null): { icon: IconName; text: string } {
   const length = durationText(item.media?.durationLabel ?? item.durationLabel);
   const pages = item.media?.pageCount ?? item.pageCount;
   const frames = item.media?.frameCount;
@@ -144,6 +219,10 @@ export function pillFor(item: FeedItem, kind: PostKind): { icon: IconName; text:
       return { icon: 'Images', text: join(['Photo set', frames ? String(frames) : null]) };
     case 'pdf':
       return { icon: 'BookOpen', text: join(['PDF', pages ? `${pages} pages` : null]) };
+    case 'course':
+      return { icon: 'GraduationCap', text: join(['Course', isLocked(item) ? freeLessonsText(detail) : lessonCountText(detail)]) };
+    case 'template':
+      return { icon: 'LayoutTemplate', text: 'Template' };
   }
 }
 
@@ -155,7 +234,7 @@ export type Offer = { icon: IconName; title: string; subtitle: string };
  * offers the piece itself: a free post linked to a separate paid piece (H3's "Golden Hour
  * presets") is not served (BACKEND_GAPS G-216).
  */
-export function offerFor(item: FeedItem, kind: PostKind): Offer | null {
+export function offerFor(item: FeedItem, kind: PostKind, detail?: CourseDetail | null): Offer | null {
   if (!isLocked(item)) return null;
   const length = durationText(item.media?.durationLabel ?? item.durationLabel);
   const pages = item.media?.pageCount ?? item.pageCount;
@@ -171,6 +250,11 @@ export function offerFor(item: FeedItem, kind: PostKind): Offer | null {
       return { icon: 'BookOpen', title: 'Read the full PDF', subtitle: join([pages ? `${pages} pages` : null, pay]) };
     case 'photos':
       return { icon: 'Images', title: 'Unlock the full set', subtitle: join([frames ? `${frames} photos` : null, pay]) };
+    // H7 and H8 name the piece itself in the bar: "VFX for Beginners · 12 lessons", "Aba Collection · Template".
+    case 'course':
+      return { icon: 'GraduationCap', title: item.title, subtitle: join([lessonCountText(detail), pay]) };
+    case 'template':
+      return { icon: 'LayoutTemplate', title: item.title, subtitle: join(['Template', pay]) };
   }
 }
 
@@ -288,4 +372,88 @@ export function hueFor(wawuId: string): AvatarHue {
   let sum = 0;
   for (let i = 0; i < wawuId.length; i += 1) sum = (sum * 31 + wawuId.charCodeAt(i)) % 9973;
   return hues[sum % hues.length];
+}
+
+// ---- The creator card (H9) and the professional card (H10) ----
+
+/**
+ * The words under the name: the person's headline, then where they work when the Hub knows
+ * (a professional's own city; a creator has none, G-100). Either part is left out when the
+ * Hub has none, never guessed.
+ */
+export function placeLine(headline: string | null | undefined, city?: string | null): string {
+  return join([headline?.trim(), city?.trim()]);
+}
+
+/** Which tick follows a card's name: the one the card is about first (a professional card leads with the blue tick). */
+export function cardTick(verification: FeedCreator['verification'] | null | undefined, lead: 'creator' | 'pro'): 'creator' | 'pro' | null {
+  const creator = verification?.creator?.verified ? 'creator' : null;
+  const pro = verification?.professional?.verified ? 'pro' : null;
+  return lead === 'pro' ? (pro ?? creator) : (creator ?? pro);
+}
+
+const firstWord = (name: string | null | undefined): string | null => name?.trim().split(/\s+/)[0] || null;
+
+export type TextPart = { text: string; bold?: boolean };
+
+/**
+ * H9's "Followed by Amaka and 12 people you know", from the Hub's `knownFollowers` (the count of
+ * people the viewer follows who follow this creator, and up to three of them by name). Null when
+ * nobody the viewer follows follows them: the line is not drawn.
+ */
+export function followedByParts(known: CreatorCardData['knownFollowers'] | null | undefined): TextPart[] | null {
+  const count = known?.count ?? 0;
+  if (!known || count <= 0) return null;
+  const lead = firstWord(known.people[0]?.displayName);
+  const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'} you know`;
+  if (!lead) return [{ text: `Followed by ${people(count)}` }];
+  if (count === 1) return [{ text: 'Followed by ' }, { text: lead, bold: true }];
+  const second = count === 2 ? firstWord(known.people[1]?.displayName) : null;
+  return [{ text: 'Followed by ' }, { text: lead, bold: true }, { text: second ? ` and ${second}` : ` and ${people(count - 1)}` }];
+}
+
+/** "~25m", "~3h", "~2d": how long they usually take to reply. Null when the Hub has no figure (too few answered messages). */
+export function usualReply(minutes: number | null | undefined): string | null {
+  if (typeof minutes !== 'number' || !(minutes > 0)) return null;
+  if (minutes < 60) return `~${Math.round(minutes)}m`;
+  const hours = Math.round(minutes / 60);
+  return hours < 24 ? `~${hours}h` : `~${Math.round(hours / 24)}d`;
+}
+
+/** "212 reviews", "1 review". */
+export const reviewsText = (count: number): string => `${count} ${count === 1 ? 'review' : 'reviews'}`;
+
+/** "₦1,500", with kobo only when the price has them. */
+export const nairaText = (naira: number): string => formatMoney(nairaToKobo(naira), { decimals: !Number.isInteger(naira) });
+
+/** H10's note: "No reply in 24 hours and your ₦1,500 comes back." The hours are the professional's own window, the price their own. */
+export function refundNote(dmPrice: number, hours: number): string {
+  return `No reply in ${hours} ${hours === 1 ? 'hour' : 'hours'} and your ${nairaText(dmPrice)} comes back.`;
+}
+
+/** The most service chips a professional card shows (H10 draws four); the rest are on their profile. Default (agent), owner may override. */
+export const CARD_SERVICE_CHIPS = 4;
+
+const workIcons: Record<string, IconName> = {
+  video: 'Play',
+  course: 'GraduationCap',
+  pdf: 'BookOpen',
+  image: 'Images',
+  audio: 'AudioLines',
+  template: 'LayoutTemplate',
+};
+
+const workNames: Record<string, string> = { video: 'Video', course: 'Course', pdf: 'PDF', image: 'Photos', audio: 'Audio', template: 'Template' };
+
+/** What one piece of a creator card's strip draws (H9): its kind, a lock and the price when locked, else views and a length. */
+export function workTile(work: CardWork): { icon: IconName; locked: boolean; left: string; right: string | null; label: string } {
+  const icon = workIcons[work.contentType] ?? 'FileText';
+  const name = workNames[work.contentType] ?? null;
+  const locked = work.locked && work.accessType === 'paid';
+  if (locked) return { icon, locked, left: nairaText(work.price), right: name, label: `${work.title}, locked, ${nairaText(work.price)}` };
+  const views = `${compactCount(work.views)} ${work.views === 1 ? 'view' : 'views'}`;
+  let right: string | null = name;
+  if (work.contentType === 'video' || work.contentType === 'audio') right = durationText(work.durationLabel);
+  else if (work.contentType === 'image') right = work.frameCount > 0 ? String(work.frameCount) : null;
+  return { icon, locked, left: views, right, label: `${work.title}, ${views}` };
 }

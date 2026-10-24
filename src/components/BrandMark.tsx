@@ -4,7 +4,7 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useWawu } from '@/theme';
 
 /** The app's name as a person reads it (R-37). The logo spells it in capitals; the text does not. */
-export const APP_NAME = 'Who Made This';
+export const APP_NAME = 'Who Made This?';
 
 export type BrandLayout = 'horizontal' | 'vertical' | 'submark';
 
@@ -65,6 +65,7 @@ export function BrandMark({ layout = 'submark', width, surface, decorative = fal
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
       accessibilityLabel={decorative ? undefined : APP_NAME}
+      aria-hidden={decorative}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}
     >

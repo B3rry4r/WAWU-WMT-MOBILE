@@ -5,15 +5,36 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius } from '@/theme';
 
 import { RECENT_ROWS } from '../api/home';
+import { ACTION_TILE, actionTileSize } from './WalletActions';
 import { ACCT } from './BalanceCard';
+import { useRowRoom } from './useRowRoom';
 
 /**
- * design/_gen/wallet.js line 65, W4: the balance card is a 196 block with a 28 corner; each row is a 44
- * circle, two lines (150 x 13 and 96 x 11, corner 6, 8 apart) and a 64 x 13 figure, 13 between the parts
- * and 18 between rows. The account tabs, the action row and the bills tiles are not drawn here because the
- * screen does not show them yet (R-41: their tasks add them, and their skeletons with them).
+ * design/_gen/wallet.js line 65, W4: the real layout in quiet blocks. The balance card is a 196 block with a 28 corner;
+ * each row is a 44 circle, two lines (150 x 13 and 96 x 11, corner 6, 8 apart) and a 64 x 13 figure, 13 between the
+ * parts and 18 between rows. The action tiles are a 54 square at the tile corner with a 44 by 10 bar under it (corner 5),
+ * in the board's five columns: only the built ones have shapes (R-47), packed from the left. The canvas also draws shapes for the account
+ * tabs; they stand for parts that are not built (R-47), so they are not drawn. The Points card is one half-width block (the Passes
+ * card has no shape: it is drawn only when the person has a pass). The title bar is the screen's own, drawn live.
  */
-const W4 = { card: 196, lead: 44, line1: 150, line2: 96, lineH1: 13, lineH2: 11, lineRadius: 6, lineGap: 8, figure: 64, rowsGap: 18 } as const;
+const W4 = {
+  card: 196,
+  tileBar: 44,
+  mini: 86,
+  tileBarH: 10,
+  tileBarRadius: 5,
+  miniRadius: 20,
+  tileGap: 10,
+  lead: 44,
+  line1: 150,
+  line2: 96,
+  lineH1: 13,
+  lineH2: 11,
+  lineRadius: 6,
+  lineGap: 8,
+  figure: 64,
+  rowsGap: 18,
+} as const;
 
 /** One recent row's stand-in. */
 export function RowSkeleton() {
@@ -43,12 +64,24 @@ export function RowsSkeleton({ testID }: { testID?: string }) {
 }
 
 /** W4: the real layout in quiet blocks. Nothing of the account, not even its number, shows until the balance is in. */
-export function WalletSkeleton() {
+export function WalletSkeleton({ tiles = 0 }: { tiles?: number }) {
+  // The tiles are the size the real ones will be (54 on a 390 screen, less on a narrower phone), so nothing jumps when the wallet loads.
+  const room = useRowRoom();
+  const tile = actionTileSize(room);
   return (
     <LoadingView label="Loading your wallet" testID="wallet-loading">
       <View style={styles.body}>
-        <Skeleton height={W4.card} radius={ACCT.radius} />
-        <View style={styles.rows}>
+        <Skeleton testID="wallet-loading-card" height={W4.card} radius={ACCT.radius} />
+        <Skeleton testID="wallet-loading-points" width={(room - W4.tileGap) / 2} height={W4.mini} radius={W4.miniRadius} />
+        <View testID="wallet-loading-actions" style={styles.tiles}>
+          {Array.from({ length: tiles }, (_, i) => (
+            <View key={i} style={[styles.tile, { width: tile + ACTION_TILE.extra }]}>
+              <Skeleton width={tile} height={tile} radius={radius.tile} />
+              <Skeleton width={Math.min(W4.tileBar, tile)} height={W4.tileBarH} radius={W4.tileBarRadius} />
+            </View>
+          ))}
+        </View>
+        <View testID="wallet-loading-rows" style={styles.rows}>
           {Array.from({ length: RECENT_ROWS }, (_, i) => (
             <RowSkeleton key={i} />
           ))}
@@ -63,6 +96,8 @@ export const BODY_GAP = 20;
 
 const styles = StyleSheet.create({
   body: { gap: BODY_GAP },
+  tiles: { flexDirection: 'row', justifyContent: 'flex-start' },
+  tile: { alignItems: 'center', gap: W4.tileGap },
   rows: { gap: W4.rowsGap },
   row: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between },
   lines: { flex: 1, gap: W4.lineGap },
