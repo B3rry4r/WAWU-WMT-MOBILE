@@ -124,13 +124,16 @@ export function AbroadAmountScreen(props: {
   const asked = useRef(0);
 
   const preferred = props.initialFrom && sources.data?.some((s) => s.currency === props.initialFrom) ? props.initialFrom : null;
-  const fromCurrency = from ?? preferred ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? 'NGN';
+  // Null until the Hub has listed the accounts: no currency (and no naira zero) is drawn before then, and none is guessed for a person
+  // with no naira account (WALLET-42).
+  const fromCurrency: string | null =
+    from ?? preferred ?? sources.data?.find((s) => s.currency === 'NGN')?.currency ?? sources.data?.[0]?.currency ?? null;
   const amountMinor = koboOfText(text);
   const key = `${fromCurrency}|${side}|${amountMinor}`;
   const quote: QuoteRead = amountMinor <= 0 ? { state: 'idle' } : held?.key === key ? held.result : { state: 'loading' };
 
   useEffect(() => {
-    if (!recipient || !sources.data || amountMinor <= 0) return;
+    if (!recipient || !sources.data || fromCurrency === null || amountMinor <= 0) return;
     const mine = ++asked.current;
     const timer = setTimeout(() => {
       void requestQuote({ recipientId: recipient.id, fromCurrency, amountMinor, side }).then((r) => {

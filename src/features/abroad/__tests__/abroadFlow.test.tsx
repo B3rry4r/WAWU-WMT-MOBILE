@@ -138,6 +138,8 @@ const hub = {
   feeMinor: 0,
   /** The accounts the Hub lists to send from; null: a naira account and a dollar account. */
   sources: null as unknown[] | null,
+  /** What the Hub does with the accounts request: answers, never answers (still loading) or fails. */
+  sourcesMode: 'ok' as 'ok' | 'hang' | 'fail',
   wrongFirst: false,
   recipients: [] as unknown[],
   saves: [] as Record<string, unknown>[],
@@ -222,6 +224,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
         },
       ],
     });
+  if (path === '/money/abroad/sources' && hub.sourcesMode === 'hang') return new Promise<Response>(() => {});
+  if (path === '/money/abroad/sources' && hub.sourcesMode === 'fail') return json(500, { statusCode: 500, message: 'down' });
   if (path === '/money/abroad/sources')
     return ok({
       sources: hub.sources ?? [
@@ -369,6 +373,7 @@ beforeEach(() => {
     partnerFee: 150,
     feeMinor: 0,
     sources: null,
+    sourcesMode: 'ok',
     wrongFirst: false,
     recipients: [],
     saves: [],
@@ -628,5 +633,38 @@ describe('send abroad from a foreign account', () => {
     const rows = within(screen.getByTestId('abroad-review-rows'));
     expect(rows.queryByText(/₦/)).toBeNull();
     expect(rows.getByText('£0.00')).toBeTruthy();
+  });
+
+  async function toAmountScreenWith(mode: 'ok' | 'hang' | 'fail', sources: unknown[] | null) {
+    hub.recipients = [RECIPIENT];
+    hub.sourcesMode = mode;
+    hub.sources = sources;
+    await renderRouter(routes, { initialUrl: '/send/abroad' });
+    await fireEvent.press(await screen.findByTestId(`abroad-recipient-${RECIPIENT.id}`));
+    await screen.findByTestId('abroad-amount-screen');
+  }
+  function expectNoAmountAndNoNaira() {
+    expect(screen.queryByTestId('abroad-amount')).toBeNull();
+    expect(screen.queryByTestId('amount-key-1')).toBeNull();
+    expect(screen.queryByText(/₦/)).toBeNull();
+    expect(hub.quotes).toEqual([]);
+  }
+
+  it('draws no amount and no naira figure while the accounts load', async () => {
+    await toAmountScreenWith('hang', null);
+    expect(await screen.findByTestId('abroad-sources-loading')).toBeTruthy();
+    expectNoAmountAndNoNaira();
+  });
+
+  it('draws no amount and no naira figure when the accounts cannot be read', async () => {
+    await toAmountScreenWith('fail', null);
+    expect(await screen.findByTestId('abroad-sources-error', {}, { timeout: 8000 })).toBeTruthy();
+    expectNoAmountAndNoNaira();
+  });
+
+  it('says so when the person holds no account to send from, and draws no amount', async () => {
+    await toAmountScreenWith('ok', []);
+    expect(await screen.findByTestId('abroad-no-source')).toBeTruthy();
+    expectNoAmountAndNoNaira();
   });
 });

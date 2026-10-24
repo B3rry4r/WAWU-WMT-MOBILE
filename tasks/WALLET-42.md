@@ -64,6 +64,15 @@ NUV-11 assertions that pinned the naira fee on a send whose source is a foreign 
 12. R1-4: `a give-back that could not be made is held for a person with a row for finance, finance finds it and ...`
 13. R1-4: `finance writes off a fee that was never taken, once; not while the partner shows it was taken; not o...`
 
+### Round 2 (24 Oct 2026, the merge job after verification PASS; backend `bd82fa6`)
+
+Backend `origin/main` `d1e6914` (SWEEP-MONEY-6) merged with `--no-ff`. Two conflicts, resolved so that both protections hold for both fee legs:
+- R2-1 (a failed or reversed send never goes back to completed or pending, one `send_contradicted` row) is status-based, so it covers the naira and the foreign fee alike; the row's detail now also names `feeMinor`.
+- R2-2 (the give-back claims the fee state first; finance's "paid outside" compares the row as read and keeps its quiet window): the foreign leg now gets the same order as the naira leg. `prepareFeeLeg` resolves what a leg needs (wallet and platform account, or holder and collecting account) BEFORE the claim and returns the function that makes it AFTER the claim. The sweep's deletion changes (the other-provider row, the freeze re-read) are kept and count a foreign fee.
+- `abroad-fee-exclusive.contract.spec` pinned the naira fee on a dollar send, the same class as the round 1 edits: its quote source is now `NGN` (one line) and its fixture lists a naira account first (one entry); no assertion text changed. Its 7 tests and the 3 new foreign-leg cases (`world-abroad.contract.spec`: finance closes the fee before the sweep claims, so no leg is made; finance's "paid outside" is refused while the foreign leg is being made, and the leg pays once; a fee the sweep touched after finance read it is not closed) pass together (92 of 92 in the abroad folder). With the claim removed, the 3 foreign cases fail.
+- Low 2: `AbroadService.isWorld` is dropped; only a spec used it, and the fee follows the source account now.
+- Low 1 (app): while the accounts load or cannot be read, or when the person holds none, the amount screen draws no amount, no keypad and no naira figure (the sending currency is null until the Hub has listed the accounts); 3 tests, red with the naira fallback put back.
+
 Round 1 checks (own DB `b31wa_test`; none imports the Fintava double): backend tsc, eslint (no --fix) on the changed files, `contract:build`, gates (0 fail), baseline, and 17 suites 266 tests (`world-abroad.contract` 16, the abroad suites, `money-contract`, `wallet-gate-coverage`, `money-moving-coverage`, `account-data-map`, `data-export-map`, `data-export-abroad-sections`, `publishing-gate-coverage`, `hub-rate-limits`, `nuvion-abroad`, the plan-settings specs off the Fintava harness) all EXIT 0. App lines are in the hand-back.
 
 ## Read first
