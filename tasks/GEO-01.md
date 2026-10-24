@@ -7,7 +7,7 @@ order: -190
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-6, R-36, R-85]
 passes: [V1, V2, V3, V4, V9]
@@ -107,3 +107,28 @@ Verifier (Sonnet, T2 check, 24 Oct 2026) of WAWU ID `wmt/GEO-01` `1e0faf1` again
 - **low** `+44 7911 123456` defaults the country to `GG` (the library's reading; builder item d). The person can send `GB`.
 
 Not a finding: login typed as `233245550101` (no `+`) answers 404; only E.164 or `00` reach a non-Nigerian number (builder item e).
+
+### Verifier report, round 1 (Sonnet, T2 re-check, 24 Oct 2026)
+
+Verifier of WAWU ID `wmt/GEO-01` `5a4629a` against `origin/main` `1bbad17`. Verdict: **PASS** (3 low, none a fix round). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/geo-12-r1-v/` (`geo01-main.json`, `geo01-br.json`, `extra-*.json`, `mig-test.log`, `local-*.log`). CI on `5a4629a`: Branch checks run 40111209066 success, Gates run 40111209053 success.
+
+| Check | Result | How |
+|---|---|---|
+| r1-1 other countries stored in their own country | passed | mailed sign-up on the branch: `07400123456` with `GB` stored `+447400123456` in `GB`; `7135551234` with `US` stored `+17135551234` in `US`; `0245550114` with `GH` stored `+233245550114` in `GH`; `4155552671`/`US`, `+44 7911 123456` (no country) is `GB`, `+233 24 555 0102` is `GH`; token claim, session user and lookup carry the code; login by `+447400123456`, `+17135551234`, `+233245550114` and `00233245550114` finds the same account. On `main` the first two were stored as `+234...` and the third was refused |
+| Nigerian forms with NG or no country are identical to main | passed | the same 95 requests on `main` and the branch (12 forms: `0803 777 0101`, `0803...`, `234...`, `+234...`, `8037770105`, `00234...`, `+2340803...`, dashed, bracketed, `07400123456`, `7135551234`, `09012345678`; sign-up, confirm, login by typed form, E.164 and email, internal lookup, 7 bad numbers, 5 web `/auth/register` calls): 0 differences except the added `countryCode` key (69 of 95 answers carry it); stored phones and the web's `country` text identical. `07400123456` with `NG` or no country is `+2347400123456` as on `main`. 18 spellings of 3 legacy verified rows answer 409 on both trees |
+| `0803...` with `GB` falls back to `+234` (lead accepted) | passed | `08037770105`/`GB` stored `+2348037770105`, country `GB` |
+| 400 `COUNTRY_INVALID` before any 409 | passed | `/auth/signup` and `/auth/register` with a taken phone or a taken email and `ZZ`, `Ghana`, `GHA`, `XK`: 400 `COUNTRY_INVALID` (`main` answered 409 or created the account); a good code with a taken phone is still 409; a free phone with `ZZ` creates nothing; `gh` is kept as `GH` |
+| Backfill | passed | scratch Postgres with 30 live-shaped rows (3 spellings, spaced, dashed, bracketed, `+2340803...`, `00234...`, bare ten digits, trailing and leading spaces; Ghana, UK, US, `released:`, `deleted:`, short, long and landline numbers): the SQL and `comparablePhone` agree on all 30; everything not Nigerian stays null; the CHECK refuses `ng` |
+| Rollback | passed | refuses (nothing changed) for a chosen `GH` on a Nigerian phone, `GB` on a dashed Nigerian phone, `NG` and `GH` on a Ghana phone; runs clean when only derived `NG` remains; `prisma migrate deploy` applies it again; `migrate diff` reports no difference; stamp `20261024120000` is the latest on `main` and every branch |
+| tsc, eslint (no fix), gates | passed | tsc EXIT 0 (branch and `main`); eslint 8 findings on the changed files, the same 8 on `main` (line shifts only), none on a line this task wrote; gates 0 fail, 22 warn, 0 accepted, EXIT 0; `scripts/gates/check_baseline.py` EXIT 0 |
+| Specs | passed | 9 suites (phone and country utils, email and phone sign-up, register-country, login-phone-verified, phone-proof, g16-revert, contract), 297 tests, EXIT 0; none names Fintava |
+| Local tests (ports 8760 to 8765) | passed, one flake | `phone-signup.local` 109 pass, 0 fail, EXIT 0 (a ports-only copy); `phone-hold` 40, `g16` 28, `erase` 27 pass, EXIT 0. `signup-email.local` 54 pass, 1 fail twice: "an email an account already holds answers 409 and mails nothing" gets 429 `EMAIL_CODE_RESEND_TOO_SOON` (a 6 second resend gap under load 5 to 6). The same test fails the same way on `main` (47 pass, 1 fail), so it is not this change |
+
+Findings (all low, to the sweep list):
+
+- **low** `src/auth/email-signup.service.ts:411` and `:532` (and `phone-signup.service.ts:420`, `:556`): confirm and resume read the typed number with `normalisePhone(rawPhone)` and no country. A client that sends `07400123456` again at confirm instead of the `+447400123456` the sign-up answered gets `EMAIL_CODE_INVALID`. The contract answers E.164 and the app keeps what it is answered, so no fix round; GEO-03 must send the answered number.
+- **low** the 429 flake above (pre-existing, same on `main`).
+- **low** a login typed as a national number outside Nigeria still finds nothing (builder item e); only E.164 or `00` reach it.
+
+Not run: a phone, the app, the real SMS provider.
+
