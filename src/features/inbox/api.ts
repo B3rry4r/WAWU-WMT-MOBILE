@@ -1,11 +1,11 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema.generated';
+import type { components, paths } from '@/api/schema.generated';
 
 /**
  * The inbox's calls (I1, I35, I36), as the Hub's contract types them (INBOX-07, INBOX-02):
  * - `GET /inbox`: chats, paid questions and communities in one list, newest activity first,
- *   cursor-paged with an opaque cursor;
+ *   cursor-paged with an opaque cursor (`?kind=money`: money requests and sends between two people, FIX-114);
  * - `GET /inbox/unread`: the Inbox tab's badge, the sum of every row's unread count;
  * - `GET /live/catch-up`: what the live socket missed while it was down.
  *
@@ -14,6 +14,8 @@ import type { components } from '@/api/schema.generated';
  */
 export type InboxItem = components['schemas']['InboxItem'];
 export type InboxKind = InboxItem['kind'];
+/** What `GET /inbox` takes as `kind`: one kind of row, or `money` (the Money chip: requests and sends between two people together). */
+export type InboxFilter = NonNullable<NonNullable<paths['/api/hub/inbox']['get']['parameters']['query']>['kind']>;
 export type InboxPage = components['schemas']['InboxPage'];
 export type InboxUnread = components['schemas']['InboxUnread'];
 export type LiveCatchUp = components['schemas']['LiveCatchUp'];
@@ -37,11 +39,11 @@ function dataOf<T>(body: unknown, what: string): T {
 }
 
 export const inboxKey = ['inbox'] as const;
-export const inboxListKey = (kind: InboxKind | 'all') => ['inbox', 'list', kind] as const;
+export const inboxListKey = (kind: InboxFilter | 'all') => ['inbox', 'list', kind] as const;
 export const inboxUnreadKey = ['inbox', 'unread'] as const;
 
 /** One page of the inbox. `nextCursor` is null on the last page; send it back exactly as given. */
-export async function fetchInboxPage(kind: InboxKind | 'all', cursor?: string): Promise<InboxPage> {
+export async function fetchInboxPage(kind: InboxFilter | 'all', cursor?: string): Promise<InboxPage> {
   const page = dataOf<InboxPage>(
     await unwrap(
       api.GET('/api/hub/inbox', {

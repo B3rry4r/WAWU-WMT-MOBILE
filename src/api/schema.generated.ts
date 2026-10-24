@@ -14486,10 +14486,22 @@ export interface components {
             paying: boolean;
             canMessage: boolean;
         };
+        InboxMoneyMove: {
+            transferId: string;
+            chatId: string;
+            /** @enum {string} */
+            direction: "outgoing" | "incoming";
+            other: components["schemas"]["InboxPerson"];
+            amountKobo: number;
+            note: string | null;
+            /** @enum {string} */
+            status: "pending" | "completed" | "reversed";
+            canMessage: boolean;
+        };
         InboxItem: {
             id: string;
             /** @enum {string} */
-            kind: "paid_dm" | "community" | "chat" | "money_request";
+            kind: "paid_dm" | "community" | "chat" | "money_request" | "money_move";
             lastActivityAt: string | null;
             unreadCount: number;
             preview: components["schemas"]["InboxPreview"] | null;
@@ -14497,6 +14509,7 @@ export interface components {
             paidDm: components["schemas"]["InboxPaidDm"] | null;
             community: components["schemas"]["InboxCommunity"] | null;
             moneyRequest: components["schemas"]["InboxMoneyRequest"] | null;
+            moneyMove?: components["schemas"]["InboxMoneyMove"] | null;
         };
         InboxPage: {
             items: components["schemas"]["InboxItem"][];
@@ -27685,10 +27698,13 @@ export interface operations {
                 /** @description 1 to 100, 20 when left out. */
                 limit?: number;
                 /**
-                 * @description Only rows of this kind (the Paid DMs, Communities and Money chips; the
-                 *     Money chip is `money_request`). All kinds when left out.
+                 * @description Only rows of this kind (the Paid DMs, Communities and Money chips). The
+                 *     Money chip is `money`: requests and sends between two WAWU people
+                 *     together (FIX-114). `money_request` stays what it was, requests only.
+                 *     Sends are served only under `money`; the unfiltered list never holds
+                 *     them. All kinds when left out.
                  */
-                kind?: "chat" | "paid_dm" | "community" | "money_request";
+                kind?: "chat" | "paid_dm" | "community" | "money_request" | "money";
             };
             header?: never;
             path?: never;

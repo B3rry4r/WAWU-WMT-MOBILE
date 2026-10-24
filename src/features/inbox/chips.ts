@@ -1,18 +1,19 @@
 import type { ChipItem } from '@/components/FilterChips';
 
-import type { InboxKind } from './api';
+import type { InboxFilter } from './api';
 
 /**
  * The filter chips under the title. Each chip beyond All leads to a view built by another task and is
  * added there, as drawn (docs/WORKFLOW.md section 7): Communities by INBOX-05, Money by INBOX-20, and Paid DMs
- * by INBOX-18, which is a creator's (`withPaidChip`). `kind` is what the chip sends to `GET /inbox` as its filter.
+ * by INBOX-18, which is a creator's (`withPaidChip`). `kind` is what the chip sends to `GET /inbox` as its filter; the Money chip's is
+ * `money`, which the Hub answers with requests and sends between two people (FIX-114, G-INBOX-15-1).
  */
-export type InboxChip = ChipItem<string> & { kind: InboxKind | 'all' };
+export type InboxChip = ChipItem<string> & { kind: InboxFilter | 'all' };
 
 export const inboxChips: readonly InboxChip[] = [
   { value: 'all', label: 'All', kind: 'all' },
   { value: 'communities', label: 'Communities', kind: 'community' },
-  { value: 'money', label: 'Money', kind: 'money_request' },
+  { value: 'money', label: 'Money', kind: 'money' },
 ];
 
 /** The chip that opens I24, the communities view (INBOX-05). */
