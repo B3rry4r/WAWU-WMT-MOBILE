@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 45 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
-| verifying | 161 | 0 | 0 | 0 |
+| building | 3 | 0 | 0 | 0 |
+| verifying | 160 | 0 | 0 | 0 |
 | review | 45 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -63,7 +63,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -227,6 +226,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
@@ -424,7 +424,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 24 Oct 2026 · WALLET-41 · Built (Sonnet builder, T2, bundle B29; backend `wmt/WALLET-41` `f8d56fd` and mobile `wmt/WALLET-41`, both on `wmt/WALLET-21-HUB` `d39a868` and `14da2683`; status verifying; no PR): R-87. A person whose number is from outside Nigeria is asked where they live, then opens a wallet with no BVN (their country's ID, the two documents, the hosted selfie), and their first account is opened in their country's currency or their pick (US USD, GB GBP, euro countries EUR, CA CAD, AE AED, GH GHS, else USD; a config table). The Wallet tab lists their foreign accounts. Switch, fee (0) and limits from config; admin list, freeze, unfreeze and cancel with an audit row. Real Nuvion DEV: seven countries approved with no BVN or SSN; AED and Kenya USD details refused (G-WALLET-41-2). Migration `20261118090000_world_wallet`. Gaps G-WALLET-41-1 to 8.
+- 24 Oct 2026 · WALLET-41 · Built (Sonnet builder, T2, bundle B29; backend `wmt/WALLET-41` `84c8ecc` and mobile `wmt/WALLET-41`, both on `wmt/WALLET-21-HUB` `d39a868` and `14da2683`; status verifying; no PR): R-87. A person whose number is from outside Nigeria is asked where they live, then opens a wallet with no BVN (their country's ID, the two documents, the hosted selfie), and their first account is opened in their country's currency or their pick (US USD, GB GBP, euro countries EUR, CA CAD, AE AED, GH GHS, else USD; a config table). The Wallet tab lists their foreign accounts. Switch, fee (0) and limits from config; admin list, freeze, unfreeze and cancel with an audit row. Real Nuvion DEV: seven countries approved with no BVN or SSN; AED and Kenya USD details refused (G-WALLET-41-2). Migration `20261118090000_world_wallet`. Gaps G-WALLET-41-1 to 8.
 - 24 Oct 2026 · FIX-109 · Built in part (Sonnet builder, T1; backend `wmt/FIX-109` on `origin/main` `0e87d06`, mobile `wmt/FIX-109` on `origin/main` `2847eb32`; status verifying): the paid thread has "+" (Add to chat, through the free chat) and "..." (Report, Block), W38 can confirm the account's email (`/confirm-email`), and W15, W17, W19 and W45 say "Free" and how long a bank transfer takes only when the Hub serves it (new settings `MONEY_ARRIVAL_BANK_OUT_MINUTES` and `MONEY_ARRIVAL_BANK_IN_MINUTES`, unset today). Gap rows G-INBOX-18-2, -3, G-486, G-WALLET-05-2, -3, -5, G-FIX-68-1, -2 closed; G-FIX-109-1 added. The Money filter (G-INBOX-15-1) is NOT built.
 - 24 Oct 2026 · FIX-113 · Built (Sonnet builder, T1; mobile `wmt/FIX-113` on `origin/main` `fbf8c725`; app only, no backend change, status verifying): the Profile half FIX-110 did not reach. M8 draws an Experience section (a row per role and "Add a role"; a new role screen adds, changes and removes one: `POST`/`PATCH`/`DELETE /users/me/experience`) and a Skills and expertise box saved with M8's Save (`PATCH /users/me/profile-fields`); M4 shows both once written. M36 takes a multi-line Description (the Hub's 1000 characters); the owner can Edit a work on M35 (`PATCH /users/me/featured-works/{id}`, fields only) and Reorder their works on M34 (`PUT /users/me/featured-works/order`). Closes G-292, G-251 and G-252; G-FIX-113-1 asks the designer to draw what was built from shared parts (R-29); SHARED-CHANGES FIX-113 #1 lists `/role` under the signed-in guard. One assertion changed: `works/form.test.ts` pinned the limits object, which now carries the description's 1000.
 - 24 Oct 2026 · FIX-111 · Built (Sonnet builder, bundle B7, T2; backend `wmt/FIX-111` and mobile `wmt/FIX-111`, both on `wmt/FIX-107`; status verifying; no PR): a creator adds a course's lessons one by one from the create flow (title, length, a file each, the first is the free one) and edits them from their own course (add, reorder, rename, remove, give a file); a piece can name one of the creator's own courses (M23's "From a course") and H24 shows "From the course <title> · <n> lessons <price>", opening the course. Migration `20261105093000` (one nullable column on the piece's side row, rollback that refuses to lose data); `POST /content` takes `parentCourseId`, `GET /content/{id}/detail` serves `parentCourse`, `GET /content/mine/library?contentType=course`; a kept lesson keeps its file when no key is sent. Closes G-FIX107-1 and G-HOME-08-1. G-FIX111-1 (no board draws the lessons step) and G-FIX111-2 (the course cannot be changed after the piece is made) are open. A phone: NOT RUN.
