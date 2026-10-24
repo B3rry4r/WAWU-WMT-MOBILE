@@ -1,0 +1,14 @@
+# POINTS-09 · round history
+
+Moved out of [tasks/POINTS-09.md](../POINTS-09.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Mobile `wmt/POINTS-09` (T1). No backend change; contract synced from backend `wmt/AITOOLS-03` `542bc86`.
+- **Files:** `src/features/points/` `ToolScreen.tsx` (branches on `input.kind`), `voiceoverApi.ts` (`startJob` by tool id), `voiceoverIntent.ts` (a record per account and tool), `voiceoverModel.ts` (`inputKindOf`, `toolReady` by kind, box labels), `studioModel.ts` (`isBuiltTool`, the Hub's ids, `costLine`), `studioApi.ts` (`AiTool` reads a missing `input.kind` as `text`), `StudioScreen.tsx` and `StudioRow.tsx` (draw only tools with a screen); new test `__tests__/studioToolsFlow.test.tsx` (19); `contract/openapi.json`, `openapi.mobile.json`, `SOURCE_COMMIT`, `src/api/schema.generated.ts` (additive: three routes, three request schemas, `outputs`, `input.kind`).
+- **Capability checks:** Quick voice (125 a minute from the Hub, voice rows, "About N minutes", cost line, run, play): tests plus the live run. Sound effect and Music track (75 and 500 from the quote, description box and count, run, play): tests plus the live run. A failed job for each tool says no points were taken and the balance is unchanged: tests plus the live run. Too few points opens PT3 and nothing runs; the daily limit opens PT7 with the Hub's sentence: tests for each tool; PT3 also live. A tool the Hub lists that the app has no screen for, and one the Hub does not list, has no tile: tests. VoiceOver's tests pass untouched: `toolFlow` 21, `voiceoverModel` 6, `studioFlow` unchanged. Real sign-in on the local stack (V9): done, see Current state.
+- **Checks (EXIT 0):** tsc; eslint on 9 changed files; jest points and create 217/217 (198 before); gates 0 fail, 18 warn, 0 accepted (as before); `check_baseline`; `check_tasks --write`. `react-native-view-shot` was missing from the shared `node_modules` on this machine, so tsc and the web export needed it unpacked into this worktree's own copy (no file of the repo changed for it).
+- **Differences from the boards (recorded):** no play button on voice rows, no "Bio" tag, no Save or Use in a product rows, no "Example values", no "Your voice" row (as POINTS-08); the description box is PT2's text box with a "Description" label and the Hub's line as its placeholder (no board draws it); the Music track tile follows the Hub's list order, after Sound effect.
+- **Gaps filed:** G-POINTS-09-1 (length, instrumental, history, existing row), G-POINTS-09-2 (the description box), G-POINTS-09-3 (PT2a's time line for a track). No shared-change request.
+- **Not done:** the three screens are not compared picture by picture with PT2 to PT2c beyond the builder's own look (the verifier does V5); no real provider, no real run of a track; PT7 not run on the stack.
+

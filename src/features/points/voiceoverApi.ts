@@ -3,10 +3,11 @@ import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
 /**
- * The calls behind one AI tool's screen (PT2, PT2a, PT2b, PT2c), as the backend contract types them (AITOOLS-01).
+ * The calls behind one AI tool's screen (PT2, PT2a, PT2b, PT2c), as the backend contract types them (AITOOLS-01 to AITOOLS-03).
  *
- * - `POST /ai-tools/voiceover/jobs`: starts a job from the words, a voice id from `GET /ai-tools` and the `quoteToken` of the
- *   `POST /points/quote` the person saw. The `Idempotency-Key` is one per job and travels again, unchanged, on every retry of the same
+ * - `POST /ai-tools/{tool}/jobs`: starts a job. A tool that reads words aloud (VoiceOver, Quick voice) sends the words, a voice id from
+ *   `GET /ai-tools` and the `quoteToken` of the `POST /points/quote` the person saw; a tool that takes a description (Sound effect,
+ *   Music track) sends the description and the `quoteToken`. The `Idempotency-Key` is one per job and travels again, unchanged, on every retry of the same
  *   job: the Hub answers a key it knows with the first job (`200`) and holds nothing more. It answers `202` with the job `working`.
  * - `GET /ai-tools/jobs/{id}`: one job as it stands now: `working`, `done` with an audio link, or `failed` with the Hub's own sentence.
  *
@@ -54,9 +55,13 @@ export type StartOutcome =
   /** The Hub refused and nothing was held, in its own sentence. The key is free to use once the cause is fixed. */
   | { kind: 'refused'; code: string | null; message: string };
 
+/** What a job carries, by the kind of input the tool takes (`GET /ai-tools`, `input.kind`). */
+export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string };
+
 export type StartInput = {
-  text: string;
-  voiceId: string;
+  /** The Hub's id for the tool (`GET /ai-tools`): it names the route. */
+  toolId: string;
+  request: JobRequest;
   quoteToken: string;
   /** One per job, kept across retries of the same job. */
   key: string;
@@ -79,15 +84,32 @@ function reasonOf(error: unknown): { code: string | null; message: string } {
   return { code: typeof reason.code === 'string' ? reason.code : null, message: typeof reason.message === 'string' && reason.message ? reason.message : message };
 }
 
+/** The one POST each tool's route takes, with the body its kind carries. A tool this build has no route for is `null`. */
+function post(input: StartInput) {
+  const { toolId, request, quoteToken, key } = input;
+  const options = { params: { header: { 'Idempotency-Key': key } }, fetch: resendsUnderKey } as const;
+  if (request.kind === 'text') {
+    const body = { text: request.text, voiceId: request.voiceId, quoteToken };
+    if (toolId === 'voiceover') return api.POST('/api/hub/ai-tools/voiceover/jobs', { ...options, body });
+    if (toolId === 'quick-voice') return api.POST('/api/hub/ai-tools/quick-voice/jobs', { ...options, body });
+    return null;
+  }
+  const body = { prompt: request.prompt, quoteToken };
+  if (toolId === 'sound-effect') return api.POST('/api/hub/ai-tools/sound-effect/jobs', { ...options, body });
+  if (toolId === 'music') return api.POST('/api/hub/ai-tools/music/jobs', { ...options, body });
+  return null;
+}
+
 /**
- * POST /ai-tools/voiceover/jobs. A request that got no answer is `unanswered`, and so is every 5xx and the key still running: points may
+ * POST /ai-tools/{tool}/jobs. A request that got no answer is `unanswered`, and so is every 5xx and the key still running: points may
  * be held, so only the SAME key is safe to send again.
  */
-export async function startVoiceover(input: StartInput): Promise<StartOutcome> {
-  const { key, ...body } = input;
+export async function startJob(input: StartInput): Promise<StartOutcome> {
   let result;
   try {
-    result = await api.POST('/api/hub/ai-tools/voiceover/jobs', { params: { header: { 'Idempotency-Key': key } }, body, fetch: resendsUnderKey });
+    const sent = post(input);
+    if (sent === null) return { kind: 'refused', code: null, message: 'That did not start. Try again.' };
+    result = await sent;
   } catch {
     return { kind: 'unanswered' };
   }
