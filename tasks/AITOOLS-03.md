@@ -7,7 +7,7 @@ order: -124
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [AITOOLS-02]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -16,6 +16,8 @@ artboards: []
 # AITOOLS-03 · Sound effect and Music track (backend)
 
 ## Current state
+
+- **24 Oct 2026, lead: merged.** Round 3 (backend `9d50fc6`) is exactly round 2's four findings (F1 to F4); the lead accepts it on round 2's check. Backend PR #183 merged as `90bb0ef`.
 
 As of 24 Oct 2026, verifying (builder fix round 3 done). Tier T2. Builder report and verifier reports of every round: [history/AITOOLS-03.md](history/AITOOLS-03.md).
 - **Heads:** backend `wmt/AITOOLS-03` `9d50fc6` (on `207fabf`, new commit only). Mobile `wmt/AITOOLS-03` carries this file. No migration, no new column. Round 3 touched 6 .ts files and the README.
