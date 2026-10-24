@@ -73,10 +73,10 @@ describe('the data request line', () => {
 });
 
 describe('the phone line', () => {
-  it('keeps the first four and last four digits of a Nigerian number as Z2 draws it, and only the last four of any other', () => {
+  it('keeps the first four and last four digits of a Nigerian number as Z2 draws it, and the country code and last four of any other (GEO-03)', () => {
     expect(maskPhone('+2348031234412')).toBe('0803 ••• 4412');
     expect(maskPhone('08031234412')).toBe('0803 ••• 4412');
-    expect(maskPhone('+447911123456')).toBe('••• 3456');
+    expect(maskPhone('+447911123456')).toBe('+44 ••• 3456');
   });
 
   it('shows nothing for a number that is missing or too short', () => {

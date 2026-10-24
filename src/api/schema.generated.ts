@@ -1359,6 +1359,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/geo/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every country, A to Z by name. */
+        get: operations["GeoController_countries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/geo/countries/{code}/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One country's ISO 3166-2 regions, A to Z by name. `code` is the country's
+         *     ISO alpha-2 code in any case. 404 `country_not_found` for a code that is
+         *     not on the list; 200 with no items for a country ISO divides into nothing.
+         */
+        get: operations["GeoController_regions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/tips": {
         parameters: {
             query?: never;
@@ -3254,6 +3292,148 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/money/cards/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a card costs and whether the person may ask for one now (W29):
+         *     Nuvion's fee plus WAWU's (R-10), both from settings, the limits and how
+         *     many the person holds. `enabled: false` means the product is switched off.
+         */
+        get: operations["MoneyCardsController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The person's cards, newest first (W29's list, W31). Failed requests are not listed. */
+        get: operations["MoneyCardsController_list"];
+        put?: never;
+        /**
+         * Gets a card (W29): Nuvion makes it and takes its fee from the person's
+         *     wallet. Answers 201 with the card: `active`, or `pending` when the issuer
+         *     has not confirmed it (it is looked for by its reference, never made
+         *     twice). The card number, expiry and CVV are not in the answer: they are
+         *     shown behind the PIN (`POST /money/cards/{id}/reveal`). The same
+         *     Idempotency-Key and body answer the first result again
+         *     (`Idempotent-Replayed: true`) without checking the PIN. Cards switched
+         *     off, a limit, and `fees_not_set` come before the PIN is looked at.
+         */
+        post: operations["MoneyCardsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One card as it stands now (a card still being confirmed is looked for). */
+        get: operations["MoneyCardsController_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Blocks the card for good (W32 "Block card"; Nuvion deletes it): it cannot
+         *     be used or brought back. Needs no PIN. Safe to repeat.
+         */
+        delete: operations["MoneyCardsController_block"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards/{id}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The card's number, expiry and CVV (W31 "Details"), read from Nuvion now,
+         *     behind the PIN or a fingerprint approval every time. WAWU never stores
+         *     them and the answer is not cacheable. A POST so no cache or log keeps the
+         *     URL with an answer.
+         */
+        post: operations["MoneyCardsController_reveal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards/{id}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freezes the card (W31 "Freeze"): no payment goes through until it is unfrozen. Needs no PIN, so a lost card is stopped at once. Safe to repeat. */
+        post: operations["MoneyCardsController_freeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards/{id}/unfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unfreezes the card (W32), behind the PIN or a fingerprint. A card support froze answers `card_blocked`. */
+        post: operations["MoneyCardsController_unfreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/cards/{id}/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payments, reversals and refunds on the card, newest first, a cursor page. A blocked card has none to show. */
+        get: operations["MoneyCardsController_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/money/transactions/{id}/receipt": {
         parameters: {
             query?: never;
@@ -3349,6 +3529,138 @@ export interface paths {
         get: operations["MoneyRecipientController_recentRecipients"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AddMoneyReturnController_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The ways to add money and whether each can be used now, with the reason in
+         *     plain words when it cannot (switched off, not set up, or not switched on
+         *     for naira at the provider yet). `cardPublicKey` is what the phone encrypts
+         *     a card with. Reads our own settings only; it never calls the provider.
+         */
+        get: operations["MoneyAddMoneyController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the person pays and what the wallet gets for one amount by one way:
+         *     the provider's charge plus WAWU's (R-10, both from config). `409
+         *     add_money_unavailable` when the way cannot be used; `503 fees_not_set`
+         *     while the provider's charge for it is not set.
+         */
+        get: operations["MoneyAddMoneyController_quote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's attempts, newest first, in cursor pages. */
+        get: operations["MoneyAddMoneyController_list"];
+        put?: never;
+        /**
+         * Starts adding money. Answers 201 with the attempt: `awaiting_user` with a
+         *     `checkoutUrl` to open in the browser (3-D Secure, Apple Pay, the bank
+         *     checkout) or a prompt to answer on the phone (USSD), `processing` (paid,
+         *     being added to the wallet), or `failed` with the reason in plain words
+         *     (a declined card, or a way the provider has not switched on for naira).
+         *     The wallet is credited by the provider's inflow, once; poll `GET
+         *     /money/add-money/{id}`. The same Idempotency-Key and body answer the first
+         *     result again (`Idempotent-Replayed: true`) without checking the PIN.
+         *     Before the PIN, changing nothing: `409 add_money_unavailable`, `503
+         *     fees_not_set`, `422 below_minimum`, `403 limit_reached`, `409
+         *     quote_changed`, `409 wallet_not_open`. A card is sent already encrypted on
+         *     the phone; the Hub passes it on and never keeps it.
+         */
+        post: operations["MoneyAddMoneyController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One attempt as it stands, asked of the provider when it is still open. Only
+         *     its owner reads it; another person's and an id nobody holds are the same
+         *     `404 not_found`.
+         */
+        get: operations["MoneyAddMoneyController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/money/add-money/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels an attempt that is not paid yet. One the provider has taken, or
+         *     that is already credited, is `409 add_money_unavailable`.
+         */
+        post: operations["MoneyAddMoneyController_cancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6702,6 +7014,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the signed-in person is (GEO-02, R-85): their country of residence
+         *     (what they chose, else the country WAWU ID holds, else their phone's),
+         *     with their region and city when they have set them. The app calls it
+         *     after sign-in; where the person has not chosen a country it records the
+         *     one WAWU ID gives, so the dashboard counts them.
+         */
+        get: operations["MeController_location"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/saved": {
         parameters: {
             query?: never;
@@ -9017,6 +9352,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/store/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The products on sale in one store, from the product map an admin keeps.
+         *     `available` is false (with a `reason`) when the Hub has no credentials for
+         *     that store yet or an admin has switched it off, and then no product is
+         *     listed. A price is never here: the app shows the store's own, in the
+         *     person's own currency. `accountToken` is the signed-in person's own id
+         *     for the stores: the app MUST pass it to Google Play Billing as
+         *     `obfuscatedAccountIdAndroid` and to StoreKit as `appAccountToken` when it
+         *     starts a purchase; a purchase that carries another person's token, or none,
+         *     is refused.
+         */
+        get: operations["StoreController_products"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/store/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hands the Hub a purchase the store has just completed. The Hub asks the
+         *     store's own server about it (the app's word is never taken), then gives
+         *     what was bought, once per store transaction: the same call again, a
+         *     restore, or the store's own notice arriving first all answer the same
+         *     purchase with `alreadyGranted: true`. Send `purchaseToken` on `android`,
+         *     `transactionId` on `ios`, and `communityId` for a pass.
+         *
+         *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
+         *     `store_product_unknown` (404), `store_receipt_missing` (400),
+         *     `store_purchase_invalid` (422), `store_purchase_pending`,
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
+         */
+        post: operations["StoreController_buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9739,7 +10131,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10100,6 +10492,52 @@ export interface components {
             statusCode: number;
             /** @description A sentence about the first field that is wrong. */
             message: string;
+        };
+        CreateCardDto: {
+            /**
+             * @description A reusable card, or one for a single payment (blocked after its first).
+             * @enum {string}
+             */
+            kind: "virtual" | "single_use";
+            /** @description What the person calls it; a default is used when absent. 30 characters at most. */
+            name?: string;
+        };
+        AddMoneyBillingDto: {
+            line1: string;
+            city: string;
+            state: string;
+            postalCode?: string;
+        };
+        AddMoneyDeviceDto: {
+            language?: string;
+            screenWidth?: string;
+            screenHeight?: string;
+            colorDepth?: string;
+            /** @description Minutes from UTC, as the phone says, for example -60. */
+            timezoneOffset?: string;
+        };
+        AddMoneyCardDto: {
+            /** @description The card encrypted on the phone with the provider public key (RSA-OAEP, SHA-256, base64). */
+            encrypted: string;
+            billing: components["schemas"]["AddMoneyBillingDto"];
+            device?: components["schemas"]["AddMoneyDeviceDto"];
+        };
+        AddMoneyUssdDto: {
+            /** @description The paying phone in international form; left out, the phone on the account is used. */
+            msisdn?: string;
+        };
+        AddMoneyDto: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            amountKobo: number;
+            /** @description What the person was shown they pay. If the quote changed, 409 quote_changed and nothing is charged. */
+            chargeKobo: number;
+            /** @description Required for rail card. */
+            card?: components["schemas"]["AddMoneyCardDto"];
+            ussd?: components["schemas"]["AddMoneyUssdDto"];
+        };
+        AdminAddMoneyActDto: {
+            reason?: string;
         };
         OpenFxAccountDto: {
             /** @enum {string} */
@@ -10560,6 +10998,32 @@ export interface components {
         UpdateProfileFieldsDto: {
             /** @description Where the person is, free text ("Lagos, Nigeria"). null or "" clears it. */
             location?: string | null;
+            /**
+             * @description Country of residence, ISO 3166-1 alpha-2 from GET /geo/countries ("NG",
+             *     any case). null or "" clears it (and the region, which belonged to it).
+             *     Changing it clears a region that is not sent again.
+             */
+            countryCode?: string | null;
+            /**
+             * @description Region, the full ISO 3166-2 code from GET /geo/countries/{code}/regions
+             *     ("NG-LA"; its tail "LA" is accepted too). It must belong to the country
+             *     saved or sent with it. null or "" clears it.
+             */
+            regionCode?: string | null;
+            /**
+             * @description The region's name ("Lagos"). Beside a regionCode it must be that code's
+             *     name; alone it is looked up in the country's list; for a country with
+             *     no list it is saved as typed. null or "" clears it.
+             */
+            regionName?: string | null;
+            /**
+             * @description City, free text ("Ikeja"). null or "" clears it. The one limit, 80
+             *     characters (CITY_MAX_LENGTH in geo.service.ts), is checked there: any longer
+             *     city is a 400 with `reason.code` `city_too_long`, not a validation message
+             *     that depends on how long it is. The four place keys carry no length rule of
+             *     their own for the same reason: GeoService.checkLocation answers them all.
+             */
+            city?: string | null;
             /** @description Skills and expertise chips. [] clears them. */
             skills?: string[];
             /** @description What the person is open to, as chips. [] clears them. */
@@ -11491,6 +11955,67 @@ export interface components {
             /** @enum {string} */
             type: "view" | "tap" | "skip";
         };
+        StorePurchaseDto: {
+            /**
+             * @description The store the purchase was made in.
+             * @enum {string}
+             */
+            platform: "android" | "ios";
+            /** @description The id the store sold it under (`storeProductId` from `GET /store/products`). */
+            productId: string;
+            /** @description Google Play: the purchase token the billing library returned. Required on `android`. */
+            purchaseToken?: string;
+            /** @description App Store: the StoreKit transaction id. Required on `ios`. */
+            transactionId?: string;
+            /**
+             * Format: uuid
+             * @description The room a community pass is bought for. Required for a pass product, refused for any other.
+             */
+            communityId?: string;
+        };
+        StoreProductGrantsDto: {
+            /** @description points: a pack of the live plan, by id. */
+            packId?: string;
+            /**
+             * @description credits: starter, popular or pro.
+             * @enum {string}
+             */
+            pack?: "starter" | "popular" | "pro";
+            /** @description tier: a tier of the live plan, by id. */
+            tierId?: string;
+            /** @description pass: the days one period runs. */
+            days?: number;
+        };
+        CreateStoreProductDto: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            /** @description The id the store sells it under. Fixed once created. */
+            storeProductId: string;
+            /**
+             * @description Fixed once created.
+             * @enum {string}
+             */
+            kind: "points" | "credits" | "tier" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsDto"];
+            /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStoreProductDto: {
+            title?: string;
+            grants?: components["schemas"]["StoreProductGrantsDto"];
+            referenceKobo?: number;
+            active?: boolean;
+            sortOrder?: number;
+        };
+        UpdateStorePlatformDto: {
+            /** @description Switch purchases from this store on or off. */
+            enabled?: boolean;
+            /** @description The store's cut in basis points (1500 = 15%), 0 to 10000. Send `-1` to go back to the config's. */
+            storeFeeBps?: number;
+        };
         FintavaWebhookAck: {
             /** @enum {string} */
             outcome: "recorded" | "duplicate";
@@ -12064,6 +12589,101 @@ export interface components {
             startedAt: string | null;
             canStart: boolean;
         };
+        AdminAddMoneyView: {
+            wawuUserId: string | null;
+            provider: string;
+            reference: string;
+            providerRef: string | null;
+            frozen: boolean;
+            failureCode: string | null;
+            reviewNote: string | null;
+            feeCollectedAt: string | null;
+            audits: {
+                action: string;
+                reason: string | null;
+                fromStatus: string;
+                toStatus: string;
+                actedByAdminEmail: string;
+                actedAt: string;
+            }[];
+            id: string;
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            status: "failed" | "expired" | "cancelled" | "created" | "awaiting_user" | "processing" | "settled";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            chargeKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            checkoutUrl: string | null;
+            message: string;
+            failureMessage: string | null;
+            cardLast4: string | null;
+            cardBrand: string | null;
+            expiresAt: string | null;
+            createdAt: string;
+            creditedAt: string | null;
+        };
+        AdminAddMoneyPage: {
+            items: components["schemas"]["AdminAddMoneyView"][];
+            nextCursor: string | null;
+        };
+        AddMoneyRailView: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            available: boolean;
+            reason: string | null;
+            hosted: boolean;
+        };
+        AddMoneyOptionsView: {
+            /** @enum {string} */
+            currency: "NGN";
+            rails: components["schemas"]["AddMoneyRailView"][];
+            cardPublicKey: string | null;
+            limits: {
+                minKobo: number | null;
+                maxKobo: number | null;
+                dailyMaxKobo: number | null;
+            };
+        };
+        AddMoneyQuoteView: {
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            feeKobo: number;
+            chargeKobo: number;
+        };
+        AddMoneyView: {
+            id: string;
+            /** @enum {string} */
+            rail: "card" | "apple_pay" | "ussd" | "open_banking";
+            /** @enum {string} */
+            status: "failed" | "expired" | "cancelled" | "created" | "awaiting_user" | "processing" | "settled";
+            /** @enum {string} */
+            currency: "NGN";
+            amountKobo: number;
+            chargeKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            checkoutUrl: string | null;
+            message: string;
+            failureMessage: string | null;
+            cardLast4: string | null;
+            cardBrand: string | null;
+            expiresAt: string | null;
+            createdAt: string;
+            creditedAt: string | null;
+        };
+        AddMoneyPage: {
+            items: components["schemas"]["AddMoneyView"][];
+            nextCursor: string | null;
+        };
         FxBalanceView: {
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
@@ -12118,9 +12738,9 @@ export interface components {
             status: "pending" | "completed" | "failed";
             wawuUserId: string;
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string|null} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN" | null;
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD" | null;
             amountFromMinor: number;
             amountToMinor: number | null;
             providerFeeMinor: number | null;
@@ -12195,9 +12815,9 @@ export interface components {
         };
         FxConversionView: {
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             rate: string;
             fromMinor: number;
             toMinor: number;
@@ -12227,9 +12847,9 @@ export interface components {
         FxQuoteView: {
             id: string;
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -12248,9 +12868,9 @@ export interface components {
             /** @enum {string} */
             status: "pending" | "completed" | "failed";
             /** @enum {string} */
-            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            fromCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             /** @enum {string} */
-            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD" | "NGN";
+            toCurrency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "NGN" | "USDT" | "USDC" | "RLUSD";
             fromAccountId: string | null;
             toAccountId: string | null;
             amountFromMinor: number;
@@ -12348,6 +12968,83 @@ export interface components {
                 currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS";
                 amountMinor: number;
             };
+        };
+        AdminCardView: {
+            id: string;
+            wawuUserId: string;
+            /** @enum {string} */
+            kind: "virtual" | "single_use";
+            state: string;
+            frozenBy: string | null;
+            providerCardId: string | null;
+            createdAt: string;
+            cancelledAt: string | null;
+        };
+        AdminCardPage: {
+            items: components["schemas"]["AdminCardView"][];
+            nextCursor: string | null;
+        };
+        CardView: {
+            id: string;
+            /** @enum {string} */
+            kind: "virtual" | "single_use";
+            name: string;
+            /** @enum {string} */
+            status: "pending" | "frozen" | "active" | "blocked" | "used";
+            /** @enum {string} */
+            currency: "USD";
+            frozenBySupport: boolean;
+            last4: string | null;
+            statusMessage: string | null;
+            createdAt: string;
+        };
+        CardQuoteView: {
+            enabled: boolean;
+            /** @enum {string} */
+            currency: "USD";
+            kinds: ("virtual" | "single_use")[];
+            fee: components["schemas"]["FeeBreakdown"];
+            limits: {
+                maxActive: number;
+                maxPerDay: number;
+                activeNow: number;
+                askedToday: number;
+            };
+            canCreate: boolean;
+        };
+        CardListView: {
+            enabled: boolean;
+            cards: components["schemas"]["CardView"][];
+        };
+        CardDetailsView: {
+            number: string;
+            expiryMonth: string;
+            expiryYear: string;
+            cvv: string;
+            cardholderName: string;
+            billing: {
+                line1: string | null;
+                line2: string | null;
+                city: string | null;
+                state: string | null;
+                postalCode: string | null;
+            } | null;
+        };
+        CardTransactionView: {
+            id: string;
+            /** @enum {string} */
+            kind: "purchase" | "refund" | "reversal";
+            amountCents: number;
+            currency: string;
+            merchant: string | null;
+            place: string | null;
+            narration: string | null;
+            status: string;
+            occurredAt: string | null;
+        };
+        CardTransactionPage: {
+            items: components["schemas"]["CardTransactionView"][];
+            nextCursor: string | null;
         };
         PointNextExpiryView: {
             points: number;
@@ -12593,6 +13290,27 @@ export interface components {
         AdminContentDecisionView: {
             content: components["schemas"]["AdminContentDetailView"];
             review: components["schemas"]["AdminContentReviewEntryView"];
+        };
+        GeoCountryView: {
+            code: string;
+            name: string;
+            dialCode: string | null;
+            flag: string;
+            exampleNumber: string | null;
+            exampleNational: string | null;
+            hasRegions: boolean;
+        };
+        GeoCountryList: {
+            items: components["schemas"]["GeoCountryView"][];
+        };
+        GeoRegionView: {
+            code: string;
+            name: string;
+            type: string;
+        };
+        GeoRegionList: {
+            countryCode: string;
+            items: components["schemas"]["GeoRegionView"][];
         };
         AdminKycMaskedIdentifiersView: {
             bvnMasked: string | null;
@@ -13226,7 +13944,7 @@ export interface components {
             flutterwaveTxRef: string;
             responseWindowHours: number;
             /** @enum {string} */
-            refundStatus: "failed" | "owed" | "not_owed" | "submitted" | "settled";
+            refundStatus: "failed" | "settled" | "owed" | "not_owed" | "submitted";
             refundReference: string | null;
             /** Format: date-time */
             refundedAt: string | null;
@@ -14050,6 +14768,28 @@ export interface components {
                 enabled: boolean | null;
                 price: number | null;
             };
+        };
+        AdminGeoRegionCount: {
+            regionCode: string | null;
+            regionName: string | null;
+            people: number;
+            creators: number;
+        };
+        AdminGeoCountryCount: {
+            countryCode: string;
+            countryName: string;
+            people: number;
+            creators: number;
+            regions: components["schemas"]["AdminGeoRegionCount"][];
+        };
+        AdminGeoCountsView: {
+            people: number;
+            creators: number;
+            unknown: {
+                people: number;
+                creators: number;
+            };
+            countries: components["schemas"]["AdminGeoCountryCount"][];
         };
         AdminFinancePeriodView: {
             from: string;
@@ -15175,6 +15915,11 @@ export interface components {
         ProfileFieldsView: {
             wawuUserId: string;
             location: string | null;
+            countryCode: string | null;
+            countryName: string | null;
+            regionCode: string | null;
+            regionName: string | null;
+            city: string | null;
             skills: string[];
             openTo: string[];
             threadsHandle: string | null;
@@ -15941,6 +16686,17 @@ export interface components {
             unreadNotifications: number;
             enrolledCourses: number;
         };
+        MeLocationView: {
+            countryCode: string | null;
+            countryName: string | null;
+            /** @enum {string|null} */
+            countrySource: "phone" | "profile" | "wawu_id" | null;
+            regionCode: string | null;
+            regionName: string | null;
+            city: string | null;
+            wawuIdCountryCode: string | null;
+            phoneCountryCode: string | null;
+        };
         SavedContentView: {
             id: string;
             title: string;
@@ -16042,7 +16798,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "transaction" | "paid_question" | "profile";
+            kind: "community" | "content" | "transaction" | "profile" | "paid_question";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -16348,6 +17104,7 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
+            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;
@@ -16481,7 +17238,7 @@ export interface components {
             ticketCount: number;
             ticketsKobo: number;
             /** @enum {string} */
-            status: "failed" | "paid" | "processing" | "awaiting_payment";
+            status: "failed" | "processing" | "paid" | "awaiting_payment";
             paymentId: string | null;
             /** @enum {string|null} */
             paymentStatus: "pending" | "completed" | "failed" | "reversed" | null;
@@ -17189,6 +17946,130 @@ export interface components {
             netPayoutKobo: number;
             daysHeld: number;
         };
+        StoreProductGrantsConfig: {
+            packId: string | null;
+            /** @enum {string|null} */
+            pack: "starter" | "popular" | "pro" | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        StoreGrantsView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            days: number | null;
+        };
+        AdminStoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            grants: components["schemas"]["StoreProductGrantsConfig"];
+            resolved: components["schemas"]["StoreGrantsView"];
+            referenceKobo: number | null;
+            active: boolean;
+            sortOrder: number;
+            updatedBy: string | null;
+            updatedAt: string;
+        };
+        AdminStoreProductListView: {
+            items: components["schemas"]["AdminStoreProductView"][];
+        };
+        AdminStorePlatformView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            enabled: boolean;
+            configured: boolean;
+            storeFeeBps: number;
+            storeFeeOverridden: boolean;
+            updatedAt: string | null;
+        };
+        AdminStorePlatformListView: {
+            items: components["schemas"]["AdminStorePlatformView"][];
+        };
+        AdminStorePurchaseView: {
+            id: string;
+            wawuUserId: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            environment: string;
+            storeTransactionId: string;
+            communityId: string | null;
+            currency: string | null;
+            priceMicros: string | null;
+            referenceKobo: number | null;
+            storeFeeBps: number;
+            netKobo: number | null;
+            creatorWawuUserId: string | null;
+            creatorShareKobo: number | null;
+            purchasedAt: string;
+            expiresAt: string | null;
+            endedAt: string | null;
+            endReason: string | null;
+            takenBack: {
+                [key: string]: unknown;
+            } | null;
+            flag: string | null;
+            flaggedAt: string | null;
+        };
+        AdminStorePurchasePageView: {
+            items: components["schemas"]["AdminStorePurchaseView"][];
+            nextCursor: string | null;
+        };
+        StoreProductView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            title: string;
+            subscription: boolean;
+            grants: components["schemas"]["StoreGrantsView"];
+        };
+        StoreProductListView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            accountToken: string;
+            available: boolean;
+            /** @enum {string|null} */
+            reason: "store_not_configured" | "store_disabled" | null;
+            products: components["schemas"]["StoreProductView"][];
+        };
+        StoreGrantedView: {
+            points: number | null;
+            credits: number | null;
+            tierId: string | null;
+            until: string | null;
+            communityId: string | null;
+        };
+        StorePurchaseView: {
+            id: string;
+            /** @enum {string} */
+            platform: "android" | "ios";
+            storeProductId: string;
+            /** @enum {string} */
+            kind: "tier" | "credits" | "points" | "pass";
+            /** @enum {string} */
+            status: "refunded" | "granted" | "revoked";
+            alreadyGranted: boolean;
+            grant: components["schemas"]["StoreGrantedView"];
+            purchasedAt: string;
+            expiresAt: string | null;
+            flag: string | null;
+        };
+        StoreWebhookAck: {
+            received: boolean;
+            outcome: string;
+        };
         AdCreativeView: {
             headline: string;
             subline: string | null;
@@ -17308,7 +18189,7 @@ export interface components {
         AdAuditEntryView: {
             id: string;
             /** @enum {string} */
-            action: "ended" | "paused" | "updated" | "scheduled" | "created" | "resumed" | "deleted";
+            action: "created" | "ended" | "paused" | "updated" | "scheduled" | "resumed" | "deleted";
             /** @enum {string|null} */
             previousStatus: "ended" | "live" | "paused" | "draft" | "scheduled" | null;
             /** @enum {string|null} */
@@ -19731,6 +20612,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LegalDeliverablesView"];
+                };
+            };
+        };
+    };
+    GeoController_countries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoCountryList"];
+                };
+            };
+        };
+    };
+    GeoController_regions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoRegionList"];
                 };
             };
         };
@@ -22452,6 +23373,15 @@ export interface operations {
                     "application/json": components["schemas"]["WalletView"];
                 };
             };
+            /** @description reason.code: passport_country_required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
             /** @description reason.code: bvn_not_checked, selfie_required, identity_has_wallet, phone_held_by_other_identity, identity_under_review, residence_not_set, residence_mismatch */
             409: {
                 headers: {
@@ -23889,6 +24819,557 @@ export interface operations {
             };
         };
     };
+    MoneyCardsController_quote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardQuoteView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardListView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCardDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, card_limit_reached */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set, cards_unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_reveal: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardDetailsView"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set, card_blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: card_reveal_rate_limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_freeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, card_blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_unfreeze: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardView"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, pin_not_set, card_blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyCardsController_transactions: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 1 to 50. */
+                limit?: number;
+                /** @description `nextCursor` from the previous page. Opaque: send it back as given. */
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardTransactionPage"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: cards_unavailable, provider_unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
     MoneyReceiptController_issue: {
         parameters: {
             query?: never;
@@ -24155,6 +25636,343 @@ export interface operations {
                 };
             };
             /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    AddMoneyReturnController_page: {
+        parameters: {
+            query?: {
+                id?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page that opens the app. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyOptionsView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_quote: {
+        parameters: {
+            query: {
+                rail: "card" | "apple_pay" | "ussd" | "open_banking";
+                amountKobo: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyQuoteView"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, add_money_unavailable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyPage"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_start: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The four-digit transaction PIN, unless X-Device-Approval is sent. Only ever in this header: never in a URL, a body or a log. */
+                "X-Transaction-Pin"?: string;
+                /** @description Instead of X-Transaction-Pin: `v1.<challengeId>.<signature>`, the registered phone key's P-256 signature (DER, base64url) over the challenge and this exact request. Send this or X-Transaction-Pin, not both. */
+                "X-Device-Approval"?: string;
+                /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMoneyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: idempotency_key_required, amount_out_of_range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: insufficient_funds */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: pin_required, pin_incorrect, limit_reached, device_approval_refused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, add_money_unavailable, email_not_verified */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: below_minimum */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen, pin_locked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: provider_unreachable, fees_not_set */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_frozen */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+        };
+    };
+    MoneyAddMoneyController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddMoneyView"];
+                };
+            };
+            /** @description reason.code: not_found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoneyErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: wallet_not_open, wallet_opening, add_money_unavailable */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -30370,6 +32188,25 @@ export interface operations {
             };
         };
     };
+    MeController_location: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeLocationView"];
+                };
+            };
+        };
+    };
     MeController_savedList: {
         parameters: {
             query?: {
@@ -34829,6 +36666,51 @@ export interface operations {
                     "application/json": {
                         accepted: boolean;
                     };
+                };
+            };
+        };
+    };
+    StoreController_products: {
+        parameters: {
+            query: {
+                /** @description The store the app runs on: `android` (Google Play) or `ios` (App Store). */
+                platform: "android" | "ios";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreProductListView"];
+                };
+            };
+        };
+    };
+    StoreController_buy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorePurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorePurchaseView"];
                 };
             };
         };

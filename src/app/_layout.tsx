@@ -9,6 +9,7 @@ import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
@@ -167,10 +168,21 @@ export default function RootLayout() {
           <Stack.Screen name="bills/electricity/[code]" />
           <Stack.Screen name="bills/electricity/index" />
           <Stack.Screen name="bills/index" />
+          <Stack.Screen name="capital/index" />
+          <Stack.Screen name="capital/order" />
+          <Stack.Screen name="capital/product" />
+          <Stack.Screen name="capital/review" />
+          <Stack.Screen name="capital/withdraw" />
+          <Stack.Screen name="cards/[id]" />
+          <Stack.Screen name="cards/index" />
+          <Stack.Screen name="cards/new" />
           <Stack.Screen name="change-pin" />
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="chat/send" />
           <Stack.Screen name="checkout" />
+          <Stack.Screen name="crypto-receive" />
+          <Stack.Screen name="crypto-send" />
+          <Stack.Screen name="fx-receipt" />
           <Stack.Screen name="community/[id]" />
           <Stack.Screen name="community/created/[id]" />
           <Stack.Screen name="community/new" />
@@ -253,6 +265,7 @@ export default function RootLayout() {
           <Stack.Screen name="settings/delete-account/scheduled" />
           <Stack.Screen name="studio" />
           <Stack.Screen name="studio-tool" />
+          <Stack.Screen name="swap" />
           <Stack.Screen name="tgif" />
           <Stack.Screen name="tier-done" />
           <Stack.Screen name="tiers" />
@@ -279,6 +292,7 @@ export default function RootLayout() {
         <Stack.Screen name="privacy-policy" />
       </Stack>
       <PushBridge live={inApp} />
+      <PlaceBridge live={inApp} />
     </QueryClientProvider>
   );
 }

@@ -1,0 +1,62 @@
+# GEO-03 · round history
+
+Moved out of [tasks/GEO-03.md](../GEO-03.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Sonnet builder, T1, bundle B26, 24 Oct 2026. Mobile `wmt/GEO-03` on `origin/main` `b1e6681f`; contracts from backend `wmt/GEO-02` `28634ce` and WAWU ID `wmt/GEO-01` `1e0faf1` (an earlier copy from `10857b8` and `7fb7dea` was replaced when both branches moved: the admin place schemas left the Hub's contract, nothing the app reads changed). No backend or WAWU ID change.
+
+Files: new `src/features/geo/` (`geoApi.ts`, `useGeo.ts`, `deviceRegion.ts`, `phone.ts`, `usePhoneInput.ts`, `place.ts`, `PlaceBridge.tsx`), new `src/components/CountryPicker.tsx` and `PhoneField.tsx`, one prop on `TextField.tsx`; `src/features/auth/` (`SignUpScreen.tsx`, `AuthField.tsx` gains `scrollToSpot`, `signupFlow.ts`, `signupFailure.ts`), `src/app/sign-up.tsx`, `src/app/_layout.tsx` (one line), `src/features/profile-edit/` (`EditProfileScreen.tsx`, `form.ts`, `limits.ts`), `src/features/me/MeScreen.tsx`, `src/features/visitor/` (`model.ts`, `VisitorProfileScreen.tsx`), `src/features/settings/phone.ts`; contracts and generated clients; `package.json` and the lock (`libphonenumber-js` 1.13.15 only).
+
+Capability checks: each is a test that fails without the feature: `src/features/auth/__tests__/signupCountry.test.tsx` (12 cases: Nigeria default, device region, picking and searching a country, searching by calling code, a pasted +233 number, a residence that differs, an invalid number named by country, the list not loaded, the text-reach line, the refusal lines, the masked number), `src/features/profile-edit/__tests__/editProfilePlace.test.tsx` (8 cases against the Hub's own response shapes), `src/features/geo/__tests__` (phone 15, place 8, profileShows 3, placeBridge 3). Live look: a web export at 390 by 844 against a stand-in that serves the Hub's own country and region data (the Hub's `geo-data` code path and packages) and made-up profile reads; the real Hub and WAWU ID were NOT run (3 GB of disk: the stack's 5 GB minimum could not be met). `GET /me/location` was seen arriving once after the sign-in.
+
+Gate counts: gates 0 fail, 18 warn, 0 accepted after; before was not run ahead of the first edit, and the same 18 warnings are named by other builders' logs on `origin/main`.
+
+Existing assertions changed (each pinned a behaviour this task replaces): `auth-signup.test.tsx` A3's POST body (`+2348031234412`); `editProfile.test.tsx` four cases (`edit-city` for `edit-location`, PATCH `{ city, location }`); `settings/logic.test.ts` one assertion and its title (`+44 ••• 3456`); `form.test.ts` a fixture gains the five place keys (types only).
+
+Filed: SHARED-CHANGES GEO-03 #1 to #4; BACKEND_GAPS G-GEO-03-1 to -5. Not done: a phone; `settingsScreens.test.tsx` (it names the Fintava double, so it was not run: CI runs it); the full suites. One slip: `git checkout src/features/auth/AuthField.tsx` was used once to put back that file after a refactor the linter refused (the file held only my own edit; nothing of anyone else's was touched).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/GEO-03.md](history/GEO-03.md).
+
+## Verifier report
+
+Sonnet verifier (T1 lean check), 24 Oct 2026. Mobile `wmt/GEO-03` `56a443e9` on `origin/main` `b1e6681f`; Hub side read from backend `wmt/GEO-02` `28634ce` and WAWU ID `wmt/GEO-01` `1e0faf1` (the contracts' SOURCE_COMMIT files match both). I built none of it. Verdict FIX: two medium surviving mutants, both tests missing; the app code is right.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | tsc EXIT 0. eslint (no --fix) on the 33 changed .ts/.tsx EXIT 0. jest `--maxWorkers=2`: `src/features/geo`, `auth`, `profile-edit`, `me`, `visitor`, `settings/__tests__/logic.test.ts` 29 suites 305 tests EXIT 0; `auth-guard`, `auth-signup-channel`, `auth-signup`, `components`, `hubSharedProps`, `identity-contract`, `kit-components`, `route-graph`, `session`, `textFieldTapBox`, `devicePrefs`, `sessionEnd`, schools `enrolFlow` 13 suites 413 tests EXIT 0 (none names the Fintava double; `settingsScreens.test.tsx` not run). Gates 10 run, 1316 files scanned, 0 fail, 18 warn, 0 accepted, EXIT 0; `check_baseline` 0 entries EXIT 0; `check_tasks` 433 tasks EXIT 0. |
+| V4 | passed, with F1 | Phone: PhoneField is the only phone-pad input in `src` (main had one, A3's); it writes E.164, WAWU ID stores it, A4 and Z2 read it through `maskedNumber`. Country: A3 `countryCode` to WAWU ID, `GET /me/location` records it on the Hub, profile-fields returns it, M4/M5/M33 show "City, Region, Country", Save writes the web's `location` line. Contract copies match the two heads. |
+| V5 | NOT RUN | 2.6 GB free on /home, under the 5 GB the brief asks for; the builder's pictures were not re-opened. |
+| V6 | partial | The committed specs reach the country list not loaded (retry), a country with no regions (typed text) and a failed read, through a cut fetch; none on a real Hub or a phone. |
+| V9 | NOT RUN | The real stack (GEO-02 Hub, GEO-01 WAWU ID) needs 5 GB free; 2.6 GB. |
+
+Phone parity, checked by running the app's `readPhone` beside WAWU ID's `normalisePhone` from `origin/main` and `origin/wmt/GEO-01` over 40 inputs: `0803 123 4412`, `08031234412`, `+2348031234412`, `+234 803 123 4412`, `2348031234412`, `002348031234412`, `8031234412`, `+2340803 123 4412`, `(0803) 123-4412`, `0703 ...` all give `+2348031234412` (or `+2347031234412`) in the app, on main and on GEO-01. `0603...`, short and long Nigerian numbers are refused by all three. UK (`07911 123456` with the United Kingdom chosen, `+44 7911 123456`), US (`(415) 555-2671`) and Ghana (`024 123 4567`, `+233 24 123 4567`) give valid E.164 matching GEO-01's reading. The app is stricter than main in two ways, both as GEO-01 is and both intended: a `+` number that only has 8 to 15 digits (`+99999999999`, `+4412345678`) is refused, and with another country chosen a leading-0 number is read in that country. Masks: `+2348031234412` gives `0803 ••• 4412`, `+233241234567` gives `+233 ••• 4567`, `+447911123456` gives `+44 ••• 3456`, `+14155552671` gives `+1 ••• 2671`. Region words computed from the Hub's own data (`@koshmoney/countries`): Nigeria State, Ghana Region, United States State, Canada Province, Kenya County, India State.
+
+Copy and the channel: A3 can know the channel. `GET /auth/signup/channel` (on main, unchanged by GEO-01) answers `phone` or `email`; A3 draws "We'll text a code to your phone." only for `phone`, "We'll email you a code to confirm your address." for `email`, and no line when WAWU ID could not be asked. Production answers `email`, so it draws the email line. The new hint under a non-Nigerian number is gated on `channel === 'phone'` as well, and the PHONE_NOT_SUPPORTED refusal can only come from a texted code, so neither claims a text for a mailed sign-up. The code is right; the test is missing (F2). No em-dash in the diff, the task file or history.
+
+Changed assertions, honest under R-85: `auth-signup.test.tsx` A3 body `+2348031234412` (R-85 stores E.164); `editProfile.test.tsx` city/location cases (R-85 puts region and city in the profile and the web still reads the free text; the body is `{ city: 'Abuja', location: 'Abuja' }` because that fixture has no structured country); `maskPhone('+447911123456')` is `+44 ••• 3456` (R-85: every country, the code kept); `form.test.ts` fixture only gains the five place keys. None was loosened.
+
+Findings:
+- **F1 (medium, defect: surviving mutant)** the country at sign-up is not asserted on the wire. Removing `...(values.countryCode ? { countryCode: values.countryCode } : {})` from `src/features/auth/signupFlow.ts` leaves 8 suites, 175 tests green (`auth-signup`, `identity-contract`, `features/auth`, `features/geo`): `signupCountry.test.tsx` stops at `onContinue`, and `auth-signup.test.tsx` runs the route with no country list, so its body has no `countryCode`. A throwaway probe (mocking `fetchCountries`, expecting `countryCode: 'NG'` in the POST body) passes on the branch and fails on the mutant, so the code is right. Kill it with a case in `auth-signup.test.tsx`: serve the list, pick Ghana for the residence, expect `countryCode: 'GH'` in the POST /auth/signup body.
+- **F2 (medium, defect: surviving mutant)** the channel guard on A3's non-Nigerian hint is untested. Changing `hint={channel === 'phone' && phone.country !== 'NG' ? ...}` to `hint={phone.country !== 'NG' ? ...}` leaves 123 tests green (`signupCountry`, `auth-signup`, `auth-signup-channel`), although the case is titled "says nothing for a mailed one": it only checks Nigeria on `phone` (none) and Ghana on `phone` (shown). With production on SIGNUP_VERIFY_CHANNEL=email this guard is the one thing keeping the app from saying "Texted codes go to some countries only" to a mailed sign-up. Kill it: channel `email` and `null`, Ghana picked, expect `TEXT_REACH_LINE` absent.
+- Other mutants killed: the Edit profile country change keeping the old region (1 test fails), the place line order (3 fail), the free-text `location` not written on Save (6 fail), `PlaceBridge` asking while signed out (1 fails).
+- **Low (sweep):** (a) the region label is the Hub's `type` for the whole country, so a few read oddly (France "Metropolitan department", Austria "Federal länder", Libya "Popularate", Saint Helena "Geographical entity", the US Minor Outlying Islands "Islands, groups of islands"), and the region sheet's search label adds an "s" ("Search metropolitan departments", "islands, groups of islandss"); (b) the `PlaceBridge` comment says Edit profile "reads the same answer when it opens", but no screen calls `useMyPlace` (Edit profile reads profile-fields, which the Hub fills from that one call); (c) the text-reach hint would warn falsely once WAWU ID widens `SIGNUP_ALLOWED_PHONE_PREFIX` (already G-GEO-03-2); (d) the builder used `git checkout` on `AuthField.tsx` once (a never-rule, admitted in the report); the file now matches its intended diff and nothing else was lost.
+- **differs-for-recorded-reason:** A3's Country row, the phone's country button and sheet, and M8's three place rows have no board (G-GEO-03-4).
+
+
+## Builder report, round 1
+
+Sonnet builder, T1, 24 Oct 2026. Mobile `wmt/GEO-03` on `327771f0` (the verifier's report); no change to the app's behaviour except the three lows below.
+
+Files: `src/__tests__/auth-signup.test.tsx` (the suite answers `fetchCountries`, default no list, cache cleared each case; two new A3 cases, F1), `src/features/auth/__tests__/signupCountry.test.tsx` (channel `email` and `null`, F2), `src/features/geo/place.ts` and its test (a short plain region word), `src/features/profile-edit/EditProfileScreen.tsx` (the search label), `src/features/geo/PlaceBridge.tsx` (comment), `src/features/geo/useGeo.ts` (unused `useMyPlace` removed).
+
+Each new test was shown to fail without the code it guards: the `countryCode` spread in `signupFlow.startSignup` removed, both F1 cases fail; `channel === 'phone'` removed from A3's hint, both F2 cases fail. Both edits were made locally and put back from copies, and the committed files are the unmutated ones.
+
+Checks: see Current state (each EXIT 0). Not run: a phone, `settingsScreens.test.tsx` (names the Fintava double), the full suites.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/GEO-03.md](history/GEO-03.md).
+

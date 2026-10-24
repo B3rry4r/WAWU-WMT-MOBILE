@@ -17,10 +17,12 @@ import Inbox from '@/app/(tabs)/inbox';
 import Wallet from '@/app/(tabs)/wallet';
 import Me from '@/app/(tabs)/me';
 import { apiBaseUrl } from '@/api/env';
+import { queryClient } from '@/api/query';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { clearAccountType } from '@/features/auth/accountType';
 import * as identityApi from '@/features/auth/identityApi';
+import * as geoApi from '@/features/geo/geoApi';
 import { forgetSignupChannel, knownSignupChannel, signupChannel } from '@/features/auth/signupFlow';
 import { resetSignupGate } from '@/features/auth/signupGate';
 import { clearSignup, SIGNUP_ATTEMPT_KEY, SIGNUP_PHONE_KEY } from '@/features/auth/signupStore';
@@ -47,6 +49,16 @@ jest.mock('@/features/auth/identityApi', () => ({
   ...jest.requireActual('@/features/auth/identityApi'),
   askUsername: jest.fn(async (handle: string) => ({ handle, available: true, message: null })),
   putIdentity: jest.fn(async (parts: { firstName?: string; lastName?: string; handle?: string }) => ({ firstName: parts.firstName ?? null, lastName: parts.lastName ?? null, handle: parts.handle ?? null })),
+}));
+
+/*
+ * GEO-03 (R-85): A3 reads the Hub's list of countries for the phone field and the country of residence. For the same reason as above
+ * this suite answers the list at the module that makes the call. By default no list arrives, as before the task; a case that wants
+ * one calls `serveCountries()`.
+ */
+jest.mock('@/features/geo/geoApi', () => ({
+  ...jest.requireActual('@/features/geo/geoApi'),
+  fetchCountries: jest.fn(),
 }));
 
 const routes = {
@@ -169,6 +181,16 @@ async function requestsAnswered() {
 /** What the app has sent to start or finish a sign-up: A3 also reads which way the code will travel (a GET that sends nothing about the person). */
 const sentCalls = () => calls.filter((c) => c.path !== '/auth/signup/channel');
 
+/** The Hub's list in its own shape (`GET /geo/countries`), cut to the three countries these cases use. */
+const country = (code: string, name: string, dialCode: string, flag: string, exampleNational: string) => ({ code, name, dialCode, flag, exampleNumber: null, exampleNational, hasRegions: true });
+function serveCountries() {
+  jest.mocked(geoApi.fetchCountries).mockResolvedValue([
+    country('GH', 'Ghana', '+233', '🇬🇭', '024 123 4567'),
+    country('NG', 'Nigeria', '+234', '🇳🇬', '0802 123 4567'),
+    country('GB', 'United Kingdom', '+44', '🇬🇧', '07400 123456'),
+  ]);
+}
+
 /*
  * The first test to draw each screen used to pay for React Native's components (loaded on first use, by
  * babel-preset-expo's lazy imports, so touched here at file load) and for the screen's own first render: the sign-in
@@ -194,6 +216,9 @@ beforeEach(async () => {
   calls = [];
   jest.mocked(identityApi.askUsername).mockClear();
   jest.mocked(identityApi.putIdentity).mockClear();
+  // No country list unless a case serves one, and none kept from an earlier case (the list is cached for the run).
+  jest.mocked(geoApi.fetchCountries).mockReset().mockRejectedValue(new TypeError('Network request failed'));
+  queryClient.clear();
   answers = {
     // What WAWU ID answers while SIGNUP_VERIFY_CHANNEL is unset or `phone`: the texted sign-up the suites below up to "AUTH-07" run.
     'GET /auth/signup/channel': ok({ channel: 'phone' }),
@@ -286,6 +311,39 @@ describe('A2 to A3', () => {
 });
 
 describe('A3: email, phone and password', () => {
+  it('a user who picks Ghana in the phone field sends the number with +233 and Ghana as the country, from the list the Hub served', async () => {
+    serveCountries();
+    await toA3();
+    await waitFor(() => expect(screen.getByTestId('sign-up-country')).toHaveTextContent(/Nigeria/));
+    await fireEvent.press(screen.getByTestId('sign-up-phone-country'));
+    await fireEvent.press(await screen.findByTestId('sign-up-phone-sheet-row-GH'));
+    await fillNames();
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'ama@wawu.africa');
+    await fireEvent.changeText(screen.getByTestId('sign-up-phone'), '024 123 4567');
+    await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'hunter2hunter2');
+    await fireEvent.press(screen.getByTestId('sign-up-consent'));
+    await press('Continue');
+    await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
+    expect(callsTo('/auth/signup')[0].body).toEqual({
+      firstName: 'Lennox',
+      lastName: 'Emmanuel',
+      email: 'ama@wawu.africa',
+      phone: '+233241234567',
+      countryCode: 'GH',
+      password: 'hunter2hunter2',
+      accountType: 'creator',
+    });
+  });
+
+  it('a user in Nigeria who types 0803... sends +234 with Nigeria as the country when the Hub served the list', async () => {
+    serveCountries();
+    await toA3();
+    await waitFor(() => expect(screen.getByTestId('sign-up-country')).toHaveTextContent(/Nigeria/));
+    await fillAndContinue();
+    await waitFor(() => expect(callsTo('/auth/signup').length).toBe(1));
+    expect(callsTo('/auth/signup')[0].body).toMatchObject({ phone: '+2348031234412', countryCode: 'NG' });
+  });
+
   it('a user who taps Continue with the fields empty or short is told what to fix, and nothing is sent', async () => {
     await toA3();
     await press('Continue');
@@ -298,7 +356,7 @@ describe('A3: email, phone and password', () => {
   it('a user can enter email, phone and password and tap Continue to reach A4; the earn pick is sent to WAWU ID as creator', async () => {
     await toA4();
     const sent = callsTo('/auth/signup')[0];
-    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '0803 123 4412', password: 'hunter2hunter2', accountType: 'creator' });
+    expect(sent.body).toEqual({ firstName: 'Lennox', lastName: 'Emmanuel', email: 'lennox@wawu.africa', phone: '+2348031234412', password: 'hunter2hunter2', accountType: 'creator' });
     expect(screen.getByText('Verify your phone')).toBeTruthy();
     expect(screen.getByText('Enter the 6-digit code')).toBeTruthy();
     expect(screen.getByText('Sent by SMS to 0803 ••• 4412.')).toBeTruthy();

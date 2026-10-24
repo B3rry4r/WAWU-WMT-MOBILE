@@ -2,26 +2,30 @@ import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { CountryPicker, type PickerItem } from '@/components/CountryPicker';
+import { PhoneField } from '@/components/PhoneField';
 import { Text } from '@/components/Text';
+import { TextField } from '@/components/TextField';
 import { layout, space } from '@/theme';
 
 import type { SignupChannel } from '@/api/identity';
 import { bareHandle } from '@/features/profile-edit/social';
 import { limits } from '@/features/profile-edit/limits';
 
-import { AuthField } from './AuthField';
+import type { GeoCountry } from '@/features/geo/geoApi';
+import { phoneProblem } from '@/features/geo/phone';
+import { usePhoneInput } from '@/features/geo/usePhoneInput';
+
+import { AuthField, scrollToSpot } from './AuthField';
 import { AuthFrame } from './AuthFrame';
 import { Banner } from '@/components/Banner';
 import type { UsernameAnswer } from './identityApi';
-import { signupFailure, type SignupFailure } from './signupFailure';
+import { signupFailure, TEXT_REACH_LINE, type SignupFailure } from './signupFailure';
 import { UsernameRefused, usernameProblem, useUsernameCheck } from './username';
 import { ConsentBox } from '@/features/open-wallet/ConsentBox';
 
 /** The shortest password WAWU ID takes (`contract/identity/openapi.json`, `SignupDto.password.minLength`); A3's hint "At least 8 characters". */
 export const MIN_PASSWORD = 8;
-/** The shortest phone WAWU ID takes (same file, `SignupDto.phone.minLength`). */
-const MIN_PHONE = 7;
-
 /** design/_gen/auth.js line 54: the heading is `h1` at 24 px, the form `gap: 14`; kit.js line 41, h1 tracking -0.03em, line 1.15. */
 export const TITLE = { size: 24, tracking: -0.03, leading: 1.15, apart: 6 } as const;
 export const BODY_GAP = 14;
@@ -35,7 +39,8 @@ const CHANNEL_LINE: Record<SignupChannel, string> = {
   phone: "We'll text a code to your phone.",
 };
 
-export type SignUpValues = { firstName: string; lastName: string; username: string; email: string; phone: string; password: string };
+/** `phone` is in full international form (`+2348031234412`); `countryCode` is the country of residence (ISO alpha-2), left out when the Hub's list did not load. */
+export type SignUpValues = { firstName: string; lastName: string; username: string; email: string; phone: string; countryCode?: string; password: string };
 
 export type SignUpScreenProps = {
   /** Starts the sign-up. Resolves when the code has been sent (the route opens A4); rejects with an ApiError. */
@@ -56,8 +61,15 @@ export type SignUpScreenProps = {
   /** The terms and the privacy policy behind the consent line's two words (public screens, readable before sign-up). */
   onOpenTerms?: () => void;
   onOpenPrivacy?: () => void;
+  /** The Hub's countries (`GET /geo/countries`): the phone field's list and the country of residence. Undefined while they load. */
+  countries?: readonly GeoCountry[];
+  /** The list of countries could not be read. */
+  countriesFailed?: boolean;
+  onRetryCountries?: () => void;
+  /** The country this phone is set to (ISO alpha-2), where the phone field starts. Left out, it is read from the system; a test names it. */
+  region?: string | null;
   /** What the fields start with (a preview, never the app). */
-  initial?: Partial<SignUpValues>;
+  initial?: Partial<Omit<SignUpValues, 'countryCode'>>;
   /** A refusal to show at first (a preview, never the app). */
   initialFailure?: SignupFailure;
 };
@@ -74,12 +86,15 @@ const AGREE_NEEDS = 'Tick the box to agree before you continue.';
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms, onOpenPrivacy, checkUsername, channel, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms, onOpenPrivacy, checkUsername, channel, countries, countriesFailed, onRetryCountries, region, initial, initialFailure }: SignUpScreenProps) {
   const [firstName, setFirstName] = useState(initial?.firstName ?? '');
   const [lastName, setLastName] = useState(initial?.lastName ?? '');
   const [username, setUsername] = useState(initial?.username ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
-  const [phone, setPhone] = useState(initial?.phone ?? '');
+  const phone = usePhoneInput(countries, region, initial?.phone);
+  // The country of residence follows the phone's country until the person chooses one of their own.
+  const [residence, setResidence] = useState<string | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const [password, setPassword] = useState(initial?.password ?? '');
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -92,6 +107,7 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
   const phoneInput = useRef<TextInput>(null);
   const passwordInput = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const phoneSpot = useRef<View>(null);
   const check = useUsernameCheck(username, checkUsername);
 
   const edit = (setter: (value: string) => void) => (value: string) => {
@@ -100,15 +116,19 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
     setMissing({});
   };
 
+  const residenceCode = residence ?? phone.country;
+  const residenceRecord = (countries ?? []).find((c) => c.code === residenceCode) ?? null;
+  const countryItems: PickerItem[] | undefined = countries?.map((c) => ({ code: c.code, name: c.name, flag: c.flag }));
+
   const submit = async () => {
     if (inFlight.current) return;
-    const typed = { firstName: firstName.trim(), lastName: lastName.trim(), username: bareHandle(username), email: email.trim(), phone: phone.trim(), password };
+    const typed = { firstName: firstName.trim(), lastName: lastName.trim(), username: bareHandle(username), email: email.trim(), password };
     const gaps: Missing = {
       firstName: !typed.firstName ? 'Enter your first name.' : typed.firstName.length > limits.namePart ? `Use at most ${limits.namePart} characters.` : undefined,
       lastName: !typed.lastName ? 'Enter your last name.' : typed.lastName.length > limits.namePart ? `Use at most ${limits.namePart} characters.` : undefined,
       username: usernameProblem(typed.username) ?? (check.phase === 'refused' ? check.message : undefined),
       email: !typed.email ? 'Enter your email.' : EMAIL_SHAPE.test(typed.email) ? undefined : 'Enter a valid email.',
-      phone: typed.phone.replace(/\D/g, '').length < MIN_PHONE ? 'Enter your phone number.' : undefined,
+      phone: phoneProblem(phone.read, phone.record),
       password: typed.password.length < MIN_PASSWORD ? `Use at least ${MIN_PASSWORD} characters.` : undefined,
       agreed: agreed ? undefined : AGREE_NEEDS,
     };
@@ -116,15 +136,17 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
       setMissing(gaps);
       return;
     }
+    if (!phone.read.ok) return;
+    const values: SignUpValues = { ...typed, phone: phone.read.e164, ...(residenceRecord ? { countryCode: residenceRecord.code } : {}) };
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
     try {
-      await onContinue(typed);
+      await onContinue(values);
     } catch (error) {
       // A name taken since the line under the field last said "free": the Hub's sentence goes under that field.
       if (error instanceof UsernameRefused) setMissing({ username: error.message });
-      else setFailure(signupFailure(error));
+      else setFailure(signupFailure(error, phone.record));
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -224,22 +246,40 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
           submitBehavior="submit"
           onSubmitEditing={() => phoneInput.current?.focus()}
         />
-        <AuthField
-          scrollRef={scrollRef}
-          label="Phone number"
-          testID="sign-up-phone"
-          inputRef={phoneInput}
-          value={phone}
-          onChangeText={edit(setPhone)}
-          error={missing.phone}
-          invalid={failure?.field === 'phone'}
-          keyboardType="phone-pad"
-          autoCorrect={false}
-          autoComplete="tel"
-          textContentType="telephoneNumber"
-          returnKeyType="next"
-          submitBehavior="submit"
-          onSubmitEditing={() => passwordInput.current?.focus()}
+        <View ref={phoneSpot}>
+          <PhoneField
+            testID="sign-up-phone"
+            countries={countries}
+            failed={countriesFailed}
+            onRetry={onRetryCountries}
+            country={phone.country}
+            onCountry={(code) => {
+              phone.pick(code);
+              setFailure(null);
+              setMissing({});
+            }}
+            inputRef={phoneInput}
+            value={phone.value}
+            onChangeText={edit(phone.setText)}
+            error={missing.phone}
+            hint={channel === 'phone' && phone.country !== 'NG' ? TEXT_REACH_LINE : undefined}
+            invalid={failure?.field === 'phone'}
+            onFocus={() => scrollToSpot(scrollRef, phoneSpot)}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => passwordInput.current?.focus()}
+          />
+        </View>
+        <TextField
+          label="Country"
+          testID="sign-up-country"
+          value={residenceRecord ? `${residenceRecord.flag}  ${residenceRecord.name}` : ''}
+          placeholder={countriesFailed ? 'Could not load the countries' : 'Choose your country'}
+          trailingIcon="ChevronDown"
+          hint="Where you live. It starts as your phone's country."
+          invalid={failure?.field === 'country'}
+          disabled={!countries}
+          onPress={() => setChoosing(true)}
         />
         <AuthField
           scrollRef={scrollRef}
@@ -257,6 +297,22 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
           textContentType="newPassword"
           returnKeyType="go"
           onSubmitEditing={() => void submit()}
+        />
+        <CountryPicker
+          visible={choosing}
+          onClose={() => setChoosing(false)}
+          title="Where do you live?"
+          searchLabel="Search countries"
+          items={countryItems}
+          selected={residenceCode}
+          failed={countriesFailed}
+          onRetry={onRetryCountries}
+          testID="sign-up-country-sheet"
+          onPick={(code) => {
+            setChoosing(false);
+            setResidence(code);
+            setFailure(null);
+          }}
         />
         <ConsentBox
           testID="sign-up-consent"

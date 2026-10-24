@@ -107,17 +107,32 @@ export function emailOutcome(error: unknown): Outcome {
 }
 
 /** Why A3's Continue failed, as the banner above the form (and which field to outline). */
-export type SignupFailure = Failure & { field?: 'email' | 'phone' };
+export type SignupFailure = Failure & { field?: 'email' | 'phone' | 'country' };
 
-export function signupFailure(error: unknown): SignupFailure {
+/** The country the number was typed under (name and how its numbers are written), so a refusal can say what a good number looks like. */
+export type PhonePlace = { name: string; exampleNational?: string | null } | null;
+
+/**
+ * Why a country's texted code cannot go to a number (WAWU ID's PHONE_NOT_SUPPORTED, GEO-01): texts reach some countries only
+ * (WAWU ID's `SIGNUP_ALLOWED_PHONE_PREFIX`, Nigeria's +234 until it is widened), and the code sent by email works for every
+ * country. Said plainly, the same way under the phone field (A3) and in the banner.
+ */
+export const TEXT_REACH_LINE = 'Texted codes go to some countries only. Codes sent by email work for every country.';
+
+export function signupFailure(error: unknown, place: PhonePlace = null): SignupFailure {
   const plain = (title: string, body: string, tone: Failure['tone'] = 'danger'): SignupFailure => ({ tone, title, body, credentials: false });
   if (!isApiError(error)) return plain('Something went wrong on our side', 'Try again in a moment.');
   if (error.kind === 'network') return plain('No connection', 'Check your internet and try again.');
   switch (error.code) {
-    case 'PHONE_INVALID':
-      return { ...plain('That phone number is not valid', 'Check it and try again.'), field: 'phone' };
+    case 'PHONE_INVALID': {
+      const like = place?.exampleNational ? `, like ${place.exampleNational}` : '';
+      const body = place ? `Enter a valid ${place.name} number${like}, or choose another country.` : 'Check it and try again.';
+      return { ...plain('That phone number is not valid', body), field: 'phone' };
+    }
     case 'PHONE_NOT_SUPPORTED':
-      return { ...plain("We can't use that number yet", 'Use a Nigerian number that starts with 0 or +234.'), field: 'phone' };
+      return { ...plain("We can't use that number yet", TEXT_REACH_LINE), field: 'phone' };
+    case 'COUNTRY_INVALID':
+      return { ...plain('Choose a country from the list', 'The country was not one we know. Choose it again.'), field: 'country' };
     case 'SMS_NOT_CONFIGURED':
     case 'SMS_SEND_FAILED':
     case 'EMAIL_NOT_CONFIGURED':
