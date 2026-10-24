@@ -7,7 +7,7 @@ order: 311
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: review
+status: building
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -32,7 +32,7 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B21, T2): backend `wmt/WALL
 
 **NOT RUN:** a naira card end to end against dev (refused); a card settling to a naira balance; Apple Pay on a phone; the PIN sheet and fingerprint hand-off of the way screen under jest (a test that opened the sheet did not pass and was left out; the wiring copies Send's `ReviewScreen`); the screens on a phone; Nuvion's own `payment_intent.*` and `funding_sessions.updated` deliveries (the dev webhook endpoint is not ours). One spec file that imports a Fintava double (`plan-settings-readers.contract.spec.ts`) was run by mistake once (4 failed with 401 in its own harness) and not looked at; it is Fintava code and was left alone.
 
-- **Next:** round 1 verified PASS (24 Oct, section below); the merge agent takes it. The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
+- **Next:** round 1 verified FIX (24 Oct, section below: F8 and F9, two red coverage specs); a builder fixes those two, then a verifier runs the four coverage specs again. The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
 - **History:** none yet. Reports go to tasks/history/WALLET-25.md.
 
 ## Read first
@@ -110,7 +110,7 @@ Also found and fixed in this round: `src/money/tests/money-contract.spec.ts` (th
 
 **Still NOT RUN:** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, and Nuvion accepting the JavaScript ciphertext with its real key.
 
-### Round 1 verifier (Sonnet, T2, 24 Oct 2026; backend `66806bd` against `e730428`, mobile `7a5164c5` against `49cf0a21`). **Verdict PASS.**
+### Round 1 verifier (Sonnet, T2, 24 Oct 2026; backend `66806bd` against `e730428`, mobile `7a5164c5` against `49cf0a21`). **Verdict FIX** (F1 to F7 are closed as the table says; the lead then asked for four coverage specs on `66806bd` and two are red: F8 and F9).
 
 | # | Closed? | Proof (repro run by the verifier) |
 |---|---|---|
@@ -127,6 +127,18 @@ Also found and fixed in this round: `src/money/tests/money-contract.spec.ts` (th
 **Checks (EXIT lines in the verifier's logs).** Backend: tsc EXIT 0; eslint (no --fix, 6 changed files) EXIT 0; add-money spec and `money-contract.spec.ts` EXIT 0 (2 suites, 27 tests); `npm run contract:build` EXIT 0 and `git status` clean (contract unchanged). App: tsc EXIT 0; jest `src/features/addmoney` and `device-approval` EXIT 0 (11 suites, 98 tests); jest `src/components/pin-sheet` EXIT 0 (2 suites, 31 tests); gates EXIT 0 (0 fail, 18 warn, 0 accepted, 1316 files); check_tasks EXIT 0. No spec that imports the Fintava double was run. The money-contract rows are honest: the seven `/money/add-money*` routes are served, mounted, carry `x-wawu-built-by` WALLET-25 and no "not served" marker in `contract/openapi.json`. The three app test files the builder touched lost only an unused import or helper, no assertion.
 
 **New findings, all low (sweep list).** (1) User words: "the Hub could not match this try to it" (`WayScreen.tsx` `keyReused`) says "the Hub", which a person does not know; say "we could not match". (2) A race: if the dispatcher is mid-way through a held delivery while an admin unfreezes, its finish can set the next attempt after the unfreeze's reset, so the credit waits up to the backoff (it still credits once). (3) `creditInflow` now writes `reviewNote: null` on a settle with no fee difference, which also clears any other earlier note on that row.
+
+**Late addition from the lead: four coverage specs on backend `66806bd`, each run alone against a migrated database (logs `be-<name>.log`).**
+
+| Spec | EXIT | Result |
+|---|---|---|
+| `src/data-export-request/tests/data-export-map.spec.ts` | 0 | 8/8 |
+| `src/money/gate/tests/wallet-gate-coverage.spec.ts` | 0 | 7/7 |
+| `src/account-purge/tests/account-data-map.spec.ts` | **1** | 3/4, F8 |
+| `src/money/limits/tests/money-moving-coverage.spec.ts` | **1** | 40/43, F9 |
+
+- **F8 medium, defect.** `account-data-map.spec` "classifies every WAWU user column in the schema" fails: `AddMoneySession.wawuUserId` and `AddMoneySession.wawuFeeKobo` are not in the account data map, so nobody has said what deleting a person does to their add-money attempts. Fix: classify both columns in `src/account-purge` (the attempt is the Hub's link between a ledger row and Nuvion's inflow, so it is most likely kept and anonymised, like the other money rows; the builder rules it and says why in the map), and make the purge do what the map says.
+- **F9 medium, defect.** `money-moving-coverage.spec` fails 3 of 43: (a) the walk of money-moving routes now finds `POST money/add-money`, which its expected list does not hold; (b) `GET money/add-money/quote` documents `fees_not_set` but does not run `FeesSetGuard`, and `POST money/add-money` is judged as moving money yet does not run `FeesSetGuard` before the PIN guard (it answers `fees_not_set` from its own precheck guard); (c) `POST money/add-money/:id/cancel` is a write under `money/` that is neither a money mover nor named in `NON_MONEY_WRITES`. Fix: either run `FeesSetGuard` first on the quote and the start as the rule asks, or add the routes to the spec's list with the reason the rule does not apply (a credit, not a debit), and name the cancel in `NON_MONEY_WRITES` with its reason. The lead rules which; the spec's failing lines are quoted above.
 
 **Still NOT RUN (unchanged):** pictures (390 px light and dark), a naira card end to end against dev (refused), a card settling to a naira balance, Apple Pay and the screens on a phone, F2 on a live Hub, the card route on the stack against the real Nuvion (the stack stand-in has no payment intents).
 

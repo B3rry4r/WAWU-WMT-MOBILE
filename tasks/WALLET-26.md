@@ -7,7 +7,7 @@ order: 312
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: review
+status: building
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
