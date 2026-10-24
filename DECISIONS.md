@@ -643,4 +643,4 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 
 ### R-87 · A person outside Nigeria opens a wallet in their own currency, and may add others
 *Owner, 24 Oct 2026 ("Yes ... that's a duh!!! Infact it should work based on region or something and also choice too").* Answers R-85's open question. A person whose country of residence is not Nigeria opens a wallet without a BVN: Nuvion checks their identity with their own country's ID document and a liveness check, as Nuvion requires for that country. Their first account is their country's currency where Nuvion serves it (USD for the United States, GBP for the United Kingdom, EUR for the euro countries, CAD for Canada, AED for the United Arab Emirates, GHS for Ghana), otherwise USD; they can choose a different first currency and add any other currency or coin afterwards (R-84). A person in Nigeria keeps the BVN naira wallet (R-6) and may add the others. Facts about which IDs Nuvion accepts per country come from Nuvion's docs and dev answers.
-**Carried out by:** WALLET-40 (Hub and app).
+**Carried out by:** WALLET-41 (Hub and app).
