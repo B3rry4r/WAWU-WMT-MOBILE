@@ -232,6 +232,7 @@ export default function RootLayout() {
           <Stack.Screen name="publish" />
           <Stack.Screen name="purchases" />
           <Stack.Screen name="reset-pin" />
+          <Stack.Screen name="role" />
           <Stack.Screen name="saved" />
           <Stack.Screen name="schools/[id]" />
           <Stack.Screen name="schools/courses/[id]" />

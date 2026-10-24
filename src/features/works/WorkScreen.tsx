@@ -46,6 +46,8 @@ export type WorkScreenProps = {
   onBack: () => void;
   /** Opens the creator's profile. Left out until that screen exists, and then the creator row is only a label. */
   onOpenCreator?: (wawuId: string) => void;
+  /** The owner's Edit: opens M36 filled with this work. Only the owner sees it (FIX-113, G-252). */
+  onEdit?: () => void;
   /** After the owner has confirmed Remove and the work is gone: the route goes back to M34, whose count has already been told to refresh. */
   onRemoved: () => void;
 };
@@ -56,10 +58,10 @@ export type WorkScreenProps = {
  * photos and videos sit in a strip under the words, and choosing one brings it up to the top. The person who
  * made the work (and nobody else) also sees Remove, which asks first and then deletes it (`DELETE /users/me/featured-works/{id}`).
  */
-export function WorkScreen({ wawuId, workId, onBack, onOpenCreator, onRemoved }: WorkScreenProps) {
+export function WorkScreen({ wawuId, workId, onBack, onOpenCreator, onEdit, onRemoved }: WorkScreenProps) {
   const work = useQuery({ queryKey: workKey(wawuId, workId), queryFn: () => fetchWork(wawuId, workId) });
 
-  if (work.data) return <Work work={work.data} onBack={onBack} onOpenCreator={onOpenCreator} onRemoved={onRemoved} />;
+  if (work.data) return <Work work={work.data} onBack={onBack} onOpenCreator={onOpenCreator} onEdit={onEdit} onRemoved={onRemoved} />;
 
   if (work.isError) {
     const gone = isApiError(work.error) && work.error.kind === 'not_found';
@@ -95,9 +97,9 @@ export function WorkScreen({ wawuId, workId, onBack, onOpenCreator, onRemoved }:
   );
 }
 
-type WorkProps = { work: WorkDetail; onBack: () => void; onOpenCreator?: (wawuId: string) => void; onRemoved: () => void };
+type WorkProps = { work: WorkDetail; onBack: () => void; onOpenCreator?: (wawuId: string) => void; onEdit?: () => void; onRemoved: () => void };
 
-function Work({ work, onBack, onOpenCreator, onRemoved }: WorkProps) {
+function Work({ work, onBack, onOpenCreator, onEdit, onRemoved }: WorkProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -216,6 +218,7 @@ function Work({ work, onBack, onOpenCreator, onRemoved }: WorkProps) {
               ))}
             </ScrollView>
           ) : null}
+          {own && onEdit ? <EditRow onPress={onEdit} /> : null}
           {own ? (
             <RemoveRow
               onPress={() => {
@@ -242,6 +245,20 @@ function Work({ work, onBack, onOpenCreator, onRemoved }: WorkProps) {
         <Button label="Remove" variant="secondary" full loading={remove.isPending} onPress={() => remove.mutate()} testID="work-remove-confirm" />
       </BottomSheet>
     </View>
+  );
+}
+
+/** The owner's way to fix a mistake in place: a quiet row under the work that opens it in M36's fields. */
+function EditRow({ onPress }: { onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable testID="work-edit" accessibilityRole="button" accessibilityLabel="Edit this work" onPress={onPress} {...ring.handlers} style={[styles.remove, ring.style]}>
+      <Icon name="SquarePen" size={removeMetrics.icon} color={colors.accentFg} />
+      <Text variant="body" style={[font(600), { color: colors.accentFg, fontSize: removeMetrics.label }]}>
+        Edit this work
+      </Text>
+    </Pressable>
   );
 }
 

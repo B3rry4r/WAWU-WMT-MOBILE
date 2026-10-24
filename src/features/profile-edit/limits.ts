@@ -14,6 +14,10 @@ export const limits = {
   bio: 500,
   /** UpdateProfileFieldsDto.location (PROVISIONAL on the Hub, ME-05). */
   location: 120,
+  /** UpdateProfileFieldsDto.skills, each one (the contract's `items.maxLength`). */
+  skill: 40,
+  /** Most skills on one profile (`SKILLS_MAX_COUNT`, PROVISIONAL on the Hub: the contract states no count, so the Hub's own sentence still says it). */
+  skills: 30,
   /** UpdateUserProfileDto.instagramHandle, xHandle, tiktokHandle and UpdateProfileFieldsDto.threadsHandle. */
   socialHandle: 50,
   /** UpdateUserProfileDto.youtubeUrl, facebookUrl, linkedinUrl. */

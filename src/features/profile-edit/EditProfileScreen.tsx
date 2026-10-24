@@ -23,7 +23,9 @@ import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, ty
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
+import { ExperienceSection, SkillsSection } from './AboutSections';
 import { PictureHeader } from './PictureHeader';
+import { roleLinesOf } from '@/features/me/model';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
 import { uploadPicture, type PictureFolder } from './upload';
@@ -45,6 +47,8 @@ export type EditProfileScreenProps = {
   onBack: () => void;
   /** A social row: opens M9. */
   onOpenSocial: () => void;
+  /** A role row, or "Add a role" (no id): opens the role screen (FIX-113). Experience is drawn only where there is a screen to open (R-47). */
+  onOpenRole?: (roleId?: string) => void;
   /** After a save. The route decides where to go. */
   onSaved: () => void;
   /**
@@ -102,12 +106,12 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
     );
   }
 
-  return <EditForm {...props} account={me.data.wawuUserId} initial={formFrom(me.data, fields.data)} />;
+  return <EditForm {...props} account={me.data.wawuUserId} initial={formFrom(me.data, fields.data)} roles={roleLinesOf(me.data.experience ?? [])} />;
 }
 
-type FormProps = EditProfileScreenProps & { account: string; initial: ProfileForm };
+type FormProps = EditProfileScreenProps & { account: string; initial: ProfileForm; roles: ReturnType<typeof roleLinesOf> };
 
-function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice = true }: FormProps) {
+function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, onSaved, ownNotice = true }: FormProps) {
   const queryClient = useQueryClient();
   const scrollRef = useRef<ScrollView>(null);
   // Idempotent: it starts the draft once per account, and an effect cleanup that ran and re-ran (development) finds it again.
@@ -281,6 +285,8 @@ function EditForm({ account, initial, onBack, onOpenSocial, onSaved, ownNotice =
           ))}
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
+        {onOpenRole ? <ExperienceSection roles={roles} onOpen={onOpenRole} disabled={busy} /> : null}
+        <SkillsSection skills={form.skills} onChange={(skills) => edit((current) => ({ ...current, skills }))} disabled={busy} />
       </ScreenFrame>
       <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">

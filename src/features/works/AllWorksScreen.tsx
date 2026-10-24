@@ -1,16 +1,20 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
+import { Banner } from '@/components/Banner';
+import { Button, IconButton } from '@/components/Button';
 import { FilterChips } from '@/components/FilterChips';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { layout, radius, space, useWawu } from '@/theme';
 
-import { fetchMyId, fetchWorks, myIdKey, worksKey, type Work } from './api';
+import { fetchMyId, fetchWorks, myIdKey, reorderWorks, worksKey, worksRoot, type Work } from './api';
 import { readFailure } from './failure';
 import { categoryOfChip, chipOfCategory, chipsFor, headerSubtitle, type CategoryChip } from './model';
+import { moved, ReorderList } from './ReorderList';
 import { cardMetrics, WorkCard } from './WorkCard';
 import { WorksFrame } from './WorksFrame';
 
@@ -33,6 +37,7 @@ export type AllWorksScreenProps = {
  * The bar's second line is the person's name and how many works they have in all.
  */
 export function AllWorksScreen({ wawuId, onBack, onOpenWork, onAddWork }: AllWorksScreenProps) {
+  const { colors } = useWawu();
   const [category, setCategory] = useState<string | null>(null);
   const works = useQuery({
     queryKey: worksKey(wawuId, category),
@@ -41,7 +46,8 @@ export function AllWorksScreen({ wawuId, onBack, onOpenWork, onAddWork }: AllWor
   });
   const data = works.data;
   const count = data?.count ?? 0;
-  const mine = useQuery({ queryKey: myIdKey, queryFn: fetchMyId, enabled: data !== undefined && count === 0 });
+  // Whose page this is: an empty page offers Add, and a page of two or more works offers Reorder, to its owner only.
+  const mine = useQuery({ queryKey: myIdKey, queryFn: fetchMyId, enabled: data !== undefined && (count === 0 || count > 1) });
 
   // The chips stay up while another category loads or fails, so the person can always get back to All.
   const [chips, setChips] = useState<CategoryChip[]>([]);
@@ -49,17 +55,60 @@ export function AllWorksScreen({ wawuId, onBack, onOpenWork, onAddWork }: AllWor
   if (fresh && !sameChips(fresh, chips)) setChips(fresh);
 
   const own = data !== undefined && mine.data !== undefined && mine.data === data.owner.wawuId;
+
+  // Reorder (FIX-113, G-252): the owner's whole list, never a category's part of it (the Hub takes every work or none).
+  const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
+  const [order, setOrder] = useState<Work[] | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const saveOrder = useMutation({
+    mutationFn: (list: readonly Work[]) => reorderWorks(list.map((work) => work.id)),
+    onMutate: () => setOrderError(null),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: worksRoot });
+      void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      AccessibilityInfo.announceForAccessibility('Order saved');
+      setOrder(null);
+    },
+    onError: (error) => {
+      setOrderError(orderFailure(error));
+      // Another device added or removed a work: read the list again, so the next try is of what is there now.
+      if (isApiError(error) && error.status === 409) void works.refetch().then(() => setOrder(null));
+    },
+  });
+  const canReorder = own && category === null && data !== undefined && data.works.length > 1 && data.works.length === data.count;
+  const changed = order !== null && data !== undefined && order.some((work, i) => work.id !== data.works[i]?.id);
   const subtitle = data ? headerSubtitle(data.owner.displayName, data.count) : undefined;
   const selected = chipOfCategory(category);
 
   return (
-    <WorksFrame title="Works" subtitle={subtitle} onBack={onBack} testID="works-screen">
-      {chips.length > 0 ? (
+    <WorksFrame
+      title="Works"
+      subtitle={subtitle}
+      onBack={order ? () => setOrder(null) : onBack}
+      testID="works-screen"
+      right={canReorder && !order && data ? <IconButton icon="ArrowDownUp" label="Reorder works" onPress={() => setOrder(data.works)} testID="works-reorder-start" /> : undefined}
+      footer={
+        order ? (
+          <View testID="works-reorder-bar" style={[styles.bar, { paddingBottom: insets.bottom + space.md, backgroundColor: colors.surfacePage }]}>
+            <Button label="Save order" full onPress={() => saveOrder.mutate(order)} disabled={!changed} loading={saveOrder.isPending} testID="works-reorder-save" />
+            <Button label="Cancel" variant="secondary" full onPress={() => setOrder(null)} disabled={saveOrder.isPending} testID="works-reorder-cancel" />
+          </View>
+        ) : undefined
+      }
+    >
+      {order ? (
+        <>
+          {orderError ? <Banner tone="danger" title="That did not work" body={orderError} testID="works-reorder-error" /> : null}
+          <ReorderList works={order} disabled={saveOrder.isPending} onMove={(from, to) => setOrder((current) => (current ? moved(current, from, to) : current))} />
+        </>
+      ) : null}
+      {order ? null : chips.length > 0 ? (
         <View style={styles.chips}>
           <FilterChips testID="works-chips" label="Filter works by category" items={chips} value={selected} onChange={(value) => setCategory(categoryOfChip(value))} />
         </View>
       ) : null}
-      {data ? (
+      {order ? null : data ? (
         data.works.length > 0 ? (
           <Grid works={data.works} onOpenWork={onOpenWork} />
         ) : category !== null ? (
@@ -86,9 +135,15 @@ export function AllWorksScreen({ wawuId, onBack, onOpenWork, onAddWork }: AllWor
       ) : (
         <Loading chips={chips.length === 0} />
       )}
-      {data && works.isError ? <Problem error={works.error} onRetry={() => void works.refetch()} /> : null}
+      {!order && data && works.isError ? <Problem error={works.error} onRetry={() => void works.refetch()} /> : null}
     </WorksFrame>
   );
+}
+
+/** The Hub's own sentence for a refused order (a 409 says the works changed), or a plain one. */
+function orderFailure(error: unknown): string {
+  if (isApiError(error) && (error.kind === 'network' || error.status === 409)) return error.message;
+  return 'The order was not saved. Try again.';
 }
 
 function sameChips(a: readonly CategoryChip[], b: readonly CategoryChip[]): boolean {
@@ -157,6 +212,7 @@ const styles = StyleSheet.create({
   grid: { gap: gridMetrics.rowGap },
   row: { flexDirection: 'row', gap: gridMetrics.columnGap },
   spacer: { flex: 1 },
+  bar: { paddingHorizontal: layout.gutter, paddingTop: space.md, gap: space.sm },
   loading: { gap: space.lg },
   loadingCard: { flex: 1, gap: cardMetrics.stack },
   loadingPicture: { width: '100%', aspectRatio: 1 / cardMetrics.ratio, borderRadius: radius.input },
