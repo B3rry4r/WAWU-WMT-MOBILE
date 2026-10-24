@@ -7,7 +7,7 @@ order: -3025
 priority: launch
 repo: wawu-backend
 type: migration
-status: verifying
+status: building
 depends_on: []
 decisions: [R-85, R-6, R-11]
 passes: [V1, V2, V3, V4, V9]
@@ -56,3 +56,30 @@ The app reads its country and region lists from the Hub, a person has a country 
 - [x] The migration fills Nigeria from a proved +234 phone, and its rollback refuses while anyone has saved a place.
 - [x] A phone from any country is stored as E.164 where the Hub only stores it; Nigerian rails keep their rule.
 - [ ] On a phone and against the live WAWU ID: NOT RUN.
+
+## Verifier report
+
+Verifier (Sonnet, T2 check, 24 Oct 2026) of backend `wmt/GEO-02` `28634ce` against `origin/main` `38be72e`, with WAWU ID `wmt/GEO-01` `1e0faf1` running for real. Verdict: **FIX** (1 medium that needs a lead ruling, 3 low). Evidence: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/geo-12-v/` (`h2.mjs`, `h3.mjs`, `h4.mjs` outputs, `be-*.log`, `geo-data.cjs`).
+
+| Check | Result | How |
+|---|---|---|
+| Lists | passed | `GET /geo/countries` 249 rows, no sign-in, `Cache-Control: public, max-age=86400`, weak `ETag`, `If-None-Match` answers 304 (curl; also for `/NG/regions`); `ng` and `NG` both work; `ZZ` is 404 `country_not_found`; `AQ` is 200 with no items |
+| Data against ISO 3166-2 | NG, US, KE, CA ok; GH, ZA wrong | see finding 1 |
+| Profile fields, reasons | passed | `ZZ` `country_invalid`; `NG-LA` under Ghana `region_invalid`; region with no country `region_needs_country`; city 81 to 100 characters `city_too_long`; a request with a good country, a bad region and a city saves none of it; a country change clears the region; `AQ` takes a typed region and refuses a region code; the free `location` still saves |
+| `/me/location` with a real claim | passed | Ghana sign-up in the real WAWU ID: token claim `GH`, `/me/location` answers `GH` source `wawu_id`; a chosen `NG`/`NG-LA`/Ikeja replaces it and the claim never overwrites it (claim still `GH`); claim null with text "Nigeria" answers `NG`; claim null, no text, `+233` phone answers `GH` source `phone` |
+| Migration `20261120093000_geo_location` | passed | 7 live-shaped profiles: wallet identity or opening with a proved `+234` phone give `NG`/`phone` (one row for a person with both; an existing row keeps its location and skills); `+233` and no-wallet profiles get nothing; rollback removes only the derived rows and keeps pre-existing ones; it refuses (nothing changed) for a saved city, a saved country, and a saved region |
+| Admin filters and counts | passed | `/admin/geo/counts`: superadmin, support, finance 200; reviewer 403; no token and a user token 401; lines add up (8 = 5 placed + 3 unknown); `?countryCode=NG` narrows; `ZZ` 400. `/admin/creators?countryCode=` returned 2 for NG and 2 for GH, 1 for GH with `accountType=creator`, 1 for AQ, and the same roles as before; `/admin/content/queue?countryCode=` 200 for reviewer, superadmin, support, 403 for finance as before; `ZZ` 400 `country_invalid` |
+| CONVENTIONS section 2, the 11 places | passed | the diff touches none of the 10 Nigerian-rule files; each still carries its Nigerian rule; only `waitlist-contact.ts` changes, and a `+234` number that is not a Nigerian mobile was refused on `main` too |
+| tsc, eslint (no fix), gates, contract | passed | tsc EXIT 0; eslint 17 findings in three touched files, none on a line the task changed; `contract:build` EXIT 0 with no diff to `contract/openapi.json`; gates 0 fail, 136 warn, 88 accepted; `check_baseline` EXIT 0 |
+| Specs | passed | 31 spec files (the 12 named in the task plus the 3 geo specs; none that imports the Fintava double), `--runInBand`: 554 tests pass. 4 suites first failed with 401 only because no mock WAWU ID was listening on my port; with it started they pass (93 tests) |
+| `test:protected` after `db:seed` | passed | 2 suites, 253 tests, EXIT 0 |
+| Route inventories | passed | `publishing-gate-coverage` and `hub-rate-limits` are in the 31 files and pass |
+
+### Findings
+
+- **medium, lead rules (data)** `src/geo/geo-data.ts:60-70` serves `@koshmoney/countries` 1.0.1 as it is. Against ISO 3166-2: NG 36 states plus FC, US 50 plus DC plus 6 outlying areas, KE 47 counties (codes 01 to 47), CA 10 plus 3 are right. **ZA is wrong**: the names are vernacular, not English (`ZA-FS` "Foreisetata", `ZA-NC` "iTlhagwini-Kapa", `ZA-WC` "iTjhingalanga-Kapa", `ZA-NL` "GaZulu-Natala", `ZA-MP` "iMpumalanga", `ZA-NW` "Bokone Bophirima"), and two codes are the retired ones (`ZA-GT`, `ZA-NL`; ISO today is `ZA-GP`, `ZA-KZN`). **GH is out of date**: 10 regions with Brong-Ahafo; ISO has 16 (Ahafo, Bono, Bono East, North East, Oti, Savannah and Western North are missing). GB (239) offers "England and Wales", "Great Britain" and "United Kingdom" as regions (ISO lists them). Some country names are ISO-table style: "Congo, The Democratic Republic Of The", "Macedonia, the Former Yugoslav Republic Of" (now North Macedonia), "Korea, Republic of", "Saint Helena, Ascension and Tristan Da Cunha". Repro: `GET /api/hub/geo/countries/ZA/regions` and `/GH/regions`. Options: a reviewed override table for ZA, GH and the long names in `src/geo/`, or another package (the builder named `iso-3166`). Other countries were not checked one by one.
+- **low** `prisma/migrations/20261120093000_geo_location`. The stamp is earlier than `origin/wmt/IAP-01` (`20261121090000`, pushed 14:50, before this branch at 15:00) and `origin/wmt/WALLET-25` (`20261122090000`). The bundle rule asks for a stamp later than every branch; `prisma migrate deploy` applies it either way and no migration touches the same table. Rename it in any fix round.
+- **low** `GET /users/me` now carries `data.countryCode` (WAWU ID's claim, passed through from the token by `src/user-profile/user-profile.controller.ts:61`), so the capability check "the web's `GET /users/me` carries none of the new keys" is true only for the mock WAWU ID, not for tokens from the GEO-01 WAWU ID. Additive and read-only, but it is a second `countryCode` beside `/me/location` that can disagree with the person's choice; note it for GEO-03 and the web.
+- **low** `src/user-profile/dto/update-profile-fields.dto.ts:22` (`PLACE_TEXT_MAX = 100`) against `src/geo/geo.service.ts:10` (`CITY_MAX_LENGTH = 80`): a city of 81 to 100 characters answers `reason.code city_too_long`, a city of 101 or more answers the DTO's generic "city must be shorter than or equal to 100 characters" with no `reason.code`.
+
+Not a finding: `people` in `/admin/geo/counts` counts accounts that have a `UserProfile`; a person who only called `/me/location` before onboarding is not counted (builder open item 1, by design). Not run: a phone, the app (GEO-03).
