@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -18,13 +18,17 @@ import { firstName } from '@/features/send/model';
 import { transferQuery } from '@/features/send/api';
 import { font, layout, space, useWawu } from '@/theme';
 
-import { tickOf, type ChatPerson } from './api';
+import { tickOf, type ChatMessage, type ChatPerson } from './api';
+import { AttachmentBubble } from './AttachmentBubbles';
+import { attachmentRulesKey, fetchAttachmentLink, fetchAttachmentRules, fileLine, kindOfType, type ChatFile } from './attachments';
 import { AttachSheet } from './AttachSheet';
 import { DayLabel, RequestBubble, SentBubble, TextBubble } from './Bubbles';
 import { ChatClosedBar, ChatComposer } from './ChatComposer';
 import { chatSendsQuery } from './ChatSendScreen';
 import { RequestPaySheet } from './RequestPaySheet';
 import { RequestSheet } from './RequestSheet';
+import { pickChatFile, pickPhotoOrVideo } from './pickAttachment';
+import { PhotoViewer } from './PhotoViewer';
 import { messageWords, threadItems, type ThreadItem } from './thread';
 import { useChatThread } from './useChatThread';
 import { useRequestPay } from './useRequestPay';
@@ -36,6 +40,8 @@ const ON_APP = 'on Who Made This?';
 const threadMetrics = { padTop: 14, padH: 16, between: 10, loadingRows: 5 } as const;
 /** How often a send the provider has not confirmed is read again (`GET /money/transfers/{id}`, our own record). Default (agent), owner may override. */
 const SEND_POLL_MS = 4000;
+/** How long what a chat takes (`GET /chats/attachment-rules`) is kept before it is asked again: five minutes. Default (agent), owner may override. */
+const RULES_STALE_MS = 5 * 60 * 1000;
 
 export type ChatScreenProps = {
   chatId: string;
@@ -68,6 +74,11 @@ export function ChatScreen(props: ChatScreenProps) {
   const sends = useQuery(chatSendsQuery(owner, chatId));
   const [attachOpen, setAttachOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
+  // What a chat takes (the File row's line, the picker's types) is the Hub's: read when the person opens the sheet's chat, never written here.
+  const rules = useQuery({ queryKey: attachmentRulesKey, queryFn: fetchAttachmentRules, staleTime: RULES_STALE_MS, retry: false });
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
+  const [opening, setOpening] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
   const pay = useRequestPay({
     chatId,
     patchRequest: thread.patchRequest,
@@ -85,6 +96,37 @@ export function ChatScreen(props: ChatScreenProps) {
     wasFocused.current = focused;
   }, [focused, refetchSends]);
 
+  /** Photo or video, File: the phone's picker, then the chat sends what was chosen. A file the phone cannot read says so; the Hub's refusals show on the file's own bubble. */
+  const choose = async (pick: () => Promise<ChatFile | null>) => {
+    setAttachNotice(null);
+    try {
+      const file = await pick();
+      if (file) thread.sendFile(file);
+    } catch {
+      setAttachNotice('That file could not be read. Choose another.');
+    }
+  };
+  const chooseMedia = () => void choose(pickPhotoOrVideo);
+  const chooseFile = () => void choose(() => pickChatFile(rules.data?.file.contentTypes ?? ['*/*']));
+
+  /** Opens one file: a fresh link (only the two people in the chat get one), a photo over the thread, anything else in the phone's own viewer. */
+  const open = useCallback(
+    async (message: ChatMessage) => {
+      setOpening(message.id);
+      setAttachNotice(null);
+      try {
+        const link = await fetchAttachmentLink(chatId, message.id);
+        if (message.kind === 'image') setViewing(link.url);
+        else await Linking.openURL(link.url);
+      } catch (error) {
+        setAttachNotice(isApiError(error) ? error.message : 'We could not open that file. Try again.');
+      } finally {
+        setOpening(null);
+      }
+    },
+    [chatId],
+  );
+
   const person = chat.data?.other ?? null;
   // The support side of a support thread (SUPPORT-01): the app's own mark, no "on Who Made This?" line, and no money in the chat.
   const support = person?.support === true;
@@ -99,6 +141,23 @@ export function ChatScreen(props: ChatScreenProps) {
   const renderItem = useCallback(
     ({ item }: { item: ThreadItem }) => {
       if (item.kind === 'day') return <DayLabel label={item.label} />;
+      if (item.kind === 'out' && item.entry.file) {
+        const entry = item.entry;
+        const file = entry.file as ChatFile;
+        const kind = kindOfType(file.contentType);
+        return (
+          <AttachmentBubble
+            id={entry.localId}
+            kind={kind}
+            mine
+            contentType={file.contentType}
+            uri={kind === 'image' ? file.previewUri : undefined}
+            name={file.name}
+            bytes={file.blob.size}
+            pending={{ status: entry.status, error: entry.error, onRetry: () => thread.retry(entry.localId), onDiscard: () => thread.discard(entry.localId) }}
+          />
+        );
+      }
       if (item.kind === 'out') {
         return (
           <TextBubble
@@ -124,9 +183,26 @@ export function ChatScreen(props: ChatScreenProps) {
           />
         );
       }
+      if (message.attachment && (message.kind === 'image' || message.kind === 'video' || message.kind === 'file')) {
+        return (
+          <AttachmentBubble
+            id={message.id}
+            kind={message.kind}
+            mine={message.mine}
+            contentType={message.attachment.contentType}
+            uri={message.kind === 'image' ? message.attachment.url : undefined}
+            name={message.attachment.name}
+            bytes={message.attachment.bytes}
+            caption={message.text}
+            at={message.createdAt}
+            opening={opening === message.id}
+            onOpen={() => void open(message)}
+          />
+        );
+      }
       return <TextBubble id={message.id} text={messageWords(message)} mine={message.mine} at={message.createdAt} />;
     },
-    [thread, pay, name, owner, chatId],
+    [thread, pay, name, owner, chatId, open, opening],
   );
 
   let body;
@@ -222,17 +298,34 @@ export function ChatScreen(props: ChatScreenProps) {
         ) : null}
       </View>
       <View style={styles.body}>{body}</View>
-      {pay.notice ? (
-        <Pressable accessibilityRole="alert" onPress={pay.clearNotice} style={[styles.notice, { backgroundColor: colors.surfaceChrome }]} testID="chat-notice">
+      {attachNotice ?? pay.notice ? (
+        <Pressable
+          accessibilityRole="alert"
+          onPress={() => {
+            setAttachNotice(null);
+            pay.clearNotice();
+          }}
+          style={[styles.notice, { backgroundColor: colors.surfaceChrome }]}
+          testID="chat-notice"
+        >
           <Text variant="errorLine" tone="danger">
-            {pay.notice}
+            {attachNotice ?? pay.notice}
           </Text>
         </Pressable>
       ) : null}
       {ready ? closed ? <ChatClosedBar /> : <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
       {person && !support ? (
         <>
-          <AttachSheet visible={attachOpen} onClose={() => setAttachOpen(false)} name={name} onSendMoney={() => props.onSendMoney(person)} onRequestMoney={() => setRequestOpen(true)} />
+          <AttachSheet
+            visible={attachOpen}
+            onClose={() => setAttachOpen(false)}
+            name={name}
+            onSendMoney={() => props.onSendMoney(person)}
+            onRequestMoney={() => setRequestOpen(true)}
+            onPickMedia={chooseMedia}
+            onPickFile={chooseFile}
+            fileLine={fileLine(rules.data)}
+          />
           <RequestSheet
             chatId={chatId}
             name={name}
@@ -244,6 +337,7 @@ export function ChatScreen(props: ChatScreenProps) {
         </>
       ) : null}
       {pay.sheet ? <RequestPaySheet sheet={pay.sheet} name={name} notice={pay.notice} /> : null}
+      <PhotoViewer uri={viewing} onClose={() => setViewing(null)} />
     </KeyboardAvoidingView>
   );
 }

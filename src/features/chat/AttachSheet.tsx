@@ -13,14 +13,20 @@ export type AttachSheetProps = {
   name: string;
   onSendMoney: () => void;
   onRequestMoney: () => void;
+  /** Photo or video (FIX-104): opens the phone's library. */
+  onPickMedia: () => void;
+  /** File (FIX-104): opens the phone's files. */
+  onPickFile: () => void;
+  /** The File row's line, from the Hub's own rule ("PDF, up to 20 MB"). Left out until the Hub has answered. */
+  fileLine?: string | null;
 };
 
 /**
  * I13 · Add to chat: a sheet over the chat with the ways to put something in it. Send money (from the person's Naira wallet) opens I14 and
- * Request money opens I16. Photo or video and File are not drawn: nothing in the app sends one yet (R-47), and the board's "instant" and
- * "PDF, up to 20 MB" say what nothing here can promise.
+ * Request money opens I16; Photo or video opens the phone's library and File its files (FIX-104), and the chat sends what is chosen. The
+ * board's "instant" says what nothing here can promise and is not printed; the File line ("PDF, up to 20 MB") is the Hub's own rule.
  */
-export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMoney }: AttachSheetProps) {
+export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMoney, onPickMedia, onPickFile, fileLine }: AttachSheetProps) {
   return (
     <BottomSheet visible={visible} onClose={onClose} label="Add to chat" gap={SHEET_GAP} testID="attach-sheet">
       <Text variant="sheetTitleSm">Add to chat</Text>
@@ -43,6 +49,25 @@ export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMone
           onPress={() => {
             onClose();
             onRequestMoney();
+          }}
+        />
+        <ListRow
+          testID="attach-photo-video"
+          lead={<IconTile icon="Image" />}
+          title="Photo or video"
+          onPress={() => {
+            onClose();
+            onPickMedia();
+          }}
+        />
+        <ListRow
+          testID="attach-file"
+          lead={<IconTile icon="Paperclip" />}
+          title="File"
+          subtitle={fileLine ?? undefined}
+          onPress={() => {
+            onClose();
+            onPickFile();
           }}
         />
       </GroupedList>
