@@ -439,6 +439,36 @@ describe('PT2 · the file step', () => {
     expect(screen.getByTestId('tool-player-button')).toHaveAccessibleName('Pause Clean audio');
   });
 
+  it.each([SPECS.captions, SPECS['clean-audio']])('SWEEP-APP-8 L3 (POINTS-10): $name: once a job is done the row names the recording and its length, with no limits line and no "Choose another" above the result', async (spec) => {
+    await toTool(spec.id);
+    await choose();
+    await run();
+    await sleep(2100);
+    await screen.findByTestId(spec.id === 'captions' ? 'tool-transcript' : 'tool-player');
+    expect(screen.getByTestId('tool-file-name')).toHaveTextContent('interview.mp3');
+    expect(screen.getByTestId('tool-length')).toHaveTextContent('About 2 minutes');
+    expect(screen.queryByText(/Up to 500 MB/)).toBeNull();
+    expect(screen.queryByText('Choose another')).toBeNull();
+    // The row is still the way to a new recording (it says so to a screen reader), it just does not shout it above the result.
+    expect(screen.getByTestId('tool-file')).toHaveAccessibleName(/Choose another$/);
+    mockPick.mockResolvedValueOnce(recording('second.mp3', 'audio/mpeg'));
+    await fireEvent.press(screen.getByTestId('tool-file'));
+    await screen.findByTestId('tool-cost');
+    expect(screen.getByTestId('tool-file-name')).toHaveTextContent('second.mp3');
+  });
+
+  it.each([SPECS.captions, SPECS['clean-audio']])('SWEEP-APP-8 L3 (POINTS-10): $name: a failed job shows no limits line above its failure', async (spec) => {
+    hub.mode = 'fail';
+    await toTool(spec.id);
+    await choose();
+    await run();
+    await sleep(2100);
+    await screen.findByTestId('tool-failed');
+    expect(screen.getByTestId('tool-length')).toHaveTextContent('');
+    expect(screen.queryByText(/Up to 500 MB/)).toBeNull();
+    expect(screen.queryByText('Choose another')).toBeNull();
+  });
+
   it('a second tap on Run while the check is running makes one job', async () => {
     await toTool('captions');
     await choose();

@@ -94,6 +94,19 @@ describe('the limits M36 says before Save', () => {
     expect(hasProblems(problemsOf({ ...filled, title: `${'a'.repeat(WORK_LIMITS.title)}   ` }))).toBe(false);
   });
 
+  it('SWEEP-APP-8 L5 (FIX-113): the description keeps its runs of spaces and its line breaks, as the Hub stores them, so they all count', () => {
+    expect(lengthOf('description', 'a  b   c')).toBe(8);
+    expect(lengthOf('description', '  a  b  ')).toBe(4);
+    expect(lengthOf('description', 'one\n\ntwo')).toBe(8);
+    // Four single-line fields still count a run as one, as the Hub collapses them.
+    for (const field of ['title', 'role', 'client', 'category'] as const) expect(lengthOf(field, 'a  b   c')).toBe(5);
+    // A description of exactly the limit, with a run of spaces, is over once the spaces count.
+    const max = WORK_LIMITS.description;
+    const over = `${'a'.repeat(max - 2)}  b`;
+    expect(problemsOf({ ...filled, description: over }).description).toBe(tooLong('description', max + 1));
+    expect(hasProblems(problemsOf({ ...filled, description: `${'a'.repeat(max - 3)}  b` }))).toBe(false);
+  });
+
   it('says how many files a work carries, how many room is left, and how many were left out', () => {
     expect(mediaHint).toBe(`Up to ${WORK_LIMITS.media} photos or videos.`);
     expect(mediaRoom(0)).toBe(WORK_LIMITS.media);

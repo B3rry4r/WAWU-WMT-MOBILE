@@ -202,7 +202,8 @@ export function LessonList({ lessons }: { lessons: PieceDetail['lessons'] }) {
                 </Text>
               ) : null}
             </View>
-            {lesson.isFree ? <StatusPill label="Free" tone="positive" /> : <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />}
+            {/* The pill hugs the top of any row it sits in (its own alignSelf); this box is what the row centres. */}
+            <View style={styles.lessonEnd}>{lesson.isFree ? <StatusPill label="Free" tone="positive" /> : <Icon name="Lock" size={m.lessonIcon} color={colors.textMuted} />}</View>
           </View>
         );
       })}
@@ -324,6 +325,7 @@ const styles = StyleSheet.create({
   lessons: { paddingHorizontal: space.lg },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: m.lessonRow },
   lessonNo: { width: m.lessonNo, fontSize: 13 },
+  lessonEnd: { alignSelf: 'center' },
   lessonWords: { flex: 1, gap: m.lessonSpace, paddingVertical: space.sm },
   lessonLength: { marginTop: 0 },
   comment: { flexDirection: 'row', gap: m.commentGap },

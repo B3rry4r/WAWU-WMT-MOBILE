@@ -23,9 +23,10 @@ import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, ty
 import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
-import { ExperienceSection, SkillsSection } from './AboutSections';
+import { ExperienceSection, SkillsSection, useSkillInput } from './AboutSections';
 import { PictureHeader } from './PictureHeader';
 import { roleLinesOf } from '@/features/me/model';
+import { addSkill } from './skills';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
 import { SocialLogo, hasMark } from './SocialLogo';
 import { uploadPicture, type PictureFolder } from './upload';
@@ -138,9 +139,15 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
   const problems = problemsOf(form, base);
   const dirty = isDirty(form, base);
 
+  // What is typed in the skills box and not yet added (SWEEP-APP-8 L5): Save adds it, or says why it cannot be.
+  const skillInput = useSkillInput();
+  const typedSkill = skillInput.typed.trim() !== '';
+  // A typed skill the screen has already said it cannot add leaves Save off until the words change.
+  const skillToAdd = typedSkill && skillInput.problem === undefined;
+
   const save = useMutation({
-    mutationFn: async () => {
-      const { handle, profile, fields } = changesOf(form, base);
+    mutationFn: async (target: ProfileForm = form) => {
+      const { handle, profile, fields } = changesOf(target, base);
       // The username first: it is the part another account can take, so a refusal leaves nothing else half saved.
       if (handle) {
         try {
@@ -203,11 +210,26 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
 
   // Fields lock only while the request is on its way; Save stays off once it has gone through.
   const busy = save.isPending;
-  const canSave = dirty && !hasProblems(problems) && uploading === null && !busy && !saved;
+  const canSave = (dirty || skillToAdd) && !hasProblems(problems) && uploading === null && !busy && !saved;
   const handleError = failure.handle ?? problems.handle;
   const banner = failure.banner ?? uploadError;
 
-  const back = () => (dirty && !saved ? setLeaving(true) : onBack());
+  const back = () => ((dirty || typedSkill) && !saved ? setLeaving(true) : onBack());
+
+  /** Save: a skill typed and not added is added first (a repeat, an over-long one or a full list is said in words and nothing is saved). */
+  const submit = () => {
+    if (!typedSkill) {
+      save.mutate(form);
+      return;
+    }
+    const next = addSkill(form.skills, skillInput.typed);
+    skillInput.setProblem(next.problem);
+    if (next.problem !== undefined) return;
+    const target = { ...form, skills: next.list };
+    skillInput.setTyped('');
+    updateDraft(() => target);
+    save.mutate(target);
+  };
 
   return (
     <>
@@ -217,7 +239,7 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
         onBack={back}
         scrollRef={scrollRef}
         gap={BODY_GAP}
-        action={{ label: 'Save', onPress: () => save.mutate(), disabled: !canSave, loading: save.isPending, testID: 'edit-save' }}
+        action={{ label: 'Save', onPress: submit, disabled: !canSave, loading: save.isPending, testID: 'edit-save' }}
       >
         {banner ? <Banner tone="danger" title="That did not work" body={banner} testID="edit-banner" /> : null}
         <PictureHeader
@@ -286,7 +308,7 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
           {added.length < PLATFORMS.length ? <AddHandleRow onPress={onOpenSocial} disabled={busy} /> : null}
         </View>
         {onOpenRole ? <ExperienceSection roles={roles} onOpen={onOpenRole} disabled={busy} /> : null}
-        <SkillsSection skills={form.skills} onChange={(skills) => edit((current) => ({ ...current, skills }))} disabled={busy} />
+        <SkillsSection skills={form.skills} onChange={(skills) => edit((current) => ({ ...current, skills }))} disabled={busy} input={skillInput} />
       </ScreenFrame>
       <Toast message={saved && ownNotice ? 'Profile saved' : null} testID="profile-saved" />
       <BottomSheet visible={leaving} onClose={() => setLeaving(false)} label="Discard your changes?" testID="edit-discard">

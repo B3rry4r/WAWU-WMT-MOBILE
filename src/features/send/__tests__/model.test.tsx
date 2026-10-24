@@ -4,7 +4,7 @@ import { MoneyCard } from '@/features/home/MoneyCard';
 import { actionTileSize } from '@/features/wallet/home/WalletActions';
 
 import type { Transfer } from '../api';
-import { CONFIRMING_LINE, RETRY_LINE, feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
+import { CONFIRMING_LINE, RETRY_LINE, bankPayeeOf, feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
 
 const AMAKA = { wawuUserId: '11111111-1111-4111-8111-111111111111', name: 'Amaka Nwosu', handle: 'amaka', avatarUrl: null, tick: 'creator' as const };
 
@@ -34,6 +34,20 @@ describe('what the send screens read and write', () => {
     expect(payeeFromParams({ id: 'x' })).toBeNull();
     expect(payeeFromParams({ name: 'x' })).toBeNull();
     expect(payeeFromParams({ id: 'x', name: 'Y', tick: 'gold' })?.tick).toBeNull();
+  });
+
+  it('SWEEP-APP-8 L2: a bank account\'s name token stays out of the route (the URL on the web) and comes back from memory', () => {
+    const bank = bankPayeeOf('Test Holder One', { bankCode: '058', bankName: 'Guaranty Trust Bank', accountNumber: '0123456789', nameToken: 'name-token-secret-0123', saved: false });
+    const params = payeeParams(bank);
+    expect(Object.keys(params)).not.toContain('nameToken');
+    expect(Object.values(params)).not.toContain('name-token-secret-0123');
+    expect(payeeFromParams(params)).toEqual(bank);
+    // A route with a payee nobody here picked (a reload on the web) has no token to carry: the send then goes without one.
+    expect(payeeFromParams({ ...params, accountNumber: '0123456780' })?.bank?.nameToken).toBeNull();
+    // A saved account carries none, and a token passed in a route by hand is not read.
+    const saved = bankPayeeOf('Test Holder Two', { bankCode: '090267', bankName: 'Kuda MFB', accountNumber: '2011458890', nameToken: null, saved: true });
+    expect(payeeFromParams(payeeParams(saved))?.bank?.nameToken).toBeNull();
+    expect(payeeFromParams({ ...payeeParams(saved), nameToken: 'typed-into-the-url' })?.bank?.nameToken).toBeNull();
   });
 
   it('the line under a name is the handle and what the tick means', () => {
