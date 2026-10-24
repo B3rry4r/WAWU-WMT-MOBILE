@@ -7,7 +7,7 @@ order: 312
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: building
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -59,7 +59,7 @@ _Filled in by the builder (docs/roles/BUILDER.md). Files changed, each check and
 
 ## Verifier report
 
-_Filled in by the verifier (docs/roles/VERIFIER.md). One row per pass: passed, failed or NOT RUN with the reason, and where the evidence is. Then findings: defect, differs-for-recorded-reason (cite the decision), or unclear._
+Checked together with WALLET-25, one branch and one verdict, **FIX**: see the Verifier report in `tasks/WALLET-25.md` (F1 to F7). USSD: not claimed for Nigeria (options and quote say so); the bank checkout reached Nuvion in GBP (checkout URL and expiry); naira bank checkout 503 is mapped to a plain refusal.
 
 ## Owner sign-off
 
