@@ -18,7 +18,7 @@ import { PointsFrame } from '@/features/points/PointsFrame';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
-import { dayOf, higherTiers, naira } from './purchaseModel';
+import { dayOf, higherTiers, priceIn } from './purchaseModel';
 
 const BODY_GAP = 12;
 const DAY_MS = 86_400_000;
@@ -162,7 +162,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
       canUpgrade || sold ? (
         <View style={styles.foot}>
           {canUpgrade ? <Button testID="your-tier-upgrade" label="Upgrade" variant="outline" onPress={onUpgrade} style={styles.half} /> : null}
-          {sold ? <Button testID="your-tier-renew" label={`Renew · ${naira(sold.priceMinor)}`} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
+          {sold ? <Button testID="your-tier-renew" label={`Renew · ${priceIn(sold.priceMinor, plans.data.currency)}`} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
         </View>
       ) : undefined;
   }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Share } from 'react-native';
+import { Linking, Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { referrals } from '../referralsForTests';
@@ -102,7 +102,9 @@ describe('Share card (RF2)', () => {
     expect(screen.getByText('Join me on Who Made This? and get paid for what you know.')).toBeTruthy();
     expect(screen.getByLabelText('Creator tick')).toBeTruthy();
     const everything = JSON.stringify(screen.toJSON());
-    for (const brand of ['Instagram', 'WhatsApp', 'Story', 'Flutterwave', 'Nuvion', 'Fintava']) expect(everything).not.toContain(brand);
+    // WhatsApp is a share target now (RELEASE-02, CHECK-3 D-2b, the lead's ruling; the content and TGIF sheets name it too): this list
+    // lost its one entry. Story is Instagram's card and stays out (R-68).
+    for (const brand of ['Instagram', 'Story', 'Flutterwave', 'Nuvion', 'Fintava']) expect(everything).not.toContain(brand);
   });
 
   it('Share captures the card as a picture and hands it to the phone\'s share sheet', async () => {
@@ -205,5 +207,58 @@ describe('Share card (RF2)', () => {
     await fireEvent.press(screen.getByText('Try again'));
     expect(await screen.findByTestId('invite-card')).toBeTruthy();
     expect(screen.getByTestId('invite-card-share')).toBeTruthy();
+  });
+});
+
+
+describe('Share card (RF2) · the targets that need no native change (RELEASE-02, CHECK-3 D-2b)', () => {
+  it('draws WhatsApp, Who Made This? chat, Share and Save, and no Story', async () => {
+    await open();
+    await screen.findByTestId('invite-card');
+    for (const id of ['invite-card-whatsapp', 'invite-card-chat', 'invite-card-share', 'invite-card-save']) expect(await screen.findByTestId(id)).toBeTruthy();
+    expect(screen.getByText('WhatsApp')).toBeTruthy();
+    expect(screen.getByText('Who Made This? chat')).toBeTruthy();
+    expect(screen.queryByText('Story')).toBeNull();
+  });
+
+  it('WhatsApp opens a link carrying the line and the Hub link', async () => {
+    const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-whatsapp'));
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    const url = decodeURIComponent(String(spy.mock.calls[0][0]));
+    expect(url.startsWith('https://wa.me/?text=')).toBe(true);
+    expect(url).toContain('Join me on Who Made This? and get paid for what you know.');
+    expect(url).toContain('wawuafrica.com/r/lennox');
+  });
+
+  it('says so when WhatsApp cannot be opened', async () => {
+    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no app'));
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-whatsapp'));
+    expect(await screen.findByTestId('invite-card-problem')).toHaveTextContent(/WhatsApp could not be opened. Try again./);
+  });
+
+  it('Who Made This? chat lists recent chats and sends the line and the link to the one tapped, once', async () => {
+    const chat = { id: 'c1', canMessage: true, other: { wawuId: 'w-ada', name: 'Ada Obi', avatarUrl: null } };
+    const blocked = { id: 'c2', canMessage: false, other: { wawuId: 'w-bayo', name: 'Bayo Ade', avatarUrl: null } };
+    answers['GET /api/hub/chats'] = ok({ items: [chat, blocked] });
+    answers['POST /api/hub/chats/c1/messages'] = ok({ id: 'm1' });
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-chat'));
+    const person = await screen.findByTestId('invite-chat-person-w-ada');
+    expect(screen.queryByTestId('invite-chat-person-w-bayo')).toBeNull();
+    await fireEvent.press(person);
+    expect(await screen.findByTestId('invite-chat-note')).toHaveTextContent(/Sent to Ada Obi./);
+    const posts = (globalThis.fetch as jest.Mock).mock.calls.filter(([input, init]) => String((input as Request).url ?? input).includes('/chats/c1/messages') && ((init as RequestInit | undefined)?.method ?? (input as Request).method) === 'POST');
+    expect(posts).toHaveLength(1);
+  });
+
+  it('says so when the chats cannot be loaded, and offers Try again', async () => {
+    answers['GET /api/hub/chats'] = 'offline';
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-chat'));
+    expect(await screen.findByTestId('invite-chat-error')).toBeTruthy();
+    expect(screen.getByTestId('invite-chat-retry')).toBeTruthy();
   });
 });

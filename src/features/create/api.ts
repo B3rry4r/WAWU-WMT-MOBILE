@@ -31,8 +31,8 @@ export type Allowance = {
   tickHeld: boolean;
   uploads: { used: number; allowed: number; remaining: number };
   /** The uploads of the Hub's free level: 0 while nothing may be published with no tier and no tick (R-43). */
-  free: { uploads: number };
-  withTick: { uploads: number };
+  free: { uploads: number; storageBytes?: number };
+  withTick: { uploads: number; storageBytes?: number };
 };
 
 export async function fetchAllowance(): Promise<Allowance> {
@@ -49,7 +49,8 @@ export async function fetchAllowance(): Promise<Allowance> {
     throw unreadable('uploads');
   }
   // A Hub that does not name its free level has none to say: no one is told they are on a free allowance.
-  return { tickHeld: out.tickHeld, uploads, free: { uploads: typeof free?.uploads === 'number' ? free.uploads : 0 }, withTick };
+  const stored = (level: { storageBytes?: unknown } | undefined) => (typeof level?.storageBytes === 'number' && level.storageBytes > 0 ? { storageBytes: level.storageBytes } : {});
+  return { tickHeld: out.tickHeld, uploads, free: { uploads: typeof free?.uploads === 'number' ? free.uploads : 0, ...stored(free) }, withTick: { uploads: withTick.uploads, ...stored(withTick) } };
 }
 
 export async function fetchFormats(): Promise<FormatRule[]> {

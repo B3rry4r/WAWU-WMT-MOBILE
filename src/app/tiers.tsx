@@ -15,6 +15,8 @@ export default function TiersRoute() {
   const router = useRouter();
   const { status } = useSession();
   const [going, setGoing] = useState<{ kind: 'tier' | 'upgrade'; tier: string } | null>(null);
+  // A person billed in dollars is led to the wallet to add a dollar account: the sheet closes first, as it does for the checkout.
+  const [toWallet, setToWallet] = useState(false);
   const routerRef = useRef(router);
   useEffect(() => {
     routerRef.current = router;
@@ -24,22 +26,27 @@ export default function TiersRoute() {
   useFocusEffect(
     useCallback(() => {
       setGoing(null);
+      setToWallet(false);
     }, []),
   );
   // Runs after the render that closed the sheet, so the checkout is pushed with the sheet already closing.
   useEffect(() => {
     if (going) routerRef.current.push({ pathname: '/checkout', params: { kind: going.kind, tier: going.tier } });
   }, [going]);
+  useEffect(() => {
+    if (toWallet) routerRef.current.push('/wallet');
+  }, [toWallet]);
 
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   return (
     <TiersScreen
-      open={going === null}
+      open={going === null && !toWallet}
       onClose={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       // A second tap while the sheet is closing keeps the first choice: one push, never two.
       onContinue={(kind, tier) => setGoing((already) => already ?? { kind, tier })}
+      onAddAccount={() => setToWallet(true)}
     />
   );
 }

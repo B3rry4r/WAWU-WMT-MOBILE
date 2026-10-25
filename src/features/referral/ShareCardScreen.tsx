@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { whatsappUrl } from '@/features/content-detail/model';
 import { hueFor } from '@/features/feed/model';
 import { nameOf, ticksOf } from '@/features/me/model';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
@@ -16,24 +17,29 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 import { fetchReferrals, referralsKey } from './api';
 import { pictureOfCard } from './cardPicture';
 import { CARD_LINE } from './model';
+import { ChatSheet } from './ChatSheet';
 import { NavBar } from './parts';
 import { cardMetrics, ShareCard } from './ShareCard';
 
 /** design/_gen/referral.js `rf2`: the card centred 6 under the bar; under it a row of 56 tiles, each 76 wide with a 12 / 600 word 8 below. */
-const screen = { top: 6, target: 76, tile: 56, tileIcon: 22, label: 12, labelGap: 8, footTop: 12, targetsGap: space.s3xl } as const;
+const screen = { top: 6, target: 76, tile: 56, tileIcon: 22, label: 12, labelGap: 8, footTop: 12 } as const;
 
 export const COULD_NOT_SHARE = 'The card could not be shared. Try again.';
 export const COULD_NOT_SAVE = 'The card could not be saved. Try again.';
 export const SAVE_NOT_ALLOWED = 'Saving needs permission to add to your photos. Allow it in your phone settings, then try again.';
 export const SAVED = 'Saved to your photos.';
+export const COULD_NOT_OPEN_WHATSAPP = 'WhatsApp could not be opened. Try again.';
 const PHONE_CAN_SHARE = ['referral', 'phone-can-share'] as const;
 
 export type ShareCardScreenProps = { onClose: () => void };
 
 /**
  * RF2 · Share card. The card is drawn here and the picture of it goes to the phone's share sheet (R-33), not to an
- * Instagram card (R-68): the sheet lists whatever the phone has, so no outside app is named. Save puts the same picture
- * in the phone's photos. A phone with no share sheet (the web build) shares the line and the link as text, and draws no Save.
+ * Instagram card (R-68): the sheet lists whatever the phone has, so no outside app is named. Four targets that need no native
+ * change (RELEASE-02, CHECK-3 D-2b): WhatsApp by link (the line and the link as text, as the content and TGIF sheets do), the
+ * in-app "Who Made This? chat" (the line and the link to a recent chat), Share (the system sheet) and Save, which puts the same
+ * picture in the phone's photos. The board's Story target needs a native module and is listed for the store build, not drawn
+ * (BACKEND_GAPS G-R2-AUTHME-2). A phone with no share sheet (the web build) shares the line and the link as text, and draws no Save.
  */
 export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const { colors } = useWawu();
@@ -46,6 +52,7 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const busy = useRef(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [chatting, setChatting] = useState(false);
 
   const link = referrals.data?.link;
   const ready = Boolean(me.data && link);
@@ -76,6 +83,15 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
         else await Share.share({ message: `${CARD_LINE} ${link ?? ''}`.trim() });
       } catch {
         setProblem(COULD_NOT_SHARE);
+      }
+    });
+
+  const whatsapp = () =>
+    once(async () => {
+      try {
+        await Linking.openURL(whatsappUrl(`${CARD_LINE} ${link ?? ''}`.trim()));
+      } catch {
+        setProblem(COULD_NOT_OPEN_WHATSAPP);
       }
     });
 
@@ -134,10 +150,13 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
       </ScrollView>
       {ready ? (
         <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+          <Target icon="MessageCircle" label="WhatsApp" onPress={() => void whatsapp()} testID="invite-card-whatsapp" />
+          <Target icon="Send" label="Who Made This? chat" onPress={() => setChatting(true)} testID="invite-card-chat" />
           <Target icon="Share" label="Share" onPress={() => void share()} testID="invite-card-share" />
           {asPicture ? <Target icon="ImageDown" label="Save" onPress={() => void save()} testID="invite-card-save" /> : null}
         </View>
       ) : null}
+      <ChatSheet visible={chatting} onClose={() => setChatting(false)} text={`${CARD_LINE} ${link ?? ''}`.trim()} />
     </View>
   );
 }
@@ -164,7 +183,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
   body: { flexGrow: 1, alignItems: 'center', paddingTop: screen.top, paddingHorizontal: layout.gutter, gap: space.lg },
-  foot: { paddingTop: screen.footTop, paddingHorizontal: layout.gutter, flexDirection: 'row', justifyContent: 'center', gap: screen.targetsGap },
+  foot: { paddingTop: screen.footTop, paddingHorizontal: layout.gutter, flexDirection: 'row', justifyContent: 'space-between' },
   target: { width: screen.target, alignItems: 'center', gap: screen.labelGap },
   tile: { width: screen.tile, height: screen.tile, borderRadius: radius.tile, alignItems: 'center', justifyContent: 'center' },
   targetLabel: { fontSize: screen.label, textAlign: 'center' },

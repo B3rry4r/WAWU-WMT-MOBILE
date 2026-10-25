@@ -174,10 +174,11 @@ describe('A22 to A2', () => {
     expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
   });
 
-  it('A22 opened with no screen behind it has no Back button', async () => {
+  it('A22 opened with no screen behind it still has a Back button, and it goes to the welcome screen (RELEASE-02, CHECK-3 L-8; this one assertion pinned "no Back button")', async () => {
     await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
   });
 });
 

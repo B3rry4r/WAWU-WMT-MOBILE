@@ -132,13 +132,12 @@ describe('Z6 · Delete account', () => {
     expect(handlers.onWithdraw).toHaveBeenCalledTimes(1);
   });
 
-  it('draws what goes, with the wallet and no cards (R-16), and no figure for the waiting period', async () => {
+  it('draws what goes, with the wallet and cards (R-84 settled the cards R-16 left out), and no figure for the waiting period', async () => {
     answers[WALLET] = ok(OPEN_WALLET);
     answers[BALANCE] = balance(48_525_075);
     await boot();
     await screen.findByTestId('delete-wallet-warning');
-    for (const row of ['Your profile, content and communities', 'Your purchases and tickets', 'Your wallet']) expect(screen.getByText(row)).toBeTruthy();
-    expect(screen.queryByText(/cards/i)).toBeNull();
+    for (const row of ['Your profile, content and communities', 'Your purchases and tickets', 'Your wallet and cards']) expect(screen.getByText(row)).toBeTruthy();
     expect(screen.getByText('Delete your account?')).toBeTruthy();
     expect(screen.queryByText(/30/)).toBeNull();
   });
@@ -149,7 +148,7 @@ describe('Z6 · Delete account', () => {
     const handlers = await boot();
     await waitFor(() => expect(disabled('delete-continue')).toBe(false));
     expect(screen.queryByTestId('delete-wallet-warning')).toBeNull();
-    expect(screen.getByText('Your wallet')).toBeTruthy();
+    expect(screen.getByText('Your wallet and cards')).toBeTruthy();
     await tap('delete-continue');
     expect(handlers.onContinue).toHaveBeenCalledTimes(1);
   });
@@ -160,7 +159,7 @@ describe('Z6 · Delete account', () => {
     await waitFor(() => expect(disabled('delete-continue')).toBe(false));
     expect(screen.queryByTestId('delete-wallet-warning')).toBeNull();
     expect(screen.queryByTestId('delete-wallet-notice')).toBeNull();
-    expect(screen.queryByText('Your wallet')).toBeNull();
+    expect(screen.queryByText('Your wallet and cards')).toBeNull();
     expect(sent.some((s) => s.path === '/api/hub/money/wallet/balance')).toBe(false);
     await tap('delete-continue');
     expect(handlers.onContinue).toHaveBeenCalledTimes(1);

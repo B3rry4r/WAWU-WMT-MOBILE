@@ -7,6 +7,8 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
+import { fetchPlans } from '@/features/verify/purchaseApi';
+
 import { fetchReferrals, referralsKey } from './api';
 import { rulesOf } from './model';
 import { NavBar } from './parts';
@@ -23,7 +25,10 @@ export function RulesScreen({ onBack }: RulesScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const referrals = useQuery({ queryKey: referralsKey, queryFn: fetchReferrals });
-  const rules = referrals.data ? rulesOf(referrals.data) : null;
+  // The cash-out sentence is true for a person billed in naira; a dollar account cannot convert points yet (G-741).
+  // Asked only once the rules are in, so the rules never wait on it; held for no longer than the screen (the answer is the person's own).
+  const plans = useQuery({ queryKey: ['referral', 'rules-currency'], queryFn: fetchPlans, enabled: referrals.isSuccess, retry: false, staleTime: 0, gcTime: 0 });
+  const rules = referrals.data ? rulesOf(referrals.data, plans.data?.currency !== 'USD') : null;
   return (
     <View testID="invite-rules" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="How it works" onBack={onBack} idPrefix="invite-rules" />
