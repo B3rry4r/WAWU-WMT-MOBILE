@@ -67,3 +67,49 @@ The owner can map every store product to what it grants, switch and set the cut 
 - [x] An admin can read purchases and refunds with the Hub's filters; nothing on those tabs changes a purchase.
 - [x] A role the Hub refuses (support, reviewer) is shown a refusal and no request is sent; finance can read and write.
 - [ ] Against the merged IAP-03 head: NOT RUN (the page was built on `wmt/IAP-03` `04d5069`; regenerate the contract at the merged head).
+
+## Verifier report (v-IAP-04, lean T2 check, 25 Oct 2026)
+
+**Verdict: PASS.** No blocker, high or medium. Three lows go to the sweep, two notes. Checked: dashboard `wmt/IAP-04` `5cb78a3` on `origin/main` `433c710`, mobile `19bb7354`, and a local Hub on backend `wmt/IAP-03` `25a2edf` (round 2, on the Nuvion stand-in, ports 9650 to 9653, a Google placeholder for the keys state). Never Fintava, never a live host. Nothing was edited; the verifier built none of it.
+
+| # | Rank | Finding |
+|---|---|---|
+| 1 | low | The Store entry stays in the nav for support and reviewer, who are then shown "Your role cannot read the store" and send no request. The brief asked for the entry hidden. The nav has no role field and the sidebar shows every entry to every role (`nav.ts`, the KYC comment); IAP-04 follows that, so hiding one entry is a nav-wide change, not an IAP-04 one. |
+| 2 | low | A refused write for a 5xx joins the Hub's sentence and "Nothing was changed." with no stop when the Hub's sentence has none (`describeRefusal`, for example "Internal server error Nothing was changed."). |
+| 3 | low | The Purchases "Until" column is blank for a pass bought once (round 2: the Hub's `expiresAt` is the store's period end, null for a one-time purchase, and the admin purchase view carries no pass end). A Hub gap, not a page fault; the owner cannot read from the page how long a pass bought once runs. |
+| 4 | note | The 16 pictures were taken on `04d5069`, before round 2 and before the take-back wording was settled (the refunds picture still shows "GrantedCredits 50", the page now says "Granted credits: 50"; passes show "Runs to"). They show every state and both themes and match the page's layout; they were not retaken at `25a2edf`. |
+| 5 | note | The task's own last capability check ("against the merged IAP-03 head: NOT RUN") is answered for the unmerged round-2 head `25a2edf`: contract current, page drives clean. It still wants one look after the merge. |
+
+**Does the committed contract go stale at `25a2edf`? No.** `HUB_API_PATH` on a worktree at `25a2edf` with `HUB_API_REF=25a2edf`, `npm run gen:store-contract` in a scratch worktree of `5cb78a3`: "wrote 7 routes, 17 types" and `git diff` empty, so `store.generated.ts` is byte-identical. `check:store-contract` says "current (25a2edf)" and, with no ref given, "current (wmt/IAP-03)". Round 2 removed `cancelInStore` from the community pass view and changed the `subscription` comment; neither is an admin store type. A pass's `grants.days` and `referenceKobo` are unchanged on the Hub, and the page reads nothing round 2 removed.
+
+**The generator change does not break the other four.** `hub-api-source.mjs` keeps `hubApiSource()` with no argument as before. The four older generators were run on `origin/main` `433c710` and on `5cb78a3` against the same ref: `generated.ts`, `ops.generated.ts`, `oversight.generated.ts` and `money.generated.ts` come out byte-identical in both trees (`cmp` and `diff -rq`). `check:oversight-contract` and `check:money-contract` are current in both. "Stale" is pre-existing as claimed: `check:ops-contract` and `check:contract` fail identically on `433c710` and on the branch, and the whole difference is the header lines ("Source of truth: /home/user/wawu-backend @ a0e7b20" against the checkout and ref the check ran on, and the web app's path); no type differs. `check:contract` also needs `WAWU_WEB_PATH` on this machine.
+
+**Driven against the local Hub (Playwright, 1440 px; over 100 assertions in 5 runs; every failure in the first runs was the verifier's own script reading the table before the refetch or on its skeleton rows, and passed once rechecked with waits).**
+
+| Area | Result |
+|---|---|
+| Add, one of each kind | Points (pack `s`), credits (no worth: the Hub defaulted it to the pack price, shown ₦500), tier, pass (days 30, worth ₦500 and ₦500.50 sent as 50000 and 50050 kobo), `extra_products` with no count (body `grants: {}`, the Hub's default 5 shown) and with 10. A pass cannot be sent without a worth. No "subscription" word on any pass form, row or dialog; "subscription" appears once, in the tier id hint, which is true |
+| Edit | Only what changed is sent: title alone, grants alone (`{"grants":{"packId":"m"}}`), credits pack and worth, tier id, pass days, worth and order together, `extraProducts` 7; no change keeps Save off and says so; store, id and kind are shown, not offered |
+| Turn off and on | Points, credits, tier, `extra_products` and pass: each asks first, sends `{"active":false}` then `{"active":true}`, the row reads Off then On |
+| Refusals by cause | Duplicate id and unknown pack or tier (`store_product_invalid`, Hub sentence word for word); a row deleted under an open edit (`store_product_unknown`, "That product is not in the map."); a 400 with no code (days 400, extraProducts 0: the Hub's validator sentence); 403, 5xx and no answer each say so and say nothing was changed |
+| Roles | Superadmin and finance read and write (finance edited a product). Support and reviewer: refusal page, zero requests to `/admin/store` (counted at the browser). Nav not hidden (finding 1) |
+| Stores | Keys read Missing for both with no placeholder, Present for Google with one; the placeholder's key text is in neither the API answer nor the page. Switch asks first and sends `enabled`; cut 12.5 sent as 1250 and shown "Set by an admin"; "Use the Hub's cut" sends -1 and returns to 15%; 101% refused in the form |
+| Purchases and refunds | Read only (no control but Refresh, Narrow, Load more); 25 rows then Load more with the Hub's `s1.` cursor to 32; store, kind, status and person filters each reach the Hub as `platform`, `kind`, `status`, `wawuUserId`; refunds list exactly the refunded and revoked rows, offer no status filter, send no `status`, show what was taken back; currency amounts, store cut, worth, net, host share, room and the `member_removed` flag show |
+| Loading, empty, error | Each of the four tabs: skeleton while held, error with Try again on a 500 (a failed Refresh over loaded data shows the error too), the Try again recovers; empty Products offers Add the first product; filtered empties say "Nothing matches" |
+| Copy | No em-dash or en-dash in the source of the page, nor in the text of ten rendered views (products, stores, purchases, refunds, four errors, two refusals) |
+
+**Checks (all in `/home/user/wt/viap4-dash`, `5cb78a3`, dependencies by `npm ci`):**
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | EXIT 0 |
+| `npx eslint` (whole repo) | EXIT 0, 1 warning (`SHOP_DTO` unused in `generate-contract-types.mjs`, a file this branch does not touch) |
+| `npm test` | EXIT 0, 13 of 13 (7 new) |
+| `python3 scripts/gates/run.py` | EXIT 0, 9 gates, 222 files, 0 fail, 0 warn, 6 accepted |
+| `python3 scripts/gates/check_baseline.py` | EXIT 0, 6 entries, each with an owner and a reason |
+| `node scripts/check-invariants.mjs` | EXIT 0, 222 files |
+| `node scripts/check-contrast.mjs` | EXIT 0, 58 pairs, both themes |
+| `check:store-contract` at `25a2edf` | EXIT 0, current |
+| `check:oversight-contract`, `check:money-contract` | current (EXIT 0) |
+| `check:contract`, `check:ops-contract` | stale on `433c710` and on `5cb78a3` alike (header lines only), not caused by this branch |
+| mobile `python3 scripts/tasks/check_tasks.py` on `19bb7354` | EXIT 0, 446 tasks |
