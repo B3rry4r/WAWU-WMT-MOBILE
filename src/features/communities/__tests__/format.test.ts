@@ -1,5 +1,5 @@
 import type { CostsByKind } from '../api';
-import { chatLine, clockTime, dayKey, dayLabel, firstName, lastLine, membersFull, membersShort, outOfCreditsLine, priceLine, rowTime, wawuCredits } from '../format';
+import { chatLine, clockTime, dayKey, dayLabel, firstName, lastLine, memberCostLine, membersFull, membersShort, creditCostLine, outOfCreditsLine, priceLine, rowTime, wawuCredits } from '../format';
 
 const NOW = new Date('2026-10-07T12:00:00');
 
@@ -82,6 +82,22 @@ describe('what each kind of message costs, in the Hub\'s words (R-62)', () => {
     expect(chatLine(costs())).toBe('Chat free · photos, video, voice use credits');
     expect(chatLine(costs({ photo: 0 }))).toBe('Chat free · video, voice use credits');
     expect(chatLine(costs({ photo: 0, video: 0, voice: 0 }))).toBe('Chat free');
+  });
+
+  it('I33\'s line says what the Hub prices and that reading is free; the board\'s words only while text costs a credit', () => {
+    expect(memberCostLine(costs())).toBe('Chat and reading are free. Credits are for photos, video and voice notes.');
+    expect(memberCostLine(costs({ photo: 0 }))).toBe('Chat and reading are free. Credits are for video and voice notes.');
+    expect(memberCostLine(costs({ photo: 0, video: 0 }))).toBe('Chat and reading are free. Credits are for voice notes.');
+    expect(memberCostLine(costs({ photo: 0, video: 0, voice: 0 }))).toBe('Chat and reading are free.');
+    expect(memberCostLine(costs({ text: 1 }))).toBe('Members pay 1 credit a message and reading is free.');
+    expect(memberCostLine(costs({ text: 2 }))).toBe('Members pay 2 credits a message and reading is free.');
+  });
+
+  it('I28\'s line says what a photo costs and what a video or voice note costs, only for what the Hub prices', () => {
+    expect(creditCostLine(costs())).toBe('A photo is 1 credit, a video or voice note 3.');
+    expect(creditCostLine(costs({ photo: 2, video: 5, voice: 4 }))).toBe('A photo is 2 credits, a video 5, a voice note 4.');
+    expect(creditCostLine(costs({ photo: 0 }))).toBe('A video or voice note 3.');
+    expect(creditCostLine(costs({ photo: 0, video: 0, voice: 0 }))).toBeNull();
   });
 
   it('I38\'s line gives photos their credits and a video and voice note that cost the same one clause', () => {

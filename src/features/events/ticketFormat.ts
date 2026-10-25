@@ -69,6 +69,9 @@ export function position(ticket: Pick<HeldTicket, 'id' | 'siblings'>): { index: 
   };
 }
 
+/** E11's banner title, on the ticket page and on the order page of the same purchase. */
+export const CALLED_OFF_TITLE = 'This event was called off';
+
 type RefundOrder = Pick<WalletOrder, 'free' | 'ticketCount' | 'returned'>;
 
 /**

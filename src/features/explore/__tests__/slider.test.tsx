@@ -125,6 +125,8 @@ beforeEach(() => {
   answers = {
     'GET /explore/categories': [ok({ items: [{ id: 'music_audio', label: 'Music & Audio' }] })],
     'GET /explore/featured-creators?limit=10': [ok({ items: [] })],
+    // R2-SOCIAL (c): nobody featured reads All creators' first page for the rail; these tests are about the slider, so it is empty.
+    'GET /explore/creators?page=1&perPage=24': [{ status: 200, body: { statusCode: 200, message: 'OK', data: [], pagination: { currentPage: 1, nextPage: null, perPage: 24, total: 0 } } }],
     'GET /users/me': [ok({ wawuUserId: ME })],
     [FEATURED_EVENTS]: [eventsPage([])],
     [UPCOMING]: [eventsPage([])],

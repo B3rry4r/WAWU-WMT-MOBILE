@@ -176,6 +176,7 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
+const textOf = (app: { screen: { toJSON: () => unknown } }) => JSON.stringify(app.screen.toJSON());
 async function hostedScreen() {
   const { HostedSelfieScreen } = require('../HostedSelfieScreen') as typeof import('../HostedSelfieScreen');
   const props = { onBack: jest.fn(), onContinue: jest.fn(), onDropped: jest.fn(), onDetails: jest.fn() };
@@ -271,6 +272,34 @@ describe('A6 · Selfie hand-off and A7 · Back from the secure page', () => {
       rtl.fireEvent.press(app.screen.getByText('Try again'));
     });
     await rtl.waitFor(() => expect(opened).toEqual([SECURE_PAGE]));
+  });
+
+  it('M-4 (A16): a selfie that did not pass is the board\u2019s dark page with the red-ringed oval and words that claim only what the Hub says', async () => {
+    fallback['GET /money/identity/liveness'] = liveness({ state: 'not_passed' });
+    const app = await hostedScreen();
+    expect(await app.screen.findByTestId('open-wallet-selfie-not-passed')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-oval-refused', { includeHiddenElements: true })).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-selfie-title')).toHaveTextContent("Your selfie wasn't approved");
+    expect(app.screen.getByTestId('open-wallet-selfie-line')).toHaveTextContent('Good light, no glasses or cap. Try again on a new page.');
+    // The Hub's answer is approved or not approved: no face mismatch is claimed, and nothing names the BVN photo.
+    expect(textOf(app)).not.toMatch(/couldn.t match|match your face|BVN/i);
+    // The X leaves as the back arrow does.
+    await rtl.act(async () => {
+      rtl.fireEvent.press(app.screen.getByTestId('open-wallet-selfie-close'));
+    });
+    expect(app.onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('M-4 (A16): a new page that cannot be made says why on the same page, with Try again kept', async () => {
+    fallback['GET /money/identity/liveness'] = liveness({ state: 'not_passed' });
+    routes['POST /money/identity/liveness'] = [{ status: 429, body: { statusCode: 429, message: 'Too many tries today.', reason: { code: 'document_rate_limited', message: 'Too many tries today.' } } }];
+    const app = await hostedScreen();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(await app.screen.findByTestId('open-wallet-selfie-continue'));
+    });
+    expect(await app.screen.findByText('Too many tries today.')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-selfie-not-passed')).toBeTruthy();
+    expect(app.screen.getByText('Try again')).toBeTruthy();
   });
 
   it('a page that could not be made says why, keeps the button, and opens nothing', async () => {

@@ -80,6 +80,9 @@ export type PurchaseQuote = {
   productsAllowedAfter: number | null;
   priceKobo: number;
   feeKobo: number;
+  /** The two parts of `feeKobo` as the Hub's quote gives them (BRIEF rule 3): the bank's charge and WAWU's fee. Either can be 0. */
+  providerFeeKobo: number;
+  wawuFeeKobo: number;
   totalKobo: number;
   balanceKobo: number | null;
   shortfallKobo: number | null;
@@ -87,12 +90,24 @@ export type PurchaseQuote = {
   expiresAt: string;
 };
 
-function readPayment(p: unknown): Pick<PurchaseQuote, 'priceKobo' | 'feeKobo' | 'totalKobo' | 'balanceKobo' | 'shortfallKobo' | 'quoteToken' | 'expiresAt'> {
+function readPayment(p: unknown): Pick<PurchaseQuote, 'priceKobo' | 'feeKobo' | 'providerFeeKobo' | 'wawuFeeKobo' | 'totalKobo' | 'balanceKobo' | 'shortfallKobo' | 'quoteToken' | 'expiresAt'> {
   const pay = p as Partial<components['schemas']['PaymentQuoteView']> | undefined;
-  if (!pay || !whole(pay.priceKobo) || !whole(pay.totalKobo) || !pay.fee || !whole(pay.fee.totalFeeKobo) || !filled(pay.quoteToken) || !filled(pay.expiresAt)) throw unreadable('price');
+  if (
+    !pay ||
+    !whole(pay.priceKobo) ||
+    !whole(pay.totalKobo) ||
+    !pay.fee ||
+    !whole(pay.fee.totalFeeKobo) ||
+    !whole(pay.fee.providerFeeKobo) ||
+    !whole(pay.fee.wawuFeeKobo) ||
+    !filled(pay.quoteToken) ||
+    !filled(pay.expiresAt)
+  ) {
+    throw unreadable('price');
+  }
   const balanceKobo = whole(pay.balanceKobo) ? pay.balanceKobo : null;
   const shortfallKobo = whole(pay.shortfallKobo) ? pay.shortfallKobo : null;
-  return { priceKobo: pay.priceKobo, feeKobo: pay.fee.totalFeeKobo, totalKobo: pay.totalKobo, balanceKobo, shortfallKobo, quoteToken: pay.quoteToken, expiresAt: pay.expiresAt };
+  return { priceKobo: pay.priceKobo, feeKobo: pay.fee.totalFeeKobo, providerFeeKobo: pay.fee.providerFeeKobo, wawuFeeKobo: pay.fee.wawuFeeKobo, totalKobo: pay.totalKobo, balanceKobo, shortfallKobo, quoteToken: pay.quoteToken, expiresAt: pay.expiresAt };
 }
 
 export function readQuote(target: PurchaseTarget, value: unknown): PurchaseQuote {
@@ -127,7 +142,7 @@ export type PurchaseTransfer = {
 
 export type PurchaseGrant = {
   tierName: string | null;
-  /** The tier's badge: `numbered` is true for the Founding Maker (the number itself is not served, G-421). */
+  /** The tier's badge: `numbered` is true for the Founding Maker (the number is on the profile details, `GET /users/me/profile-fields`). */
   numbered: boolean;
   activeUntil: string;
   productsAllowed: number;

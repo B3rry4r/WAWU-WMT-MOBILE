@@ -231,6 +231,20 @@ describe('A6 · Selfie', () => {
     expect(sent.filter((s) => s.method === 'GET' && s.path.endsWith('/money/wallet')).length).toBeGreaterThanOrEqual(2);
   });
 
+  it('SWEEP-R2 (A16): the oval holds the board’s portrait guide (a head and shoulders on the lilac wash), not an empty frame, while no live picture is in it', async () => {
+    keepOpening();
+    routes['POST /money/identity/selfie'] = [refusal(422, 'selfie_not_matched', A16, { checksLeft: 2 })];
+    const app = await boot();
+    await take(app);
+    expect(await app.screen.findByTestId('open-wallet-selfie-not-matched')).toBeTruthy();
+    for (const part of ['wash', 'head', 'shoulders']) {
+      expect(app.screen.getByTestId(`open-wallet-oval-guide-${part}`, { includeHiddenElements: true })).toBeTruthy();
+    }
+    // Still behind the red ring, and nothing but the guide: the live-picture mask belongs to the camera's own oval.
+    expect(app.screen.getByTestId('open-wallet-oval-refused', { includeHiddenElements: true })).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-oval-mask', { includeHiddenElements: true })).toBeNull();
+  });
+
   it('A16: a user whose face did not match sees the server’s words, the red oval, and can try again', async () => {
     keepOpening();
     routes['POST /money/identity/selfie'] = [refusal(422, 'selfie_not_matched', A16, { checksLeft: 2 })];

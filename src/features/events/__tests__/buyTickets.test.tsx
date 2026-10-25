@@ -32,6 +32,7 @@ const refuse = (status: number, reason: Record<string, unknown>) =>
 
 const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 const ORDER_ID = '44444444-4444-4444-8444-444444444444';
+const CALLED_OFF_AT = '2026-10-20T10:00:00.000Z';
 
 const REGULAR = { id: 't-reg', tier: 'regular', name: 'Regular', priceNaira: 7500, quantity: 100, sold: 10, remaining: 90, soldOut: false, salesStartAt: null, salesEndAt: null };
 const VIP = { ...REGULAR, id: 't-vip', tier: 'vip', name: 'VIP', priceNaira: 12000, remaining: 5 };
@@ -89,7 +90,7 @@ function orderView(status: OrderStatus, lines: { ticketTypeId: string; quantity:
   return {
     id: ORDER_ID,
     reference: 'WAW-EVT-8F2K91QX',
-    event: { id: 'e-1', name: 'Creators Summit', startsAt: soon, endsAt: null, timezone: null, timeLabel: null, location: 'Lagos', venueName: 'Eko Hall', bannerUrl: null },
+    event: { id: 'e-1', name: 'Creators Summit', startsAt: soon, endsAt: null, timezone: null, timeLabel: null, location: 'Lagos', venueName: 'Eko Hall', bannerUrl: null, cancelledAt: hub.eventCancelled ? CALLED_OFF_AT : null },
     free: ticketsKobo === 0,
     lines: viewLines,
     ticketCount: count,
@@ -114,7 +115,7 @@ function orderView(status: OrderStatus, lines: { ticketTypeId: string; quantity:
 }
 
 function paymentQuote(priceKobo: number, over: Record<string, unknown> = {}) {
-  const provider = 1575;
+  const provider = hub.providerFeeKobo;
   return {
     kind: 'event_ticket',
     targetId: ORDER_ID,
@@ -138,6 +139,8 @@ type PayMode = 'paid' | 'processing' | 'failed' | 'lost_before' | 'lost_after' |
 const hub = {
   mode: 'paid' as PayMode,
   balanceKobo: 48_525_075,
+  /** The bank's part of the quoted fee. Zero is a quote whose charge is ₦0 (R2-SOCIAL 2). */
+  providerFeeKobo: 1575,
   tiers: [REGULAR, VIP] as unknown[],
   /** How many times the page asked for the tier list. */
   tierReads: 0,
@@ -156,6 +159,13 @@ const hub = {
   lines: [] as { ticketTypeId: string; quantity: number }[],
   orderReads: 0,
   noWalletOnPay: false,
+  /**
+   * The event the host called off (E11). As the Hub does it: the buyer's own order read carries `event.cancelledAt`, and
+   * `GET /events/{id}` answers the buyer 404 from then on (an event that is not live is an event you are not told about).
+   */
+  eventCancelled: false,
+  /** Fields the order read answers over the default view (E11: what came back). */
+  orderOver: {} as Record<string, unknown>,
 };
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -163,7 +173,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
-  if (path === '/events/e-1' && method === 'GET') return ok(eventRow);
+  if (path === '/events/e-1' && method === 'GET') return hub.eventCancelled ? json(404, { statusCode: 404, message: 'Event not found.', data: null }) : ok(eventRow);
   if (path === '/events/e-1/tickets') {
     hub.tierReads += 1;
     return ok(hub.tiers);
@@ -223,7 +233,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === `/events/orders/wallet/${ORDER_ID}` && method === 'GET') {
     hub.orderReads += 1;
-    return ok(orderView(hub.orderStatus, hub.lines));
+    return ok(orderView(hub.orderStatus, hub.lines, hub.orderOver));
   }
   throw new Error(`no answer for ${method} ${path}`);
 }) as typeof fetch;
@@ -250,6 +260,7 @@ beforeEach(() => {
   Object.assign(hub, {
     mode: 'paid',
     balanceKobo: 48_525_075,
+    providerFeeKobo: 1575,
     tiers: [REGULAR, VIP],
     tierReads: 0,
     createFails: null,
@@ -264,6 +275,8 @@ beforeEach(() => {
     lines: [],
     orderReads: 0,
     noWalletOnPay: false,
+    eventCancelled: false,
+    orderOver: {},
   });
 });
 
@@ -303,7 +316,8 @@ async function enterPin(pin: string) {
   for (const d of pin) await user.press(await rtl.screen.findByRole('button', { name: d }));
 }
 
-const payButton = () => rtl.screen.findByRole('button', { name: /^Pay · / });
+// R2-SOCIAL: E3's button is the verb and the total with no dot, "Pay ₦7,515.75" (the board and BRIEF E3); this line pinned "Pay · ".
+const payButton = () => rtl.screen.findByRole('button', { name: /^Pay ₦/ });
 
 async function reachPin() {
   await getTickets();
@@ -353,6 +367,29 @@ describe('E2: the picker beside Get tickets', () => {
 });
 
 describe('E3 and E4: pay and PIN', () => {
+  // R2-SOCIAL 2 (BRIEF rules 3 to 5, E3): the charge and the Total are drawn also when the charge is ₦0; "No fee" is never drawn.
+  it('a quote with a ₦0 charge still reads Tickets, "Bank charge ₦0", Total, and the button "Pay ₦7,500"', async () => {
+    hub.providerFeeKobo = 0;
+    await bootDetail();
+    await getTickets();
+    await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
+    expect(rtl.screen.queryByText('No fee')).toBeNull();
+    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('₦0')).toBeTruthy();
+    expect(rtl.screen.getByText('Total')).toBeTruthy();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,500' })).toBeTruthy();
+    expect(rtl.screen.queryByRole('button', { name: /^Pay · / })).toBeNull();
+  });
+
+  it('a quote with a fee never says "No fee", and the button is "Pay ₦7,515.75"', async () => {
+    await bootDetail();
+    await getTickets();
+    await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
+    expect(rtl.screen.queryByText('No fee')).toBeNull();
+    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,515.75' })).toBeTruthy();
+  });
+
   it('a user reviews the order, sees the tickets, the bank charge and the total, and pays with the PIN once', async () => {
     const buy = await bootDetail();
     await getTickets();
@@ -651,6 +688,66 @@ describe('E5: the ticket', () => {
     await rtl.fireEvent.press(rtl.screen.getByTestId('order-ticket-next'));
     expect(rtl.screen.getByText('Ticket 2 of 2')).toBeTruthy();
     expect(rtl.screen.getByText('K7QX-4M2P-9WLA-3RT1')).toBeTruthy();
+  });
+
+  // R2-SOCIAL 2, CHECK-3 defect 4 (E11): the order page of a called-off event draws the state the ticket page draws for the same purchase.
+  const REFUNDED = { holdStatus: 'refunded', returned: true, returnedKobo: 750_000 };
+  const CALLED_OFF_REASON = 'This event can no longer take place. Your money is back in your wallet.';
+
+  it('E11: an order refunded because the host called the event off says so and what came back, never "Your payment didn\'t go through"', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: REFUNDED };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-called-off')).toBeTruthy();
+    expect(rtl.screen.getByText('This event was called off')).toBeTruthy();
+    expect(rtl.screen.getByText('₦7,500 is back in your Naira wallet.')).toBeTruthy();
+    expect(rtl.screen.queryByText("Your payment didn't go through")).toBeNull();
+    expect(rtl.screen.queryByTestId('order-ticket-failed')).toBeNull();
+  });
+
+  it('E11: a refund still on its way reads as the ticket page reads it', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: { holdStatus: 'held', returned: false, returnedKobo: null } };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByText('Your refund is on its way to your Naira wallet.')).toBeTruthy();
+    expect(rtl.screen.queryByText("Your payment didn't go through")).toBeNull();
+  });
+
+  it('E11: an order the Hub gave no return record for still names the called-off event, with the Hub\'s own reason', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: null };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByText('This event was called off')).toBeTruthy();
+    expect(rtl.screen.getByText(CALLED_OFF_REASON)).toBeTruthy();
+  });
+
+  it('a failed order of an event that is still on keeps the failed words', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-failed')).toBeTruthy();
+    expect(rtl.screen.getByText("Your payment didn't go through")).toBeTruthy();
+    expect(rtl.screen.queryByText('This event was called off')).toBeNull();
+  });
+
+  it('E11: a paid order whose tickets were all voided by a call-off is not "You\'re in": it says the event was called off', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'paid';
+    hub.eventCancelled = true;
+    hub.orderOver = {
+      tickets: [{ id: '55555555-5555-4555-8555-555555555550', code: 'K7QX-4M2P-9WLA-3RT0', tierName: 'Regular', status: 'void' }],
+      returned: REFUNDED,
+    };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-called-off')).toBeTruthy();
+    expect(rtl.screen.queryByText("You're in. Show this at the door.")).toBeNull();
+    expect(rtl.screen.queryByTestId('ticket-qr')).toBeNull();
   });
 
   it('says still confirming, with Refresh, for an order the Hub has not finished', async () => {
