@@ -7,7 +7,7 @@ order: 176
 priority: launch
 repo: wawu-backend
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2]
@@ -17,12 +17,12 @@ artboards: []
 
 ## Current state
 
-As of 17 Oct 2026.
-- **Status:** verifying. Built once; not yet checked by an independent verifier.
-- **Id and order:** filed at launch priority, order 176, the nearest free number below CHECK-3 (a launch task cannot come after it; 1 to 298 are otherwise used; OPS-STACK built `scripts/dev/stack.sh`).
-- **History:** the builder report is in [history/STACK-NUV.md](history/STACK-NUV.md).
-- **Open findings:** none yet.
-- **Next:** an independent verifier runs the stack on its own ports and repeats the proof. Joins batch 7 (backend branch `wmt/STACK-NUV` from `0be61a4`).
+
+As of 25 Oct 2026.
+- **Status:** review. Independent lean verifier (T2 check, 25 Oct): PASS, no open defect. Checked on backend `origin/main` `dcee8af`, the stack and tool as they are today (later tasks have grown them: NUV-12, WALLET-31, WALLET-41).
+- **Id and order:** filed at launch priority, order 176 (see the earlier note in the history file).
+- **Open findings:** none medium or worse. Two lows, for the lead to place in a sweep (see the history file).
+- **History:** the builder report and the verifier report are in [history/STACK-NUV.md](history/STACK-NUV.md).
 
 ## Read first
 
@@ -43,15 +43,16 @@ Nuvion is the wallet provider (R-39, R-45) and Fintava is out. Before this task 
 
 ## Capability checks
 
-- [ ] A fresh stack on its own ports comes up with `status` naming provider nuvion and the stand-in port; `down` stops all of it and closes the ports.
-- [ ] `nuvion-tool.cjs seed` ends with an approved wallet, an account number, a PIN and a balance that is the same on `GET /money/wallet/balance` and on the stand-in.
-- [ ] A WAWU Credits pack bought from that wallet, and a bank send with a name check, complete through the real routes; the balances match the stand-in after each.
-- [ ] `nuvion-tool.cjs fire --settle <id> --status reversed` on the bank send gives the money back (balance matches the stand-in).
-- [ ] The Hub log holds no call to the Fintava base URL (0), and `block-net.cjs` refused nothing.
-- [ ] Backend `tsc --noEmit` EXIT 0; CI gates unchanged.
+- [x] A fresh stack on its own ports comes up with `status` naming provider nuvion and the stand-in port; `down` stops all of it and closes the ports.
+- [x] `nuvion-tool.cjs seed` ends with an approved wallet, an account number, a PIN and a balance that is the same on `GET /money/wallet/balance` and on the stand-in.
+- [x] A WAWU Credits pack bought from that wallet, and a bank send with a name check, complete through the real routes; the balances match the stand-in after each.
+- [x] `nuvion-tool.cjs fire --settle <id> --status reversed` on the bank send gives the money back (balance matches the stand-in).
+- [x] The Hub log holds no call to the Fintava base URL (0), and `block-net.cjs` refused nothing.
+- [x] Backend `tsc --noEmit` EXIT 0; CI gates unchanged.
 
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/STACK-NUV.md](history/STACK-NUV.md).
 
 ## Owner sign-off
+

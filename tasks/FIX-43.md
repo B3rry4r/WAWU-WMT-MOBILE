@@ -7,7 +7,7 @@ order: 338
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [FIX-22]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -17,11 +17,12 @@ artboards: []
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Status:** verifying. Hotfix; backend only, no app change.
-- **Backend:** `wmt/FIX-43` `018f09a` on backend main `b3a4ab6`. Mobile: this record.
-- **Next:** the lead runs the one live check (a profiling turn must come back `STOP` with a full JSON object), then a verifier.
-- **Open findings:** none yet.
+
+As of 25 Oct 2026.
+- **Status:** review. Independent lean verifier (T2 check, 25 Oct): PASS, no open defect. Built by a Sonnet builder; checked on backend `origin/main` `dcee8af` (the change is `018f09a`, in main).
+- **Still the lead's:** capability check 1, the one live profiling turn (`STOP` with a full JSON object). Agents never call an AI provider, so it was NOT RUN here. It is also the only proof that Google accepts `thinkingLevel: "LOW"` for the pinned model.
+- **Open findings:** none medium or worse. Three lows, for the lead to place in a sweep (see the history file).
+- **History:** [history/FIX-43.md](history/FIX-43.md).
 
 ## Read first
 
@@ -40,18 +41,7 @@ Every legal assistant turn failed in production with `assistant_unavailable`. Th
 ## Capability checks
 
 - [ ] A profiling turn with a schema comes back `STOP` with a full JSON object (the lead's one live check).
-- [ ] Chat without a schema and a brief carry the same thinking level and a larger limit (specs on the built request body).
-- [ ] An answer with a thought part first parses; a `MAX_TOKENS` answer fails the turn and logs the reason and counts once.
-
-## Builder report
-
-Sonnet builder. Backend `wmt/FIX-43` `018f09a`; the check log ends `EXIT 0` for typecheck, eslint (no fix), the common/ai and legal assistant unit specs (56 tests) and `contract:build` twice (equal).
-- **Thinking:** `generationConfig.thinkingConfig.thinkingLevel` (Google's generateContent reference, ThinkingConfig and ThinkingLevel: MINIMAL, LOW, MEDIUM, HIGH; recommended for Gemini 3 and later, an error on earlier models). Chosen LOW: every Gemini 3 model lists it, while MINIMAL is listed for some Flash models only and an unsupported level is an HTTP 400. `GEMINI_THINKING_LEVEL` moves it without a deploy.
-- **Limits:** `maxOutputTokens` is a named room for thinking (2048) plus a named room for the answer: structured chat 2048 (schema worst case about 1400) = 4096, prose chat 1024 = 3072, brief 2048 = 4096. They were 700, 700 and 1200.
-- **Reading:** the answer is the join of every part without `thought: true`; a finish reason other than `STOP` logs `finishReason` with prompt, thoughts, answer and total counts once and fails the call as before.
-- **Specs:** `src/common/ai/tests/real-gemini.adapter.spec.ts`. The FIX-22 expectations of the old 700 body were updated to the new body (the change is the point of this task); new block for the body of each call, a thought part first, and `MAX_TOKENS` and other reasons.
-- **Not done:** no call to Gemini (agents never call AI providers); the live check is the lead's.
-
-## Verifier report
+- [x] Chat without a schema and a brief carry the same thinking level and a larger limit (specs on the built request body).
+- [x] An answer with a thought part first parses; a `MAX_TOKENS` answer fails the turn and logs the reason and counts once.
 
 ## Owner sign-off
