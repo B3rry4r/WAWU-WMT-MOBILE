@@ -107,20 +107,20 @@ describe("M8's route (M10)", () => {
     expect(up).toBe(false);
   });
 
-  it('opened as from the Me tab but with nothing to go back to, M8 shows its own notice instead', async () => {
+  it('opened cold (nothing to go back to), M8 draws no notice of its own: the save lands on the Me tab, which shows it (M10, R2-AUTHME3)', async () => {
     notice.clearProfileSaved();
     mockRouter.canGoBack.mockReturnValue(false);
     await render(<EditProfileRoute />);
-    expect(mockShown!.ownNotice).toBe(true);
+    expect(mockShown!.ownNotice).toBe(false);
     await act(async () => mockShown!.onSaved());
-    expect(mockRouter.replace).toHaveBeenCalledWith('/');
-    let up = true;
+    expect(mockRouter.replace).toHaveBeenCalledWith('/me');
+    let up = false;
     function Probe() {
       up = notice.useProfileSaved();
       return null;
     }
     await render(<Probe />);
-    expect(up).toBe(false);
+    expect(up).toBe(true);
   });
 });
 

@@ -174,6 +174,9 @@ describe('the entries VERIFY-02 adds', () => {
     };
     await render(frame(<HearNameRoute />));
     await fireEvent.press(await screen.findByTestId('hear-name-right'));
+    // R2-AUTHME3: "Sounds right" shows VF3b first; "Write my Voice Intro" is the button that opens VF4.
+    expect(mockPush).not.toHaveBeenCalled();
+    await fireEvent.press(await screen.findByTestId('hear-name-write'));
     expect(mockPush).toHaveBeenCalledWith('/voice-intro');
   });
 

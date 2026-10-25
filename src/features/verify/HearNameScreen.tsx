@@ -24,7 +24,7 @@ const board = { centreGap: 18, pairGap: 10 } as const;
 
 export type HearNameScreenProps = {
   onBack: () => void;
-  /** "Sounds right" and "Write my Voice Intro": on to VF4. */
+  /** "Write my Voice Intro" (VF3b's button, shown after "Sounds right" or a saved spelling): on to VF4. */
   onWriteIntro: () => void;
 };
 
@@ -35,7 +35,7 @@ type Clip = { uri: string; spelling: string };
 
 /**
  * VF3 · Hear your name, VF3a · Phonetic edit and VF3b · Name saved. The person's name (`GET /profile`), said in the studio voice
- * (`POST /me/voice/name-preview`, free), plays as the screen opens. "Sounds right" goes on to the Voice Intro (VF4); "Not quite right?"
+ * (`POST /me/voice/name-preview`, free), plays as the screen opens. "Sounds right" shows VF3b (Saved, then "Write my Voice Intro", which goes on to VF4); "Not quite right?"
  * opens the spelling field, where "Play again" says the name the way it is spelled and "Save" keeps that spelling (`PUT /me/voice/name`).
  * Voices off on the Hub, the hourly limit on previews and a failed preview each say so in the Hub's own words; a name that cannot be
  * made keeps the disc, which tries again. Nothing here names or calls a voice provider: the Hub makes the audio.
@@ -124,6 +124,14 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
     setSaveFailure(null);
     setSpelling(saved ?? plain);
     setMode('edit');
+  };
+
+  /** "Sounds right": the name as it stands is the one kept (the spelling saved before, else the plain one), so VF3b shows it with Saved and "Write my Voice Intro". Nothing is sent. */
+  const soundsRight = () => {
+    setPlaying(false);
+    setKeptSpelling(saved ?? '');
+    setMode('saved');
+    AccessibilityInfo.announceForAccessibility('Saved');
   };
 
   const save = async () => {
@@ -249,7 +257,7 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
   ) : mode === 'saved' ? (
     <Button testID="hear-name-write" label="Write my Voice Intro" full onPress={onWriteIntro} />
   ) : (
-    <Button testID="hear-name-right" label="Sounds right" full onPress={onWriteIntro} />
+    <Button testID="hear-name-right" label="Sounds right" full onPress={soundsRight} />
   );
 
   return (

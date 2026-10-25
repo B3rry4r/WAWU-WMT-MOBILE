@@ -3,6 +3,8 @@ import { ApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import type { components } from '@/api/schema.generated';
 
+import { fetchMyLocation } from '@/features/geo/geoApi';
+
 import type { FieldsUpdate, MyProfile, ProfileFields, ProfileUpdate } from './form';
 
 /**
@@ -61,6 +63,24 @@ export async function fetchFields(): Promise<ProfileFields> {
   const fields = dataOf<ProfileFields>(await unwrap(api.GET('/api/hub/users/me/profile-fields')), 'profile details');
   if (!Array.isArray(fields.socialOrder)) throw unreadable('profile details');
   return fields;
+}
+
+/**
+ * M8's read of the details: `fetchFields`, and where the Hub holds no country yet, one `GET /me/location` first (the Hub records the
+ * country WAWU ID or the phone gives, and answers it) and a second read. The app asks that once per sign-in (`PlaceBridge`) and a
+ * call that failed or was slow is not asked again, which left the Country empty on M8 for a person whose account holds one.
+ * Where it cannot be asked or answers none, the first read stands.
+ */
+export async function fetchFieldsWithPlace(): Promise<ProfileFields> {
+  const fields = await fetchFields();
+  if (fields.countryCode) return fields;
+  try {
+    const place = await fetchMyLocation();
+    if (typeof place.countryCode !== 'string' || place.countryCode === '') return fields;
+    return await fetchFields();
+  } catch {
+    return fields;
+  }
 }
 
 export async function patchMe(body: ProfileUpdate): Promise<void> {

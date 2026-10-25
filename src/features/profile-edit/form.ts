@@ -89,6 +89,15 @@ export function formFrom(me: MyProfile, fields: ProfileFields): ProfileForm {
   };
 }
 
+/**
+ * The country the Hub holds that the form does not (yet): where the person has chosen none, in the form or in what is saved, the
+ * one WAWU ID or their phone gave them, which the Hub can record after M8 opened. Null when there is nothing to take over.
+ */
+export function heldCountry(form: ProfileForm, base: ProfileForm, held: ProfileForm): Pick<ProfileForm, 'countryCode' | 'countryName' | 'regionCode' | 'regionName'> | null {
+  if (!held.countryCode || form.countryCode || base.countryCode) return null;
+  return { countryCode: held.countryCode, countryName: held.countryName, regionCode: held.regionCode, regionName: held.regionName };
+}
+
 export type Problems = {
   name?: string;
   handle?: string;
