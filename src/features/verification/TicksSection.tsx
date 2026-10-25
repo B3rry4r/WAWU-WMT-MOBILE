@@ -7,7 +7,8 @@ import { StatusPill } from '@/components/StatusPill';
 import { ROW_TILE } from '@/features/settings/metrics';
 import type { Allowance } from '@/features/create/api';
 import type { Plans } from '@/features/verify/purchaseApi';
-import { higherTiers, lengthOf, priceIn } from '@/features/verify/purchaseModel';
+import { higherTiers, lengthOf } from '@/features/verify/purchaseModel';
+import { tierItemOf, type StoreState } from '@/features/store/model';
 
 import { givesOf, type GiveRow, type TierRow } from './model';
 
@@ -17,14 +18,18 @@ const GIVE_ICONS: Record<GiveRow['id'], IconName> = { uploads: 'Upload', space: 
  * The row that leads to a tick (M16, M17: "Get it"), worked out from the Hub's own tiers (`GET /plans`): for a person with no running
  * tier the cheapest tier, with its name, price (in the currency the Hub gave) and length; for one with a tier running, the step up
  * (the store works out what moving up costs, R-86) while a higher tier exists. Null when the Hub gave no tiers or there is nothing above the tier held.
+ * The price on the row is the STORE's own for that tier (IAP-03, R-86), never the Hub's plan price: of the tiers the store sells, the cheapest
+ * by the Hub's order; while the store has not answered, or sells none, the row names the tier and its length and shows no price.
  */
-export function getTickOf(plans: Plans | null, heldId: string | null): { title: string; line: string; button: string } | null {
+export function getTickOf(plans: Plans | null, heldId: string | null, store: StoreState): { title: string; line: string; button: string } | null {
   if (!plans || plans.tiers.length === 0) return null;
   if (heldId) {
     return higherTiers(plans.tiers, heldId).length > 0 ? { title: 'Move up a tier', line: 'The store works out what moving up costs', button: 'Upgrade' } : null;
   }
-  const cheapest = [...plans.tiers].sort((a, b) => a.priceMinor - b.priceMinor)[0];
-  return { title: 'Get your tick', line: `${cheapest.name} · ${priceIn(cheapest.priceMinor, plans.currency)} for ${lengthOf(cheapest)}`, button: 'Get it' };
+  const byPrice = [...plans.tiers].sort((a, b) => a.priceMinor - b.priceMinor);
+  const cheapest = byPrice.find((t) => tierItemOf(store, t.id) !== null) ?? byPrice[0];
+  const price = tierItemOf(store, cheapest.id)?.price ?? null;
+  return { title: 'Get your tick', line: price ? `${cheapest.name} · ${price} for ${lengthOf(cheapest)}` : `${cheapest.name} for ${lengthOf(cheapest)}`, button: 'Get it' };
 }
 
 export type GetTick = NonNullable<ReturnType<typeof getTickOf>>;

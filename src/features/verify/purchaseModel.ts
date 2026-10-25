@@ -1,17 +1,8 @@
-import { formatMoney, type Currency } from '@/components/Money';
 import { formatPoints } from '@/components/PointsFigure';
-import { CHANGED_LINE, lastsText, naira, NOT_READY_LINE, SHORT_LINE } from '@/features/points/buyModel';
+import { lastsText } from '@/features/points/buyModel';
 import { dateWords } from '@/features/wallet/history/lagosTime';
 
-import type { PlanTier, Purchase, PurchaseGrant, PurchaseQuote, PurchaseTarget } from './purchaseApi';
-
-export { CHANGED_LINE, naira, NOT_READY_LINE, SHORT_LINE };
-
-/**
- * A price in the currency the Hub priced it in (`GET /plans` `currency`), with that currency's own sign: "$3" for a person billed in
- * dollars, "₦1,000" for one billed in naira. A dollar figure is never drawn with the naira sign (RELEASE-02, CHECK-3 D-1).
- */
-export const priceIn = (minor: number, currency: Currency): string => formatMoney(minor, { currency, decimals: minor % 100 !== 0 });
+import type { PlanTier, PurchaseGrant } from './purchaseApi';
 
 /**
  * The words of VF5 to VF7a that are the design's own. No figure is in any of them: every price, length, count and point is the Hub's
@@ -78,34 +69,6 @@ export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, ext
   const above = heldId === null ? [...tiers] : higherTiers(tiers, heldId);
   return above.filter((t) => t.products + extraProducts > used);
 };
-
-/** "Add 1,000 points for ₦800": the checkout offer, from the Hub's own figures. */
-export const bumpLine = (bump: { points: number; priceMinor: number }): string => `Add ${formatPoints(bump.points)} for ${naira(bump.priceMinor)}`;
-
-/** What the pay button says: the total the payer pays, the Bank charge included (BRIEF rule 5). */
-export const payLabel = (totalKobo: number): string => `Pay ${naira(totalKobo)}`;
-
-/** VF6a's two lines: what is needed and what the wallet has, both the Hub's. */
-export const shortLine = (quote: Pick<PurchaseQuote, 'totalKobo' | 'balanceKobo'>): string =>
-  quote.balanceKobo === null ? `You need ${naira(quote.totalKobo)}.` : `You need ${naira(quote.totalKobo)}. Your wallet has ${naira(quote.balanceKobo)}.`;
-
-/** The PIN sheet's line after the amount ("Approve ₦5,800 for ..."): the tier, its renewal or upgrade, or the five more products. */
-export function pinPurposeOf(target: PurchaseTarget, tierName: string | null, products: number | null): string {
-  if (target.kind === 'extra_products') return products !== null ? `${products} more products` : 'more products';
-  const name = tierName ?? 'your tier';
-  if (target.kind === 'renew') return `renewing ${name}`;
-  if (target.kind === 'upgrade') return `upgrading to ${name}`;
-  return `the ${name} tier`;
-}
-
-/** When the figures the person was shown are not the figures the Hub has now. */
-export function quoteMoved(a: PurchaseQuote, b: PurchaseQuote): boolean {
-  return a.totalKobo !== b.totalKobo || a.planKobo !== b.planKobo || a.bumpKobo !== b.bumpKobo || a.bumpPoints !== b.bumpPoints || a.productsAllowedAfter !== b.productsAllowedAfter;
-}
-
-/** The words for a purchase that did not go through: the Hub's own sentence when it sent one. Nothing is promised about the money. */
-export const failedLine = (p: Pick<Purchase, 'statusMessage' | 'status'>): string =>
-  p.statusMessage?.trim() || (p.status === 'expired' ? 'The bank transfer did not arrive in time. Nothing was taken.' : 'Payment did not go through. Nothing was taken.');
 
 /** VF7's three rows, from what the Hub granted: the points (the tier's and the offer's, "600 + 1,000"), the products, the event pass. A row the grant does not carry is not drawn. */
 export type GrantRow = { id: 'points' | 'products' | 'pass'; label: string; value: string };

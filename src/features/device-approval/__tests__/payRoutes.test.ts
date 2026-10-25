@@ -70,7 +70,6 @@ beforeAll(() => {
   const legal = require('@/features/legal/pay/api') as typeof import('@/features/legal/pay/api');
   const schools = require('@/features/schools/enrolApi') as typeof import('@/features/schools/enrolApi');
   const convert = require('@/features/points/api') as typeof import('@/features/points/api');
-  const plans = require('@/features/verify/purchaseApi') as typeof import('@/features/verify/purchaseApi');
   rows = [
     ['a tip', '/api/hub/tips/wallet', (c, key) => tips.sendTip({ creatorWawuId: 'creator-1', amountKobo: 100_000, note: ' thanks ', ...quoteFields, key, ...c } as never)],
     // An id with a space: the path is signed as it is sent, encoded.
@@ -81,7 +80,6 @@ beforeAll(() => {
     ['a legal fee', '/api/hub/legal/requests/lr-1/pay/wallet', (c, key) => legal.payFee({ requestId: 'lr-1', ...quoteFields, key, ...c } as never)],
     ['school fees', '/api/hub/money/payments', (c, key) => schools.payFee({ enrolmentId: 'en-1', ...quoteFields, key, ...c } as never)],
     ['a points conversion', '/api/hub/points/convert', (c, key) => convert.convertPoints({ points: 500, quoteToken: 'tok-1', key, ...c } as never)],
-    ['a plan', '/api/hub/plans/purchases', (c, key) => plans.buy({ target: { kind: 'extra_products' }, method: 'wallet', ...quoteFields, key, ...c } as never)],
   ];
 });
 
@@ -104,11 +102,11 @@ const approve = (): Cred => ({ approve: (signed) => approveRequest(signed, 'Appr
 const NAMES = (): [string, string][] => rows.map(([name, path]) => [name, path]);
 
 describe('every payment route takes the phone’s approval in place of the PIN', () => {
-  it('has a row for each of the 9 payment calls the sheets make', () => {
-    expect(rows).toHaveLength(9);
+  it('has a row for each of the 8 payment calls the sheets make', () => {
+    expect(rows).toHaveLength(8);
   });
 
-  it.each(Array.from({ length: 9 }, (_, i) => i))('row %i · the Hub accepts the signed request, with the same Idempotency-Key and no PIN', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · the Hub accepts the signed request, with the same Idempotency-Key and no PIN', async (i) => {
     const [, path, call] = rows[i];
     const outcome = await call(approve(), KEY);
     expect(seen).toHaveLength(1);
@@ -120,7 +118,7 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[0].text).not.toMatch(/pin|approve/i);
   });
 
-  it.each(Array.from({ length: 9 }, (_, i) => i))('row %i · a refused approval is followed by the PIN under the SAME key and body', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · a refused approval is followed by the PIN under the SAME key and body', async (i) => {
     const [, , call] = rows[i];
     if (device.device) device.device.publicKey = makeKeyPair().publicKey;
     const first = await call(approve(), KEY);
@@ -133,7 +131,7 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[1].text).toBe(seen[0].text);
   });
 
-  it.each(Array.from({ length: 9 }, (_, i) => i))('row %i · a prompt the person closes sends nothing, and the PIN then goes under the same key', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · a prompt the person closes sends nothing, and the PIN then goes under the same key', async (i) => {
     const [, , call] = rows[i];
     phone.prompt = 'cancel';
     expect(await call(approve(), KEY)).toEqual({ kind: 'approval_cancelled' });
@@ -144,9 +142,9 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[0]).toMatchObject({ pin: '1234', approval: null, key: KEY });
   });
 
-  it('names the 9 routes once each', () => {
+  it('names the 8 routes once each', () => {
     expect(NAMES().map(([name]) => name)).toEqual([
-      'a tip', 'an unlock', 'a paid ask', 'a request pay', 'a ticket', 'a legal fee', 'school fees', 'a points conversion', 'a plan',
+      'a tip', 'an unlock', 'a paid ask', 'a request pay', 'a ticket', 'a legal fee', 'school fees', 'a points conversion',
     ]);
   });
 });

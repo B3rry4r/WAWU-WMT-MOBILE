@@ -197,7 +197,9 @@ describe('E21 · Needs a tier', () => {
     await bootHost();
     expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
     expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
     expect(rtl.screen.queryByTestId('host-name')).toBeNull();
     expect(posts()).toHaveLength(0);
   });
@@ -206,7 +208,9 @@ describe('E21 · Needs a tier', () => {
     serve(false, (c) => (c.path === '/plans' ? ok({ ...plansView(), tiers: plansView().tiers.map((t) => ({ ...t, priceMinor: t.priceMinor + 50_000 })) }) : undefined));
     await bootHost();
     expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
+    expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
   });
 
   it('See tiers opens the tiers (VF5)', async () => {
@@ -228,7 +232,9 @@ describe('E21 · Needs a tier', () => {
     serve(false, undefined, 'ended');
     await bootHost();
     expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
     expect(rtl.screen.queryByTestId('host-name')).toBeNull();
   });
 
@@ -282,7 +288,7 @@ describe('E21 · Needs a tier', () => {
       held.forEach((release) => release(new Response(JSON.stringify(ok(plansView()).body), { status: 200, headers: { 'content-type': 'application/json' } })));
     });
     expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(rtl.screen.getByText('From ₦1,000.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
     expect(rtl.screen.queryByTestId('host-gate-loading')).toBeNull();
   });
 
@@ -295,7 +301,7 @@ describe('E21 · Needs a tier', () => {
     serve(false);
     await press('host-gate-retry');
     expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(rtl.screen.getByText('From ₦1,000.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
   });
 
   it('leaves a dollar price out: dollar prices wait for dollar accounts (R-64)', async () => {
@@ -319,7 +325,9 @@ describe('E21 · Needs a tier', () => {
       await send();
       expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
       expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-      expect(await rtl.screen.findByText('From ₦1,500.')).toBeTruthy();
+      expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
       expect(rtl.screen.queryByTestId('host-failure')).toBeNull();
       expect(rtl.screen.queryByTestId('host-name')).toBeNull();
     });
@@ -329,7 +337,9 @@ describe('E21 · Needs a tier', () => {
       await bootHost();
       await send();
       expect(await rtl.screen.findByText(ENDED_WORDS)).toBeTruthy();
-      expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+      expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
       expect(rtl.screen.queryByText(/Founding Maker/)).toBeNull();
     });
 
@@ -339,7 +349,9 @@ describe('E21 · Needs a tier', () => {
       await send();
       expect(await rtl.screen.findByText('Hosting needs a tier')).toBeTruthy();
       expect(await rtl.screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-      expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+      expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
     });
 
     it('shows any other 403 as the Hub\'s sentence on the form, which stays', async () => {
@@ -650,7 +662,9 @@ describe('E22 · Sent back', () => {
     await type('sent-back-address', '12 Ngwa Road');
     await press('sent-back-send');
     expect(await rtl.screen.findByText(ENDED_WORDS)).toBeTruthy();
-    expect(await rtl.screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect((await rtl.screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
     expect(rtl.screen.queryByTestId('sent-back-failure')).toBeNull();
     await press('host-see-tiers');
     expect(props.onSeeTiers).toHaveBeenCalledTimes(1);

@@ -7,10 +7,10 @@ export type HubProduct = {
   id: string;
   platform: 'android' | 'ios';
   storeProductId: string;
-  kind: 'points' | 'credits' | 'tier' | 'pass';
+  kind: 'points' | 'credits' | 'tier' | 'pass' | 'extra_products';
   title: string;
   subscription: boolean;
-  grants: { points: number | null; credits: number | null; tierId: string | null; days: number | null };
+  grants: { points: number | null; credits: number | null; tierId: string | null; days: number | null; extraProducts?: number | null };
 };
 
 export const hub = {
@@ -19,6 +19,8 @@ export const hub = {
   accountToken: '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6',
   reason: null as 'store_not_configured' | 'store_disabled' | null,
   products: [] as HubProduct[],
+  /** When set, `GET /store/products` waits for it (a store that is still loading). */
+  hold: null as Promise<void> | null,
   /** What the next purchases answer: 'ok' grants; any other is a refusal code or 'network' / 'server'. */
   answer: 'ok' as string,
   message: 'The Hub said so.',
@@ -33,6 +35,7 @@ export const hub = {
     this.open = true;
     this.reason = null;
     this.products = [];
+    this.hold = null;
     this.answer = 'ok';
     this.message = 'The Hub said so.';
     this.bodies = [];
@@ -68,7 +71,7 @@ export function viewOf(product: HubProduct, alreadyGranted: boolean, communityId
     kind: product.kind,
     status: 'granted',
     alreadyGranted,
-    grant: { points: product.grants.points, credits: product.grants.credits, tierId: product.grants.tierId, until: product.subscription ? '2026-12-01T00:00:00.000Z' : null, communityId },
+    grant: { points: product.grants.points, credits: product.grants.credits, tierId: product.grants.tierId, extraProducts: product.grants.extraProducts ?? null, until: product.subscription ? '2026-12-01T00:00:00.000Z' : null, communityId },
     purchasedAt: '2026-11-01T00:00:00.000Z',
     expiresAt: product.subscription ? '2026-12-01T00:00:00.000Z' : null,
   };
@@ -81,6 +84,7 @@ export function installHub(): void {
     const path = url.pathname.replace(/^\/api\/hub/, '');
     hub.reads.push(`${request.method} ${path}`);
     if (request.method === 'GET' && path === '/store/products') {
+      if (hub.hold) await hub.hold;
       const platform = url.searchParams.get('platform');
       return json(200, {
         statusCode: 200,

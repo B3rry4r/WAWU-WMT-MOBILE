@@ -195,7 +195,6 @@ beforeAll(async () => {
 beforeEach(() => {
   pinClock(TODAY);
   Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
-  (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
@@ -393,7 +392,8 @@ describe('VF14 · your tier', () => {
     expect(screen.getByTestId('your-tier-points')).toHaveTextContent(/100/);
     expect(screen.getByTestId('your-tier-pass')).toHaveTextContent(/Watch live, apply/);
     expect(screen.queryByTestId('your-tier-ending')).toBeNull();
-    expect(screen.getByTestId('your-tier-renew')).toHaveTextContent('Renew · ₦1,000');
+    // G-IAP-02-5: Renew is bought in the store sheet, so no Hub plan price is drawn (the store's own once it has answered).
+    expect(screen.getByTestId('your-tier-renew')).toHaveTextContent(/^Renew$/);
     await fireEvent.press(screen.getByTestId('your-tier-renew'));
     expect(await screen.findByTestId('where')).toHaveTextContent('/checkout?kind=renew&tier=verify');
   });

@@ -6,8 +6,8 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
 /**
  * The two Hub calls behind every purchase made in the store sheet (IAP-01, R-86):
  *
- * - `GET /store/products?platform=`: what is on sale in this phone's store (the points packs, the WAWU Credits packs, the tiers and the
- *   passes) and what each gives. It carries no price: the store's own is shown. `available: false` says the Hub is not open for this
+ * - `GET /store/products?platform=`: what is on sale in this phone's store (the points packs, the WAWU Credits packs, the tiers, the
+ *   passes and the upload pack "Add 5 more products") and what each gives. It carries no price: the store's own is shown. `available: false` says the Hub is not open for this
  *   store yet (`store_not_configured`) or an admin paused it (`store_disabled`).
  * - `POST /store/purchases`: hands the Hub a purchase the store has just completed. The Hub asks the store's own server about it before it
  *   grants anything, and grants once per store transaction, so the same call again (a retry, a restore) answers the same purchase with
@@ -22,7 +22,7 @@ export type StorePurchaseView = components['schemas']['StorePurchaseView'];
 export type StoreKind = StoreProductView['kind'];
 export type Platform = 'android' | 'ios';
 
-const KINDS: StoreKind[] = ['points', 'credits', 'tier', 'pass'];
+const KINDS: StoreKind[] = ['points', 'credits', 'tier', 'pass', 'extra_products'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
 /** The catalog, or a refusal to draw an answer that is not whole (never half empty). */

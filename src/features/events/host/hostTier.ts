@@ -1,5 +1,6 @@
 import { toApiError, ApiError } from '@/api/errors';
-import { formatMoney, type Currency } from '@/components/Money';
+import type { Currency } from '@/components/Money';
+import { tierItemOf, type StoreState } from '@/features/store/model';
 import type { Plans } from '@/features/verify/purchaseApi';
 
 /**
@@ -80,14 +81,15 @@ export function tierNamesLine(plans: Pick<Plans, 'tiers'> | null | undefined): s
 }
 
 /**
- * "From ₦1,000.": the Hub's own lowest price, from the refusal when it carries one, else the cheapest tier of `GET /plans`. A price in
- * another currency is left out: dollar prices wait for dollar accounts (R-16, R-64).
+ * "From $2.99.": the STORE's own price for the lowest tier (IAP-03, R-86), in the person's own currency. The lowest tier is the one the Hub
+ * names in the refusal when it carries one, else the cheapest tier of `GET /plans` that the store sells. Null (no line) until the store has
+ * answered, and when it sells none: the Hub's plan price is never drawn.
  */
-export function fromLine(plans: Pick<Plans, 'tiers' | 'currency'> | null | undefined, refusal?: HostTierRefusal | null): string | null {
-  const fromRefusal = refusal?.lowestTier && refusal.currency === 'NGN' ? refusal.lowestTier.priceMinor : null;
-  const cheapest = plans && plans.currency === 'NGN' && plans.tiers.length > 0 ? Math.min(...plans.tiers.map((t) => t.priceMinor)) : null;
-  const kobo = fromRefusal ?? cheapest;
-  return kobo === null ? null : `From ${formatMoney(kobo, { currency: 'NGN', decimals: kobo % 100 !== 0 })}.`;
+export function fromLine(store: StoreState, plans: Pick<Plans, 'tiers'> | null | undefined, refusal?: HostTierRefusal | null): string | null {
+  const named = tierItemOf(store, refusal?.lowestTier?.id);
+  const cheapest = [...(plans?.tiers ?? [])].sort((a, b) => a.priceMinor - b.priceMinor).find((t) => tierItemOf(store, t.id) !== null);
+  const item = named ?? (cheapest ? tierItemOf(store, cheapest.id) : null);
+  return item ? `From ${item.price}.` : null;
 }
 
 /** A tier is running while it is `active` or `ending` (the Hub's own rule); `none` and `ended` do not host. */

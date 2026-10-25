@@ -15,10 +15,12 @@ import { TierBadge } from '@/components/TierBadge';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { PointsFrame } from '@/features/points/PointsFrame';
+import { tierItemOf } from '@/features/store/model';
+import { useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
-import { dayOf, higherTiers, priceIn } from './purchaseModel';
+import { dayOf, higherTiers } from './purchaseModel';
 
 const BODY_GAP = 12;
 const DAY_MS = 86_400_000;
@@ -71,6 +73,8 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   const owner = useSessionAccount(undefined);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
   const plans = useQuery(plansQuery(owner), queryClient);
+  // Renew is bought in the store sheet, so the price on it is the store's own (IAP-03, R-86); none is drawn until the store has answered.
+  const store = useStoreCatalog(['tier']);
   const tier = mine.data;
   const held = tier && tier.state !== 'none' && tier.tier ? tier.tier : null;
 
@@ -111,6 +115,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   } else {
     const sold = plans.data.tiers.find((t) => t.id === held.id) ?? null;
     const canUpgrade = higherTiers(plans.data.tiers, held.id).length > 0;
+    const renewPrice = tierItemOf(store.state, held.id)?.price ?? null;
     const line = stateLine(tier);
     body = (
       <>
@@ -162,7 +167,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
       canUpgrade || sold ? (
         <View style={styles.foot}>
           {canUpgrade ? <Button testID="your-tier-upgrade" label="Upgrade" variant="outline" onPress={onUpgrade} style={styles.half} /> : null}
-          {sold ? <Button testID="your-tier-renew" label={`Renew · ${priceIn(sold.priceMinor, plans.data.currency)}`} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
+          {sold ? <Button testID="your-tier-renew" label={renewPrice ? `Renew · ${renewPrice}` : 'Renew'} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
         </View>
       ) : undefined;
   }

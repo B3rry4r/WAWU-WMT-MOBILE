@@ -33,6 +33,16 @@ export function storeUnavailableLine(os: Os | null): string {
 /** "the App Store" or "Google Play". */
 export { storeName };
 
+/**
+ * The store's own item for a tier, once the store has answered. Null while it is loading, not open, unavailable or failed, and when it does
+ * not sell that tier: a screen then shows no price at all, never the Hub's plan price (IAP-03, R-86: bought "at the store's price in the
+ * person's own currency").
+ */
+export function tierItemOf(state: StoreState, tierId: string | null | undefined): StoreItem | null {
+  if (state.kind !== 'ready' || !tierId) return null;
+  return state.items.find((i) => i.product.kind === 'tier' && i.product.grants.tierId === tierId) ?? null;
+}
+
 /** The count a points or credits product gives, for a row or a button. */
 export function countOf(product: Pick<StoreProductView, 'grants'>): number {
   return product.grants.points ?? product.grants.credits ?? 0;

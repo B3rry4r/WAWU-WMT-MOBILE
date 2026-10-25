@@ -12378,6 +12378,8 @@ export interface components {
             tierId?: string;
             /** @description pass: the days one period runs. */
             days?: number;
+            /** @description extra_products: the products one purchase adds. Defaults to the plan's count when left out. */
+            extraProducts?: number;
         };
         CreateStoreProductDto: {
             /** @enum {string} */
@@ -12388,7 +12390,7 @@ export interface components {
              * @description Fixed once created.
              * @enum {string}
              */
-            kind: "points" | "credits" | "tier" | "pass";
+            kind: "points" | "credits" | "tier" | "pass" | "extra_products";
             title: string;
             grants: components["schemas"]["StoreProductGrantsDto"];
             /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
@@ -18588,12 +18590,14 @@ export interface components {
             pack: "starter" | "popular" | "pro" | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         StoreGrantsView: {
             points: number | null;
             credits: number | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         AdminStoreProductView: {
             id: string;
@@ -18601,7 +18605,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             grants: components["schemas"]["StoreProductGrantsConfig"];
             resolved: components["schemas"]["StoreGrantsView"];
@@ -18633,7 +18637,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             environment: string;
@@ -18666,7 +18670,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             subscription: boolean;
             grants: components["schemas"]["StoreGrantsView"];
@@ -18684,6 +18688,7 @@ export interface components {
             points: number | null;
             credits: number | null;
             tierId: string | null;
+            extraProducts: number | null;
             until: string | null;
             communityId: string | null;
         };
@@ -18693,7 +18698,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             alreadyGranted: boolean;

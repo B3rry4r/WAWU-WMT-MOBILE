@@ -22,6 +22,8 @@ import { ROW_TILE } from '@/features/settings/metrics';
 import { useWawu } from '@/theme';
 
 import { heldTierQuery, pendingPurchaseQuery, selfieStoppedQuery } from './api';
+import { useStoreCatalog } from '@/features/store/useStore';
+
 import { getTickOf, GivesRows, TicksRows } from './TicksSection';
 import { asksSelfie, identityRow, STILL_CONFIRMING_BODY, STILL_CONFIRMING_TITLE, tierRow } from './model';
 
@@ -60,6 +62,8 @@ export function VerificationScreen({ onBack, onOpenWallet, onGetTick }: Verifica
   const pending = useQuery(pendingPurchaseQuery(owner), queryClient);
   // The way to a tick and what a tick gives are asked for beside the page, never in its way: a failed read leaves those rows out.
   const plans = useQuery({ ...plansQuery(owner), retry: false }, queryClient);
+  // The price on the tick row is the store's own (IAP-03, R-86): none is drawn until the store has answered.
+  const store = useStoreCatalog(['tier']);
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const wantsSelfie = progress.data ? asksSelfie(progress.data.state, progress.data.review?.stage ?? null) : false;
   const selfie = useQuery(selfieStoppedQuery(owner, wantsSelfie), queryClient);
@@ -119,7 +123,7 @@ export function VerificationScreen({ onBack, onOpenWallet, onGetTick }: Verifica
     const held = tier.data ? tierRow(tier.data) : null;
     const confirming = Boolean(pending.data);
     const running = tier.data && (tier.data.state === 'active' || tier.data.state === 'ending') ? (tier.data.id ?? null) : null;
-    const get = onGetTick ? getTickOf(plans.data ?? null, running) : null;
+    const get = onGetTick ? getTickOf(plans.data ?? null, running, store.state) : null;
     body = (
       <>
         <ListSection title="Getting paid" testID="verification-paying">

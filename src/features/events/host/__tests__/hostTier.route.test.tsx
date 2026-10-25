@@ -147,7 +147,9 @@ describe('M19 to E21 · hosting needs a tier', () => {
     await fireEvent.press(await screen.findByTestId('create-tile-event'));
     expect(await screen.findByText('Hosting needs a tier')).toBeTruthy();
     expect(await screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect((await screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(screen.queryByText(/From/)).toBeNull();
     expect(screen.queryByTestId('host-name')).toBeNull();
     expect(hub.posts).toBe(0);
     await fireEvent.press(screen.getByTestId('host-see-tiers'));
