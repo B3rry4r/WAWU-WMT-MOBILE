@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Linking, Share } from 'react-native';
+import { Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { referrals } from '../referralsForTests';
@@ -102,9 +102,7 @@ describe('Share card (RF2)', () => {
     expect(screen.getByText('Join me on Who Made This? and get paid for what you know.')).toBeTruthy();
     expect(screen.getByLabelText('Creator tick')).toBeTruthy();
     const everything = JSON.stringify(screen.toJSON());
-    // WhatsApp is a share target now (RELEASE-02, CHECK-3 D-2b, the lead's ruling; the content and TGIF sheets name it too): this list
-    // lost its one entry. Story is Instagram's card and stays out (R-68).
-    for (const brand of ['Instagram', 'Story', 'Flutterwave', 'Nuvion', 'Fintava']) expect(everything).not.toContain(brand);
+    for (const brand of ['Instagram', 'WhatsApp', 'Story', 'Flutterwave', 'Nuvion', 'Fintava']) expect(everything).not.toContain(brand);
   });
 
   it('Share captures the card as a picture and hands it to the phone\'s share sheet', async () => {
@@ -212,31 +210,14 @@ describe('Share card (RF2)', () => {
 
 
 describe('Share card (RF2) · the targets that need no native change (RELEASE-02, CHECK-3 D-2b)', () => {
-  it('draws WhatsApp, Who Made This? chat, Share and Save, and no Story', async () => {
+  it('draws Who Made This? chat, Share and Save, and no outside brand (no WhatsApp, no Story; R-68)', async () => {
     await open();
     await screen.findByTestId('invite-card');
-    for (const id of ['invite-card-whatsapp', 'invite-card-chat', 'invite-card-share', 'invite-card-save']) expect(await screen.findByTestId(id)).toBeTruthy();
-    expect(screen.getByText('WhatsApp')).toBeTruthy();
+    for (const id of ['invite-card-chat', 'invite-card-share', 'invite-card-save']) expect(await screen.findByTestId(id)).toBeTruthy();
     expect(screen.getByText('Who Made This? chat')).toBeTruthy();
+    expect(screen.queryByText('WhatsApp')).toBeNull();
+    expect(screen.queryByTestId('invite-card-whatsapp')).toBeNull();
     expect(screen.queryByText('Story')).toBeNull();
-  });
-
-  it('WhatsApp opens a link carrying the line and the Hub link', async () => {
-    const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
-    await open();
-    await fireEvent.press(await screen.findByTestId('invite-card-whatsapp'));
-    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
-    const url = decodeURIComponent(String(spy.mock.calls[0][0]));
-    expect(url.startsWith('https://wa.me/?text=')).toBe(true);
-    expect(url).toContain('Join me on Who Made This? and get paid for what you know.');
-    expect(url).toContain('wawuafrica.com/r/lennox');
-  });
-
-  it('says so when WhatsApp cannot be opened', async () => {
-    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no app'));
-    await open();
-    await fireEvent.press(await screen.findByTestId('invite-card-whatsapp'));
-    expect(await screen.findByTestId('invite-card-problem')).toHaveTextContent(/WhatsApp could not be opened. Try again./);
   });
 
   it('Who Made This? chat lists recent chats and sends the line and the link to the one tapped, once', async () => {
