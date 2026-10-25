@@ -1,0 +1,63 @@
+# CHECK-3, Legal journey (S14 to S26), findings only
+
+Auditor: Sonnet agent (session 01YVWyVbutb6jEWsPXBkYeY9). Built none of this (no commit of mine touches `src/features/legal`). Mobile branch `wmt/CHECK-3-legal` from origin/main `25d24f0a`; backend origin/main `d02df24` (contains PR #207, `009675f`).
+
+Stack (`stack.sh up --name lgl --ports 9270-9275 --with mobile`, a scratch copy of `stack.sh` and `block-net.cjs` that lets `generativelanguage.googleapis.com` through; nothing committed): Hub on the Nuvion stand-in, mock WAWU ID, app web export at 390x844 (Chromium, dark and light), storage stand-in on :9276 for the delivered files. Boards from `scripts/design/render_design.py S14 .. S26` (`build/design_shots/<ID>-dark.png` and `-light.png`, not committed). App pictures are in `audits/CHECK-3/legal/` (38 PNGs, 390 px wide).
+People: Ada (funded N500,000, dark, the full journey), Bea (funded, light, the second journey), Cy (N1,000, not-enough state), Adaeze (no wallet). The consultant is a superadmin made on the test database and named "Adaora Nnaji"; she acts through the Hub's own admin routes (no board draws a lawyer app; the dashboard side is the only lawyer side).
+
+## What was reached, end to end
+Home Legal tile -> S14 chat -> profiling turns -> S16 brief -> Send to a consultant -> consultant joins (arrived 0.6 s later with no reload) -> S18 -> S19 pay sheet and PIN -> S20 booked -> consultation completed and quote sent (admin) -> S21 read letter and sign -> S22 pay to start (wrong PIN first: nothing debited; then right PIN) -> documents delivered (admin) -> S23, a document opened. Light run on a second person. Money checked on the stand-in after: Ada 500,000 - 15,000 - 45,000 = 440,000 (the wrong PIN debited nothing); Bea 500,000 - 35,000 - 15,000 = 450,000; Cy untouched.
+Gemini: the Hub's default `gemini-3-flash-preview` answered 429 on every turn ("Generate content requests per day limit exceeded on Free Tier", limit 20, model gemini-3-flash, retry in about 15 h; read from a Hub-shaped probe). `gemini-2.5-flash` answered until its own free-tier quota also ran out mid-pass; the rest ran on `gemini-2.5-flash-lite`. The Hub was restarted three times outside `stack.sh` (same environment, `GEMINI_MODEL` and the storage endpoint changed). With 2.5-flash and 2.5-flash-lite the assistant answered in 1.7 to 3.7 s and the brief sent in 3 to 5 s, so M-01's cause (the thinking setting by model family) is confirmed fixed. The default model itself is NOT proven on this key (quota). About 25 answered calls and 9 tiny probes in all.
+
+## Defects
+### High
+- **H-1 After the consultation is booked, the person cannot get back to their matter, so the quote, the signature and the payment (S21, S22) cannot be found.** Screens: Legal entry, S21, S22 (S23 only through its notification). Artboards S17 to S23 ("Adaora sends a quote in the chat"). Repro: finish S19 on any matter, leave S20, tap Legal on Home: a fresh S14 chat opens (`resolveThread` keeps a sent conversation only while the matter is `awaiting_quote`, BACKEND_GAPS G-501). Then the consultant quotes: the Hub writes no chat line and no notification for a quote (only `legal_delivered` exists), Inbox and Me hold no matter entry, so S21 has no way in. Seen live at status `quoted` (Bea) and `delivered` (Ada); at `consultation_scheduled` by reading `resolveThread`. The one door that works is the "Your documents are ready" notification (S23), and its text says "They are in your legal chat" while the chat opens empty. Shots: `after-quote-fresh-chat-light.png`, `after-delivery-fresh-chat-dark.png`.
+- **H-2 "Register a business" (S14 chip, board S24 and S26) ends in a matter nobody can book or pay in the app.** Screens: S14, S17 card, S18, S24, S26. Repro: Bea, S14, tap "Register a business", answer the turns, Send; the consultant joins and the S17 card offers Book; Book, pick In person, Request in person: 400, the screen says "Not booked. CAC business name registration does not need a consultation." No S24 card appears (the Hub lists `cac-registration` with `requiresDocuments: true`, so the card is suppressed, G-LEGAL-06-2), and `/legal-fixed?code=cac-registration` answers "This service isn't open right now" (`S26-not-open-light.png`). The only way on is the consultant quoting in admin, which H-1 then hides from the person.
+
+### Medium
+- **M-1 Quick replies are raw option ids on `gemini-2.5-flash-lite`.** S15. Repro: Bea, tap "Register a business", the first chips read "individual", "business_owner", "company", "creator"; later "yes", "one_only", "no" and "no_rush", "soon", "urgent". The screen draws what the Hub serves; with `gemini-2.5-flash` the labels were words ("Individual", "Business owner"). `S15-raw-option-ids-light.png`.
+- **M-2 A control character reaches the brief.** S16 Matter row shows an empty box ("Property [box] Rent increase dispute"); the stored headline holds U+0008 between the words (gemini-2.5-flash). The Hub strips NUL and em-dashes only (`cleanAiText`). Repro: Ada, `S16-brief-dark.png`, `S16-brief-light.png`.
+- **M-3 S16 lacks the line under the button.** Board S16: "Nothing is charged yet." App: no line (G-500, open since 8 Oct). The sentence is true (Send writes no money field) and is the person's only assurance at the moment of sending.
+- **M-4 The default model is out of quota on the shared test key and the person is told only "taking a while".** S15 (`S15-slow-ask-again-dark.png`): the Hub answered 429 on 11 turns over 6 minutes; the note and "Ask again" are the app's correct 503 path, but a daily cap never clears by asking again. After one failed Ask again the words change to the Hub's sentence and the button to "Try again". An environment limit as much as a defect; needs the owner's key plan (a paid key, or the console line `GEMINI_MODEL`).
+
+### Low
+- L-1 S20 to S23 titles: a long service name is cut and left-aligned ("Property and legal document...", "CAC business name registrati..."); the board centres a short matter name ("Tenancy agreement review").
+- L-2 S20 lacks "Details are in your email." (G-LEGAL-04-1, the Hub sends none).
+- L-3 The engagement letter sheet (no board) prints "Reference: <the raw request uuid>" and "Client: the client" (`S21-dark-letter.png`).
+- L-4 S23 does not arrive live: delivery with the matter screen open left the stepper at "Documents delivered" with no files for 6 s and more; it filled on the next open (G-502).
+- L-5 S18: a person's own held hour (they opened the pay sheet and left) is greyed as taken for 30 minutes (`S18-dark-own-hold-greyed.png`).
+- L-6 Hub 500 on opening Legal shows the raw words "Internal server error" (`S14-open-fails-dark.png`).
+- L-7 Browser offline: the Legal screen stayed on its skeleton for 30 s with no message (react-query pauses while offline). The earlier verifier saw "You're offline"; unclear on a phone.
+- L-8 "Add to calendar" does nothing on web (a native calendar module); NOT RUN on a phone.
+- L-9 The assistant repeated "Who are you, for this matter?" after a free-text answer and took the problem text as the answer to "Where does this matter concern?" (model behaviour).
+- L-10 S18 hours are hourly 09:00 to 16:00 (board: 10:30 grid to 17:00, G-269) and the day strip scrolls 14 days (board shows five).
+- Observed outside Legal: Home's services row showed Studio, Learn, Legal (board H1 draws Monetize too); the Legal tile opens S14 correctly.
+
+## Coverage table
+Board files are `build/design_shots/<ID>-dark.png` and `-light.png`; app files are in `audits/CHECK-3/legal/`.
+
+| Artboard | Coverage | Conformance | Board file vs app file, and what differs or why not reached |
+|---|---|---|---|
+| S14 Legal chat | built | conforms | `S14-dark.png`, `S14-light.png` vs `legal/S14-dark.png`, `legal/S14-light.png`: header, two lines, four chips, composer match; "Hi Lennox" is the account's own first name. States with no board: loading skeleton (`S14-loading-dark.png`), open fails with Try again (`S14-open-fails-dark.png`). |
+| S15 Profiling | built | conforms | `S15-dark.png`, `S15-light.png` vs `legal/S15-answer-dark.png`, `legal/S15-light.png`: bubbles, chips, composer match. Extra states: typing bubble (`S15-typing-dark.png`), slow answer with Ask again (`S15-slow-ask-again-dark.png`). Content defects M-1, L-9. |
+| S16 Brief | built | differs | `S16-dark.png`, `S16-light.png` vs `legal/S16-brief-dark.png`, `legal/S16-brief-light.png`: card, rows, purple button and "Add anything else" match; the board's "Nothing is charged yet." is missing (M-3); rows are the person's (9 and 10 rows, board 4); tofu in Matter (M-2). |
+| S17 Consultant joins | built | conforms | `S17-dark.png`, `S17-light.png` vs `legal/S17-dark.png`, `legal/S17-light.png`: avatar and name header, "joined" notice, consultant label and bubble, Book card all match. Before she joins the header reads "Waiting for a consultant" (`legal/S17-waiting-dark.png`, no board). |
+| S18 Book | built | differs | `S18-dark.png`, `S18-light.png` vs `legal/S18-dark-picked.png`, `legal/S18-light-picked.png`: cards, day strip, hours, caption and purple Pay match (prices set by the admin routes to the board's: video 30 min N15,000, phone 20 min N10,000); hours and strip differ (L-10); phone row exists only once an admin prices it; own hold greyed (L-5). First open before pricing: `legal/S18-dark-open.png` (video N45,000, 60 min, no phone). |
+| S19 Pay | built | differs | `S19-dark.png`, `S19-light.png` vs `legal/S19-dark-sheet.png`, `legal/S19-light-sheet.png`: sheet over S18 with the wallet row matches; differs as BRIEF S19 and SHARED-CHANGES say (Price, Bank charge, Total rows; button "Pay · N15,000"; "Bank charge" per R-67; N0 because the stand-in charges nothing). PIN sheet `legal/S19-dark-pin.png`. States: not enough (`legal/S19-dark-not-enough.png`, Add N14,000), no wallet lands on "Complete your account, 1 of 4" (`legal/S19-dark-no-wallet.png`). |
+| S20 Booked | built | differs | `S20-dark.png`, `S20-light.png` vs `legal/S20-dark.png`, `legal/S20-light.png`: green banner, tracker, Add to calendar match; no "Details are in your email." (L-2); title (L-1). |
+| S21 Quote and sign | built | conforms | `S21-dark.png`, `S21-light.png` vs `legal/S21-dark-typed.png`, `legal/S21-light.png`: tracker, Quote, Read letter, name field, Sign match (board is drawn with the field filled and focused; both states seen). Letter sheet `legal/S21-dark-letter.png` (no board, L-3). |
+| S22 Pay to start | built | differs | `S22-dark.png`, `S22-light.png` vs `legal/S22-dark.png`, `legal/S22-light.png`: Signed as, wallet row, "Pay N45,000 to start" match; Price, Bank charge and Total rows are BRIEF S22. Wrong PIN `legal/S22-dark-wrong-pin.png` ("Wrong PIN. 4 tries left."), nothing debited. |
+| S23 Delivered | built | conforms | `S23-dark.png`, `S23-light.png` vs `legal/S23-dark.png`, `legal/S23-light.png`: five ticks, "Your documents", two files with pages and a download mark; a tap opened the file. Delivery arrives late (L-4). |
+| S24 Fixed price, in chat | built | unverified | `S24-dark.png`, no app file: the card never drew (H-2: `cac-registration` needs documents so the Hub data suppresses it, G-LEGAL-06-2). |
+| S25 No slots | built | conforms | `S25-dark.png`, `S25-light.png` vs `legal/S25-light.png`: calendar icon note and "Request in person" match. Reached by a real cause: every weekday hour of 22 days held (159 test appointments, deleted after). Tapping Request in person on a CAC matter: H-2. |
+| S26 Fixed-price request | built | unverified | `S26-dark.png`, no matching app file: only "This service isn't open right now" (`legal/S26-not-open-light.png`); the form never opens (H-2). |
+
+## Still unreachable, with the exact reason
+- S24 and S26: no fixed-price service qualifies (needs a price and `requiresDocuments` false; the Hub's catalogue has none).
+- Default model `gemini-3-flash-preview` answering: the key's free-tier daily cap (20) is spent.
+- Rate-limit refusal (30 turns an hour, 40 a conversation, 5 brief tries): needs 30 paid calls; not driven.
+- "Add to calendar" opening a phone calendar, push on a legal delivery, and the release build on the owner's Android phone (R-24): web only.
+- A consultant with an app of her own: none is drawn; her side was the Hub's admin routes.
+
+## Process notes
+SQL on `lgl_wawu_hub_test` (dropped at the end): one admin user and its name; 159 held-appointment rows for S25 (deleted); Ada's request status flipped to `consultation_scheduled` and back to `delivered`. Hub routes used: admin price routes (zoom, phone, cac-registration), ops consultation/complete, quote, deliverables, ops chat. No Fintava, no live host; the Gemini key was read from its file only and never printed.
