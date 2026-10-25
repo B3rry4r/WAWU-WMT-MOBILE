@@ -17442,7 +17442,7 @@ export interface components {
         PaidPurchaseView: {
             id: string;
             /** @enum {string} */
-            kind: "content_unlock" | "credit_pack" | "school_fee" | "event_ticket" | "community_pass";
+            kind: "content_unlock" | "credit_pack" | "legal_fee" | "school_fee" | "event_ticket" | "community_pass";
             title: string;
             amountKobo: number;
             totalKobo: number | null;

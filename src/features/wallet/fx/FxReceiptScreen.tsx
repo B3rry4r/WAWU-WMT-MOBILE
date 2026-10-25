@@ -20,6 +20,7 @@ import { font, radius, space } from '@/theme';
 import { chainName, formatMinor, formatTrim, rateLine, SHORT_NAME, type FxChain, type QuoteCode } from './amount';
 import { sendQuery, swapQuery, type FxSend, type FxSwap } from './api';
 import { FxAmount } from './parts';
+import { shortReference } from '@/features/send/reference';
 
 const RECEIPT = { mark: 88, headGap: 12, headTop: 20, figure: 36, poll: 4000 } as const;
 
@@ -30,6 +31,9 @@ export const SEND_CONFIRMING = 'The network has not confirmed this send yet. Thi
 export function shortAddress(address: string): string {
   return address.length <= 14 ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
+
+/** `WAW-XXXX-XXXX` from the swap's or send's id, by the rule a send to a person uses (`shortReference`, R2-MONEY2): never the id itself. */
+export const fxReference = (id: string): string => shortReference(`wawu-fx-${id}`);
 
 type Row = { key: string; label: string; value: string; wrap?: boolean };
 
@@ -57,7 +61,7 @@ export function swapRows(s: FxSwap): Row[] {
     { key: 'rate', label: 'Rate', value: rateLine({ fromCurrency: from, toCurrency: to, fromDecimals: s.fromDecimals, toDecimals: s.toDecimals, rate: s.rate }) ?? 'Not available' },
     ...feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountFromMinor, providerLabel: 'Bank charge', money: (m) => formatMinor(m, from, s.fromDecimals) }),
     { key: 'date', label: 'Date', value: longDateTime(s.createdAt) },
-    { key: 'ref', label: 'Reference', value: s.id, wrap: true },
+    { key: 'ref', label: 'Reference', value: fxReference(s.id), wrap: true },
   ];
 }
 
@@ -72,7 +76,7 @@ export function sendRows(s: FxSend): Row[] {
     { key: 'amount', label: 'Amount', value: money(s.amountMinor) },
     ...parts,
     { key: 'date', label: 'Date', value: longDateTime(s.createdAt) },
-    { key: 'ref', label: 'Reference', value: s.id, wrap: true },
+    { key: 'ref', label: 'Reference', value: fxReference(s.id), wrap: true },
   ];
 }
 

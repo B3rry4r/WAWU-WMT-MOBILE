@@ -433,7 +433,7 @@ are up ... never use opus agents again to do tasks").*
 `scripts/tasks/check_tasks.py` reads this list. Every other artboard must be in
 exactly one screen task.
 
-<!-- not-built: SH M3 W40 W18 W16 M11 M12 M13 M14 VF5a VF13a PT4a -->
+<!-- not-built: SH M3 W40 W18 W16 M11 M12 M13 M14 VF5a VF13a PT4a W30 W33 W34 -->
 - `SH1` to `SH15`: WAWU Shop, retired (R-2); the 16 Oct 2026 export no longer draws them
 - `W16`: add money by card, "Removed: transfer only" on the 16 Oct 2026 canvas (R-16, R-42); WALLET-36 is cancelled
 - `VF5a`, `VF13a`, `PT4a`: the dollar variants of the tier cards, the all-products-used sheet and the points packs. Dollar prices wait for dollar accounts (R-16, R-65). Unblocked when a person can be billed in dollars (dollar accounts, WALLET-32).
@@ -441,6 +441,7 @@ exactly one screen task.
 - `M3`: the profile Shop tab (R-9)
 - `W40`: move earnings to wallet (R-11)
 - `W18`: withdraw waiting on KYC (R-28). Unblocked when Fintava names an account status that blocks withdrawals.
+- `W30`, `W33`, `W34`: the physical card's delivery form, the card's limits and channel switches, and the card PIN. Nuvion issues no physical card and serves no limits, channel switches or card PIN, so the WAWU card is what Nuvion serves (R-84, R-47). WALLET-22 records the three as not built (CHECK-3 money third pass; R2-MONEY2). Unblocked when Nuvion serves them.
 
 Elements, not whole artboards, also left out at launch:
 - The school rating on `SC1` and `SC2` (R-32). Unblocked when the owner rules where a school's rating comes from.
