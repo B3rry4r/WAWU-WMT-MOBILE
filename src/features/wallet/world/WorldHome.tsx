@@ -68,6 +68,10 @@ export function WorldHome({ owner }: { owner: string }) {
   const held = new Set((accounts.data ?? []).map((a) => a.currency));
   const more = (addable.data ?? []).filter((c) => !held.has(c.code));
   const open = (accounts.data ?? []).filter((a) => a.status === "open");
+  // History stays readable on a frozen account: its movements show even when no account is open (an account still opening has none).
+  const withHistory = (accounts.data ?? []).filter(
+    (a) => a.status === "open" || a.status === "frozen",
+  );
   // A swap needs a side to move money to as well as from: two open accounts of their own.
   const swaps = currencies.data?.products.swap === true && open.length > 1;
 
@@ -81,7 +85,8 @@ export function WorldHome({ owner }: { owner: string }) {
       await refresh();
     } catch (error) {
       setProblem(
-        isApiError(error)
+        // A provider's refusal carries the provider's words: never drawn (M-02).
+        isApiError(error) && error.code !== "provider_declined"
           ? error.message
           : "We could not open that account. Try again.",
       );
@@ -134,10 +139,10 @@ export function WorldHome({ owner }: { owner: string }) {
           canSwap={swaps && account.status === "open"}
         />
       ))}
-      {open.length > 0 ? (
+      {withHistory.length > 0 ? (
         <Transactions
           owner={owner}
-          accounts={open}
+          accounts={withHistory}
           currencies={currencies.data ?? null}
           allAccounts={accounts.data}
           noun="account"

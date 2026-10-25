@@ -72,25 +72,44 @@ export function startingSides(sides: readonly Side[], from: string | undefined, 
   return { from: a, to: b && b.key !== a?.key ? b : sides.find((s) => s.key !== a?.key) };
 }
 
-/** What the person pays Nuvion and WAWU for a swap, as one line on W20: the sum of the fees the Hub named, in what they give. */
-export function feeSummary(q: Pick<FxQuote, 'providerFeeMinor' | 'wawuFeeMinor' | 'fromCurrency' | 'fromDecimals'>): string {
-  const total = (q.providerFeeMinor ?? 0) + q.wawuFeeMinor;
-  if (total === 0) return q.providerFeeMinor === null ? 'No fee from WAWU' : 'No fee';
-  const known = formatMinor(total, q.fromCurrency as QuoteCode, q.fromDecimals);
-  return q.providerFeeMinor === null ? `${known} and Nuvion's charge` : known;
+type FeeQuote = Pick<FxQuote, 'providerFeeMinor' | 'wawuFeeMinor' | 'fromCurrency' | 'fromDecimals'>;
+
+/**
+ * What the person pays for a swap, as the one line on W20: the two parts added up, in what they give, and never "No fee" (BRIEF rules 3 and 4):
+ * a zero is the figure "₦0.00". The bank's part is unnamed until the Hub names it, and then it is said to be coming ("+ bank charge"). The
+ * parts are the line under it (`feeSplit`). The provider's part is "Bank charge", never its name (R-53).
+ */
+export function feeSummary(q: FeeQuote): string {
+  const code = q.fromCurrency as QuoteCode;
+  if (q.providerFeeMinor === null) return `${formatMinor(q.wawuFeeMinor, code, q.fromDecimals)} + bank charge`;
+  return formatMinor(q.providerFeeMinor + q.wawuFeeMinor, code, q.fromDecimals);
+}
+
+/** The small line under W20's fee: the bank's charge + WAWU's fee, each a figure. */
+export function feeSplit(q: FeeQuote): string {
+  const code = q.fromCurrency as QuoteCode;
+  const wawu = formatMinor(q.wawuFeeMinor, code, q.fromDecimals);
+  return q.providerFeeMinor === null ? `Bank charge on your receipt + WAWU fee ${wawu}` : `Bank charge ${formatMinor(q.providerFeeMinor, code, q.fromDecimals)} + WAWU fee ${wawu}`;
 }
 
 export type FeeRow = { label: string; value: string };
 
-/** The review's fee breakdown (R-10: the provider's charge and WAWU's fee as their own rows). */
-export function feeRows(q: Pick<FxQuote, 'providerFeeMinor' | 'wawuFeeMinor' | 'fromCurrency' | 'fromDecimals'>): FeeRow[] {
+/** The review's fee breakdown (R-10, R-23): the bank's charge and WAWU's fee as their own rows, Fees, then the Total that leaves the account. Every figure is the quote's. */
+export function feeRows(q: FeeQuote & Pick<FxQuote, 'totalFromMinor'>): FeeRow[] {
   const code = q.fromCurrency as QuoteCode;
+  const money = (minor: number) => formatMinor(minor, code, q.fromDecimals);
+  if (q.providerFeeMinor === null) {
+    return [
+      { label: 'Bank charge', value: 'Shown on your receipt' },
+      { label: 'WAWU fee', value: money(q.wawuFeeMinor) },
+      { label: 'Total', value: `${money(q.totalFromMinor)} + bank charge` },
+    ];
+  }
   return [
-    {
-      label: 'Nuvion fee',
-      value: q.providerFeeMinor === null ? 'Shown on your receipt' : q.providerFeeMinor === 0 ? 'No fee' : formatMinor(q.providerFeeMinor, code, q.fromDecimals),
-    },
-    { label: 'WAWU fee', value: q.wawuFeeMinor === 0 ? 'No fee' : formatMinor(q.wawuFeeMinor, code, q.fromDecimals) },
+    { label: 'Bank charge', value: money(q.providerFeeMinor) },
+    { label: 'WAWU fee', value: money(q.wawuFeeMinor) },
+    { label: 'Fees', value: money(q.providerFeeMinor + q.wawuFeeMinor) },
+    { label: 'Total', value: money(q.totalFromMinor) },
   ];
 }
 
@@ -98,6 +117,11 @@ export function feeRows(q: Pick<FxQuote, 'providerFeeMinor' | 'wawuFeeMinor' | '
 export const quoteHeld = (q: Pick<FxQuote, 'expiresAt'>, now: number): boolean => Date.parse(q.expiresAt) > now;
 
 export type SwapProblem = { title: string; message: string };
+
+/** What W20 says when the provider gives no rate. The provider's text and its error code stay in the Hub's logs, never on a screen. */
+export const SWAP_DECLINED = "We can't offer this swap right now. Try another amount or pair, or try again later.";
+/** What W21 says when the provider refuses after the PIN. Nothing moved. */
+export const SWAP_NOT_TAKEN = "We couldn't make this swap right now. Your money did not move. Try again later.";
 
 const BY_CODE: Record<string, string> = {
   amount_out_of_range: 'This amount is outside what a swap can be.',
@@ -108,7 +132,8 @@ const BY_CODE: Record<string, string> = {
 
 /** The words for a quote that could not be had, by its cause. A refusal from the provider is drawn as the plain refusal it is. */
 export function quoteProblem(code: string | undefined, message: string): SwapProblem {
-  if (code === 'provider_declined') return { title: 'This swap was not offered', message: message || 'The provider did not give a rate for this.' };
+  // M-02: a provider's refusal carries the provider's own words (a name, an endpoint): they are never drawn, one plain sentence stands in.
+  if (code === 'provider_declined') return { title: 'This swap was not offered', message: SWAP_DECLINED };
   if (code && BY_CODE[code]) return { title: code === 'provider_unreachable' ? 'We couldn’t reach the bank' : 'We couldn’t get a rate', message: message && code === 'amount_out_of_range' ? message : BY_CODE[code] };
   return { title: 'We couldn’t get a rate', message: message || 'Check your connection and try again.' };
 }

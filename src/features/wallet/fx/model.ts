@@ -120,9 +120,9 @@ export function fxProblem(error: unknown): FxProblem {
   }
 }
 
-/** The Hub's own sentence for a refusal, or the line given. */
+/** The Hub's own sentence for a refusal, or the line given. A provider's refusal (`provider_declined`) carries the provider's words, which are never drawn (M-02): the line given stands in. */
 export function sentenceOf(error: unknown, fallback: string): string {
-  return error instanceof ApiError && error.message.trim() ? error.message : fallback;
+  return error instanceof ApiError && error.code !== 'provider_declined' && error.message.trim() ? error.message : fallback;
 }
 
 export const NOT_NAIRA_NAME = (code: QuoteCode): string => SHORT_NAME[code];

@@ -100,7 +100,7 @@ export const transactionsQuery = (owner: string | null, accountId: string | null
 
 /**
  * POST /accounts: opens an account in one currency (a stablecoin with its chain). Asking again for one the person has returns it.
- * Rejects with an `ApiError`: `fx_switched_off` and `provider_declined` carry the Hub's own words in the message.
+ * Rejects with an `ApiError`: `fx_switched_off` carries the Hub's own words in the message; a `provider_declined` is drawn as a plain sentence of the screen's own, never its text (M-02).
  */
 export async function openAccount(currency: FxCode, chain?: FxChain): Promise<FxAccount> {
   const data = dataOf<FxAccount>(
@@ -235,8 +235,8 @@ export type FxOutcome<T> =
   | { kind: 'frozen' }
   /** `409 fx_switched_off`: an admin turned this off. */
   | { kind: 'switched_off' }
-  /** `409 provider_declined`: Nuvion will not take it, in its own words. Nothing moved. */
-  | { kind: 'declined'; message: string }
+  /** `409 provider_declined`: the provider will not take it. Nothing moved. Its words are never drawn (M-02): the screen writes its own sentence. */
+  | { kind: 'declined' }
   /** `422 address_invalid` or `chain_mismatch`, before the PIN. */
   | { kind: 'bad_address'; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
@@ -296,7 +296,7 @@ function outcomeOf<T>(result: { data?: unknown; error?: unknown; response: Respo
     case 'fx_switched_off':
       return { kind: 'switched_off' };
     case 'provider_declined':
-      return { kind: 'declined', message: message || 'The provider did not take this. Nothing moved.' };
+      return { kind: 'declined' };
     case 'address_invalid':
     case 'chain_mismatch':
       return { kind: 'bad_address', message: message || 'This address does not look right for this network.' };

@@ -390,23 +390,20 @@ describe('W9 · the amount', () => {
 
   it('kobo are typed whole: 12.5 is ₦12.50, and the review is asked for that amount in kobo', async () => {
     await toReview('12.5');
-    expect(screen.getByText('Send ₦12.50')).toBeTruthy();
-    expect(screen.getByText('₦38.25')).toBeTruthy();
+    expect(screen.getByText('Send ₦38.25')).toBeTruthy();
     expect(hub.sends).toHaveLength(0);
   });
 });
 
 describe('W10 · review, with W11 the PIN sheet', () => {
-  it('a user sending ₦25,000 sees Bank charge, WAWU’s fee, Fees and the Total, and what they receive on the button (R2-MONEY D-02)', async () => {
+  it('a user sending ₦25,000 sees Bank charge, WAWU’s fee, Fees and the Total, the total on the button and "They get ₦25,000"', async () => {
     await toReview('25000', 'Rent contribution');
     expect(screen.getByText("Bank charge")).toBeTruthy();
     expect(screen.getByText("WAWU's fee")).toBeTruthy();
     expect(screen.getByText('Fees')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
-    expect(screen.getByText('₦25,025.75')).toBeTruthy();
-    expect(screen.getByText('Send ₦25,000')).toBeTruthy();
-    expect(screen.queryByText('Send ₦25,025.75')).toBeNull();
-    expect(screen.queryByText(/They get/)).toBeNull();
+    expect(screen.getByText('Send ₦25,025.75')).toBeTruthy();
+    expect(screen.getByText('They get ₦25,000')).toBeTruthy();
     expect(screen.getByText('@amaka')).toBeTruthy();
     expect(screen.getByText('Rent contribution')).toBeTruthy();
   });
@@ -450,7 +447,7 @@ describe('W10 · review, with W11 the PIN sheet', () => {
     hub.mode = 'changed';
     await toReview();
     await pay();
-    expect(await screen.findByText('₦25,035.75')).toBeTruthy();
+    expect(await screen.findByText('Send ₦25,035.75')).toBeTruthy();
     expect(await screen.findByText('The fees changed. Check the new total before you send.')).toBeTruthy();
     await pay();
     expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
@@ -645,7 +642,7 @@ describe('W10 · a payment intent is kept until the Hub has the last word (round
     await fireEvent.press(await screen.findByRole('button', { name: /^Send ₦/ }));
     await screen.findByText(/^Approve ₦/);
     await tap('1234');
-    expect(await screen.findByText('₦25,035.75')).toBeTruthy();
+    expect(await screen.findByText('Send ₦25,035.75')).toBeTruthy();
     expect(await screen.findByText('The fees changed. Check the new total before you send.')).toBeTruthy();
     hub.quoteExpiredForSend = false;
     await pay();
@@ -739,7 +736,7 @@ describe('W10 · over the limit, the quote, and the fee call (round 2)', () => {
     await toReview();
     hub.quoteTotalExtra = 3575;
     await fireEvent.press(screen.getByRole('button', { name: /^Send ₦/ }));
-    expect(await screen.findByText('₦25,035.75')).toBeTruthy();
+    expect(await screen.findByText('Send ₦25,035.75')).toBeTruthy();
     expect(await screen.findByText('The fees changed. Check the new total before you send.')).toBeTruthy();
     expect(screen.queryByText(/^Approve ₦/)).toBeNull();
   });

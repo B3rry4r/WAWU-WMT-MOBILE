@@ -22,6 +22,8 @@ import { canvasNormalLineHeight, radius, space } from '@/theme';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { ROW_TILE } from '@/features/settings/metrics';
 
+import { beneficiariesQuery, savedBankRows } from '@/features/send/api';
+
 import { walletSettingsQuery, type WalletSettings } from '../api/settings';
 import { useStatementSent } from '../statements/notice';
 import { AccountDetailsSheet } from './AccountDetailsSheet';
@@ -62,8 +64,9 @@ export type WalletSettingsScreenProps = {
  * key behind a biometric (FIX-108; SHARED-CHANGES WALLET-06 #1): the switch makes the key, asks the PIN on a sheet with no amount, and
  * registers it (`PUT /money/device`); off turns it off at the Hub and drops the key. Help with a payment, the
  * last row, opens the support chat (I12) with nothing attached, since no one payment is being asked about (SUPPORT-01, R-30; the
- * chat's own entries from H18 and W27 attach theirs). Beneficiaries (R2-MONEY D-05) is drawn as W35 draws it, with the Hub's count ("6 saved"),
- * and opens W8, whose Saved list holds the accounts a person saved from a receipt (W12); a screen to remove one is not built (BACKEND_GAPS).
+ * chat's own entries from H18 and W27 attach theirs). Beneficiaries (R2-MONEY D-05, round 1) is drawn as W35 draws it ("6 saved") and opens W8, whose Saved list holds the bank accounts a person
+ * saved from a receipt (W12); the count is that list's own number (the saved bank accounts), not the Hub's `beneficiaryCount`, which also counts a saved
+ * WAWU user that no list draws. A screen to remove one is not built (BACKEND_GAPS).
  * The Tier row stays out: no tier is served (WALLET-19). The fingerprint or face switch is drawn wherever the phone can keep that key; the
  * CHECK-3 audit ran on a web export, which cannot, so it did not show there.
  */
@@ -75,6 +78,10 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
   const sent = useStatementSent();
   const support = useOpenSupport();
   const data = wallet.data;
+  // Beneficiaries counts the saved bank accounts, which are the rows W8's Saved list draws, read under the same key (R2-MONEY D-05). The Hub's own
+  // `beneficiaryCount` also counts a saved WAWU user, who is drawn nowhere on that list, so it is not used. Only read once the wallet is open.
+  const saved = useQuery({ ...beneficiariesQuery(owner), enabled: Boolean(owner) && Boolean(onOpenBeneficiaries) && data?.state === 'open' }, queryClient);
+  const savedCount = saved.data ? savedBankRows(saved.data).length : null;
   // Fingerprint or face for payments (R-26): read again whenever the wallet read comes in, so a PIN reset (which turns it off at the Hub) shows.
   const approval = useApprovalSwitch(wallet.dataUpdatedAt);
   const [askPin, setAskPin] = useState(false);
@@ -163,6 +170,7 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
         onOpenStatements={onOpenStatements}
         cards={cards}
         onOpenBeneficiaries={onOpenBeneficiaries}
+        savedCount={savedCount}
         onOpenHelp={() => void support.open()}
         biometric={
           approval.support !== null
@@ -204,10 +212,12 @@ type SettingsProps = {
   onOpenStatements?: () => void;
   cards?: { subtitle: string; onOpen: () => void };
   onOpenBeneficiaries?: () => void;
+  /** The saved bank accounts W8 will show; null until the list is read (or when it cannot be), when the row has no second line. */
+  savedCount: number | null;
   onOpenHelp: () => void;
 };
 
-function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, onOpenHelp }: SettingsProps) {
+function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, savedCount, onOpenHelp }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -241,7 +251,7 @@ function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOp
             testID="wallet-settings-beneficiaries"
             lead={<IconTile icon="Users" size={ROW_TILE} />}
             title="Beneficiaries"
-            subtitle={savedLine(data.beneficiaryCount)}
+            subtitle={savedCount === null ? undefined : savedLine(savedCount)}
             onPress={onOpenBeneficiaries}
           />
         ) : null}

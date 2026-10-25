@@ -6,6 +6,7 @@ import { isApprovalStop, notApproved, stopCode, type Credential, type Settled } 
 import { newRequestKey } from '@/features/wallet/api/settings';
 
 import { swapAtQuote, swapQuery, type FxQuote, type FxSwap } from '../api';
+import { SWAP_NOT_TAKEN } from './model';
 
 export type SwapPayProblem = { title: string; message: string };
 
@@ -99,7 +100,7 @@ export function useSwapPay(args: UseSwapPayArgs) {
         case 'declined':
           nothingMoved();
           args.onClosePin();
-          setProblem({ title: 'This swap was not taken', message: outcome.message });
+          setProblem({ title: 'This swap was not taken', message: SWAP_NOT_TAKEN });
           return { code: 'approved' };
         default:
           nothingMoved();

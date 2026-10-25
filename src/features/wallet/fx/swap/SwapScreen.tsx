@@ -28,7 +28,7 @@ import { accountsQuery, currenciesQuery, fetchQuote, type FxQuote, type FxSwap }
 import { fxProblem, sentenceOf } from '../model';
 import { FxAmount, FxFlag, HoldPill } from '../parts';
 import { useNow } from '../useNow';
-import { feeSummary, quoteProblem, sidesOf, startingSides, type Side } from './model';
+import { feeSplit, feeSummary, quoteProblem, sidesOf, startingSides, type Side } from './model';
 import { SwapReview } from './SwapReview';
 import { useSwapPay } from './useSwapPay';
 
@@ -283,9 +283,16 @@ export function SwapScreen(props: SwapScreenProps) {
               <Text variant="body" tone="textSecondary" style={styles.infoLabel}>
                 Fee
               </Text>
-              <Text variant="body" tone={quote ? 'textPrimary' : 'textMuted'} style={font(700)} testID="swap-fee">
-                {quote ? feeSummary(quote) : 'Shown with the rate'}
-              </Text>
+              <View style={styles.feeEnd}>
+                <Text variant="body" tone={quote ? 'textPrimary' : 'textMuted'} style={font(700)} testID="swap-fee">
+                  {quote ? feeSummary(quote) : 'Shown with the rate'}
+                </Text>
+                {quote ? (
+                  <Text variant="meta" tone="textMuted" testID="swap-fee-split">
+                    {feeSplit(quote)}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           </View>
 
@@ -471,6 +478,7 @@ const styles = StyleSheet.create({
   info: { borderRadius: radius.card + 6, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: CARD.pad },
   infoRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   infoLabel: { fontSize: type.size.body },
+  feeEnd: { alignItems: 'flex-end', flexShrink: 1, gap: space.xs },
   rateEnd: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
   rate: { fontSize: 16, flexShrink: 1 },
   rule: { height: StyleSheet.hairlineWidth },

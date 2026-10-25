@@ -114,7 +114,10 @@ describe('W20 · Swap', () => {
     expect(hub.quotes[0]).toMatchObject({ fromCurrency: 'NGN', toCurrency: 'USD', toAccountId: USD_ID, amountFromMinor: 15_800_000, amountToMinor: 10_000 });
     expect(rtl.screen.getByLabelText('100 point 0 0 Dollar')).toBeTruthy();
     expect(rtl.screen.getByTestId('swap-hold').props.accessibilityLabel).toMatch(/^Rate held for 1:(29|30)$/);
-    expect(rtl.screen.getByTestId('swap-fee').props.children).toBe('No fee');
+    // BRIEF rules 3 and 4: the fee is its parts and a total, even at zero; "No fee" is never drawn.
+    expect(rtl.screen.getByTestId('swap-fee').props.children).toBe('₦0.00');
+    expect(rtl.screen.getByTestId('swap-fee-split').props.children).toBe('Bank charge ₦0.00 + WAWU fee ₦0.00');
+    expect(rtl.screen.queryByText(/No fee/)).toBeNull();
     expect(rtl.screen.getByTestId('swap-review').props.accessibilityState.disabled).toBe(false);
   });
 
@@ -145,7 +148,9 @@ describe('W20 · Swap', () => {
     await rtl.screen.findByTestId('swap-from', {}, patient);
     await key('1000');
     expect(await rtl.screen.findByText('This swap was not offered', {}, patient)).toBeTruthy();
-    expect(rtl.screen.getByText('Nuvion cannot swap this pair on dev.')).toBeTruthy();
+    // M-02: one plain sentence, never the provider's words (the double's refusal names Nuvion).
+    expect(rtl.screen.getByText("We can't offer this swap right now. Try another amount or pair, or try again later.")).toBeTruthy();
+    expect(rtl.screen.queryByText(/Nuvion|cannot swap this pair|endpoint/)).toBeNull();
     expect(rtl.screen.getByTestId('swap-review').props.accessibilityState.disabled).toBe(true);
   });
 
@@ -169,8 +174,11 @@ describe('W21 · review, with W11 the PIN sheet', () => {
     expect(rtl.screen.getByTestId('swap-review-from').props.children).toBe('Naira wallet');
     expect(rtl.screen.getByTestId('swap-review-to').props.children).toBe('Dollar account');
     expect(rtl.screen.getByTestId('swap-review-rate').props.children).toBe('$1 = ₦1,580.00');
-    expect(rtl.screen.getByText('Nuvion fee')).toBeTruthy();
+    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
     expect(rtl.screen.getByText('WAWU fee')).toBeTruthy();
+    expect(rtl.screen.getByText('Fees')).toBeTruthy();
+    expect(rtl.screen.getByTestId('swap-review-total').props.children).toBe('₦158,000.00');
+    expect(rtl.screen.queryByText(/No fee|Nuvion/)).toBeNull();
     expect(rtl.screen.getByRole('button', { name: 'Swap ₦158,000' })).toBeTruthy();
     await fireEvent.press(rtl.screen.getByTestId('swap-cancel'));
     await waitFor(() => expect(rtl.screen.queryByTestId('swap-review-sheet')).toBeNull());

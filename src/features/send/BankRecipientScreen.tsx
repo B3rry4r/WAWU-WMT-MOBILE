@@ -23,7 +23,7 @@ import { nameLineHint } from '@/features/wallet/nameLine';
 import { digitsOnly, isComplete, nameLine, type NameCheck, type PayoutForm } from '@/features/wallet/payoutForm';
 import { space } from '@/theme';
 
-import { fetchBeneficiaries, savedBankRowFor, type Beneficiary } from './api';
+import { beneficiariesQuery, savedBankRowFor, savedBankRows, type Beneficiary } from './api';
 import { bankLine, bankPayeeOf, type BankPayee, type Payee } from './model';
 import { useSendWays, type SendWay } from './parts';
 
@@ -61,10 +61,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onAbroad, onPick, init
 
   const complete = isComplete(form) ? { bankCode: form.bank.code, accountNumber: form.accountNumber } : null;
   const check = useQuery({ ...nameCheckQuery(complete ?? { bankCode: '', accountNumber: '' }), enabled: complete !== null }, queryClient);
-  const saved = useQuery(
-    { queryKey: ['money', 'beneficiaries', owner ?? ''] as const, queryFn: fetchBeneficiaries, staleTime: 0, enabled: Boolean(owner), retry: false },
-    queryClient,
-  );
+  const saved = useQuery(beneficiariesQuery(owner), queryClient);
   const payout = useQuery({ ...payoutAccountQuery, enabled: Boolean(owner) }, queryClient);
   // The bank list is read once the screen opens, so a bank's name shows beside its code before the sheet is ever opened.
   useQuery({ ...banksQuery, enabled: Boolean(owner) }, queryClient);
@@ -98,7 +95,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onAbroad, onPick, init
           : { status: 'pending' };
   const line = nameLine(form, null, nameCheck);
   const hint = nameLineHint(line, 'send');
-  const savedRows = useMemo(() => (saved.data ?? []).filter((row) => row.kind === 'bank_account' && row.bankAccount), [saved.data]);
+  const savedRows = useMemo(() => savedBankRows(saved.data ?? []), [saved.data]);
   const resolved = complete !== null && check.isSuccess ? check.data : null;
 
   const proceed = () => {

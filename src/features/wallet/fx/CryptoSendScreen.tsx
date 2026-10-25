@@ -38,6 +38,9 @@ const SHEET_GAP = 14;
 export const looksLikeAddress = (value: string): boolean => /^[A-Za-z0-9]{20,64}$/.test(value);
 
 /** The amount the account is debited: what they get, plus WAWU's fee. The provider's network fee is charged on top and named only when it takes the send. */
+/** What a send says when the provider will not take it (M-02): one plain sentence, never the provider's words. Nothing left the account. */
+export const SEND_DECLINED = "We couldn't send this right now. Nothing left your account. Try again later.";
+
 export const totalFrom = (amountMinor: number, wawuFeeMinor: number): number => amountMinor + wawuFeeMinor;
 
 export type CryptoSendScreenProps = {
@@ -172,7 +175,7 @@ export function CryptoSendScreen(props: CryptoSendScreenProps) {
       case 'quote_expired':
         return stop('The fees changed', 'Check the amount and try again.');
       case 'declined':
-        return stop('This send was not taken', outcome.message);
+        return stop('This send was not taken', SEND_DECLINED);
       default:
         return stop('This send was not taken', outcome.kind === 'refused' ? outcome.message : 'Nothing left your account. Try again.');
     }
@@ -321,7 +324,7 @@ export function CryptoSendScreen(props: CryptoSendScreenProps) {
 
           <GroupedList testID="crypto-send-fees">
             <KeyValueRow label="Network fee" value={<Val text={quote ? (quote.providerFeeMinor === null ? 'Shown on your receipt' : formatMinor(quote.providerFeeMinor, code, decimals)) : 'Shown with the amount'} muted={!quote} />} />
-            <KeyValueRow label="WAWU fee" value={<Val text={quote ? (quote.wawuFeeMinor === 0 ? 'No fee' : formatMinor(quote.wawuFeeMinor, code, decimals)) : 'Shown with the amount'} muted={!quote} />} />
+            <KeyValueRow label="WAWU fee" value={<Val text={quote ? formatMinor(quote.wawuFeeMinor, code, decimals) : 'Shown with the amount'} muted={!quote} />} />
             <KeyValueRow
               label="Total from your balance"
               value={<Val text={total !== null ? `${formatMinor(total, code, decimals)}${quote?.providerFeeMinor === null ? ' + network fee' : ''}` : 'Shown with the amount'} muted={total === null} />}
@@ -345,7 +348,11 @@ export function CryptoSendScreen(props: CryptoSendScreenProps) {
             <KeyValueRow label="Network" value={<Val text={chainName(chain)} />} />
             <KeyValueRow label="Amount" value={<Val text={formatMinor(amountMinor, code, decimals)} />} />
             <KeyValueRow label="Network fee" value={<Val text={quote?.providerFeeMinor == null ? 'Shown on your receipt' : formatMinor(quote.providerFeeMinor, code, decimals)} />} />
-            <KeyValueRow label="WAWU fee" value={<Val text={!quote || quote.wawuFeeMinor === 0 ? 'No fee' : formatMinor(quote.wawuFeeMinor, code, decimals)} />} />
+            <KeyValueRow label="WAWU fee" value={<Val text={quote ? formatMinor(quote.wawuFeeMinor, code, decimals) : 'Shown with the amount'} />} />
+            <KeyValueRow
+              label="Total"
+              value={<Val text={total !== null ? `${formatMinor(total, code, decimals)}${quote?.providerFeeMinor == null ? ' + network fee' : ''}` : 'Shown with the amount'} />}
+            />
           </GroupedList>
           <View style={styles.buttons}>
             <Button

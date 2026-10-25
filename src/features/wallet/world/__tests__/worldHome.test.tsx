@@ -46,14 +46,30 @@ const RECIPIENT = {
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown, status = 200) => json(status, { statusCode: status, message: 'OK', data });
-const hub = { enabled: true, swap: true, quotes: [] as { fromCurrency: string; amountMinor: number }[] };
+const FROZEN = ACCOUNTS.map((a) => ({ ...a, status: 'frozen' }));
+const MOVEMENT = {
+  id: 'tx-1',
+  accountId: 'a1',
+  currency: 'GBP',
+  direction: 'in',
+  status: 'completed',
+  amountMinor: 2500,
+  feeMinor: 0,
+  balanceAfterMinor: 2500,
+  description: 'Payment received',
+  counterpartyName: 'Kofi Mensah',
+  reference: 'ref-1',
+  occurredAt: '2026-10-20T10:00:00.000Z',
+  conversion: null,
+};
+const hub = { enabled: true, swap: true, quotes: [] as { fromCurrency: string; amountMinor: number }[], accounts: ACCOUNTS as readonly object[], movements: [] as object[] };
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
-  if (path === '/money/fx/accounts') return ok({ accounts: ACCOUNTS });
+  if (path === '/money/fx/accounts') return ok({ accounts: hub.accounts });
   if (path === '/money/fx/currencies') return ok({ currencies: [], products: { openAccount: false, swap: hub.swap } });
-  if (path.startsWith('/money/fx/accounts/') && path.endsWith('/transactions')) return ok({ items: [], nextCursor: null });
+  if (path.startsWith('/money/fx/accounts/') && path.endsWith('/transactions')) return ok({ items: path.includes('/a1/') ? hub.movements : [], nextCursor: null });
   if (path === '/money/abroad/corridors') return ok({ enabled: hub.enabled, minReceiveMinor: 100, wawuFeeKobo: 0, countries: [] });
   if (path === '/money/abroad/sources') return ok({ sources: SOURCES });
   if (path === '/money/abroad/recipients') return ok({ items: [RECIPIENT] });
@@ -129,6 +145,8 @@ beforeEach(() => {
   hub.enabled = true;
   hub.swap = true;
   hub.quotes = [];
+  hub.accounts = ACCOUNTS;
+  hub.movements = [];
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
@@ -169,6 +187,24 @@ describe('the world Wallet tab (R2-MONEY D-01)', () => {
     await screen.findByTestId('wallet-world-GBP-card');
     await waitFor(() => expect(queryClient.getQueryData(['money', 'fx', 'currencies', OWNER])).toBeDefined());
     expect(screen.queryByTestId('wallet-world-GBP-swap')).toBeNull();
+  });
+
+  it('keeps Transactions when every account is frozen, so the history stays readable (R2-MONEY round 1)', async () => {
+    hub.accounts = FROZEN;
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    await screen.findByTestId('wallet-world-GBP-frozen');
+    expect(await screen.findByTestId('fx-no-transactions')).toBeTruthy();
+    expect(screen.getByText('No transactions yet')).toBeTruthy();
+  });
+
+  it('lists the movements of a frozen account', async () => {
+    hub.accounts = FROZEN;
+    hub.movements = [MOVEMENT];
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    await screen.findByTestId('wallet-world-GBP-frozen');
+    expect(await screen.findByTestId('fx-transactions')).toBeTruthy();
+    expect(screen.getByTestId('fx-row-tx-1')).toBeTruthy();
+    expect(screen.queryByTestId('wallet-world-GBP-send')).toBeNull();
   });
 
   it('opens the details payers use from Get paid from abroad, only for an account whose details were issued', async () => {
