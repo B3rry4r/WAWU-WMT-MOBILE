@@ -22,7 +22,10 @@ jest.mock('@/api/tokenStore', () => ({
 }));
 
 let answer: { status: number; body: unknown } | 'offline' = 'offline';
+// When set, the Hub holds its answer until the test releases it, so the loading state is asserted while the request is still pending.
+let held: Promise<void> | null = null;
 globalThis.fetch = jest.fn(async () => {
+  if (held) await held;
   if (answer === 'offline') throw new TypeError('Network request failed');
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
 }) as typeof fetch;
@@ -43,6 +46,9 @@ function open() {
   );
 }
 
+beforeEach(() => {
+  held = null;
+});
 afterEach(async () => {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -66,10 +72,17 @@ describe('How it works (RF4)', () => {
 
   it('shows a loading state, and an error with Try again that recovers', async () => {
     answer = 'offline';
+    let release!: () => void;
+    held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     await open();
     expect(screen.getByTestId('invite-rules-loading')).toBeTruthy();
+    expect(screen.queryByTestId('invite-rules-error')).toBeNull();
+    release();
     expect(await screen.findByTestId('invite-rules-error')).toBeTruthy();
     expect(screen.queryByTestId('invite-rule-1')).toBeNull();
+    held = null;
     answer = ok(referrals({ holdDays: 7 }));
     await fireEvent.press(screen.getByText('Try again'));
     expect(await screen.findByText('Rewards are held for 7 days.')).toBeTruthy();
