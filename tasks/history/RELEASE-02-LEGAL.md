@@ -126,4 +126,4 @@ No blocker, high or medium defect.
 - Light picture of S16 (the brief needs a fourth model turn; dark taken). Light pictures taken: Legal reopened with the Open card (both fans), S24, S26, S21, S22.
 - Mutation runs (no mutant was run in this check).
 - A phone.
-- Gemini: 10 calls (4 refused by the provider: one 503, three 429 with `gemini-2.5-flash-lite`); the Hub ran on `gemini-2.5-flash` from the fifth call; the model never returned an option id this time, so M-1 is proven by `ai-text.spec` and the contract spec, not by a live id.
+- Gemini: 10 calls (4 refused by the provider: one 503, three 429 with `gemini-2.5-flash-lite`); the Hub ran on `gemini-2.5-flash` from the seventh call; the model never returned an option id this time, so M-1 is proven by `ai-text.spec` and the contract spec, not by a live id.
