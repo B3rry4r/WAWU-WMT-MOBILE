@@ -87,8 +87,10 @@ function everyAnswer(): Record<string, Answer[]> {
   return {
     [T.wallet]: [walletOpen],
     [T.balance]: [ok({ availableKobo: 48525075, asOf: '2026-10-07T10:00:00Z' })],
-    [T.creators]: [creatorsPage([creator(ME, 'Me Myself'), creator(ADA, 'Adaeze O.'), creator(FUNMI, 'Funmi A.', { field: 'Accountant', verification: { creator: tick(false), professional: tick(true) } })])],
+    [T.creators]: [creatorsPage([creator(ME, 'Me Myself'), creator(ADA, 'Adaeze O.'), creator(FUNMI, 'Funmi A.', { field: 'business_finance', verification: { creator: tick(false), professional: tick(true) } })])],
     [T.me]: [ok({ wawuUserId: ME })],
+    // R2-SOCIAL3: the line under a creator's name is sign-up's label for the interest id the Hub names in `field`.
+    'GET /users/me/interests': [ok({ minimum: 3, options: [{ id: 'business_finance', label: 'Business & Finance' }], selected: [] })],
   };
 }
 
@@ -216,7 +218,8 @@ describe('H1 · Today', () => {
     await rtl.waitFor(() => expect(clients.every((c) => c.isFetching() === 0)).toBe(true));
     expect(screen.queryByTestId(`today-creator-${ME}`)).toBeNull();
     expect(screen.getByText('Funmi A.')).toBeTruthy();
-    expect(screen.getByText('Accountant')).toBeTruthy();
+    expect(await screen.findByText('Business & Finance')).toBeTruthy();
+    expect(screen.queryByText('business_finance')).toBeNull();
     expect(rtl.within(screen.getByTestId(`today-creator-${FUNMI}`)).getByTestId('tick-pro')).toBeTruthy();
     expect(rtl.within(screen.getByTestId(`today-creator-${ADA}`)).getByTestId('tick-creator')).toBeTruthy();
   });

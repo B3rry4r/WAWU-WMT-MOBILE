@@ -39,6 +39,8 @@ const AS_SENT: Record<HubNotificationKind, Sample> = {
   community_messages: { target: { kind: 'community', id: 'r1' }, actionHref: '/communities/r1' },
   legal_delivered: { target: null, actionHref: '/legal/requests/m1' },
   legal_quote_ready: { target: null, actionHref: '/legal/requests/m1' },
+  legal_consultant_joined: { target: null, actionHref: '/legal/requests/m1' },
+  legal_consultation_booked: { target: null, actionHref: '/legal/requests/m1' },
   tgif_daily: { target: { kind: 'tgif_day', id: '2026-10-23' } },
   money_in: { target: { kind: 'transaction', id: 't1' } },
   money_in_reversed: { target: { kind: 'transaction', id: 't1' } },

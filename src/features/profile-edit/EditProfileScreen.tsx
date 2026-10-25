@@ -19,11 +19,11 @@ import { Banner } from '@/components/Banner';
 import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { changeHandle, fetchFields, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
+import { changeHandle, fetchFieldsWithPlace, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
 import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
-import { addedOf, changesOf, formFrom, hasProblems, isDirty, problemsOf, rebased, type ProfileForm } from './form';
+import { addedOf, changesOf, formFrom, hasProblems, heldCountry, isDirty, problemsOf, rebased, type ProfileForm } from './form';
 import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { ExperienceSection, SkillsSection, useSkillInput } from './AboutSections';
@@ -72,7 +72,7 @@ export type EditProfileScreenProps = {
  */
 export function EditProfileScreen(props: EditProfileScreenProps) {
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe, staleTime: 0, gcTime: 0 });
-  const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields, staleTime: 0, gcTime: 0 });
+  const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFieldsWithPlace, staleTime: 0, gcTime: 0 });
 
   if (me.isError || fields.isError) {
     const error = me.error ?? fields.error;
@@ -143,6 +143,14 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
 
   // M9 sits above this screen and edits the same draft; it is dropped when this screen closes.
   useEffect(() => () => clearDraft(), []);
+  // The Hub may learn the person's country (WAWU ID's, else the phone's) after this screen opened, or while they typed. Where they have
+  // chosen none, the screen takes over what the Hub holds, so a Save never leaves "Choose your country" over an account that has one.
+  const taken = heldCountry(form, base, initial);
+  useEffect(() => {
+    if (!taken) return;
+    updateDraft((f) => ({ ...f, ...taken }));
+    rebaseDraft((b) => ({ ...b, ...taken }));
+  }, [taken?.countryCode, taken?.regionCode]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!saved || !ownNotice) return undefined;
     const timer = setTimeout(onSaved, TOAST_MS);

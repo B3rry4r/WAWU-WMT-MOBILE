@@ -14,7 +14,7 @@ import { Toast } from '@/components/Toast';
 import { space } from '@/theme';
 
 import { fetchJobQuote, type JobInput, type JobQuote } from './studioApi';
-import { CAP_WORDS, capTitle, SHEET_WORDS, verdictOf } from './studioModel';
+import { CAP_WORDS, capMessage, capTitle, SHEET_WORDS, verdictOf } from './studioModel';
 import { PointsFrame } from './PointsFrame';
 
 /** The board's sheet stacks its parts 12 apart (points.js `pt3`, the sheet's second argument). */
@@ -192,7 +192,7 @@ export function CapReachedScreen({ quote, onBack }: { quote: Pick<JobQuote, 'tit
   return (
     <Modal visible animationType="fade" onRequestClose={onBack} statusBarTranslucent>
       <PointsFrame title={quote.title || 'AI tools'} onBack={onBack} gap={space.md} centered testID="cap-screen">
-        <EmptyState testID="cap-reached" icon="Timer" title={capTitle(cap)} message={`${cap.message} Your points are safe.`} action={{ label: CAP_WORDS.back, onPress: onBack }} />
+        <EmptyState testID="cap-reached" icon="Timer" title={capTitle(cap)} message={capMessage(cap)} action={{ label: CAP_WORDS.back, onPress: onBack }} />
       </PointsFrame>
     </Modal>
   );

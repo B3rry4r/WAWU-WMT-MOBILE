@@ -30,7 +30,7 @@ export function LegalFrame({
   const insets = useSafeAreaInsets();
   return (
     <View testID={testID} style={[styles.root, { backgroundColor: colors.surfacePage }]}>
-      <ScreenFrame title={title} onBack={onBack} gap={m.bodyGap} idPrefix={testID} keyboard={keyboard} titleLines={2}>
+      <ScreenFrame title={title} onBack={onBack} gap={m.bodyGap} idPrefix={testID} keyboard={keyboard}>
         {children}
       </ScreenFrame>
       {foot ? <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, m.footBottom) }]}>{foot}</View> : null}

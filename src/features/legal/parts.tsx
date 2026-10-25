@@ -6,6 +6,9 @@ import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
+import { AttachmentBubble } from '@/features/chat/AttachmentBubbles';
+import { ChatPlusButton } from '@/features/chat/ChatComposer';
+import { kindOfType } from '@/features/chat/attachments';
 import { font, radius, useWawu } from '@/theme';
 
 import type { LegalBrief, LegalQuickReply } from './api';
@@ -43,9 +46,25 @@ export function ChatBar({ header, onBack }: { header: ChatHeader; onBack: () => 
   );
 }
 
-/** One line of the conversation: a bubble, a name above a consultant's lines, or the "joined" notice. */
-export function ChatLine({ row }: { row: ChatRow }) {
+/** One line of the conversation: a bubble, a file, a name above a consultant's lines, or the "joined" notice. */
+export function ChatLine({ row, onOpenFile, openingId }: { row: ChatRow; onOpenFile?: (row: Extract<ChatRow, { kind: 'file' }>) => void; openingId?: string | null }) {
   const { colors } = useWawu();
+  if (row.kind === 'file') {
+    const kind = kindOfType(row.contentType);
+    return (
+      <AttachmentBubble
+        id={row.id}
+        kind={kind}
+        mine={row.mine}
+        contentType={row.contentType}
+        uri={kind === 'image' ? row.url : undefined}
+        name={row.name}
+        bytes={row.bytes}
+        opening={openingId === row.id}
+        onOpen={onOpenFile ? () => onOpenFile(row) : undefined}
+      />
+    );
+  }
   if (row.kind === 'system') {
     return (
       <View testID="legal-joined" accessible accessibilityRole="text" accessibilityLabel={row.text} style={styles.system}>
@@ -193,10 +212,12 @@ export type ComposerProps = {
   placeholder: string;
   onSend: (() => void) | null;
   paddingBottom: number;
+  /** The + that opens "Add to chat" (R2-LEGAL3). Left out, no + is drawn: there is no matter to put a file on yet. */
+  onPlus?: () => void;
 };
 
 /** `composer`: the field and the send disc. The disc is a button only while there is something to send. */
-export function Composer({ value, onChange, placeholder, onSend, paddingBottom }: ComposerProps) {
+export function Composer({ value, onChange, placeholder, onSend, paddingBottom, onPlus }: ComposerProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const ready = onSend !== null;
@@ -208,6 +229,7 @@ export function Composer({ value, onChange, placeholder, onSend, paddingBottom }
         { paddingBottom, backgroundColor: colors.surfaceChrome, boxShadow: [{ offsetX: 0, offsetY: 1, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] },
       ]}
     >
+      {onPlus ? <ChatPlusButton onPress={onPlus} testID="legal-plus" /> : null}
       <View
         style={[
           styles.fieldShell,

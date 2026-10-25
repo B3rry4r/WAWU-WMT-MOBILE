@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -9,6 +9,11 @@ import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { ErrorState } from '@/components/StateViews';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
+import { attachmentRulesKey, fetchAttachmentRules, fileLine, kindOfType, type ChatFile } from '@/features/chat/attachments';
+import { AttachmentBubble } from '@/features/chat/AttachmentBubbles';
+import { AttachSheet } from '@/features/chat/AttachSheet';
+import { pickChatFile, pickPhotoOrVideo } from '@/features/chat/pickAttachment';
+import { PhotoViewer } from '@/features/chat/PhotoViewer';
 import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { useWawu } from '@/theme';
 
@@ -18,6 +23,7 @@ import { readDraft, writeDraft } from './draft';
 import { legalMetrics as m } from './look';
 import {
   briefToConfirm,
+  canAttach,
   chatRows,
   canTryAgain,
   failureKind,
@@ -33,8 +39,13 @@ import {
   SLOW_NOTE,
   tapsOf,
   typedBody,
+  type ChatRow,
 } from './model';
+import { useLegalFiles } from './useLegalFiles';
 import { Bubble, BriefCard, ChatBar, ChatLine, Composer, Note, QuickReplies, Typing } from './parts';
+
+/** How long what a chat takes (`GET /chats/attachment-rules`) is kept before it is asked again: five minutes, as the one-to-one chat does. */
+const RULES_STALE_MS = 5 * 60 * 1000;
 
 /** What the person is waiting on. One thing at a time: a second tap while one is under way is ignored. */
 type Working = { kind: 'message'; shown: string } | { kind: 'ask' } | { kind: 'send' };
@@ -187,7 +198,10 @@ type ChatProps = {
 function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpenMatter, onStartFixed }: ChatProps) {
   const scroll = useRef<ScrollView>(null);
   // S24: the Hub says on the conversation when its matter has a fixed price WAWU set (R-14); then Start this request replaces Send to a consultant.
-  const fixed = thread.stage !== 'sent' && hasSpoken(thread) ? thread.fixedPrice : null;
+  // The card is drawn once profiling is done (R2-LEGAL3): while the assistant has taps waiting for an answer, or its last answer is awaited, the
+  // questions come first, as the board orders it (the assistant's line, then the card).
+  const fixedService = thread.stage !== 'sent' && hasSpoken(thread) ? thread.fixedPrice : null;
+  const fixed = fixedService && tapsOf(thread).length === 0 && !thread.awaitingReply ? fixedService : null;
   // The card back to the matter: once a consultant has joined, and for a matter that needs none (a fixed-price request) from the moment it exists.
   const cardKind = thread.legalRequestId ? matterCardOf(thread.requestStatus, thread.requestPath) : null;
   const matterCard = cardKind && (thread.consultant || cardKind === 'open') ? cardKind : null;
@@ -196,6 +210,13 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
   const [draft, setDraft] = useState(() => readDraft(thread.id));
   const [working, setWorking] = useState<Working | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
+  // Files (R2-LEGAL3): the + opens "Add to chat" once the matter exists; what a chat takes is the Hub's (the same rules as the one-to-one chat).
+  const attachable = canAttach(thread);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
+  const [opening, setOpening] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const rules = useQuery({ queryKey: attachmentRulesKey, queryFn: fetchAttachmentRules, staleTime: RULES_STALE_MS, retry: false, enabled: attachable }, queryClient);
   // Two taps in one frame both see the state as it was: the guard is a ref, set before anything is awaited.
   const busy = useRef(false);
   const id = thread.id;
@@ -205,6 +226,36 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
     writeDraft(id, text);
   };
   const keep = (next: LegalThread) => queryClient.setQueryData(legalKeys.thread, next);
+  const files = useLegalFiles(thread.id, keep);
+
+  /** Photo or video, File: the phone's picker, then the chat sends what was chosen. A file the phone cannot read says so; the Hub's refusals show on the file's own bubble. */
+  const choose = async (pick: () => Promise<ChatFile | null>) => {
+    setAttachNotice(null);
+    try {
+      const file = await pick();
+      if (file) files.add(file);
+    } catch {
+      setAttachNotice('That file could not be read. Choose another.');
+    }
+  };
+
+  /** Opens one file the conversation holds: a fresh link is asked for (the one served with the conversation lives 15 minutes), a photo opens over the chat, a PDF in the phone's own viewer. */
+  const openFile = async (row: Extract<ChatRow, { kind: 'file' }>) => {
+    setOpening(row.id);
+    setAttachNotice(null);
+    try {
+      const fresh = await fetchThread(thread.id);
+      keep(fresh);
+      const link = fresh.messages.find((message) => message.id === row.id)?.attachment?.url ?? null;
+      if (!link) throw new Error('no link');
+      if (kindOfType(row.contentType) === 'image') setViewing(link);
+      else await Linking.openURL(link);
+    } catch (error) {
+      setAttachNotice(isApiError(error) && error.message ? error.message : 'We could not open that file. Try again.');
+    } finally {
+      setOpening(null);
+    }
+  };
 
   /**
    * One call at a time. Typed words leave the box when they are sent and come back if the send fails, in front of
@@ -279,8 +330,24 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}
       >
         {rows.map((row) => (
-          <ChatLine key={row.id} row={row} />
+          <ChatLine key={row.id} row={row} onOpenFile={(file) => void openFile(file)} openingId={opening} />
         ))}
+        {files.outgoing.map((entry) => {
+          const kind = kindOfType(entry.file.contentType);
+          return (
+            <AttachmentBubble
+              key={entry.localId}
+              id={entry.localId}
+              kind={kind}
+              mine
+              contentType={entry.file.contentType}
+              uri={kind === 'image' ? entry.file.previewUri : undefined}
+              name={entry.file.name}
+              bytes={entry.file.blob.size}
+              pending={{ status: entry.status, error: entry.error, onRetry: () => files.retry(entry.localId), onDiscard: () => files.discard(entry.localId) }}
+            />
+          );
+        })}
         {working?.kind === 'message' ? <Bubble mine body={working.shown} testID="legal-bubble-sending" dim /> : null}
         {working?.kind === 'message' || working?.kind === 'ask' ? <Typing /> : null}
         {matterCard && thread.legalRequestId ? (
@@ -292,14 +359,32 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
         ) : null}
         {fixed && !sending ? <FixedPriceCard service={fixed} onStart={() => onStartFixed(thread.id)} /> : null}
         {taps.length > 0 && !sending ? <QuickReplies taps={taps} onTap={tap} disabled={working !== null} /> : null}
-        {brief && !fixed && working?.kind !== 'message' ? <BriefCard brief={brief} onSend={send} sending={working?.kind === 'send'} /> : null}
+        {brief && !fixedService && working?.kind !== 'message' ? <BriefCard brief={brief} onSend={send} sending={working?.kind === 'send'} /> : null}
         {slow && working === null && !problem ? (
           <Note testID="legal-slow" text={busyNote ? BUSY_NOTE : SLOW_NOTE} action="Ask again" onAction={ask} />
         ) : null}
         {problem ? <Note testID="legal-problem" text={problem.text} action={problem.retry ? 'Try again' : undefined} onAction={problem.retry ?? undefined} busy={working !== null} /> : null}
+        {attachNotice ? <Note testID="legal-attach-problem" text={attachNotice} /> : null}
         {refreshFailed && !problem ? <Note testID="legal-stale" text="Could not check for new messages." action="Try again" onAction={onRefresh} /> : null}
       </ScrollView>
-      <Composer value={draft} onChange={change} placeholder={placeholderOf(thread)} onSend={canSend ? sendTyped : null} paddingBottom={bottom} />
+      <Composer
+        value={draft}
+        onChange={change}
+        placeholder={placeholderOf(thread)}
+        onSend={canSend ? sendTyped : null}
+        paddingBottom={bottom}
+        onPlus={attachable ? () => setAttachOpen(true) : undefined}
+      />
+      {attachable ? (
+        <AttachSheet
+          visible={attachOpen}
+          onClose={() => setAttachOpen(false)}
+          onPickMedia={() => void choose(pickPhotoOrVideo)}
+          onPickFile={() => void choose(() => pickChatFile(rules.data?.file.contentTypes ?? ['*/*']))}
+          fileLine={fileLine(rules.data)}
+        />
+      ) : null}
+      <PhotoViewer uri={viewing} onClose={() => setViewing(null)} />
     </>
   );
 }

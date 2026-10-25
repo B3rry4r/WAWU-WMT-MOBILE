@@ -119,6 +119,31 @@ const UPLOAD_FAILED = 'Your recording did not upload. Try again.';
 export type RecordingFile = { uri: string; contentType: string; extension: string };
 
 /**
+ * How long the app waits on the phone or the browser to hand over the take, and on the storage host to take the bytes, before it calls the
+ * upload failed (R2-AUTHME3, VF10a). Without a limit a host that never answers left "Use this" spinning with nothing said.
+ * PROVISIONAL(VOICE-UPLOAD-WAIT, owner=VOICE-01, why=no ruling names a wait; a 30 second take is under a megabyte, so a minute is generous on any connection that works).
+ */
+export const READ_TAKE_MS = 15_000;
+export const UPLOAD_PUT_MS = 60_000;
+const UPLOAD_SLOW = 'Your recording is taking too long to upload. Check your connection and try again.';
+
+function withinMs<T>(ms: number, work: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    work().then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+/**
  * Sends the recording the Hub's way: `POST /uploads/presign` (folder `voice/sample`, the exact byte length), a PUT of the bytes to the
  * address it gave, then `POST /uploads/confirm`, which asks the storage host whether the file landed. A file the host says is not there
  * (`abandoned`) is an upload that failed. Answers the file's address, which `keepVoiceSample` takes.
@@ -126,7 +151,7 @@ export type RecordingFile = { uri: string; contentType: string; extension: strin
 export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
   let blob: Blob;
   try {
-    blob = await (await fetch(file.uri)).blob();
+    blob = await withinMs(READ_TAKE_MS, async () => (await fetch(file.uri)).blob());
   } catch {
     throw new ApiError('unknown', 0, 'We could not read your recording. Record it again.', RECORDING_UPLOAD_FAILED);
   }
@@ -136,10 +161,15 @@ export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
   const target = signed?.data;
   if (!target || typeof target.uploadUrl !== 'string' || typeof target.fileUrl !== 'string') throw unreadable('upload');
   let sent: Response;
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), UPLOAD_PUT_MS);
   try {
-    sent = await fetch(target.uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: blob });
+    sent = await fetch(target.uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: blob, signal: stop.signal });
   } catch {
+    if (stop.signal.aborted) throw new ApiError('network', 0, UPLOAD_SLOW, RECORDING_UPLOAD_FAILED);
     throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+  } finally {
+    clearTimeout(timer);
   }
   if (!sent.ok) throw new ApiError('server', sent.status, UPLOAD_FAILED, RECORDING_UPLOAD_FAILED);
   const settled = (await unwrap(api.POST('/api/hub/uploads/confirm', { body: { key: target.fileUrl } }))) as unknown as Envelope<{ status?: unknown }>;

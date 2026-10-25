@@ -13,9 +13,10 @@ jest.mock('expo-image-manipulator', () => ({ ImageManipulator: { manipulate: jes
 jest.mock('expo-file-system', () => ({ File: jest.fn(), Directory: jest.fn(), Paths: { cache: { uri: 'file:///cache/' } } }));
 
 type Answer = { status: number; body: unknown };
+type Served = Answer | (() => Answer);
 type Sent = { method: string; path: string; body: unknown };
 
-let answers: Record<string, Answer> = {};
+let answers: Record<string, Served> = {};
 let sent: Sent[] = [];
 
 function installFetch() {
@@ -24,7 +25,8 @@ function installFetch() {
     const path = new URL(request.url).pathname;
     const text = request.method === 'GET' ? '' : await request.text();
     sent.push({ method: request.method, path, body: text ? JSON.parse(text) : undefined });
-    const answer = answers[`${request.method} ${path}`];
+    const served = answers[`${request.method} ${path}`];
+    const answer = typeof served === 'function' ? served() : served;
     if (!answer) return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
     return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { 'content-type': 'application/json' } });
   }) as typeof fetch;
@@ -66,7 +68,7 @@ installFetch();
 const { EditProfileScreen } = require('../EditProfileScreen') as typeof import('../EditProfileScreen');
 const draft = require('../draft') as typeof import('../draft');
 
-function serve(overrides: Record<string, Answer> = {}, fields: Record<string, unknown> = details) {
+function serve(overrides: Record<string, Served> = {}, fields: Record<string, unknown> = details) {
   answers = {
     [`GET ${ME}`]: ok(profile),
     [`GET ${FIELDS}`]: ok(fields),
@@ -99,6 +101,45 @@ beforeEach(() => {
 });
 
 const fieldPatches = () => sent.filter((s) => s.method === 'PATCH' && s.path === FIELDS).map((s) => s.body);
+
+const LOCATION = '/api/hub/me/location';
+const noCountry = { ...details, countryCode: null, countryName: null, regionCode: null, regionName: null, city: null, location: null };
+const heldNigeria = { countryCode: 'NG', countryName: 'Nigeria', countrySource: 'wawu_id', regionCode: null, regionName: null, city: null, wawuIdCountryCode: 'NG', phoneCountryCode: 'NG' };
+
+describe('M8 · Edit profile: the country WAWU ID gave stays on screen (R2-AUTHME3, D-p3-2)', () => {
+  it('the Hub holds no country yet: M8 asks where the person is and shows the country that comes back', async () => {
+    let reads = 0;
+    serve({ [`GET ${FIELDS}`]: () => ok(++reads === 1 ? noCountry : { ...noCountry, ...heldNigeria, countrySource: undefined }), [`GET ${LOCATION}`]: ok(heldNigeria) });
+    await boot();
+    expect((await screen.findByTestId('edit-country')).props.accessibilityLabel).toContain('Nigeria');
+    expect(sent.filter((s) => s.path === LOCATION)).toHaveLength(1);
+  });
+
+  it('the Hub cannot say where the person is: M8 draws the empty Country and the person can still choose one', async () => {
+    serve({ [`GET ${FIELDS}`]: ok(noCountry), [`GET ${LOCATION}`]: refusal(500, 'Down') });
+    await boot();
+    expect((await screen.findByTestId('edit-country')).props.accessibilityLabel).toContain('Choose your country');
+  });
+
+  it('after Save the screen shows the country the Hub holds, also when the Hub only learned it while the person typed; no country is sent', async () => {
+    let saved = false;
+    const held = { ...noCountry, countryCode: 'NG', countryName: 'Nigeria', city: 'Lagos', location: 'Lagos' };
+    serve({
+      [`GET ${FIELDS}`]: () => ok(saved ? held : noCountry),
+      [`PATCH ${FIELDS}`]: () => {
+        saved = true;
+        return ok(held);
+      },
+      [`GET ${LOCATION}`]: refusal(500, 'Down'),
+    });
+    const { onSaved } = await boot();
+    await fireEvent.changeText(await screen.findByTestId('edit-city'), 'Lagos');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId('edit-country').props.accessibilityLabel).toContain('Nigeria'));
+    expect(fieldPatches()).toEqual([{ city: 'Lagos', location: 'Lagos' }]);
+  });
+});
 
 describe('M8 · Edit profile: Country, then Region, then City (GEO-03, R-85)', () => {
   it('a user sees the country, the region in that country\'s own word, and the city they saved', async () => {

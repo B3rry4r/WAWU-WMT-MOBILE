@@ -125,11 +125,15 @@ describe('VF3 · Hear your name', () => {
     expect(posts(PREVIEW)[0].body).toEqual({ name: 'Lennox Emmanuel', phonetic: 'Leh-nox Em-man-yoo-el' });
   });
 
-  it('"Sounds right" goes on to the Voice Intro without saving anything', async () => {
+  it('"Sounds right" shows VF3b (the Saved chip and "Write my Voice Intro") without saving anything, and the button goes on to the Voice Intro (R2-AUTHME3)', async () => {
     const { onWriteIntro } = await bootName();
     await fireEvent.press(await screen.findByTestId('hear-name-right'));
-    expect(onWriteIntro).toHaveBeenCalledTimes(1);
+    expect(onWriteIntro).not.toHaveBeenCalled();
+    expect(await screen.findByTestId('hear-name-saved')).toBeTruthy();
+    expect(screen.queryByTestId('hear-name-right')).toBeNull();
     expect(posts(NAME)).toHaveLength(0);
+    await fireEvent.press(screen.getByTestId('hear-name-write'));
+    expect(onWriteIntro).toHaveBeenCalledTimes(1);
   });
 
   it('VF3a and VF3b: "Not quite right?" opens the spelling, Play again says it, Save keeps it and shows Saved', async () => {

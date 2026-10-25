@@ -38,15 +38,23 @@ export type DayChip = {
   /** "Thu" and 2. */
   weekday: string;
   day: number;
-  slots: { startsAt: string; time: string; available: boolean }[];
+  slots: { startsAt: string; time: string; available: boolean; mine: boolean }[];
 };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-/** The days the calendar offers: those with at least one hour still free, each with all its times (a taken hour stays on the grid, greyed). */
-export function dayChips(view: SlotsView): DayChip[] {
+/** True when two ISO times are the same instant (the Hub and the matter may write the same hour with different suffixes). */
+const sameInstant = (a: string, b: string): boolean => new Date(a).getTime() === new Date(b).getTime();
+
+/**
+ * The days the calendar offers: those with at least one hour still free, each with all its times (a taken hour stays on the grid,
+ * greyed). The hour the person's own unpaid booking holds is served as taken (it is held for them); it is theirs to pick again, so it
+ * is drawn free and marked `mine` (CHECK-3 S19: after backing out of the pay sheet it must read as their choice, not as taken).
+ */
+export function dayChips(view: SlotsView, ownHold: string | null = null): DayChip[] {
+  const free = (startsAt: string, available: boolean): boolean => available || (ownHold !== null && sameInstant(startsAt, ownHold));
   return view.days
-    .filter((d) => d.slots.some((s) => s.available))
+    .filter((d) => d.slots.some((s) => free(s.startsAt, s.available)))
     .map((d) => {
       const at = new Date(`${d.date}T00:00:00Z`);
       return {
@@ -55,7 +63,7 @@ export function dayChips(view: SlotsView): DayChip[] {
         day: at.getUTCDate(),
         slots: d.slots.map((s) => {
           const w = watOf(s.startsAt);
-          return { startsAt: s.startsAt, time: `${w.hour}:${w.minute}`, available: s.available };
+          return { startsAt: s.startsAt, time: `${w.hour}:${w.minute}`, available: free(s.startsAt, s.available), mine: ownHold !== null && sameInstant(s.startsAt, ownHold) };
         }),
       };
     });

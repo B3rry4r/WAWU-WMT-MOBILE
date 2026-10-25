@@ -224,7 +224,10 @@ describe('X1 · Explore', () => {
   });
 
   it('a user sees the category tiles in the server’s order and the featured creators, with handle, field and tick', async () => {
-    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist'), card('c2', 'funmi', 'Accountant', { verification: ticks(false, true) })] })];
+    // R2-SOCIAL3 (CHECK-3 social pass 3, defect 3): this test used to pin the Hub's raw `field` as the line ("Business strategist"). The Hub's
+    // field is an interest id, so the line is sign-up's label for it (GET /users/me/interests), and an id that list does not know shows nothing.
+    answers['GET /users/me/interests'] = [ok({ minimum: 3, options: categories, selected: [] })];
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'business_finance'), card('c2', 'funmi', 'business_entrepreneurship', { verification: ticks(false, true) })] })];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     expect(await rtl.screen.findByText('Who Made This?')).toBeTruthy();
     const tiles = rtl.screen.getByTestId('explore-tiles');
@@ -232,7 +235,9 @@ describe('X1 · Explore', () => {
       'All', 'Music & Audio', 'Film & Video', 'Photography', 'Fashion & Beauty', 'Business & Finance', 'Technology', 'More categories',
     ]);
     expect(rtl.screen.getByText('@adaeze')).toBeTruthy();
-    expect(rtl.screen.getByText('Business strategist')).toBeTruthy();
+    expect(await rtl.within(rtl.screen.getByTestId('explore-featured-c1')).findByText('Business & Finance')).toBeTruthy();
+    expect(rtl.screen.queryByText('business_finance')).toBeNull();
+    expect(rtl.screen.queryByText('business_entrepreneurship')).toBeNull();
     expect(rtl.within(rtl.screen.getByTestId('explore-featured-c1')).getByTestId('tick-creator')).toBeTruthy();
     expect(rtl.within(rtl.screen.getByTestId('explore-featured-c2')).getByTestId('tick-pro')).toBeTruthy();
   });

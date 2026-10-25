@@ -426,6 +426,7 @@ export function WhenWhere({
       <TextField
         testID="host-address"
         label="Street address"
+        hint="Missing addresses are the top reason events get sent back."
         value={draft.address}
         onChangeText={(address) => set({ address })}
         error={errors.address}
