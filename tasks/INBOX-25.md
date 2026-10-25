@@ -7,7 +7,7 @@ order: 296
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [INBOX-14, INBOX-24]
 decisions: [R-71, R-63, R-19, R-39, R-55, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -27,6 +27,8 @@ As of 19 Oct 2026, merging (lead): stacked in batch 26 (backend `894c058`, mobil
 - **Lead default F6 (no build):** a host may delete their account with a deduction still open; WAWU bears what is left. F5 and F7 are lows in `tasks/SWEEP-INBOX.md`.
 - **Checks (round 2):** removal spec 14 of 14 (the 2 new fail on the old code with 23514); 7 touched suites 120 tests pass; tsc, eslint changed files, gates 0 fail all EXIT 0; rollback proved on a throwaway database both ways. Round 1 notes: protected suite 251 of 253, the 2 red are `/communities/:id/messages` widened by MERGE-25's `videoUrl` and `voiceUrl`.
 - **Next:** the batch 26 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 8c86edaf, lead acceptance in the lead's merge log, 19 Oct.
 
 ## Read first
 

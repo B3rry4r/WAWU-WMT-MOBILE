@@ -7,7 +7,7 @@ order: 294
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [HOME-16, TIER-06, WALLET-37, EXPLORE-06]
 decisions: [R-59, R-65, R-43]
 passes: [V1, V2, V3, V4, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026. Built, and checked by an independent Sonnet verifier (report 
 - **Shared changes filed:** HOME-17 #1 and #2 in `SHARED-CHANGES.md`. `contract/openapi.json` is unchanged (no route added or changed).
 - **Not done / for the lead:** (1) PushDelivery rows for a cleared notice are left to their own retention (outside this scope). (2) The admin dashboard has no screen change: the four rows list in the existing settings page (`unit` time, count, days). (3) `tgif_notification_time` is no longer marked provisional (owner answer 32 named 07:00). (4) The 10 `search-response.contract.spec.ts` cases that failed on the local stack need the seeded database CI has; they pass in CI.
 - **Next:** the lead merges it with batch 7.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

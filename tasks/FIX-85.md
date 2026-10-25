@@ -7,7 +7,7 @@ order: -56
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [FIX-70]
 decisions: [R-10, R-19, R-39, R-42]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 18 Oct 2026, merging (lead): built by a Sonnet builder (tier T2) and accep
 - **Lead ruling G-FIX-85-2 (new, LOW, 18 Oct 2026):** on a bank return where Nuvion keeps its payout charge (the builder's principal-only refund), the person ends short by that charge; by the ruling (a refund the person did not cause returns every naira; Nuvion's charges are WAWU's) WAWU gives it back too. Whether Nuvion keeps its charge on a return is undocumented (as G-FIX-80-5): it waits for the owner's Nuvion sandbox access, then a fix. G-FIX-85-1 (History shows the fee row reversed before the fee-back lands) is G-FIX-70-2's design default.
 - **Merged (MERGE-22):** on MERGE-22 `wallet-transfer-bank-nuvion` ran 17 of 17 and the fee-back-failed, wawu-fee, failed-move and nuvion specs green.
 - **Next:** the batch 22 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4e0067b0, lead acceptance in this file (accepted on the lead's diff read).
 
 ## Read first
 

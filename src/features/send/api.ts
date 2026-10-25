@@ -359,28 +359,23 @@ export async function saveBankBeneficiary(bankCode: string, accountNumber: strin
   return body.data;
 }
 
-/** POST /money/beneficiaries for a WAWU user. Saving one already saved answers the one already there. */
-export async function saveWawuBeneficiary(wawuUserId: string): Promise<Beneficiary> {
-  const body = (await unwrap(
-    api.POST('/api/hub/money/beneficiaries', { body: { kind: 'wawu_user', wawuUserId } }),
-  )) as unknown as Envelope<Beneficiary>;
-  if (!body?.data || !filled(body.data.id)) throw unreadable('saved person');
-  return body.data;
-}
-
 /** DELETE /money/beneficiaries/{id}. */
 export async function removeBeneficiary(id: string): Promise<void> {
   await unwrap(api.DELETE('/api/hub/money/beneficiaries/{id}', { params: { path: { id } } }));
 }
 
+/** The saved list's query: W8's Saved list and W35's Beneficiaries count read it under one key, so the number and the list cannot disagree. */
+export const beneficiariesQuery = (owner: string | null | undefined) =>
+  ({ queryKey: ['money', 'beneficiaries', owner ?? ''] as const, queryFn: fetchBeneficiaries, staleTime: 0, enabled: Boolean(owner), retry: false }) as const;
+
+/** The saved bank accounts: the rows W8's Saved list draws, and the ones W35's Beneficiaries row counts (R2-MONEY D-05). A saved WAWU user is in the Hub's list but is not drawn there. */
+export function savedBankRows(rows: readonly Beneficiary[]): Beneficiary[] {
+  return rows.filter((row) => row.kind === 'bank_account' && row.bankAccount);
+}
+
 /** The saved row for this bank account, if there is one. */
 export function savedBankRowFor(rows: readonly Beneficiary[], bankCode: string, accountNumber: string): Beneficiary | undefined {
   return rows.find((row) => row.kind === 'bank_account' && row.bankAccount?.bankCode === bankCode && row.bankAccount?.accountNumber === accountNumber);
-}
-
-/** The saved row for this person, if there is one. */
-export function savedRowFor(rows: readonly Beneficiary[], wawuUserId: string): Beneficiary | undefined {
-  return rows.find((row) => row.kind === 'wawu_user' && row.wawuUser?.wawuUserId === wawuUserId);
 }
 
 export { isApiError };

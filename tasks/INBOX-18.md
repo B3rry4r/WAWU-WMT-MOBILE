@@ -7,7 +7,7 @@ order: 171
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [INBOX-04, INBOX-08, INBOX-12, INBOX-17, WALLET-16, UI-02, ME-14, INBOX-19]
 decisions: [R-11, R-13]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open:** G-INBOX-18-1 to -5 and -7 (badge counts both sides, pronoun, push target, older questions have no share); G-INBOX-18-6 (no Idempotency-Key on replies) is closed by round 2. Contract carries `GET /search/people` from ME-14's side (backend `wmt/EXPLORE-02`, not in `98efeef`).
 - **Round 2 (F1 medium, 17 Oct 2026, Sonnet builder, T2):** `POST /paid-dm/questions/{id}/replies` takes an OPTIONAL `Idempotency-Key` (8 to 128 of `A-Za-z0-9_-`; bad value 400). Per creator and key one bubble: the unique index of the new table `DmReplyKey` decides a race (same shape as `CommunityMessageKey`); a repeat, or a second request at the same moment, answers 201 with the question as it stands and `Idempotent-Replayed: true`, stores and releases nothing; the same key for other words or another question is 409 `idempotency_key_reused` (the convention's code and status, not 422). No header: as before. App: one key per reply attempt (`attempt` ref in `PaidThreadScreen`), kept across a retry of the same words, new for other words, cleared once the Hub took it; the read-back after a lost answer now matches a NEW reply id with the same words (the Hub's id), and `SAME_TAP_MS` is gone (F2). Specs: backend 12 new (two taps and a retry, four taps across two servers, an answered question, other words or question 409, bad header 400, a refused request keeps the key free, no key as before, cascade) plus 3 new app tests; protected suite 253 of 253; paid-dm and direct-message specs, gates, tsc, eslint, `contract:build` green. Backend `3381b7c`, migration `20261025190000_dm_reply_key` (stamp is the builder's; the lead renames at merge). SHARED-CHANGES INBOX-18 #5.
 - **Next:** the batch 15 pull request (the lead). The verifier's lows are in SWEEP-INBOX (INBOX-18 F3, F4, F7, F8, F9).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 586b8492, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

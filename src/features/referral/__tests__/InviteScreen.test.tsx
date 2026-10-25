@@ -39,11 +39,14 @@ jest.mock('@/api/tokenStore', () => ({
 type Answer = { status: number; body: unknown } | 'offline';
 let answers: Record<string, Answer | Answer[]> = {};
 let asked = 0;
+// When set, the Hub holds its answer until the test releases it.
+let held: Promise<void> | null = null;
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
   if (url.pathname === '/api/hub/me/referrals') asked += 1;
+  if (held) await held;
   const queued = answers[`${request.method} ${url.pathname}`];
   const answer = Array.isArray(queued) ? (queued.length > 1 ? queued.shift()! : queued[0]) : queued;
   if (!answer) return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
@@ -81,6 +84,7 @@ const text = (id: string) => {
 beforeEach(() => {
   answers = {};
   asked = 0;
+  held = null;
   mockVault.clear();
   mockCopied.length = 0;
   mockCopyWorks = true;
@@ -178,9 +182,14 @@ describe('Invite and earn (RF1)', () => {
 
   it('shows a loading state while the Hub answers', async () => {
     answers[HUB] = ok(referrals());
+    let release!: () => void;
+    held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     await open();
     expect(screen.getByTestId('invite-loading')).toBeTruthy();
     expect(screen.queryByTestId('invite-link-card')).toBeNull();
+    release();
     await screen.findByTestId('invite-link-card');
     expect(screen.queryByTestId('invite-loading')).toBeNull();
   });

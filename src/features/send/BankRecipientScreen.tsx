@@ -23,14 +23,16 @@ import { nameLineHint } from '@/features/wallet/nameLine';
 import { digitsOnly, isComplete, nameLine, type NameCheck, type PayoutForm } from '@/features/wallet/payoutForm';
 import { space } from '@/theme';
 
-import { fetchBeneficiaries, savedBankRowFor, type Beneficiary } from './api';
+import { beneficiariesQuery, savedBankRowFor, savedBankRows, type Beneficiary } from './api';
 import { bankLine, bankPayeeOf, type BankPayee, type Payee } from './model';
-import { SEND_WAYS, type SendWay } from './parts';
+import { useSendWays, type SendWay } from './parts';
 
 export type BankRecipientScreenProps = {
   onBack: () => void;
   /** W7: the other tab. */
   onWawuUser: () => void;
+  /** The Abroad tab (NUV-11), drawn only while the Hub says sending abroad is on. */
+  onAbroad?: () => void;
   /** A bank account, ready for W9: its name is the bank's. */
   onPick: (payee: Payee) => void;
   /** A bank and number to start from (Try again after W14). */
@@ -50,7 +52,8 @@ const SECTION_GAP = 12;
  * wait; the form opens again when it has passed); a check the bank did not answer is Try again. Nothing is sent from here and no
  * money moves.
  */
-export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: BankRecipientScreenProps) {
+export function BankRecipientScreen({ onBack, onWawuUser, onAbroad, onPick, initial }: BankRecipientScreenProps) {
+  const ways = useSendWays();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const [form, setForm] = useState<PayoutForm>(() => ({ bank: initial ? { code: initial.bankCode, name: initial.bankName } : null, accountNumber: initial?.accountNumber ?? '' }));
@@ -58,10 +61,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
 
   const complete = isComplete(form) ? { bankCode: form.bank.code, accountNumber: form.accountNumber } : null;
   const check = useQuery({ ...nameCheckQuery(complete ?? { bankCode: '', accountNumber: '' }), enabled: complete !== null }, queryClient);
-  const saved = useQuery(
-    { queryKey: ['money', 'beneficiaries', owner ?? ''] as const, queryFn: fetchBeneficiaries, staleTime: 0, enabled: Boolean(owner), retry: false },
-    queryClient,
-  );
+  const saved = useQuery(beneficiariesQuery(owner), queryClient);
   const payout = useQuery({ ...payoutAccountQuery, enabled: Boolean(owner) }, queryClient);
   // The bank list is read once the screen opens, so a bank's name shows beside its code before the sheet is ever opened.
   useQuery({ ...banksQuery, enabled: Boolean(owner) }, queryClient);
@@ -95,7 +95,7 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
           : { status: 'pending' };
   const line = nameLine(form, null, nameCheck);
   const hint = nameLineHint(line, 'send');
-  const savedRows = useMemo(() => (saved.data ?? []).filter((row) => row.kind === 'bank_account' && row.bankAccount), [saved.data]);
+  const savedRows = useMemo(() => savedBankRows(saved.data ?? []), [saved.data]);
   const resolved = complete !== null && check.isSuccess ? check.data : null;
 
   const proceed = () => {
@@ -120,10 +120,11 @@ export function BankRecipientScreen({ onBack, onWawuUser, onPick, initial }: Ban
         <SegmentedTabs<SendWay>
           testID="send-ways"
           label="Who to send to"
-          items={SEND_WAYS}
+          items={ways}
           value="bank"
           onChange={(way) => {
             if (way === 'user') onWawuUser();
+            if (way === 'abroad') onAbroad?.();
           }}
         />
         <TextField

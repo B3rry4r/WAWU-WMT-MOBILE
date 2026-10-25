@@ -7,7 +7,7 @@ order: 177
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [SETTINGS-06]
 decisions: [R-17]
 passes: [V1, V2, V3, V4, V9]
@@ -26,6 +26,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open for the verifier / lead:** G-SETTINGS-08-1 fixed in the Hub (verify it); G-SETTINGS-08-2 open; G-SETTINGS-08-3 low (BACKEND_GAPS). Merge note: wawu-id `wmt/H1` (FIX-53, data-export mail) selects the account without `status` and `deletedAt`; once both are on main `provenEmail` stops compiling until it selects them. That is deliberate, so the export link is never mailed to a deleted account.
 - **Records:** this file only (builder report below).
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-AUTH (L1, L2).
+
+Status set to review by the records sync, 25 Oct 2026: merged as wawu-id b201cfc9, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

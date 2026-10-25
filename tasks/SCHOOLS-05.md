@@ -7,7 +7,7 @@ order: 36
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: todo
+status: review
 depends_on: [SCHOOLS-02, SCHOOLS-04]
 decisions: []
 passes: [V1, V6, V7, V9]
@@ -21,6 +21,8 @@ As of 16 Oct 2026.
 - **Status:** todo. No branch, no code, nothing merged, no findings.
 - **Next:** a builder starts from the brief below. Dependencies done; ready to schedule.
 - **History:** none yet. Reports go to tasks/history/SCHOOLS-05.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as dashboard ee23d21, verifier PASS in the lead's merge log, 24 Oct (v B13 dashboard PASS).
 
 ## Read first
 

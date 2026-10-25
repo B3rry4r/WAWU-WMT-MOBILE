@@ -7,7 +7,7 @@ order: 256
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [EXPLORE-05]
 decisions: [R-57]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, round 1 (builder, Sonnet).
 - **Records:** this file's history, `SHARED-CHANGES.md` EXPLORE-06 #1, `BACKEND_GAPS.md` G-340 (one clause), `docs/LOG.md`.
 - **Open findings:** none yet.
 - **Next:** the lead merges it with batch 7 (backend `wmt/EXPLORE-06` is on top of `wmt/EXPLORE-05`, already on main).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

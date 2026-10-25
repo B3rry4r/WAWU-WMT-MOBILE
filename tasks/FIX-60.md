@@ -7,7 +7,7 @@ order: -60
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T0
 depends_on: []
 decisions: [R-47, R-48]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, merging (lead): a T0 record, accepted on the lead's diff read
 - **Needs a build or store release:** `app.json` changed native config, so `/content/` links open the app only from the next development or store build, and the Apple team id and Android fingerprint are still the owner's.
 - **Not run:** GitHub CI, a real phone, the real website.
 - **Next:** the batch 15 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 8ccb40fb, lead acceptance in this file (verdict ACCEPTED on the lead's diff read).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 107
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-05, INBOX-16, UI-02]
 decisions: [R-5, R-6, R-10, R-37, R-62, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026.
 - **Open:** G-881; SHARED-CHANGES INBOX-13 #1 (applied here), #2 and INBOX-19 #1 (open). This task flipped two assertions that pinned its own absence (`RoomScreen.test.tsx` "offers no way to it", `CommunitiesView.test.tsx` no Buy).
 - **Round 2 (17 Oct, builder, F1 medium):** a short wallet no longer hides the packs. The sheet stays on I28 with every pack drawn; "Not enough in your Naira wallet" (This costs X. You have Y.) and "Add X" speak for the chosen pack only, and picking another pack brings Buy back. The sheet opens on the largest pack the wallet covers when the popular one is out of reach (the bank charge from the popular quote, once per opening; none covered: popular stays, with the note). `useBuyCredits` decides it while rendering; `reset` clears the choice. Tests: wallet ₦600 shows the three packs, opens on the 50 pack and buys it once; Not enough on the 300 pack only; no pack covered. Picture: `.../s2-r2-b/pics/I28-short-{light,dark}.png` (opens on 50) and `I28-short-note-{light,dark}.png` (300 chosen, 390 px). The empty tile before the title on the pay sheet's states is the shared `PaySheet` header: SHARED-CHANGES INBOX-13 #3 (open).
 - **Next:** the batch 10 pull request. Passes the task needs: V1, V4, V5, V6, V7, V8, V9. NOT RUN: V10 (no phone); a payment against a real provider (never run).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Design v2 update (16 Oct 2026)
 

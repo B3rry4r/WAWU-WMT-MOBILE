@@ -7,7 +7,7 @@ order: 268
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [UI-03, SHARED-06]
 decisions: [R-43, R-66, R-68]
 passes: [V1, V4, V5, V6]
@@ -39,6 +39,8 @@ As of 17 Oct 2026 (builder, Sonnet, round 5 on the round 4 head acf1865; mobile 
 - **Capability checks:** each state above is a preview state and a test (`src/__tests__/dv2-comp.test.tsx`, 115 tests); no outside brand name in any piece (a test reads the sources); every figure comes from props.
 - **Open, none blocking:** SHARED-CHANGES DV2-COMP #2 (the two confetti tokens, for ME-12, which draws VF7). No new BACKEND_GAPS row: G-800 already says the Hub marks the audio `aiVoice` and G-803 covers the badge on public profiles.
 - **Next:** the lead merges with batch 7. The screen tasks (VERIFY-01 to 05, ME-12, POINTS-05 to 07, DV2-01 to 04, REF-03) import these pieces and never draw their own.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 9c9890bd, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

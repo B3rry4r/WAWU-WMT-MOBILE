@@ -7,7 +7,7 @@ order: -63
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: []
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): accepted on a diff read and stacked in batch 
 - **Checks:** jest, the whole run once: 270 suites, 4649 tests, EXIT 0 (the new `route-guard.test.tsx` 219 of 219, with `route-graph`, `shell`, `appLinkRoutes`, `auth-guard`, the claim, invite and open-wallet route tests among them); `tsc --noEmit` EXIT 0; eslint EXIT 0 on `_layout.tsx`, `route-guard.test.tsx` and `ads/api.ts`; gates passed (0 fail, 15 warn, none new) and baseline ok; `check_tasks` ok after `--write`. Code `452c08fc`.
 - **NOT RUN:** a phone (V10); mobile CI (not pushed to a PR).
 - **Next:** the verifier. A lead merge of batch 15 takes `_layout.tsx` and `SHARED-CHANGES.md` (a conflict there is a union of rows).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 3e43f77c, lead acceptance in this file (accepted on a diff read).
 
 ## Read first
 

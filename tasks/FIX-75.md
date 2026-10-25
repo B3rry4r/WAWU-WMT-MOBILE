@@ -7,7 +7,7 @@ order: -75
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): accepted by the lead on a diff read (T0, test
 - **Seen, not touched (Fintava):** the same CI run's shard 1 failed `src/money/earnings/tests/earning-settlement.contract.spec.ts` (WALLET-16, "on Fintava", first at line 803 `expect(m).toHaveLength(1)`, received 0). It fails the same way on the base `wmt/MERGE-17` `f0022e3` (run 39085241768, 21 tests), so it is not a flake and not from FIX-66. Changed nothing; row G-FIX-75-1.
 - **CI on this branch (`50a81a6`):** gates 39090053474 success. Protected routes 39090053513 failed the same 10 tests as the base (run 39085241782): events routes, not storage; row G-FIX-75-2. Branch checks 39090053470: still running at hand-back (the base fails it too, on earning-settlement: G-FIX-75-1); the lead watches it.
 - **Next:** the batch 19 pull request (the lead). Lows: none.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e199d955, lead acceptance in this file (accepted by the lead on a diff read, T0).
 
 ## Read first
 

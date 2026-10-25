@@ -6,6 +6,7 @@ import { FEE_LABELS, OWN_WALLET } from '@/features/wallet/history/model';
 import { longDateTime } from '@/features/wallet/history/lagosTime';
 
 import type { FeeQuote, Recipient, Transfer } from './api';
+import { shortReference } from './reference';
 
 /** The wallet a send comes from, as W10 and W12 name it. */
 export const WALLET_NAME = OWN_WALLET;
@@ -210,7 +211,7 @@ export type ReceiptRow = { key: string; label: string; value: string; money?: nu
 export function receiptRows(t: Transfer): ReceiptRow[] {
   const providerLabel = t.kind === 'bank_account' ? BANK_CHARGE : FEE_LABELS.provider;
   const rows: ReceiptRow[] = [
-    { key: 'reference', label: 'Reference', value: t.reference, copy: true },
+    { key: 'reference', label: 'Reference', value: shortReference(t.reference), copy: true },
     { key: 'date', label: 'Date', value: longDateTime(t.completedAt ?? t.createdAt) },
     { key: 'from', label: 'From', value: WALLET_NAME },
   ];
@@ -239,7 +240,7 @@ export function shareText(t: Transfer): string {
     if (row.key === 'reference') continue;
     out.push(`${row.label}: ${row.money !== undefined ? formatMoney(row.money) : row.value}`);
   }
-  out.push(`Reference: ${t.reference}`);
+  out.push(`Reference: ${shortReference(t.reference)}`);
   return out.join('\n');
 }
 
@@ -300,7 +301,7 @@ export function failedRows(t: Pick<Transfer, 'amountKobo' | 'reference' | 'creat
   const r = t.reversal;
   const rows: ReceiptRow[] = r ? [{ key: 'returned', label: 'Returned to your wallet', value: '', money: r.returnedKobo }] : [{ key: 'amount', label: 'Amount', value: '', money: t.amountKobo }];
   if (r && r.keptKobo > 0) rows.push({ key: 'kept', label: 'Charge kept', value: '', money: r.keptKobo });
-  rows.push({ key: 'reference', label: 'Reference', value: t.reference, copy: true });
+  rows.push({ key: 'reference', label: 'Reference', value: shortReference(t.reference), copy: true });
   rows.push({ key: 'date', label: 'Date', value: longDateTime((r ? r.reversedAt : null) ?? t.completedAt ?? t.createdAt) });
   return rows;
 }

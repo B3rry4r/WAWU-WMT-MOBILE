@@ -7,7 +7,7 @@ order: 142
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-06, WALLET-07, WALLET-02, UI-02, UI-03, INBOX-04]
 decisions: [R-13, R-6, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
@@ -27,6 +27,8 @@ As of 17 Oct 2026.
 - **Stack (backend `wmt/INBOX-15` `c803256` on the Nuvion stand-in, name `s2_test`, ports 7760 to 7767, taken down after):** the web export of `wmt/S2` ran against the real Hub with two funded wallets; pictures in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-b/pics/` (`beside-<board>-<light|dark>.png`, board left, built right); the attacks below were run once each, results in `.../s2-b/logs/live-attacks.txt`.
 - **Open:** G-880, G-882, G-883 (the stack's send took ₦100.00 where the quote said ₦110.00, WAWU's fee not collected); SHARED-CHANGES INBOX-19 #1. Flipped four assertions that pinned chat rows' and Money's absence in `InboxScreen.test.tsx` (chip list, two "no row nobody draws" tests now use a paid question as the undrawn kind).
 - **Next:** the batch 10 pull request. Passes the task needs: V1, V4, V5, V6, V7, V8, V9, V10. NOT RUN: V10.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, verifier PASS in this file (verdict merge).
 
 ## Read first
 

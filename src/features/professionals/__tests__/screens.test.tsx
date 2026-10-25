@@ -140,7 +140,7 @@ describe('P1 · Professionals', () => {
     expect(rtl.within(row).getByTestId('tick-pro')).toBeTruthy();
     expect(rtl.screen.getByTestId('pros-price-p1').props.accessibilityLabel).toBe('5,000 naira');
     expect(rtl.screen.getByTestId('pros-price-p2').props.accessibilityLabel).toBe('7,500 naira');
-    expect(rtl.screen.getByText('Vetted practitioners.')).toBeTruthy();
+    expect(rtl.screen.getByText('Vetted practitioners. Pay to send the first message.')).toBeTruthy();
     // The chips: All, then the Hub's fields.
     expect(rtl.screen.getByTestId('pros-chips-all').props.accessibilityState.checked).toBe(true);
     expect(rtl.screen.getByTestId('pros-chips-engineering')).toBeTruthy();
@@ -194,7 +194,7 @@ describe('P1 · Professionals', () => {
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pros-chips-engineering')));
     expect(await rtl.screen.findByText('Nobody listed in Engineering yet')).toBeTruthy();
     expect(rtl.screen.getByText('If you do this work, apply to be listed here.')).toBeTruthy();
-    expect(rtl.screen.queryByText('Vetted practitioners.')).toBeNull();
+    expect(rtl.screen.queryByText('Vetted practitioners. Pay to send the first message.')).toBeNull();
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Offer your services' })));
     expect(onOfferServices).toHaveBeenCalledWith('engineering');
   });

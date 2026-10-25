@@ -7,7 +7,7 @@ order: -58
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Built (2, spec only):** the scan names `Table.column (secret shaped A99999999)` when it fails (round 1), and ID-number secrets are now `Q` + 8 digits (round 2, lead ruling: Q is not a hex digit and starts no id prefix). `ulid()`, uuids, BVN and NIN untouched (BVN and NIN stay at about 2.5 in a million per run). The assertion and the hit query are unchanged (SHARED-CHANGES FIX-58 #1). `nuvion-opening` 365 of 365.
 - **Checks:** tsc 0, eslint 0 on the four changed files, `contract:build` 0, gates passed, baseline ok; the two specs above 425 of 425.
 - **Next:** the batch 12 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

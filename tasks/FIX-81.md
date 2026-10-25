@@ -7,7 +7,7 @@ order: -81
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-5]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 18 Oct 2026, merging (lead): accepted on the lead's diff read (a spec and 
 - **Checks:** `tsc` 0, `eslint` 0 and prettier on the changed file, the spec 12 of 12 alone, gates EXIT 0 (0 fail, 129 warn, 88 accepted; the base shows the same 129), baseline EXIT 0; the three school specs that use the harness, run by name together: 39 of 40 (the report and locks specs green; the one red, in the settlement spec, is "a failed payout is retried once..." at `:508`, expected paid, got sent: the ten-minute wait FIX-76 replaces; FIX-76 is not on this base).
 - **Not fixed (sweep list):** the locks spec is red every run beside another copy of itself on one database (its release sweeps are global too, G-FIX-81-1); a fresh tree run by several processes at once can write a mismatched `mock-wawu-id/private.pem` and `public.pem`, so every case answers 401 "pin not set" (G-FIX-81-2).
 - **Next:** an independent verifier; then the lead's batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, lead acceptance in this file (accepted on the lead's diff read).
 
 ## Read first
 

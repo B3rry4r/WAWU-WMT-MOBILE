@@ -7,7 +7,7 @@ order: 128
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-10, R-19, R-39, R-42]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026.
 - **Open findings:** none known. Findings 3 and 4 of the verifier (30 s dispatcher cadence, no `is_partial_refund` on the stand-in) are existing behaviour, on the sweep list. **Not run:** the Fintava specs (rule), a stack drive through the app, GitHub CI beyond the run ids in the builder report.
 - **Next:** the batch 11 pull request. Findings 3 and 4 and the round 2 note are in `tasks/SWEEP-MONEY.md` (3 rows).
 - **History:** [history/FIX-54.md](history/FIX-54.md).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend aef2c337, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

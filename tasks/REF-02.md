@@ -7,7 +7,7 @@ order: 264
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [REF-01, POINTS-01, TIER-03, TIER-06]
 decisions: [R-43, R-65]
 passes: [V1, V2, V3, V4, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, built by a Sonnet builder and checked by an independent Sonne
 - **Open findings:** none medium or worse; the verifier's lows are in `tasks/SWEEP-MONEY.md` (REF-02 L1 to L4).
 - **Next:** the lead merges it on batch 7; REF-03 regenerates the app types for the referral routes (SHARED-CHANGES REF-02 #2).
 - **History:** tasks/history/REF-02.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

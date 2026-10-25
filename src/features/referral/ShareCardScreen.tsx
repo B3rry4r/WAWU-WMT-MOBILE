@@ -16,6 +16,7 @@ import { font, layout, radius, space, useWawu } from '@/theme';
 import { fetchReferrals, referralsKey } from './api';
 import { pictureOfCard } from './cardPicture';
 import { CARD_LINE } from './model';
+import { ChatSheet } from './ChatSheet';
 import { NavBar } from './parts';
 import { cardMetrics, ShareCard } from './ShareCard';
 
@@ -32,8 +33,11 @@ export type ShareCardScreenProps = { onClose: () => void };
 
 /**
  * RF2 · Share card. The card is drawn here and the picture of it goes to the phone's share sheet (R-33), not to an
- * Instagram card (R-68): the sheet lists whatever the phone has, so no outside app is named. Save puts the same picture
- * in the phone's photos. A phone with no share sheet (the web build) shares the line and the link as text, and draws no Save.
+ * Instagram card (R-68): the sheet lists whatever the phone has, so no outside app is named, WhatsApp included (R-68 wins over the
+ * lead's first D-2b ruling). Targets that need no native change (RELEASE-02, CHECK-3 D-2b): the in-app "Who Made This? chat" (the
+ * line and the link to a recent chat), Share (the system sheet, which reaches every chat app) and Save, which puts the same
+ * picture in the phone's photos. The board's WhatsApp and Story targets are not drawn: Story needs a native module and both name an
+ * outside brand (BACKEND_GAPS G-R2-AUTHME-2). A phone with no share sheet (the web build) shares the line and the link as text, and draws no Save.
  */
 export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const { colors } = useWawu();
@@ -46,6 +50,7 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
   const busy = useRef(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [chatting, setChatting] = useState(false);
 
   const link = referrals.data?.link;
   const ready = Boolean(me.data && link);
@@ -134,10 +139,12 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
       </ScrollView>
       {ready ? (
         <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+          <Target icon="Send" label="Who Made This? chat" onPress={() => setChatting(true)} testID="invite-card-chat" />
           <Target icon="Share" label="Share" onPress={() => void share()} testID="invite-card-share" />
           {asPicture ? <Target icon="ImageDown" label="Save" onPress={() => void save()} testID="invite-card-save" /> : null}
         </View>
       ) : null}
+      <ChatSheet visible={chatting} onClose={() => setChatting(false)} text={`${CARD_LINE} ${link ?? ''}`.trim()} />
     </View>
   );
 }

@@ -103,7 +103,11 @@ export function usePage(id: string, onFail: (line: string) => void) {
 
   const rate = useMutation({
     mutationFn: (stars: number) => putRating(id, stars),
-    onSuccess: (state: RatingState) => client.setQueryData<PieceDetail>(detailKey(id), (d) => (d ? { ...d, rating: state } : d)),
+    onSuccess: (state: RatingState) => {
+      client.setQueryData<PieceDetail>(detailKey(id), (d) => (d ? { ...d, rating: state } : d));
+      // The heart's "96% liked" is the piece's own rating, which a new rating moves (R2-SOCIAL e).
+      void client.invalidateQueries({ queryKey: pieceKey(id), exact: true });
+    },
   });
 
   const post = useMutation({

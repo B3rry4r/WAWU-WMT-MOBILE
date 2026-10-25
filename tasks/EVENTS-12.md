@@ -7,7 +7,7 @@ order: 265
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [TIER-02, EVENTS-11, TIER-07]
 decisions: [R-43, R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -26,6 +26,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 17.
 - **Decisions to confirm:** (1) a tier of any account type hosts (a buyer account with a running tier does); a buyer with neither still gets `account_type_required`. (2) The status stays 403 and the code is additive; `verification_required` is no longer answered by these routes (the web reads only `reason.code` and `message`). (3) Five spec assertions of `verification_required` became `tier_required` (see the report).
 - **Protected suite:** 253/253, all 244 required, against the branch's own lock (EVENTS-11's); this commit changes no file of the lock or the suite. Route table unchanged (603 routes, same order).
 - **Gaps:** G-EVENTS-12-1: the app's `hostApi.ts` does not know `tier_required` (DV2-04 builds E21 on it). G-EVENTS-12-2: nothing tells the app before a POST whether a person may host (a live tick hosts with state `none`); `GET /me/tier` could carry it. No SHARED-CHANGES row was filed (records limited to the task files): `contract/openapi.json` is additive, +140 lines.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 33b627f0, verifier PASS in this file (PASS, no blocker, high or medium).
 
 ## Read first
 

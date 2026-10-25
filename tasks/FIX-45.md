@@ -7,7 +7,7 @@ order: 217
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026.
 - **Open findings:** none. Round 1's medium (the reset-code scan weakened by `scannable(row)`) is closed in round 2: the scan is `JSON.stringify(row)` again and the fingerprint is checked on its own; the verifier's low 2 (9 requests, not 12), 3 (`together` above 1) are fixed; low 4 is information.
 - **Next:** the lead merges it with batch 7.
 - **History:** tasks/history/FIX-45.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, lead acceptance in this file (verifier FIX round 1 closed; accepted on the lead's diff read).
 
 ## Read first
 

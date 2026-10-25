@@ -207,3 +207,39 @@ describe('Share card (RF2)', () => {
     expect(screen.getByTestId('invite-card-share')).toBeTruthy();
   });
 });
+
+
+describe('Share card (RF2) · the targets that need no native change (RELEASE-02, CHECK-3 D-2b)', () => {
+  it('draws Who Made This? chat, Share and Save, and no outside brand (no WhatsApp, no Story; R-68)', async () => {
+    await open();
+    await screen.findByTestId('invite-card');
+    for (const id of ['invite-card-chat', 'invite-card-share', 'invite-card-save']) expect(await screen.findByTestId(id)).toBeTruthy();
+    expect(screen.getByText('Who Made This? chat')).toBeTruthy();
+    expect(screen.queryByText('WhatsApp')).toBeNull();
+    expect(screen.queryByTestId('invite-card-whatsapp')).toBeNull();
+    expect(screen.queryByText('Story')).toBeNull();
+  });
+
+  it('Who Made This? chat lists recent chats and sends the line and the link to the one tapped, once', async () => {
+    const chat = { id: 'c1', canMessage: true, other: { wawuId: 'w-ada', name: 'Ada Obi', avatarUrl: null } };
+    const blocked = { id: 'c2', canMessage: false, other: { wawuId: 'w-bayo', name: 'Bayo Ade', avatarUrl: null } };
+    answers['GET /api/hub/chats'] = ok({ items: [chat, blocked] });
+    answers['POST /api/hub/chats/c1/messages'] = ok({ id: 'm1' });
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-chat'));
+    const person = await screen.findByTestId('invite-chat-person-w-ada');
+    expect(screen.queryByTestId('invite-chat-person-w-bayo')).toBeNull();
+    await fireEvent.press(person);
+    expect(await screen.findByTestId('invite-chat-note')).toHaveTextContent(/Sent to Ada Obi./);
+    const posts = (globalThis.fetch as jest.Mock).mock.calls.filter(([input, init]) => String((input as Request).url ?? input).includes('/chats/c1/messages') && ((init as RequestInit | undefined)?.method ?? (input as Request).method) === 'POST');
+    expect(posts).toHaveLength(1);
+  });
+
+  it('says so when the chats cannot be loaded, and offers Try again', async () => {
+    answers['GET /api/hub/chats'] = 'offline';
+    await open();
+    await fireEvent.press(await screen.findByTestId('invite-card-chat'));
+    expect(await screen.findByTestId('invite-chat-error')).toBeTruthy();
+    expect(screen.getByTestId('invite-chat-retry')).toBeTruthy();
+  });
+});

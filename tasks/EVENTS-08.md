@@ -7,7 +7,7 @@ order: 152
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EVENTS-04, EVENTS-05, EVENTS-09, EVENTS-10, UI-02, EVENTS-01]
 decisions: [R-10, R-37, R-69]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -36,6 +36,8 @@ As of 17 Oct 2026.
 - **Pictures:** 390 px, light and dark, from the stack's web export, beside the boards (`render_design.py E17 E18 E25 E11`): scratch `events-08-b/pics/` (E17, E18, E25, E25-result, links, E11).
 - **Checks (local, mobile CI is off):** full run 194 suites, 3380 tests passed; typecheck, lint, gates (0 fail, 7 warn: two new PROVISIONAL, G-EVENTS-08-1), baseline and tasks all exit 0; the 21 new tests in `organiser/__tests__`. Backend: typecheck, lint, contract:build; the specs run in GitHub. No Fintava code was touched, run or tested; the stack's Hub ran with the repo default provider setting at a closed port and made no provider call.
 - **Next:** a verifier; the lead rules the two decisions above and G-833.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app d37b0c84, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Design v2 update (16 Oct 2026)
 

@@ -1,3 +1,4 @@
+import { formatMoney, type Currency } from '@/components/Money';
 import { formatPoints } from '@/components/PointsFigure';
 import { CHANGED_LINE, lastsText, naira, NOT_READY_LINE, SHORT_LINE } from '@/features/points/buyModel';
 import { dateWords } from '@/features/wallet/history/lagosTime';
@@ -5,6 +6,12 @@ import { dateWords } from '@/features/wallet/history/lagosTime';
 import type { PlanTier, Purchase, PurchaseGrant, PurchaseQuote, PurchaseTarget } from './purchaseApi';
 
 export { CHANGED_LINE, naira, NOT_READY_LINE, SHORT_LINE };
+
+/**
+ * A price in the currency the Hub priced it in (`GET /plans` `currency`), with that currency's own sign: "$3" for a person billed in
+ * dollars, "₦1,000" for one billed in naira. A dollar figure is never drawn with the naira sign (RELEASE-02, CHECK-3 D-1).
+ */
+export const priceIn = (minor: number, currency: Currency): string => formatMoney(minor, { currency, decimals: minor % 100 !== 0 });
 
 /**
  * The words of VF5 to VF7a that are the design's own. No figure is in any of them: every price, length, count and point is the Hub's
@@ -22,6 +29,10 @@ export const TIER_WORDS = {
   wallet: 'Who Made This? wallet',
   transfer: 'Bank transfer',
   transferSub: 'From any Nigerian bank',
+  dollarsTitle: "Paying in dollars isn't open yet",
+  dollarsBody: 'Your tiers are priced in dollars. Paying for a tier from a dollar account is not switched on yet. Add a dollar account to your wallet so you are ready.',
+  dollarsAdd: 'Add a dollar account',
+  price: 'Price',
   total: 'Total',
   paying: 'Paying...',
   officialTitle: "You're official",
@@ -56,6 +67,16 @@ export const startingTier = (tiers: readonly PlanTier[]): PlanTier | null => tie
 export const higherTiers = (tiers: readonly PlanTier[], heldId: string): PlanTier[] => {
   const held = tiers.find((t) => t.id === heldId);
   return held ? tiers.filter((t) => t.priceMinor > held.priceMinor) : [];
+};
+
+/**
+ * The tiers VF13's "Upgrade instead" can lead to: the ones above the held tier (they cost more) that would leave room, as the Hub offers on a
+ * `product_limit_reached` refusal (a tier counts only when its products plus the extras held are more than what is used). A person with no
+ * running tier is offered every tier that leaves room; the top tier gets none.
+ */
+export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, extraProducts: number, used: number): PlanTier[] => {
+  const above = heldId === null ? [...tiers] : higherTiers(tiers, heldId);
+  return above.filter((t) => t.products + extraProducts > used);
 };
 
 /** "Add 1,000 points for ₦800": the checkout offer, from the Hub's own figures. */

@@ -7,7 +7,7 @@ order: 207
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T2
 depends_on: [WALLET-06]
 decisions: [R-47]
@@ -34,6 +34,8 @@ As of 18 Oct 2026, merging (lead): built by a Sonnet builder (tier T2; mobile `w
 - **Gaps recorded, not fixed here (the ruling leaves them):**
   - **G-FIX-87-1 (medium, V6):** the writes with no key (about 109 calls; the nearest one for the PIN screens is `POST /money/pin/verify`, W36's "Checking your PIN") are never aborted, so they can still wait for good. A 30 s end for them is safe only per call, where repeating it moves nothing (the PIN check spends a try); each is its own decision.
   - **G-FIX-87-2 (low):** the paid question's first ask makes a new key on every ask; if its screen kept one key per words (as `useAsk` already keeps the draft per words), the call could pass `resendsUnderKey` and move to the list above.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 0cf68728, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

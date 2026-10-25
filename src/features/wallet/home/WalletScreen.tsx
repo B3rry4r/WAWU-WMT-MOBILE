@@ -10,14 +10,22 @@ import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
-import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
+import { isFiat, type FiatCode } from '@/features/open-wallet/api/world';
+import { OPEN_WALLET_ACCOUNT_PATH, OPEN_WALLET_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, radius, useWawu } from '@/theme';
 
+import { availabilityQuery } from '@/features/capital/api';
+import { CapitalWalletRow } from '@/features/capital/WalletRow';
+import { CardRow } from '@/features/cards/CardRow';
 import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
 import { myPassQuery, type MyPass } from '../api/pass';
+import { FxTabBody } from '../fx/FxTabBody';
+import { NAIRA_TAB } from '../fx/model';
+import { WalletTabs } from '../fx/parts';
+import { useFxHome } from '../fx/useFx';
 import { PassesTile } from '../pass/PassesTile';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { PointsTile } from './PointsTile';
@@ -25,6 +33,7 @@ import { WalletActions, type WalletAction } from './WalletActions';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
 import { WalletBar } from './WalletBar';
+import { WorldHome } from '../world/WorldHome';
 import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
 
 /**
@@ -44,8 +53,9 @@ const INFO_SKELETON = 86;
  * bills anywhere on this tab (R-52).
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
- * drawn: the scan icon (WALLET-20); the Dollar and Crypto tabs and Swap (WALLET-21);
- * the WAWU card row (WALLET-22). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
+ * drawn: the scan icon (WALLET-20). The WAWU card row is built (WALLET-22, R-84): drawn while the Hub says cards are on. The tabs under the title (WALLET-21, R-83, R-84) are one for each
+ * currency account the Hub says exists or can be opened, and Crypto; Naira is the tab below, as it was, and a person whose wallet is
+ * not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
  * is drawn when `GET /me/tier` has an event pass, beside the Points card (wallet.js line 47, 10 apart). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
  * money beyond the reads above.
@@ -56,31 +66,47 @@ const INFO_SKELETON = 86;
  * Nobody has a wallet until they open one (R-6): with none, tapping the tab opens Open your wallet
  * (A26). Coming back without opening one shows the way in again; coming back from A10 shows W5.
  */
-export function WalletScreen() {
+export function WalletScreen({ add }: { add?: string } = {}) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const router = useRouter();
+  // `add`: a currency account the person was sent here to add ("Add a dollar account" on /tiers, R-87). Without a wallet it is the
+  // first account asked for in Open your wallet; with one, its tab (or the add-a-currency sheet of a world wallet) is where they land.
+  const adding: FiatCode | null = isFiat(add) ? add : null;
+  const openFlow = useCallback(() => (adding ? router.push({ pathname: OPEN_WALLET_PATH, params: { currency: adding } }) : entry.open()), [adding, entry, router]);
 
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
   const state = wallet.data?.state;
-  const open = state === 'open' || state === 'frozen';
+  // WALLET-41: a person who opened from outside Nigeria has no naira account to read a balance or rows from.
+  const open = (state === 'open' || state === 'frozen') && !wallet.data?.world;
   const balance = useQuery(homeBalanceQuery(owner, open), queryClient);
   const recent = useQuery(recentTransactionsQuery(owner, open), queryClient);
   // The Passes card: drawn only when the Hub says the person has a pass (WALLET-38). A read that fails draws nothing here.
   const pass = useQuery(myPassQuery(owner), queryClient);
   // The Points card: the Hub's balance as a count. Nothing is drawn for a read that failed (never a 0 the Hub did not say).
   const points = useQuery(myPointsQuery(owner), queryClient);
+  // The Capital row: drawn when the Hub says Capital is on and served, or the person holds something (the way out stays open when it is switched off, NUV-12). A failed read draws nothing.
+  const capital = useQuery({ ...availabilityQuery(owner), enabled: Boolean(owner) && open }, queryClient);
 
   const view = homeView(wallet, balance);
+  // W6 keeps the tab strip (M-04): the bank not answering the naira balance says nothing of the other accounts, which are read for themselves.
+  const tabbed = view.kind === 'ready' || view.kind === 'unreachable';
+  const fx = useFxHome(owner, open && tabbed);
+  // The tab the person chose; none yet means the one they were sent to add (below), or Naira.
+  const [tab, setTab] = useState<string | null>(null);
+  // Sent here to add a currency account: that currency's tab is the one in front once the Hub lists it, until the person moves off it.
+  const addingTab = adding !== null && fx.tabs.some((t) => t.key === adding);
+  const wanted = tab ?? (addingTab ? adding : NAIRA_TAB);
+  const activeTab = fx.tabs.some((t) => t.key === wanted) ? wanted : NAIRA_TAB;
   const [hidden, setHidden] = useState(false);
   const [pulled, setPulled] = useState(false);
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];
-    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch(), points.refetch());
+    if (open) asked.push(balance.refetch(), recent.refetch(), pass.refetch(), points.refetch(), queryClient.invalidateQueries({ queryKey: ['money', 'fx'] }));
     await Promise.all(asked);
   }, [wallet, balance, recent, pass, points, open]);
 
@@ -92,7 +118,7 @@ export function WalletScreen() {
   }, [focused, refreshAll]);
 
   const actions = builtActions(router);
-  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
+  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, openFlow);
   // The account opened and no PIN is set (it landed while the tab said "Your account is opening", or while the app was closed): the
   // board's step after the account is "Create your transaction PIN", so the person is led there once, never left on W1 unasked (U3b).
   useLeadToCreatePin(owner, open && wallet.data?.pinIsSet === false, focused, () => router.push(OPEN_WALLET_ACCOUNT_PATH));
@@ -120,7 +146,24 @@ export function WalletScreen() {
         {owner === null ? (
           <WalletSkeleton tiles={actions.length} />
         ) : (
+          <>
+            {tabbed && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} /> : null}
+            {tabbed && activeTab !== NAIRA_TAB ? (
+              <FxTabBody
+                tab={activeTab}
+                owner={owner}
+                currencies={fx.currencies}
+                accounts={fx.accounts}
+                accountsError={fx.accountsError}
+                accountsPending={fx.accountsPending}
+                onRetry={() => void queryClient.invalidateQueries({ queryKey: ['money', 'fx'] })}
+                hidden={hidden}
+                onToggleHidden={() => setHidden((was) => !was)}
+              />
+            ) : (
           <Body
+            owner={owner}
+            adding={adding}
             view={view}
             hidden={hidden}
             onToggleHidden={() => setHidden((was) => !was)}
@@ -130,6 +173,8 @@ export function WalletScreen() {
             onOpenPoints={() => router.push('/points')}
             pass={pass.data ?? null}
             onOpenPass={() => router.push('/pass')}
+            capital={capital.data?.available === true || capital.data?.holding === true}
+            onOpenCapital={() => router.push('/capital')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
             recent={{
@@ -142,13 +187,21 @@ export function WalletScreen() {
               onOpenGroup: (key: string) => router.push({ pathname: '/transactions', params: { group: key } }),
             }}
           />
+            )}
+          </>
         )}
       </ScrollView>
     </View>
   );
 }
 
+/** W6's line under "We couldn't reach your account": the board's words, in place of the sentence the Hub sends (which can carry the provider's own text). */
+const W6_LINE = 'Your money is safe. This is a connection problem between us and the bank.';
+
 type BodyProps = {
+  owner: string;
+  /** The currency account the person was sent here to add, if any (a world wallet then opens its add-a-currency sheet on it). */
+  adding: FiatCode | null;
   view: HomeView;
   hidden: boolean;
   onToggleHidden: () => void;
@@ -161,12 +214,15 @@ type BodyProps = {
   /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
   pass: MyPass | null;
   onOpenPass: () => void;
+  /** Capital is on and served: its row is drawn (NUV-12). */
+  capital: boolean;
+  onOpenCapital: () => void;
   onRetryWallet: () => void;
   onRetryBalance: () => void;
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
@@ -206,7 +262,7 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
     case 'unreachable':
       return (
         <StateCard>
-          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} onRetry={onRetryBalance} />
+          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} message={W6_LINE} onRetry={onRetryBalance} />
         </StateCard>
       );
     case 'frozen':
@@ -226,6 +282,8 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
           />
         </StateCard>
       );
+    case 'world':
+      return <WorldHome owner={owner} adding={adding} />;
     case 'ready':
       return (
         <>
@@ -247,7 +305,9 @@ function Body({ view, hidden, onToggleHidden, onOpenWallet, actions, points, onO
               {(points !== null ? 1 : 0) + (pass ? 1 : 0) === 1 ? <View style={styles.half} /> : null}
             </View>
           ) : null}
+          {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
+          <CardRow />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );

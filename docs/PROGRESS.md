@@ -3,28 +3,42 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 377.**
+**Launch tasks done: 176 of 391.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 46 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 160 | 0 | 0 | 0 |
-| review | 46 | 0 | 0 | 0 |
+| verifying | 4 | 0 | 0 | 0 |
+| review | 224 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
 - [DEPS-SDK](../tasks/DEPS-SDK.md) The app's packages match the installed Expo SDK, so CI's Expo SDK health step passes (You)
-- [IAP-02](../tasks/IAP-02.md) Points, WAWU Credits, ticks and tiers, and community passes are bought in the store sheet (Google Play Billing, Apple In-App Purchase); no wallet or naira path for them in the app (You)
+- [WALLET-31](../tasks/WALLET-31.md) WAWU card (first slice) (You)
+- [WALLET-22](../tasks/WALLET-22.md) WAWU card (You)
+- [GEO-02](../tasks/GEO-02.md) Countries, regions and where a person is, on the Hub (lists, profile place, /me/location, admin filters and counts, phones from any country) (You)
+- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
+- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
+- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
+- [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
+- [NUV-12](../tasks/NUV-12.md) Capital: fixed-return and share-offering products from the wallet (list, reserve, confirm with the PIN, portfolio, history, early liquidation) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
+- [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
+- [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
+- [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
+- [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
+- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
+- [WALLET-42](../tasks/WALLET-42.md) A person outside Nigeria sends abroad from a foreign account (and a naira person from one they hold), WAWU's fee from the same account (R-87) (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-113](../tasks/FIX-113.md) Profile, the half FIX-110 did not reach: Experience and Skills can be written on Edit profile, and a Work has a description, can be edited and can be put in order (You)
 - [SIGNUP-NAMES](../tasks/SIGNUP-NAMES.md) Sign-up asks for a first name, a last name and a username (R-82) (You)
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
 - [AITOOLS-03](../tasks/AITOOLS-03.md) Sound effect and Music track (backend) (You)
 - [AITOOLS-04](../tasks/AITOOLS-04.md) Captions and Clean audio, with the person's own audio or video going in (backend) (You)
+- [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend) (You)
 - [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [POINTS-10](../tasks/POINTS-10.md) Studio: Captions and Clean audio (You)
@@ -50,20 +64,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-97](../tasks/FIX-97.md) The Nuvion name check and bank-send set-up use the shapes Nuvion DEV answers (You)
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
-- [FIX-112](../tasks/FIX-112.md) Every payment sheet that asks for the PIN can be approved with the fingerprint or face (You)
-- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
-- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
-- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
-- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
-- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
-- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
-- [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
-- [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
-- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
-
-## Being verified
-
 - [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
@@ -71,6 +71,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-90](../tasks/FIX-90.md) Four specs and one timing case that failed the batch 26 whole-suite run stop reading rows other specs change (You)
 - [FIX-89](../tasks/FIX-89.md) Two specs that read the shared deploy database assert only on their own rows (You)
 - [FIX-88](../tasks/FIX-88.md) Three old backend specs that run on the Fintava double stop failing CI, by chance or by design (You)
+- [FIX-112](../tasks/FIX-112.md) Every payment sheet that asks for the PIN can be approved with the fingerprint or face (You)
 - [FIX-84](../tasks/FIX-84.md) Tests that compare a sent photo link with a returned one compare the object and a valid signed link, never the whole signed link (You)
 - [FIX-83](../tasks/FIX-83.md) A test that lists a message's media compares the object key and a valid signed link, never the whole signed link (You)
 - [FIX-82](../tasks/FIX-82.md) A test's clean-up never touches a database that is not a test database; the M19 test fails on the old route (You)
@@ -105,7 +106,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
+- [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes (You)
+- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
+- [ADS-02](../tasks/ADS-02.md) Admin screens: ads (You)
 - [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
+- [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices (You)
 - [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 - [EXPLORE-02](../tasks/EXPLORE-02.md) All creators and search (You)
 - [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
@@ -116,11 +121,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [LEGAL-04](../tasks/LEGAL-04.md) Legal: book and pay a consultation (You)
 - [HOME-13](../tasks/HOME-13.md) Tip a creator (You)
+- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [LEGAL-06](../tasks/LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price (You)
 - [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
+- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
 - [HOME-12](../tasks/HOME-12.md) Unlock from the feed (You)
 - [FIX-54](../tasks/FIX-54.md) A bank send on Nuvion shows its true outcome (You)
 - [SCHOOLS-06](../tasks/SCHOOLS-06.md) Enrol and pay, class full (You)
+- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
 - [FIX-52](../tasks/FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote (You)
 - [SCHOOLS-09](../tasks/SCHOOLS-09.md) Enrolment report to the school, and My courses (You)
@@ -140,6 +148,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-05](../tasks/WALLET-05.md) Add money and withdraw (You)
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
+- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
 - [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
@@ -153,6 +162,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
 - [SETTINGS-08](../tasks/SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in (You)
 - [SETTINGS-05](../tasks/SETTINGS-05.md) Delete account (You)
+- [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
 - [SETTINGS-09](../tasks/SETTINGS-09.md) A deleted account's ID documents are kept hidden for 5 years, then deleted (You)
 - [FIX-12](../tasks/FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11 (You)
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
@@ -162,6 +172,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
+- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
@@ -169,9 +180,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
 - [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
-- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
-- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
-- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
+- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
@@ -179,10 +188,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-24](../tasks/INBOX-24.md) Private community monthly pass (backend) (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [EVENTS-12](../tasks/EVENTS-12.md) Hosting an event needs an active tier (backend) (You)
+- [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [AITOOLS-01](../tasks/AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
 - [ME-12](../tasks/ME-12.md) Make it official: choose a tier and pay (You)
+- [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
+- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
 - [VERIFY-04](../tasks/VERIFY-04.md) Publish your first product, and the identity check (You)
 - [VERIFY-05](../tasks/VERIFY-05.md) Your tier, and when you have used all your products (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
@@ -211,6 +223,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LINKS-01](../tasks/LINKS-01.md) Every link WAWU sends lands somewhere that works (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
+- [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
+- [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
+- [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
 - [FIX-28](../tasks/FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break (You)
 - [FIX-33](../tasks/FIX-33.md) The Nuvion opening spec draws every client address once, so it stops failing at random (You)
@@ -224,6 +239,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 - [OWNER-1019](../tasks/OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73 (You)
+
+## Being verified
+
+- [SWEEP-R2](../tasks/SWEEP-R2.md) App sweep: three low rows from R2-MONEY and R2-AUTHME2 (beneficiary switch, tier checkout ring, selfie portrait guide) (You)
+- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
+- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
+- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -414,7 +436,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked
@@ -423,18 +445,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
-- 24 Oct 2026 · IAP-02 follow-up · Built (Sonnet builder, T2, bundle B28; mobile `wmt/IAP-02` from `0abf6844`, contract from backend `wmt/IAP-01` `6e92cd2`; status verifying): every store purchase carries the Hub's per-person `accountToken` (Google's obfuscated account id, Apple's app account token; never the user id); a pass's room is kept on the phone for the App Store; `store_purchase_taken`, `store_account_token_missing` (update the app) and `store_grant_failed` (paid, kept open for the next recovery) are said by cause; a removed member with `cancelInStore` is told to cancel the pass in the store. A phone: NOT RUN.
-- 24 Oct 2026 · IAP-02 · Built (Sonnet builder, T2, bundle B28; mobile `wmt/IAP-02` on `origin/main` `b1e6681f`, contract from backend `wmt/IAP-01` `8e7e16a`; status verifying; no PR): Buy points, the Studio shortfall, WAWU Credits packs, ticks and tiers, and community passes are bought in the store sheet (Google Play Billing, Apple In-App Purchase) at the store's price, sent to `POST /store/purchases`, and finished only after the Hub answers 201; cancelled, pending, already owned, no connection, store unavailable and "Buying is not open yet" are said by their cause; Restore purchases is on the checkout and the pass; no wallet or naira path remains for these in the app (R-86). New native module `expo-iap` 6.1.1, so it ships in the next store build. VF13 stays on the wallet (G-IAP-02-1). A phone and a real store sheet: NOT RUN.
-- 24 Oct 2026 · FIX-109 · Built in part (Sonnet builder, T1; backend `wmt/FIX-109` on `origin/main` `0e87d06`, mobile `wmt/FIX-109` on `origin/main` `2847eb32`; status verifying): the paid thread has "+" (Add to chat, through the free chat) and "..." (Report, Block), W38 can confirm the account's email (`/confirm-email`), and W15, W17, W19 and W45 say "Free" and how long a bank transfer takes only when the Hub serves it (new settings `MONEY_ARRIVAL_BANK_OUT_MINUTES` and `MONEY_ARRIVAL_BANK_IN_MINUTES`, unset today). Gap rows G-INBOX-18-2, -3, G-486, G-WALLET-05-2, -3, -5, G-FIX-68-1, -2 closed; G-FIX-109-1 added. The Money filter (G-INBOX-15-1) is NOT built.
-- 24 Oct 2026 · FIX-113 · Built (Sonnet builder, T1; mobile `wmt/FIX-113` on `origin/main` `fbf8c725`; app only, no backend change, status verifying): the Profile half FIX-110 did not reach. M8 draws an Experience section (a row per role and "Add a role"; a new role screen adds, changes and removes one: `POST`/`PATCH`/`DELETE /users/me/experience`) and a Skills and expertise box saved with M8's Save (`PATCH /users/me/profile-fields`); M4 shows both once written. M36 takes a multi-line Description (the Hub's 1000 characters); the owner can Edit a work on M35 (`PATCH /users/me/featured-works/{id}`, fields only) and Reorder their works on M34 (`PUT /users/me/featured-works/order`). Closes G-292, G-251 and G-252; G-FIX-113-1 asks the designer to draw what was built from shared parts (R-29); SHARED-CHANGES FIX-113 #1 lists `/role` under the signed-in guard. One assertion changed: `works/form.test.ts` pinned the limits object, which now carries the description's 1000.
-- 24 Oct 2026 · FIX-111 · Built (Sonnet builder, bundle B7, T2; backend `wmt/FIX-111` and mobile `wmt/FIX-111`, both on `wmt/FIX-107`; status verifying; no PR): a creator adds a course's lessons one by one from the create flow (title, length, a file each, the first is the free one) and edits them from their own course (add, reorder, rename, remove, give a file); a piece can name one of the creator's own courses (M23's "From a course") and H24 shows "From the course <title> · <n> lessons <price>", opening the course. Migration `20261105093000` (one nullable column on the piece's side row, rollback that refuses to lose data); `POST /content` takes `parentCourseId`, `GET /content/{id}/detail` serves `parentCourse`, `GET /content/mine/library?contentType=course`; a kept lesson keeps its file when no key is sent. Closes G-FIX107-1 and G-HOME-08-1. G-FIX111-1 (no board draws the lessons step) and G-FIX111-2 (the course cannot be changed after the piece is made) are open. A phone: NOT RUN.
-- 24 Oct 2026 · FIX-107 · Built (Sonnet builder, T1; backend `wmt/FIX-107` `433e56e` on `origin/main` `0e87d06`, mobile `wmt/FIX-107` on `origin/main` `2847eb32`; status verifying; no PR): a person can play a course lesson by lesson (H25): each lesson has its own file, the first is always free and the rest play for a buyer or the creator, from a one-hour link the Hub signs for each play; a finished lesson is marked done. A person can save a school course from SC3 (the bookmark) and finds it in Saved and the Me count. Migration `20261104093000` (one column, one table, rollback that refuses to lose data), routes `GET /content/:id/lessons/:lessonId/play`, `PUT /content/:id/lessons`, `GET`, `PUT`, `DELETE /me/saved/courses/:courseId`. Closes G-HOME-08-2, G-121 (in part), G-627; G-HOME-08-1 (H24's parent course row) and the creator's lesson upload flow (G-FIX107-1) are NOT built. Pictures and a phone: NOT RUN.
-- 24 Oct 2026 · FIX-114 · Built (Sonnet builder, T1; mobile `wmt/FIX-114` on `origin/main` `fbf8c725`, backend `wmt/FIX-114` `c8e52f5` on `origin/main` `650be9d`; status verifying; no PR): the Inbox Money chip shows sends between two WAWU people next to the requests (G-INBOX-15-1, the piece FIX-109 left open). `GET /inbox?kind=money` returns requests and a new feed kind `money_move` (from `WalletTransfer` kind `wawu_user`, not failed, joined to the one chat of the two people; a send with no chat is not a row; a pending send is its sender's only; a send that paid a request is the request's row); the unfiltered list, `kind=money_request` and the badge read as before, and `kind=money_move` alone is a 400. The app's chip asks `kind=money` and draws "Sent you ₦5,000" and "You sent ₦25,000" as board I20 does, each opening the chat; tips and refunds are still not rows (G-FIX-114-1). No migration, no route. Checks: backend `inbox-money.contract.spec.ts` 10 pass and `inbox.contract.spec.ts` 36 pass (one assertion changed, `kind=money` was a 400), contract:build EXIT 0, eslint EXIT 0; app 119 tests pass in the inbox and chat-inbox files plus `InboxScreen.test.tsx` 51 pass alone (one load timeout in a busy run), tsc EXIT 0, eslint EXIT 0, gates 0 fail, check_tasks EXIT 0. Pictures: see `tasks/FIX-114.md`. NOT RUN: a phone, the full suites, the protected route suite (no route changed).
-- 24 Oct 2026 · FIX-110 · Built, PARTIAL (Sonnet builder, T1; backend `wmt/FIX-110` `767c510` on `origin/main` `0e87d06`, mobile `wmt/FIX-110` on `origin/main` `2847eb32`; status verifying): M24 draws the Hub's quick prices, "You earn per sale", "Your share" and "Listing fee" and M25 "Usually takes" from the new `GET /content/sale-terms`; the pass shows its event name and a QR (`eventPass.eventName`, `passCode`); the host can pick an end day and a multi-day event names both days; E17 says "Taken down 20 Sep" from the new `GET /events/mine/decisions`; "Yours forever" is drawn on H4, H14 and H19. Not built: Experience and Skills, Works description, edit and re-order (G-292, G-251, G-252); pictures NOT RUN.
-- 24 Oct 2026 · POINTS-11 · Built (Sonnet builder, T1, bundle B11; mobile `wmt/POINTS-11` on `wmt/POINTS-10` `cbdb3f7d`, contract from backend `wmt/AITOOLS-05` `4aeff65`; status verifying): Studio draws Dubbing ("From 1,500 a minute"); a person picks a recording and one of the Hub's languages, sees the Hub's cost for the file, runs a dub that takes minutes (the working view says so, the person can leave and find it again, the reads slow after the first minute) and gets the dubbed audio in PT2b's player with the subtitles read in a card and shared as the Hub's WebVTT; a failed dub says no points were taken. Live on a local stack with the stand-ins in light and dark; the FLAC played in Chromium with a real FLAC and is NOT RUN on a phone. Gaps G-POINTS-11-1 to -3.
-- 24 Oct 2026 · FIX-108 round 2 · The verifier's FIX built (Sonnet builder, T2; mobile `wmt/FIX-108` from `283ff898`; status verifying; no backend change): a fingerprint that was closed or refused never rotates the Idempotency-Key and never drops a stored unknown intent on the chat send, Withdraw and the review route (one function, `notApproved`); after a PIN whose answer was lost the PIN again pays once. 12 new cases and a unit test; the seven that pin the defect fail on `283ff898`.
-- 24 Oct 2026 · FIX-108 and DEPS-SDK · Built (Sonnet builder, T2; mobile `wmt/FIX-108` on `origin/main` `2847eb32`; status verifying; no backend change): a person can turn on fingerprint or face for payments in Wallet settings (W35: the PIN sheet with no amount, a P-256 key kept behind the biometric, `PUT /money/device`, one checked approval) and approve a send, a bank send, a chat send or a withdraw with it (W11: `X-Device-Approval` signed over the exact request, in place of the PIN; "Fingerprint failed. Use your PIN." and no PIN try on a refusal). Packages `@noble/curves` and `expo-crypto`; 12 SDK patch updates so `npx expo-doctor` passes 21 of 21. NOT RUN: a phone, the live Hub, pictures. Other payment sheets still PIN only (task file).
-- 24 Oct 2026 · AITOOLS-07 · Round 3 built (Sonnet builder, T2, bundle B10; backend `wmt/AITOOLS-07` `54f196f` with `origin/main` `575e9e0` merged, mobile `wmt/AITOOLS-07` records and one contract description line; status verifying): the verifier's two mediums and two lows are fixed. The data export now holds the VoiceOver agreement (time and words), `savedAt` and `mediaJobId`; account deletion takes the agreement back and asks the provider to drop every noted voice copy before any row goes, and waits (the note stays, the sweep retries) while the provider refuses, shown with the real purge on the voice stand-in (empty after); `noteCopy` says false when the note was not written and the voice is then not handed over unnoted; `?saved=false` lists only the unsaved. Lead ruling (Default, owner may override): Use in a product takes any own finished result, saved or not. Checks: tsc, eslint, 18 ai-tools specs (221), 13 export, purge and account suites (161), `test:protected` 253/253, gates and baseline, all EXIT 0. Two gap rows filed (G-AITOOLS-07-7, -8).
-- 24 Oct 2026 · AITOOLS-07 · Round 2 built (Sonnet builder, T2, bundle B10; backend `wmt/AITOOLS-07` `8f1fe8d`, mobile `wmt/AITOOLS-07` with `origin/main` `206365d8` merged; status verifying): a person can play a voice's sample, agree to and use "Your voice" (their Voice Intro recording, a clone made for one run and deleted), Save a VoiceOver result and attach it to a draft, run live on a local stack in light and dark beside PT2 and PT2b. The red `voiceExtras` test was a wrong test (the testing library's `render` and `fireEvent` are async), not the screen. Found live and fixed: the sample route's same-origin header blocked a web player; the result rows now use the shared grouped card; success notices wear the tick. `test:protected` is 253/253 on this branch and on `origin/main` with `db:seed` and the plain mock id (round 1's 5 failures were its environment). G-AITOOLS-01-1, G-AITOOLS-01-4, G-POINTS-08-1, G-POINTS-08-2 and G-VOICE-01-6 closed; G-AITOOLS-07-5 and -6 filed.
-- 24 Oct 2026 · FIX-105 round 2 · The verifier's FIX built (Sonnet builder, T1; backend `wmt/FIX-105` `f5aa816` on `origin/main` `21cba57`, mobile `wmt/FIX-105` on `origin/main` `e4d88d6`; status verifying): a notice now counts each message once whatever is replayed (a person's mark for a room is the largest `countedUpTo` of all their notices for it), and a room that fails goes on a retry list (additive migration `20261102090100`) and never holds the other rooms; a muted person's unread notice stays unread; the notification list reads the Hub again on focus, when the app returns to the front and on a pull; `stack.sh` prints the app at localhost. Live check NOT RUN.
-- 24 Oct 2026 · FIX-105 · Built (Sonnet builder, T1; backend `wmt/FIX-105` on `origin/main` `fefc1ec`, mobile `wmt/FIX-105` on `origin/main` `74a040e7`; status verifying): R-81, a person is told when a community they joined has new messages, as ONE grouped notice per room that is updated until they open it; never for their own messages; the Z3 "Community messages" switch mutes it; it is pushed once per notice. Closes G-21. A sweep folds settled messages in pages of 500 members (six statements a page), the request path writes nothing. The app maps the new kind to the room. Live-walk pictures NOT RUN.
+- 25 Oct 2026 · SWEEP-R2 · Built (Sonnet builder, T1; mobile `wmt/SWEEP-R2` on `origin/main` `045cacf2`; no PR, no backend change, no native change; status verifying): three R2 lows. W12 offers "Save as a beneficiary" after a bank send only (a WAWU user is no longer saved into a list no screen draws); the tier checkout's two ways to pay are cards with the accent ring on the chosen one (VF6); the selfie camera page's oval holds the board's portrait guide when no live picture is in it (A16). Not done: the admin transfer lookup's tag is already `AdminTransfers` (excluded by `^Admin`); only its two schemas remain in the app's client, like every admin schema, so a tag cannot remove them (two options in tasks/SWEEP-R2.md row 4). Pictures: scratchpad `sweep-r2/`.
+- 25 Oct 2026 · RELEASE-02 (R2-AUTHME2) · Second pass built (Sonnet builder, T2; mobile `wmt/R2-AUTHME2` on `origin/main` `25d24f0a`; app only, no backend change, no new route, no native change): M-1 the tier and upgrade checkout draws the price, Bank charge, WAWU's fee and Total from the quote even at ₦0; M-3 VF13 is the board's sheet with Upgrade instead (a higher tier the Hub lists, none for the top tier) and Open library, a tier holder is never told to get verified (/create-format, library and dashboard meters), and "Add 5 more products" stays with its existing wallet path and now shows its fee as parts and the total (lead correction: nothing working is removed ahead of IAP-02, R-86); M-4 a refused hosted selfie is A16's dark page with true words (no face mismatch is claimed: the Hub says only not passed); L-p2-4 the Founding badge number. Not built, with reasons: L-p2-1, 5, 6, 9, 10 (G-R2-AUTHME-7 to 11), L-p2-2, 3, 8, 11 (G-R2-AUTHME-12). Live pictures NOT RUN (budget). Record: `tasks/history/RELEASE-02-AUTHME.md` "Second pass".
+- 25 Oct 2026 · R2-SOCIAL2 · Fix round 2 (Sonnet builder, T2; mobile `wmt/R2-SOCIAL` on `44c56591`, backend `wmt/R2-SOCIAL` `3bc58eb` on `origin/main` `dcee8af`, no PR, no route, no migration, no native change): the verifier's one medium. The E11 order page of a called-off event read `GET /events/{id}`, which the Hub answers the buyer 404 once the event is called off, so it kept "Your payment didn't go through". The buyer's order read now carries `event.cancelledAt` (additive, nullable) and the page reads it there; the jest mock answers the event 404 as the Hub does (red first, then green). Proved live on a stack of both branches: a fan bought a ticket, the host called the event off, the order page drew "This event was called off" and "₦7,500 is back in your Naira wallet." (390 px, light and dark).
+- 25 Oct 2026 · R2-SOCIAL2 · Built (Sonnet builder, T2; mobile `wmt/R2-SOCIAL` on `06da5ad0`; no PR, no backend change, no native change): the second CHECK-3 social pass. Round 1's "Fee: No fee" is reversed (BRIEF rules 3 to 5: the breakdown and the Total, also at ₦0; the E3 button keeps no dot). E25 and I4 words follow rule 6 ("the ticket price back", "it comes back to your wallet"); the E11 order page of a called-off event shows the ticket page's called-off banner and refund; the called-off ticket card is greyed; I28 draws the board's cost-by-kind line. The fan's Inbox + and header icons are not drawn (R-38, the boards' own map, G-882: no picker board). Lows needing a ruling are listed in tasks/RELEASE-02.md.
+- 25 Oct 2026 · R2-SOCIAL · Built (Sonnet builder, T2; mobile `wmt/R2-SOCIAL` on `origin/main` `a3fdaf71`; no PR, no backend change, no native change): the CHECK-3 social defects. I1's + is the Create button for creators (it was never wired); Explore's "Who Made This?" falls back to All creators when nobody is featured; H14 and E3 say "No fee" only for a zero fee and E3's button is "Pay ₦7,500"; the detail heart reads "96% liked" when the Hub serves a percent; I33's cost line follows `GET /communities/message-cost`; E7 raises the brightness. Reported, not changed: the `wawu/c/...` link form (G-R2S-1) and I32's host-share line (G-INBOX-14-1).
+- 26 Oct 2026 · R2-MONEY · Fix round 1 (Sonnet builder, T2; mobile `wmt/R2-MONEY`, backend untouched `4f865f2`; status verifying; no PR, no migration): D-02 reverted to BRIEF rule 5 (the send button shows the total, "They get" is its own line; SHARED-CHANGES R2-MONEY #1 removed); D-05 Beneficiaries counts the saved bank accounts W8 draws; a frozen world home keeps Transactions; `wallet/fx` never prints "No fee" (the fee is its parts, Fees and Total, the provider's part "Bank charge"); a provider's refusal is one plain sentence, never its words; W6 keeps the tab strip and draws the board's line; W4 skeleton tab-pill row; W13 over the balance hides the chips and the note. Lead rulings recorded: M-03 conforms to R-86; D-03's dashboard screen is a gap row. The W15 account card's "Free" pill is replaced by the fee rows "Bank charge" and "Total fee" (BRIEF rule 4). Not built (gap rows G-R2M-1 to G-R2M-8): W3 coin balance, W23 Arrives and network fee, W44 tier line, PT1 tiles, W4 scan, W39 calendar icon, PT6a footnote.
+- 25 Oct 2026 · R2-MONEY · Built (Sonnet builder, T2; mobile `wmt/R2-MONEY`, backend `wmt/R2-MONEY` `4f865f2`; status verifying; no PR, no migration): the CHECK-3 money-work defects the lead ruled on. D-01 the world wallet home is a balance card per foreign account with Send abroad, Swap, Get paid from abroad, activity and Add a currency; D-02 the send button names what they receive; D-03 receipts show `WAW-XXXX-XXXX` and the Hub gets an admin lookup of a send by it (`GET /admin/money/transfers/lookup`); D-04 add-money ways only when available; D-05 Beneficiaries on Wallet settings; D-06 swap and cards empty states; lows D-10 (W26 export icon) and D-14 (P1 intro). D-07 to D-09 stand. Not changed and why: tasks/R2-MONEY.md.
+- 25 Oct 2026 · RELEASE-02 (R2-AUTHME) · Fix round 1 (Sonnet builder, T1; mobile `wmt/R2-AUTHME` on `a09e523b`; app only, no new route file, no native change): the tier checkout draws "Bank transfer" only for a short wallet again (the lead reversed D-3: the Hub settles a transfer order from a covering wallet, so the row charged the wallet); "Add a dollar account" on /tiers opens the wallet with US dollar as the first account (`/wallet?add=USD`, then `/open-wallet?currency=USD`; an open wallet gets the Dollar tab or the add-a-currency sheet); BRIEF Z6 says cards exist (R-84). "Banking by" reads the Hub variable `NUVION_WALLET_BANK_NAME` (no default by design). Proven on a local stack. Report: tasks/history/RELEASE-02-AUTHME.md.
+- 25 Oct 2026 · RELEASE-02 (R2-AUTHME) · CHECK-3 area 1 fixes built (Sonnet builder, T1; mobile `wmt/R2-AUTHME` on `origin/main` `a3fdaf71`; app only, no backend change, no new route; no native change): D-1 tier prices keep the Hub's currency sign ($3, never ₦3) and a dollar account's Continue explains and leads to the wallet (G-R2-AUTHME-1); D-2 "Record my voice" after a tier is drawn for a creator account only; D-3 Bank transfer row from first paint; D-7 Verification draws Your ticks (Get it, Upgrade) and Every tick gives you from the Hub; D-2b share card has Who Made This? chat, Share and Save (no WhatsApp: R-68 wins over the lead's first ruling); D-4 About drops the two rows Z9 does not draw; lows L-6, L-8, L-9 fixed. D-5, D-6 and D-8 need no build (G-R2-AUTHME-5, the built A29, G-R2-AUTHME-4). Report: tasks/history/RELEASE-02-AUTHME.md.
+- 25 Oct 2026 · RELEASE-02 R2-LEGAL · Built (Sonnet builder, T2; backend `wmt/R2-LEGAL` `7f78ef1` on `origin/main` `dcee8af`, this record on mobile `wmt/R2-LEGAL`; app unchanged, no route, no migration): CHECK-3 M-01, the Legal chat showed no assistant answer. Two causes found on a local stack with the real key: every Gemini call sent `thinkingLevel`, which only Gemini 3 takes, so a Hub on `gemini-2.5-flash` got HTTP 400 on every turn (the thinking setting now follows the model family); and the default `gemini-3.7-flash` answered 503 or nothing in time (the default is `gemini-3-flash-preview`, 9 of 9 probes in 1 to 4 s; an empty `GEMINI_MODEL` is the default too). Live: a question at 390 px is answered and drawn in about 1.5 s, a whole conversation to Send opens the matter at `awaiting_quote`, and a failing model shows the saved message with "Ask again". Owner console line: `GEMINI_MODEL=gemini-3-flash-preview`. History: `tasks/history/RELEASE-02-LEGAL.md`.
+- 24 Oct 2026 · SWEEP-MONEY-6 · Built (Sonnet builder B32, T2; backend `wmt/SWEEP-MONEY-6` and mobile `wmt/SWEEP-MONEY-6`; no PR, no migration): the low findings of today's money tasks. Fixed with a spec red before: NUV-11 R2-1 (a failed or reversed send never goes back on the provider word; one `send_contradicted` audit row) and R2-2 (finance's paid-outside and the sweep's give-back cannot both pay), WALLET-21 L1, L2, L3, NUV-12 N1, the deletion sentence for a person with no naira account, the world account card's padding and the worldOpening wait. the three FX-A deletion rows (a mixed set says try again beside the rest, another provider's foreign row does not block, the foreign accounts are read again inside the deletion claim) and WALLET-31 L6's used-card Block (409, no audit row). WALLET-31 L1, L2, L5, L7 checked on main (closed in round 1); NUV-12 N3 and the OPS-28 Block note ruled no. 19 rows in `tasks/SWEEP-MONEY.md`; the table has 245 rows, 228 settled, 12 waiting, 5 open.
+- 24 Oct 2026 · WALLET-41 round 3 (lead ruling) · The passport loophole is closed: the ID step asks a passport's issuing country (the profile's country list, starting as the country they live in) and sends it as `nationality`; the Hub refuses a passport without it (`400 passport_country_required`). Backend and mobile `wmt/WALLET-41`, `origin/main` merged into both; gap G-WALLET-41-10 is a designer row ("built as the lead ruled; designer to draw").
+- 24 Oct 2026 · WALLET-41 re-check ruling · One wallet per document now follows the document's country (the `nationality` field, residence only when none is sent), not where the account lives: the same passport from accounts in two countries is `identity_has_wallet` on the second. A naira route tells a world person they have no naira account; cancelling an open world wallet is `wallet_already_open`. Backend `wmt/WALLET-41` `1dc2dcf`; the app sends no `nationality` yet (lead to decide).
+- 24 Oct 2026 · WALLET-41 round 1 · The verifier's FIX built (Sonnet builder, T2; backend `wmt/WALLET-41` `ff088fa` with `origin/main` `53819c2` merged, mobile `wmt/WALLET-41`; status verifying): residence (the account's country) decides which opening starts, one wallet per document number, a world person swaps between foreign accounts and sends coins out and sets a PIN with no naira wallet, deletion with foreign money is refused (proven live), the first-account backstop asks Nuvion, the app marks the fields the Hub names, forks and lint fixed. Migration `20261129090000_world_wallet`. Gaps G-WALLET-41-3, -5, -6 rewritten, -9 added.
+- 24 Oct 2026 · WALLET-41 · Built (Sonnet builder, T2, bundle B29; backend `wmt/WALLET-41` `84c8ecc` and mobile `wmt/WALLET-41`, both on `wmt/WALLET-21-HUB` `d39a868` and `14da2683`; status verifying; no PR): R-87. A person whose number is from outside Nigeria is asked where they live, then opens a wallet with no BVN (their country's ID, the two documents, the hosted selfie), and their first account is opened in their country's currency or their pick (US USD, GB GBP, euro countries EUR, CA CAD, AE AED, GH GHS, else USD; a config table). The Wallet tab lists their foreign accounts. Switch, fee (0) and limits from config; admin list, freeze, unfreeze and cancel with an audit row. Real Nuvion DEV: seven countries approved with no BVN or SSN; AED and Kenya USD details refused (G-WALLET-41-2). Migration `20261118090000_world_wallet`. Gaps G-WALLET-41-1 to 8.

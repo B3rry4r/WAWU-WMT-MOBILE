@@ -7,7 +7,7 @@ order: 329
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -23,6 +23,8 @@ As of 16 Oct 2026.
 - **History:** none yet.
 - **Open findings:** blocker 0, high 0, medium 0. Lows: 4 (an empty CI-rerun commit on the backend branch, the identity-holds flake that FIX-34 fixes, the helper's per-run memory, a comment's wording). They are in tasks/SWEEP-APP.md with the report path.
 - **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3a4ab69, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

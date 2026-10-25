@@ -7,7 +7,7 @@ order: 326
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [FIX-27]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -29,6 +29,8 @@ As of 16 Oct 2026.
 - **History:** none yet. Reports go to tasks/history/FIX-28.md.
 - **Open findings:** blocker 0, high 0, medium 0. Lows: the builder wrote 6 of 8 for lower() to upper() in schools-order.ts; the verifier measured 4 of 8 and the line above now says 4 (the check holds). They are in tasks/SWEEP-APP.md with the report path.
 - **Next:** the lead opens one pull request per repo from the last batch 3 head, for the owner to merge after batch 2; then mobile sign-off.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 12bb8c11, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

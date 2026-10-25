@@ -119,6 +119,21 @@ export function chatLine(costs: CostsByKind): string {
 }
 
 /**
+ * I33's second sentence under "Share the link or post your first message.", from the Hub's costs: what members pay in the new room,
+ * then that reading is free. The board's "Members pay 1 credit a message and reading is free." was drawn before R-62, when every message
+ * cost a credit; it is those words only while the Hub still prices text. Otherwise what the Hub prices is named and the rest is free.
+ */
+export function memberCostLine(costs: CostsByKind): string {
+  if (costs.text > 0) return `Members pay ${formatCredits(costs.text)} a message and reading is free.`;
+  const paid = [costs.photo > 0 ? 'photos' : null, costs.video > 0 ? 'video' : null, costs.voice > 0 ? 'voice notes' : null].filter(
+    (word): word is string => word !== null,
+  );
+  if (paid.length === 0) return 'Chat and reading are free.';
+  const named = paid.length === 1 ? paid[0] : `${paid.slice(0, -1).join(', ')} and ${paid[paid.length - 1]}`;
+  return `Chat and reading are free. Credits are for ${named}.`;
+}
+
+/**
  * I38's line under "Photo", from the Hub's costs: "Photos 1 credit · video and voice notes 3". A video and a voice note that cost
  * the same share a clause. Null when the Hub prices none of them.
  */
@@ -132,6 +147,22 @@ export function priceLine(costs: CostsByKind): string | null {
     if (costs.voice > 0) parts.push(`voice notes ${costs.voice}`);
   }
   return parts.length > 0 ? upFirst(parts.join(' · ')) : null;
+}
+
+/**
+ * I28's line above the packs, from the Hub's costs: "A photo is 1 credit, a video or voice note 3". A video and a voice note that cost
+ * the same share a clause. Null when the Hub prices neither a photo, a video nor a voice note, so nothing is said that is not so.
+ */
+export function creditCostLine(costs: CostsByKind): string | null {
+  const parts: string[] = [];
+  if (costs.photo > 0) parts.push(`a photo is ${formatCredits(costs.photo)}`);
+  if (costs.video > 0 && costs.video === costs.voice) {
+    parts.push(`a video or voice note ${costs.video}`);
+  } else {
+    if (costs.video > 0) parts.push(`a video ${costs.video}`);
+    if (costs.voice > 0) parts.push(`a voice note ${costs.voice}`);
+  }
+  return parts.length > 0 ? `${upFirst(parts.join(', '))}.` : null;
 }
 
 /**

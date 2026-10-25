@@ -7,7 +7,7 @@ order: -69
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: [R-12]
@@ -33,6 +33,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 17.
 - **Not run (rule):** `school-enrolment.contract.spec.ts` and `school-settlement.contract.spec.ts` use the Fintava double. They cover `retake` and the refund; CI runs them.
 - **Open findings:** none. Lows: none.
 - **Next:** the batch 17 pull request (the lead). `wmt/FIX-68` and `wmt/FIX-69` both append to `BACKEND_GAPS.md`; MERGE-17 kept both rows.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 33b627f0, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

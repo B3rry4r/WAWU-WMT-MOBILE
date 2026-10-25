@@ -7,7 +7,7 @@ order: 174
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [INBOX-06, INBOX-19, HOME-12, WALLET-04, WALLET-06]
 decisions: [R-30]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 2 (17 Oct):** the verifier's high (CI Branch checks red on TIER-02's `publishing-gate-coverage.spec.ts`: the staff reply took `ChatSendMessageDto`, so its body could carry a file) and its low (that attachment always answered 400) are fixed together. The reply has its own text-only `AdminSupportReplyDto` (text, same 2000-character rule as a chat message, plus `clientMessageId`); a body with an attachment is 400 by the whitelist. The coverage spec is untouched and passes (18 of 18). Support spec 16 of 16. Contract rebuilt (one `$ref` changed, one schema added).
 - **Open findings:** none known.
 - **Next:** the batch 13 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 2a05924a, app f8663857, lead acceptance in the lead's merge log, 17 Oct (verifier FIX FIRST, round 2 accepted on the lead's diff read, CI green).
 
 ## Read first
 

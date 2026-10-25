@@ -44,7 +44,7 @@ describe('the Wallet tab picks its state from its reads', () => {
     expect(homeView(read({ state: 'opening', account: null }), read(undefined)).kind).toBe('opening');
   });
 
-  it('shows W6 with the server’s own sentence when the bank does not answer, never a figure', () => {
+  it('shows W6 with the server’s own sentence when the bank does not answer, never a figure (the Wallet tab draws the board’s line over it, M-04)', () => {
     const down = new ApiError('server', 503, 'We could not reach your account. Your money is safe. Try again in a moment.', 'provider_unreachable');
     expect(homeView(read({ state: 'open', account: ACCOUNT }), read(undefined, down))).toEqual({
       kind: 'unreachable',

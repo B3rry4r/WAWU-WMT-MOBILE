@@ -14,9 +14,10 @@ export const ADD_TITLE = 'Add money';
 export const ACCOUNT_HEAD = 'Your wallet account';
 export const ACCOUNT_LINE = 'Send money here from any Nigerian bank app.';
 /*
- * The board's "Free" pill and its "arrives in a few minutes" and "Usually a few minutes" lines are the Hub's to say (FIX-109): they are
- * drawn from `GET /money/wallet`'s `transferIn` (`feeKobo` 0 is Free, `arrivalMinutes` writes the two lines in `features/wallet/arrival`)
- * and only when the Hub sent them. The app keeps no figure of its own.
+ * The board's "Free" pill is never drawn (BRIEF rule 4): the fee is its breakdown, a figure even at zero (`feeRows`). Its "arrives in a few
+ * minutes" and "Usually a few minutes" lines are the Hub's to say (FIX-109): they are drawn from `GET /money/wallet`'s `transferIn`
+ * (`feeKobo` is the provider's charge, `arrivalMinutes` writes the two lines in `features/wallet/arrival`) and only when the Hub sent them.
+ * The app keeps no figure of its own.
  */
 export const WAITING_TITLE = 'Waiting for your transfer';
 export const SHARE_LABEL = 'Share details';
@@ -39,6 +40,19 @@ export function accountRows(account: AccountDetails): AccountRow[] {
     { key: 'name', label: 'Account name', value: account.accountName, copy: account.accountName, copyLabel: 'Copy account name' },
     { key: 'number', label: 'Account number', value: groupedAccountNumber(account.accountNumber), copy: account.accountNumber, copyLabel: 'Copy account number' },
     { key: 'bank', label: 'Bank', value: account.bankName, copy: account.bankName, copyLabel: 'Copy bank name' },
+  ];
+}
+
+/**
+ * The fee of a bank transfer in, as its breakdown (BRIEF rules 3 and 4, R-23): the bank's charge, which is the Hub's `transferIn.feeKobo`,
+ * then the total fee. A zero is the figure ₦0.00, never "Free". The Hub serves no WAWU fee on a transfer in, so no row claims one; with one
+ * part the total is that part. Nothing when the Hub sent no fee (it says none when the charge depends on the amount).
+ */
+export function feeRows(feeKobo: number | undefined): { key: 'provider' | 'total'; label: string; kobo: number }[] {
+  if (feeKobo === undefined) return [];
+  return [
+    { key: 'provider', label: 'Bank charge', kobo: feeKobo },
+    { key: 'total', label: 'Total fee', kobo: feeKobo },
   ];
 }
 

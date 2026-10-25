@@ -7,7 +7,7 @@ order: 173
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [AUTH-04, AUTH-05, UI-02, INBOX-12, ME-06, ME-04, KYC-05, PROS-03]
 decisions: [R-6, R-11]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026 (builder, round 2).
 - **Round 3** (17 Oct, lead rulings on the verifier; done on `wmt/VERIFY-01`, which now holds this branch's mobile side merged at `fe5b218c`): (1) P10's Become a creator is the board's compact pill (`size="md"`, 44 high, centred), test added; (2) A13 has a Back that opens A12 again for new picks (the gate's local `reopened`, WAWU ID only moves forward; A12's Continue then saves and returns to A13, its Back leaves it); A12 as the first step has no Back (nothing before it: the code and access-code steps are over); (3) the step labels stay the true count, "1 of 2" and "2 of 2", a difference from the boards' "3 of 3" on both; (4) A13's role line stays the first interest's label: the Hub's `ExploreCreatorCard` carries no profession, so showing one is a backend field (more than 15 lines), left to the sweep (G-1711). The layout order for the merge is SHARED-CHANGES VERIFY-01 #3.
 - **Findings:** none open; lows are in SWEEP-APP. **Next:** the owner's tap on batch 9 (backend `wmt/AUTH-06` merged first, SHARED-CHANGES AUTH-06 #2).
 - **History:** none yet. Reports go to tasks/history/AUTH-06.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app ca29ebce, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

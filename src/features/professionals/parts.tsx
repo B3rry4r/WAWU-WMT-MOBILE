@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { BackHandler, Platform, StyleSheet, View } from 'react-native';
 
 import { Button, IconButton } from '@/components/Button';
@@ -9,7 +9,7 @@ import { canvasNormalLineHeight, font, layout, space } from '@/theme';
 export const navMetrics = { height: 56, button: 42, title: 17, titleTracking: -0.02 } as const;
 
 /** P1 to P4's bar: back and the centred title. */
-export function ProsNav({ title, onBack }: { title: string; onBack: () => void }) {
+export function ProsNav({ title, onBack, right }: { title: string; onBack: () => void; right?: ReactNode }) {
   return (
     <View style={styles.nav}>
       <View style={styles.side}>
@@ -18,7 +18,7 @@ export function ProsNav({ title, onBack }: { title: string; onBack: () => void }
       <Text variant="body" numberOfLines={1} accessibilityRole="header" style={styles.title}>
         {title}
       </Text>
-      <View style={styles.side} />
+      <View style={styles.side}>{right}</View>
     </View>
   );
 }

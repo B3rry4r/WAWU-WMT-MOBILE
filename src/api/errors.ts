@@ -48,7 +48,12 @@ export class ApiError extends Error {
 }
 
 /** The figures a money refusal's `reason` carries (contract `MoneyErrorReason`), each present only when the server sent it. */
-export type ApiErrorDetail = { checksLeft?: number; retryAfterSeconds?: number };
+export type ApiErrorDetail = {
+  checksLeft?: number;
+  retryAfterSeconds?: number;
+  /** A refused opening's `reason.fields` (WALLET-41): the names of the fields the provider pointed at, never a value. */
+  fields?: string[];
+};
 
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
@@ -106,9 +111,13 @@ function detailOf(reason: unknown): ApiErrorDetail | undefined {
   const record = recordOf(reason);
   const left = record.checksLeft;
   const wait = positiveSeconds(record.retryAfterSeconds);
+  const named = Array.isArray(record.fields)
+    ? record.fields.filter((f): f is string => typeof f === 'string' && /^[A-Za-z_][A-Za-z0-9_.[\]]{0,59}$/.test(f)).slice(0, 10)
+    : [];
   const detail: ApiErrorDetail = {
     ...(typeof left === 'number' && Number.isSafeInteger(left) ? { checksLeft: left } : {}),
     ...(wait !== undefined ? { retryAfterSeconds: wait } : {}),
+    ...(named.length > 0 ? { fields: named } : {}),
   };
   return Object.keys(detail).length > 0 ? detail : undefined;
 }

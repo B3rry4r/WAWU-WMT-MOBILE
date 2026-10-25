@@ -7,7 +7,7 @@ order: -82
 priority: launch
 repo: wawu-backend, wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -29,6 +29,8 @@ As of 18 Oct 2026, merging (lead): accepted on a diff read (tier T0) and stacked
 - **Checks:** backend tsc 0, eslint 0 on the spec, gates passed (0 fail, 128 warn, 88 accepted), baseline ok. Mobile tsc 0, eslint 0 on the two files, `entries.test.tsx` 3 of 3, `check_tasks --write` and `npm run tasks` exit 0 (356 tasks), mobile gates passed.
 - **Not done:** the whole nuvion-opening spec was not run (365 tests; it names Fintava tables), only the guard runs and its dispatcher test.
 - **Next:** the batch 20 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 5567e8e0, app a024a276, lead acceptance in this file (accepted on a diff read, T0).
 
 ## Read first
 

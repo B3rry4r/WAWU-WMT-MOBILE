@@ -34,6 +34,11 @@ const me = {
 const fields: ProfileFields = {
   wawuUserId: 'u1',
   location: 'Lagos, Nigeria',
+  countryCode: null,
+  countryName: null,
+  regionCode: null,
+  regionName: null,
+  city: null,
   skills: [],
   openTo: [],
   threadsHandle: null,

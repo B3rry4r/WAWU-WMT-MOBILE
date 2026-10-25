@@ -1170,7 +1170,7 @@ here is redrawn.
 
 ### Z6 · Delete account
 - **Now:** "wallet and cards" in what goes.
-- **Instead:** "wallet". No cards at launch.
+- **Instead:** none, keep "wallet and cards" as drawn: virtual cards exist (R-84 settled R-16's cards).
 - **Why:** R-16.
 
 ### W12 · Send · success receipt

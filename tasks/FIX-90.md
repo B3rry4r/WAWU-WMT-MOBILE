@@ -7,7 +7,7 @@ order: -90
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-70]
 passes: [V1]
@@ -25,6 +25,8 @@ As of 19 Oct 2026, built by a Sonnet builder (tier T0, test files only; backend 
 - **Fixes (assertions unchanged, nothing skipped):** the two event specs make the host's profile when it is missing and remove it if they made it; `learn-entitlement` asks the route about a plain user it registers on the mock WAWU ID and enrolls itself; `course-lesson` uses a buyer and a Purchase it writes and removes.
 - **`fintava-stall.spec.ts` (R-70, test only):** three "times out on time" cases failed by 6 to 77 ms in the deploy run. A forced collection in the one big process blocks the loop more than once per call, so a bound built on the worst single stall is too tight. The lag allowed is now the total time the loop was unavailable. Same bound on an idle machine.
 - **Open:** G-FIX-90-1 (low): the leak and the sweep are still there; other specs that read the seeded plain user after batch 12 are exposed until one of them is fixed.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend aef2c337, lead acceptance in the lead's merge log, 19 Oct.
 
 ## Read first
 

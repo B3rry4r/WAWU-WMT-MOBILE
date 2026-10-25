@@ -7,7 +7,7 @@ order: 144
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [HOME-03, UI-02, HOME-13, HOME-12]
 decisions: [R-8]
 passes: [V1, V4, V5, V6, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Not built:** the parent-course row on H24 (G-HOME-08-1: no link from a free piece to its course); playing a free lesson (G-HOME-08-2: no file per lesson); a course total from the Hub (G-HOME-08-3).
 - **Round 2 (17 Oct 2026, finding 1):** the locked course's foot now lies over the screen's bottom and the list is padded by the foot's measured height (plus 16), so the five marks and the comments scroll up clear of it on every screen size (web export 360x640, 390x844 and 430x932: lowest mark or comment 16 above the foot). Not reproduced on the build as verified: scrolled to the end, the list already stopped at the foot's top, and the verifier's "scrolled" picture is the unscrolled page (marks cut at the fold). The change makes it hold whatever the list does when laid out. Tests: `contentDetail.test.tsx` "the foot never sits over the page" (3).
 - **Next:** the batch 14 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 099cf130, lead acceptance in the lead's merge log, 17 Oct (verifier FIX on one medium, round 2 accepted on the lead's diff read).
 
 ## Read first
 

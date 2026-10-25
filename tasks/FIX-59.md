@@ -7,7 +7,7 @@ order: -59
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-5, R-10]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Specs:** `src/me/tests/me-paid-purchases.contract.spec.ts` 8 of 8 (each kind once, another person's never, refunded marked, paging at five page sizes with a three-way tie and no repeat or gap, title and creator search, the old answer byte-identical while other kinds are bought) plus `me.contract.spec.ts` 37 of 37. Protected suite `run.sh --fresh` all 244 required tests passed. tsc 0, eslint 0 on the changed files, gates passed, baseline ok, `contract:build` 0 (151 lines added, none removed).
 - **Open:** M7's "My purchases N" still counts unlocks only (`GET /me/counts`, G-FIX-59-2). The app adopts the new read in ME-14's follow-up.
 - **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (FIX-59 F1).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 40a92487, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

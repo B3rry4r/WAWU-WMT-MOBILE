@@ -14,6 +14,7 @@ import {
   type SignupChannel,
 } from '@/api/identity';
 import { adoptSession } from '@/api/session';
+import { maskedNumber } from '@/features/geo/phone';
 import { noteContactProved } from '@/features/claim/freshToken';
 import { markOfferPending } from '@/features/claim/offerStep';
 import { markBonusPending } from '@/features/verify/bonusStep';
@@ -37,7 +38,7 @@ import { clearSignup, heldSignup, loadSignup, saveSignup, setStarted, started } 
  * `accountType` goes to WAWU ID only: never to the Hub (G-34, R-6).
  */
 export async function startSignup(
-  values: { firstName: string; lastName: string; username: string; email: string; phone: string; password: string },
+  values: { firstName: string; lastName: string; username: string; email: string; phone: string; countryCode?: string; password: string },
   pick: AccountType | null,
 ): Promise<void> {
   const accountType = wireAccountType(pick);
@@ -52,7 +53,9 @@ export async function startSignup(
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
     email: values.email,
+    // In full international form, with the country of residence beside it (GEO-03, R-85; WAWU ID GEO-01).
     phone: values.phone,
+    ...(values.countryCode ? { countryCode: values.countryCode } : {}),
     password: values.password,
     ...(accountType ? { accountType } : {}),
   });
@@ -169,11 +172,12 @@ export async function resumeSignup(): Promise<'phone' | 'details' | null> {
   }
 }
 
-/** A4's subtitle number: the stored +234 number written as it is dialled, middle hidden (0803 ••• 4412). */
+/**
+ * A4's subtitle number, middle hidden: a Nigerian number as it is dialled at home (0803 ••• 4412), any other with its own
+ * country code (+233 ••• 4567).
+ */
 export function maskedPhone(phone: string): string {
-  const national = phone.startsWith('+234') ? `0${phone.slice(4)}` : phone;
-  if (national.length < 8) return national;
-  return `${national.slice(0, 4)} ••• ${national.slice(-4)}`;
+  return maskedNumber(phone) || phone;
 }
 
 export { started };

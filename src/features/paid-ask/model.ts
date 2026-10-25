@@ -184,7 +184,7 @@ export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string 
   return {
     tone: 'waiting',
     title: `${whoOf(name)} has ${leftLong(left)} left to reply`,
-    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and all of it comes back to your wallet.`,
+    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to your wallet.`,
   };
 }
 

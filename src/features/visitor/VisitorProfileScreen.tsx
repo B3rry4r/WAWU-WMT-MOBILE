@@ -60,6 +60,7 @@ import {
   visitorName,
   visitorTicks,
 } from './model';
+import { whereLine } from '@/features/geo/place';
 import { Actions, type ActionsProps, EducationCard, ExperienceCard, FootBar, IntroCard, SkillsCard, VisitorTop, WorksCard } from './parts';
 
 /** How near the end of the page (in points) the next page of pieces is asked for. */
@@ -449,7 +450,7 @@ function AboutBody({ wawuId, view, onOpenAllWorks, onOpenWork }: { wawuId: strin
   const education = useQuery({ queryKey: educationKey(person), queryFn: () => fetchEducation(person), retry: false }, cache);
   return (
     <View testID="visitor-about" style={styles.about}>
-      <IntroCard headline={headlineLine(view.profile)} place={placeLine(view.fields)} located={Boolean(view.fields.location?.trim())} openTo={openToChips(view.fields.openTo)} />
+      <IntroCard headline={headlineLine(view.profile)} place={placeLine(view.fields)} located={Boolean(whereLine(view.fields))} openTo={openToChips(view.fields.openTo)} />
       {works.isError ? (
         <ErrorState testID="visitor-works-error" title="Their featured works did not load" message={readFailure(works.error)} onRetry={() => void works.refetch()} />
       ) : !works.data ? (

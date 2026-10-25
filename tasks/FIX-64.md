@@ -7,7 +7,7 @@ order: -64
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-5]
 passes: [V1, V2, V3, V4, V9]
@@ -32,6 +32,8 @@ As of 18 Oct 2026, merging (lead): accepted and stacked in batch 16.
 - **Checks:** tsc 0, eslint 0 on the 3 changed files and the new spec, gates passed (0 fail, 128 warn, 88 accepted), baseline ok. `src/schools` run: 10 of 11 suites pass (108 tests).
 - **Slip, reported:** the `src/schools` run also picked up `school-enrolment.contract.spec.ts`, a Fintava-double spec. It was not edited, and it failed 32 of 32 with 401 (no mock WAWU ID was running on this machine; nothing reached a provider). It was not run again. CI runs it with its own setup.
 - **Next:** an independent verifier; then the lead's batch. Low left open: none. The backup table's removal is a follow-up task two weeks after the migration ships with no rollback.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e208d904, lead acceptance in this file (accepted by the lead).
 
 ## Read first
 

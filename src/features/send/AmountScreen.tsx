@@ -149,28 +149,33 @@ export function AmountScreen({ payee, onBack, onContinue, initial, onAddMoney }:
           ) : null}
         </View>
 
-        <AmountPresets
-          testID="send-presets"
-          presetsKobo={presets.data?.quickAmounts.map((q) => q.amountKobo) ?? []}
-          chosenKobo={amountKobo === 0 ? null : amountKobo}
-          onPick={(kobo) => setText(textOfKobo(kobo))}
-        />
+        {/* W13 draws neither the quick amounts nor the note while the amount is over the balance: the way out is Add money. */}
+        {balance.data && over ? null : (
+          <>
+            <AmountPresets
+              testID="send-presets"
+              presetsKobo={presets.data?.quickAmounts.map((q) => q.amountKobo) ?? []}
+              chosenKobo={amountKobo === 0 ? null : amountKobo}
+              onPick={(kobo) => setText(textOfKobo(kobo))}
+            />
 
-        <View style={[styles.note, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
-          <Icon name="SquarePen" size={AMOUNT.noteIcon} color={colors.textMuted} />
-          <TextInput
-            testID="send-note"
-            value={note}
-            onChangeText={setNote}
-            maxLength={presets.data?.noteMaxLength ?? NOTE_FALLBACK}
-            placeholder="Add a note (optional)"
-            placeholderTextColor={colors.textMuted}
-            accessibilityLabel="Note, optional"
-            selectionColor={colors.accent}
-            cursorColor={colors.accent}
-            style={[styles.noteInput, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
-          />
-        </View>
+            <View style={[styles.note, { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline }]}>
+              <Icon name="SquarePen" size={AMOUNT.noteIcon} color={colors.textMuted} />
+              <TextInput
+                testID="send-note"
+                value={note}
+                onChangeText={setNote}
+                maxLength={presets.data?.noteMaxLength ?? NOTE_FALLBACK}
+                placeholder="Add a note (optional)"
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel="Note, optional"
+                selectionColor={colors.accent}
+                cursorColor={colors.accent}
+                style={[styles.noteInput, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
+              />
+            </View>
+          </>
+        )}
 
         <AmountKeypad
           onKey={(key) => setText((was) => pressKey(was, key))}

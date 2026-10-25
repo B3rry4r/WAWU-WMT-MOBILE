@@ -7,7 +7,7 @@ order: 231
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-69, R-37]
 passes: [V1]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, built by a Sonnet builder (T0); accepted by the lead.
 - **Not edited:** `tasks/history/*` (round records; they keep the ids of the day they were written).
 - **Checks:** all exit 0 (builder report).
 - **Next:** the batch 11 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 170f8f56, lead acceptance in this file (accepted by the lead, T0).
 
 ## Read first
 

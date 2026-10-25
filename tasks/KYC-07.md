@@ -7,7 +7,7 @@ order: 281
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [KYC-06, HOME-01, KYC-05]
 decisions: [R-6, R-47]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -25,6 +25,8 @@ As of 17 Oct 2026, builder round 1 done (Sonnet builder); waiting for a verifier
 - **Checks:** local full check EXIT 0 (typecheck, lint 0 errors, jest 187 suites and 3307 tests, gates 10 run, 702 files, 0 fail, 5 warn as on main, `npm run tasks`). Pictures (V5) of A30 and A31 (and A14) at 390 px, light and dark, beside the boards, from a web export through stack `kyc_07`: the flag and the form match; the one difference is A30's card (below).
 - **Open:** G-824 (under the review opening nothing on the phone knows the person's name, so A5 asks for it; owner may redraw), G-825 (the phone check happens inside the bank's review, so A14 cannot show before Submit there). KYC-06's G-820 is closed by this chain.
 - **Next:** the lead merges it with batch 7.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 353c0009, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 206
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [NUV-04, NUV-05, NUV-06, NUV-07]
 decisions: [R-39, R-42]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -23,6 +23,8 @@ artboards: []
 - **Next:** a verifier (not the builder). The (key) check waits for the sandbox key and must also confirm that a statement's `transaction_id` is the transfer id, and ask Nuvion for a fee-reading call (see the fee check).
 - **Sweep list (lows, not fixed):** 5 (the extra day after the window asks next month), 8 (the schema comment names old finding kinds), the sweep's `seen` keyed on transfer id alone.
 - **History:** reports go to tasks/history/NUV-08.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 3acc0443, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

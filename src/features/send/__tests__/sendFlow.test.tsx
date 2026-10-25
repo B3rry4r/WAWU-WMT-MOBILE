@@ -49,6 +49,7 @@ const hub = {
   sends: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   searches: [] as string[],
   saved: [] as { id: string; kind: string; wawuUser: unknown }[],
+  savedPosts: [] as unknown[],
   stored: null as null | Record<string, unknown>,
   pollsLeftPending: 0,
   /** Every payment the Hub made, by Idempotency-Key: a key it knows is answered again, never paid again. */
@@ -59,7 +60,6 @@ const hub = {
   quoteTtlMs: null as number | null,
   limit: null as null | { remaining: number | null },
   quoteExpiredForSend: false,
-  saveFails: false,
 };
 
 function quote(amountKobo: number, extra = hub.quoteTotalExtra, ttlMs: number | null = hub.quoteTtlMs) {
@@ -159,7 +159,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/money/beneficiaries' && method === 'GET') return ok(hub.saved);
   if (path === '/money/beneficiaries' && method === 'POST') {
-    if (hub.saveFails) return refuse(409, { code: 'beneficiary_limit', message: 'You have saved the most people you can.' });
+    hub.savedPosts.push((await request.json()) as unknown);
     const row = { id: 'b-1', kind: 'wawu_user', wawuUser: AMAKA, bankAccount: null, createdAt: '2026-10-16T09:43:00.000Z' };
     hub.saved = [row];
     return ok(row);
@@ -239,6 +239,7 @@ beforeEach(() => {
     sends: [],
     searches: [],
     saved: [],
+    savedPosts: [],
     stored: null,
     pollsLeftPending: 0,
     created: {},
@@ -248,7 +249,6 @@ beforeEach(() => {
     quoteTtlMs: null,
     limit: null,
     quoteExpiredForSend: false,
-    saveFails: false,
   });
   forgetIntentsInMemory();
   mockVaultFault.fail = false;
@@ -502,18 +502,20 @@ describe('W12 · the receipt', () => {
     await waitFor(() => expect(pathname()).toBe('/wallet'));
   });
 
-  it('the beneficiary switch starts ON and the person is saved; the user takes it back and puts it on again; Share receipt opens the share sheet with the receipt and its reference', async () => {
+  it('SWEEP-R2: a send to a WAWU user offers no "Save as a beneficiary" switch and saves nobody (no screen draws a saved WAWU user); Share receipt opens the share sheet with the receipt and its reference', async () => {
     const shared = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
     await toReview();
     await pay();
-    const toggle = await screen.findByRole('switch', { name: 'Save Amaka as a beneficiary' });
-    expect(toggle.props.accessibilityState.checked).toBe(true);
-    await waitFor(() => expect(hub.saved).toHaveLength(1));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Save Amaka as a beneficiary' }));
-    await waitFor(() => expect(hub.saved).toHaveLength(0));
-    expect(screen.getByRole('switch', { name: 'Save Amaka as a beneficiary' }).props.accessibilityState.checked).toBe(false);
-    await fireEvent.press(screen.getByRole('switch', { name: 'Save Amaka as a beneficiary' }));
-    await waitFor(() => expect(hub.saved).toHaveLength(1));
+    expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
+    await screen.findByText('Total paid');
+    // Time for the saved people to be read and the row to be drawn, were it going to be.
+    await sleep(500);
+    await sleep(500);
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByText(/as a beneficiary/)).toBeNull();
+    expect(screen.queryByTestId('receipt-save')).toBeNull();
+    expect(hub.savedPosts).toEqual([]);
+    expect(hub.saved).toHaveLength(0);
     await press('Share receipt');
     expect(shared).toHaveBeenCalledTimes(1);
     const message = (shared.mock.calls[0][0] as { message: string }).message;
@@ -524,16 +526,7 @@ describe('W12 · the receipt', () => {
   });
 });
 
-describe('W12 · the beneficiary switch (round 2)', () => {
-  it('when the Hub will not save the person the switch shows off and says why', async () => {
-    hub.saveFails = true;
-    await toReview();
-    await pay();
-    expect(await screen.findByText('You have saved the most people you can.')).toBeTruthy();
-    expect(screen.getByRole('switch', { name: 'Save Amaka as a beneficiary' }).props.accessibilityState.checked).toBe(false);
-    expect(hub.saved).toHaveLength(0);
-  });
-
+describe('W12 · the receipt (round 2)', () => {
   it('a send still confirming points to Wallet activity and promises no notice', async () => {
     hub.stored = transfer('pending', { amountKobo: 2_500_000, expectedTotalKobo: 2_502_575 });
     hub.pollsLeftPending = 50;

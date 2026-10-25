@@ -7,7 +7,7 @@ order: -66
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-5, R-10, R-19, R-39, R-42, R-55]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,6 +30,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 18.
 - **Specs (Nuvion, real adapter over the stand-in socket):** new `src/nuvion/tests/nuvion-failed-move.contract.spec.ts` 5 of 5 (earnings and a paid-question refund: accepted-then-failed lands once under a new reference with Hub = Nuvion = ledger; a second failure rests, no loop, a third reference lands it; past the review bound a person looks and nothing more is sent), all 5 fail without the fix. `wallet-transfer-wawu-fee-nuvion.contract.spec.ts` 12 of 12 (4 new: operational ledger = Nuvion after sends, after a failed principal, after a reversal, after every scenario of the spec) and `wallet-transfer-bank-nuvion.contract.spec.ts` 9 of 9 (1 new), the new ones fail without the fix.
 - **Open:** G-FIX-66-1 (a fee-back transfer Nuvion accepts and fails has the same cause and is retried under the same reference; not in this task's scope).
 - **Next:** the batch 18 pull request (the lead). FIX-70 builds on this branch (G-FIX-66-1).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 6e815cd9, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

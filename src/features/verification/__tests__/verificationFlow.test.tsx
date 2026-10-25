@@ -44,8 +44,12 @@ type Hub = {
   tier: { state: string; tier?: { id: string; name: string } | null; activeUntil?: string | null };
   pending: { id: string; status?: string } | null;
   failWallet: boolean;
+  /** RELEASE-02 D-7: what `GET /plans` answers: naira tiers, dollar tiers, or nothing (404). */
+  plans: 'ngn' | 'usd' | 'none';
+  /** The uploads allowance, or nothing (404). */
+  allowance: boolean;
 };
-const fresh = (): Hub => ({ wallet: { state: 'not_open' }, selfie: { matchedAt: null, checksLeft: 3 }, tier: { state: 'none' }, pending: null, failWallet: false });
+const fresh = (): Hub => ({ wallet: { state: 'not_open' }, selfie: { matchedAt: null, checksLeft: 3 }, tier: { state: 'none' }, pending: null, failWallet: false, plans: 'none', allowance: false });
 let hub: Hub = fresh();
 const calls: string[] = [];
 const ok = (data: unknown) => new Response(JSON.stringify({ statusCode: 200, message: 'OK', data }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -74,6 +78,15 @@ function install() {
         return ok(hub.selfie);
       case 'GET /me/tier':
         return ok({ tier: null, activeFrom: null, activeUntil: null, productsAllowed: 5, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...hub.tier });
+      case 'GET /plans': {
+        if (hub.plans === 'none') return new Response(JSON.stringify({ statusCode: 404, message: 'Not here' }), { status: 404 });
+        const usd = hub.plans === 'usd';
+        const tier = (id: string, name: string, days: number, naira: number, cents: number) => ({ id, name, days, products: 3, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: usd ? cents : naira, eventPass: null, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: id === 'founding' });
+        return ok({ currency: usd ? 'USD' : 'NGN', currencyFixed: false, tiers: [tier('verify', 'Verify', 30, 100_000, 300), tier('plus', 'Verify Plus', 180, 300_000, 900), tier('founding', 'Founding Maker', 365, 500_000, 1500)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} });
+      }
+      case 'GET /uploads/allowance':
+        if (!hub.allowance) return new Response(JSON.stringify({ statusCode: 404, message: 'Not here' }), { status: 404 });
+        return ok({ tickHeld: false, uploads: { used: 0, allowed: 5, remaining: 5 }, storage: { usedBytes: 0, quotaBytes: 1_073_741_824 }, free: { uploads: 5, storageBytes: 1_073_741_824 }, withTick: { uploads: 25, storageBytes: 10_737_418_240 } });
       case 'GET /plans/purchases/pending':
         return ok({ purchase: hub.pending ? { id: hub.pending.id, kind: 'tier', tierId: 'founding', status: hub.pending.status ?? 'pending' } : null });
       default:
@@ -93,6 +106,7 @@ beforeAll(async () => {
     '(tabs)/wallet': page('@/app/(tabs)/wallet'),
     '(tabs)/me': page('@/app/(tabs)/me'),
     verification: page('@/app/verification'),
+    tiers: () => <Text accessibilityRole="header">Tiers</Text>,
     'open-wallet': () => <Text accessibilityRole="header">Open your wallet</Text>,
   };
   queryClient = (require('@/api/query') as typeof import('@/api/query')).queryClient;
@@ -210,12 +224,68 @@ describe('ME-13: Verification', () => {
     expect(held).toHaveTextContent(/Active until 17 Nov 2026/);
   });
 
-  it('with nothing confirming and no tier, there is no tier part and no banner', async () => {
+  it('with nothing confirming, no tier and no tiers the Hub will sell, there is no Your ticks part and no banner (the part now exists to carry "Get it", so it is drawn only when it has a row)', async () => {
     hub.wallet = { state: 'open' };
     await open();
     await settled();
     expect(screen.queryByTestId('verification-tier')).toBeNull();
     expect(screen.queryByTestId('verification-confirming')).toBeNull();
+  });
+
+  it('D-7 · M16: a person with no tier sees Your ticks with the cheapest tier, its price and length, and Get it opens the tiers', async () => {
+    hub.wallet = { state: 'not_open' };
+    hub.plans = 'ngn';
+    await open();
+    const row = await screen.findByTestId('verification-get-tick');
+    expect(row).toHaveTextContent(/Get your tick/);
+    expect(row).toHaveTextContent(/Verify · ₦1,000 for 30 days/);
+    expect(screen.getByText('Your ticks')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('verification-get-tick-button'));
+    await waitFor(() => expect(pathname()).toBe('/tiers'));
+  });
+
+  it('D-7: a person billed in dollars is shown the dollar price with the dollar sign', async () => {
+    hub.plans = 'usd';
+    await open();
+    expect(await screen.findByTestId('verification-get-tick')).toHaveTextContent(/Verify · \$3 for 30 days/);
+  });
+
+  it('D-7: a person whose tier is running sees it, and Upgrade while a higher tier exists', async () => {
+    hub.wallet = { state: 'open' };
+    hub.plans = 'ngn';
+    hub.tier = { state: 'active', tier: { id: 'plus', name: 'Verify Plus' }, activeUntil: '2026-10-12T10:00:00.000Z' };
+    await open();
+    expect(await screen.findByTestId('verification-held')).toHaveTextContent(/Verify Plus/);
+    expect(screen.getByTestId('verification-get-tick')).toHaveTextContent(/Move up a tier/);
+    expect(screen.getByText('Upgrade')).toBeTruthy();
+  });
+
+  it('D-7: a person on the highest tier is offered no step up', async () => {
+    hub.wallet = { state: 'open' };
+    hub.plans = 'ngn';
+    hub.tier = { state: 'active', tier: { id: 'founding', name: 'Founding Maker' }, activeUntil: '2026-10-12T10:00:00.000Z' };
+    await open();
+    await screen.findByTestId('verification-held');
+    expect(screen.queryByTestId('verification-get-tick')).toBeNull();
+  });
+
+  it('D-7 · M16: "Every tick gives you" draws the uploads and library space from the Hub, then reach and the tick, and nothing it did not give', async () => {
+    hub.allowance = true;
+    await open();
+    expect(await screen.findByTestId('verification-gives-uploads')).toHaveTextContent(/Up to 25 uploads/);
+    expect(screen.getByTestId('verification-gives-uploads')).toHaveTextContent(/Free accounts get 5/);
+    expect(screen.getByTestId('verification-gives-space')).toHaveTextContent(/10 GB library space/);
+    expect(screen.getByTestId('verification-gives-space')).toHaveTextContent(/Free accounts get 1 GB/);
+    expect(screen.getByTestId('verification-gives-reach')).toHaveTextContent(/Reach more people/);
+    expect(screen.getByTestId('verification-gives-tick')).toHaveTextContent(/And you can host events/);
+  });
+
+  it('D-7: with no allowance from the Hub, the two rows that carry its figures are not drawn', async () => {
+    hub.allowance = false;
+    await open();
+    await screen.findByTestId('verification-gives-reach');
+    expect(screen.queryByTestId('verification-gives-uploads')).toBeNull();
+    expect(screen.queryByTestId('verification-gives-space')).toBeNull();
   });
 
   it('a person with a tier sees its name and day from the Hub, and an open wallet has no row to open', async () => {

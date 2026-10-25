@@ -51,6 +51,7 @@ const hub = {
   stored: null as null | TransferShape,
   reversalReady: true,
   savedPosts: [] as Record<string, unknown>[],
+  saveFails: false,
   /** FIX-101 M-A: while set, POST /money/transfers/bank waits for it before answering (a Hub that takes its time). */
   hold: null as null | Promise<void>,
 };
@@ -152,6 +153,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (path === '/money/beneficiaries' && method === 'POST') {
     const body = (await request.json()) as Record<string, unknown>;
     hub.savedPosts.push(body);
+    if (hub.saveFails) return refuse(409, { code: 'beneficiary_limit', message: 'You have saved the most people you can.' });
     const row = { id: 'b-bank-1', kind: 'bank_account', wawuUser: null, bankAccount: ACCOUNT, createdAt: '2026-10-16T09:43:00.000Z' };
     hub.saved = [row];
     return ok(row);
@@ -254,6 +256,7 @@ beforeEach(() => {
     stored: null,
     reversalReady: true,
     savedPosts: [],
+    saveFails: false,
     hold: null,
   });
   (require('../intent') as { forgetIntentsInMemory: () => void }).forgetIntentsInMemory();
@@ -411,9 +414,14 @@ describe('W9 and W13 · the amount', () => {
     expect(screen.getByTestId('send-continue').props.accessibilityState?.disabled).toBe(true);
     // W13's "Add money" (WALLET-05) opens W15 with what the amount is over the balance by: ₦500,000 less ₦485,250.75.
     expect(screen.getByRole('button', { name: 'Add money' })).toBeTruthy();
+    // W13 draws neither the quick amounts nor the note field while the amount is over the balance (round 1, low).
+    expect(screen.queryByTestId('send-presets')).toBeNull();
+    expect(screen.queryByTestId('send-note')).toBeNull();
     await fireEvent.press(screen.getByTestId('amount-key-delete'));
     expect(screen.queryByTestId('send-over-balance')).toBeNull();
     expect(screen.getByTestId('send-balance')).toBeTruthy();
+    expect(screen.getByTestId('send-presets')).toBeTruthy();
+    expect(screen.getByTestId('send-note')).toBeTruthy();
     expect(screen.getByTestId('send-continue').props.accessibilityState?.disabled).toBeFalsy();
   });
 });
@@ -448,6 +456,29 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     await waitFor(() => expect(hub.savedPosts).toEqual([{ kind: 'bank_account', bankCode: GTB.code, accountNumber: ACCOUNT.accountNumber }]));
     await fireEvent.press(screen.getByTestId('receipt-done'));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
+  });
+
+  it('SWEEP-R2: the receipt of a bank send offers "Save <first name> as a beneficiary", on; off takes the account back out; on saves it again', async () => {
+    await toReview();
+    await pay();
+    const name = `Save ${ACCOUNT.accountName.split(' ')[0]} as a beneficiary`;
+    await screen.findByRole('switch', { name });
+    await waitFor(() => expect(screen.getByRole('switch', { name }).props.accessibilityState.checked).toBe(true));
+    await waitFor(() => expect(hub.saved).toHaveLength(1));
+    await fireEvent.press(screen.getByRole('switch', { name }));
+    await waitFor(() => expect(hub.saved).toHaveLength(0));
+    expect(screen.getByRole('switch', { name }).props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(screen.getByRole('switch', { name }));
+    await waitFor(() => expect(hub.saved).toHaveLength(1));
+  });
+
+  it('SWEEP-R2: when the Hub will not save the account the switch shows off and says why', async () => {
+    hub.saveFails = true;
+    await toReview();
+    await pay();
+    expect(await screen.findByText('You have saved the most people you can.')).toBeTruthy();
+    expect(screen.getByRole('switch', { name: `Save ${ACCOUNT.accountName.split(' ')[0]} as a beneficiary` }).props.accessibilityState.checked).toBe(false);
+    expect(hub.saved).toHaveLength(0);
   });
 
   it('SWEEP-APP-8 L2: the name token is not in the address of any screen on the way (W14, W9, W10), and the send still carries it', async () => {

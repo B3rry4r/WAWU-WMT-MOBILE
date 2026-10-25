@@ -37,7 +37,8 @@ export default function SignInRoute() {
       }}
       onForgot={(email) => router.push({ pathname: '/forgot-password', params: email ? { email } : {} })}
       onCreateAccount={() => router.push('/account-type')}
-      onBack={router.canGoBack() ? () => router.back() : undefined}
+      // Opened cold (a link, a reload) there is no screen behind: back goes to the welcome screen, so the arrow is always there (A22, CHECK-3 L-8).
+      onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))}
     />
   );
 }

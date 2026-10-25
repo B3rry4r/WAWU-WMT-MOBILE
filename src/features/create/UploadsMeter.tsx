@@ -6,8 +6,11 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
+import { ProductsMeter } from '@/components/ProductsMeter';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
+import { fetchMyTier, tierKey } from '@/features/me/api';
+import { productsMeterOf, runningTier } from '@/features/me/model';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { allowanceKey, fetchAllowance, type Allowance } from './api';
@@ -46,7 +49,11 @@ const noticeMetrics = { padV: 14, icon: 19, iconToText: 12, inner: 3, iconNudge:
  */
 export function SlotsFullNotice({ allowance, onOpenLibrary, onGetVerified }: { allowance: Allowance; onOpenLibrary?: () => void; onGetVerified?: () => void }) {
   const { colors } = useWawu();
-  const { tickHeld, uploads, withTick } = allowance;
+  // A person who holds a tier is never told to "Get verified" (RELEASE-02 second pass, M-3): the Hub's tier read decides, as it does for the Create tile.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
+  const holdsTier = runningTier(tier.data) !== null;
+  const { uploads, withTick } = allowance;
+  const tickHeld = allowance.tickHeld || holdsTier;
   if (noAllowance(allowance)) return null;
   return (
     <View testID="create-slots-full" accessibilityRole="alert" accessibilityLiveRegion="polite" style={[styles.notice, { backgroundColor: colors.warningTint }]}>
@@ -75,6 +82,12 @@ export function AllowanceMeter() {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0 });
+  // A person who holds a tier is shown the tier's own count and name ("3 of 3 products", "Verify · ends 26 Nov"), as Create and Me show it, and
+  // never the free level's "Get verified" line (RELEASE-02 second pass, L-p2-12). The Hub's tier read is the one that decides.
+  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
+  const products = productsMeterOf(tier.data);
+  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} caption={products.caption} testID="meter-products" />;
+  if (tier.isPending) return <Skeleton testID="meter-loading" height={96} radius={radius.card} />;
   if (allowance.data) return <UploadsMeter allowance={allowance.data} />;
   if (allowance.isError) {
     return (

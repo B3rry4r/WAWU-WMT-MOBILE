@@ -354,3 +354,53 @@ describe('PaySheet', () => {
     expect(p.onRetry).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIEF rules 3, 4 and 5; H14, E3)', () => {
+  const none = [{ label: 'Bank charge', amountKobo: 0 }];
+
+  it('H14 with a ₦0 charge: Price, Yours, "Bank charge ₦0", the Total, and "Unlock · ₦2,500"', async () => {
+    await render(<PaySheet {...props({ fees: none })} />);
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('₦0')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getAllByText('₦2,500')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
+  });
+
+  it('E3: Tickets, the charge, the Total, and a button that is the verb and the total with no dot, "Pay ₦7,515.75"', async () => {
+    await render(<PaySheet {...props({ amountKobo: 750000, amountLabel: 'Tickets', details: [], fees: [{ label: 'Bank charge', amountKobo: 1575 }], actionLabel: 'Pay', actionJoin: 'space' })} />);
+    expect(screen.getByText('Tickets')).toBeTruthy();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('₦15.75')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText('₦7,515.75')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay ₦7,515.75' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Pay · / })).toBeNull();
+  });
+
+  it('a charge and WAWU\'s fee are two parts, "Fees" adds them, the Total and the button carry the total', async () => {
+    const fees = [charge, { label: "WAWU's fee", amountKobo: 1000 }];
+    await render(<PaySheet {...props({ fees })} />);
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText("WAWU's fee")).toBeTruthy();
+    expect(screen.getByText('Fees')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText('₦2,533.25')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,533.25' })).toBeTruthy();
+  });
+
+  it('a WAWU fee of ₦0 beside a charge is still its own row, and the button is the total', async () => {
+    await render(<PaySheet {...props({ fees: [charge, { label: "WAWU's fee", amountKobo: 0 }] })} />);
+    expect(screen.getByText("WAWU's fee")).toBeTruthy();
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' })).toBeTruthy();
+  });
+
+  it('the send form keeps its charge rows too', async () => {
+    await render(<PaySheet {...props({ variant: 'send', fees: none, actionLabel: 'Send', amountKobo: 2500000 })} />);
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+  });
+});

@@ -7,7 +7,7 @@ order: -57
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -26,6 +26,8 @@ As of 17 Oct 2026.
 - **Stand-in starter:** `nuvion-standin.cjs` has no port check of its own; the check lives only in `stack.sh`, so nothing else changed.
 - **Open findings:** none. One low for the sweep: `mock-wawu-id/server.js` (Express 5) calls the `app.listen` callback on EADDRINUSE too, so its log says "listening" after it lost the port and it exits 0; the `why:` line now says the truth, the log line stays misleading.
 - **Next:** the batch 11 pull request. The low (the mock ID's log line) is in `tasks/SWEEP-APP.md`.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend aef2c337, lead acceptance in this file (accepted by the lead, T0).
 
 ## Read first
 

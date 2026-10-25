@@ -40,6 +40,7 @@ import {
   firstName,
   kindOf,
   layoutOf,
+  likeLabel,
   makerLine,
   mediaTag,
   metaLine,
@@ -208,7 +209,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
   };
 
   const actions: Action[] = [
-    { key: 'like', icon: 'Heart', label: compactCount(e.likes), on: e.likedByMe, hint: e.likedByMe ? 'Unlike' : 'Like', onPress: () => page.like.mutate(!e.likedByMe), testID: 'detail-like' },
+    { key: 'like', icon: 'Heart', label: likeLabel(p.ratingPct, e.likes), on: e.likedByMe, hint: e.likedByMe ? 'Unlike' : 'Like', onPress: () => page.like.mutate(!e.likedByMe), testID: 'detail-like' },
     { key: 'comments', icon: 'MessageCircle', label: compactCount(count), hint: commentLine, onPress: () => setCommentsOpen(true), testID: 'detail-comments' },
     { key: 'share', icon: 'Share', label: 'Share', onPress: () => setShareOpen(true), testID: 'detail-share-action' },
     { key: 'save', icon: 'Bookmark', label: e.savedByMe ? 'Saved' : 'Save', on: e.savedByMe, onPress: () => page.save.mutate(!e.savedByMe), testID: 'detail-save' },

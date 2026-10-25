@@ -7,7 +7,7 @@ order: 355
 priority: after-launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-70, R-71, R-72, R-73]
 passes: [V1]
@@ -29,6 +29,8 @@ As of 19 Oct 2026, merging (lead): stacked in batch 26 (mobile `wmt/OWNER-1019` 
   - An email sender for it does NOT exist in WAWU ID: the route is on none of its 23 branches (G-400 is open, no task). Under nuvion today the reset answers 503 "We could not send the code right now". The Hub's `mock-wawu-id/server.js:439` serves the route (a double only). Under fintava the code is a text: `src/fintava/fintava-wallet-provider.ts:706` (`FintavaOtpSender`).
   - Sign-up code, `SIGNUP_VERIFY_CHANNEL=email`: the email path is built. `src/auth/email-signup.service.ts:701` mails the 6-digit code through `MailService.sendOtpCode` (`src/mail/mail.service.ts:786`, Resend, strict delivery). The setting is read at `src/auth/signup-channel.config.ts:34` and applied at `signup-channel.service.ts:62`. Its default is `phone` (Fintava text through `src/sms/fintava-sms.provider.ts`), also `.env.example:63` and `deploy/ENV.md:27`, so production must set `email` (AUTH-07 release step 5, after G-222).
 - **Checks (EXIT lines):** `python3 scripts/tasks/check_tasks.py --write` EXIT 0 (380 tasks, INDEX.md written); `npm run tasks` EXIT 0; `python3 scripts/gates/run.py` EXIT 0 (10 gates, 1162 files, 0 fail, 16 warn, 0 accepted; the warns are old PROVISIONAL lines). No em-dash added.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 1d7dc26a, lead acceptance in the lead's merge log, 19 Oct.
 
 ## Read first
 

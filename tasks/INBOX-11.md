@@ -7,7 +7,7 @@ order: 168
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [INBOX-10, INBOX-09, MONEY-03, MONEY-19, HOME-13, UI-02, WALLET-05]
 decisions: [R-2, R-9, R-10, R-13, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 18 Oct 2026, merging (lead): round 2 verified (MERGE) and stacked in batch
 Round 2, built after the check (18 Oct 2026, Sonnet builder, T2). Same branches as INBOX-10 (`wmt/S3`, mobile and backend); the full account is in INBOX-10's Current state.
 - **I7 (F1):** the amount is now the Hub's real returned total (`HoldView.refundedKobo` = what the refund moved, ₦1,523.25 with a 2,325 kobo charge), checked live: "you got ₦1,523.25 back" and the fan's balance +152,325.
 - **I6 (F2):** after Add money and back the sheet asks one fresh quote and shows Send (live: ₦900, deposit, back, "₦2,100.00 available", paid). Round 1's "₦0 bank charge on the stack" is replaced by a 2,325 kobo run.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app c5118ae6, verifier PASS in the lead's merge log, 18 Oct (v S3 r2 MERGE both).
 
 ## Read first
 

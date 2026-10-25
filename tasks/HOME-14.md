@@ -7,7 +7,7 @@ order: 114
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-17, MONEY-13, MONEY-16, WALLET-15, WALLET-16]
 decisions: [R-5, R-10, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open for the lead:** the web's `/me/earnings` now sees wallet tips (G-704 for tips); a refunded tip leaves a hold row that appears in the payer's holds list as `tip_delivered` (same as TIER-03's refund).
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B1 F2, F4 to F6).
 - **Records:** tasks/history/HOME-14.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

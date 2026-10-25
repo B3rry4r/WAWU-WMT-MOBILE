@@ -8,6 +8,8 @@ import { Button } from '@/components/Button';
 import { IconTile } from '@/components/IconTile';
 import { Text } from '@/components/Text';
 import { creditsKey, fetchCredits } from '@/features/communities/api';
+import { creditCostLine } from '@/features/communities/format';
+import { useMessageCost } from '@/features/communities/useCredits';
 import { SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
 import { buyLabel, type StoreItem } from '@/features/store/model';
 import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
@@ -48,6 +50,9 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   const items = store.state.kind === 'ready' ? store.state.items : [];
   const selected = items.find((i) => i.product.id === chosen) ?? startingCredits(items);
   const balance = useQuery({ queryKey: creditsKey, queryFn: fetchCredits, enabled: visible && buyer.granted !== null }, queryClient);
+  // I28's "A photo is 1 credit, a video or voice note 3": the Hub's costs by kind, said only once they are known (never a number written here).
+  const costs = useMessageCost();
+  const costLine = costs.data ? creditCostLine(costs.data.creditsByKind) : null;
 
   const close = () => {
     onClose();
@@ -77,6 +82,11 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
     <BottomSheet visible={visible} onClose={close} label={SHEET_TITLE} gap={SHEET_GAP} dismissible={!buyer.busy} testID="credits-sheet">
       <View style={styles.head}>
         <Text variant="sheetTitleSm">{SHEET_TITLE}</Text>
+        {costLine ? (
+          <Text variant="muted" testID="credits-cost-line">
+            {costLine}
+          </Text>
+        ) : null}
         <Text variant="muted">{SHEET_LINE}</Text>
       </View>
       {store.state.kind === 'loading' ? (

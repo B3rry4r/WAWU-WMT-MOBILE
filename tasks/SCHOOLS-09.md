@@ -7,7 +7,7 @@ order: 133
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [SCHOOLS-07]
 decisions: [R-12]
 passes: [V1, V2, V3, V4, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026.
 - **Round 2 (be8d9cb, one low from the verifier):** a report whose token gave no name, email or phone is no longer given up as "the student removed their account": that happens only when the account is really removed (the purge clears `wawuUserId` with the details). Otherwise the school gets the mail with what exists ("not given" for the rest, plus the course, the reference and the consent time). Spec added to `school-report.contract.spec.ts` (12 tests; fails before, passes after). The 30-day copy of a released or refunded order's details is by design.
 - **Next:** the batch 10 pull request. Passes V1, V2, V3, V4, V9.
 - **History:** reports go to tasks/history/SCHOOLS-09.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 96726430, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

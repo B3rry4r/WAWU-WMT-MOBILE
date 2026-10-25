@@ -7,7 +7,7 @@ order: 274
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [ME-12, TIER-04, TIER-07, DV2-COMP]
 decisions: [R-43, R-65]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Entries:** Me's tier badge, Settings' Your tier row, the Create hub's Content at the limit of a running tier, the upload step and the publish step on a 402.
 - **Not drawn:** dollar offer (VF13a, R-16).
 - **Next:** the batch 14 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app dba331c1, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

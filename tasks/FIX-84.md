@@ -7,7 +7,7 @@ order: -84
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-62]
 passes: [V1]
@@ -33,6 +33,8 @@ As of 18 Oct 2026, merging (lead): accepted (T0, the lead's read; the assertions
 - **Checks:** backend tsc EXIT 0; eslint EXIT 0 on the helper, kinds and idempotency specs; `community-image` has 25 lint findings before and after (all older, none added); prettier clean; gates 0 fail, 129 warn, 88 accepted, EXIT 0; check_baseline EXIT 0. No Fintava spec run.
 - **Low, for the sweep:** after FIX-83 and FIX-84 both merge, the kinds spec holds FIX-83's local helper and the shared one. They could be one.
 - **Next:** an independent verifier; then the lead's batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, lead acceptance in this file (accepted, T0 lead read).
 
 ## Read first
 

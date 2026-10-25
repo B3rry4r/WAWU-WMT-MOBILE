@@ -14,6 +14,11 @@ export const limits = {
   bio: 500,
   /** UpdateProfileFieldsDto.location (PROVISIONAL on the Hub, ME-05). */
   location: 120,
+  /**
+   * UpdateProfileFieldsDto.city. The Hub's service refuses a city over 80 characters (`city_too_long`, GEO-02); the DTO's own
+   * `maxLength` says 100 (BACKEND_GAPS G-GEO-03-1), so the shorter, enforced number is the limit.
+   */
+  city: 80,
   /** UpdateProfileFieldsDto.skills, each one (the contract's `items.maxLength`). */
   skill: 40,
   /** Most skills on one profile (`SKILLS_MAX_COUNT`, PROVISIONAL on the Hub: the contract states no count, so the Hub's own sentence still says it). */

@@ -7,7 +7,7 @@ order: -62
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: [R-47, R-43]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS, one medium closed in round 2)
 - **Round 2 (finding 2, low):** `useJobCheck` ends the Add money trip when the person goes anywhere that is not the screen they left from or Add money, and when the screen goes away; no unasked re-quote follows. Test: `studioFlow.test.tsx` (Add money, then elsewhere, then back to the screen: the Hub is not asked, no sheet).
 - **Open:** M7's "My purchases N" still counts unlocks only (G-FIX-59-2).
 - **NOT RUN:** a phone (V10); mobile CI (fails in seconds while GitHub billing is off).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 58a65d26, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Goal
 

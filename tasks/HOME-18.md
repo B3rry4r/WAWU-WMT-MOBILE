@@ -7,7 +7,7 @@ order: 233
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [HOME-01]
 decisions: [R-47, R-27, R-49]
 passes: [V1, V4, V5, V6, V9]
@@ -30,6 +30,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 20. Tier
 - **Open findings:** none. Shared-file rows filed: HOME-18 #1 and #2 in `SHARED-CHANGES.md`. The verifier's 3 lows are SWEEP-APP rows HOME-18 L1 to L3 (open): 3 mutants survive (Explore's bell size at `ExploreBar.tsx:81`, Today's `fit` at `TodayScreen.tsx:82`, the dot's ring at `NotificationsBell.tsx:47`); built item 1 below says H11 draws the bell "without a dot" where the board draws one (the built behaviour, no dot until the count arrives, is right by R-47); G-HOME-18-1 and G-HOME-18-2 are reconfirmed.
 - **Merge (MERGE-20):** one conflict, in SHARED-CHANGES.md (a union: HOME-18 #1 and #2 after SWEEP-APP-4 #4); no new route file (the Home tab route gains one prop and opens the existing `/notifications`); order 233 is held by no other task.
 - **Next:** the batch 20 pull request (the lead). V9 (the real Hub) and V10 (a phone) were not run.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 128a7c23, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

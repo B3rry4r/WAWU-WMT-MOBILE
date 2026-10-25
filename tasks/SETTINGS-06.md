@@ -7,7 +7,7 @@ order: 175
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [MONEY-06, MONEY-11]
 decisions: [R-17, R-11, R-19]
 passes: [V1, V2, V3, V4, V9]
@@ -35,6 +35,8 @@ As of 17 Oct 2026, builder round 9 done (verifier round 8 said FIX: 3 medium, 2 
   - Under Nuvion nothing is frozen (no freeze method yet); the up-front checks and the final re-check are the guard.
   - Money that becomes due during the window keeps the final purge back until an operator looks (`purgeBlockedBy`).
 - **Records:** round reports and the verifier's report are in tasks/history/SETTINGS-06.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

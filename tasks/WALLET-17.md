@@ -7,7 +7,7 @@ order: 159
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-18, WALLET-16, EVENTS-07, INBOX-16]
 decisions: [R-5, R-11, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,6 +30,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open for the lead:** (b) `community_credits` is a stream kind the contract's `PaymentKind` enum does not list; the earnings read keeps unknown kinds. (c) Credits bought at Flutterwave pay no host here. Low, for the sweep: G-WALLET-17-1 (`wallet-funding.service.ts:114`, the legacy funding sweep would double-credit what the sweeps now pay if `WALLET_FUNDING=on`).
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B3a L2, L3).
 - **Records:** tasks/history/WALLET-17.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in this file (verdict merge after rounds 2 and 3).
 
 ## Read first
 

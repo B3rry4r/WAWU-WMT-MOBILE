@@ -1,5 +1,7 @@
 import type { components } from '@/api/schema.generated';
 
+import { locationText } from '@/features/geo/place';
+
 import { HANDLE_PATTERN, limits } from './limits';
 import {
   PLATFORMS,
@@ -25,7 +27,16 @@ export type ProfileForm = {
   /** Without the "@". */
   handle: string;
   bio: string;
+  /** The older free-text place the web reads. It is not edited here: saving a country, region or city writes it from them. */
   location: string;
+  /** Country of residence (ISO alpha-2) and its name, from the Hub's list (GEO-03, R-85). Null until chosen. */
+  countryCode: string | null;
+  countryName: string | null;
+  /** The region's full ISO 3166-2 code ("NG-LA"), or null; for a country the Hub lists no regions for, the name below is typed text. */
+  regionCode: string | null;
+  regionName: string;
+  /** Free text, trimmed on save. */
+  city: string;
   /** The saved or newly uploaded picture; null when there is none. */
   avatarUrl: string | null;
   coverUrl: string | null;
@@ -65,6 +76,11 @@ export function formFrom(me: MyProfile, fields: ProfileFields): ProfileForm {
     handle: me.handle ?? '',
     bio: me.bio ?? '',
     location: fields.location ?? '',
+    countryCode: fields.countryCode ?? null,
+    countryName: fields.countryName ?? null,
+    regionCode: fields.regionCode ?? null,
+    regionName: fields.regionName ?? '',
+    city: fields.city ?? '',
     avatarUrl: me.avatarUrl,
     coverUrl: me.coverUrl,
     handles,
@@ -77,7 +93,7 @@ export type Problems = {
   name?: string;
   handle?: string;
   bio?: string;
-  location?: string;
+  city?: string;
   /** One sentence per platform whose handle cannot be saved. */
   social: Partial<Record<SocialPlatform, string>>;
 };
@@ -98,7 +114,7 @@ export function problemsOf(form: ProfileForm, base: ProfileForm): Problems {
     else if (form.handle.length > limits.handle) problems.handle = `A handle can be at most ${limits.handle} characters.`;
   }
   if (form.bio.length > limits.bio) problems.bio = `Your bio can be at most ${limits.bio} characters.`;
-  if (form.location.trim().length > limits.location) problems.location = `Your location can be at most ${limits.location} characters.`;
+  if (form.city.trim().length > limits.city) problems.city = `A city can be at most ${limits.city} characters.`;
   for (const platform of PLATFORMS) {
     const sentence = socialProblem(platform, form.handles[platform]);
     if (sentence) problems.social[platform] = sentence;
@@ -107,13 +123,40 @@ export function problemsOf(form: ProfileForm, base: ProfileForm): Problems {
 }
 
 export function hasProblems(problems: Problems): boolean {
-  return Object.keys(problems.social).length > 0 || Boolean(problems.name ?? problems.handle ?? problems.bio ?? problems.location);
+  return Object.keys(problems.social).length > 0 || Boolean(problems.name ?? problems.handle ?? problems.bio ?? problems.city);
 }
 
 const sameOrder = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((key, i) => key === b[i]);
 
 /** The social part of the form that has been added (M9's order), as handles in that order. */
 const filledOrder = (form: ProfileForm) => form.order.filter((p) => form.handles[p] !== '');
+
+const sameRegion = (a: ProfileForm, b: ProfileForm) => a.regionCode === b.regionCode && a.regionName.trim() === b.regionName.trim();
+
+/**
+ * The place the person changed (GEO-03): the country, the region and the city, each only when it differs from what is saved.
+ * Changing the country clears the region the Hub held for the old one, so the form clears it too and the clearing is sent.
+ * Any change also writes the free-text `location` the web reads ("Ikeja, Lagos, Nigeria") from the three, so the two agree;
+ * a line over the Hub's length is left unwritten.
+ */
+function placeChanges(form: ProfileForm, base: ProfileForm): FieldsUpdate {
+  const out: FieldsUpdate = {};
+  const countryChanged = form.countryCode !== base.countryCode;
+  const regionChanged = !sameRegion(form, base);
+  const cityChanged = form.city.trim() !== base.city.trim();
+  if (countryChanged) out.countryCode = form.countryCode;
+  if (regionChanged) {
+    out.regionCode = form.regionCode;
+    out.regionName = form.regionName.trim() === '' ? null : form.regionName.trim();
+  }
+  if (cityChanged) out.city = form.city.trim() === '' ? null : form.city.trim();
+  if (countryChanged || regionChanged || cityChanged) {
+    const line = locationText({ city: form.city, regionName: form.regionName, countryName: form.countryName });
+    if (line === null) out.location = null;
+    else if (line.length <= limits.location) out.location = line;
+  }
+  return out;
+}
 
 export type Changes = {
   /**
@@ -143,7 +186,10 @@ export function changesOf(form: ProfileForm, base: ProfileForm): Changes {
 
   const fields: FieldsUpdate = {};
   if (!sameOrder(form.skills, base.skills)) fields.skills = [...form.skills];
+  // The free-text place is no field of M8 any more (a country, region and city replace it), but a form that holds a different one still saves it,
+  // unless the place was changed too: then the line written from the three below is the one saved.
   if (form.location.trim() !== base.location.trim()) fields.location = form.location.trim() === '' ? null : form.location.trim();
+  Object.assign(fields, placeChanges(form, base));
 
   for (const platform of PLATFORMS) {
     if (form.handles[platform] === base.handles[platform]) continue;
@@ -178,7 +224,18 @@ export function rebased(base: ProfileForm, form: ProfileForm, part: 'handle' | '
   if (part === 'handle') return { ...base, handle: form.handle };
   if (part === 'fields') {
     const handles = { ...base.handles, threads: form.handles.threads };
-    return { ...base, location: form.location, handles, order: form.order, skills: form.skills };
+    return {
+      ...base,
+      location: form.location,
+      countryCode: form.countryCode,
+      countryName: form.countryName,
+      regionCode: form.regionCode,
+      regionName: form.regionName,
+      city: form.city,
+      handles,
+      order: form.order,
+      skills: form.skills,
+    };
   }
   const handles = { ...form.handles, threads: base.handles.threads };
   return { ...base, name: form.name, bio: form.bio, avatarUrl: form.avatarUrl, coverUrl: form.coverUrl, handles };

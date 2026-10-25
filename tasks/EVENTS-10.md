@@ -7,7 +7,7 @@ order: 149
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [EVENTS-07, MONEY-18]
 decisions: [R-10, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -38,6 +38,8 @@ As of 17 Oct 2026.
 - **Open findings:** none medium or worse. Verifier finding 2 (the 15 s budget and what the answer says) is in `tasks/SWEEP-EVENTS.md` (EVENTS-10 F2). Findings 1, 3, 4 and 5 (a lazy request in the slow-provider spec, a double 201 on two cancels at once, a free order made at the instant of the cancel, the per-order charge cap) go to the lead's task EVENTS-13.
 - **Next:** the lead merges it with batch 7; EVENTS-13 takes findings 1, 3, 4 and 5.
 - **History:** the builder report is in tasks/history/EVENTS-10.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: -89
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -31,6 +31,8 @@ As of 19 Oct 2026, built by a Sonnet builder (tier T0, test only): backend `wmt/
 - **Checks:** backend `tsc --noEmit` EXIT 0; eslint (no fix) on the five files EXIT 0; prettier clean.
 - **Left (G-FIX-89-1, low):** `plan-transfer-sweep.contract.spec.ts` (Fintava double, not touched) reads the shared table; the polluters (TIER-04 specs delete no audit rows; the transfer specs leave waiting orders) could also clean up after themselves.
 - **Next:** the lead's read (T0, test only); the account-deletion fuzz is a separate flake for the lead.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 40f64b36, lead acceptance in the lead's merge log, 19 Oct.
 
 ## Read first
 

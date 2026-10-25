@@ -7,7 +7,7 @@ order: 283
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [INBOX-22, INBOX-13, INBOX-05]
 decisions: [R-62, R-5, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS for the app) and stacked in ba
 - **Checks:** tsc EXIT 0; eslint on 13 changed files EXIT 0; jest `src/features/communities` and `src/features/credits` 7 suites, 179 tests EXIT 0 (78 in RoomScreen, 16 of them new or rewritten); gates EXIT 0 (baseline 0, 56 unit tests). Pictures at 390 px, light and dark, board then built: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/inbox-23-b/side/` (I24, I25, I26, I38, I27).
 - **Not run:** V10 (no phone); a real provider or bucket (never).
 - **Next:** the batch 19 pull request (the lead). FIX-77 (backend `84d56ff`, mobile `a92f29e9`, ready for batch 20) closes INBOX-23 F1 and F2.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 9b9aadd5, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

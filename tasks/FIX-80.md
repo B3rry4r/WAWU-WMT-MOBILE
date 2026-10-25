@@ -7,7 +7,7 @@ order: -80
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 18 Oct 2026, merging (lead): round 2 checked PASS (no finding, three notes
 - **Gaps named:** G-FIX-80-6 (a retroactive edit older than the cut reads clean; what it would take), G-FIX-80-7 (a provider with no balance on any line is not balance-compared).
 - **Not done:** G-FIX-80-4 (a duplicated ledger row is named on one of its two rows), G-FIX-80-5 (the reference of a book-transfer reversal on the real Nuvion statement is not documented).
 - **Checked (round 2) and merged (MERGE-22):** the round 2 verifier ran a 349-line, 7.5 hour history on a real Hub: `clean`, balances 5 of 5 compared, twice; 700 short and over named; dates 5 hours off read `clean`; a bank return 80 hours old read `clean` with `reversal_returned`; every plant named; read-only (the stand-in's books and a hash of every ledger row unchanged). Notes (rows in SWEEP-MONEY): G-FIX-80-7 only an empty WAWU statement skips silently (its rows then read `ledger_only`); a statement-only dropped return older than the window is not named; the Hub reads 20 Nuvion webhooks per 30 second tick, so a big burst lags about 10 minutes. On MERGE-22 the pure specs (7 suites, 151) and money-check-nuvion with wallet-transfer-wawu-fee-nuvion, nuvion-failed-move and wallet-transfer-bank-nuvion in one process (4 suites, 61) ran green. Lead rulings: FIX-74 L3 is fixed by this task; G-FIX-67-4 and G-FIX-67-5 are done.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4e0067b0, verifier PASS in the lead's merge log, 18 Oct (v FIX-80 r2 PASS; lead accepted the closing diff).
 
 ## Read first
 

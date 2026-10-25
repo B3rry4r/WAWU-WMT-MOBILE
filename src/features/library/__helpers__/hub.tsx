@@ -47,6 +47,20 @@ export const allowance = (used: number, allowed: number, tickHeld = false) => ({
   withTick: { uploads: 25, storageBytes: 10 * 1024 * MB },
 });
 
+/** `GET /me/tier` for a person holding a running tier (RELEASE-02 second pass, M-3): the tier's own count and end date. */
+export const runningTier = (used: number, allowed: number, id = 'verify', name = 'Verify') => ({
+  state: 'active',
+  tier: { id, name, badge: { id: 'verified', numbered: false } },
+  activeFrom: '2026-10-01T00:00:00.000Z',
+  activeUntil: '2099-11-26T00:00:00.000Z',
+  productsAllowed: allowed,
+  productsUsed: used,
+  extraProducts: 0,
+  pointsIncluded: 100,
+  firstVoiceIntroIncluded: true,
+  eventPass: null,
+});
+
 /** One piece as `GET /content/mine/library` serves it. */
 export function piece(over: Record<string, unknown> = {}) {
   return {

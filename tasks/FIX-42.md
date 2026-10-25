@@ -7,7 +7,7 @@ order: 337
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [BILLS-04]
 decisions: [R-19, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -24,6 +24,8 @@ As of 16 Oct 2026.
 - **Open findings:** none yet.
 - **Id and order:** filed after-launch at order 292, the way FIX-40 (order 291) is: the checker keeps launch tasks before CHECK-3 (order 253). The lead can move it.
 - **Next:** an independent verifier.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend a5e48fc1, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

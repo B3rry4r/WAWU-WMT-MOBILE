@@ -7,7 +7,7 @@ order: -67
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-39]
 passes: [V1, V3, V9]
@@ -32,6 +32,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 20 (roun
 - **Run on a stack** (`fix67r2`, ports 7800 to 7807, down afterwards, databases dropped): 4 funded wallets, then content unlock, 4 tips, a paid question released and one refunded, an event ticket (held), a bank send and a WAWU send with fees, an add-money inflow, 2 earnings moves (stand-in 18 transfers plus the refund and the moves, all successful). `MONEY_CHECK_SETTLE_MINUTES=5`, 10 minutes after the last move: verdict `clean`, 4 of 4 wallets, movements 21 compared, WAWU's account 13, balances 5 (4 wallets and WAWU's account), held money 5, WAWU's fee 2 (both legs), ledger rows 40, holds 1, no mismatch, no look, no notice. The stand-in's operational account (100,581,000) is its opening 100,000,000 plus the merchant ledger 581,000. A wrong amount planted on one ledger row (+700 kobo) read `differences`: `amount_differs` and `balance_differs` (700 kobo), then put back.
 - **Not done / for the lead:** G-FIX-67-4 (a reversed or returned move still reads as a difference on Nuvion: the walk has none) and G-FIX-67-5 (an explained row ages out of the night's window and reads as a discrepancy again). Both low, named in BACKEND_GAPS. CI run ids: see the hand-back.
 - **Next:** FIX-80 (F1, F2 and G-FIX-67-5, on `wmt/FIX-67` `b75e01a`; not in this batch); the batch 20 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 5567e8e0, verifier PASS in the lead's merge log, 18 Oct (v FIX-67 r2 PASS; lead accepted r2 as built).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 0
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -26,6 +26,8 @@ As of 17 Oct 2026.
 - **Open findings:** none yet.
 - **Next:** an independent verifier; then the lead merges it with the next batch.
 - **History:** tasks/history/FIX-48.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app e209ca47, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

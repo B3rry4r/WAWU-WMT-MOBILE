@@ -7,7 +7,7 @@ order: 153
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, WALLET-09, WALLET-10, WALLET-14, MONEY-12, UI-02, HOME-12, WALLET-03]
 decisions: [R-10, R-1, R-16, R-28, R-33, R-6, R-42, R-53, R-67, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 2 (verifier M1, L1, L2):** "Free" is no longer drawn (no inflow fee is served); "Money you send arrives in a few minutes." and "Usually a few minutes" are removed (nothing serves an arrival time); W15 under the card is empty until the wait starts. The landing reads every unseen top-up, not the newest only, and the balance again after the rows so it holds every row named. Tests: `addMoney.test.tsx` 20 (3 new: two close together, one landing unchanged, a second between the reads), the old words now asserted absent.
 - **Gaps:** G-WALLET-05-1 (contract omits `at` on the timeline), -2 (no arrival time: W17 Arrives and W19's last line not drawn), -3 (W15/W45 arrival lines, no longer drawn), -4 (a stack inflow names no sender), -5 (the Hub serves no inflow fee: W15 "Free" not drawn). **Not run:** V10 (phone). **Next:** the verifier.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (L3, L4).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 86268a22, verifier PASS in this file (verdict: money core holds on every attack; M1, L1, L2 closed in round 2 on the lead's diff read).
 
 ## Design v2 update (16 Oct 2026)
 

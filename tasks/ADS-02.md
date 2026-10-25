@@ -7,7 +7,7 @@ order: 43
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: todo
+status: review
 depends_on: [ADS-06, ADS-05]
 decisions: [R-15]
 passes: [V1, V6, V7, V9]
@@ -23,6 +23,8 @@ As of 16 Oct 2026, from the branch (built 8 Oct). The lead's log does not mentio
 - **Merged and live:** nothing. **Open findings:** none yet. G-332: the 11 admin ads routes are not in the protected list (an owner re-lock).
 - **Next:** a verifier session, once the lead says where the dashboard repo is.
 - **Records:** on the branch, `wmt/ADS-02`, in tasks/ADS-02.md there (11 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py ADS-02`; the history goes to tasks/history/ADS-02.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as dashboard ee23d21c, verifier PASS in the lead's merge log, 24 Oct (v B13 dashboard PASS).
 
 ## Read first
 

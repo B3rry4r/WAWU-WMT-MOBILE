@@ -7,7 +7,7 @@ order: 179
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SETTINGS-06, SETTINGS-08, MONEY-11, MONEY-13, UI-02, SETTINGS-01, WALLET-05]
 decisions: [R-17, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/set05-b/pics/` 390 wide, light and dark: `board-*` and `side-*` (board left, built right) for Z2 foot, Z6, Z7, Z8; Z6 loading, error and no wallet; Z7 empty, sheet, refused (wallet, earning), error. Not run: V10 (phone), a real bank outage (the unreachable pictures answer the Hub's own 503 body in the browser).
 - **Gaps and shared changes:** G-SETTINGS-05-1 (no served waiting period), G-SETTINGS-05-2 (no read says a deletion is waiting); SHARED-CHANGES SETTINGS-05 #1 (contract copy), #2 (Banner action, Button danger), #3 (merge).
 - **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-AUTH (L1 to L3).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app dc2a5dc9, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

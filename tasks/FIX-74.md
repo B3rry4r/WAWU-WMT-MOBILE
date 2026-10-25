@@ -7,7 +7,7 @@ order: -74
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-1, R-10, R-19, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 19.
 - **Not run (brief):** `school-settlement.contract.spec.ts` and `school-enrolment.contract.spec.ts`. Note for the lead: the settlement spec imports only `test/schools/school-nuvion-harness`, whose Fintava settings point at a closed counter; the enrolment spec is the one FIX-64 found to use the double. `school-settlement.contract.spec.ts` holds the existing pending-row charge test ("takes the provider's own charge when it differs from the quote"); the new spec repeats that case.
 - **Left as is (decision for the lead):** the audit note lives on `discrepancy`, the ledger's only per-row note, so the nightly money check still lists the row as a ledger discrepancy (it lists every row carrying the provider's charge note, which the webhook writes today). The figures now agree with the provider; the listing is the existing convention, not a new flag. A column or a check that skips explained rows would need a schema change or a change to the check.
 - **Next:** the batch 19 pull request (the lead). FIX-76 takes the load flake in `school-settlement.contract.spec.ts` (FIX-74 L1).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e199d955, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

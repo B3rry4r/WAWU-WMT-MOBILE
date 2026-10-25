@@ -144,7 +144,7 @@ describe('M8 · Edit profile', () => {
 
     await fireEvent.changeText(screen.getByTestId('edit-name'), 'Lennox Chuka Emmanuel');
     await fireEvent.changeText(screen.getByTestId('edit-bio'), 'Teaching African creators to get paid.');
-    await fireEvent.changeText(screen.getByTestId('edit-location'), 'Abuja, Nigeria');
+    await fireEvent.changeText(screen.getByTestId('edit-city'), 'Abuja');
     expect(screen.getByTestId('edit-save')).toBeEnabled();
     await fireEvent.press(screen.getByTestId('edit-save'));
 
@@ -155,7 +155,7 @@ describe('M8 · Edit profile', () => {
     // Only what changed goes up, to the route that holds it.
     expect(patches()).toEqual([
       { method: 'PATCH', path: ME, body: { firstName: 'Lennox', middleName: 'Chuka', lastName: 'Emmanuel', bio: 'Teaching African creators to get paid.' } },
-      { method: 'PATCH', path: FIELDS, body: { location: 'Abuja, Nigeria' } },
+      { method: 'PATCH', path: FIELDS, body: { city: 'Abuja', location: 'Abuja' } },
     ]);
   });
 
@@ -272,7 +272,7 @@ describe('M8 · Edit profile', () => {
   it('a user who leaves with unsaved changes is asked, and can keep editing or discard', async () => {
     serve();
     const { onBack } = await boot();
-    await fireEvent.changeText(await screen.findByTestId('edit-location'), 'Kano');
+    await fireEvent.changeText(await screen.findByTestId('edit-city'), 'Kano');
     await fireEvent.press(screen.getByTestId('edit-back'));
     expect(await screen.findByText('Discard your changes?')).toBeTruthy();
     expect(onBack).not.toHaveBeenCalled();
@@ -309,14 +309,14 @@ describe('M8 · Edit profile', () => {
     serve({ [`PATCH ${FIELDS}`]: refusal(500, 'boom') });
     await boot();
     await fireEvent.changeText(await screen.findByTestId('edit-bio'), 'New bio');
-    await fireEvent.changeText(screen.getByTestId('edit-location'), 'Kano');
+    await fireEvent.changeText(screen.getByTestId('edit-city'), 'Kano');
     await fireEvent.press(screen.getByTestId('edit-save'));
     expect(await screen.findByTestId('edit-banner')).toBeTruthy();
     answers[`PATCH ${FIELDS}`] = ok(details);
     sent = [];
     await fireEvent.press(screen.getByTestId('edit-save'));
     await saveLands();
-    expect(patches()).toEqual([{ method: 'PATCH', path: FIELDS, body: { location: 'Kano' } }]);
+    expect(patches()).toEqual([{ method: 'PATCH', path: FIELDS, body: { city: 'Kano', location: 'Kano' } }]);
   });
 
   it('a user sees a loading state while the profile is on its way', async () => {
@@ -344,7 +344,7 @@ describe('M8 · Edit profile', () => {
     });
     await boot();
     expect((await screen.findByTestId('edit-handle')).props.value).toBe('@');
-    expect(screen.getByTestId('edit-location').props.value).toBe('');
+    expect(screen.getByTestId('edit-city').props.value).toBe('');
     expect(screen.getByText('0 / 500')).toBeTruthy();
     expect(screen.queryByTestId('edit-social-instagram')).toBeNull();
     expect(screen.getByTestId('edit-social-add')).toBeTruthy();

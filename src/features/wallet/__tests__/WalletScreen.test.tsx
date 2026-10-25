@@ -180,7 +180,7 @@ const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'to-cash'];
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
 const NOT_BUILT_IDS = [
   'wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
-  'wallet-loading-tabs', 'wallet-loading-bills', 'wallet-bills',
+  'wallet-loading-bills', 'wallet-bills',
   'wallet-bill-power', 'wallet-bill-more', 'wallet-bill-airtime', 'wallet-bill-data', 'wallet-bill-tv',
 ];
 /**
@@ -367,6 +367,33 @@ describe('W1 · Wallet · Naira', () => {
     expect(second.screen.queryByTestId('wallet-points')).toBeNull();
   });
 
+  it('the Capital row is drawn when the Hub says Capital is on and served, or the person holds something, and opens Capital (NUV-12)', async () => {
+    const off = await boot();
+    expect(await off.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await off.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(0));
+    expect(off.screen.queryByTestId('wallet-capital')).toBeNull();
+    await off.cleanup();
+    // Switched off and nothing held: no way in.
+    fallback['GET /capital/availability'] = ok({ available: false, holding: false });
+    const none = await boot();
+    expect(await none.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await none.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(1));
+    expect(none.screen.queryByTestId('wallet-capital')).toBeNull();
+    await none.cleanup();
+    // Switched off but the person holds something: the way out stays.
+    fallback['GET /capital/availability'] = ok({ available: false, holding: true });
+    const holder = await boot();
+    expect(await holder.screen.findByTestId('wallet-capital')).toBeTruthy();
+    await holder.cleanup();
+    fallback['GET /capital/availability'] = ok({ available: true, holding: false });
+    const on = await boot();
+    const row = await on.screen.findByTestId('wallet-capital');
+    expect(row).toBeTruthy();
+    mockPushed.length = 0;
+    rtl.fireEvent.press(row);
+    expect(mockPushed).toEqual(['/capital']);
+  });
+
   it('a transaction row says who, what, how much and when, and a user can tap it to open that transaction (W27)', async () => {
     const app = await boot();
     const row = await app.screen.findByTestId('wallet-row-r2');
@@ -433,17 +460,17 @@ describe('W4 · Wallet · loading', () => {
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
   });
 
-  it('draws W4 for what is built: the bar, then the shapes of the card, the Points card, the five actions and three rows, and no shape of a tab (R-47)', async () => {
+  it('draws W4 for what is built: the bar, then the tab-pill row (the tabs are built, WALLET-21), the shapes of the card, the Points card, the five actions and three rows, and no scan icon (R-47; round 1)', async () => {
     routes['GET /money/wallet/balance'] = ['hold'];
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-loading')).toBeTruthy();
     expect(app.screen.getByRole('header', { name: 'Wallet' })).toBeTruthy();
-    for (const id of ['wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows']) {
+    for (const id of ['wallet-loading-tabs', 'wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows']) {
       expect(app.screen.getByTestId(id)).toBeTruthy();
     }
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
     expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(5);
-    const stands = ['wallet-bar', 'wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows'];
+    const stands = ['wallet-bar', 'wallet-loading-tabs', 'wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
     // Quiet shapes, not the real entries: only the bar's settings icon to press, and no word of the account.
@@ -479,12 +506,13 @@ describe('W5 · Wallet · new account', () => {
 });
 
 describe('W6 · Wallet · can’t reach account', () => {
-  it('shows no balance and no number when the bank does not answer, with the server’s sentence, and Try again asks again', async () => {
+  it('shows no balance and no number when the bank does not answer, with the board’s line (never the server’s words), and Try again asks again', async () => {
     routes['GET /money/wallet/balance'] = [refusal(503, 'provider_unreachable', UNREACHABLE)];
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-unreachable')).toBeTruthy();
     expect(app.screen.getByText("We couldn't reach your account")).toBeTruthy();
-    expect(app.screen.getByText(UNREACHABLE)).toBeTruthy();
+    expect(app.screen.getByText('Your money is safe. This is a connection problem between us and the bank.')).toBeTruthy();
+    expect(app.screen.queryByText(UNREACHABLE)).toBeNull();
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
     expect(app.screen.queryByText('810 000 0417')).toBeNull();
     expect(allText(app)).not.toContain('₦');

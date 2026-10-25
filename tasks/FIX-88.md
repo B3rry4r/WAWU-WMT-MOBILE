@@ -7,7 +7,7 @@ order: -88
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-70]
 passes: [V1]
@@ -26,6 +26,8 @@ As of 19 Oct 2026, merging (lead): stacked in batch 26 (backend `wmt/FIX-88` `42
 - **`src/money/earnings/tests/earning-settlement.contract.spec.ts`: 21 of 29 failed by design since R-55** (one earnings move per creator per Lagos day, WALLET-16). All 21 now pin R-55 as the Nuvion earning specs do: one `EarningMove` per creator per day carries every earning, its reference is `moveReference(creator, day)`, the lease, the unknown outcomes and the 72 hours after the FIRST refusal belong to the move, the ledger holds one pair per move (a move of one sale keeps that sale's link), a second sale on the same day waits for the next day's move. Every money check is kept: amounts to the kobo, the provider's charge paid once per move, once only under replay, two Hub processes, a crash and a lost answer. Teardown now also deletes the moves. Two hand-made cases (a sale that stops being finished) test both places the rule is read: the planner (no move) and the lease (a move that is withdrawn, nothing sent).
 - **Open:** G-FIX-88-1 (low, the T6b cause is not proven) is a row of `tasks/SWEEP-MONEY.md`, open for the lead.
 - **Checks:** see the builder report. CI on the backend head is green (Branch checks, Gates, Protected routes).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 19 Oct.
 
 ## Read first
 

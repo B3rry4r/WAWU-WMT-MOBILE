@@ -220,4 +220,36 @@ describe('VF7 · You’re official', () => {
     expect(rtl.screen.getByTestId('official-products')).toBeTruthy();
     expect(rtl.screen.getByTestId('official-pass')).toBeTruthy();
   });
+
+  // RELEASE-02 second pass (L-p2-4), carried over from main: the Founding badge's number is the Hub's, on the profile details.
+  const fields = (badge: object | null) => ({ wawuUserId: 'me', location: null, countryCode: null, countryName: null, regionCode: null, regionName: null, city: null, skills: [], openTo: [], threadsHandle: null, socialOrder: [], memberSince: null, badge });
+  const official = async (tierId: string) => {
+    const { OfficialScreen } = require('../OfficialScreen') as typeof import('../OfficialScreen');
+    await renderSignedIn(<OfficialScreen tierId={tierId} onDone={jest.fn()} />);
+    return rtl.screen.findByTestId('official-title');
+  };
+  const fieldReads = () => (globalThis.fetch as jest.Mock).mock.calls.filter(([input]) => String(input instanceof Request ? input.url : input).includes('/users/me/profile-fields')).length;
+
+  it('L-p2-4: the Founding Maker success shows the badge with the number the Hub gave it', async () => {
+    serve();
+    hub.routes['GET /users/me/profile-fields'] = fields({ id: 'founding', name: 'Founding Maker', numbered: true, number: 128 });
+    await official('founding');
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('official-badge')).toHaveTextContent('Founding Maker #128'));
+  });
+
+  it('L-p2-4: a Founding badge the Hub has not numbered yet shows the name alone, never a number of the app’s own', async () => {
+    serve();
+    hub.routes['GET /users/me/profile-fields'] = fields(null);
+    await official('founding');
+    await rtl.waitFor(() => expect(fieldReads()).toBeGreaterThan(0));
+    expect(rtl.screen.getByTestId('official-badge')).toHaveTextContent(/^Founding Maker$/);
+  });
+
+  it('L-p2-4: a tier with no numbered badge never asks for the number', async () => {
+    serve();
+    hub.routes['GET /users/me/profile-fields'] = fields({ id: 'founding', name: 'Founding Maker', numbered: true, number: 128 });
+    await official('verify');
+    expect(rtl.screen.getByTestId('official-badge')).toHaveTextContent(/^Verify$/);
+    expect(fieldReads()).toBe(0);
+  });
 });

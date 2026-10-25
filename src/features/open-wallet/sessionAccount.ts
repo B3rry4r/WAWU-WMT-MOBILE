@@ -41,6 +41,24 @@ export function namesOfToken(token: string | null): { firstName: string; lastNam
   }
 }
 
+/**
+ * The country of residence the account carries (WAWU ID's `countryCode` claim, ISO 3166-1 alpha-2, upper case), or null
+ * when the token has none. It decides which opening a person may start (WALLET-41 round 1): the Hub reads the same claim.
+ * Read, never verified.
+ */
+export function countryCodeOfToken(token: string | null): string | null {
+  const json = payloadOf(token);
+  if (json === null) return null;
+  try {
+    const claims: unknown = JSON.parse(json);
+    const raw = typeof claims === 'object' && claims !== null ? (claims as { countryCode?: unknown }).countryCode : undefined;
+    const code = typeof raw === 'string' ? raw.trim().toUpperCase() : '';
+    return /^[A-Z]{2}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 /** base64url: the JWT alphabet, `-` and `_` in place of `+` and `/`, padding optional. */
 const BASE64URL = /^[A-Za-z0-9_-]+={0,2}$/;
 
@@ -81,6 +99,23 @@ export function useAccountNames(): { firstName: string; lastName: string } | nul
     };
   }, [status]);
   return status === 'signedIn' ? names : null;
+}
+
+/** The account's country of residence: undefined while the token is being read, null when the account has none. */
+export function useAccountCountry(): string | null | undefined {
+  const { status } = useSession();
+  const [country, setCountry] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let current = true;
+    if (status !== 'signedIn') return undefined;
+    void getAccessToken().then((token) => {
+      if (current) setCountry(countryCodeOfToken(token));
+    });
+    return () => {
+      current = false;
+    };
+  }, [status]);
+  return status === 'signedIn' ? country : undefined;
 }
 
 /**

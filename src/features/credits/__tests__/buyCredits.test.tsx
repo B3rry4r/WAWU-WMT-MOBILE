@@ -40,6 +40,7 @@ function serve(over: { available?: boolean; reason?: 'store_not_configured' | 's
   hub.reason = over.reason ?? null;
   fakeStore.products = PACKS.map((p, i) => ({ id: p.storeProductId, displayPrice: PRICES[i], type: 'in-app' as const }));
   hub.routes['GET /credits'] = { userWawuId: 'me', creditBalance: 170, trialEndsAt: null };
+  hub.routes['GET /communities/message-cost'] = { creditsPerMessage: 1, creditsByKind: { text: 0, photo: 1, video: 3, voice: 3 } };
 }
 
 async function boot(over: Parameters<typeof serve>[0] = {}) {
@@ -71,6 +72,13 @@ describe('I28 · Buy WAWU Credits in the store sheet', () => {
     expect(rtl.screen.getByText('Buy 120 credits · KSh 199')).toBeTruthy();
     for (const gone of ['credits-total', 'credits-short', 'credits-add']) expect(rtl.screen.queryByTestId(gone)).toBeNull();
     expect(rtl.screen.queryByText(/wallet|PIN|Bank charge|₦|Total/i)).toBeNull();
+  });
+
+  // R2-SOCIAL 2 (CHECK-3 low 14, I28), carried over from main: the board's line above the packs, from the Hub's costs by kind.
+  it('says what a photo, a video and a voice note cost, from the Hub, above the packs', async () => {
+    await boot();
+    expect(await rtl.screen.findByTestId('credits-cost-line')).toHaveTextContent('A photo is 1 credit, a video or voice note 3.');
+    expect(rtl.screen.getByText('Credits don’t expire and can’t be cashed out.')).toBeTruthy();
   });
 
   it('a person buys a pack: the Hub is given the Google Play token, grants it, and the pack is consumed after; I29 shows what they have', async () => {

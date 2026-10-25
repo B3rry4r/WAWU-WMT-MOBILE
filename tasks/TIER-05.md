@@ -7,7 +7,7 @@ order: 211
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [TIER-03, NUV-04]
 decisions: [R-42, R-43, R-44]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -36,6 +36,8 @@ As of 17 Oct 2026, builder round 3 done (Sonnet builder): one small fix after th
 - **Owner question (the lead asks):** is 24 hours the right transfer window? It is an admin setting, changeable at any time.
 - **Next:** the lead merges it with batch 7.
 - **History:** tasks/history/TIER-05.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct (v TIER-05 r2 MERGE).
 
 ## Read first
 

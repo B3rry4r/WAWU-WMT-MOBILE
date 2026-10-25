@@ -7,7 +7,7 @@ order: -76
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-12, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -26,6 +26,8 @@ As of 18 Oct 2026, merging (lead): accepted on the lead's diff read (test files 
 - **Counts:** settlement spec (22 tests) 20 times with two other spec files looping beside it on the same database: before, 1 red of 11 ("whose answer is lost", stopped there), and 0 of 20 when the others had their own databases; after, 0 of 20. Four sweeps at once, 40 runs: old ten-minute wait 13 stayed `sent`, the new wait 0. Forced order: old wait red 10 of 10, new wait green 10 of 10. The settlement, failed-payout and Nuvion payouts specs 60 of 60; `tsc` and `eslint` clean on the changed files; gates EXIT 0 (0 fail), baseline EXIT 0.
 - **Not run:** `school-enrolment.contract.spec.ts` and every Fintava spec. Observed, not diagnosed (sweep list): `school-report.contract.spec.ts` was red 48 of 174 runs under the same load; the one captured is "the relay takes the mail and the answer is lost" at `:167` (`lastError` null after `firstTryDone`), see G-FIX-76-1. `nuvion-payouts.contract.spec.ts` was red 0 of 209.
 - **Next:** an independent verifier (the settlement and payout specs by name, gates).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

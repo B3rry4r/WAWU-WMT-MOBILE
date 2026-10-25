@@ -7,7 +7,7 @@ order: 123
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-17, MONEY-19, MONEY-13, MONEY-16, WALLET-15, WALLET-16]
 decisions: [R-5, R-10, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open for the lead:** none beyond the fences.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B1 F4).
 - **Records:** tasks/history/HOME-15.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 219
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [NUV-01]
 decisions: [R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -27,6 +27,8 @@ As of 18 Oct 2026, merging (lead): built by a Sonnet builder (tier T2) and stack
 - **Not done:** the full backend suite (GitHub runs it on the push); the CI run ids are in the hand-back.
 - **Merged (MERGE-23):** on MERGE-23 `nuvion-dispatch-drain` and `nuvion-dispatch-burst` ran 7 of 7 with no conflict (the dispatcher file was not touched by the other two branches). Its N3 row in SWEEP-MONEY is marked fixed and counted settled there.
 - **Next:** the batch 23 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 0794dcba, lead acceptance in this file (accepted on the lead's diff read).
 
 ## Read first
 

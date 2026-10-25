@@ -7,7 +7,7 @@ order: 276
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [POINTS-02, TIER-05, POINTS-05, DV2-COMP]
 decisions: [R-43, R-65, R-10, R-16]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `o
 - **Pictures:** `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/wa-b/pics/` PT5, PT4, PT4 with the transfer way, PT4 with the PIN sheet (light and dark), PT4c (light), with `side-PT5`, `side-PT4` beside the boards.
 - **Round 2 (verifier F5):** the transfer card shows the pack's full price (the total) when the Hub needs 0 from the transfer because the wallet already covers the pack, never "Send ₦0.00"; a short wallet still shows the shortfall. The Hub's behaviour is unchanged. Two new cases in `buyFlow.test.tsx`.
 - **Gaps:** G-POINTS-06-1 (Back to AI tools), G-POINTS-06-2 (no board for the transfer state). **Next:** the batch 10 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

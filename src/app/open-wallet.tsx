@@ -1,5 +1,6 @@
 import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 
+import { isFiat } from '@/features/open-wallet/api/world';
 import { OPEN_WALLET_DETAILS_PATH } from '@/features/open-wallet/entry';
 import { useOpenWalletWay } from '@/features/open-wallet/leave';
 import { OpenWalletScreen } from '@/features/open-wallet/OpenWalletScreen';
@@ -19,7 +20,8 @@ export default function OpenWalletRoute() {
   const router = useRouter();
   const way = useOpenWalletWay();
   // `again`: the person was sent here to add their details again (A27, A29), so the review is not resumed.
-  const { again } = useLocalSearchParams<{ again?: string }>();
+  // `currency`: the first account the person asked for on the way in ("Add a dollar account" on /tiers, R-87), a code the Hub knows.
+  const { again, currency } = useLocalSearchParams<{ again?: string; currency?: string }>();
   // A31 stays mounted under A5, A26 and A27: only while it is in front may it send a person to where the review stands.
   const focused = useIsFocused();
   return (
@@ -35,6 +37,7 @@ export default function OpenWalletRoute() {
       <OpenWalletScreen
         onClose={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         onContinue={() => router.push(OPEN_WALLET_DETAILS_PATH)}
+        firstCurrency={isFiat(currency) ? currency : undefined}
       />
     </ReviewResume>
   );

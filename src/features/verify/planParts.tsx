@@ -8,15 +8,37 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
+import { BANK_CHARGE, WAWU_FEE } from '@/features/money-attempt/refusal';
 import { copyText } from '@/features/open-wallet/copy';
-import { font, space, useWawu, type ColorToken } from '@/theme';
+import { font, radius, space, useWawu, type ColorToken } from '@/theme';
 
-import type { PurchaseTransfer } from './purchaseApi';
+import type { PurchaseQuote, PurchaseTransfer } from './purchaseApi';
+import { TIER_WORDS } from './purchaseModel';
 
 const RADIO = { size: 22, dot: 10 } as const;
+const ROW_VALUE = 14.5;
 /** The offer's square (kit `check`) and the Copy chip (kit.js `copyBtn`: 32 high, 12 at the sides, 6 between the glyph and the word). */
 const CHECK = { box: 22, corner: 6 } as const;
 const COPY = { height: 32, padH: 12, glyphToWord: 6, corner: 16 } as const;
+/** A way to pay is a card of its own (VF6): a 2 px accent ring on the chosen one, a 1 px hairline on the other, as the pack rows draw it (PT4). */
+const METHOD = { ringOn: 2, ringOff: 1 } as const;
+
+/**
+ * The fee as its parts then the total (BRIEF rules 3 and 4): the price, the Bank charge, WAWU's fee and the Total, each from the purchase's
+ * quote, every part drawn even at ₦0, and "No fee" never. The tier checkout (VF6) and the five-more-products sheet (VF13) both draw it;
+ * `prefix` names the rows' test ids (`<prefix>-fees`, `-price`, `-bank-charge`, `-wawu-fee`, `-total`).
+ */
+export function QuoteBreakdown({ quote, prefix }: { quote: Pick<PurchaseQuote, 'priceKobo' | 'providerFeeKobo' | 'wawuFeeKobo' | 'totalKobo'>; prefix: string }) {
+  const money = (kobo: number, weight?: 700) => <Money minorUnits={kobo} size={ROW_VALUE} weight={weight} decimals={kobo % 100 !== 0} />;
+  return (
+    <GroupedList testID={`${prefix}-fees`}>
+      <KeyValueRow testID={`${prefix}-price`} label={TIER_WORDS.price} value={money(quote.priceKobo)} />
+      <KeyValueRow testID={`${prefix}-bank-charge`} label={BANK_CHARGE} value={money(quote.providerFeeKobo)} />
+      <KeyValueRow testID={`${prefix}-wawu-fee`} label={WAWU_FEE} value={money(quote.wawuFeeKobo)} />
+      <KeyValueRow testID={`${prefix}-total`} label={TIER_WORDS.total} value={money(quote.totalKobo, 700)} />
+    </GroupedList>
+  );
+}
 
 /** The round choice mark of the tier cards, the payment methods and the offer (kit `radio`): the accent when on, a strong edge when off. */
 export function Radio({ on }: { on: boolean }) {
@@ -32,7 +54,7 @@ export function Radio({ on }: { on: boolean }) {
   );
 }
 
-/** One way to pay (VF6): the wallet or a bank transfer. */
+/** One way to pay (VF6): the wallet or a bank transfer, each its own card; the chosen one has the accent ring and tint. */
 export function MethodRow({ testID, icon, tone, title, subtitle, on, disabled, onPress }: { testID: string; icon: 'Wallet' | 'Landmark'; tone: 'accent' | 'neutral'; title: string; subtitle?: string; on: boolean; disabled: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
@@ -45,7 +67,14 @@ export function MethodRow({ testID, icon, tone, title, subtitle, on, disabled, o
       disabled={disabled}
       onPress={onPress}
       {...ring.handlers}
-      style={[styles.method, { backgroundColor: on ? colors.accentTint : 'transparent' }, ring.style]}
+      style={[
+        styles.method,
+        {
+          backgroundColor: on ? colors.accentTint : colors.surfaceCard,
+          boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: on ? METHOD.ringOn : METHOD.ringOff, color: on ? colors.accent : colors.borderHairline, inset: true }],
+        },
+        ring.style,
+      ]}
     >
       <IconTile icon={icon} tone={tone} size={44} />
       <View style={styles.methodWords}>
@@ -216,7 +245,7 @@ export function Confetti() {
 const styles = StyleSheet.create({
   radio: { width: RADIO.size, height: RADIO.size, borderRadius: RADIO.size / 2, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   dot: { width: RADIO.dot, height: RADIO.dot, borderRadius: RADIO.dot / 2 },
-  method: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, paddingHorizontal: space.lg },
+  method: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, paddingHorizontal: space.lg, borderRadius: radius.card },
   methodWords: { flex: 1 },
   check: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   box: { width: CHECK.box, height: CHECK.box, borderRadius: CHECK.corner, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },

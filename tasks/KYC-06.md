@@ -7,7 +7,7 @@ order: 280
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [NUV-03, KYC-03, KYC-04, KYC-05]
 decisions: [R-6, R-39, R-42]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, builder round 2 done (Sonnet builder); waiting for a verifier
 - **Open (gaps):** G-820 (`bvn` and `nin` stay with A31, KYC-07: until it holds them Submit under nuvion ends in the Hub's own 400 for the first field it lacks, and no step links A6 to A26), G-821 (the boards' sublines "Done · NIN slip" and "Utility bill · September" stay unbuilt, R-47), G-823 (the Hub sends no notice when the account number is ready, so the owner's alert cannot be built: unblocked by a backend notification where `src/nuvion/handlers/accounts.ts` records the number).
 - **Checks:** local full check EXIT 0 (typecheck, lint 0 errors, jest 186 suites and 3297 tests, gates 10 run, 697 files, 0 fail, 5 warn as on main, `npm run tasks`). Pictures (V5) of A26 to A29 at 390 px, light and dark, beside the boards, from a web export through stack `kyc_06`: the four states the boards draw match, the new fields look like the form's others. NOT RUN: the open call and its body in a browser (nothing links A6 to A26, and the kept BVN check is dropped when the first step closes), covered by `documentsFlow.test.tsx`; V9 against a Hub on `nuvion` (no Nuvion rows on the stack).
 - **Next:** the lead merges it with batch 7.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 353c0009, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

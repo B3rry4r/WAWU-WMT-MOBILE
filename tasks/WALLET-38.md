@@ -7,7 +7,7 @@ order: 285
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [TIER-03, TIER-06, WALLET-01]
 decisions: [R-43, R-65]
 passes: [V1, V4, V5, V6, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, built by a Sonnet builder and checked by an independent Sonne
 - **Open findings:** none medium or worse; the verifier's lows are in `tasks/SWEEP-MONEY.md` (WALLET-38 L1 and L3).
 - **Next:** the lead merges it with batch 7.
 - **History:** tasks/history/WALLET-38.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 34effb86, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

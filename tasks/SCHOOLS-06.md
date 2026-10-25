@@ -7,7 +7,7 @@ order: 129
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, SCHOOLS-03, SCHOOLS-07, UI-02]
 decisions: [R-12, R-1, R-6, R-10, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -31,6 +31,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 2 checks:** `tsc --noEmit` EXIT 0; eslint on changed files EXIT 0; jest `src/features/schools` 5 suites, 156 tests, EXIT 0 (5 new in `enrolFlow.test.tsx`: pending then failed, pending then paid, a reload in between, a second phone, a Pay refused as in progress). NOT RUN: the stand-in settling a transfer failed on a stack (tests only).
 - **Round 3 (17 Oct 2026, builder, from 309abf74; the two lows F6, F7):** a failed payment the Hub was confirming draws the Hub's reason alone when it gave one; "Your money is back in your wallet." (with "The payment didn’t go through.") only when it gave none (`enrolModel.ts` `failedLine`, new `enrolModel.test.ts`); the "second phone" test and the other round 2 Refresh presses wait for the settled button name. `tsc` EXIT 0, eslint EXIT 0, jest `src/features/schools` 6 suites, 159 tests, EXIT 0 five runs in a row.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S4 F2 / S5 F5, S4 F5 / S5 F3).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 5f0a87a4, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 
