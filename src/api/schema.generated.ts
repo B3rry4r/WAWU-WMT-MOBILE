@@ -18651,6 +18651,7 @@ export interface components {
             creatorShareKobo: number | null;
             purchasedAt: string;
             expiresAt: string | null;
+            passEndsAt?: string | null;
             endedAt: string | null;
             endReason: string | null;
             takenBack: {

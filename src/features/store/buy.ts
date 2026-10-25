@@ -3,7 +3,7 @@ import { sendPurchase } from './api';
 import * as iap from './iap';
 import type { StoreCause, StoreTransaction } from './iap';
 import type { StoreItem } from './model';
-import { bindRoom, forgetBuy, pendingBuy, rememberBuy, roomOf, unbindRoom } from './roomIntent';
+import { bindRoom, doneIds, forgetBuy, markDone, pendingBuy, rememberBuy, roomOf, unbindRoom } from './roomIntent';
 
 /**
  * Buying through the store sheet, from tap to grant (IAP-02, R-86). The order is the point:
@@ -65,6 +65,18 @@ const consumable = (product: Pick<StoreProductView, 'subscription'>): boolean =>
 
 /** What a held transaction is told apart by: the App Store's transaction id, or Google Play's purchase token. */
 const keyOf = (t: StoreTransaction): string | null => t.transactionId ?? t.purchaseToken;
+
+/**
+ * A pass the Hub has: its kept room is let go and its id is remembered as delivered, so the store listing it again (it does, for ever, on the
+ * App Store) is never mistaken for a payment the app has not seen complete (F-1). A transaction the store could not finish keeps its room, so the
+ * next open finishes it; one with no room kept is only remembered.
+ */
+async function settle(token: string | null, t: StoreTransaction, finished: boolean): Promise<void> {
+  const key = keyOf(t);
+  if (!finished && (await roomOf(token, key))) return;
+  await unbindRoom(token, key);
+  await markDone(token, t.transactionId);
+}
 
 /** Transactions on their way to the Hub right now, so a buy and a recovery never send the same one at once. */
 const sending = new Map<string, Promise<SendOutcome>>();
@@ -152,7 +164,7 @@ export async function purchase(item: StoreItem, options: BuyOptions): Promise<Pu
     const outcome = await hand(options.platform, product, found, heldRoom);
     if (outcome.kind === 'granted') {
       if (remembers) await forgetBuy(options.accountToken);
-      if (isPass && outcome.finished) await unbindRoom(options.accountToken, keyOf(found));
+      if (isPass) await settle(options.accountToken, found, outcome.finished === true);
       if (isPass && heldRoom !== communityId) return { kind: 'earlier_room', purchase: outcome.purchase };
       return fromOutcome(outcome);
     }
@@ -169,7 +181,7 @@ export async function purchase(item: StoreItem, options: BuyOptions): Promise<Pu
   const outcome = await hand(options.platform, product, bought.transaction, communityId);
   if (outcome.kind === 'granted') {
     if (product.subscription) await forgetBuy(options.accountToken);
-    if (isPass && outcome.finished) await unbindRoom(options.accountToken, key);
+    if (isPass) await settle(options.accountToken, bought.transaction, outcome.finished === true);
   }
   return fromOutcome(outcome);
 }
@@ -183,6 +195,11 @@ export type Recovery = {
   left: number;
   /** The Hub is not open for this store. */
   notOpen: boolean;
+  /**
+   * Pass payments this phone owes the Hub that it could not place with a room (two or more that nothing was kept for), so none was sent.
+   * Zero unless the phone knows it owes one; a finished pass the store still lists, or one bought on another device, is never counted.
+   */
+  unplaced: number;
 };
 
 /**
@@ -191,20 +208,27 @@ export type Recovery = {
  * acknowledged. A transaction of a product the Hub does not sell, or a pass whose room is not known, is left alone.
  *
  * A held pass is handed over with the room it was bought for: the one Google Play kept in the purchase, or the one this phone kept against
- * that transaction. The latest thing the person was trying to buy stands in only for a pass nothing was kept for, and only when it is the
- * single such pass held, so a payment for one room is never given to the room being looked at (F2b).
+ * that transaction. A pass this phone already delivered (`doneIds`) is never handed over again: the App Store lists a finished non-renewing
+ * pass for ever, so without that a payment the app never saw complete sat next to a finished one and was never placed (F-1). The latest thing
+ * the person was trying to buy stands in only for a pass nothing was kept for, and only when it is the single one left, so a payment for one
+ * room is never given to the room being looked at (F2b). Two or more are not guessed: they are counted in `unplaced`, and Restore purchases
+ * in a room (`restoreRoom`, the room the person is looking at, so their choice) places one of them there per tap.
  */
 export async function recover(
   products: readonly StoreProductView[],
-  options: { platform: Platform; all: boolean; transactions?: StoreTransaction[]; accountToken?: string | null },
+  options: { platform: Platform; all: boolean; transactions?: StoreTransaction[]; accountToken?: string | null; restoreRoom?: string | null },
 ): Promise<Recovery> {
-  const result: Recovery = { granted: [], already: 0, left: 0, notOpen: false };
+  const result: Recovery = { granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 };
   const token = options.accountToken ?? null;
   const held = options.transactions ?? (await iap.owned());
+  const done = await doneIds(token);
+  const delivered = (t: StoreTransaction) => t.transactionId !== null && done.has(t.transactionId);
   const passes = held.filter((t) => !t.pending && products.find((p) => p.storeProductId === t.productId)?.kind === 'pass');
   const placed = new Map<StoreTransaction, string | null>();
   for (const t of passes) placed.set(t, t.communityId ?? (await roomOf(token, keyOf(t))));
-  const unplaced = passes.filter((t) => !placed.get(t));
+  const unplaced = passes.filter((t) => !placed.get(t) && !delivered(t));
+  const waiting = new Set<StoreTransaction>();
+  let restoreTaken = false;
   for (const t of held) {
     const product = products.find((p) => p.storeProductId === t.productId);
     if (!product || t.pending) continue;
@@ -214,24 +238,40 @@ export async function recover(
     if (!options.all && product.subscription && t.acknowledged !== false && !owed) continue;
     let communityId: string | null = null;
     let fromEntry = false;
+    let fromRestore = false;
     if (product.kind === 'pass') {
       communityId = placed.get(t) ?? null;
       if (!communityId && unplaced.length === 1 && unplaced[0] === t) {
         communityId = (await pendingBuy(token, product.storeProductId))?.communityId ?? null;
         fromEntry = communityId !== null;
       }
-      if (!communityId) continue;
+      if (!communityId && options.all && options.restoreRoom && !restoreTaken && unplaced.includes(t)) {
+        communityId = options.restoreRoom;
+        fromRestore = true;
+      }
+      if (!communityId) {
+        if (unplaced.includes(t)) waiting.add(t);
+        continue;
+      }
     }
     const outcome = await hand(options.platform, product, t, communityId);
     if (outcome.kind === 'granted') {
       if (outcome.purchase.alreadyGranted) result.already += 1;
       else result.granted.push(outcome.purchase);
+      if (fromRestore && !outcome.purchase.alreadyGranted) restoreTaken = true;
       if (product.subscription || fromEntry) await forgetBuy(token);
-      if (product.kind === 'pass' && outcome.finished) await unbindRoom(token, keyOf(t));
+      if (product.kind === 'pass') await settle(token, t, outcome.finished === true);
     } else if (outcome.kind === 'not_open') result.notOpen = true;
     else if (outcome.kind !== 'taken' && outcome.kind !== 'room_mismatch') result.left += 1;
   }
+  if (waiting.size > 0 && (options.restoreRoom || (await owesAPass(token, products)))) result.unplaced = waiting.size;
   return result;
+}
+
+/** Whether this phone remembers the person was buying a pass and the Hub has not been told it is done. */
+async function owesAPass(token: string | null, products: readonly StoreProductView[]): Promise<boolean> {
+  for (const p of products) if (p.kind === 'pass' && (await pendingBuy(token, p.storeProductId))) return true;
+  return false;
 }
 
 /** The subscription of a product the person holds now, for an upgrade: Google Play needs its token to replace it. */

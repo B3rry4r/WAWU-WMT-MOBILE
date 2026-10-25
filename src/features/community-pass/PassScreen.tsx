@@ -157,7 +157,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
         {pass.canBuy ? <PassOptions items={items} selected={selected} onChoose={setChosen} /> : null}
         {problem ? <StoreUnready state={store.state} onRetry={store.refetch} testID="pass-store" /> : null}
         <SaidBanner said={buyer.said} testID="pass-said" />
-        <RestoreRow buyer={buyer} testID="pass-restore" />
+        <RestoreRow buyer={buyer} testID="pass-restore" communityId={id} />
       </>
     );
     footer = (
@@ -198,7 +198,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
           </>
         )}
         <SaidBanner said={buyer.said} testID="pass-said" />
-        <RestoreRow buyer={buyer} testID="pass-restore" />
+        <RestoreRow buyer={buyer} testID="pass-restore" communityId={id} />
       </>
     );
     footer = selected ? (

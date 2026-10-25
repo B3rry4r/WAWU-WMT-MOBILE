@@ -447,6 +447,91 @@ describe('a community pass is bought once, for one room (IAP-03 round 2)', () =>
   });
 });
 
+describe('a pass payment the app never saw complete, while finished passes are still listed by the store (IAP-03 round 3, F-1, G-1)', () => {
+  const held = (id: string, productId = 'africa.wawu.pass.month') => ({ id: `tx-${id}`, productId, purchaseState: 'purchased' as const, purchaseToken: 'jws', transactionId: id });
+  const ios = (): HubProduct => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    return product;
+  };
+  /** Two passes bought through the app: the Hub has them and the app finished them. StoreKit lists a non-renewing pass for ever. */
+  async function twoFinishedPasses(product: HubProduct) {
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toMatchObject({ kind: 'granted', finished: true });
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toMatchObject({ kind: 'granted', finished: true });
+    hub.bodies = [];
+  }
+
+  it('F-1: one new payment the app never saw complete is placed with the room being bought and handed to the Hub, next to two finished passes', async () => {
+    const product = ios();
+    await twoFinishedPasses(product);
+    // The app was closed while the sheet for room B was up: the entry for B is kept, the payment is taken, the transaction never came back inside the buy.
+    await roomIntent().rememberBuy(TOKEN, product.storeProductId, ROOM_B);
+    fakeStore.owned = [held('1001'), held('1002'), held('3001')];
+    const found = await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(found).toMatchObject({ granted: [expect.anything()], already: 0, left: 0, unplaced: 0 });
+    // Only the new one goes to the Hub, with its room; the two finished ones are not sent again.
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '3001', communityId: ROOM_B }]);
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toBeNull();
+    // Restore purchases is the same code: the delivered one is not sent again.
+    hub.bodies = [];
+    expect(await buyModule().recover([product], { platform: 'ios', all: true, accountToken: TOKEN })).toMatchObject({ granted: [], unplaced: 0 });
+    expect(hub.bodies).toEqual([]);
+  });
+
+  it('G-1: a finished pass still listed by the store is not sent again, opened again and again, and says nothing', async () => {
+    const product = ios();
+    await twoFinishedPasses(product);
+    fakeStore.owned = [held('1001'), held('1002')];
+    for (let open = 0; open < 5; open += 1) {
+      expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toEqual({ granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 });
+    }
+    expect(hub.bodies).toEqual([]);
+    // Even with a stale entry for another room (a buy that never completed) and a single finished pass listed: it is not given to that room.
+    await roomIntent().rememberBuy(TOKEN, product.storeProductId, ROOM_B);
+    fakeStore.owned = [held('1001')];
+    expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toEqual({ granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 });
+    expect(hub.bodies).toEqual([]);
+  });
+
+  it('G-1: when finishing fails on the phone the Hub is asked once per open, answers "already", and says nothing', async () => {
+    const product = ios();
+    fakeStore.finishFails = true;
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toMatchObject({ kind: 'granted', finished: false });
+    fakeStore.finishFails = false;
+    fakeStore.owned = [held('1001')];
+    hub.bodies = [];
+    const found = await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(found).toMatchObject({ granted: [], already: 1, left: 0, unplaced: 0 });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '1001', communityId: ROOM }]);
+    // Finished now: it is let go, and the next open sends nothing.
+    hub.bodies = [];
+    expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toMatchObject({ granted: [], already: 0, unplaced: 0 });
+    expect(hub.bodies).toEqual([]);
+  });
+
+  it('two new payments nothing was kept for are not guessed: neither goes to the Hub, the person is told, and Restore purchases in a room places one there', async () => {
+    const product = ios();
+    await twoFinishedPasses(product);
+    await roomIntent().rememberBuy(TOKEN, product.storeProductId, ROOM_B);
+    fakeStore.owned = [held('1001'), held('1002'), held('3001'), held('3002')];
+    const first = await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(first).toMatchObject({ granted: [], left: 0, unplaced: 2 });
+    expect(hub.bodies).toEqual([]);
+    // The person opens a room and taps Restore purchases: that room is theirs to name. One payment goes there; the other waits for its own room.
+    const restored = await buyModule().recover([product], { platform: 'ios', all: true, accountToken: TOKEN, restoreRoom: ROOM });
+    expect(restored).toMatchObject({ granted: [expect.anything()], unplaced: 1 });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '3001', communityId: ROOM }]);
+  });
+
+  it('with no payment owed on this phone, listed passes it did not finish (bought on another device) are left alone and nothing is said', async () => {
+    const product = ios();
+    fakeStore.owned = [held('4001'), held('4002')];
+    expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toEqual({ granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 });
+    expect(hub.bodies).toEqual([]);
+  });
+});
+
 describe('a phone with no store', () => {
   it('the web build says the store is unavailable and opens nothing', async () => {
     jest.replaceProperty(Platform, 'OS', 'web');

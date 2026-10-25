@@ -92,6 +92,36 @@ export async function roomOf(token: string | null, transactionKey: string | null
   return e && typeof e.communityId === 'string' && typeof e.at === 'number' && now - e.at <= KEEP_MS ? e.communityId : null;
 }
 
+const MAX_DONE = 80;
+const doneKey = (token: string) => `wmt.store.done.${token}`;
+
+async function readDone(token: string): Promise<string[]> {
+  try {
+    const raw = await read(doneKey(token));
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The App Store transaction ids this phone has delivered: the Hub has them, or the app finished them (F-1). StoreKit keeps listing a finished
+ * non-renewing pass in the entitlements for ever, and the app can not tell it from a payment it never saw complete, so these are left out of
+ * the passes "nothing was kept for". Not a clock: the newest `MAX_DONE` are kept, because the oldest listed pass is still listed.
+ */
+export async function doneIds(token: string | null): Promise<Set<string>> {
+  return token ? new Set(await readDone(token)) : new Set();
+}
+
+/** The Hub has this App Store transaction and the store is done with it (or nothing more can be done): remember its id as delivered. */
+export async function markDone(token: string | null, transactionId: string | null): Promise<void> {
+  if (!token || !transactionId) return;
+  const list = await readDone(token);
+  if (list.includes(transactionId)) return;
+  await write(doneKey(token), JSON.stringify([...list, transactionId].slice(-MAX_DONE)));
+}
+
 /** The Hub has the transaction: its room is not needed. */
 export async function unbindRoom(token: string | null, transactionKey: string | null): Promise<void> {
   if (!token || !transactionKey) return;

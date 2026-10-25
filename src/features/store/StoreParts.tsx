@@ -56,10 +56,10 @@ export function SaidBanner({ said, testID }: { said: Said | null; testID: string
 }
 
 /** Restore purchases, where a subscription lives: asks the store what this account bought and hands the Hub what it has not seen. */
-export function RestoreRow({ buyer, testID }: { buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>; testID: string }) {
+export function RestoreRow({ buyer, testID, communityId }: { buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>; testID: string; communityId?: string | null }) {
   return (
     <View style={styles.restore}>
-      <Button testID={testID} label={buyer.restoring ? RESTORE_WORDS.working : RESTORE_WORDS.label} variant="secondary" full loading={buyer.restoring} disabled={buyer.busy || buyer.restoring} onPress={() => void buyer.restore()} />
+      <Button testID={testID} label={buyer.restoring ? RESTORE_WORDS.working : RESTORE_WORDS.label} variant="secondary" full loading={buyer.restoring} disabled={buyer.busy || buyer.restoring} onPress={() => void buyer.restore(communityId ? { communityId } : undefined)} />
       {buyer.restoreLine ? (
         <Text variant="meta" tone="textMuted" testID={`${testID}-line`} accessibilityLiveRegion="polite" style={styles.centre}>
           {buyer.restoreLine}

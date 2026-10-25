@@ -8,7 +8,7 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { fetchCatalog, type StoreCatalog, type StoreKind, type StorePurchaseView } from './api';
 import { purchase, recover, type BuyOptions, type PurchaseResult } from './buy';
 import * as iap from './iap';
-import { restoredLine, type StoreItem, type StoreState } from './model';
+import { restoredLine, waitingLine, type StoreItem, type StoreState } from './model';
 import { said, type Said } from './words';
 
 /**
@@ -88,7 +88,8 @@ export type StoreBuyer = {
   restoring: boolean;
   restoreLine: string | null;
   buy: (item: StoreItem, options?: Pick<BuyOptions, 'communityId' | 'replace'>) => Promise<PurchaseResult | null>;
-  restore: () => Promise<void>;
+  /** With `communityId` (a room's pass screen), a pass payment this phone could not place is given to that room, one per tap. */
+  restore: (options?: { communityId?: string | null }) => Promise<void>;
   clear: () => void;
 };
 
@@ -124,7 +125,10 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     if (recovering.current === once) return;
     recovering.current = once;
     void recover(products, { platform: os, all: false, accountToken: token }).then((found) => {
-      if (!alive.current || found.granted.length === 0) return;
+      if (!alive.current) return;
+      // Said only when this phone knows it owes a pass payment it could not place; a finished pass the store still lists is never counted.
+      if (found.unplaced > 0) setRestoreLine(waitingLine(found.unplaced));
+      if (found.granted.length === 0) return;
       setRecovered(found.granted);
       refreshAfterGrant();
     });
@@ -157,7 +161,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     [os, token],
   );
 
-  const restore = useCallback(async () => {
+  const restore = useCallback<StoreBuyer['restore']>(async (options) => {
     if (running.current || !os || !products) return;
     running.current = true;
     setRestoring(true);
@@ -165,10 +169,12 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     setLine(null);
     try {
       const transactions = await iap.restore();
-      const found = await recover(products, { platform: os, all: true, transactions, accountToken: token });
+      const found = await recover(products, { platform: os, all: true, transactions, accountToken: token, restoreRoom: options?.communityId ?? null });
       if (!alive.current) return;
       if (found.notOpen) setLine(said({ kind: 'not_open', why: 'not_configured' }, os, true));
-      else setRestoreLine(found.left > 0 ? said({ kind: 'unreachable' }, os, true)?.line ?? null : restoredLine(found.granted.length, found.already));
+      else if (found.left > 0) setRestoreLine(said({ kind: 'unreachable' }, os, true)?.line ?? null);
+      else if (found.unplaced > 0) setRestoreLine(found.granted.length + found.already > 0 ? `${restoredLine(found.granted.length, found.already)} ${waitingLine(found.unplaced)}` : waitingLine(found.unplaced));
+      else setRestoreLine(restoredLine(found.granted.length, found.already));
       if (found.granted.length > 0) {
         setRecovered(found.granted);
         refreshAfterGrant();

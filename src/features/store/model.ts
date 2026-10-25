@@ -72,6 +72,15 @@ export function restoredLine(granted: number, already: number): string {
   return RESTORE_WORDS.nothing;
 }
 
+/**
+ * Pass payments this phone could not place with a room (F-1). Said only when the phone knows it owes one, or the person tapped Restore purchases
+ * in a room. The way out is the same row: the room they are in takes one payment per tap.
+ */
+export function waitingLine(count: number): string {
+  const what = count === 1 ? 'A payment for a pass' : `${count} payments for a pass`;
+  return `${what} could not be matched to a room on this phone. If you paid and are not in the room, open that room and tap Restore purchases.`;
+}
+
 /** What one pass purchase gives, for a price line: "for 30 days". A pass is bought once (IAP-03 round 2), so it is a length, never a rate. */
 export function forDays(days: number | null): string {
   if (days === null || days <= 0) return '';

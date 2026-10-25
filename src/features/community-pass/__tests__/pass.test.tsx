@@ -197,3 +197,63 @@ describe('I30 · Private, pay to join, in the store sheet', () => {
     expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
   });
 });
+
+describe('F-1 · App Store · passes the store still lists after they were delivered (IAP-03 round 3)', () => {
+  const held = (id: string) => ({ id: `tx-${id}`, productId: PASS.storeProductId, purchaseState: 'purchased' as const, purchaseToken: 'jws', transactionId: id });
+  const roomIntent = () => require('@/features/store/roomIntent') as typeof import('@/features/store/roomIntent');
+
+  async function bootIos(owned: ReturnType<typeof held>[], setUp: () => Promise<void> = async () => {}) {
+    mockVault.clear();
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
+    serve();
+    hub.products = [{ ...PASS, platform: 'ios' }];
+    fakeStore.owned = owned;
+    await setUp();
+    const { PassScreen } = require('../PassScreen') as typeof import('../PassScreen');
+    await renderSignedIn(<PassScreen id={ID} onBack={jest.fn()} />);
+    await rtl.screen.findByTestId('pass-pay');
+    await rtl.act(async () => new Promise((r) => setTimeout(r, 0)));
+  }
+
+  it('a pass the app delivered and the store still lists is not sent again when the screen opens, and nothing is said', async () => {
+    await bootIos([held('1001')], async () => {
+      await roomIntent().markDone(hub.accountToken, '1001');
+      // An earlier buy that never completed left an entry for this room: it must not be given to the delivered pass.
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByTestId('pass-said')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
+  });
+
+  it('a payment the app never saw complete is handed to the Hub with this room, though delivered passes are listed beside it', async () => {
+    await bootIos([held('1001'), held('1002'), held('3001')], async () => {
+      await roomIntent().markDone(hub.accountToken, '1001');
+      await roomIntent().markDone(hub.accountToken, '1002');
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(fakeStore.finished).toEqual([{ productId: PASS.storeProductId, isConsumable: true }]);
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+  });
+
+  it('two payments nothing was kept for are not guessed: the screen says so plainly, and Restore purchases gives one to this room', async () => {
+    await bootIos([held('3001'), held('3002')], async () => {
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([]);
+    expect((await rtl.screen.findByTestId('pass-restore-line')).props.children).toBe('2 payments for a pass could not be matched to a room on this phone. If you paid and are not in the room, open that room and tap Restore purchases.');
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(await rtl.screen.findByText(/^Restored 1 purchase\. A payment for a pass could not be matched/)).toBeTruthy();
+  });
+
+  it('a person who owes no pass payment on this phone, with passes listed from another device, is told nothing', async () => {
+    await bootIos([held('4001'), held('4002')]);
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-said')).toBeNull();
+  });
+});
