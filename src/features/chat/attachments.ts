@@ -72,18 +72,14 @@ export const kindOfType = (contentType: string): ChatFileKind => (contentType.st
 
 const noConnection = () => new ApiError('network', 0, 'No connection. Check your internet and try again.');
 
+/** Where the Hub said to upload one file: the address to PUT to and the key the send takes. */
+type UploadTarget = { uploadUrl?: string; key?: string };
+
 /**
- * Steps 1 to 3: asks the Hub where to upload, sends the bytes, and asks the Hub to confirm they landed. Answers the key the send takes.
- * The Hub's own sentence travels with a refusal (a type a chat cannot hold, a file over the size, storage full, a block).
+ * Steps 2 and 3 for an address the Hub gave (a one-to-one chat's, or a legal matter's): sends the bytes, then asks the Hub to confirm they
+ * landed. Answers the key the send takes.
  */
-export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob' | 'contentType'>, onReserved?: (key: string) => void): Promise<string> {
-  const body = (await unwrap(
-    api.POST('/api/hub/chats/{chatId}/attachments', {
-      params: { path: { chatId } },
-      body: { contentType: file.contentType as 'application/pdf', contentLength: file.blob.size },
-    }),
-  )) as unknown as Envelope<{ uploadUrl?: string; key?: string }>;
-  const target = body?.data;
+async function putAndConfirm(target: UploadTarget | null | undefined, file: Pick<ChatFile, 'blob' | 'contentType'>, onReserved?: (key: string) => void): Promise<string> {
   if (!target || !filled(target.uploadUrl) || !filled(target.key)) throw unreadable('upload address');
   // The Hub counts the file from here: whoever called knows which key to give back if the rest fails.
   onReserved?.(target.key as string);
@@ -97,6 +93,31 @@ export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob'
   const settled = (await unwrap(api.POST('/api/hub/uploads/confirm', { body: { key: target.key as string } }))) as unknown as Envelope<{ status?: unknown }>;
   if (settled?.data?.status === 'abandoned') throw new ApiError('server', 0, 'That file did not upload. Try again.', ATTACHMENT_UPLOAD_FAILED);
   return target.key as string;
+}
+
+/**
+ * Steps 1 to 3: asks the Hub where to upload, sends the bytes, and asks the Hub to confirm they landed. Answers the key the send takes.
+ * The Hub's own sentence travels with a refusal (a type a chat cannot hold, a file over the size, storage full, a block).
+ */
+export async function uploadChatFile(chatId: string, file: Pick<ChatFile, 'blob' | 'contentType'>, onReserved?: (key: string) => void): Promise<string> {
+  const body = (await unwrap(
+    api.POST('/api/hub/chats/{chatId}/attachments', {
+      params: { path: { chatId } },
+      body: { contentType: file.contentType as 'application/pdf', contentLength: file.blob.size },
+    }),
+  )) as unknown as Envelope<UploadTarget>;
+  return putAndConfirm(body?.data, file, onReserved);
+}
+
+/** The same three steps for a legal matter's chat (R2-LEGAL3): `POST /legal/assistant/{id}/attachments` says where, the rest is the chat's. */
+export async function uploadLegalFile(threadId: string, file: Pick<ChatFile, 'blob' | 'contentType'>, onReserved?: (key: string) => void): Promise<string> {
+  const body = (await unwrap(
+    api.POST('/api/hub/legal/assistant/{id}/attachments', {
+      params: { path: { id: threadId } },
+      body: { contentType: file.contentType as 'application/pdf', contentLength: file.blob.size },
+    }),
+  )) as unknown as Envelope<UploadTarget>;
+  return putAndConfirm(body?.data, file, onReserved);
 }
 
 /**

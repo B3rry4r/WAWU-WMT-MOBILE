@@ -127,3 +127,28 @@ No blocker, high or medium defect.
 - Mutation runs (no mutant was run in this check).
 - A phone.
 - Gemini: 10 calls (4 refused by the provider: one 503, three 429 with `gemini-2.5-flash-lite`); the Hub ran on `gemini-2.5-flash` from the seventh call; the model never returned an option id this time, so M-1 is proven by `ai-text.spec` and the contract spec, not by a live id.
+
+
+---
+
+# RELEASE-02 · R2-LEGAL3: documents in the Legal chat, option labels, S24 order, the dropped assertions
+
+Built 25 Oct 2026 by a Sonnet builder (T2). Backend `wmt/R2-LEGAL3` (`f066827`, merged with `origin/wmt/R2-LEGAL2` `9eb6512` as `57088dc`; PR #213 was still open), mobile `wmt/R2-LEGAL3` on `wmt/R2-LEGAL2` `35e6b3ea`. No notification kind was added, so nothing joins the push policy list.
+
+## Default (lead), owner may override
+
+A fixed-price matter (Register a business: an ID, two name options, an address) must let the person send its documents in the app before the work starts. Built by reusing the one-to-one chat's parts and the Hub's FIX-104 upload path; no new storage provider. No board draws an attach control in the Legal chat, so the chat's own + and "Add to chat" sheet are used as is, without the two money rows (they need a person to send money to).
+
+| # | What | How | Proof |
+|---|---|---|---|
+| 1 | Attach in the Legal chat | Backend: `POST /legal/assistant/{id}/attachments` signs a chat upload (`chat/media`, `chat/file`: the chat's types, sizes and the person's storage allowance); `POST .../messages` takes `attachment.key` on its own. The file is one client line on the matter's thread (4 nullable columns, migration `20261201090000`) and its key is appended to `LegalRequest.documents`. No model call, no assistant-allowance spend; at most 20 files a matter; a delivered or cancelled matter takes none; sending a key twice is one line; a line's file counts as claimed (the unsent-chat sweep and `POST /uploads/release` leave it). The thread carries a fresh 15-minute link per file; the consultant's chat read (`GET /legal/ops/intakes/chat/{requestId}`) lists each file with a link. App: the Legal composer draws the chat's + once the matter exists; Photo or video, File; a bubble at once, Try again and Delete as in the chat; a file in the conversation is the chat's file bubble and opens a fresh link. | Hub `legal-matter-files.contract.spec.ts` (6), app `LegalChatScreen.test.tsx` (9 new), `model.test.ts` (2 new) |
+| 2a | "Other african", "Outside africa" chips | `readableOption` uses the question bank's label for an option id that names a proper noun (`other_african` is "Another African country", `outside_africa` is "Outside Africa"). The ids whose plain reading was already fine ("one_only", "no_rush") keep it; the earlier assertions for them are unchanged. | `ai-text.spec.ts` (red first: 1 failed, then 7 of 7) |
+| 2b | `matterCardOf` assertions | Three stand-ins restored in `legalModels.test.ts`: awaiting the consultation payment books, scheduled and delivered open, each with the path `consultation`, no path and (for open) `simple`. | passes |
+| 2c | S24 card while taps are pending | The card is drawn when the assistant has no tap waiting and its last answer is not awaited (the board: the assistant's line, then the card). One assertion changed: the S24 first test now has no taps, because it pinned the card beside the taps; two tests added. Default (lead), owner may override: "profiling is done" is read as "no tap is waiting", not as the brief being ready (a fixed-price matter may never reach a brief). | `LegalChatScreen.test.tsx` |
+| 2d | S26 title | Not changed, reported: G-R2-LEGAL3-2. | |
+
+## Checks
+
+- Backend (`r2l3_wawu_hub_test`, mock WAWU ID on 9351): tsc EXIT 0; eslint (no --fix) on the changed files EXIT 0; 14 legal suites 293 passed, 3 skipped; `publishing-gate-coverage` (one `NOT_GATED` row added for `POST legal/assistant/:id/messages`), `hub-rate-limits`, `chat-upload-storage`, `storage-quota`, `storage.presign` pass; migration rollback spec EXIT 0; `contract:build` EXIT 0 and committed; gates EXIT 0 (0 fail, 139 warn, 88 accepted: the new warn is the PROVISIONAL marker on the 20-file cap); `check_baseline` EXIT 0. A mutation (the sweep and `isClaimed` ignoring legal lines) failed the keep-the-file test, then restored.
+- App: tsc EXIT 0; eslint EXIT 0; jest `src/features/legal`, `src/features/chat`, `route-guard` (`--maxWorkers=2`) 14 suites, 543 tests EXIT 0; fingerprint Android `17ffb13d520882bf144982b61d03f3994c6e40e4` (unchanged), iOS `496a3ee0`.
+

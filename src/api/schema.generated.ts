@@ -1088,6 +1088,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/assistant/{id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A file for the matter (R2-LEGAL3): where to upload one photo, video or PDF.
+         *     Upload it there, confirm it with `POST /uploads/confirm`, then send it with
+         *     `POST {id}/messages` and `attachment.key`. A file that is signed for and
+         *     never sent is given back like any chat upload (`POST /uploads/release`).
+         */
+        post: operations["LegalAssistantController_attachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/legal/assistant/{id}/reply": {
         parameters: {
             query?: never;
@@ -9984,11 +10006,36 @@ export interface components {
              */
             body: string;
         };
+        ChatAttachmentDto: {
+            /** @description The `key` POST /chats/:chatId/attachments returned, after the upload. */
+            key: string;
+            /** @description The file's own name, shown on a PDF bubble. */
+            name?: string;
+        };
         SendAssistantMessageDto: {
             /** @description What the client typed. At most 2000 characters. */
             body?: string;
             /** @description The `id` of one of the thread's live `quickReplies`. */
             quickReplyId?: string;
+            /**
+             * @description A photo, video or PDF uploaded through `POST /legal/assistant/{id}/attachments`
+             *     for this conversation's matter: the `key` that call answered with, and the
+             *     file's name for a PDF. Only once the matter exists, and not on its own
+             *     with words.
+             */
+            attachment?: components["schemas"]["ChatAttachmentDto"];
+        };
+        ChatUploadDto: {
+            /**
+             * @description image/png, image/jpeg, image/webp, video/mp4, video/quicktime or application/pdf.
+             * @enum {string}
+             */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "video/mp4" | "video/quicktime" | "application/pdf";
+            /**
+             * @description Exact size in bytes; the upload link is signed for this length. Up to
+             *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
+             */
+            contentLength: number;
         };
         StartFixedPriceDto: {
             /** @description The business name the person wants first. 2 to 120 characters. */
@@ -11032,12 +11079,6 @@ export interface components {
              */
             wawuId: string;
         };
-        ChatAttachmentDto: {
-            /** @description The `key` POST /chats/:chatId/attachments returned, after the upload. */
-            key: string;
-            /** @description The file's own name, shown on a PDF bubble. */
-            name?: string;
-        };
         ChatSendMessageDto: {
             text?: string;
             attachment?: components["schemas"]["ChatAttachmentDto"];
@@ -11050,18 +11091,6 @@ export interface components {
         MarkChatReadDto: {
             /** Format: uuid */
             messageId?: string;
-        };
-        ChatUploadDto: {
-            /**
-             * @description image/png, image/jpeg, image/webp, video/mp4, video/quicktime or application/pdf.
-             * @enum {string}
-             */
-            contentType: "image/png" | "image/jpeg" | "image/webp" | "video/mp4" | "video/quicktime" | "application/pdf";
-            /**
-             * @description Exact size in bytes; the upload link is signed for this length. Up to
-             *     512 MB, the limit every upload already has (MAX_UPLOAD_BYTES).
-             */
-            contentLength: number;
         };
         EventDecisionReasonDto: {
             reason: string;
@@ -15029,6 +15058,12 @@ export interface components {
             brief: components["schemas"]["LegalBrief"];
             legalRequestId: string | null;
         };
+        LegalAssistantAttachment: {
+            url: string | null;
+            contentType: string;
+            bytes: number;
+            name: string | null;
+        };
         ChatMessageView: {
             id: string;
             /** @enum {string} */
@@ -15036,6 +15071,7 @@ export interface components {
             body: string;
             /** Format: date-time */
             createdAt: string;
+            attachment?: components["schemas"]["LegalAssistantAttachment"];
         };
         ChatThreadView: {
             legalRequestId: string;
@@ -15085,6 +15121,7 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             consultantName: string | null;
+            attachment?: components["schemas"]["LegalAssistantAttachment"] | null;
         };
         LegalAssistantQuickReply: {
             id: string;
@@ -15131,6 +15168,10 @@ export interface components {
             fixedPrice: components["schemas"]["LegalAssistantFixedPrice"] | null;
             consultant: components["schemas"]["LegalAssistantConsultant"] | null;
             assistantStopped: boolean;
+        };
+        LegalAssistantUpload: {
+            uploadUrl: string;
+            key: string;
         };
         LegalAssistantTranscript: {
             intakeId: string;
@@ -20600,6 +20641,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatUploadDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantUpload"];
                 };
             };
         };

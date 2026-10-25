@@ -14,6 +14,8 @@ export function firstNameOf(name: string | null | undefined): string | null {
 
 export type ChatRow =
   | { kind: 'bubble'; id: string; mine: boolean; body: string }
+  /** A photo, video or PDF on a line (R2-LEGAL3): drawn with the one-to-one chat's file bubble. `url` is the link the Hub served with the conversation. */
+  | { kind: 'file'; id: string; mine: boolean; contentType: string; name: string | null; bytes: number; url: string | null }
   | { kind: 'who'; id: string; text: string }
   | { kind: 'system'; id: string; text: string };
 
@@ -42,7 +44,13 @@ export function chatRows(thread: LegalThread): ChatRow[] {
         rows.push({ kind: 'who', id: `who-${message.id}`, text: name ? `${name} · Consultant` : 'Consultant' });
       }
     }
-    rows.push({ kind: 'bubble', id: message.id, mine: message.authorRole === 'client', body: message.body });
+    const mine = message.authorRole === 'client';
+    if (message.attachment) {
+      const { contentType, name, bytes, url } = message.attachment;
+      rows.push({ kind: 'file', id: message.id, mine, contentType, name: name ?? null, bytes, url: url ?? null });
+    } else {
+      rows.push({ kind: 'bubble', id: message.id, mine, body: message.body });
+    }
     previous = message.authorRole;
   }
   return rows;
@@ -67,6 +75,14 @@ export function headerOf(thread: LegalThread): ChatHeader {
   }
   if (thread.stage === 'sent') return { title: LEGAL_NAME, sub: 'Waiting for a consultant', human: false };
   return { title: LEGAL_NAME, sub: hasSpoken(thread) ? 'Assistant' : 'Assistant · a consultant takes over', human: false };
+}
+
+/**
+ * Whether the person can send files in this conversation (R2-LEGAL3): once the Hub has made the matter (a sent brief, or a started fixed-price
+ * request) and until it is delivered or cancelled. Before then there is nothing to attach them to.
+ */
+export function canAttach(thread: Pick<LegalThread, 'legalRequestId' | 'requestStatus'>): boolean {
+  return Boolean(thread.legalRequestId) && thread.requestStatus !== 'delivered' && thread.requestStatus !== 'cancelled';
 }
 
 /** The composer's hint: S14 "Type your message", S16 "Add anything else", S17 "Message Adaora". */

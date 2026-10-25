@@ -141,4 +141,19 @@ describe('R2-LEGAL2 H-1: which matters the Legal entry goes back to', () => {
     expect(matterCardOf('cancelled', 'simple')).toBeNull();
     expect(matterCardOf(null, null)).toBeNull();
   });
+
+  // R2-LEGAL3: stand-ins for the three assertions R2-LEGAL2 dropped, now with the path the Hub serves (and without it, as a matter whose path is not known).
+  it('a consultation matter awaiting the consultation payment is booked from the card; once scheduled or delivered the card opens the matter', () => {
+    for (const path of ['consultation', null] as const) {
+      expect(matterCardOf('awaiting_consultation_payment', path)).toBe('book');
+      expect(matterCardOf('consultation_scheduled', path)).toBe('open');
+      expect(matterCardOf('delivered', path)).toBe('open');
+    }
+    expect(matterCardOf('awaiting_consultation_payment')).toBe('book');
+    expect(matterCardOf('consultation_scheduled')).toBe('open');
+    expect(matterCardOf('delivered')).toBe('open');
+    // A fixed-price matter is never booked, whatever its status.
+    expect(matterCardOf('awaiting_consultation_payment', 'simple')).toBe('open');
+    expect(matterCardOf('delivered', 'simple')).toBe('open');
+  });
 });
