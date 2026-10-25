@@ -9,6 +9,7 @@ import type { components } from '@/api/schema.generated';
  * - `POST /legal/assistant/{id}/messages`: typed words (`body`) or a tap (`quickReplyId`);
  * - `POST /legal/assistant/{id}/reply`: ask the assistant again after a 503;
  * - `POST /legal/assistant/{id}/send`: "Send to a consultant";
+ * - `POST /legal/assistant/{id}/start`: "Start this request" for a matter with a fixed price (S26);
  * - `GET /legal/intake/mine`: where a conversation already sent to a consultant is found again.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data`
@@ -18,6 +19,8 @@ export type LegalThread = components['schemas']['LegalAssistantThread'];
 export type LegalMessage = components['schemas']['LegalAssistantMessage'];
 export type LegalQuickReply = components['schemas']['LegalAssistantQuickReply'];
 export type LegalBrief = components['schemas']['LegalAssistantBrief'];
+/** The fixed-price service a conversation can start (S24, S26): the service and the price WAWU set in admin (R-14), what it takes and what to hand over. */
+export type LegalFixedPrice = components['schemas']['LegalAssistantFixedPrice'];
 type IntakeView = components['schemas']['IntakeView'];
 
 /** What one message carries: words, or the id of a tap the thread offered. Exactly one. */
@@ -62,6 +65,20 @@ export async function sendToConsultant(id: string): Promise<LegalThread> {
   return threadOf(await unwrap(api.POST('/api/hub/legal/assistant/{id}/send', { params: { path: { id } } })));
 }
 
+/** "Start this request" (S26): the request is made at the price WAWU set and the conversation becomes its chat. Answers the conversation as it stands. */
+export async function startFixedPrice(id: string, firstNameChoice: string): Promise<LegalThread> {
+  return threadOf(await unwrap(api.POST('/api/hub/legal/assistant/{id}/start', { params: { path: { id } }, body: { firstNameChoice } })));
+}
+
+/**
+ * Whether a conversation is one the Legal entry goes back to: one still being profiled, or a sent one whose matter is open at any step up to the
+ * documents arriving (R2-LEGAL2, CHECK-3 H-1). A delivered or cancelled matter is finished and Legal opens a new conversation; its documents are
+ * reached from the notification that said they were ready.
+ */
+export function isOpenMatter(thread: Pick<LegalThread, 'stage' | 'requestStatus'>): boolean {
+  return thread.stage !== 'sent' || (thread.requestStatus !== 'delivered' && thread.requestStatus !== 'cancelled');
+}
+
 /** How many earlier conversations are looked at when finding the one the person is in. */
 const EARLIER_LOOKED_AT = 5;
 
@@ -73,10 +90,10 @@ function rowsOf(body: unknown): IntakeView[] {
 
 /**
  * The conversation the person is in, newest first: one still being profiled, or one sent to a
- * consultant that no quote has answered yet (`requestStatus` `awaiting_quote`, where a consultant
- * joins before any payment); otherwise a new one. The Hub has no route that returns a sent
+ * consultant whose matter is still open at any step (`isOpenMatter`: awaiting a quote, booked, quoted, signed, paid), so the person gets back to
+ * the quote (S21) and the payment (S22) after leaving; otherwise a new one. The Hub has no route that returns a sent
  * conversation on its own, so the person's intakes are read and the likely ones asked for; an
- * intake from the older form answers 404 and is passed over (BACKEND_GAPS G-501).
+ * intake from the older form answers 404 and is passed over (BACKEND_GAPS G-501, R2-LEGAL2).
  */
 export async function resolveThread(): Promise<LegalThread> {
   const rows = rowsOf(await unwrap(api.GET('/api/hub/legal/intake/mine')));
@@ -84,7 +101,7 @@ export async function resolveThread(): Promise<LegalThread> {
   for (const row of likely) {
     try {
       const thread = await fetchThread(row.id);
-      if (thread.stage !== 'sent' || thread.requestStatus === 'awaiting_quote') return thread;
+      if (isOpenMatter(thread)) return thread;
     } catch (error) {
       if (!(error instanceof ApiError) || error.kind !== 'not_found') throw error;
     }

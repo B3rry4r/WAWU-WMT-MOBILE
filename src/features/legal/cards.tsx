@@ -8,7 +8,7 @@ import { Text } from '@/components/Text';
 import { font } from '@/theme';
 
 import { iconOf } from './fixed/model';
-import type { CatalogueService } from './fixed/api';
+import type { LegalFixedPrice } from './api';
 import { matterMetrics as m } from './look2';
 import { normal } from './look';
 
@@ -16,8 +16,10 @@ import { normal } from './look';
 const BOOKABLE = ['draft', 'awaiting_quote', 'awaiting_consultation_payment'];
 
 /** What the consultant's card in the chat offers: to book while the consultation can be booked, to open the matter once it has moved on, nothing once it is closed. */
-export function matterCardOf(requestStatus: string | null): 'book' | 'open' | null {
+export function matterCardOf(requestStatus: string | null, requestPath: string | null = null): 'book' | 'open' | null {
   if (requestStatus === null || requestStatus === 'cancelled') return null;
+  // A fixed-price matter has no consultation to book (the Hub refuses it): its card only ever opens the matter.
+  if (requestPath === 'simple') return 'open';
   return BOOKABLE.includes(requestStatus) ? 'book' : 'open';
 }
 
@@ -42,7 +44,7 @@ export function MatterCard({ kind, matterLabel, onPress }: { kind: 'book' | 'ope
 }
 
 /** S24 · the fixed-price card under the assistant's line: the service, what it is, the price WAWU set, and "Start this request". */
-export function FixedPriceCard({ service, onStart }: { service: CatalogueService & { priceNaira: number }; onStart: () => void }) {
+export function FixedPriceCard({ service, onStart }: { service: LegalFixedPrice; onStart: () => void }) {
   return (
     <Card testID="legal-fixed-card-chat" style={styles.fixed}>
       <View style={styles.row}>

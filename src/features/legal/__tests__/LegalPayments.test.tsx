@@ -519,50 +519,83 @@ describe('S23 · Delivered', () => {
 });
 
 describe('S26 · Fixed-price request', () => {
-  const CAC = { code: 'cac-registration', name: 'Business name registration', category: 'Business Services', path: 'simple', blurb: 'Register your business name with the Corporate Affairs Commission.', priceNaira: 35000 };
+  /** What the Hub serves on the conversation (R2-LEGAL2, G-LEGAL-06-1): the service, the price WAWU set in admin, how long it takes and what to hand over. */
+  const FIXED = {
+    code: 'cac-registration',
+    name: 'Business name registration',
+    blurb: 'Register your business name with the Corporate Affairs Commission.',
+    priceNaira: 35000,
+    turnaround: '5 to 7 working days',
+    needs: ['ID', '2 name options', 'address'],
+  };
+  const conversation = (over: Record<string, unknown> = {}) => ({
+    id: 'i1', stage: 'profiling', matter: 'business_registration', matterLabel: 'Business registration', messages: [], quickReplies: [], brief: null,
+    awaitingReply: false, legalRequestId: null, requestStatus: null, requestPath: null, fixedPrice: FIXED, consultant: null, assistantStopped: false, ...over,
+  });
+  const screen = (onStarted = jest.fn()) => render(<FixedPriceScreen threadId="i1" onBack={jest.fn()} onStarted={onStarted} />);
 
-  it('a user sees the price, the bank charge and the total, types a name and Continue starts ONE request however often it is tapped', async () => {
-    hub.catalogue = [CAC];
+  it('a user sees the price, the bank charge and the total, what it takes and what to hand over, types a name and Continue starts ONE request however often it is tapped', async () => {
+    hub.thread = conversation();
     const onStarted = jest.fn();
-    await render(<FixedPriceScreen code="cac-registration" onBack={jest.fn()} onStarted={onStarted} />);
+    await screen(onStarted);
     expect(await rtl.screen.findByText('Bank charge')).toBeTruthy();
     expect(rtl.screen.getByText('Price')).toBeTruthy();
+    expect(rtl.screen.getByText('Takes')).toBeTruthy();
+    expect(rtl.screen.getByText('5 to 7 working days')).toBeTruthy();
+    expect(rtl.screen.getByText("You'll need")).toBeTruthy();
+    expect(rtl.screen.getByText('ID, 2 name options, address')).toBeTruthy();
     expect(await rtl.screen.findByRole('button', { name: 'Continue · ₦35,015.75' })).toBeTruthy();
     expect(rtl.screen.getByTestId('legal-fixed-continue').props.accessibilityState.disabled).toBe(true);
     await rtl.fireEvent.changeText(rtl.screen.getByTestId('legal-fixed-name'), 'Lennox Films');
     await press('legal-fixed-continue');
     await press('legal-fixed-continue');
     await rtl.waitFor(() => expect(onStarted).toHaveBeenCalledWith(R1));
-    expect(hub.creates).toEqual([{ serviceCode: 'cac-registration', details: { firstNameChoice: 'Lennox Films' } }]);
+    expect(hub.starts).toEqual([{ firstNameChoice: 'Lennox Films' }]);
+  });
+
+  it('draws no Takes or You\'ll need row when the Hub names none', async () => {
+    hub.thread = conversation({ fixedPrice: { ...FIXED, turnaround: null, needs: [] } });
+    await screen();
+    expect(await rtl.screen.findByText('Price')).toBeTruthy();
+    expect(rtl.screen.queryByText('Takes')).toBeNull();
+    expect(rtl.screen.queryByText("You'll need")).toBeNull();
   });
 
   it('draws no bank charge or total when the Hub has no fee figure, and the button says Continue', async () => {
-    hub.catalogue = [CAC];
+    hub.thread = conversation();
     hub.feeQuoteFails = true;
-    await render(<FixedPriceScreen code="cac-registration" onBack={jest.fn()} onStarted={jest.fn()} />);
+    await screen();
     expect(await rtl.screen.findByText('Price')).toBeTruthy();
     await rtl.waitFor(() => expect(rtl.screen.getByRole('button', { name: 'Continue' })).toBeTruthy());
     expect(rtl.screen.queryByText('Bank charge')).toBeNull();
     expect(rtl.screen.queryByText('Total')).toBeNull();
   });
 
-  it('offers nothing for a service WAWU has not priced, or one that needs documents this screen does not ask for', async () => {
-    hub.catalogue = [{ ...CAC, priceNaira: null }];
-    await render(<FixedPriceScreen code="cac-registration" onBack={jest.fn()} onStarted={jest.fn()} />);
+  it('offers nothing when the conversation has no fixed price', async () => {
+    hub.thread = conversation({ fixedPrice: null });
+    await screen();
     expect(await rtl.screen.findByTestId('legal-fixed-unavailable')).toBeTruthy();
     expect(rtl.screen.queryByTestId('legal-fixed-continue')).toBeNull();
   });
 
-  it('shows the Hub\'s sentence when the request is refused, and a second Continue asks again', async () => {
-    hub.catalogue = [CAC];
-    hub.createFails = { status: 400, message: 'That service cannot be started yet.' };
-    await render(<FixedPriceScreen code="cac-registration" onBack={jest.fn()} onStarted={jest.fn()} />);
+  it('opens the matter at once when the request was already started', async () => {
+    hub.thread = conversation({ fixedPrice: null, stage: 'sent', legalRequestId: R1, requestStatus: 'quoted', requestPath: 'simple' });
+    const onStarted = jest.fn();
+    await screen(onStarted);
+    await rtl.waitFor(() => expect(onStarted).toHaveBeenCalledWith(R1));
+    expect(hub.starts).toEqual([]);
+  });
+
+  it("shows the Hub's sentence when the request is refused, and a second Continue asks again", async () => {
+    hub.thread = conversation();
+    hub.startFails = { status: 409, code: 'not_fixed_price', message: 'This one needs a consultant first. Send it to a consultant instead.' };
+    await screen();
     await rtl.screen.findByRole('button', { name: /^Continue/ });
     await rtl.fireEvent.changeText(rtl.screen.getByTestId('legal-fixed-name'), 'Lennox Films');
     await press('legal-fixed-continue');
-    expect(await rtl.screen.findByText('That service cannot be started yet.')).toBeTruthy();
-    hub.createFails = null;
+    expect(await rtl.screen.findByText('This one needs a consultant first. Send it to a consultant instead.')).toBeTruthy();
+    hub.startFails = null;
     await press('legal-fixed-continue');
-    await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
+    await rtl.waitFor(() => expect(hub.starts).toHaveLength(2));
   });
 });

@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
@@ -19,11 +20,13 @@ import { font, space, text } from '@/theme';
 
 import { matterMetrics as m } from '../look2';
 import { LegalFrame } from '../ui';
-import { fetchPurchaseFee, fetchServices, fixedKeys, startRequest } from './api';
-import { iconOf, nameChoice, startable } from './model';
+import { fetchThread, legalKeys, startFixedPrice } from '../api';
+import { fetchPurchaseFee, fixedKeys } from './api';
+import { iconOf, nameChoice } from './model';
 
 export type FixedArgs = {
-  code: string;
+  /** The conversation the request starts from: its `fixedPrice` is what is drawn. */
+  threadId: string;
   onBack: () => void;
   /** The request exists: its matter, where the letter is signed and the fee paid. */
   onStarted: (requestId: string) => void;
@@ -32,14 +35,14 @@ export type FixedArgs = {
 const sentence = (error: unknown, fallback: string) => (isApiError(error) && error.message ? error.message : fallback);
 
 /**
- * S26 · Fixed-price request: what the service is, the price WAWU set (R-14), the bank's charge and the total (BRIEF S26), and the first name choice.
- * "Continue" starts the request on the Hub, which quotes it at the fixed price; the matter then asks for the letter to be signed (S21) before the fee is
- * paid with the PIN (S22), because the Hub refuses a fee until the letter is signed. Nothing is charged here.
+ * S26 · Fixed-price request: what the service is, how long it takes and what to hand over (when the Hub says), the price WAWU set (R-14), the bank's
+ * charge and the total (BRIEF S26), and the first name choice. "Continue" starts the request on the Hub (`POST /legal/assistant/{id}/start`), which
+ * quotes it at the fixed price and keeps the conversation as the matter's chat; the matter then asks for the letter to be signed (S21) before the fee
+ * is paid with the PIN (S22), because the Hub refuses a fee until the letter is signed. Nothing is charged here.
  */
-export function FixedPriceScreen({ code, onBack, onStarted }: FixedArgs) {
-  const services = useQuery({ queryKey: fixedKeys.catalogue, queryFn: fetchServices, staleTime: 0 });
-  const service = services.data?.find((s) => s.code === code);
-  const ok = startable(service) ? service : null;
+export function FixedPriceScreen({ threadId, onBack, onStarted }: FixedArgs) {
+  const services = useQuery({ queryKey: fixedKeys.thread(threadId), queryFn: () => fetchThread(threadId), staleTime: 0 });
+  const ok = services.data?.fixedPrice ?? null;
   const priceKobo = ok ? ok.priceNaira * 100 : null;
   const fee = useQuery({
     queryKey: fixedKeys.fee(priceKobo ?? 0),
@@ -65,8 +68,13 @@ export function FixedPriceScreen({ code, onBack, onStarted }: FixedArgs) {
     setStarting(true);
     setProblem(null);
     try {
-      if (made.current === null) made.current = (await startRequest(ok.code, { firstNameChoice: choice })).id;
-      onStarted(made.current);
+      if (made.current === null) {
+        const thread = await startFixedPrice(threadId, choice);
+        // The chat behind this screen now shows the request as its matter.
+        queryClient.setQueryData(legalKeys.thread, thread);
+        made.current = thread.legalRequestId;
+      }
+      if (made.current) onStarted(made.current);
     } catch (error) {
       setProblem(sentence(error, 'We could not start your request. Check your connection and try again.'));
     } finally {
@@ -75,8 +83,15 @@ export function FixedPriceScreen({ code, onBack, onStarted }: FixedArgs) {
     }
   };
 
+  // Started already (on this phone a moment ago, or on another): the matter is where it goes on.
+  const startedId = services.data?.legalRequestId ?? null;
+  useEffect(() => {
+    if (startedId) onStarted(startedId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the matter is opened once, when the Hub says the request exists
+  }, [startedId]);
+
   let body;
-  if (services.isPending) {
+  if (startedId || services.isPending) {
     body = (
       <View testID="legal-fixed-loading" accessibilityLabel="Loading" style={styles.loading}>
         <Skeleton height={m.headTile} width={m.headTile} radius={m.headTile / 2} />
@@ -112,6 +127,8 @@ export function FixedPriceScreen({ code, onBack, onStarted }: FixedArgs) {
           {ok.blurb ? <Text variant="muted" style={styles.centre}>{ok.blurb}</Text> : null}
         </View>
         <GroupedList testID="legal-fixed-card">
+          {ok.turnaround ? <KeyValueRow label="Takes" value={<Text variant="kvValue">{ok.turnaround}</Text>} /> : null}
+          {ok.needs.length > 0 ? <KeyValueRow label="You'll need" value={<Text variant="kvValue">{ok.needs.join(', ')}</Text>} /> : null}
           <KeyValueRow label="Price" value={<Money minorUnits={ok.priceNaira * 100} size={text.kvValue.fontSize} decimals={false} />} />
           {fee.data ? (
             <>

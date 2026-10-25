@@ -18,6 +18,8 @@ function thread(over: Partial<LegalThread> = {}): LegalThread {
     awaitingReply: false,
     legalRequestId: null,
     requestStatus: null,
+    requestPath: null,
+    fixedPrice: null,
     consultant: null,
     assistantStopped: false,
     ...over,
@@ -120,7 +122,7 @@ describe('hasSpoken and placeholderOf', () => {
 });
 
 describe('briefToConfirm, tapsOf and needsAnotherAsk', () => {
-  const brief = { matter: 'property', matterLabel: 'Tenancy', rows: [{ label: 'Matter', value: 'Tenancy' }], ready: true };
+  const brief = { matter: 'property', matterLabel: 'Tenancy', rows: [{ label: 'Matter', value: 'Tenancy' }], ready: true, note: null };
   it('offers the brief only when the stage is brief_ready and the brief is ready', () => {
     expect(briefToConfirm(thread({ stage: 'brief_ready', brief }))).toBe(brief);
     expect(briefToConfirm(thread({ stage: 'brief_ready', brief: { ...brief, ready: false } }))).toBeNull();

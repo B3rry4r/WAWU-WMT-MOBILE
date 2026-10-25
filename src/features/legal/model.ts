@@ -110,9 +110,16 @@ export type FailureKind = 'offline' | 'unavailable' | 'other';
 export function failureKind(error: unknown): FailureKind {
   if (!isApiError(error)) return 'other';
   if (error.kind === 'network') return 'offline';
-  if (error.status === 503 && error.code === 'assistant_unavailable') return 'unavailable';
+  if (error.status === 503 && (error.code === 'assistant_unavailable' || error.code === 'assistant_at_capacity')) return 'unavailable';
   return 'other';
 }
+
+/** The assistant cannot answer because its provider's allowance is spent, not because it is slow: the Hub's code for it (R2-LEGAL2, CHECK-3 M-4). */
+export const isAtCapacity = (error: unknown): boolean => isApiError(error) && error.code === 'assistant_at_capacity';
+
+/** What the note says while the assistant is busy, and while it is only slow. The message is kept either way, and "Ask again" asks for the answer. */
+export const BUSY_NOTE = 'The assistant is busy right now. Your message is saved.';
+export const SLOW_NOTE = 'The assistant is taking a while to answer. Your message is saved.';
 
 /** The words of a live frame that says a conversation changed (LEGAL-02, BACKEND_GAPS G-502). */
 export function isLegalLiveEvent(event: unknown): boolean {
@@ -125,5 +132,5 @@ export function isLegalLiveEvent(event: unknown): boolean {
  */
 export function canTryAgain(error: unknown): boolean {
   if (!isApiError(error)) return true;
-  return error.kind === 'network' || error.kind === 'server' || error.code === 'assistant_busy' || error.code === 'assistant_unavailable';
+  return error.kind === 'network' || error.kind === 'server' || error.code === 'assistant_busy' || error.code === 'assistant_unavailable' || error.code === 'assistant_at_capacity';
 }

@@ -154,6 +154,9 @@ export function routeForPush(raw: unknown): Href | null {
     // The documents are in the matter: its id rides in the Hub's path (`/legal/requests/<id>`); without it, Legal.
     case 'legal_delivered':
       return routeForAction(data.actionHref) ?? '/legal';
+    // R2-LEGAL2: the consultant's quote is ready, and the matter is where the letter is read and signed (S21).
+    case 'legal_quote_ready':
+      return routeForAction(data.actionHref) ?? '/legal';
     case 'tgif_daily': {
       // HOME-16: the morning TGIF notice opens the reader on the day it was made for. A
       // notice with no day (or a day that is not a safe date) opens today's reader.

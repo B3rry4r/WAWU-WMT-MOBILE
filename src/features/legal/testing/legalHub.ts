@@ -9,6 +9,8 @@ export const refuse = (status: number, reason: Record<string, unknown>) => json(
 
 export const R1 = '11111111-1111-4111-8111-111111111111';
 export const PROVIDER_FEE = 1575;
+/** The conversation id S26 starts from. */
+export const THREAD_ID = 'i1';
 
 export function request(over: Record<string, unknown> = {}) {
   return {
@@ -71,12 +73,14 @@ export const hub = {
   wrongFirst: false,
   mode: 'paid' as PayMode,
   signs: [] as Record<string, unknown>[],
-  creates: [] as Record<string, unknown>[],
-  catalogue: [] as unknown[],
+  /** The conversation S26 reads (`GET /legal/assistant/{id}`) and starts from (`POST .../start`): its `fixedPrice` is what S26 draws. */
+  thread: null as null | Record<string, unknown>,
+  /** What `POST /legal/assistant/{id}/start` was asked with. */
+  starts: [] as Record<string, unknown>[],
+  /** A refusal the start route answers with, until it is cleared. */
+  startFails: null as null | { status: number; code: string; message: string },
   deliverables: [] as unknown[],
   feeQuoteFails: false,
-  /** A refusal the request-making route answers with, until it is cleared. */
-  createFails: null as null | { status: number; message: string },
   /** While set, the booking answer waits for it: a second tap lands while the first is still under way. */
   bookGate: null as null | Promise<void>,
 };
@@ -99,11 +103,11 @@ export function resetHub() {
     wrongFirst: false,
     mode: 'paid',
     signs: [],
-    creates: [],
-    catalogue: [],
+    thread: null,
+    starts: [],
+    startFails: null,
     deliverables: [],
     feeQuoteFails: false,
-    createFails: null,
     bookGate: null,
   });
 }
@@ -217,18 +221,19 @@ export function installHub() {
       return ok(hub.req);
     }
     if (path === `/legal/requests/${R1}/deliverables`) return ok({ requestId: R1, status: String(hub.req.status), items: hub.deliverables });
-    if (path === '/legal/catalogue') return ok({ categories: [], consultationOptions: [], services: hub.catalogue });
+    if (path === `/legal/assistant/${THREAD_ID}` && method === 'GET') return ok(hub.thread);
+    if (path === `/legal/assistant/${THREAD_ID}/start` && method === 'POST') {
+      const body = (await r.json()) as Record<string, unknown>;
+      hub.starts.push(body);
+      if (hub.startFails) return refuse(hub.startFails.status, { code: hub.startFails.code, message: hub.startFails.message });
+      hub.req = request({ serviceCode: 'cac-registration', serviceName: 'CAC business name registration', path: 'simple', status: 'quoted', quoteAmount: 35000 });
+      hub.thread = { ...hub.thread, stage: 'sent', fixedPrice: null, legalRequestId: R1, requestStatus: 'quoted', requestPath: 'simple' };
+      return json(201, { statusCode: 201, message: 'Created', data: hub.thread });
+    }
     if (path === '/money/fees/quote') {
       if (hub.feeQuoteFails) return refuse(503, { code: 'fees_not_set', message: 'Fees are not set.' });
       const amount = Number(url.searchParams.get('amountKobo'));
       return ok({ kind: 'purchase', billCategory: null, amountKobo: amount, fee: { providerFeeKobo: PROVIDER_FEE, wawuFeeKobo: 0, totalFeeKobo: PROVIDER_FEE }, parts: [], totalKobo: amount + PROVIDER_FEE, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'fee-tok', expiresAt: '2099-01-01T00:00:00.000Z' });
-    }
-    if (path === '/legal/requests' && method === 'POST') {
-      const body = (await r.json()) as Record<string, unknown>;
-      if (hub.createFails) return json(hub.createFails.status, { statusCode: hub.createFails.status, message: hub.createFails.message, error: 'Bad Request' });
-      hub.creates.push(body);
-      hub.req = request({ serviceCode: body.serviceCode, serviceName: 'CAC business name registration', path: 'simple', status: 'quoted', quoteAmount: 35000 });
-      return json(201, { statusCode: 201, message: 'Created', data: hub.req });
     }
     if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2099-09-20T09:00:00.000Z' });
     throw new Error(`no answer for ${method} ${path}`);

@@ -3914,6 +3914,47 @@
         ]
       }
     },
+    "/api/hub/legal/assistant/{id}/start": {
+      "post": {
+        "operationId": "LegalAssistantController_startFixedPrice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartFixedPriceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalAssistantThread"
+                }
+              }
+            }
+          }
+        },
+        "summary": "\"Start this request\" (S24, S26): a matter with a fixed price becomes a\nrequest at that price with no consultation (409 `not_fixed_price` when\nthe matter has none). Nothing is charged: the letter is signed on the\nmatter, then the fee is paid. Starting twice answers the same thread.",
+        "tags": [
+          "LegalAssistant"
+        ]
+      }
+    },
     "/api/hub/legal/ops/intakes/{id}/assistant": {
       "get": {
         "operationId": "LegalAssistantOpsController_transcript",
@@ -20628,6 +20669,40 @@
         "summary": "Cancels an attempt the provider has not taken. A taken or credited one is refused.",
         "tags": [
           "AdminAddMoney"
+        ]
+      }
+    },
+    "/api/hub/admin/money/transfers/lookup": {
+      "get": {
+        "operationId": "AdminTransfersController_find",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "query",
+            "description": "The short reference a person quotes (\"WAW-8F2A-91C3\") or the whole stored reference (\"wawu-send-<id>\", \"wawu-bank-<id>\").",
+            "schema": {
+              "minLength": 4,
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTransferLookupResult"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The send a person quotes: by the short reference on their receipt (\"WAW-8F2A-91C3\") or by the whole stored reference. Answers every\nsend the reference fits, newest first (a short reference is derived from the send's id, so two sends can share one), or an empty list.",
+        "tags": [
+          "AdminTransfers"
         ]
       }
     },
@@ -44835,6 +44910,20 @@
           }
         }
       },
+      "StartFixedPriceDto": {
+        "type": "object",
+        "properties": {
+          "firstNameChoice": {
+            "type": "string",
+            "description": "The business name the person wants first. 2 to 120 characters.",
+            "minLength": 2,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "firstNameChoice"
+        ]
+      },
       "CreateLegalRequestDto": {
         "type": "object",
         "properties": {
@@ -53769,6 +53858,98 @@
           "accountNumber",
           "accountName",
           "nameToken"
+        ]
+      },
+      "AdminTransferLookupView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "shortReference": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountKobo": {
+            "type": "integer"
+          },
+          "providerFeeKobo": {
+            "type": "integer"
+          },
+          "wawuFeeKobo": {
+            "type": "integer"
+          },
+          "totalKobo": {
+            "type": "integer"
+          },
+          "payerWawuUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipientWawuUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "payerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "reference",
+          "shortReference",
+          "amountKobo",
+          "providerFeeKobo",
+          "wawuFeeKobo",
+          "totalKobo",
+          "payerWawuUserId",
+          "recipientWawuUserId",
+          "payerName",
+          "recipientName",
+          "bankName",
+          "createdAt",
+          "completedAt"
+        ]
+      },
+      "AdminTransferLookupResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTransferLookupView"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "RecipientView": {
@@ -63191,13 +63372,53 @@
           },
           "ready": {
             "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
           "matter",
           "matterLabel",
           "rows",
-          "ready"
+          "ready",
+          "note"
+        ]
+      },
+      "LegalAssistantFixedPrice": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "blurb": {
+            "type": "string"
+          },
+          "priceNaira": {
+            "type": "number"
+          },
+          "turnaround": {
+            "type": "string",
+            "nullable": true
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "blurb",
+          "priceNaira",
+          "turnaround",
+          "needs"
         ]
       },
       "LegalAssistantConsultant": {
@@ -63268,6 +63489,22 @@
             "type": "string",
             "nullable": true
           },
+          "requestPath": {
+            "type": "string",
+            "enum": [
+              "consultation",
+              "simple"
+            ],
+            "nullable": true
+          },
+          "fixedPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalAssistantFixedPrice"
+              }
+            ],
+            "nullable": true
+          },
           "consultant": {
             "allOf": [
               {
@@ -63291,6 +63528,8 @@
           "awaitingReply",
           "legalRequestId",
           "requestStatus",
+          "requestPath",
+          "fixedPrice",
           "consultant",
           "assistantStopped"
         ]
@@ -75074,6 +75313,10 @@
           "bannerUrl": {
             "type": "string",
             "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -75085,7 +75328,8 @@
           "timeLabel",
           "location",
           "venueName",
-          "bannerUrl"
+          "bannerUrl",
+          "cancelledAt"
         ]
       },
       "EventOrderLineView": {

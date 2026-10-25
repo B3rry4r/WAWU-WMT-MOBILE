@@ -27,6 +27,7 @@ export const HUB_NOTIFICATION_KINDS = [
   'community_pass_refunded',
   'community_messages',
   'legal_delivered',
+  'legal_quote_ready',
   'tgif_daily',
   'money_in',
   'money_in_reversed',

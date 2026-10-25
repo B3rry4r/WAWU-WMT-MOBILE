@@ -36,6 +36,7 @@ const ICONS: Record<string, IconName> = {
   verify_reminder: 'BadgeCheck',
   identity_review: 'ShieldCheck',
   legal_delivered: 'FileText',
+  legal_quote_ready: 'FileText',
   tgif_daily: 'BookOpen',
   wallet_ready: 'Wallet',
   community_join_approved: 'Users',

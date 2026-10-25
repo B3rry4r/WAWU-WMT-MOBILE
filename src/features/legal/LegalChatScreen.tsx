@@ -15,8 +15,6 @@ import { useWawu } from '@/theme';
 import { askAgain, fetchThread, legalKeys, resolveThread, sendMessage, sendToConsultant, type LegalQuickReply, type LegalSend, type LegalThread } from './api';
 import { FixedPriceCard, MatterCard, matterCardOf } from './cards';
 import { readDraft, writeDraft } from './draft';
-import { fetchServices, fixedKeys } from './fixed/api';
-import { FIXED_PRICE_MATTERS, fixedPriceFor } from './fixed/model';
 import { legalMetrics as m } from './look';
 import {
   briefToConfirm,
@@ -25,11 +23,14 @@ import {
   failureKind,
   failureText,
   hasSpoken,
+  isAtCapacity,
   headerOf,
   isLegalLiveEvent,
+  BUSY_NOTE,
   LEGAL_NAME,
   needsAnotherAsk,
   placeholderOf,
+  SLOW_NOTE,
   tapsOf,
   typedBody,
 } from './model';
@@ -119,7 +120,7 @@ export function LegalChatScreen() {
         bottom={bottom}
         onBook={(requestId) => router.push({ pathname: '/legal-book', params: { requestId } })}
         onOpenMatter={(id) => router.push({ pathname: '/legal-matter', params: { id } })}
-        onStartFixed={(code) => router.push({ pathname: '/legal-fixed', params: { code } })}
+        onStartFixed={(id) => router.push({ pathname: '/legal-fixed', params: { id } })}
       />
     );
   } else {
@@ -179,17 +180,19 @@ type ChatProps = {
   onBook: (requestId: string) => void;
   /** Once booked the same card opens the matter (S20 to S23). */
   onOpenMatter: (requestId: string) => void;
-  /** S24's Start this request opens the fixed-price request (S26). */
-  onStartFixed: (serviceCode: string) => void;
+  /** S24's Start this request opens the fixed-price request (S26) of this conversation. */
+  onStartFixed: (threadId: string) => void;
 };
 
 function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpenMatter, onStartFixed }: ChatProps) {
   const scroll = useRef<ScrollView>(null);
-  // S24: the services the Hub lists are asked for only when this conversation's matter is one that starts as a fixed-price service.
-  const fixedMatter = thread.stage === 'profiling' && hasSpoken(thread) && thread.matter in FIXED_PRICE_MATTERS;
-  const services = useQuery({ queryKey: fixedKeys.catalogue, queryFn: fetchServices, enabled: fixedMatter, staleTime: 60_000 }, queryClient);
-  const fixed = fixedMatter ? fixedPriceFor(thread.matter, services.data) : null;
-  const matterCard = thread.consultant && thread.legalRequestId ? matterCardOf(thread.requestStatus) : null;
+  // S24: the Hub says on the conversation when its matter has a fixed price WAWU set (R-14); then Start this request replaces Send to a consultant.
+  const fixed = thread.stage !== 'sent' && hasSpoken(thread) ? thread.fixedPrice : null;
+  // The card back to the matter: once a consultant has joined, and for a matter that needs none (a fixed-price request) from the moment it exists.
+  const cardKind = thread.legalRequestId ? matterCardOf(thread.requestStatus, thread.requestPath) : null;
+  const matterCard = cardKind && (thread.consultant || cardKind === 'open') ? cardKind : null;
+  // Only the Hub's busy words are drawn while the assistant is out of calls; any answer clears them.
+  const [busyNote, setBusyNote] = useState(false);
   const [draft, setDraft] = useState(() => readDraft(thread.id));
   const [working, setWorking] = useState<Working | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -216,8 +219,11 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
     if (typed !== undefined) change('');
     try {
       keep(await call());
+      setBusyNote(false);
     } catch (error) {
       const kind = failureKind(error);
+      const capacity = isAtCapacity(error);
+      if (capacity) setBusyNote(true);
       const code = isApiError(error) ? error.code : undefined;
       let saved = false;
       if (what.kind === 'message' && (kind === 'unavailable' || code === 'assistant_busy' || code === 'quick_reply_unknown')) {
@@ -228,7 +234,8 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
           // The conversation could not be read again; the words go back into the box below.
         }
       }
-      if (!saved) {
+      // Asking again while the assistant is still busy changes nothing on screen: the same plain words, the same Ask again.
+      if (!saved && !(capacity && what.kind === 'ask')) {
         if (typed !== undefined) {
           const now = readDraft(id);
           change(now === '' ? typed : `${typed}\n${now}`);
@@ -283,11 +290,11 @@ function Chat({ thread, refreshFailed, onRefresh, onLeave, bottom, onBook, onOpe
             onPress={() => (matterCard === 'book' ? onBook(thread.legalRequestId as string) : onOpenMatter(thread.legalRequestId as string))}
           />
         ) : null}
-        {fixed && !sending ? <FixedPriceCard service={fixed} onStart={() => onStartFixed(fixed.code)} /> : null}
+        {fixed && !sending ? <FixedPriceCard service={fixed} onStart={() => onStartFixed(thread.id)} /> : null}
         {taps.length > 0 && !sending ? <QuickReplies taps={taps} onTap={tap} disabled={working !== null} /> : null}
-        {brief && working?.kind !== 'message' ? <BriefCard brief={brief} onSend={send} sending={working?.kind === 'send'} /> : null}
+        {brief && !fixed && working?.kind !== 'message' ? <BriefCard brief={brief} onSend={send} sending={working?.kind === 'send'} /> : null}
         {slow && working === null && !problem ? (
-          <Note testID="legal-slow" text="The assistant is taking a while to answer. Your message is saved." action="Ask again" onAction={ask} />
+          <Note testID="legal-slow" text={busyNote ? BUSY_NOTE : SLOW_NOTE} action="Ask again" onAction={ask} />
         ) : null}
         {problem ? <Note testID="legal-problem" text={problem.text} action={problem.retry ? 'Try again' : undefined} onAction={problem.retry ?? undefined} busy={working !== null} /> : null}
         {refreshFailed && !problem ? <Note testID="legal-stale" text="Could not check for new messages." action="Try again" onAction={onRefresh} /> : null}
