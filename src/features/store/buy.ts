@@ -74,8 +74,11 @@ const keyOf = (t: StoreTransaction): string | null => t.transactionId ?? t.purch
 async function settle(token: string | null, t: StoreTransaction, finished: boolean): Promise<void> {
   const key = keyOf(t);
   if (!finished && (await roomOf(token, key))) return;
-  await unbindRoom(token, key);
+  // Marked first (IAP-03 round 4, L-5): if the app stops between the two writes, the worst left is a delivered pass that still has its room,
+  // which the next open hands to the Hub once more ("already") and lets go. Unbinding first could leave a finished pass with no room and no
+  // mark, which reads as a payment the app never saw complete and stops a genuinely lost one from being placed.
   await markDone(token, t.transactionId);
+  await unbindRoom(token, key);
 }
 
 /** Transactions on their way to the Hub right now, so a buy and a recovery never send the same one at once. */
@@ -200,6 +203,11 @@ export type Recovery = {
    * Zero unless the phone knows it owes one; a finished pass the store still lists, or one bought on another device, is never counted.
    */
   unplaced: number;
+  /**
+   * Pass payments the Hub refused as another room's (round 4, L-3). Present only when there were some, so Restore purchases in a room can say
+   * so instead of "nothing to restore". Nothing is delivered or marked for these: they are open for the room they belong to.
+   */
+  elsewhere?: number;
 };
 
 /**
@@ -260,9 +268,12 @@ export async function recover(
       else result.granted.push(outcome.purchase);
       if (fromRestore && !outcome.purchase.alreadyGranted) restoreTaken = true;
       if (product.subscription || fromEntry) await forgetBuy(token);
+      // The person chose the room for this one (L-2): what they were buying before is stale now, so it must not place the payment left over.
+      else if (fromRestore && !outcome.purchase.alreadyGranted && (await owesAPass(token, products))) await forgetBuy(token);
       if (product.kind === 'pass') await settle(token, t, outcome.finished === true);
     } else if (outcome.kind === 'not_open') result.notOpen = true;
-    else if (outcome.kind !== 'taken' && outcome.kind !== 'room_mismatch') result.left += 1;
+    else if (outcome.kind === 'room_mismatch') result.elsewhere = (result.elsewhere ?? 0) + 1;
+    else if (outcome.kind !== 'taken') result.left += 1;
   }
   if (waiting.size > 0 && (options.restoreRoom || (await owesAPass(token, products)))) result.unplaced = waiting.size;
   return result;

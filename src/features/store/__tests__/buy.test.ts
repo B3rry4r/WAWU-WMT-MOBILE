@@ -530,6 +530,68 @@ describe('a pass payment the app never saw complete, while finished passes are s
     expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toEqual({ granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 });
     expect(hub.bodies).toEqual([]);
   });
+
+  it('L-2: once Restore purchases has placed a payment by the person’s own room, the kept entry is let go, so the next open does not give the other one to the old room', async () => {
+    const product = ios();
+    await twoFinishedPasses(product);
+    await roomIntent().rememberBuy(TOKEN, product.storeProductId, ROOM_B);
+    fakeStore.owned = [held('1001'), held('1002'), held('3001'), held('3002')];
+    const restored = await buyModule().recover([product], { platform: 'ios', all: true, accountToken: TOKEN, restoreRoom: ROOM });
+    expect(restored).toMatchObject({ granted: [expect.anything()], unplaced: 1 });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '3001', communityId: ROOM }]);
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toBeNull();
+    // The next open: the payment left is not placed by what the person was buying before they chose a room, and nothing is said.
+    hub.bodies = [];
+    expect(await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).toMatchObject({ granted: [], already: 0, left: 0, unplaced: 0 });
+    expect(hub.bodies).toEqual([]);
+  });
+
+  it('L-2: a tier’s kept entry is not let go by a pass placed through Restore purchases', async () => {
+    const product = ios();
+    const tierProduct = tier('ios');
+    hub.products = [product, tierProduct];
+    await roomIntent().rememberBuy(TOKEN, tierProduct.storeProductId, null);
+    fakeStore.owned = [held('3001'), held('3002')];
+    expect(await buyModule().recover([product, tierProduct], { platform: 'ios', all: true, accountToken: TOKEN, restoreRoom: ROOM })).toMatchObject({ granted: [expect.anything()] });
+    expect(await roomIntent().pendingBuy(TOKEN, tierProduct.storeProductId)).toEqual({ communityId: null });
+  });
+
+  it('L-3: Restore purchases in a room, with the Hub refusing every payment as another room’s, counts them so the person can be told', async () => {
+    const product = ios();
+    fakeStore.owned = [held('3001'), held('3002')];
+    hub.answer = 'store_purchase_other_room';
+    const restored = await buyModule().recover([product], { platform: 'ios', all: true, accountToken: TOKEN, restoreRoom: ROOM });
+    expect(restored).toMatchObject({ granted: [], already: 0, left: 0, unplaced: 0, elsewhere: 2 });
+    // Nothing is delivered or marked: both stay open for the room they belong to.
+    expect(await roomIntent().doneIds(TOKEN)).toEqual(new Set());
+    expect(fakeStore.finished).toEqual([]);
+  });
+
+  it('L-5: a pass the Hub has is marked delivered before its room is let go, so a stop between the two writes never leaves a finished pass looking unplaced', async () => {
+    const product = ios();
+    const SecureStore = require('expo-secure-store') as { setItemAsync: jest.Mock; deleteItemAsync: jest.Mock };
+    const realSet = SecureStore.setItemAsync.getMockImplementation() as (k: string, v: string) => Promise<void>;
+    const realDelete = SecureStore.deleteItemAsync.getMockImplementation() as (k: string) => Promise<void>;
+    // The app is killed after the fourth write of a pass bought here: remember, bind, forget, then the first write of the settling.
+    let writes = 0;
+    SecureStore.setItemAsync.mockImplementation(async (k: string, v: string) => {
+      writes += 1;
+      if (writes <= 4) await realSet(k, v);
+    });
+    SecureStore.deleteItemAsync.mockImplementation(async (k: string) => {
+      writes += 1;
+      if (writes <= 4) await realDelete(k);
+    });
+    try {
+      expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toMatchObject({ kind: 'granted', finished: true });
+    } finally {
+      SecureStore.setItemAsync.mockImplementation(realSet);
+      SecureStore.deleteItemAsync.mockImplementation(realDelete);
+    }
+    expect(writes).toBeGreaterThan(4);
+    // The transaction id the sandbox gave this purchase is in the delivered list, though the app died before the room was let go.
+    expect((await roomIntent().doneIds(TOKEN)).size).toBe(1);
+  });
 });
 
 describe('a phone with no store', () => {

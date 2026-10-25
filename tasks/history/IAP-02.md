@@ -237,3 +237,26 @@ Sonnet verifier (T2, lean). Checked mobile `wmt/IAP-02` `ca72c84d` (on `fdf3af17
 | dashboard merge into `origin/main` `433c710` | fast-forward (main is an ancestor), nothing to resolve |
 
 NOT RUN: a phone, a real store sheet, Apple's sandbox, the GitHub Branch checks for `a2ed812` (the lead reads that run), `wmt/IAP-04` records branch merge.
+
+## IAP-03 round 4, builder IAP-03 r4 (25 Oct 2026): v-IAP-03c's lows L-4, L-2, L-3, L-5 answered
+
+Sonnet builder (T1, small). Mobile `wmt/IAP-02` from `37a57493`; app only (no Hub, contract, route or migration change). Each low has a test written first and seen red. `expo-iap` 6.1.1 came from the pinned tarball (sha512 matched the lock) into this worktree's `node_modules` only. L-1 stays as recorded above (past 80 delivered App Store passes on one phone).
+
+| Low | Cause | What was done | Proof |
+|---|---|---|---|
+| L-4 | Not an ordering race: a wall-clock budget. The first test waits (`findBy*`, 1 s by default) for a chain of hops (room and pass, host handle, the Hub's catalog, the store's prices) and also paid for loading the code on the way. Quiet it took about 1.4 s in all, with 0.3 s inside the wait; a cold transform cache took it past 9 s. No timer or shared mock was involved | `pass.test.tsx`: `rtl.configure({ asyncUtilTimeout: 10_000 })` as the other store screens' tests do, and a `beforeAll` that puts the stand-in Hub in and loads `PassScreen` before the first test (the Hub client takes `fetch` when first loaded, so loading it earlier without the stand-in made every case fail with `pass-error`). No assertion changed, nothing skipped; a `findBy*` still returns the moment its element is there | red: `--no-cache` failed the first test twice (EXIT 1, "Unable to find an element with testID: pass-price", also once cold alone); green: `--no-cache` twice EXIT 0. 20 runs of the file with `--maxWorkers=2` while a full `src/features` jest run (`--maxWorkers=2`) ran beside them: 20 of 20 EXIT 0, 18 tests each, the first test 310 to 416 ms; the load run itself EXIT 0 (342 suites, 5057 tests) |
+| L-2 | `recover` kept the remembered room entry after Restore purchases placed a payment by the person's own room, so the next open gave the other lost payment to the old room | In `recover`, a Restore placement that granted (not "already") lets the entry go, but only when the entry is for a pass (`owesAPass`); a tier's entry is left alone | `buy.test.ts`: two lost payments and an entry for room B, Restore in room A places one in A, the entry is gone, the next open sends nothing and says nothing (red before: the entry stayed); and a tier's entry survives a pass placed by Restore (guard) |
+| L-3 | Restore in a room, with the Hub refusing every payment as another room's, ended with "There was nothing to restore." | `Recovery.elsewhere` (optional, present only when there were some) counts the Hub's `store_purchase_other_room` refusals; in a room, when nothing was restored and nothing is already up to date, `useStore` shows the existing room-mismatch sentence ("That payment was already used for a different room. To join this one, buy its pass again."). Outside a room the quiet line stays, because "this one" would point at nothing. Nothing is delivered or marked for these | `buy.test.ts` (two payments refused: `elsewhere: 2`, nothing finished, nothing marked) and `pass.test.tsx` (the sentence on the pass screen, not "nothing to restore"), both red before |
+| L-5 | `settle` let go of the room, then marked the id delivered | Order swapped: mark first, then unbind. The order is the safer one: a stop between the two writes now leaves a delivered pass that still has its room, which the next open hands to the Hub once more (it answers "already") and lets go; the old order could leave a finished pass with no room and no mark, which reads as a payment the app never saw complete and stops a genuinely lost one from being placed | `buy.test.ts`: the vault stops after the fourth write of a pass bought on the App Store; the delivered list holds the id (red before: empty) |
+
+| Check | Result |
+|---|---|
+| app `tsc --noEmit` | EXIT 0 |
+| eslint (no `--fix`) on `buy.ts`, `useStore.ts`, `buy.test.ts`, `pass.test.tsx` | EXIT 0 |
+| app jest `src/features/store`, `community-pass`, `communities`, `src/__tests__/route-guard.test.tsx` (`--maxWorkers=2`) | EXIT 0, 8 suites, 522 tests (517 before, 5 new) |
+| app jest `src/features` (`--maxWorkers=2`, as the load for the L-4 proof) | EXIT 0, 342 suites, 5057 tests |
+| `python3 scripts/gates/run.py` / `check_baseline.py` | EXIT 0 (10 gates, 1433 files, 0 fail, 17 warn, 0 accepted) / EXIT 0 |
+| `check_tasks` | EXIT 0 (446 tasks) |
+| fingerprints (`expo-updates fingerprint:generate`) | EXIT 0, android `2e0e4d998b156d1c3ed97cb963577318e6a91a18`, ios `240378f19fb16a59d3be716e17e283dc02166f7a` (both unchanged) |
+
+NOT RUN: a phone, a real store sheet, Apple's sandbox, the GitHub Branch checks (the lead reads that run).

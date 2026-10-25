@@ -174,6 +174,8 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
       if (found.notOpen) setLine(said({ kind: 'not_open', why: 'not_configured' }, os, true));
       else if (found.left > 0) setRestoreLine(said({ kind: 'unreachable' }, os, true)?.line ?? null);
       else if (found.unplaced > 0) setRestoreLine(found.granted.length + found.already > 0 ? `${restoredLine(found.granted.length, found.already)} ${waitingLine(found.unplaced)}` : waitingLine(found.unplaced));
+      // Every payment the Hub refused as another room's (L-3): said in a room, where "this one" is the room in view, never as "nothing to restore".
+      else if (options?.communityId && found.granted.length + found.already === 0 && (found.elsewhere ?? 0) > 0) setRestoreLine(said({ kind: 'room_mismatch' }, os, false)?.line ?? null);
       else setRestoreLine(restoredLine(found.granted.length, found.already));
       if (found.granted.length > 0) {
         setRecovered(found.granted);

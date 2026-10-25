@@ -52,6 +52,21 @@ async function boot(pass?: Record<string, unknown>, over?: Parameters<typeof ser
   await renderSignedIn(<PassScreen id={ID} onBack={jest.fn()} />);
 }
 
+/*
+ * L-4 (v-IAP-03c): the first test failed once under load with no `pass-price`. The screen's answer lands only after a chain of hops (room and
+ * pass, the host's handle, the Hub's catalog, the store's prices), and the first test paid for loading the code on the way: about 0.3 s when
+ * the machine is quiet, over the 1 s that `findBy*` waits by default when it is not (a cold transform cache takes it past 9 s). The asserts
+ * are unchanged; this file waits as long as the other store screens' tests do (they wait up to 10 s, and a `findBy*` returns the moment its
+ * element is there), and loads the screen's code before the first test starts instead of inside it.
+ */
+rtl.configure({ asyncUtilTimeout: 10_000 });
+
+beforeAll(() => {
+  // The Hub client takes `fetch` when it is first loaded, so the stand-in Hub goes in before the screen's code does (as `boot` does).
+  installHub();
+  require('../PassScreen');
+});
+
 beforeEach(() => {
   jest.replaceProperty(Platform, 'OS', 'android');
   (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
@@ -248,6 +263,17 @@ describe('F-1 · App Store · passes the store still lists after they were deliv
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
     expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
     expect(await rtl.screen.findByText(/^Restored 1 purchase\. A payment for a pass could not be matched/)).toBeTruthy();
+  });
+
+  it('L-3: Restore purchases in a room, with the Hub refusing the payment as another room’s, tells the person so and does not say there was nothing to restore', async () => {
+    await bootIos([held('3001')]);
+    expect(hub.bodies).toEqual([]);
+    hub.answer = 'store_purchase_other_room';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
+    expect((await rtl.screen.findByTestId('pass-restore-line')).props.children).toBe('That payment was already used for a different room. To join this one, buy its pass again.');
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(rtl.screen.queryByText('There was nothing to restore.')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
   });
 
   it('a person who owes no pass payment on this phone, with passes listed from another device, is told nothing', async () => {
