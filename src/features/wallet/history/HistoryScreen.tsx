@@ -4,7 +4,7 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
-import { Button } from '@/components/Button';
+import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { FilterChips } from '@/components/FilterChips';
 import { LoadingView, Skeleton, SkeletonRows } from '@/components/Skeleton';
@@ -35,6 +35,8 @@ export type HistoryScreenProps = {
   onOpenTransaction: (id: string) => void;
   /** A grouped row ("Unlock, 3 buyers"): the movements it stands for. */
   onOpenGroup: (key: string) => void;
+  /** The export icon beside the title (W26): Statements (W38). Left out, the icon is not drawn. */
+  onOpenStatements?: () => void;
 };
 
 /**
@@ -43,12 +45,12 @@ export type HistoryScreenProps = {
  * (`filter`, `q`), so every row on screen is a row the Hub sent. In and Out are the Hub's sums for this month (`GET
  * /money/transactions/summary`), never a sum made here.
  *
- * Not drawn, because what they open is another task's (R-47): the export icon beside the title (statements, WALLET-35).
+ * The export icon beside the title opens Statements (W38, WALLET-35), as W26 draws it (R2-MONEY D-10); it is not drawn on a grouped row's list.
  *
  * Default (agent), owner may override: the list is the whole history, so a chip with nothing says "yet" where the canvas says
  * "in September"; a grouped row opens the movements it stands for, the same list without its search, chips and totals.
  */
-export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup }: HistoryScreenProps) {
+export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup, onOpenStatements }: HistoryScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const owner = useSessionAccount(undefined);
@@ -164,7 +166,13 @@ export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup }:
 
   return (
     <View testID="history-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      <ProsNav title="Transactions" onBack={onBack} />
+      <ProsNav
+        title="Transactions"
+        onBack={onBack}
+        right={
+          onOpenStatements && !group ? <IconButton icon="FileDown" label="Statements" onPress={onOpenStatements} testID="history-statements" /> : undefined
+        }
+      />
       {group ? null : (
         <View style={styles.head}>
           <View style={styles.gutter}>

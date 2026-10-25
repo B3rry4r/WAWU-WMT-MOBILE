@@ -25,7 +25,7 @@ import { ROW_TILE } from '@/features/settings/metrics';
 import { walletSettingsQuery, type WalletSettings } from '../api/settings';
 import { useStatementSent } from '../statements/notice';
 import { AccountDetailsSheet } from './AccountDetailsSheet';
-import { accountLine, approvalTitle, limitsLine, pinLine, turnOnLine } from './model';
+import { accountLine, approvalTitle, limitsLine, pinLine, savedLine, turnOnLine } from './model';
 
 /** design/_gen/wallet.js line 143 (W35): the parts of the page stand 14 apart. */
 const BODY_GAP = 14;
@@ -46,6 +46,8 @@ export type WalletSettingsScreenProps = {
   onOpenStatements?: () => void;
   /** Cards (WALLET-22, R-84): the row's second line and where it leads. Without it the row is not drawn (cards are off at the Hub). */
   cards?: { subtitle: string; onOpen: () => void };
+  /** Beneficiaries (WALLET-14, W35): where the saved accounts are, the Saved list on W8. Without it the row is not drawn. */
+  onOpenBeneficiaries?: () => void;
 };
 
 /**
@@ -60,10 +62,12 @@ export type WalletSettingsScreenProps = {
  * key behind a biometric (FIX-108; SHARED-CHANGES WALLET-06 #1): the switch makes the key, asks the PIN on a sheet with no amount, and
  * registers it (`PUT /money/device`); off turns it off at the Hub and drops the key. Help with a payment, the
  * last row, opens the support chat (I12) with nothing attached, since no one payment is being asked about (SUPPORT-01, R-30; the
- * chat's own entries from H18 and W27 attach theirs). Beneficiaries is not drawn: no screen lists the saved recipients yet (a person
- * saves one from a receipt, W12), and a row that opens nothing is not shown (R-47, SWEEP-FLOWS B9). The screen that builds the list adds it.
+ * chat's own entries from H18 and W27 attach theirs). Beneficiaries (R2-MONEY D-05) is drawn as W35 draws it, with the Hub's count ("6 saved"),
+ * and opens W8, whose Saved list holds the accounts a person saved from a receipt (W12); a screen to remove one is not built (BACKEND_GAPS).
+ * The Tier row stays out: no tier is served (WALLET-19). The fingerprint or face switch is drawn wherever the phone can keep that key; the
+ * CHECK-3 audit ran on a web export, which cannot, so it did not show there.
  */
-export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards }: WalletSettingsScreenProps) {
+export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards, onOpenBeneficiaries }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
   const [showAccount, setShowAccount] = useState(false);
@@ -158,6 +162,7 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
         onOpenAccount={() => setShowAccount(true)}
         onOpenStatements={onOpenStatements}
         cards={cards}
+        onOpenBeneficiaries={onOpenBeneficiaries}
         onOpenHelp={() => void support.open()}
         biometric={
           approval.support !== null
@@ -198,10 +203,11 @@ type SettingsProps = {
   onOpenAccount: () => void;
   onOpenStatements?: () => void;
   cards?: { subtitle: string; onOpen: () => void };
+  onOpenBeneficiaries?: () => void;
   onOpenHelp: () => void;
 };
 
-function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenHelp }: SettingsProps) {
+function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, onOpenHelp }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -229,6 +235,15 @@ function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOp
         {biometric ? <BiometricRow {...biometric} /> : null}
         {cards ? (
           <ListRow testID="wallet-settings-cards" lead={<IconTile icon="CreditCard" size={ROW_TILE} />} title="Cards" subtitle={cards.subtitle} onPress={cards.onOpen} />
+        ) : null}
+        {onOpenBeneficiaries ? (
+          <ListRow
+            testID="wallet-settings-beneficiaries"
+            lead={<IconTile icon="Users" size={ROW_TILE} />}
+            title="Beneficiaries"
+            subtitle={savedLine(data.beneficiaryCount)}
+            onPress={onOpenBeneficiaries}
+          />
         ) : null}
       </GroupedList>
       <GroupedList testID="wallet-settings-account">

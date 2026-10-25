@@ -24,6 +24,13 @@ export type WorldAccount = {
   /** The bank's available balance in the currency's smallest unit; null when the bank could not be asked. */
   availableMinor: number | null;
   details: WorldDetails | null;
+  /** The details exactly as the Hub sent them: the sheet payers read draws from this (copy, share). */
+  rawDetails: components["schemas"]["FxReceivingDetailsView"] | null;
+  /** A stablecoin account's network; null for a currency account. */
+  chain: string | null;
+  /** Where the details stand, as the Hub says: `ready`, `pending`, or `unavailable` with the provider's own words in `detailsNote`. */
+  detailsStatus: "ready" | "pending" | "unavailable";
+  detailsNote: string | null;
 };
 export type AddableCurrency = { code: string; name: string };
 
@@ -83,6 +90,18 @@ export function readAccount(value: unknown): WorldAccount {
       ? (balance?.availableMinor as number)
       : null,
     details: readDetails(v.details),
+    rawDetails:
+      v.details && typeof v.details === "object"
+        ? (v.details as components["schemas"]["FxReceivingDetailsView"])
+        : null,
+    detailsStatus:
+      v.detailsStatus === "ready" || v.detailsStatus === "unavailable"
+        ? v.detailsStatus
+        : "pending",
+    detailsNote: filled(v.detailsNote) ? v.detailsNote : null,
+    chain: filled((v as { chain?: unknown }).chain)
+      ? ((v as { chain?: string }).chain as string)
+      : null,
   };
 }
 

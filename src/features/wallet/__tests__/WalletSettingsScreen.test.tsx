@@ -73,11 +73,11 @@ function tokenFor(sub: string) {
   return `${part({ alg: 'RS256' })}.${part({ sub })}.signature`;
 }
 
-type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock };
+type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock; onOpenBeneficiaries?: jest.Mock };
 
-async function boot(): Promise<Props> {
+async function boot(extra: Partial<Props> = {}): Promise<Props> {
   const { WalletSettingsScreen } = require('../settings/WalletSettingsScreen') as typeof import('../settings/WalletSettingsScreen');
-  const props = { onBack: jest.fn(), onOpenPin: jest.fn(), onCreatePin: jest.fn(), onOpenWallet: jest.fn() };
+  const props = { onBack: jest.fn(), onOpenPin: jest.fn(), onCreatePin: jest.fn(), onOpenWallet: jest.fn(), ...extra };
   await rtl.render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <WalletSettingsScreen {...props} />
@@ -128,7 +128,7 @@ afterAll(() => {
 });
 
 describe('W35 · Wallet settings', () => {
-  it('a user sees Transaction PIN with its age and Account details with the bank and the number, all from the wallet read (no Beneficiaries row, SWEEP-FLOWS B9)', async () => {
+  it('a user sees Transaction PIN with its age and Account details with the bank and the number, all from the wallet read (no destination given, so no Beneficiaries row)', async () => {
     await boot();
     expect(await rtl.screen.findByTestId('wallet-settings-pin')).toBeTruthy();
     expect(rtl.screen.getByRole('header', { name: 'Wallet settings' })).toBeTruthy();
@@ -208,19 +208,26 @@ describe('W35 · Wallet settings', () => {
     expect(props.onOpenPin).not.toHaveBeenCalled();
   });
 
-  it('Beneficiaries is not drawn: no screen lists the saved recipients, so a row that opens nothing is left out (R-47, SWEEP-FLOWS B9)', async () => {
+  it('a user sees Beneficiaries with the Hub\'s count and taps it to open the saved accounts (R2-MONEY D-05)', async () => {
+    const props = await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.getByText('Beneficiaries')).toBeTruthy();
+    expect(rtl.screen.getByText('6 saved')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-settings-beneficiaries'));
+    expect(props.onOpenBeneficiaries).toHaveBeenCalledTimes(1);
+  });
+
+  it('with none saved the Beneficiaries row says "None saved"', async () => {
+    fallback['GET /money/wallet'] = view({ beneficiaryCount: 0 });
+    await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.getByText('None saved')).toBeTruthy();
+  });
+
+  it('where the route gives Beneficiaries nowhere to go, the row is not drawn (R-47)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-settings-pin');
     expect(rtl.screen.queryByTestId('wallet-settings-beneficiaries')).toBeNull();
-    expect(rtl.screen.queryByText('Beneficiaries')).toBeNull();
-    expect(rtl.screen.queryByLabelText('Beneficiaries, 6 saved')).toBeNull();
-  });
-
-  it('with none saved there is still no Beneficiaries row and no "None saved"', async () => {
-    fallback['GET /money/wallet'] = view({ beneficiaryCount: 0 });
-    await boot();
-    await rtl.screen.findByTestId('wallet-settings-pin');
-    expect(rtl.screen.queryByText('None saved')).toBeNull();
   });
 
   it('a user can open Account details and read the holder, the number and the bank, and copy the number as sent', async () => {

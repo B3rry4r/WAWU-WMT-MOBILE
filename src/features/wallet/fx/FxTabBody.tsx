@@ -182,7 +182,7 @@ function OpenCard({ code, allowed, onOpened }: { code: FxCode; allowed: boolean;
 }
 
 /** W2's "Get paid from abroad": the card that opens the details payers need. The words say what is there, never what it will earn. */
-function PaidFromAbroad({ code, name, onPress }: { code: FxCode; name: string; onPress: () => void }) {
+export function PaidFromAbroad({ code, name, onPress }: { code: FxCode; name: string; onPress: () => void }) {
   const ring = useFocusRing();
   const { colors } = useWawu();
   return (
@@ -277,16 +277,16 @@ function Holdings({ groups, hidden, onOpen }: { groups: CoinGroup[]; hidden: boo
   );
 }
 
-type TxProps = {
+export type TxProps = {
   owner: string | null;
-  accounts: readonly FxAccount[];
+  accounts: readonly { id: string; currency: string; decimals: number }[];
   currencies: FxCurrencies | null;
-  allAccounts: readonly FxAccount[] | null;
+  allAccounts: readonly { currency: string; decimals: number }[] | null;
   noun: string;
 };
 
 /** The account's statement (the provider's, newest first): its rows, the designed empty state, and a retry for a read that failed. */
-function Transactions({ owner, accounts, currencies, allAccounts, noun }: TxProps) {
+export function Transactions({ owner, accounts, currencies, allAccounts, noun }: TxProps) {
   const reads = useQueries({ queries: accounts.map((a) => transactionsQuery(owner, a.id)) }, queryClient);
   const loading = reads.some((r) => r.isPending && r.isFetching);
   const failed = reads.find((r) => r.isError);
@@ -330,7 +330,7 @@ function Transactions({ owner, accounts, currencies, allAccounts, noun }: TxProp
   );
 }
 
-function ActionPill({ icon, label, onPress, accent, testID }: { icon: IconName; label: string; onPress: () => void; accent?: boolean; testID: string }) {
+export function ActionPill({ icon, label, onPress, accent, testID }: { icon: IconName; label: string; onPress: () => void; accent?: boolean; testID: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -350,7 +350,7 @@ function ActionPill({ icon, label, onPress, accent, testID }: { icon: IconName; 
   );
 }
 
-function ActionRound({ icon, label, onPress, testID }: { icon: IconName; label: string; onPress: () => void; testID: string }) {
+export function ActionRound({ icon, label, onPress, testID }: { icon: IconName; label: string; onPress: () => void; testID: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (

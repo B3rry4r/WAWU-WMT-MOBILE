@@ -210,15 +210,17 @@ describe('PaySheet', () => {
     actionLabel: 'Send',
   });
 
-  it('lets a sender review W10: who, how much, what they get, and the total on the button', async () => {
+  it('lets a sender review W10: who, how much, the fees and the Total, and what they receive on the button (R2-MONEY D-02)', async () => {
     const p = props(send());
     await render(<PaySheet {...p} />);
     // The avatar is decorative (the line beside it says the name); its initials come from the short display name, as W10 draws "CO".
     expect(screen.getByText('CO', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText('Sending to Chidinma Adaeze Okoro')).toBeTruthy();
     expect(screen.getByText('₦25,000.00')).toBeTruthy();
-    expect(screen.getByText('They get ₦25,000')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Send ₦25,065' }));
+    expect(screen.getByText('₦25,065.00')).toBeTruthy();
+    expect(screen.queryByText(/They get/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₦25,065' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Send ₦25,000' }));
     expect(p.onPay).toHaveBeenCalledTimes(1);
   });
 

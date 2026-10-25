@@ -36,8 +36,11 @@ const sideOfAccount = (a: FxAccount): Side => {
   };
 };
 
-/** The ends a swap can have: the naira wallet first, then each open account, currencies before coins, in the Hub's order. */
-export function sidesOf(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null, nairaKobo: number | null): Side[] {
+/**
+ * The ends a swap can have: the naira wallet first, then each open account, currencies before coins, in the Hub's order. A person who
+ * opened from outside Nigeria has no naira account (WALLET-41), so for them (`withNaira` false) a swap is between their own accounts.
+ */
+export function sidesOf(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null, nairaKobo: number | null, withNaira = true): Side[] {
   const naira: Side = {
     key: NAIRA_SIDE_KEY,
     code: 'NGN',
@@ -50,7 +53,7 @@ export function sidesOf(currencies: FxCurrencies | null, accounts: readonly FxAc
   };
   const order = [...FIAT_ORDER, ...COIN_ORDER];
   const open = (accounts ?? []).filter((a) => a.status === 'open').sort((a, b) => order.indexOf(a.currency as never) - order.indexOf(b.currency as never));
-  return [naira, ...open.map(sideOfAccount)];
+  return [...(withNaira ? [naira] : []), ...open.map(sideOfAccount)];
 }
 
 /** The side a route's `from` or `to` code names: the first account in that currency (the naira wallet for NGN). */
@@ -58,7 +61,11 @@ export const sideForCode = (sides: readonly Side[], code: string | undefined): S
 
 /** What each end starts as: what the route named, else naira to the first account (or, with naira already taken, naira). */
 export function startingSides(sides: readonly Side[], from: string | undefined, to: string | undefined): { from: Side | undefined; to: Side | undefined } {
-  const naira = sides[0];
+  const naira = sides[0]?.code === 'NGN' ? sides[0] : undefined;
+  if (!naira) {
+    const a = sideForCode(sides, from) ?? sides[0];
+    return { from: a, to: sideForCode(sides, to) && sideForCode(sides, to)?.key !== a?.key ? sideForCode(sides, to) : sides.find((s) => s.key !== a?.key) };
+  }
   const first = sides.find((s) => s.code !== 'NGN');
   const a = sideForCode(sides, from) ?? (to && to !== 'NGN' ? naira : first && to === 'NGN' ? first : naira);
   const b = sideForCode(sides, to) ?? (a?.code === 'NGN' ? first : naira);

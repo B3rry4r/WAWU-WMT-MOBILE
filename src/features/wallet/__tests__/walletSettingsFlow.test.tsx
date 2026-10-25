@@ -175,7 +175,7 @@ afterAll(async () => {
 });
 
 describe('from the Wallet tab to Wallet settings', () => {
-  it('a user on the Wallet tab taps the settings icon and lands on W35, with the PIN and the account from the Hub (no Beneficiaries row: no screen lists them, SWEEP-FLOWS B9)', async () => {
+  it('a user on the Wallet tab taps the settings icon and lands on W35, with the PIN, Beneficiaries (3 saved, R2-MONEY D-05) and the account from the Hub', async () => {
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
@@ -183,7 +183,8 @@ describe('from the Wallet tab to Wallet settings', () => {
     expect(await screen.findByTestId('wallet-settings-screen')).toBeTruthy();
     expect(pathname()).toBe('/wallet-settings');
     expect(await screen.findByText('Changed 3 months ago')).toBeTruthy();
-    expect(screen.queryByText('3 saved')).toBeNull();
+    expect(screen.getByText('Beneficiaries')).toBeTruthy();
+    expect(screen.getByText('3 saved')).toBeTruthy();
     expect(screen.getByText('Ekiti Trial MFB · 810 000 0528')).toBeTruthy();
     // Back returns to the tab.
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));

@@ -104,7 +104,7 @@ export type PaySheetProps = {
   wallet: PayWallet;
   /** The wallet's name, e.g. "Naira wallet". */
   walletName: string;
-  /** The verb on the pay button: "Unlock" gives "Unlock · ₦2,523.25"; a send gives "Send ₦25,065". */
+  /** The verb on the pay button: "Unlock" gives "Unlock · ₦2,523.25"; a send gives "Send ₦25,000", what the other person receives (W10), while the Total row above it carries the fees. */
   actionLabel: string;
   /** When another person receives a set amount (a send), say what arrives. */
   recipientGetsKobo?: number;
@@ -240,14 +240,15 @@ function Review(p: Inner) {
       p.onOpenWallet ? <Button label="Open your wallet" onPress={p.onOpenWallet} full /> : null
     ) : (
       <Button
-        label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
+        label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.recipientGetsKobo ?? p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
         loading={paying}
         disabled={p.wallet.kind === 'loading'}
         full
       />
     );
-  const gets = p.recipientGetsKobo !== undefined && (
+  // W10 (R2-MONEY D-02): a send's button names what the other person receives, with the fees and the Total above it, so no second line says it.
+  const gets = !send && p.recipientGetsKobo !== undefined && (
     <Text variant="muted" style={styles.centre}>
       They get {formatNaira(p.recipientGetsKobo)}
     </Text>

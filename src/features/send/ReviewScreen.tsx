@@ -93,8 +93,8 @@ type Request = Omit<SendIntent, 'phase' | 'at'> & { phase: 'ready' | 'unknown' |
 
 /**
  * W10 · Send · review, with W11 (the PIN sheet) over it. The review is `PaySheet`'s send variant: the person, the amount, Fintava's
- * charge and WAWU's fee as their own rows with Fees and Total (R-10), the note, "Pay from wallet", "They get ₦X" and a button that
- * shows the total (BRIEF W10). Every figure is the Hub's quote or the bank's balance.
+ * charge and WAWU's fee as their own rows with Fees and Total (R-10), the note, "Pay from wallet" and a button that
+ * shows what the other person receives (W10, R2-MONEY D-02), the total sitting above it. Every figure is the Hub's quote or the bank's balance.
  *
  * One Idempotency-Key per payment intent: a wrong PIN, a request that got no answer and a PIN typed again all send the SAME key, so
  * the money moves once. A new intent (the fees changed, a send that failed, a new total) takes a new key.

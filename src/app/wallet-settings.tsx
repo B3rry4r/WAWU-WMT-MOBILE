@@ -25,6 +25,7 @@ export default function WalletSettingsRoute() {
       onCreatePin={() => router.push(OPEN_WALLET_PIN_PATH)}
       onOpenWallet={entry.open}
       onOpenStatements={() => router.push('/wallet-statement')}
+      onOpenBeneficiaries={() => router.push('/send/bank')}
       cards={cards ? { subtitle: cards.subtitle, onOpen: () => router.push('/cards') } : undefined}
     />
   );

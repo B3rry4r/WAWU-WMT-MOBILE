@@ -49,7 +49,7 @@ export function tabsOf(currencies: FxCurrencies | null, accounts: readonly FxAcc
 }
 
 /** How many places a currency's smallest unit has: the naira's two, or what the Hub says for that currency. */
-export function decimalsFor(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null, code: QuoteCode): number {
+export function decimalsFor(currencies: FxCurrencies | null, accounts: readonly { currency: string; decimals: number }[] | null, code: QuoteCode): number {
   if (code === 'NGN') return currencies?.naira.decimals ?? NAIRA_DECIMALS;
   return currencyOf(currencies, code)?.decimals ?? (accounts ?? []).find((a) => a.currency === code)?.decimals ?? NAIRA_DECIMALS;
 }

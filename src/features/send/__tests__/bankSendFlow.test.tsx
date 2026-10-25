@@ -419,14 +419,15 @@ describe('W9 and W13 · the amount', () => {
 });
 
 describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', () => {
-  it('a user sending ₦25,000 sees Bank charge ₦40 + WAWU’s fee ₦25 = ₦65, the total on the button and "They get ₦25,000"', async () => {
+  it('a user sending ₦25,000 sees Bank charge ₦40 + WAWU’s fee ₦25 = ₦65, and what they receive on the button (R2-MONEY D-02)', async () => {
     await toReview();
     expect(screen.getByText('Bank charge')).toBeTruthy();
     expect(screen.getByText("WAWU's fee")).toBeTruthy();
     expect(screen.getByText('Fees')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
-    expect(screen.getByText('Send ₦25,065')).toBeTruthy();
-    expect(screen.getByText('They get ₦25,000')).toBeTruthy();
+    expect(screen.getByText('₦25,065.00')).toBeTruthy();
+    expect(screen.getByText('Send ₦25,000')).toBeTruthy();
+    expect(screen.queryByText(/They get/)).toBeNull();
     expect(screen.getByText(GTB.name)).toBeTruthy();
     expect(screen.getByText(ACCOUNT.accountNumber)).toBeTruthy();
     expect(screen.queryByText(/Fintava|Nuvion/)).toBeNull();
@@ -575,7 +576,7 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     await toReview();
     await pay();
     expect(await screen.findByText('The fees changed. Check the new total before you send.')).toBeTruthy();
-    expect(screen.getByText('Send ₦25,075')).toBeTruthy();
+    expect(screen.getByText('₦25,075.00')).toBeTruthy();
     expect(hub.payments).toBe(0);
     await pay();
     expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();

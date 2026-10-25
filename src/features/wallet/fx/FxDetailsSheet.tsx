@@ -43,7 +43,7 @@ export function shareText(name: string, rows: readonly { label: string; value: s
   return [`${name} account details`, ...rows.map((r) => `${r.label}: ${r.value}`)].join('\n');
 }
 
-export type FxDetailsSheetProps = { visible: boolean; onClose: () => void; account: FxAccount; name: string };
+export type FxDetailsSheetProps = { visible: boolean; onClose: () => void; account: Pick<FxAccount, 'currency' | 'details'>; name: string };
 
 /**
  * W2's "Get paid from abroad": the account details Nuvion issued, each with Copy, and Share for the whole set. Every value is the

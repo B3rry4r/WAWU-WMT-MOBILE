@@ -152,7 +152,7 @@ export function DirectoryScreen({ initial, onBack, onOpen, onOfferServices, onCh
         {/* P4 draws the chips straight under the bar: the line about the directory goes with its rows. */}
         {empty ? null : (
           <Text variant="muted" style={styles.intro} testID="pros-intro">
-            Vetted practitioners.
+            Vetted practitioners. Pay to send the first message.
           </Text>
         )}
         {fieldList.length > 0 ? <FilterChips items={fieldChips(fieldList)} value={choice} onChange={pick} label="Filter by field" revealSelected testID="pros-chips" /> : null}

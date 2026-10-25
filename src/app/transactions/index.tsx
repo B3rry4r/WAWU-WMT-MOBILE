@@ -25,6 +25,7 @@ export default function TransactionsRoute() {
       onBack={leave}
       onOpenTransaction={(id) => router.push({ pathname: '/transactions/[id]', params: { id } })}
       onOpenGroup={(key) => router.push({ pathname: '/transactions', params: { group: key } })}
+      onOpenStatements={() => router.push('/wallet-statement')}
     />
   );
 }
