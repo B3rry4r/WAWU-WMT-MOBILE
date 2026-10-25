@@ -7,7 +7,7 @@ order: -301
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-10, R-23, R-27, R-47, R-87]
 passes: [V1, V4, V5, V6, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 25 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/R2-MONEY` on `origin/main` `a3fdaf71`, backend `wmt/R2-MONEY` on `origin/main` `dcee8af` (head `4f865f2`). Source: `audits/CHECK-3/money-work.md` on `wmt/CHECK-3-money-work` (`aea65680`). The lead's rulings D-01 to D-06 are the brief ("Default (lead), owner may override"). Status verifying; no PR.
+As of 25 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/R2-MONEY` on `origin/main` `a3fdaf71`, backend `wmt/R2-MONEY` on `origin/main` `dcee8af` (head `4f865f2`). Source: `audits/CHECK-3/money-work.md` on `wmt/CHECK-3-money-work` (`aea65680`). The lead's rulings D-01 to D-06 are the brief ("Default (lead), owner may override"). Status review after verifier round 1 (PASS, 26 Oct 2026, mobile `18f9ef48`); no PR.
 
 | Defect | Before | After |
 |---|---|---|
@@ -131,3 +131,42 @@ Not built, with the reason (BACKEND_GAPS rows G-R2M-2 to G-R2M-7): W3 coin balan
 Checks (logs in the scratchpad `r2m1/logs/`, each with its EXIT line): `npx tsc --noEmit` EXIT 0; ESLint (no fix) on every changed ts and tsx file EXIT 0, no warning; Jest (`--maxWorkers=2`) on wallet, send, pay-sheet, home, delete-account and `route-guard.test.tsx`: 51 suites, 1003 tests, EXIT 0; gates `python3 scripts/gates/run.py` 0 fail, 18 warn (all old), EXIT 0 (a first run had 2 deferral findings on my own comments, reworded); `check_tasks.py --write` EXIT 0; Android fingerprint `17ffb13d520882bf144982b61d03f3994c6e40e4`. After the lead's addition (item 4b) tsc, ESLint on the 4 changed files, gates (0 fail, 18 warn), check_tasks and the fingerprint were run again, all EXIT 0, and `src/features/addmoney` plus the arrival tests passed (8 suites, 49 tests).
 
 NOT RUN: the live proof on a local stack (backend `origin/wmt/R2-MONEY`, the Nuvion stand-in) with pictures at 390 px beside the boards, for items 1, 2, 4, 5 and 6: the step budget ended first, so none was driven and no picture was made (the checks above are Jest against the Hub's stand-in `fetch`). A phone; `npm run check` (the merge agent runs it).
+
+## Verifier report, fix round 1
+
+26 Oct 2026, Sonnet verifier (T2 lean check; built none of it). Mobile `18f9ef48` (round 1 = `65903bca..18f9ef48`) on `origin/main` `a3fdaf71`; backend `4f865f2` unchanged. Local stack `vr2m1` (ports 9110 to 9119, the Nuvion stand-in, the mock WAWU ID, the branch's web export), real login for each user, 390x844, dark and light, beside the boards. Pictures and logs: scratchpad `v-r2m1/` (lead's session; `shots/m-W*.png` are board, built dark, board, built light). **Verdict: PASS** (no blocker, high or medium; five lows for the sweep).
+
+| Check | Result | Evidence |
+|---|---|---|
+| tsc | passed | `app-tsc.log` EXIT 0 |
+| jest (wallet, send, pay-sheet, home, addmoney, delete-account, both route-guard files, `--maxWorkers=2`, once) | passed | 59 suites, 1057 tests, EXIT 0 (`app-jest.log`) |
+| gates | passed | 10 gates, 1418 files, 0 fail, 18 warn (all old), 0 accepted, EXIT 0; check_tasks 444 tasks EXIT 0; Android fingerprint `17ffb13d520882bf144982b61d03f3994c6e40e4` (unchanged) |
+| 1 D-02 | passed | below |
+| 2 D-05 | passed | below |
+| 3 frozen world home | passed | below |
+| 4 fee breakdown, refusal | passed on what the stand-in serves; swap review, crypto send review and FX receipt NOT RUN live | below |
+| 5 W6 | passed | below |
+| 6 W4, W13 | passed | below |
+| 7 assertions | passed, none weakened | below |
+
+### Findings, ranked
+
+No blocker, high or medium. Lows (sweep):
+1. **low, NOT RUN: the swap review, the crypto send review and the FX receipt cannot be reached on the stack.** The stand-in answers `POST /fx-quotes` 404 and makes no coin account, so the Hub's only swap answer is `409 provider_declined` ("API endpoint does not exist"). Their fee rows and totals are held by `fxModel`, `fxSwapFlow` and `fxCryptoFlow` (passed) and a read of the source: no drawn "No fee" or "Free" is left in `wallet`, `send`, `addmoney`, `cards` or `pay-sheet` (the five hits are comments). A stand-in route for fx quotes would let a later check drive them.
+2. **low: the receipt's "Save Ada as a beneficiary" switch is on by default and saves a WAWU user into a list no screen shows.** After the WAWU send in check 2 the Hub holds two beneficiaries (one bank account, one WAWU user); Wallet settings says "1 saved" and its list shows the bank account only. Consistent with the D-05 ruling; the saved person is simply never listed (no board draws one, R-29).
+3. **low: the Add money card draws "Bank charge" and "Total fee", with no "WAWU fee" row.** BRIEF rule 3 allows it where WAWU adds no fee, and the Hub's `transferIn` serves no WAWU part (G-R2M-8). Both read ₦0.00 here and equal the stack's inflow fee (0).
+4. **low: the board's footnote "Money you send arrives in a few minutes." under W15 is not drawn.** Ruled out in round 1 (a timing promise the Hub does not serve).
+5. **low, note: a bank send's receipt read "Still confirming" about nine seconds after the PIN** (the stack's Hub reads webhooks on a 30 second tick; the balance was already debited once). Not the branch's doing.
+
+### What was driven
+
+1. **D-02, passed.** Sender at ₦50,000.00. To a WAWU user, ₦5,000: review rows Bank charge ₦0.00, WAWU's fee ₦10.00, Fees ₦10.00, Total ₦5,010.00; "They get ₦5,000" its own line above the button "Send ₦5,010"; PIN sheet "Approve ₦5,010 to Ada Seeded"; receipt "₦5,000 sent" with "Total paid ₦5,010.00"; balance 5,000,000 to 4,499,000 kobo (₦5,010 once). The stand-in holds one transfer of 500,000 and one fee transfer of 1,000, and the receiver's account went up 500,000. To a bank, ₦5,000: Bank charge ₦25.00, WAWU's fee ₦25.00, Fees ₦50.00, Total ₦5,050.00, "They get ₦5,000", button "Send ₦5,050", PIN sheet "Approve ₦5,050 to STANDIN HOLDER 6789"; balance 4,499,000 to 3,994,000 (₦5,050 once: transfer 500,000, its fee 2,500 to WAWU, the bank's own fee 2,500). Light and dark pictures of both reviews and PIN sheets.
+2. **D-05, passed.** Hub list holds a bank account and a WAWU user; the row says "1 saved"; its tap opens W8 with a Saved section of exactly that one bank account.
+3. **Frozen world home, passed.** A KE person with USD $125.50 and EUR €40.00 (both frozen through the real admin freeze route): "This account is frozen" on each, no Send abroad or Swap, Get paid from abroad stays, Transactions lists both top-ups (`world-frozen-*.png`; open state beside it in `world-open-*.png`).
+4. **Fees and refusal.** Add money card: no "Free" pill, rows "Bank charge ₦0.00" and "Total fee ₦0.00" (`addmoney-*.png`). Swap USD to EUR: the Hub answers 409 `provider_declined` with the provider's words; the screen says "This swap was not offered. We can't offer this swap right now. Try another amount or pair, or try again later." and the rate and fee rows read "Not available" and "Shown with the rate", never "No fee". The rest: finding 1.
+5. **W6, passed.** My stand-in stopped: the Hub's balance read is `503 provider_unreachable`; Wallet keeps the tab strip (Naira to Crypto), "We couldn't reach your account", "Your money is safe. This is a connection problem between us and the bank." and Try again; no figure (`w6-*.png`).
+6. **W4 and W13, passed.** With the Hub's money reads held open: the skeleton draws the tab-pill row above the card, then the card, Points block, tiles and rows (`m-W4.png`). Amount ₦99,999 over a ₦39,940.00 balance: "Over your balance of ₦39,940.00" and Add money, no quick amounts and no note field (`m-W13.png`).
+7. **Assertions in `65903bca..18f9ef48`.** `PaySheet.tsx`, `PaySheet.test.tsx` and `sendFlow.test.tsx` equal `a3fdaf71` byte for byte; `bankSendFlow.test.tsx` equals it plus five added W13 lines (no existing assertion touched). Changed or removed, each with the defect it followed, each replaced by an equal or stricter one: `addMoney.test` ("Free" pill, three tests; BRIEF rule 4); `WalletScreen.test` (the W4 "no shape of a tab" test and the `wallet-loading-tabs` not-built entry, tabs are built; W6 "server's sentence", M-04); `WalletSettingsScreen.test` and `walletSettingsFlow.test` ("6 saved", "3 saved" were the Hub's count, D-05; "None saved", "2 saved" and the unreadable-list case added); `fxCryptoFlow`, `fxModel` and `fxSwapFlow` ("No fee" twice over, "No fee from WAWU", "Nuvion fee" now "Bank charge" (R-53), and the provider's refusal text; rules 3 and 4, M-02); `fxTabs.test` (the balance mock gained a 503 switch and a W6 case); `walletHomeModel.test` (a title only); `worldHome.test` (the mock gained frozen accounts and movements, two cases added). None weakened.
+8. **Lead ruling noted, not tested:** "Listing fee Free" (PriceScreen) and "Course fee Free" (schools) are item prices, not transfer fees, and stay.
+
+Cleaned up: stack `vr2m1` down, databases `vr2m1_*` dropped, worktrees `/home/user/wt/vr2m1-app` and `vr2m1-be` removed, nothing listening on 9110 to 9129.

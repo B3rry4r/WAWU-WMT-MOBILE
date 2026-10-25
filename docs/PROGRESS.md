@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
-| building | 2 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
 | verifying | 3 | 0 | 0 | 0 |
-| review | 223 | 0 | 0 | 0 |
+| review | 224 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -25,6 +25,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
 - [NUV-12](../tasks/NUV-12.md) Capital: fixed-return and share-offering products from the wallet (list, reserve, confirm with the PIN, portfolio, history, early liquidation) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
+- [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
 - [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
@@ -247,7 +248,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
