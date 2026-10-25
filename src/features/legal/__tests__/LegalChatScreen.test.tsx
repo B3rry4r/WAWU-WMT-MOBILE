@@ -91,6 +91,7 @@ const BRIEF = {
   matter: 'property',
   matterLabel: 'Tenancy',
   ready: true,
+  note: null,
   rows: [
     { label: 'Matter', value: 'Tenancy · rent increase' },
     { label: 'Lease', value: 'Signed, 14 months left' },
@@ -111,6 +112,8 @@ function thread(over: Partial<LegalThread> = {}): LegalThread {
     awaitingReply: false,
     legalRequestId: null,
     requestStatus: null,
+    requestPath: null,
+    fixedPrice: null,
     consultant: null,
     assistantStopped: false,
     ...over,
@@ -553,18 +556,26 @@ describe("S17 · the card under the consultant's lines", () => {
 });
 
 describe("S24 · the fixed-price card under the assistant's line", () => {
-  const CATALOGUE = 'GET /legal/catalogue';
-  const cac = { code: 'cac-registration', name: 'CAC business name registration', blurb: 'We register your business name with the CAC.', category: 'Business', path: 'simple', priceNaira: 35000, requiresDocuments: false };
-  const registering = () =>
+  /** The service the Hub serves on the conversation when the matter has a price WAWU set (R2-LEGAL2, G-LEGAL-06-1). */
+  const cac = {
+    code: 'cac-registration',
+    name: 'CAC business name registration',
+    blurb: 'We register your business name with the CAC.',
+    priceNaira: 35000,
+    turnaround: '5 to 7 working days',
+    needs: ['ID', '2 name options', 'address'],
+  };
+  const registering = (over: Partial<LegalThread> = {}) =>
     asking({
       matter: 'business_registration',
       matterLabel: 'Register a business',
+      fixedPrice: cac,
       messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business'), line('a3', 'assistant', 'Is it a sole trader or a company?')],
+      ...over,
     });
 
-  it('shows the service and the price WAWU set, and Start this request opens the fixed-price screen for that service (S26)', async () => {
+  it('shows the service and the price WAWU set, and Start this request opens the fixed-price screen for this conversation (S26)', async () => {
     answers[OPEN] = [ok(registering())];
-    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [cac] })];
     await renderScreen();
     expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
     expect(rtl.screen.getByText('CAC business name registration')).toBeTruthy();
@@ -572,12 +583,11 @@ describe("S24 · the fixed-price card under the assistant's line", () => {
     expect(mockPush).not.toHaveBeenCalled();
     await press('legal-fixed-start');
     expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-fixed', params: { code: 'cac-registration' } });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-fixed', params: { id: 'i1' } });
   });
 
-  it('draws no card for a service WAWU has not priced, so there is no Start to tap', async () => {
-    answers[OPEN] = [ok(registering())];
-    answers[CATALOGUE] = [ok({ categories: [], consultationOptions: [], services: [{ ...cac, priceNaira: null }] })];
+  it('draws no card when the Hub names no fixed price, so there is no Start to tap', async () => {
+    answers[OPEN] = [ok(registering({ fixedPrice: null }))];
     await renderScreen();
     await rtl.screen.findByText('Is it a sole trader or a company?');
     await rtl.act(async () => {
@@ -585,6 +595,95 @@ describe("S24 · the fixed-price card under the assistant's line", () => {
     });
     expect(rtl.screen.queryByTestId('legal-fixed-card-chat')).toBeNull();
     expect(rtl.screen.queryByTestId('legal-fixed-start')).toBeNull();
+  });
+
+  it('a fixed-price matter offers Start this request and never "Send to a consultant", which the Hub refuses for it', async () => {
+    answers[OPEN] = [ok(registering({ stage: 'brief_ready', quickReplies: [], brief: BRIEF }))];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-send-brief')).toBeNull();
+  });
+});
+
+describe('S16 · the line under Send to a consultant (G-500)', () => {
+  it('draws the Hub\'s line "Nothing is charged yet." under the button', async () => {
+    answers[OPEN] = [ok(briefReady({ brief: { ...BRIEF, note: 'Nothing is charged yet.' } }))];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-send-brief')).toBeTruthy();
+    expect(rtl.screen.getByTestId('legal-brief-note')).toBeTruthy();
+    expect(rtl.screen.getByText('Nothing is charged yet.')).toBeTruthy();
+  });
+
+  it('draws no line when the Hub serves none', async () => {
+    answers[OPEN] = [ok(briefReady())];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-send-brief')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-brief-note')).toBeNull();
+  });
+});
+
+describe('R2-LEGAL2 H-1 · Legal opens on the matter the person has, after the consultation is booked', () => {
+  const intake = (id: string, status: string, legalRequestId: string | null) => ({ id, matter: 'property', matterLabel: 'Tenancy', status, answers: {}, documents: [], questions: [], outstandingRequired: [], brief: null, legalRequestId });
+
+  it.each(['consultation_scheduled', 'consultation_done', 'quoted', 'contract_signed', 'awaiting_service_payment', 'in_progress'])(
+    'at %s the sent conversation opens, not a new one, and its card opens the matter',
+    async (status) => {
+      answers[MINE] = [ok([intake('i1', 'complete', 'r1')])];
+      answers[GET] = [ok(withConsultant({ requestStatus: status }))];
+      await renderScreen();
+      expect(await rtl.screen.findByText("Hi Chidi, I've read your brief.")).toBeTruthy();
+      expect(calls(OPEN)).toHaveLength(0);
+      expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+      await press('legal-matter-card-button');
+      expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-matter', params: { id: 'r1' } });
+    },
+  );
+
+  it('a fixed-price matter that no consultant has joined still has its card, which opens the matter and never offers a booking', async () => {
+    answers[MINE] = [ok([intake('i1', 'converted', 'r1')])];
+    answers[GET] = [ok(sentThread({ requestStatus: 'quoted', requestPath: 'simple', brief: null }))];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-matter-card')).toBeTruthy();
+    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    await press('legal-matter-card-button');
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-matter', params: { id: 'r1' } });
+  });
+
+  it('a fixed-price matter still waiting for a quote opens, it does not offer a consultation that cannot be booked', async () => {
+    answers[OPEN] = [ok(sentThread({ requestStatus: 'awaiting_quote', requestPath: 'simple' }))];
+    answers[MINE] = [ok([intake('i1', 'converted', 'r1')])];
+    answers[GET] = [ok(sentThread({ requestStatus: 'awaiting_quote', requestPath: 'simple' }))];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-matter-card')).toBeTruthy();
+    expect(rtl.screen.queryByText('Book a consultation')).toBeNull();
+    expect(rtl.screen.getByText('Open')).toBeTruthy();
+  });
+});
+
+describe('R2-LEGAL2 M-4 · the assistant is out of calls for the day', () => {
+  const BUSY = 'The assistant is busy right now. Your message is saved.';
+
+  it('says the assistant is busy, keeps the message and offers Ask again, and asking again while it is busy says the same', async () => {
+    answers[MESSAGES] = [refuse(503, 'assistant_at_capacity', BUSY)];
+    answers[GET] = [ok(thread({ messages: [...thread().messages, line('c1', 'client', 'My rent')], quickReplies: [], awaitingReply: true }))];
+    answers[REPLY] = [refuse(503, 'assistant_at_capacity', BUSY), ok(asking())];
+    await renderScreen();
+    await rtl.screen.findByText(OPENER);
+    await type('My rent');
+    await press('legal-send');
+    expect(await rtl.screen.findByTestId('legal-slow')).toBeTruthy();
+    expect(rtl.screen.getByText(BUSY)).toBeTruthy();
+    expect(rtl.screen.queryByText(/taking a while/)).toBeNull();
+    expect(rtl.screen.getByText('Ask again')).toBeTruthy();
+    await press('legal-slow-action');
+    await rtl.waitFor(() => expect(calls(REPLY)).toHaveLength(1));
+    // Still busy: the same plain words and the same button, never "taking a while" and never a different button.
+    expect(await rtl.screen.findByText(BUSY)).toBeTruthy();
+    expect(rtl.screen.getByText('Ask again')).toBeTruthy();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+    await press('legal-slow-action');
+    expect(await rtl.screen.findByText('Does the lease say anything about rent reviews?')).toBeTruthy();
+    expect(rtl.screen.queryByText(BUSY)).toBeNull();
   });
 });
 
@@ -613,9 +712,11 @@ describe('the matter before payment', () => {
     expect(await rtl.screen.findByText('Any news?')).toBeTruthy();
   });
 
-  it('a conversation whose matter has moved past "awaiting a quote" is not reopened: a new one starts', async () => {
+  // R2-LEGAL2 (CHECK-3 H-1): this test pinned the defect (a quoted matter was dropped, so the person could not get back to the quote). Only a finished
+  // matter is passed over now; the steps up to delivery are in the H-1 tests below.
+  it('a conversation whose matter is finished (delivered) is not reopened: a new one starts', async () => {
     answers[MINE] = [ok([intake('i1', 'complete', 'r1')])];
-    answers[GET] = [ok(sentThread({ requestStatus: 'quoted' }))];
+    answers[GET] = [ok(sentThread({ requestStatus: 'delivered' }))];
     answers[OPEN] = [ok(thread({ id: 'i2' }))];
     await renderScreen();
     expect(await rtl.screen.findByText(OPENER)).toBeTruthy();

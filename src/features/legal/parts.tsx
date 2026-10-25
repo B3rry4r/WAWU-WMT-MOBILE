@@ -164,6 +164,11 @@ export function BriefCard({ brief, onSend, sending }: { brief: LegalBrief; onSen
         ))}
       </Card>
       <Button label="Send to a consultant" icon="Send" onPress={onSend} loading={sending} full testID="legal-send-brief" />
+      {brief.note ? (
+        <Text variant="body" tone="textMuted" testID="legal-brief-note" style={[styles.briefNote, { fontSize: m.noteText, lineHeight: normal(m.noteText) }]}>
+          {brief.note}
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -238,6 +243,7 @@ export function Composer({ value, onChange, placeholder, onSend, paddingBottom }
 }
 
 const styles = StyleSheet.create({
+  briefNote: { textAlign: 'center' },
   bar: { height: m.headHeight, paddingLeft: m.headPadLeft, paddingRight: m.headPadRight, flexDirection: 'row', alignItems: 'center', gap: m.headGap },
   scales: { width: m.avatar, height: m.avatar, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   words: { flex: 1 },

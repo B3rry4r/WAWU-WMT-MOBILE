@@ -64,6 +64,9 @@ describe('where a tap on a notification goes (INBOX-21)', () => {
     expect(routeForPush({ kind: 'campaign', actionHref: '/profile/verification' })).toBe('/tiers');
     expect(routeForPush({ kind: 'legal_delivered', actionHref: '/legal/requests/r-1' })).toEqual({ pathname: '/legal-matter', params: { id: 'r-1' } });
     expect(routeForPush({ kind: 'legal_delivered', actionHref: '/legal/requests/../wallet' })).toBe('/legal');
+    // R2-LEGAL2: the quote notification opens the matter, where the letter is signed.
+    expect(routeForPush({ kind: 'legal_quote_ready', actionHref: '/legal/requests/r-1' })).toEqual({ pathname: '/legal-matter', params: { id: 'r-1' } });
+    expect(routeForPush({ kind: 'legal_quote_ready', actionHref: '/legal/requests/../wallet' })).toBe('/legal');
     expect(routeForPush({ actionHref: '/wallet' })).toBeNull();
   });
 

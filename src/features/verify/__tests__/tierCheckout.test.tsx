@@ -228,7 +228,7 @@ describe('VF7 · You’re official', () => {
     await renderSignedIn(<OfficialScreen tierId={tierId} onDone={jest.fn()} />);
     return rtl.screen.findByTestId('official-title');
   };
-  const fieldReads = () => (globalThis.fetch as jest.Mock).mock.calls.filter(([input]) => String(input instanceof Request ? input.url : input).includes('/users/me/profile-fields')).length;
+  const fieldReads = () => hub.reads.filter((r) => r === 'GET /users/me/profile-fields').length;
 
   it('L-p2-4: the Founding Maker success shows the badge with the number the Hub gave it', async () => {
     serve();

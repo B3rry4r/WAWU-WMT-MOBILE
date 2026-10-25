@@ -1,6 +1,7 @@
 import { dayChips, horizonWords, mediumRows, pickedLine, sheetSubtitle } from '../book/model';
 import { matterCardOf } from '../cards';
-import { fixedPriceFor, nameChoice, startable } from '../fixed/model';
+import { isOpenMatter } from '../api';
+import { nameChoice } from '../fixed/model';
 import { askOf, consultationBooked, consultationLine, signableName, stepsOf } from '../matter/model';
 import { feeSettled } from '../pay/model';
 import { OPTIONS, request } from '../testing/legalHub';
@@ -109,24 +110,7 @@ describe('pay: a fee is settled when the matter says so', () => {
   });
 });
 
-describe('fixed price: what S24 and S26 are offered', () => {
-  const cac = { code: 'cac-registration', name: 'Business name registration', category: 'Business Services', path: 'simple' as const, blurb: 'b', priceNaira: 35000 };
-
-  it('a fixed-price service WAWU priced, needing no documents, can be started', () => {
-    expect(startable(cac)).toBe(true);
-    expect(fixedPriceFor('business_registration', [cac])?.code).toBe('cac-registration');
-  });
-
-  it('is not offered when unpriced, on the consultation path, or needing documents the screen does not ask for', () => {
-    expect(startable({ ...cac, priceNaira: null })).toBe(false);
-    expect(startable({ ...cac, priceNaira: 0 })).toBe(false);
-    expect(startable({ ...cac, path: 'consultation' })).toBe(false);
-    expect(startable({ ...cac, requiresDocuments: true })).toBe(false);
-    expect(startable(undefined)).toBe(false);
-    expect(fixedPriceFor('property', [cac])).toBeNull();
-    expect(fixedPriceFor('business_registration', undefined)).toBeNull();
-  });
-
+describe('fixed price: what S26 asks of the person', () => {
   it('a name choice is words, trimmed', () => {
     expect(nameChoice(' ')).toBeNull();
     expect(nameChoice('a')).toBeNull();
@@ -134,13 +118,27 @@ describe('fixed price: what S24 and S26 are offered', () => {
   });
 });
 
-describe('chat: the card under the consultant', () => {
-  it('books while the matter can be booked, opens it once it has moved on, and draws nothing for a closed one', () => {
-    expect(matterCardOf('awaiting_quote')).toBe('book');
-    expect(matterCardOf('awaiting_consultation_payment')).toBe('book');
-    expect(matterCardOf('consultation_scheduled')).toBe('open');
-    expect(matterCardOf('delivered')).toBe('open');
-    expect(matterCardOf('cancelled')).toBeNull();
-    expect(matterCardOf(null)).toBeNull();
+describe('R2-LEGAL2 H-1: which matters the Legal entry goes back to', () => {
+  const sent = (requestStatus: string | null) => ({ stage: 'sent', requestStatus }) as Parameters<typeof isOpenMatter>[0];
+
+  it('a conversation not yet sent is open, and so is a sent one at every step up to delivery', () => {
+    expect(isOpenMatter({ stage: 'profiling', requestStatus: null } as Parameters<typeof isOpenMatter>[0])).toBe(true);
+    for (const status of ['awaiting_quote', 'awaiting_consultation_payment', 'consultation_scheduled', 'consultation_done', 'quoted', 'contract_signed', 'awaiting_service_payment', 'in_progress']) {
+      expect(isOpenMatter(sent(status))).toBe(true);
+    }
+  });
+
+  it('a delivered or cancelled matter is finished, so Legal opens a new conversation', () => {
+    expect(isOpenMatter(sent('delivered'))).toBe(false);
+    expect(isOpenMatter(sent('cancelled'))).toBe(false);
+  });
+
+  it('the chat card books only a consultation matter that has not moved on, and opens every other', () => {
+    expect(matterCardOf('awaiting_quote', 'consultation')).toBe('book');
+    expect(matterCardOf('awaiting_quote', 'simple')).toBe('open');
+    expect(matterCardOf('quoted', 'consultation')).toBe('open');
+    expect(matterCardOf('in_progress', 'simple')).toBe('open');
+    expect(matterCardOf('cancelled', 'simple')).toBeNull();
+    expect(matterCardOf(null, null)).toBeNull();
   });
 });

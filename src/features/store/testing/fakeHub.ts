@@ -27,6 +27,8 @@ export const hub = {
   extra: {} as Record<string, unknown>,
   /** Any other route a screen reads, by `METHOD /path`: the data it answers with (200). */
   routes: {} as Record<string, unknown>,
+  /** Every request the stand-in saw, as `METHOD /path`, in order (the API client keeps the first `fetch` it finds, so a call count lives here). */
+  reads: [] as string[],
   reset() {
     this.open = true;
     this.reason = null;
@@ -37,6 +39,7 @@ export const hub = {
     this.seen = new Map();
     this.extra = {};
     this.routes = {};
+    this.reads = [];
   },
 };
 
@@ -76,6 +79,7 @@ export function installHub(): void {
     const request = input instanceof Request ? input : new Request(String(input), init);
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/api\/hub/, '');
+    hub.reads.push(`${request.method} ${path}`);
     if (request.method === 'GET' && path === '/store/products') {
       const platform = url.searchParams.get('platform');
       return json(200, {

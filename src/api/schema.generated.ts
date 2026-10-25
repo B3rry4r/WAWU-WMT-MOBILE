@@ -1129,6 +1129,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/legal/assistant/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Start this request" (S24, S26): a matter with a fixed price becomes a
+         *     request at that price with no consultation (409 `not_fixed_price` when
+         *     the matter has none). Nothing is charged: the letter is signed on the
+         *     matter, then the fee is paid. Starting twice answers the same thread.
+         */
+        post: operations["LegalAssistantController_startFixedPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/legal/availability": {
         parameters: {
             query?: never;
@@ -9968,6 +9990,10 @@ export interface components {
             /** @description The `id` of one of the thread's live `quickReplies`. */
             quickReplyId?: string;
         };
+        StartFixedPriceDto: {
+            /** @description The business name the person wants first. 2 to 120 characters. */
+            firstNameChoice: string;
+        };
         CreateLegalRequestDto: {
             serviceCode: string;
             /** @description Whatever the service's intake form collected. */
@@ -15073,6 +15099,15 @@ export interface components {
             matterLabel: string;
             rows: components["schemas"]["LegalAssistantBriefRow"][];
             ready: boolean;
+            note: string | null;
+        };
+        LegalAssistantFixedPrice: {
+            code: string;
+            name: string;
+            blurb: string;
+            priceNaira: number;
+            turnaround: string | null;
+            needs: string[];
         };
         LegalAssistantConsultant: {
             name: string | null;
@@ -15091,6 +15126,9 @@ export interface components {
             awaitingReply: boolean;
             legalRequestId: string | null;
             requestStatus: string | null;
+            /** @enum {string|null} */
+            requestPath: "consultation" | "simple" | null;
+            fixedPrice: components["schemas"]["LegalAssistantFixedPrice"] | null;
             consultant: components["schemas"]["LegalAssistantConsultant"] | null;
             assistantStopped: boolean;
         };
@@ -20597,6 +20635,31 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAssistantThread"];
+                };
+            };
+        };
+    };
+    LegalAssistantController_startFixedPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartFixedPriceDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {

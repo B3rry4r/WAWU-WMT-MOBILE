@@ -95,6 +95,7 @@ const BRIEF = {
   matter: 'property',
   matterLabel: 'Tenancy',
   ready: true,
+  note: null,
   rows: [
     { label: 'Matter', value: 'Tenancy · rent increase' },
     { label: 'Lease', value: 'Signed, 14 months left' },
@@ -115,6 +116,8 @@ function thread(over: Partial<LegalThread> = {}): LegalThread {
     awaitingReply: false,
     legalRequestId: null,
     requestStatus: null,
+    requestPath: null,
+    fixedPrice: null,
     consultant: null,
     assistantStopped: false,
     ...over,

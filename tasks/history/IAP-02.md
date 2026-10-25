@@ -26,3 +26,20 @@ Findings (none medium or worse):
 5. **test gaps** (code kept, tests deleted with the wallet ones): the host sees "You host this room" and "Open the room" (I30 host branch); a person whose pass ended sees "Your pass ended" with the day (the ended branch); the VF5b year-boundary dates in the tiers blurb ("until 15 Jul" or "until 15 Jul 2027"); the tiers sheet closing before the checkout shows and two Continue taps opening one checkout (S7 F1); a person with no tier sees no bonus chip on Buy points. None changes money; the lead can give them to a test-only follow-up.
 
 Not run: a phone, a real Google Play or App Store sheet, a live Hub, the full suites.
+
+## Merge with main (25 Oct 2026)
+
+Sonnet merge agent IAP-02-MERGE (T2). Mobile `wmt/IAP-02` (`3b792b21`, built on `b1e6681f`) merged with `origin/main` `7f406395` (merge commit `10f77d13`) and then `fd47cb0a` (R2-LEGAL2, which moved main's contract files to backend `c02b553`), a merge commit each, no rebase. 483 files changed on the first merge; 15 conflicted.
+
+| Conflict or carry | Resolved as |
+|---|---|
+| `contract/**`, `src/api/schema.generated.ts` | main's, byte for byte: IAP-01 was already in backend main when main's copy was taken (`99322c3`), so the branch needs no contract change; the store routes and schemas were compared with the copy this branch was built on (`6e92cd2`): identical |
+| `TiersScreen.tsx`, `CheckoutScreen.tsx`, `/tiers` | this branch's store versions. Main's changes to them were the wallet checkout: the fee breakdown, the Bank transfer row only when short, the accent-ring method cards, the dollar tiers and "Add a dollar account" |
+| `OfficialScreen.tsx`, `/tier-done` | the store version plus main's Founding badge number and Record-my-voice-for-creators-only |
+| `BuyCreditsSheet.tsx` | the store version plus main's credit cost line |
+| VF13 `ProductsFullSheet.tsx`, `ProductsFullHost.tsx`, `PublishScreen.tsx`, `/publish` | the board's sheet with "Upgrade instead" and "Open library" and no "Add 5 more products" (the files as they were before the lead correction `361d2217`): the Hub's store map (`kind` is `tier`, `credits`, `points` or `pass`) has no upload-pack product, so the pack's wallet path is removed and the Hub change is G-IAP-02-1 |
+| `TicksSection.tsx` (new on main) | kept; the upgrade line "Pay only the difference" is "The store works out what moving up costs" (the wallet's difference quote is gone, row 4) |
+| records | BACKEND_GAPS (G-IAP-02-1 rewritten, G-R2-AUTHME-6 points to it, G-IAP-02-5 new), SHARED-CHANGES (IAP-02 #3 withdrawn: no contract change), LOG, `check_tasks --write` for INDEX and PROGRESS |
+
+Open low items for the sweep, found at the merge: the plan price from `GET /plans` is still drawn before the tiers sheet on "Get your tick", VF14's Renew and the host gate (G-IAP-02-5); `usePlanPurchase.ts`, `purchaseIntent.ts`, the wallet purchase calls in `purchaseApi.ts`, `MethodRow`, `QuoteBreakdown` and `TransferCard` are unused now; `GET /plans/purchases/pending` (M15's "Paid, still confirming") still reads a wallet tier purchase from the website; the wallet's `add` currency parameter has no caller left in the app.
+
