@@ -245,29 +245,34 @@ describe('Add money (W15)', () => {
   });
 });
 
-describe('what the Hub says of a transfer in (FIX-109: W15 "Free", the arrival line, W45 "Usually about")', () => {
-  it('draws Free and the arrival line from the Hub\'s figures, and the wait says the same usual time', async () => {
+describe('what the Hub says of a transfer in (FIX-109: the fee, the arrival line, W45 "Usually about"; BRIEF rules 3 and 4)', () => {
+  it('draws the fee as its breakdown, a figure even at zero and never "Free", and the arrival line from the Hub\'s figures; the wait says the same usual time', async () => {
     hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 0, arrivalMinutes: 7 } };
     await toAddMoney();
-    expect(screen.getByTestId('add-money-free')).toBeTruthy();
-    expect(screen.getByText('Free')).toBeTruthy();
+    expect(screen.getByTestId('add-money-fee')).toBeTruthy();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Total fee')).toBeTruthy();
+    expect(screen.getAllByText('₦0.00')).toHaveLength(2);
+    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.queryByText(/free|no fee/i)).toBeNull();
     expect(screen.getByText('Money you send arrives in about 7 minutes.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Copy account number' }));
     expect(await screen.findByTestId('add-money-waiting')).toBeTruthy();
     expect(screen.getByTestId('add-money-waiting-usually').props.children).toBe('Usually about 7 minutes');
   });
 
-  it('draws only the part the Hub sent: a time without a fee has no pill, a fee without a time has no line', async () => {
+  it('draws only the part the Hub sent: a time without a fee has no fee rows, a fee without a time has no line', async () => {
     hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { arrivalMinutes: 15 } };
     await toAddMoney();
-    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.queryByTestId('add-money-fee')).toBeNull();
     expect(screen.getByText('Money you send arrives in about 15 minutes.')).toBeTruthy();
   });
 
-  it('never calls a charge free: a fee above nothing draws no pill, and a figure that is not a time draws no line', async () => {
+  it('a charge above nothing is its figure in the same rows, never called free, and a figure that is not a time draws no line', async () => {
     hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 2500, arrivalMinutes: 0 } };
     await toAddMoney();
-    expect(screen.queryByTestId('add-money-free')).toBeNull();
+    expect(screen.getByTestId('add-money-fee')).toBeTruthy();
+    expect(screen.getAllByText('₦25.00')).toHaveLength(2);
     expect(screen.queryByText(/free/i)).toBeNull();
     expect(screen.queryByTestId('add-money-arrives')).toBeNull();
   });
