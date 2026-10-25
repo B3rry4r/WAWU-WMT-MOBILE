@@ -58,6 +58,12 @@ const hub = {
   balanceKobo: 48_525_075,
   shortfall: false,
   priceDrift: 0,
+  /** RELEASE-02 second pass (M-1): the two parts of the fee the quote carries. The stack's real book-transfer fee is 0, so a case sets them to see both rows at 0 and at a figure. */
+  providerFee: BANK_CHARGE,
+  wawuFee: 0,
+  /** RELEASE-02 second pass (L-p2-4): the number the Hub gives the Founding badge on `GET /users/me/profile-fields`; null while it serves none. */
+  badgeNumber: null as number | null,
+  fieldsReads: 0,
   quotes: [] as { kind: string; tierId: string | null; bump: string | null }[],
   buys: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   created: {} as Record<string, Record<string, unknown>>,
@@ -72,7 +78,8 @@ function quoteFor(kind: string, tierId: string, bump: boolean) {
   const plan = (kind === 'upgrade' && held ? tier.priceMinor - held.priceMinor : tier.priceMinor) + hub.priceDrift;
   const bumpMinor = bump ? BUMP.priceMinor : 0;
   const price = plan + bumpMinor;
-  const total = price + BANK_CHARGE;
+  const fee = hub.providerFee + hub.wawuFee;
+  const total = price + fee;
   const balance = hub.shortfall ? 320_000 : hub.balanceKobo;
   return {
     kind,
@@ -90,7 +97,7 @@ function quoteFor(kind: string, tierId: string, bump: boolean) {
       title: tier.name,
       payee: null,
       priceKobo: price,
-      fee: { providerFeeKobo: BANK_CHARGE, wawuFeeKobo: 0, totalFeeKobo: BANK_CHARGE },
+      fee: { providerFeeKobo: hub.providerFee, wawuFeeKobo: hub.wawuFee, totalFeeKobo: fee },
       totalKobo: total,
       balanceKobo: balance,
       shortfallKobo: Math.max(0, total - balance),
@@ -154,6 +161,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const cents: Record<string, number> = { verify: 300, plus: 900, founding: 1500 };
     const tiers = hub.usd ? TIERS.map((t) => ({ ...t, priceMinor: cents[t.id] })) : TIERS;
     return ok({ currency: hub.usd ? 'USD' : 'NGN', currencyFixed: false, tiers, extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: BUMP, actions: [], caps: {} });
+  }
+  if (path === '/users/me/profile-fields') {
+    hub.fieldsReads += 1;
+    const badge = hub.badgeNumber === null ? null : { id: 'founding', name: 'Founding Maker', numbered: true, number: hub.badgeNumber };
+    return ok({ wawuUserId: '00000000-0000-4000-8000-0000000000a7', location: null, countryCode: null, countryName: null, regionCode: null, regionName: null, city: null, skills: [], openTo: [], threadsHandle: null, socialOrder: [], memberSince: null, badge });
   }
   if (path === '/me/tier') {
     if (hub.held === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
@@ -248,7 +260,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { mode: 'ok', usd: false, accountType: 'creator', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
+  Object.assign(hub, { mode: 'ok', usd: false, accountType: 'creator', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, providerFee: BANK_CHARGE, wawuFee: 0, badgeNumber: null, fieldsReads: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -391,7 +403,11 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     expect(screen.getByTestId('checkout-bump').props.accessibilityState.checked).toBe(false);
     expect(screen.getByText('Add 1,000 points for ₦800')).toBeTruthy();
     expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦5,025/);
-    expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,000 + ₦25 Bank charge');
+    // The fee is its parts then the total (BRIEF rule 3): the price, the Bank charge, WAWU's fee, the Total. This one assertion pinned the
+    // one-line "₦5,000 + ₦25 Bank charge" note, which RELEASE-02 second pass M-1 replaces.
+    expect(screen.getByTestId('checkout-price')).toHaveTextContent(/₦5,000/);
+    expect(screen.getByTestId('checkout-bank-charge')).toHaveTextContent(/Bank charge.*₦25/);
+    expect(screen.getByTestId('checkout-wawu-fee')).toHaveTextContent(/WAWU.s fee.*₦0/);
     expect(screen.getByText('Pay ₦5,025')).toBeTruthy();
     expect(hub.quotes.every((q) => q.bump === 'false')).toBe(true);
     // The wallet covers it, so the Hub pays from the wallet and no transfer card is offered (POINTS-06's ruling).
@@ -414,12 +430,84 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     expect(screen.getByTestId('points-back')).toBeTruthy();
   });
 
+  it('L-p2-4: the Founding Maker success shows the badge with the number the Hub gave it', async () => {
+    hub.badgeNumber = 128;
+    await toCheckout();
+    await pay();
+    expect(await screen.findByTestId('official-title')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('official-badge')).toHaveTextContent('Founding Maker #128'));
+  });
+
+  it('L-p2-4: a Founding badge the Hub has not numbered yet shows the name alone, never a number of the app\u2019s own', async () => {
+    hub.badgeNumber = null;
+    await toCheckout();
+    await pay();
+    expect(await screen.findByTestId('official-title')).toBeTruthy();
+    await waitFor(() => expect(hub.fieldsReads).toBeGreaterThan(0));
+    expect(screen.getByTestId('official-badge')).toHaveTextContent(/^Founding Maker$/);
+  });
+
+  it('L-p2-4: a tier with no numbered badge never asks for the number', async () => {
+    await toCheckout('/checkout?kind=tier&tier=verify');
+    await fireEvent.press(screen.getByTestId('checkout-pay'));
+    await screen.findByText(/ for the Verify tier/);
+    await tap('1234');
+    expect(await screen.findByTestId('official-title')).toBeTruthy();
+    expect(screen.getByTestId('official-badge')).toHaveTextContent(/^Verify$/);
+    expect(hub.fieldsReads).toBe(0);
+  });
+
+  it('M-1: a fee of ₦0 is still drawn as its parts, never "No fee", and Pay and the PIN sheet carry the total', async () => {
+    hub.providerFee = 0;
+    hub.wawuFee = 0;
+    await toCheckout();
+    expect(screen.getByTestId('checkout-price')).toHaveTextContent(/Price.*₦5,000/);
+    expect(screen.getByTestId('checkout-bank-charge')).toHaveTextContent(/Bank charge.*₦0/);
+    expect(screen.getByTestId('checkout-wawu-fee')).toHaveTextContent(/WAWU.s fee.*₦0/);
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/Total.*₦5,000/);
+    expect(screen.queryByText(/no fee/i)).toBeNull();
+    expect(screen.getByText('Pay ₦5,000')).toBeTruthy();
+    await pay();
+    expect(await screen.findByTestId('official-title')).toBeTruthy();
+    expect(hub.buys[0].body.expectedTotalKobo).toBe(500_000);
+  });
+
+  it('M-1: both parts of a real fee are drawn and add up to the total on the button and the PIN sheet', async () => {
+    hub.providerFee = 2325;
+    hub.wawuFee = 1000;
+    await toCheckout();
+    expect(screen.getByTestId('checkout-price')).toHaveTextContent(/₦5,000/);
+    expect(screen.getByTestId('checkout-bank-charge')).toHaveTextContent(/Bank charge.*₦23\.25/);
+    expect(screen.getByTestId('checkout-wawu-fee')).toHaveTextContent(/WAWU.s fee.*₦10/);
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦5,033\.25/);
+    expect(screen.getByText('Pay ₦5,033.25')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('checkout-pay'));
+    await screen.findByText(/₦5,033\.25 for the Founding Maker tier/);
+    await tap('1234');
+    await screen.findByTestId('official-title');
+    expect(hub.buys[0].body.expectedTotalKobo).toBe(503_325);
+  });
+
+  it('M-1: an upgrade draws the breakdown too, from the quote for the difference', async () => {
+    hub.held = 'verify';
+    hub.providerFee = 0;
+    await toCheckout('/checkout?kind=upgrade&tier=founding');
+    expect(screen.getByTestId('checkout-price')).toHaveTextContent(/₦4,000/);
+    expect(screen.getByTestId('checkout-bank-charge')).toHaveTextContent(/₦0/);
+    expect(screen.getByTestId('checkout-wawu-fee')).toHaveTextContent(/₦0/);
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦4,000/);
+    expect(screen.queryByText(/no fee/i)).toBeNull();
+    expect(screen.getByText('Pay ₦4,000')).toBeTruthy();
+  });
+
   it('a user who ticks the offer pays the tier and the offer, and the Hub is sent it', async () => {
     await toCheckout();
     await fireEvent.press(screen.getByTestId('checkout-bump'));
     await screen.findByText('Pay ₦5,825');
     expect(screen.getByTestId('checkout-bump').props.accessibilityState.checked).toBe(true);
-    expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,800 + ₦25 Bank charge');
+    expect(screen.getByTestId('checkout-price')).toHaveTextContent(/₦5,800/);
+    expect(screen.getByTestId('checkout-bank-charge')).toHaveTextContent(/₦25/);
+    expect(screen.getByTestId('checkout-total')).toHaveTextContent(/₦5,825/);
     await pay();
     expect(await screen.findByTestId('official-points')).toHaveTextContent(/600 \+ 1,000/);
     expect(hub.buys[0].body).toEqual({ kind: 'tier', tierId: 'founding', bump: true, method: 'wallet', expectedTotalKobo: 582_500, quoteToken: 'tok-founding-b-582500' });

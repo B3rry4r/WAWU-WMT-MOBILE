@@ -44,7 +44,7 @@ const PREVIEW_HEIGHT = 190;
 /** One file the person adds before publishing: nothing yet, on its way (the real share that has gone up), ready, or refused. */
 type Slot = { state: 'empty' } | { state: 'uploading'; name: string; share: number } | { state: 'ready'; file: UploadedFile } | { state: 'failed'; message: string };
 
-export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onForgotPin' | 'onSetPin' | 'onAddMoney'> & {
+export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onOpenLibrary'> & {
   draftId: string;
   onBack: () => void;
   /** No tier is running: VF5. */
@@ -383,9 +383,14 @@ export function PublishScreen(props: PublishScreenProps) {
             setLimit(false);
             props.onUpgrade();
           }}
-          onForgotPin={props.onForgotPin}
-          onSetPin={props.onSetPin}
-          onAddMoney={props.onAddMoney}
+          onOpenLibrary={
+            props.onOpenLibrary
+              ? () => {
+                  setLimit(false);
+                  props.onOpenLibrary?.();
+                }
+              : undefined
+          }
         />
       ) : null}
       {notice ? <Toast message={notice} tone="alert" placement="top" lines={2} onHide={() => setNotice(null)} testID="publish-notice" /> : null}

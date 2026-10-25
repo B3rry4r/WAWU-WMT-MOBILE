@@ -113,3 +113,37 @@ Two tests failed in GitHub's full jest on `df1b952e` and `a09e523b`; main `a3fda
 Proof for 2: with the countries answer held back 400 ms in a scratch copy of the file (not committed), A31 fails with the same message on main `a3fdaf71` (1 failed, 19 passed) and on this branch before the fix; after the fix all 24 pass. The branch's `CountryStep` change (`preferredCurrency`) does not touch the loading path.
 
 Checks (logs in `scratchpad/r2-authme-b/`): `tsc.log` EXIT 0; `eslint.log` EXIT 0 on the two files (no --fix); `two.log` EXIT 0 (2 suites, 65 tests); `ow.log` open-wallet folder EXIT 0 (24 suites, 374 tests); `auth.log` auth folder, the five `auth-*` tests and `route-guard.test.tsx` EXIT 0 (8 suites, 513 tests); `gates.log` EXIT 0 (0 fail, 18 warn, 0 accepted); `baseline.log` EXIT 0; `tasks.log` EXIT 0 (443 tasks).
+
+## Second pass (25 Oct 2026, T2, builder R2-AUTHME2, mobile `wmt/R2-AUTHME2` on `origin/main` `25d24f0a`)
+
+Source: `audits/CHECK-3/auth-me-p2.md` on `origin/wmt/CHECK-3-auth-me-p2` (`4d9a60b5`). App only: no backend change (the backend was read on `origin/main`, never edited), no new route file (so no SHARED-CHANGES row), no native change (fingerprint `17ffb13d520882bf144982b61d03f3994c6e40e4` unchanged). Each fix has its test written red first, then green.
+
+| Finding | Before | After | Proof |
+|---|---|---|---|
+| M-1 MED | the tier and upgrade checkout (VF6) drew "Total" and a one-line "₦5,000 + ₦25 Bank charge" only when the fee was above 0 | BRIEF rule 3 and 4: always the price, Bank charge, WAWU's fee and Total, each from the purchase quote (`fee.providerFeeKobo`, `fee.wawuFeeKobo`), even at ₦0; "No fee" is never drawn. Pay and the PIN sheet keep the total. Points checkout (PT4) untouched. Two assertions pinned the one-line note ("₦5,000 + ₦25 Bank charge", "₦5,800 + ₦25 Bank charge") and are replaced by the rows | `tierCheckout.test.tsx` (3 new cases: ₦0 fee, both parts non-zero adding up on the button and PIN line, an upgrade) |
+| M-3 MED, L-p2-12 | at the limit /create-format drew a banner "Get verified for up to 25 uploads" (also to a Verify holder); the library meter said the same | VF13 is the board's sheet "You have used N of N" with "Upgrade instead" (only while the Hub lists a higher tier that leaves room, `GET /plans` against `GET /me/tier`; none for the top tier) and "Open library", the way to take something down. A person who holds a tier is never told to "Get verified": /create-format opens the sheet over the step and its note takes something down; the library and dashboard meter read the tier (`3 of 3 products`, `Verify · ends 26 Nov`), as Create and Me do; a person with no tier keeps M27 and the free meter as drawn. **Default (lead), owner may override:** the board's "Add 5 more products ₦1,500" is an in-app digital unlock, so it follows R-86 (app stores, IAP-02): no "Add 5" and no wallet path is drawn now (G-R2-AUTHME-6). The two cases that bought five with the PIN and the lost-answer case pinned that path and are replaced | `publishAndTier.test.tsx` (VF13: 5 cases), `entries.test.tsx` (2), `library.test.tsx` (2) |
+| M-4 MED | a refused hosted selfie was a plain light result | A16 is the board's layout: the dark page, the red-ringed oval, the white Try again button; the X leaves as Back does. The words stay the true ones ("Your selfie wasn't approved", "Good light, no glasses or cap. Try again on a new page."): the Hub's liveness answer is `not_passed` with no reason and Nuvion's check says approved or not approved, so "We couldn't match your face" is not claimed (`docs/PAYMENTS-PLAN.md` "No selfie match under Nuvion"). The camera page parts moved to `CameraPage.tsx`, shared by the camera step and the hosted step | `hostedSelfie.test.tsx` (2 new cases; the existing "never says match or BVN" case still passes) |
+| L-p2-4 | VF7a showed "Founding Maker" without the number | the badge carries the number the Hub gave it (`GET /users/me/profile-fields` `badge.number`); a numbered tier only asks, and a number not yet served leaves the name alone | `tierCheckout.test.tsx` (3 cases) |
+
+### Lows not built (each says why; nothing invented)
+
+- L-p2-5 M26 "Delete and free the slot": untrue. The Hub gives a turned-down piece's place back when the reviewer rejects it, so deleting it frees none (its own spec: "a piece turned down already gave its place back: removing it returns nothing more"). The row stays "Delete" (G-ME-07-2, G-R2-AUTHME-8).
+- L-p2-10 A21 "Creators only.": untrue. The Hub has no creator rule on `PUT /money/payout-account` and anyone with an open wallet reaches the screen from Withdraw; the screen's own test asserts it never says so (G-58, G-R2-AUTHME-9).
+- L-p2-9 A6 "It must match your BVN photo": left out. Nuvion's hosted selfie is not known to compare to the BVN photo (`docs/PAYMENTS-PLAN.md`: "No selfie match under Nuvion"; `docs/nuvion/DEV-RESULTS.md` NUV-03: the selfie result was never read from a real person's page). Unblocked by Nuvion saying what the hosted check compares (G-R2-AUTHME-7).
+- L-p2-1 Voice Intro limit and "About 20 seconds when read": the screen already reads the limit from the Hub (`textMaxChars`). The Hub's `voice.intro_max_chars` default is 500 (`plan-settings.defaults.json`), the board draws 250: reported, not changed. No seconds figure is served, and 500 characters would not be 20 seconds, so the line is not drawn (G-R2-AUTHME-10).
+- L-p2-6 VF10 "64%" and "About a minute": `GET /me/voice-intro` serves no progress or time left (`run` has none), so a figure would be invented (G-R2-AUTHME-11).
+- L-p2-2 (A26, A27 extra fields), L-p2-3 (A13 empty list), L-p2-8 (VF12 opens with the category chips), L-p2-11 (M33 visitor footer): gaps, not built (G-R2-AUTHME-12).
+
+### Lead rulings recorded, no code
+
+- M-2 (Bank transfer row only when the wallet is short): the FIX-55 rule kept on 25 Oct (the Hub settles a transfer order from a covering wallet, so the row would charge the wallet). The board's always-drawn row stays a known difference.
+- M-5 (A5 is an empty form): stays G-R2-AUTHME-5.
+- M-6 (tiers paid from the wallet): IAP-02 (R-86).
+- M-7 (Professional tick row on M16): a store product under R-86, drawn with IAP-02, not now.
+
+### Checks (logs in `scratchpad/r2a2b/`)
+
+`tsc.log` EXIT 0; `eslint.log` EXIT 0 on the 21 changed files (no --fix; two warnings, `MB18` unused in `publishAndTier.test.tsx` as on main, and the orphaned `tap` removed afterwards, `eslint2.log` EXIT 0 with the one on-main warning); `jest.log` EXIT 0, 66 suites, 1202 tests (`features/verify`, `library`, `create`, `creator`, `open-wallet`, `me`, `verification`, `route-guard`, `--maxWorkers=2`); `jest-last.log` EXIT 0 (`publishAndTier` again after the cleanup); `gates.log` EXIT 0 (10 gates, 1422 files, 0 fail, 18 warn, 0 accepted); `baseline.log` EXIT 0; `tasks.log` EXIT 0 (444 tasks); `fingerprint.log` EXIT 0, android hash `17ffb13d520882bf144982b61d03f3994c6e40e4` (unchanged). Red logs: `m1-red.log`, `m3-red.log`, `m3b-red.log`, `l4-red.log` (the A16 cases failed first on the old screen too).
+
+NOT RUN: the live proof of M-1, M-3 and M-4 on a local stack (Nuvion stand-in, mock WAWU ID) with pictures at 390 px beside the boards: the step budget ended after the code, the records and the checks. The boards were rendered (`scratchpad/r2a2b`, build/design_shots VF6, VF13, A16 light and dark) and the audit's pictures are the "before". A non-zero fee on the stack (its book fee is 0) is covered by jest only. Also NOT RUN: the signed phone build.
+

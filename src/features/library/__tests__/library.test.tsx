@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
-import { allowance, calls, hub, installFetch, ok, piece, renderFrame, type Sent } from '../__helpers__/hub';
+import { allowance, calls, hub, installFetch, ok, piece, renderFrame, runningTier, type Sent } from '../__helpers__/hub';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -20,6 +20,7 @@ const { LibraryScreen } = require('../LibraryScreen') as typeof import('../Libra
 const LIST = '/api/hub/content/mine/library';
 const COUNTS = '/api/hub/content/mine/library/counts';
 const ALLOWANCE = '/api/hub/uploads/allowance';
+const TIER = '/api/hub/me/tier';
 
 const page = (items: unknown[], nextPage: number | null = null, currentPage = 1) => ok(items, { currentPage, nextPage, perPage: 20, total: items.length });
 const six = [
@@ -83,6 +84,23 @@ describe('M28 · My content', () => {
     expect(screen.queryByText('Get verified')).toBeNull();
     // Only the turned-down piece opens anything.
     expect(within(screen.getByTestId('library-list')).getAllByRole('button').map((b) => b.props.testID)).toEqual(['library-row-r1']);
+  });
+
+  it('a person who holds a tier is shown the tier\u2019s own count and name, never "Get verified" (RELEASE-02 second pass, L-p2-12)', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(3, 3));
+    hub.answers[`GET ${TIER}`] = ok(runningTier(3, 3));
+    await open();
+    expect(await screen.findByText('3 of 3 products')).toBeTruthy();
+    expect(screen.getByText(/^Verify \u00b7 ends /)).toBeTruthy();
+    expect(screen.queryByText(/Get verified/)).toBeNull();
+    expect(screen.queryByText(/more reach/)).toBeNull();
+  });
+
+  it('a person with no tier keeps the uploads meter and its way up', async () => {
+    hub.answers[`GET ${TIER}`] = ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
+    await open();
+    expect(await screen.findByText('4 of 5 used')).toBeTruthy();
+    expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
   });
 
   it('draws no "0 of 0" meter for an account the Hub allows nothing, and still lists its pieces', async () => {
