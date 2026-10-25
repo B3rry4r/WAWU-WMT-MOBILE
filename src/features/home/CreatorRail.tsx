@@ -7,6 +7,7 @@ import { VerifiedTick } from '@/components/icon';
 import { MediaCard } from '@/components/MediaCard';
 import { EmptyState } from '@/components/StateViews';
 import { Text as WawuText } from '@/components/Text';
+import { useInterestLabel } from '@/features/explore/interestLabel';
 import { PortraitTile } from '@/features/explore/PortraitTile';
 import { hueFor } from '@/features/feed/model';
 import { space } from '@/theme';
@@ -24,6 +25,7 @@ import { suggestionLine, suggestionTick } from './model';
  */
 function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggestion; onFollow: () => void; onOpen?: () => void; busy: boolean }) {
   const tick = suggestionTick(item);
+  const labelOf = useInterestLabel();
   return (
     <MediaCard
       testID={`today-creator-${item.wawuId}`}
@@ -32,7 +34,7 @@ function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggest
       height={m.cardHeight}
       onPress={onOpen}
       title={item.name}
-      subtitle={suggestionLine(item) ?? undefined}
+      subtitle={suggestionLine(item, labelOf) ?? undefined}
       imageUrl={item.avatarUrl ?? undefined}
       placeholder={<PortraitTile hue={hueFor(item.wawuId)} testID={`today-creator-${item.wawuId}-portrait`} />}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}

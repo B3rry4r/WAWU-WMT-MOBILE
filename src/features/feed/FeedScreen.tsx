@@ -115,17 +115,19 @@ export type FeedScreenProps = {
   onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
   /** A professional card's Profile opens their page (P2) with the listing's id. Not drawn without it. */
   onOpenProfessional?: (id: string) => void;
+  /** A professional card's Message opens the paid question (I3), and a paid question opens its thread (I4) with the creator's WAWU ID. Message is not drawn without it and `pay`. */
+  onOpenPaidThread?: (creatorWawuId: string) => void;
   /** A creator card's Profile button opens that creator's profile (H9, M5). Not drawn without it. */
   onOpenCreator?: (wawuId: string) => void;
   /** "Find people to follow" on an empty Following, and the creators rail's "See all" beside it, open All creators (X4). Not drawn without it. */
   onSeeAllCreators?: () => void;
 };
 
-export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece, onOpenProfessional, onOpenCreator, onSeeAllCreators }: FeedScreenProps = {}) {
-  const pay = useFeedPay(payHandlers);
+export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: payHandlers, onOpenPiece, onOpenProfessional, onOpenPaidThread, onOpenCreator, onSeeAllCreators }: FeedScreenProps = {}) {
+  const focused = useIsFocused();
+  const pay = useFeedPay(payHandlers, { onOpenPaidThread, focused });
   const insets = useSafeAreaInsets();
   const { dark, colors } = useWawu();
-  const focused = useIsFocused();
   const chromeTop = Math.max(insets.top, metrics.statusBar);
   const [scope, setScope] = useState<FeedScope>(initialScope);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -239,7 +241,16 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
             return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} onOpenProfile={onOpenCreator} />;
           }
           if (row.kind === 'professional') {
-            return <FeedProfessionalCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenProfile={onOpenProfessional} />;
+            return (
+              <FeedProfessionalCard
+                card={row.card}
+                width={size.width}
+                height={size.height}
+                chromeTop={chromeTop}
+                onOpenProfile={onOpenProfessional}
+                onMessage={row.card.wawuId === me.data ? undefined : pay.onMessage}
+              />
+            );
           }
           return (
             <Post

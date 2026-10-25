@@ -41,6 +41,18 @@ export const posterMetrics = {
 /** The amber of every star on the board (the board's amber): the warning token in its dark cut. */
 export const starColor = darkColors.warning;
 
+/**
+ * MV11's wait (`mvLoad`): the hero's size, three chips (64, 80 and 72 wide, 36 high), a 16 high heading 140 wide, and three
+ * posters of MV1's rail width, 10 apart. Quiet blocks only; nothing in them is a title.
+ */
+export const loadingMetrics = {
+  chipWidths: [64, 80, 72],
+  chipHeight: 36,
+  headingWidth: 140,
+  headingHeight: 16,
+  posters: 3,
+} as const;
+
 export const heroMetrics = {
   /** `mvHero`: 240 high, 24 radius, the badge 14 in from the top-left, the words 16 in from the left, right and bottom, 10 apart. */
   height: 240,

@@ -1,5 +1,7 @@
 import { ApiError } from '@/api/errors';
 
+import { interestLabelOf } from '@/features/explore/interestLabel';
+
 import { discoverable, moneyCard, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
 
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
@@ -66,10 +68,15 @@ describe('creators to discover', () => {
     expect(suggestionTick(person('a'))).toBeNull();
   });
 
-  it('writes what they do only when they listed it', () => {
-    expect(suggestionLine(person('a', { field: ' Accountant ' }))).toBe('Accountant');
-    expect(suggestionLine(person('a', { field: '  ' }))).toBeNull();
-    expect(suggestionLine(person('a'))).toBeNull();
+  // R2-SOCIAL3 (CHECK-3 social pass 3, defect 3): this test used to pin the Hub's raw `field` as the line ("Accountant"). The Hub's field is an
+  // interest id, so the line is the sign-up list's label for it, and an id that list does not know gives nothing, never the id.
+  it('writes what they are into in words, and nothing for an id the interest list does not know', () => {
+    const labels: Record<string, string> = { music_audio: 'Music and audio' };
+    const labelOf = (id: string | null | undefined) => interestLabelOf([{ id: 'music_audio', label: labels.music_audio }], id);
+    expect(suggestionLine(person('a', { field: ' music_audio ' }), labelOf)).toBe('Music and audio');
+    expect(suggestionLine(person('a', { field: 'business_entrepreneurship' }), labelOf)).toBeNull();
+    expect(suggestionLine(person('a', { field: '  ' }), labelOf)).toBeNull();
+    expect(suggestionLine(person('a'), labelOf)).toBeNull();
   });
 });
 
