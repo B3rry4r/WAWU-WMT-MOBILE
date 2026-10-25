@@ -202,6 +202,22 @@ describe('FLIX-03 · MV1, MV11, MV12', () => {
     expect(screen.queryByTestId('movies-search')).toBeNull();
   });
 
+  // R2-SOCIAL3 (CHECK-3 social pass 3, defect 6): MV11 draws skeleton blocks (a hero, three chips, a heading, three posters), not a spinner.
+  // They are quiet blocks only: the real hero, genre chips and Search button still wait for the Hub to say movies are on (FLIX-04 L1).
+  it('MV11 draws skeleton blocks while the Hub answers, and no spinner', async () => {
+    mockGet.mockImplementation((path: string) => (path.endsWith('/filters') ? Promise.resolve(ok({ genres: [], languages: [] })) : new Promise(() => undefined)));
+    await render(wrap(<MoviesScreen {...props} />));
+    const wait = screen.getByTestId('movies-loading');
+    expect(within(wait).getByTestId('movies-loading-hero')).toBeTruthy();
+    expect(within(wait).getAllByTestId(/^movies-loading-chip-/)).toHaveLength(3);
+    expect(within(wait).getByTestId('movies-loading-heading')).toBeTruthy();
+    expect(within(wait).getAllByTestId(/^movies-loading-poster-/)).toHaveLength(3);
+    expect(JSON.stringify(screen.toJSON())).not.toContain('"type":"ActivityIndicator"');
+    expect(screen.queryByTestId('flix-hero')).toBeNull();
+    expect(screen.queryByTestId('movies-genre')).toBeNull();
+    expect(screen.queryByTestId('movies-search')).toBeNull();
+  });
+
   it('Search appears once the Hub has said movies are on', async () => {
     // The catalog read is held until the assertion has been made (an instantly resolved mock can be flushed before it), then released.
     let release: () => void = () => undefined;

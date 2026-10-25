@@ -61,6 +61,8 @@ Live proof on a local stack of both branches (Hub on the Nuvion stand-in, mock W
 
 Not run: `src/tests/hub-rate-limits.contract.spec.ts` (it names Fintava, so it is not run here; no route was added or changed, so the `@Throttle` list is untouched). Not touched: the verifier's findings 2 and 3 (the wallet FX "No fee" copy is the money area's; the order-page void-ticket branch draws no greyed card, a note the owner may rule on).
 
+- **R2-SOCIAL3 (25 Oct 2026, Sonnet builder, T2; mobile `wmt/R2-SOCIAL3` on `origin/main` `fd47cb0a`; app only, no backend change, no native change, no route; audit `audits/CHECK-3/social-p3.md`):** H10 draws "Message · ₦<price>" (the card's own Hub price) opening the I3 sheet, hidden when paid messages are off, paused or the card is the viewer's own; creator rows draw the interest's label (the sign-up list), never the raw id; E14 address line; I8 one Message row (free chat stays in the More menu); MV11 skeleton blocks. Ruled no: MV10 copy (the search has no filters, FLIX-03 round 2) and E15 Remove (EVENTS-04 U1, `editEvent.test.tsx`). Fan Inbox ruling (no filter, compose or + for a fan; a fan starts a chat from a profile; the gap row stays). Table, updated tests and checks (tsc, eslint, 45 suites 992 tests, gates 0 fail, fingerprint `17ffb13d...` unchanged, all EXIT 0) in `tasks/history/RELEASE-02.md`.
+
 ## Read first
 
 - `docs/WORKFLOW.md`

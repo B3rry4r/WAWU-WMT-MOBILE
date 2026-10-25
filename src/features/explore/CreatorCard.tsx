@@ -5,6 +5,7 @@ import { MediaCard, mediaMetrics } from '@/components/MediaCard';
 import { hueFor } from '@/features/feed/model';
 
 import type { ExploreCreator } from './api';
+import { useInterestLabel } from './interestLabel';
 import { PortraitTile } from './PortraitTile';
 
 /**
@@ -48,6 +49,7 @@ export type CreatorCardProps = {
  */
 export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, height = creatorCardMetrics.railHeight, onPress, onToggleFollow, testID }: CreatorCardProps) {
   const tick = tickOf(creator);
+  const labelOf = useInterestLabel();
   const followTestID = testID ? `${testID}-follow` : undefined;
   const following = Boolean(onToggleFollow) && creator.following;
 
@@ -56,7 +58,7 @@ export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, hei
       layout="stacked"
       testID={testID}
       title={displayHandle(creator)}
-      subtitle={creator.field ?? undefined}
+      subtitle={labelOf(creator.field) ?? undefined}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : undefined}
       imageUrl={creator.avatarUrl ?? undefined}
       placeholder={<PortraitTile hue={hueFor(creator.wawuId)} testID={testID ? `${testID}-portrait` : undefined} />}

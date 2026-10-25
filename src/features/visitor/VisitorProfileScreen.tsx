@@ -93,8 +93,9 @@ export type VisitorProfileScreenProps = {
   /** A question was paid: the thread (I4) opens. Message and its price are drawn only when this and `pay` are given (R-47). */
   onOpenPaidThread?: (wawuId: string) => void;
   /**
-   * The free chat with this person (R-13) is open: its id goes here and the chat (I12) opens. Message (free) is drawn only when this is
-   * given, and whether or not the person takes paid messages: "Messages off" only means paid messages are off (SWEEP-FLOWS B3).
+   * The free chat with this person (R-13) is open: its id goes here and the chat (I12) opens. "Message <name>" in the More menu is drawn only
+   * when this is given, and whether or not the person takes paid messages: "Messages off" only means paid messages are off (SWEEP-FLOWS B3).
+   * The profile has no second Message row under "Messages off": I8 draws one row (R2-SOCIAL3).
    */
   onOpenChat?: (chatId: string) => void;
   /** False while another screen (Add money) is on top of this one, true when it is in front. The route says; the ask sheet asks its quote again on return (I6). */
@@ -193,11 +194,9 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
 
   // One free chat opened at a time: a second tap while the first is on its way opens nothing more (the Hub finds the same chat anyway).
   const chatting = useRef(false);
-  const [openingChat, setOpeningChat] = useState(false);
   const message = async () => {
     if (!person || !onOpenChat || chatting.current) return;
     chatting.current = true;
-    setOpeningChat(true);
     setNotice(null);
     try {
       onOpenChat(await openFreeChat(person));
@@ -205,7 +204,6 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
       setNotice(isApiError(error) && error.message ? error.message : 'The chat could not be opened. Try again.');
     } finally {
       chatting.current = false;
-      setOpeningChat(false);
     }
   };
 
@@ -390,9 +388,6 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
               <Counts counts={countsOf({ followerCount: view.profile.followerCount, followingCount: view.profile.followingCount, postCount: view.profile.contentCount })} />
               <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />
               {terms?.kind === 'off' ? <Banner tone="info" icon="Info" title={offTitle(name)} body={offBody(name)} testID="visitor-messages-off" /> : null}
-              {terms?.kind === 'off' && onOpenChat ? (
-                <Button testID="visitor-message-free" label={`Message ${name}`} icon="MessageCircle" variant="secondary" size="md" loading={openingChat} onPress={() => void message()} full />
-              ) : null}
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} /> : null}
               {tab === 'services' ? <ServicesBody view={view} onOpenListing={onOpenListing} /> : null}

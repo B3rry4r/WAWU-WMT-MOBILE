@@ -27,6 +27,8 @@ export type HomeScreenProps = {
   onSeeAllCreators?: () => void;
   /** A professional card in the feed has Profile, which opens their page (P2, PROS-01) with the listing's id. Not drawn without it. */
   onOpenProfessional?: (id: string) => void;
+  /** A professional card's Message opens the paid question (I3); a paid question opens its thread (I4). Message is not drawn without it and `pay`. */
+  onOpenPaidThread?: (creatorWawuId: string) => void;
   /** A creator card on Today's rail and the feed's creator card open that creator's profile (M5). */
   onOpenCreator?: (wawuId: string) => void;
   /** Where the feed's wallet payments lead when they need somewhere else (HOME-13). */
@@ -35,7 +37,7 @@ export type HomeScreenProps = {
   onOpenPiece?: (item: Pick<FeedItem, 'id'>) => void;
 };
 
-export function HomeScreen({ onCreate, onSearch, onOpenNotifications, onSeeAllCreators, onOpenProfessional, onOpenCreator, pay, onOpenPiece }: HomeScreenProps = {}) {
+export function HomeScreen({ onCreate, onSearch, onOpenNotifications, onSeeAllCreators, onOpenProfessional, onOpenPaidThread, onOpenCreator, pay, onOpenPiece }: HomeScreenProps = {}) {
   const [view, setView] = useState<HomeView>('today');
   // Kept here, not on Today, so the figure stays hidden while the person looks at the feed and back.
   const [masked, setMasked] = useState(false);
@@ -54,6 +56,7 @@ export function HomeScreen({ onCreate, onSearch, onOpenNotifications, onSeeAllCr
           pay={pay}
           onOpenPiece={onOpenPiece}
           onOpenProfessional={onOpenProfessional}
+          onOpenPaidThread={onOpenPaidThread}
           onOpenCreator={onOpenCreator}
           onSeeAllCreators={onSeeAllCreators}
         />
