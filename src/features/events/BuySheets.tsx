@@ -7,7 +7,8 @@ import type { BuySheet } from './useTicketBuy';
 
 /**
  * E3 · Pay and E4 · PIN, over E2. E3 is the shared pay sheet in its purchase form: the tickets, the bank's charge and WAWU's own
- * fee when it has one, the total, and "Pay from wallet" with the balance the Hub read (BRIEF E3, R-10). Pay opens E4, the shared
+ * fee when it has one, the total, and "Pay from wallet" with the balance the Hub read (BRIEF E3, R-10). With no fee at all it reads as the
+ * board does, "Fee: No fee"; the button is "Pay ₦7,500", the verb and the total with no dot between them (R2-SOCIAL d). Pay opens E4, the shared
  * PIN sheet, "Approve ₦X to <event>"; the pay sheet steps aside while the keypad is up, as the artboard draws it.
  * Every figure is the Hub's quote; the sheets add nothing of their own.
  */
@@ -21,9 +22,11 @@ export function BuySheets({ sheet }: { sheet: BuySheet }) {
         amountKobo={payment.priceKobo}
         amountLabel="Tickets"
         fees={sheet.fees}
+        noFee="total"
         wallet={sheet.wallet}
         walletName={WALLET_NAME}
         actionLabel="Pay"
+        actionJoin="space"
         status={sheet.status}
         onPay={sheet.pay}
         onAddMoney={sheet.addMoney}

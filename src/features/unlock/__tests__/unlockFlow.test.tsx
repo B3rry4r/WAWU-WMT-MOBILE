@@ -40,7 +40,7 @@ const lockedItem = () => ({
   price: 2500,
   durationLabel: '18:04',
   pageCount: null,
-  previewAssetUrl: 'https://cdn.test/preview.webm',
+  previewAssetUrl: hub.preview,
   creatorFirstUploadFree: false,
   views: 0,
   ratingPct: null,
@@ -61,6 +61,8 @@ type Kind = 'video' | 'course' | 'template';
 const hub = {
   /** What the feed's one post is (HOME-07: a course or a template is unlocked from the feed as a video is). */
   kind: 'video' as Kind,
+  /** The piece's preview file: a clip for a video, a picture for a template (R2-SOCIAL d: H14's thumbnail). */
+  preview: 'https://cdn.test/preview.webm',
   mode: 'paid' as Mode,
   balanceKobo: 48_525_075,
   feeKobo: FEE,
@@ -239,7 +241,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { kind: 'video', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
+  Object.assign(hub, { kind: 'video', preview: 'https://cdn.test/preview.webm', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
   mockPush.mockClear();
 });
 
@@ -286,6 +288,37 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     // FIX-110 (G-1723): H14's "Yours: Forever, in My purchases" row is drawn.
     expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
     expect(screen.queryByText(/Fintava/)).toBeNull();
+  });
+
+  // R2-SOCIAL (d), CHECK-3 defect 4: a quote with no fee at all is H14 as the board draws it, and only then.
+  it('a quote with no fee reads Price, Yours, "Fee: No fee" and no Total, with "Unlock · ₦2,500"', async () => {
+    hub.feeKobo = 0;
+    const screen = await openSheet();
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.getByText('No fee')).toBeTruthy();
+    expect(screen.queryByText('Bank charge')).toBeNull();
+    expect(screen.queryByText('Total')).toBeNull();
+    expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
+  });
+
+  it('H14 draws the piece\'s thumbnail when its preview is a picture', async () => {
+    hub.kind = 'template';
+    hub.preview = 'https://cdn.test/cover.jpg';
+    const screen = await openSheet();
+    expect(screen.getByTestId('pay-sheet-head-image').props.source).toEqual([{ uri: 'https://cdn.test/cover.jpg' }]);
+  });
+
+  it('H14 is the words alone, with no empty square, when the preview is a clip (the Hub serves no poster for a video)', async () => {
+    const screen = await openSheet();
+    expect(screen.queryByTestId('pay-sheet-head-image')).toBeNull();
+    expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(1);
+  });
+
+  it('a quote with a fee never says "No fee"', async () => {
+    const screen = await openSheet();
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Total')).toBeTruthy();
   });
 
   it('FIX-101 H-A: a creator with no display name still gets the sheet, the PIN and the unlock: the Hub\'s quote is never refused for a name', async () => {

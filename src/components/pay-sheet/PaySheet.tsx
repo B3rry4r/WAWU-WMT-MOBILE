@@ -99,6 +99,13 @@ export type PaySheetProps = {
    * adds them up (DECISIONS.md R-23). The Total row always shows.
    */
   fees: readonly PayFeeLine[];
+  /**
+   * What a purchase with no fee at all draws, as its board does (H14, E3): one "Fee: No fee" row where the zero charges would be, and
+   * no "Fees" sum. `'total'` keeps the Total row under it (E3); `'no-total'` leaves it out, since with no fee the total is the price
+   * (H14). It is only said when every fee part is zero, so the words are always true; a fee above zero is drawn as its parts and the
+   * Total whatever this says. Left out, each part is drawn as its own line, ₦0 included. Purchases only, never the send form.
+   */
+  noFee?: 'total' | 'no-total';
   /** Rows after Total that are not money (W10's Note). */
   notes?: readonly PayDetailRow[];
   wallet: PayWallet;
@@ -106,6 +113,11 @@ export type PaySheetProps = {
   walletName: string;
   /** The verb on the pay button: "Unlock" gives "Unlock · ₦2,523.25"; a send gives "Send ₦25,065". */
   actionLabel: string;
+  /**
+   * How the verb and the total are joined. `'dot'` is H14's "Unlock · ₦2,500", the purchase form's default; `'space'` is E3's
+   * "Pay ₦7,500", which is also how the send form always reads.
+   */
+  actionJoin?: 'dot' | 'space';
   /** When another person receives a set amount (a send), say what arrives. */
   recipientGetsKobo?: number;
   status: PayStatus;
@@ -226,12 +238,14 @@ function Review(p: Inner) {
   const paying = p.status.kind === 'paying';
   const pay = usePayOnce(p.onPay, p.status.kind);
   const send = p.variant === 'send';
+  // A purchase whose fee is nothing at all says so in one row, as H14 and E3 draw it; any fee is drawn as its parts.
+  const noFee = !send && p.noFee !== undefined && feesTotalKobo(p.fees) === 0;
   const card = (
     <GroupedList>
       {send ? null : <KeyValueRow key="price" label={p.amountLabel ?? 'Price'} value={money(p, p.amountKobo)} />}
       {p.details?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
-      {feeRows(p)}
-      <KeyValueRow key="total" label="Total" value={money(p, p.total)} />
+      {noFee ? <KeyValueRow key="nofee" label="Fee" value="No fee" /> : feeRows(p)}
+      {noFee && p.noFee === 'no-total' ? null : <KeyValueRow key="total" label="Total" value={money(p, p.total)} />}
       {p.notes?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
     </GroupedList>
   );
@@ -240,7 +254,7 @@ function Review(p: Inner) {
       p.onOpenWallet ? <Button label="Open your wallet" onPress={p.onOpenWallet} full /> : null
     ) : (
       <Button
-        label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
+        label={paying ? 'Paying' : send || p.actionJoin === 'space' ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
         loading={paying}
         disabled={p.wallet.kind === 'loading'}

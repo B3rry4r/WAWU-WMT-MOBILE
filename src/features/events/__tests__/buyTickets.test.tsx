@@ -114,7 +114,7 @@ function orderView(status: OrderStatus, lines: { ticketTypeId: string; quantity:
 }
 
 function paymentQuote(priceKobo: number, over: Record<string, unknown> = {}) {
-  const provider = 1575;
+  const provider = hub.providerFeeKobo;
   return {
     kind: 'event_ticket',
     targetId: ORDER_ID,
@@ -138,6 +138,8 @@ type PayMode = 'paid' | 'processing' | 'failed' | 'lost_before' | 'lost_after' |
 const hub = {
   mode: 'paid' as PayMode,
   balanceKobo: 48_525_075,
+  /** The bank's part of the quoted fee. Zero is a quote with no fee at all (R2-SOCIAL d). */
+  providerFeeKobo: 1575,
   tiers: [REGULAR, VIP] as unknown[],
   /** How many times the page asked for the tier list. */
   tierReads: 0,
@@ -250,6 +252,7 @@ beforeEach(() => {
   Object.assign(hub, {
     mode: 'paid',
     balanceKobo: 48_525_075,
+    providerFeeKobo: 1575,
     tiers: [REGULAR, VIP],
     tierReads: 0,
     createFails: null,
@@ -303,7 +306,8 @@ async function enterPin(pin: string) {
   for (const d of pin) await user.press(await rtl.screen.findByRole('button', { name: d }));
 }
 
-const payButton = () => rtl.screen.findByRole('button', { name: /^Pay · / });
+// R2-SOCIAL (d): E3's button is the verb and the total with no dot, "Pay ₦7,500" (the board); this line pinned "Pay · ".
+const payButton = () => rtl.screen.findByRole('button', { name: /^Pay ₦/ });
 
 async function reachPin() {
   await getTickets();
@@ -353,6 +357,29 @@ describe('E2: the picker beside Get tickets', () => {
 });
 
 describe('E3 and E4: pay and PIN', () => {
+  // R2-SOCIAL (d), CHECK-3 defect 4: with no fee in the Hub's quote the sheet is the board's: "Fee: No fee", the Total and "Pay ₦7,500".
+  it('a quote with no fee reads Tickets, "Fee: No fee", Total, and the button "Pay ₦7,500" with no dot', async () => {
+    hub.providerFeeKobo = 0;
+    await bootDetail();
+    await getTickets();
+    await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
+    expect(rtl.screen.getByText('No fee')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
+    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
+    expect(rtl.screen.getByText('Total')).toBeTruthy();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,500' })).toBeTruthy();
+    expect(rtl.screen.queryByRole('button', { name: /^Pay · / })).toBeNull();
+  });
+
+  it('a quote with a fee never says "No fee", and the button is "Pay ₦7,515.75"', async () => {
+    await bootDetail();
+    await getTickets();
+    await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
+    expect(rtl.screen.queryByText('No fee')).toBeNull();
+    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,515.75' })).toBeTruthy();
+  });
+
   it('a user reviews the order, sees the tickets, the bank charge and the total, and pays with the PIN once', async () => {
     const buy = await bootDetail();
     await getTickets();
