@@ -46,7 +46,8 @@ export type CheckoutScreenProps = {
  * length and products and the checkout offer are the Hub's (`GET /plans`); the figures under them (the price, the Bank charge, the
  * total, the wallet's balance) are the purchase's own quote, asked again at every Pay (V8), and Pay is the total the payer pays.
  * The payment is `usePlanPurchase`: one `Idempotency-Key` per attempt, the PIN through the shared PIN sheet, a lost answer sent again
- * as it was. Bank transfer is offered only when the wallet is short (POINTS-06's ruling); the wallet's own account to send to is
+ * as it was. Bank transfer is offered only when the wallet is short (POINTS-06's ruling, FIX-55; kept on the tier checkout by the lead on
+ * 25 Oct 2026, because the Hub settles a transfer order from a covering wallet); the wallet's own account to send to is
  * the Hub's, given with the PIN. The board's Reference line is not drawn: the Hub serves none.
  */
 export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSetPin, onAddMoney }: CheckoutScreenProps) {

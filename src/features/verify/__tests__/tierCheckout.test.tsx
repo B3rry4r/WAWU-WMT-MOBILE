@@ -48,6 +48,10 @@ const HELD_UNTIL = '2026-11-26T00:00:00.000Z';
 type Mode = 'ok' | 'pending' | 'lost' | 'changed' | 'failed' | 'wrongfirst';
 const hub = {
   mode: 'ok' as Mode,
+  /** RELEASE-02 D-1: the Hub bills this person in dollars (cents, the board's $3, $9 and $15). */
+  usd: false,
+  /** RELEASE-02 D-2: the account type on the profile (`GET /users/me`). A creator is offered "Record my voice" after paying; anyone else is not. */
+  accountType: 'creator' as 'creator' | 'user',
   held: 'none' as 'none' | 'verify',
   /** The end date the Hub gives the tier held, when a test sets one (otherwise 26 Nov of this year). */
   until: null as string | null,
@@ -145,8 +149,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
+  if (path === '/users/me') return ok({ wawuUserId: '00000000-0000-4000-8000-0000000000a7', accountType: hub.accountType });
   if (path === '/plans') {
-    return ok({ currency: 'NGN', currencyFixed: false, tiers: TIERS, extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: BUMP, actions: [], caps: {} });
+    const cents: Record<string, number> = { verify: 300, plus: 900, founding: 1500 };
+    const tiers = hub.usd ? TIERS.map((t) => ({ ...t, priceMinor: cents[t.id] })) : TIERS;
+    return ok({ currency: hub.usd ? 'USD' : 'NGN', currencyFixed: false, tiers, extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: BUMP, actions: [], caps: {} });
   }
   if (path === '/me/tier') {
     if (hub.held === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
@@ -227,6 +234,7 @@ beforeAll(async () => {
     welcome: stub('Welcome'),
     'reset-pin': stub('Reset PIN'),
     'open-wallet': stub('Open your wallet'),
+    wallet: stub('Wallet'),
     'open-wallet-pin': stub('Create your PIN'),
     'add-money': stub('Add money'),
     index: stub('Home'),
@@ -240,7 +248,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { mode: 'ok', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
+  Object.assign(hub, { mode: 'ok', usd: false, accountType: 'creator', held: 'none', until: null, balanceKobo: 48_525_075, shortfall: false, priceDrift: 0, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0 });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -518,6 +526,29 @@ describe('VF6a to VF6d · the states', () => {
     expect(hub.buys).toHaveLength(1);
   });
 
+  it('RELEASE-02 fix round 1: a wallet that covers the total draws no Bank transfer row, and Pay sends method wallet (the Hub settles a transfer order from a covering wallet, so the row would charge the wallet)', async () => {
+    await toCheckout();
+    expect(screen.getByText('Balance ₦485,250.75')).toBeTruthy();
+    expect(screen.queryByTestId('checkout-method-transfer')).toBeNull();
+    expect(screen.queryByText('Bank transfer')).toBeNull();
+    expect(screen.getByTestId('checkout-method-wallet').props.accessibilityState.checked).toBe(true);
+    await pay();
+    await screen.findByTestId('official-title');
+    expect(hub.buys).toHaveLength(1);
+    expect(hub.buys[0].body).toMatchObject({ method: 'wallet' });
+  });
+
+  it('RELEASE-02 fix round 1: a short wallet draws the Bank transfer row beside the wallet, the wallet chosen, and the row can be picked', async () => {
+    hub.shortfall = true;
+    await toCheckout();
+    expect(screen.getByTestId('checkout-method-transfer')).toBeTruthy();
+    expect(screen.getByText('Bank transfer')).toBeTruthy();
+    expect(screen.getByTestId('checkout-method-wallet').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(screen.getByTestId('checkout-method-transfer'));
+    expect(screen.getByTestId('checkout-method-transfer').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('checkout-pay')).toBeEnabled();
+  });
+
   it('a refused payment shows the Hub’s own words, grants nothing, and can be tried again', async () => {
     hub.mode = 'failed';
     await toCheckout();
@@ -526,5 +557,55 @@ describe('VF6a to VF6d · the states', () => {
     expect(screen.getByTestId('checkout-failed-line')).toHaveTextContent('The bank did not take this payment.');
     expect(screen.queryByTestId('official-title')).toBeNull();
     expect(screen.getByTestId('checkout-pay')).toBeEnabled();
+  });
+});
+
+
+describe('RELEASE-02 · CHECK-3 D-1, a person the Hub bills in dollars', () => {
+  it('sees the Hub’s dollar prices with the dollar sign, never a naira sign, and Continue explains instead of opening a naira checkout', async () => {
+    hub.usd = true;
+    await renderRouter(routes, { initialUrl: '/tiers' });
+    await screen.findByTestId('tiers-list');
+    expect(screen.getByText('$3')).toBeTruthy();
+    expect(screen.getByText('$9')).toBeTruthy();
+    expect(screen.getByText('$15')).toBeTruthy();
+    expect(screen.queryByText(/₦/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('tiers-continue'));
+    // The Hub takes a tier payment only from a naira wallet, so there is no checkout to open: the sheet says so, plainly.
+    expect(await screen.findByTestId('tiers-dollars')).toBeTruthy();
+    expect(screen.getByText("Paying in dollars isn't open yet")).toBeTruthy();
+    expect(screen.queryByTestId('checkout-screen')).toBeNull();
+    expect(hub.quotes).toHaveLength(0);
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('is led to the wallet to add a dollar account, and no wallet is opened to pay dollars', async () => {
+    hub.usd = true;
+    await renderRouter(routes, { initialUrl: '/tiers' });
+    await screen.findByTestId('tiers-list');
+    await fireEvent.press(screen.getByTestId('tiers-continue'));
+    await fireEvent.press(await screen.findByText('Add a dollar account'));
+    // The dollar account is asked for through the route (`add`), so the wallet opens with US dollar as the first account.
+    expect(await screen.findByTestId('where')).toHaveTextContent('/wallet?add=USD');
+    expect(screen.queryByText('Open your wallet')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+});
+
+describe('RELEASE-02 · CHECK-3 D-2, money is never taken and then led to a screen that bounces', () => {
+  it('a creator who paid is offered "Record my voice"', async () => {
+    await toCheckout();
+    await pay();
+    await screen.findByTestId('official-title');
+    expect(screen.getByTestId('official-voice')).toBeTruthy();
+  });
+
+  it('a fan who paid (a user account) ends on Done: "Record my voice" is not drawn, because the voice screens would send them Home', async () => {
+    hub.accountType = 'user';
+    await toCheckout();
+    await pay();
+    await screen.findByTestId('official-title');
+    expect(screen.getByTestId('official-done')).toBeTruthy();
+    expect(screen.queryByTestId('official-voice')).toBeNull();
   });
 });

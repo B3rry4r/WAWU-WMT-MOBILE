@@ -14,12 +14,15 @@ import { ScreenFrame } from '@/components/ScreenFrame';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { StatusPill } from '@/components/StatusPill';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { openingProgressQuery } from '@/features/open-wallet/api/review';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { plansQuery } from '@/features/verify/purchaseApi';
 import { ROW_TILE } from '@/features/settings/metrics';
 import { useWawu } from '@/theme';
 
 import { heldTierQuery, pendingPurchaseQuery, selfieStoppedQuery } from './api';
+import { getTickOf, GivesRows, TicksRows } from './TicksSection';
 import { asksSelfie, identityRow, STILL_CONFIRMING_BODY, STILL_CONFIRMING_TITLE, tierRow } from './model';
 
 /** design/_gen/me.js line 55 (`verifBody`): the parts of the page stand 20 apart; the rows of a part, 10. */
@@ -32,6 +35,8 @@ export type VerificationScreenProps = {
   onBack: () => void;
   /** The identity row leads into Open your wallet (A31), which resumes where the Hub says the opening stands. */
   onOpenWallet: () => void;
+  /** "Get it" and "Upgrade" on Your ticks open the tiers (VF5). Left out, the row is not drawn (R-47). */
+  onGetTick?: () => void;
 };
 
 /**
@@ -41,15 +46,21 @@ export type VerificationScreenProps = {
  * - **Getting paid**: the identity check as the wallet's state (R-6), never a flag kept here. No wallet yet is M16
  *   ("Needed to get paid", Not started); an opening the Hub's review turned down, or one whose selfie step used every
  *   try, is M17 ("Send your ID again", Not approved). The row opens Open your wallet, which the Hub resumes.
- * - **Your tier**: M15's "Paid, still confirming" while a tier payment is still going through (read from the Hub, so
- *   it is there after a restart), and the tier the person holds. M11 to M14 are replaced by the tier checkout (R-43,
- *   ME-12), so there is no "Get it" here: that screen adds its own way in.
+ * - **Your ticks** (M16, M17): M15's "Paid, still confirming" while a tier payment is still going through (read from the Hub,
+ *   so it is there after a restart), the tier the person holds, and the way to get one: "Get it" for a person with none (the
+ *   cheapest tier, its price and length from `GET /plans`) or "Upgrade" while a higher tier exists, both opening the tiers
+ *   (RELEASE-02, CHECK-3 D-7). M11 to M14 are replaced by the tier checkout (R-43, ME-12), which is where "Get it" leads.
+ * - **Every tick gives you**: the uploads and library space from the Hub's allowance (`GET /uploads/allowance`) and the two
+ *   lines that carry no figure. A row whose figure the Hub did not give is not drawn.
  */
-export function VerificationScreen({ onBack, onOpenWallet }: VerificationScreenProps) {
+export function VerificationScreen({ onBack, onOpenWallet, onGetTick }: VerificationScreenProps) {
   const owner = useSessionAccount(undefined);
   const progress = useQuery(openingProgressQuery(owner ?? undefined), queryClient);
   const tier = useQuery(heldTierQuery(owner), queryClient);
   const pending = useQuery(pendingPurchaseQuery(owner), queryClient);
+  // The way to a tick and what a tick gives are asked for beside the page, never in its way: a failed read leaves those rows out.
+  const plans = useQuery({ ...plansQuery(owner), retry: false }, queryClient);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const wantsSelfie = progress.data ? asksSelfie(progress.data.state, progress.data.review?.stage ?? null) : false;
   const selfie = useQuery(selfieStoppedQuery(owner, wantsSelfie), queryClient);
 
@@ -107,6 +118,8 @@ export function VerificationScreen({ onBack, onOpenWallet }: VerificationScreenP
     const row = identityRow({ wallet: progress.data.state, review: progress.data.review?.stage ?? null, selfieStopped: selfie.data?.stopped ?? null });
     const held = tier.data ? tierRow(tier.data) : null;
     const confirming = Boolean(pending.data);
+    const running = tier.data && (tier.data.state === 'active' || tier.data.state === 'ending') ? (tier.data.id ?? null) : null;
+    const get = onGetTick ? getTickOf(plans.data ?? null, running) : null;
     body = (
       <>
         <ListSection title="Getting paid" testID="verification-paying">
@@ -122,22 +135,15 @@ export function VerificationScreen({ onBack, onOpenWallet }: VerificationScreenP
             />
           </GroupedList>
         </ListSection>
-        {confirming || held ? (
-          <ListSection title="Your tier" testID="verification-tier">
+        {confirming || held || get ? (
+          <ListSection title="Your ticks" testID="verification-tier">
             {confirming ? <Banner testID="verification-confirming" tone="warning" icon="Clock" title={STILL_CONFIRMING_TITLE} body={STILL_CONFIRMING_BODY} /> : null}
-            {held ? (
-              <GroupedList>
-                <ListRow
-                  testID="verification-held"
-                  lead={<IconTile icon="BadgeCheck" tone="accent" size={ROW_TILE} />}
-                  title={held.title}
-                  subtitle={held.line ?? undefined}
-                  trailing={<Trailing label={held.pill} tone={held.pillTone} icon={held.pillTone === 'positive' ? 'Check' : undefined} />}
-                />
-              </GroupedList>
-            ) : null}
+            <TicksRows held={held} get={get} onGetTick={onGetTick ?? (() => undefined)} />
           </ListSection>
         ) : null}
+        <ListSection title="Every tick gives you" testID="verification-every">
+          <GivesRows allowance={allowance.data ?? null} />
+        </ListSection>
       </>
     );
   }

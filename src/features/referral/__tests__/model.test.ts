@@ -42,10 +42,11 @@ describe('REF-03: what the screens say, from the Hub', () => {
     expect(rulesOf(referrals())).toHaveLength(6);
   });
 
-  it('says rewards are points, never cash, and promises no cash-out the app cannot do yet', () => {
-    const words = rulesOf(referrals()).join(' ');
-    expect(words).toContain('Rewards are points, never cash.');
-    expect(words).not.toMatch(/convert/i);
+  it('says rewards are points, never cash, and that points convert to cash in the wallet now that Convert to cash is built (G-REF-03-2); a dollar account is not told it can', () => {
+    expect(rulesOf(referrals()).join(' ')).toContain('Rewards are points, never cash. You can convert points to cash in your wallet.');
+    const dollars = rulesOf(referrals(), false).join(' ');
+    expect(dollars).toContain('Rewards are points, never cash.');
+    expect(dollars).not.toMatch(/convert/i);
   });
 
   it('lists a reward once it is available and a milestone once it is granted, oldest first (RF3, RF3a)', () => {

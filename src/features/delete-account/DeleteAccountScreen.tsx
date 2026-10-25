@@ -19,11 +19,11 @@ import { WalletNotice } from './WalletNotice';
 const LOOK = { title: 24, titleGap: 6, parts: space.lg, cardPadV: 14, rowSpace: 10, cross: 15, crossStroke: 2.4, crossGap: 8, rowText: 14 } as const;
 
 /**
- * What goes with the account. The board's third row says "Your wallet and cards"; there are no cards at launch (BRIEF Z6, R-16), so it says
- * "Your wallet", and a person with no wallet (R-6) has none to lose, so that row is not drawn for them.
+ * What goes with the account. The board's third row says "Your wallet and cards": cards are built now (R-84 settled R-16's open
+ * question), so it says so (CHECK-3 L-9). A person with no wallet (R-6) has none to lose, so that row is not drawn for them.
  */
 const GOES = ['Your profile, content and communities', 'Your purchases and tickets'] as const;
-const GOES_WALLET = 'Your wallet';
+const GOES_WALLET = 'Your wallet and cards';
 
 export type DeleteAccountScreenProps = {
   onBack: () => void;

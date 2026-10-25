@@ -9,5 +9,5 @@ import { AboutScreen } from '@/features/about/AboutScreen';
 export default function AboutRoute() {
   const router = useRouter();
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  return <AboutScreen onBack={leave} onOpenTerms={() => router.push('/terms')} onOpenPrivacy={() => router.push('/privacy-policy')} />;
+  return <AboutScreen onBack={leave} />;
 }
