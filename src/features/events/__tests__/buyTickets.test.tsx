@@ -32,6 +32,7 @@ const refuse = (status: number, reason: Record<string, unknown>) =>
 
 const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 const ORDER_ID = '44444444-4444-4444-8444-444444444444';
+const CALLED_OFF_AT = '2026-10-20T10:00:00.000Z';
 
 const REGULAR = { id: 't-reg', tier: 'regular', name: 'Regular', priceNaira: 7500, quantity: 100, sold: 10, remaining: 90, soldOut: false, salesStartAt: null, salesEndAt: null };
 const VIP = { ...REGULAR, id: 't-vip', tier: 'vip', name: 'VIP', priceNaira: 12000, remaining: 5 };
@@ -89,7 +90,7 @@ function orderView(status: OrderStatus, lines: { ticketTypeId: string; quantity:
   return {
     id: ORDER_ID,
     reference: 'WAW-EVT-8F2K91QX',
-    event: { id: 'e-1', name: 'Creators Summit', startsAt: soon, endsAt: null, timezone: null, timeLabel: null, location: 'Lagos', venueName: 'Eko Hall', bannerUrl: null },
+    event: { id: 'e-1', name: 'Creators Summit', startsAt: soon, endsAt: null, timezone: null, timeLabel: null, location: 'Lagos', venueName: 'Eko Hall', bannerUrl: null, cancelledAt: hub.eventCancelled ? CALLED_OFF_AT : null },
     free: ticketsKobo === 0,
     lines: viewLines,
     ticketCount: count,
@@ -158,7 +159,10 @@ const hub = {
   lines: [] as { ticketTypeId: string; quantity: number }[],
   orderReads: 0,
   noWalletOnPay: false,
-  /** The event the host called off (E11): the Hub's event read carries `cancelledAt`. */
+  /**
+   * The event the host called off (E11). As the Hub does it: the buyer's own order read carries `event.cancelledAt`, and
+   * `GET /events/{id}` answers the buyer 404 from then on (an event that is not live is an event you are not told about).
+   */
   eventCancelled: false,
   /** Fields the order read answers over the default view (E11: what came back). */
   orderOver: {} as Record<string, unknown>,
@@ -169,7 +173,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
-  if (path === '/events/e-1' && method === 'GET') return ok(hub.eventCancelled ? { ...eventRow, status: 'cancelled', cancelledAt: '2026-10-20T10:00:00.000Z' } : eventRow);
+  if (path === '/events/e-1' && method === 'GET') return hub.eventCancelled ? json(404, { statusCode: 404, message: 'Event not found.', data: null }) : ok(eventRow);
   if (path === '/events/e-1/tickets') {
     hub.tierReads += 1;
     return ok(hub.tiers);

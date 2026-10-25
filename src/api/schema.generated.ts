@@ -17776,6 +17776,7 @@ export interface components {
             location: string;
             venueName: string | null;
             bannerUrl: string | null;
+            cancelledAt: string | null;
         };
         EventOrderLineView: {
             ticketTypeId: string;

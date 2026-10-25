@@ -13,7 +13,6 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
-import { detailKey, fetchEvent } from './api';
 import { fetchOrder, walletOrderKey, type WalletOrder } from './buyApi';
 import { CONFIRMING_LINE, CONFIRMING_TITLE, FAILED_TITLE, failedLine } from './buyModel';
 import { addToCalendar } from './calendar';
@@ -55,8 +54,8 @@ function heldOf(order: WalletOrder, index: number): HeldTicket {
       location: order.event.location,
       venueName: order.event.venueName,
       bannerUrl: order.event.bannerUrl,
-      status: 'published',
-      cancelledAt: null,
+      status: order.event.cancelledAt ? 'cancelled' : 'published',
+      cancelledAt: order.event.cancelledAt,
     },
     siblings: [],
   };
@@ -78,13 +77,10 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
   });
   const [index, setIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
-  // E11: an order that ended refunded, or whose tickets were all voided, may belong to an event the host called off. The order carries no
-  // such flag, so the event is read for it (`cancelledAt`); the plain failed or "not valid" words stand until it says so, or if it cannot be read.
-  const orderEventId = order.data?.event.id ?? '';
-  const failed = order.data?.status === 'failed';
+  // E11: an order that ended refunded, or whose tickets were all voided, may belong to an event the host called off. The buyer cannot read
+  // such an event (`GET /events/{id}` answers 404 once it is called off), so the order's own event block carries when it was (`cancelledAt`).
   const allVoid = order.data?.status === 'paid' && order.data.tickets.length > 0 && order.data.tickets.every((t) => t.status === 'void');
-  const event = useQuery({ queryKey: detailKey(orderEventId), queryFn: () => fetchEvent(orderEventId), enabled: failed || allVoid, retry: false });
-  const calledOff = Boolean(event.data?.cancelledAt) || event.data?.status === 'cancelled';
+  const calledOff = Boolean(order.data?.event.cancelledAt);
 
   const frame = (body: React.ReactNode, title = 'Your ticket') => (
     <Page testID="order-ticket-screen" insetTop={insets.top}>
@@ -133,9 +129,6 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     );
   }
   if (data.status === 'failed') {
-    if (event.isLoading) {
-      return loading;
-    }
     if (calledOff) {
       // The same state the ticket page draws for the same purchase (E11): the event was called off and what came back to the wallet.
       return frame(
@@ -156,9 +149,6 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     );
   }
 
-  if (allVoid && event.isLoading) {
-    return loading;
-  }
   const at = Math.min(index, data.tickets.length - 1);
   const many = data.tickets.length > 1;
   const calendar = async () => {

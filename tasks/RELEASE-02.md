@@ -51,6 +51,16 @@ The ten lows of `social-p2.md` (numbers as in the audit): **6** H33 "Ads keep TG
 
 Seen and not mine: the wallet's FX screens and receipts still print "No fee" for a zero WAWU or network fee (`src/features/wallet/fx`), which BRIEF rule 4 forbids; that is the money area's.
 
+- **R2-SOCIAL2 Fix round 2 (25 Oct 2026, Sonnet builder, T2; mobile `wmt/R2-SOCIAL` on `44c56591`; backend `wmt/R2-SOCIAL` `3bc58eb` on `origin/main` `dcee8af`; one additive nullable Hub field, no route, no migration, no native change):** the verifier's one medium (`v-R2-SOCIAL2`, finding 1).
+
+| # | Item | Before | After |
+|---|---|---|---|
+| 1 (med) | E11 order page of a called-off event | the page read `GET /events/{id}` for `cancelledAt`, but the Hub answers the buyer 404 once the host calls the event off, so `calledOff` stayed false and the page kept "Your payment didn't go through". The jest mock in `buyTickets.test.tsx` handed the fan the called-off event, which the real Hub never does | the buyer's own order read already joins the event, so the order's `event` block now carries `cancelledAt` (an ISO time, null while the event is on) on every answer that returns an order (`GET /events/orders/wallet/{id}`, its quote, the create and the pay answers). `OrderTicketScreen` reads it there and makes no event read; `GET /events/{id}` is not reopened for anyone. The mock now answers the event with the Hub's own 404 (`{statusCode 404, message "Event not found."}`) once called off and carries `cancelledAt` on the order. Red first: the 4 E11 tests failed on the old screen with the corrected mock (they drew `order-ticket-failed`), then green. Backend spec `event-order-called-off.contract.spec.ts` (3 reads: a failed order, a paid order whose ticket the call-off voided, an order of a live event; red on the missing field, then green) |
+
+Live proof on a local stack of both branches (Hub on the Nuvion stand-in, mock WAWU ID, mobile web export, no Fintava, no live host): a fan bought a Regular ticket at 7,500 from a funded wallet, the host called the event off (`ordersRefunded 1`), the fan's `GET /events/{id}` answered 404 as before, the fan's order read answered `status failed`, `event.cancelledAt` set, `returned` 750,000 kobo, and the app's order page (390 px, light and dark) drew "This event was called off / ₦7,500 is back in your Naira wallet." and not "Your payment didn't go through". Pictures: `scratchpad/r2s3/e11-order-dark.png` and `e11-order-light.png`. The purchase and the call-off went through the Hub's routes (what the app calls), the order page through the app.
+
+Not run: `src/tests/hub-rate-limits.contract.spec.ts` (it names Fintava, so it is not run here; no route was added or changed, so the `@Throttle` list is untouched). Not touched: the verifier's findings 2 and 3 (the wallet FX "No fee" copy is the money area's; the order-page void-ticket branch draws no greyed card, a note the owner may rule on).
+
 ## Read first
 
 - `docs/WORKFLOW.md`
