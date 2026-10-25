@@ -192,3 +192,48 @@ Checks (logs in the builder's scratchpad folder `iap3c-b/logs/`):
 | dashboard `tsc --noEmit`, eslint on `src/components/store` and the contract, `npm test`, gates, `check_baseline`, `check:invariants`, `check:contrast`, `check:store-contract` | all EXIT 0 (`npm test` 15 tests, 2 new; gates 222 files, 0 fail) |
 
 NOT RUN: a phone, a real store sheet, the live Hub, Apple's sandbox, a picture of the Until column against a local Hub (the column is pinned by the `untilOf` unit test and the Hub's spec), the GitHub Branch checks for `a2ed812` (the lead reads that run).
+
+## IAP-03 round 3 verifier v-IAP-03c (25 Oct 2026): PASS
+
+Sonnet verifier (T2, lean). Checked mobile `wmt/IAP-02` `ca72c84d` (on `fdf3af17`), backend `wmt/IAP-03` `a2ed812` (on `25a2edf`), dashboard `wmt/IAP-04` `2adb286` (on `5cb78a3`), mobile records `wmt/IAP-04` `a1ba1f22` (one file, `tasks/IAP-04.md`). Worktrees, a test database (`viap3c_spec_test`), a local Hub on `a2ed812` (ports 9690 to 9695, Nuvion stand-in) and a Next dev server (9696); store calls mocked, no real Apple, Google or Fintava call, no live host. `expo-iap` 6.1.1 from the pinned tarball (sha512 matched the lock) into the worktree only. Branch checks on `a2ed812` were not read by this verifier (the lead reads that run).
+
+**Verdict: PASS.** No blocker, high or medium. Five lows go to the sweep, three notes.
+
+| Asked | Result | Evidence |
+|---|---|---|
+| F-1: a lost pass payment is delivered once the person holds finished passes | held | the builder's red-first case and a case of mine: the one new payment sits next to finished ones, goes to the Hub once with the room being bought, the finished ones are not sent |
+| Done-ids list, cap 80, past it | held, one low (L-1) | `MAX_DONE` 80: 85 marked leaves the newest 80 (1001 to 1005 gone, 1006 present). Past it the oldest still-listed passes read as unplaced again: nothing is lost or doubled (Hub answers `alreadyGranted`) |
+| Two new unplaced payments never guessed, told plainly | held | open: none sent, `unplaced: 2`, `waitingLine` shown only when an entry is kept or Restore was tapped in a room; no em-dash in the sentence |
+| Restore in a room: one unplaced payment per tap; Hub refuses another room's | held, two lows (L-2, L-3) | two unplaced: one granted to the room in view, one left; an `already` one does not use the tap; with the Hub refusing every one with `store_purchase_other_room` nothing is granted and nothing is marked delivered |
+| G-1 pinned | held | `buy.test.ts` A, B, two-unplaced, other-device cases and four `pass.test.tsx` cases green (in the 517-test app run below) |
+| Nothing delivered is re-sent | held | finished pass listed five opens: 0 Hub calls; finish failing: one call per open, then none |
+| Android: no new way to lose or double | held | `transactionId` is null on Android, so `markDone` and the delivered filter do nothing there; `settle` unbinds exactly where it did; consume still only after 201. New Android surface: Restore in a room can give a pass whose purchase carries no room (Google normally carries it) to that room; the Hub still refuses a transaction held by another room, so no double |
+| `passEndsAt` additive, optional | held | `AdminStorePurchaseView.passEndsAt?: string \| null`, not in `required` (23 required, none new), 4 contract lines, no migration, `.pipeline/protected-registry.json` untouched; mobile `contract/openapi.json` equals the backend's |
+| `passEndsAt` correct: once, stacked, refunded | held | local Hub, seeded rows: one pass +10 days reads that end; the stacked second reads +40 days; a pass that ran out reads its past end; a refunded pass reads the refund moment and `endedAt` the same; tier and points read null (a tier keeps its store `expiresAt`). The real refund moving a stacked period up is pinned by round 2's `store.contract` case (green); the rows I seeded were written by hand, so refund to admin view is two specs, not one end-to-end run |
+| Dashboard Until column and the 5xx sentence | held, picture matches the claim | 1440 px light and dark against the local Hub: "Runs to 04 Nov 2026" and "Runs to 04 Dec 2026" (stacked), "Ran to 15 Oct 2026" (ended), "Ended 21 Oct 2026 Refund" (refunded), "Runs to 14 Nov 2026" (tier), "-" (points). Pictures stay in the verifier's scratch folder (`viap3c-v/pics/until-light-1440.png`, `until-dark-1440.png`), not committed, because nothing differs from the claim. The 5xx sentence is `endSentence` ("Internal server error. Nothing was changed."), covered by the two new `node --test` cases |
+
+**Lows (sweep)**
+- L-1 · low · past 80 delivered App Store passes on one phone (about six years of monthly renewals): the oldest listed passes read as unplaced, so a lost payment next to them is counted with them (not guessed, the line says "6 payments", wrong count), and Restore in a room walks them (Hub: already) while moving the window by what it marks, so the line returns on every open until the kept entry expires (30 days). No money lost or doubled. The builder named the bound.
+- L-2 · low · `recover` does not forget the kept entry when Restore placed a payment by the person's room (`fromRestore`): with two lost payments, one goes to the room in view on the tap and the other is sent to the entry's room (single unplaced plus entry) on the next open. Same price, the Hub refuses a transaction already held by another room, so nothing doubles; it is a placement by the old entry after the person chose a room.
+- L-3 · low · Restore in a room when the Hub refuses every unplaced payment as another room's ends with the quiet "nothing to restore" kind of line; the person is not told the payment sits in another room. Designed quiet (v-IAP-03b).
+- L-4 · low · test flake: `pass.test.tsx` "a person sees the pass at the store's own price..." failed once (no `pass-price`) in the merged mobile tree while tsc and a backend contract build ran beside it; green alone (62 tests) and in the branch run.
+- L-5 · low · `settle` unbinds the room, then marks the id done: a kill between the two writes leaves one finished pass without its mark, so a later lost payment sees two unplaced (told, not delivered until Restore). Safe direction; marking first would close it.
+
+**Notes.** G-2 stays UNVERIFIED (no sandbox): whether StoreKit lists a finished non-renewing pass for ever, and whether `fetchProducts` type `all` returns it; the fix is harmless if not. Merge into mobile `origin/main` `08cf3d81` conflicts only in generated records, `docs/PROGRESS.md` and `contract/SOURCE_COMMIT` (take main's progress file and run `check_tasks --write`; the source commit is the merged backend head; then `npm run api` once backend IAP-03 is on main, because `contract/openapi.json` and `schema.generated.ts` auto-merged). The records branch `wmt/IAP-04` is one file and will conflict the same way in `docs/PROGRESS.md` and `tasks/INDEX.md`.
+
+| Check | Result |
+|---|---|
+| backend `tsc --noEmit` (branch) / merged tree | EXIT 0 / EXIT 0 |
+| backend store specs (`google-play.client`, `store-extra-products`, `store-ownership`, `store-pass-one-time`, `store-pure`, `store.contract`) and `community-pass-rules`, `--runInBand`, `viap3c_spec_test`, none imports the Fintava double | EXIT 0, 7 suites, 107 tests |
+| backend `contract:build` (branch) / merged tree | EXIT 0, regenerated equals committed (0 diff) / EXIT 0, equals the merged file (0 diff) |
+| backend `python3 scripts/gates/run.py` / `check_baseline.py` | EXIT 0 (9 gates, 1992 files, 0 fail, 138 warn, 88 accepted) / EXIT 0 (124 entries) |
+| backend merge into `origin/main` `24a1fa8` | clean (`contract/openapi.json`, `prisma/schema.prisma` auto-merged); the one migration `20261202090000_store_extra_products` is still the newest stamp on main and on every origin ref (newest elsewhere `20261201090000`) |
+| app `tsc --noEmit` | EXIT 0 |
+| app jest `src/features/store`, `community-pass`, `communities`, `src/__tests__/route-guard.test.tsx` (`--maxWorkers=2`, once) | EXIT 0, 8 suites, 517 tests |
+| app `npm run gates` / `check_tasks` | EXIT 0 (10 gates, 1433 files, 0 fail, 17 warn, 56 gate tests) / EXIT 0 (446 tasks) |
+| app fingerprints | EXIT 0, android `2e0e4d998b156d1c3ed97cb963577318e6a91a18`, ios `240378f19fb16a59d3be716e17e283dc02166f7a` (both match) |
+| app merge into `origin/main` (scratch tree) | two generated-record conflicts as above, resolved in the scratch tree; `tsc` EXIT 0; `check_tasks --write` then `check_tasks` EXIT 0; store and community-pass jest EXIT 0, 2 suites, 62 tests (second run, see L-4) |
+| dashboard `tsc --noEmit` / `npm test` / `check:store-contract` (at `a2ed812`) | EXIT 0 / EXIT 0, 15 of 15 / EXIT 0, "current (a2ed812)" |
+| dashboard merge into `origin/main` `433c710` | fast-forward (main is an ancestor), nothing to resolve |
+
+NOT RUN: a phone, a real store sheet, Apple's sandbox, the GitHub Branch checks for `a2ed812` (the lead reads that run), `wmt/IAP-04` records branch merge.
