@@ -348,6 +348,15 @@ describe('S20 · Booked', () => {
   const booked = () =>
     request({ status: 'consultation_scheduled', consultationMedium: 'zoom', consultationFee: 15000, consultationPaidAt: '2099-09-20T09:00:00.000Z', scheduledFor: '2099-10-02T11:00:00.000Z' });
 
+  it('S20: a long service name wraps in the title bar, whole, never cut with an ellipsis', async () => {
+    hub.req = { ...booked(), serviceName: 'Property and legal document drafting and review' };
+    await render(<MatterScreen requestId={R1} onBack={jest.fn()} wallet={wallet()} />);
+    const title = await rtl.screen.findByText('Property and legal document drafting and review');
+    expect(title.props.numberOfLines).toBeUndefined();
+    // No email is sent when a consultation is booked, so the page does not say one was (CHECK-3 S20).
+    expect(rtl.screen.queryByText(/Details are in your email/)).toBeNull();
+  });
+
   it('a user sees the steps, the hour and the kind, and can add it to the calendar', async () => {
     hub.req = booked();
     await render(<MatterScreen requestId={R1} onBack={jest.fn()} wallet={wallet()} />);

@@ -11,7 +11,7 @@ status: review
 depends_on: [WALLET-31]
 decisions: [R-16, R-37, R-84, R-47, R-29]
 passes: [V1, V4, V5, V6, V7, V8, V9]
-artboards: [W29, W30, W31, W32, W33, W34]
+artboards: [W29, W31, W32]
 tier: T2
 ---
 # WALLET-22 · The WAWU card on Nuvion (app side)

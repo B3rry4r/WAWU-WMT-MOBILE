@@ -41,6 +41,21 @@ describe('book: what S18 draws from the Hub', () => {
     expect(chips[0].slots.map((s) => [s.time, s.available])).toEqual([['09:00', false], ['12:00', true]]);
   });
 
+  it('S19: the hour the person holds themselves is drawn free and theirs, not taken', () => {
+    const view = {
+      medium: 'zoom' as const,
+      label: 'Video call',
+      minutes: 30,
+      timeZone: 'Africa/Lagos',
+      horizonDays: 21,
+      days: [{ date: '2099-10-02', slots: [{ startsAt: '2099-10-02T08:00:00.000Z', available: false }, { startsAt: '2099-10-02T11:00:00.000Z', available: false }] }],
+    };
+    // Without an own hold both hours are taken, so the day is not offered.
+    expect(dayChips(view)).toHaveLength(0);
+    const [day] = dayChips(view, '2099-10-02T11:00:00Z');
+    expect(day.slots.map((s) => [s.time, s.available, s.mine])).toEqual([['09:00', false, false], ['12:00', true, true]]);
+  });
+
   it('says the pick the way the board does, and the horizon in words', () => {
     expect(pickedLine('2099-10-02T11:00:00.000Z', 'Africa/Lagos')).toBe('Fri 2 Oct, 12:00 (Lagos time)');
     expect(pickedLine('2099-10-02T11:00:00.000Z', 'Africa/Accra')).toBe('Fri 2 Oct, 12:00');

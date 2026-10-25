@@ -25,7 +25,7 @@ export type PurchasesPage = { items: PurchaseEntry[]; nextCursor: string | null 
 /** Every key starts with `me`, so the Me menu's count and these lists can be refreshed together. */
 export const purchasesKey = (query: string) => ['me', 'purchases', query] as const;
 
-const KINDS: readonly string[] = ['content_unlock', 'event_ticket', 'credit_pack', 'school_fee', 'community_pass'];
+const KINDS: readonly string[] = ['content_unlock', 'event_ticket', 'credit_pack', 'school_fee', 'community_pass', 'legal_fee'];
 
 const isEntry = (value: unknown): value is PurchaseEntry => {
   const e = value as Partial<PurchaseEntry> | null;

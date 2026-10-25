@@ -37,6 +37,8 @@ const ICONS: Record<string, IconName> = {
   identity_review: 'ShieldCheck',
   legal_delivered: 'FileText',
   legal_quote_ready: 'FileText',
+  legal_consultant_joined: 'FileText',
+  legal_consultation_booked: 'FileText',
   tgif_daily: 'BookOpen',
   wallet_ready: 'Wallet',
   community_join_approved: 'Users',

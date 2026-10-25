@@ -433,6 +433,26 @@ describe('E13 to E15 · the wizard', () => {
     expect(rtl.screen.getByTestId('host-ticket-0')).toBeTruthy();
   });
 
+  // R2-SOCIAL3 (CHECK-3 social pass 3, defect 4): E14 draws a helper line under Street address.
+  it('E14 draws the line under Street address, and the missing-address error replaces it', async () => {
+    serve(true);
+    await bootHost();
+    await fillBasics();
+    expect(await rtl.screen.findByText('Missing addresses are the top reason events get sent back.')).toBeTruthy();
+    await press('host-starts');
+    await press('host-starts-sheet-day-2027-01-02');
+    await press('host-starts-sheet-time-14:00');
+    await press('host-starts-done');
+    await press('host-ends');
+    await press('host-ends-sheet-time-17:00');
+    await press('host-ends-done');
+    await press('host-category');
+    await press('host-category-sheet-business');
+    await press('host-continue');
+    expect(rtl.screen.getByText('Add the street address.')).toBeTruthy();
+    expect(rtl.screen.queryByText('Missing addresses are the top reason events get sent back.')).toBeNull();
+  });
+
   it('writes the ticket note from the Hub and sends the event and its types in one POST', async () => {
     serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? ok(created) : undefined));
     const props = await bootHost();

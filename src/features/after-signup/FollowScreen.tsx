@@ -11,6 +11,7 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { displayHandle, tickOf } from '@/features/explore/CreatorCard';
+import { interestLabelOf } from '@/features/explore/interestLabel';
 import { FOLLOW_NOTICE_MS, useFollow } from '@/features/explore/follow';
 import { hueFor } from '@/features/feed/model';
 import { font, space } from '@/theme';
@@ -39,7 +40,8 @@ export function FollowScreen({ step, onBack, onDone }: FollowScreenProps) {
   const ids = picks.data?.selected ?? [];
   const list = useQuery({ queryKey: suggestedKey(ids), queryFn: () => fetchSuggested(ids), enabled: picks.isSuccess });
   const follow = useFollow();
-  const labels = new Map((picks.data?.options ?? []).map((o) => [o.id, o.label]));
+  const options = picks.data?.options;
+  const labelOf = (id: string | null | undefined) => interestLabelOf(options, id);
 
   return (
     <AuthFrame
@@ -68,7 +70,7 @@ export function FollowScreen({ step, onBack, onDone }: FollowScreenProps) {
           ) : (
             (list.data ?? []).map((person) => {
               const tick = tickOf(person);
-              const role = person.field ? (labels.get(person.field) ?? person.field) : undefined;
+              const role = labelOf(person.field) ?? undefined;
               return (
                 <View key={person.wawuId} style={styles.person} testID={`person-${person.wawuId}`}>
                   <Avatar name={person.name} hue={hueFor(person.wawuId)} size={PERSON.avatar} source={person.avatarUrl ?? undefined} decorative />

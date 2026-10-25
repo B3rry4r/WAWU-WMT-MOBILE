@@ -33,6 +33,7 @@ export const KIND_WORDS: Record<Exclude<PurchaseKind, 'content_unlock'>, string>
   credit_pack: 'Credit pack',
   school_fee: 'School fee',
   community_pass: 'Community pass',
+  legal_fee: 'Legal fee',
 };
 
 /** The picture's place for a purchase that has no picture of its own (a piece has its thumbnail). */
@@ -41,6 +42,7 @@ export const KIND_ICONS: Record<Exclude<PurchaseKind, 'content_unlock'>, IconNam
   credit_pack: 'Coins',
   school_fee: 'GraduationCap',
   community_pass: 'Users',
+  legal_fee: 'FileText',
 };
 
 /** What the person paid, in the Hub's own figure: what left the wallet when it was a wallet payment, else the charge. */
@@ -77,7 +79,8 @@ export type PurchaseTarget =
   | { kind: 'piece'; id: string }
   | { kind: 'ticket'; orderId: string }
   | { kind: 'courses' }
-  | { kind: 'room'; id: string };
+  | { kind: 'room'; id: string }
+  | { kind: 'matter'; id: string };
 
 export function targetOf(entry: PurchaseEntry): PurchaseTarget | null {
   if (entry.status === 'refunded') return null;
@@ -92,6 +95,9 @@ export function targetOf(entry: PurchaseEntry): PurchaseTarget | null {
       return { kind: 'courses' };
     case 'community_pass':
       return entry.openId ? { kind: 'room', id: entry.openId } : null;
+    // R2-MONEY2: a legal fee opens its matter (S20 to S23), where the booking, the quote and the documents are.
+    case 'legal_fee':
+      return entry.openId ? { kind: 'matter', id: entry.openId } : null;
     default:
       return null;
   }

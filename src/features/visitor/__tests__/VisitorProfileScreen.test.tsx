@@ -410,15 +410,32 @@ describe('SWEEP-FLOWS B3 · a free chat can always be started from a profile (R-
     const { onOpenChat } = await bootChat();
     expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
     expect(screen.getByText("Lennox isn't taking paid messages right now")).toBeTruthy();
-    await fireEvent.press(await screen.findByTestId('visitor-message-free'));
+    // R2-SOCIAL3: this test pressed a second "Message Lennox" row under "Messages off" (I8 draws one row); the free chat is the More menu's Message.
+    await fireEvent.press(screen.getByTestId('visitor-menu-button'));
+    await fireEvent.press(await screen.findByTestId('visitor-menu-message'));
     await waitFor(() => expect(onOpenChat).toHaveBeenCalledWith('chat-77'));
     expect(asked.filter((line) => line === `POST ${CHATS}`)).toHaveLength(1);
+  });
+
+  // R2-SOCIAL3 (CHECK-3 social pass 3, defect 5): I8 draws one row, "Messages off", with the note under it. The second outlined "Message Lennox" row is gone.
+  it('I8: with paid messages off the profile has one message row (Messages off), and the free chat is in the More menu', async () => {
+    answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })), [`POST ${CHATS}`]: ok(chat) });
+    const { onOpenChat } = await bootChat();
+    expect(await screen.findByTestId('visitor-message-off')).toBeTruthy();
+    expect(screen.queryByTestId('visitor-message-free')).toBeNull();
+    expect(screen.queryByText('Message Lennox Emmanuel')).toBeNull();
+    await fireEvent.press(screen.getByTestId('visitor-menu-button'));
+    expect(await screen.findByText('Message Lennox Emmanuel')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('visitor-menu-message'));
+    await waitFor(() => expect(onOpenChat).toHaveBeenCalledWith('chat-77'));
   });
 
   it('a chat the Hub refuses stays on the profile and says why in the Hub\'s words', async () => {
     answers = page({ [`GET ${VISIT}`]: ok(view({}, { dmEnabled: false })), [`POST ${CHATS}`]: refusal(403, 'You cannot message this person.') });
     const { onOpenChat } = await bootChat();
-    await fireEvent.press(await screen.findByTestId('visitor-message-free'));
+    // R2-SOCIAL3: through the More menu's Message, as the test above (the second row under "Messages off" is gone).
+    await fireEvent.press(await screen.findByTestId('visitor-menu-button'));
+    await fireEvent.press(await screen.findByTestId('visitor-menu-message'));
     expect(await screen.findByText('You cannot message this person.')).toBeTruthy();
     expect(onOpenChat).not.toHaveBeenCalled();
   });

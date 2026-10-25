@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { queryClient } from '@/api/query';
 import { Button, IconButton } from '@/components/Button';
 import { FilterChips, type ChipItem } from '@/components/FilterChips';
 import { Icon } from '@/components/icon';
 import { ScreenFrame } from '@/components/ScreenFrame';
-import { LoadingView } from '@/components/Skeleton';
+import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
@@ -15,7 +15,7 @@ import { SectionHeading } from '@/features/explore/parts';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import { detailKey, fetchDetail, fetchFilters, filtersKey, useMoviesHome, type BrowseFilter, type MovieCard, type MovieRail } from './api';
-import { heroMetrics as h, posterMetrics } from './look';
+import { heroMetrics as h, loadingMetrics, posterMetrics } from './look';
 import { genreChoices, heroLine, premiereAhead, premiereText } from './model';
 import { FlixTabBar } from './FlixTabBar';
 import { PosterCard, RailScroller, Scrim, SeeAll } from './parts';
@@ -87,16 +87,27 @@ function Hero({ movie, now, onWatch, onTrailer }: { movie: MovieCard; now: Date;
 }
 
 /**
- * The wait on a cold open: the title and a spinner, and nothing else. MV11's catalog shapes (a hero, chips, three posters) and the
- * Search button promise a catalog the Hub may not be serving (movies off, or not live yet), so they are not drawn until the Hub has
- * said movies are on.
+ * MV11 · the wait on a cold open: quiet blocks where the hero, the genre chips, a rail's heading and three posters will be, as the board
+ * draws them (R2-SOCIAL3, not a spinner). They are blocks and nothing more: the real hero and chips, and the Search button, are not drawn
+ * until the Hub has said movies are on (FLIX-04 L1: they would promise a catalog the Hub may not be serving).
  */
 export function MoviesLoading() {
-  const { colors } = useWawu();
+  const posterHeight = Math.round(posterMetrics.mvRailWidth * posterMetrics.ratio);
   return (
     <LoadingView testID="movies-loading" label="Loading movies">
       <View style={styles.waiting}>
-        <ActivityIndicator color={colors.accentFg} />
+        <Skeleton testID="movies-loading-hero" height={h.height} radius={h.radius} />
+        <View style={styles.waitChips}>
+          {loadingMetrics.chipWidths.map((width, i) => (
+            <Skeleton key={width} testID={`movies-loading-chip-${i}`} width={width} height={loadingMetrics.chipHeight} radius={radius.chip} />
+          ))}
+        </View>
+        <Skeleton testID="movies-loading-heading" width={loadingMetrics.headingWidth} height={loadingMetrics.headingHeight} radius={space.sm} />
+        <View style={styles.waitPosters}>
+          {Array.from({ length: loadingMetrics.posters }, (_, i) => (
+            <Skeleton key={i} testID={`movies-loading-poster-${i}`} width={posterMetrics.mvRailWidth} height={posterHeight} radius={posterMetrics.radius} />
+          ))}
+        </View>
       </View>
     </LoadingView>
   );
@@ -202,5 +213,7 @@ const styles = StyleSheet.create({
   heroButtons: { flexDirection: 'row', gap: h.buttonsGap },
   bleed: { marginHorizontal: -layout.gutter },
   section: { gap: space.md },
-  waiting: { paddingVertical: space.xl, alignItems: 'center' },
+  waiting: { gap: h.sectionGap },
+  waitChips: { flexDirection: 'row', gap: space.sm },
+  waitPosters: { flexDirection: 'row', gap: posterMetrics.railGap },
 });

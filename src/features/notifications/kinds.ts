@@ -28,6 +28,8 @@ export const HUB_NOTIFICATION_KINDS = [
   'community_messages',
   'legal_delivered',
   'legal_quote_ready',
+  'legal_consultant_joined',
+  'legal_consultation_booked',
   'tgif_daily',
   'money_in',
   'money_in_reversed',

@@ -421,13 +421,13 @@ describe('PT3 and PT7 · too few points and the daily limit, for each tool', () 
     await screen.findByText('from studio');
   });
 
-  it.each([SPECS['quick-voice'], SPECS['sound-effect'], SPECS.music])('$name: past the daily limit the Hub’s own sentence names when it resets and nothing runs', async (spec) => {
+  it.each([SPECS['quick-voice'], SPECS['sound-effect'], SPECS.music])('$name: past the daily limit the board’s three sentences are drawn from the Hub’s numbers and nothing runs', async (spec) => {
     hub.cap = { cap: 'daily', limit: 5000, usedPoints: 4900, remainingPoints: 100, resetsAt: '2026-10-24T23:00:00.000Z', message: "That is over today's limit of 5000 points for AI tools. The count starts again at midnight." };
     await toTool(spec.id);
     await typeIn(spec.sent);
     await fireEvent.press(screen.getByTestId('tool-run'));
     await screen.findByTestId('cap-reached');
-    expect(screen.getByText(/The count starts again at midnight/)).toBeTruthy();
+    expect(screen.getByText("You've used 4,900 points on AI tools today. It resets at midnight. Your points are safe.")).toBeTruthy();
     expect(hub.posts).toHaveLength(0);
   });
 });

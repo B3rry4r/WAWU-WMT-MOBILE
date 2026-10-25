@@ -2,11 +2,15 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { radius } from '@/theme';
 
+import { askButtonLabel } from '@/features/paid-ask/model';
+import type { AskTarget } from '@/features/paid-ask/useAsk';
+
 import type { ProfessionalCardData } from './api';
 import { ButtonRow, CardButton, CardFrame, CardName, Stat, StatsPanel } from './CardFrame';
 import { cardMetrics as m, media, words } from './look';
-import { CARD_SERVICE_CHIPS, cardTick, placeLine, refundNote, reviewsText, usualReply } from './model';
+import { CARD_SERVICE_CHIPS, cardTick, hueFor, placeLine, refundNote, reviewsText, usualReply } from './model';
 import { Pill } from './parts';
+import { useProfessionalAsk } from './useProfessionalAsk';
 
 export type FeedProfessionalCardProps = {
   card: ProfessionalCardData;
@@ -15,6 +19,11 @@ export type FeedProfessionalCardProps = {
   chromeTop: number;
   /** Profile opens the professional's page (P2) with the listing's id. Left out, the card has no Profile button. */
   onOpenProfile?: (id: string) => void;
+  /**
+   * Message · price opens the paid question (I3) for this professional. Left out, the card has no Message button (R-47), and it is also
+   * left out when the professional has paid messages off or paused (their listing and the Hub say so).
+   */
+  onMessage?: (target: AskTarget) => void;
 };
 
 /**
@@ -23,9 +32,12 @@ export type FeedProfessionalCardProps = {
  * when the Hub has the figure, and no Trust Score: R-18, BRIEF H10), their services, the line that the money
  * comes back when they do not reply in their window, and Profile. The tag says "Professional": the Hub does not
  * know where the viewer is, so it makes no claim of distance (G-100), and it does not know who is online, so
- * "Online now" is not drawn (G-101). Message and its price are added by INBOX-10 with the screen they open (I3).
+ * "Online now" is not drawn (G-101). Message with the professional's own price (the Hub's, `dmPrice`) opens the same paid question as their
+ * profile (I3, R2-SOCIAL3); it and the refund line are left out while the professional has paid messages off.
  */
-export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenProfile }: FeedProfessionalCardProps) {
+export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenProfile, onMessage }: FeedProfessionalCardProps) {
+  const terms = useProfessionalAsk(card, Boolean(onMessage));
+  const off = terms?.kind === 'off';
   const name = card.displayName?.trim() ?? '';
   const reply = usualReply(card.usualReplyMinutes);
   const rated = card.ratingAvg !== null && card.reviewCount > 0;
@@ -56,13 +68,35 @@ export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenPro
           ))}
         </View>
       ) : null}
-      <View testID="card-note" style={[styles.note, { backgroundColor: media.infoTint }]}>
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.noteEdge, { borderColor: media.info }]} />
-        <Text style={[words.note, { color: media.ink }]}>{refundNote(card.dmPrice, card.dmResponseHours)}</Text>
-      </View>
-      {onOpenProfile ? (
+      {off ? null : (
+        <View testID="card-note" style={[styles.note, { backgroundColor: media.infoTint }]}>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.noteEdge, { borderColor: media.info }]} />
+          <Text style={[words.note, { color: media.ink }]}>{refundNote(card.dmPrice, card.dmResponseHours)}</Text>
+        </View>
+      )}
+      {onOpenProfile || (onMessage && terms?.kind === 'on') ? (
         <ButtonRow>
-          <CardButton testID="card-profile" tone="glass" label="Profile" onPress={() => onOpenProfile(card.id)} />
+          {onMessage && terms?.kind === 'on' ? (
+            <CardButton
+              testID="card-message"
+              tone="light"
+              icon="MessageCircle"
+              label={askButtonLabel(terms.priceKobo)}
+              grow={2}
+              onPress={() =>
+                onMessage({
+                  wawuId: card.wawuId,
+                  name: card.displayName,
+                  avatarUrl: card.avatarUrl,
+                  hue: hueFor(card.wawuId),
+                  tick: cardTick(card.verification, 'pro') ?? undefined,
+                  priceKobo: terms.priceKobo,
+                  windowHours: terms.windowHours,
+                })
+              }
+            />
+          ) : null}
+          {onOpenProfile ? <CardButton testID="card-profile" tone="glass" label="Profile" onPress={() => onOpenProfile(card.id)} /> : null}
         </ButtonRow>
       ) : null}
     </CardFrame>

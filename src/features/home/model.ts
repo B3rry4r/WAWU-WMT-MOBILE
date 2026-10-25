@@ -56,10 +56,12 @@ export function suggestionTick(item: CreatorSuggestion): 'creator' | 'pro' | nul
   return null;
 }
 
-/** The line under a creator's name: what they do, as they listed it. Nothing when they listed nothing. */
-export function suggestionLine(item: CreatorSuggestion): string | null {
-  const field = item.field?.trim();
-  return field ? field : null;
+/**
+ * The line under a creator's name: what they are into, in words. The Hub's `field` is an interest id, so `labelOf` (the sign-up list's
+ * labels, `useInterestLabel`) turns it into words; an id it does not know gives nothing, never the id (R2-SOCIAL3).
+ */
+export function suggestionLine(item: CreatorSuggestion, labelOf: (id: string | null | undefined) => string | null): string | null {
+  return labelOf(item.field);
 }
 
 /**

@@ -10,6 +10,7 @@ import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
 import { GroupTile, tileMetrics } from '@/features/communities/GroupTile';
 import { tickOf } from '@/features/explore/CreatorCard';
+import { useInterestLabel } from '@/features/explore/interestLabel';
 import { hueFor } from '@/features/feed/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
@@ -195,7 +196,9 @@ export function PersonRow({ person, onToggleFollow, onPress, testID }: { person:
   const { colors } = useWawu();
   const ring = useFocusRing();
   const tick = tickOf(person);
-  const label = [person.name, person.field].filter(Boolean).join(', ');
+  const labelOf = useInterestLabel();
+  const line = labelOf(person.field);
+  const label = [person.name, line].filter(Boolean).join(', ');
   const who = (
     <>
       <Avatar name={person.name} hue={hueFor(person.wawuId)} size={rowMetrics.avatar} source={person.avatarUrl ?? undefined} decorative />
@@ -206,9 +209,9 @@ export function PersonRow({ person, onToggleFollow, onPress, testID }: { person:
           </NativeText>
           {tick ? <VerifiedTick kind={tick} size={rowMetrics.tick} /> : null}
         </View>
-        {person.field ? (
+        {line ? (
           <NativeText numberOfLines={1} style={[font(400), styles.line, { color: colors.textMuted }]}>
-            {person.field}
+            {line}
           </NativeText>
         ) : null}
       </View>
