@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Image, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/errors';
@@ -220,6 +220,8 @@ export function PublishScreen(props: PublishScreenProps) {
 
   let body;
   let foot;
+  // VF15 to VF15b are full-bleed on the boards (no Publish bar, no back button), so they replace the frame instead of filling it.
+  let identityView: ReactNode = null;
   if (failed) {
     const error = draft.error ?? tier.error ?? formats.error ?? progress.error;
     body = (
@@ -259,7 +261,7 @@ export function PublishScreen(props: PublishScreenProps) {
     // The Hub's sentence is the reason (it names what went wrong and what to do), so no steps are listed under it. Try again opens
     // Open your wallet when the wallet's own state says it is the way forward, else asks the Hub again.
     const canOpen = identity?.kind === 'paused' ? identity.canOpen : identity?.kind !== 'checking';
-    body = (
+    identityView = (
       <IdentityCheck
         state={{ kind: 'paused', reason: hubPause, fixes: [], canOpen }}
         onContinue={() => setHubPause(null)}
@@ -271,7 +273,7 @@ export function PublishScreen(props: PublishScreenProps) {
       />
     );
   } else if (identity && (identity.kind !== 'passed' || (watched && !continued))) {
-    body = (
+    identityView = (
       <IdentityCheck
         state={identity}
         onContinue={() => setContinued(true)}
@@ -370,9 +372,11 @@ export function PublishScreen(props: PublishScreenProps) {
 
   return (
     <>
-      <PointsFrame title="Publish" onBack={props.onBack} gap={BODY_GAP} foot={foot} testID="publish-screen">
-        {body}
-      </PointsFrame>
+      {identityView ?? (
+        <PointsFrame title="Publish" onBack={props.onBack} gap={BODY_GAP} foot={foot} testID="publish-screen">
+          {body}
+        </PointsFrame>
+      )}
       {limit ? (
         <ProductsFullSheet
           onClose={() => {

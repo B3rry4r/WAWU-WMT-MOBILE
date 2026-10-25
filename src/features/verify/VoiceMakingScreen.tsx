@@ -8,7 +8,7 @@ import { Text } from '@/components/Text';
 import { footMetrics } from '@/features/create/CreateFrame';
 import { font, layout, space, useWawu } from '@/theme';
 
-import { FAILED_FALLBACK } from './voiceModel';
+import { failedLineOf } from './voiceModel';
 import { MakingRing } from './voiceParts';
 
 /** design/_gen/verify.js `vf10`: 14 between the ring and its words, the title at 22, the result sits 220 down with 20 between its parts. */
@@ -41,8 +41,8 @@ export type VoiceMakingScreenProps =
 
 /**
  * VF10 · Making your intro, and VF10a · the failed try. Working: a ring that turns (the Hub serves no percentage) and "In your own
- * voice." (no time is promised: nothing serves one, G-VERIFY-03-3). Failed: the board's title and the Hub's own line under it, which
- * says no points were taken; Try again goes back to the recording.
+ * voice." (no time is promised: nothing serves one, G-VERIFY-03-3). Failed: the board's title and the Hub's own line under it (without its
+ * opening "That didn't work.", the title says it), which says no points were taken; Try again goes back to the recording.
  */
 export function VoiceMakingScreen(props: VoiceMakingScreenProps) {
   if (props.state === 'working') {
@@ -68,7 +68,7 @@ export function VoiceMakingScreen(props: VoiceMakingScreenProps) {
           {"We couldn't make your intro"}
         </Text>
         <Text variant="secondary" testID="voice-failed-line" accessibilityRole="alert" style={styles.resultLine}>
-          {props.message ?? FAILED_FALLBACK}
+          {failedLineOf(props.message)}
         </Text>
       </View>
     </Bare>

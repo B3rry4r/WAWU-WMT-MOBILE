@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { Children, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
@@ -141,9 +141,18 @@ export function CardButton({
   );
 }
 
-/** The row of buttons at the foot, stopping short of the Create button. */
+/**
+ * The row of buttons at the foot, stopping short of the Create button as the boards draw it (Message and Profile, Follow and Profile).
+ * A lone button (the other is hidden: Message off, no Profile wired) is the whole row, not the narrower width the boards leave for
+ * two (SWEEP-R3, R2-SOCIAL3 verifier low 1).
+ */
 export function ButtonRow({ children }: { children: ReactNode }) {
-  return <View style={styles.buttons}>{children}</View>;
+  const alone = Children.toArray(children).length === 1;
+  return (
+    <View testID="card-buttons" style={[styles.buttons, alone && styles.buttonsAlone]}>
+      {children}
+    </View>
+  );
 }
 
 /**
@@ -193,6 +202,7 @@ const styles = StyleSheet.create({
   stat: { flex: 1, gap: m.statGap },
   statValue: { flexDirection: 'row', alignItems: 'center', gap: m.starGap },
   buttons: { flexDirection: 'row', gap: m.buttonGap, marginRight: m.buttonRight },
+  buttonsAlone: { marginRight: 0 },
   button: {
     flexBasis: 0,
     height: m.buttonH,

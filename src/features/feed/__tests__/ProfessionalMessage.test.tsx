@@ -173,6 +173,26 @@ describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
     expect(screen.queryByTestId('card-message')).toBeNull();
   });
 
+  // SWEEP-R3 (R2-SOCIAL3 verifier, low 1): with Message hidden the lone Profile is the whole row, not a 280 wide button with the
+  // Message slot's width left empty. Beside Message the row keeps the board's 70 clear of the Create button.
+  it('draws Profile across the whole row when Message is hidden (paused), and keeps the board\'s two-button row when Message is drawn', async () => {
+    answers[FOR_YOU] = [page([professionalCard()])];
+    const first = await boot(wired());
+    await first.findByTestId('card-message');
+    expect(first.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 });
+    await first.unmount();
+    answers[FOR_YOU] = [page([professionalCard()])];
+    answers['GET /paid-dm/creators/p1/availability'] = [ok({ creatorWawuId: 'p1', paused: true, pausedUntil: '2026-11-01T00:00:00Z' })];
+    const screen = await boot(wired());
+    await screen.findByTestId('professional-card-l1');
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByTestId('card-message')).toBeNull();
+    expect(screen.getByTestId('card-profile')).toBeTruthy();
+    expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 0 });
+  });
+
   it('has no Message on the viewer\'s own card', async () => {
     answers[FOR_YOU] = [page([professionalCard({ wawuId: ME })])];
     answers['GET /professionals/directory/l1'] = [ok(listing({ wawuId: ME }))];

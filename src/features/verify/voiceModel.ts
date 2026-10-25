@@ -142,3 +142,12 @@ export function makingResult(intro: Pick<VoiceIntro, 'run' | 'audioUrl'>): Makin
 
 /** What VF10a says under its title when the Hub gave no words of its own (the Hub's try always carries them). */
 export const FAILED_FALLBACK = 'Try again.';
+
+/**
+ * What VF10a says under its title: the Hub's own sentence without its opening "That didn't work." (the title, "We couldn't make your
+ * intro", already says it; the board's line is "No points were taken. Try again."). Any other sentence is the Hub's and stays whole.
+ */
+export function failedLineOf(message: string | null | undefined): string {
+  const kept = (message ?? '').trim().replace(/^that didn['\u2019]t work\.\s*/i, '').trim();
+  return kept === '' ? FAILED_FALLBACK : kept;
+}
