@@ -80,3 +80,50 @@ Built 25 Oct 2026 by a Sonnet builder (T2). Backend `wmt/R2-LEGAL2` `62629ec` on
 - L-3 the raw request id in the engagement letter: the letter text is the web's too, so changing it is not additive (BACKEND_GAPS G-R2-LEGAL2-2).
 - L-5 the person's own held hour greyed on S18, L-6, L-7, L-8, L-9, L-10: left on the sweep list.
 
+
+---
+
+# RELEASE-02 · R2-LEGAL2 · Verifier report (T2 check, v-R2-LEGAL2, 25 Oct 2026)
+
+Verdict: **PASS (merge)**. Nothing medium or worse. Checked: backend `wmt/R2-LEGAL2` `62629ec` on `29a265e`, mobile `wmt/R2-LEGAL2` `add21afc` on `25d24f0a`. The verifier wrote none of it. Pictures (390 px, dark and light): scratchpad `v-r2l2/` (`H1-*`, `H2-*`, `cmp-S16/S24/S26-*`).
+
+## Passes
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V7 H-1, real chat | passed | Local stack (`vr2l2`, ports 9330-9335, Nuvion stand-in, scratch copy of `stack.sh` letting only the Gemini host through, `gemini-2.5-flash-lite` then `gemini-2.5-flash`; 10 provider calls in all, 4 of them refused by the provider). Fan opened Legal from Home, chatted to a brief in 4 answered turns (S16 drawn with "Nothing is charged yet."; balance and `LegalRequest` unchanged after Send, so the line is true), sent, consultant joined and quoted through the Hub's admin routes, `legal_quote_ready` ("Your quote is ready", opens `/legal/requests/<id>`) and the chat line "I have sent you a quote of ₦45,000..." arrived, Legal on Home reopened the same conversation with an Open card (no new chat), Open went to S21, signed, paid S22 with the PIN |
+| V8 money H-1 | passed | stand-in balance: 500,000 to 485,000 (S19, one debit of ₦15,000, Bank charge ₦0 on the stand-in) to 440,000 (S22, one debit of ₦45,000); transfers 2 to 3 to 4; WAWU operational +15,000 and +45,000; request `in_progress`, signed, paid |
+| V7 H-2 | passed | "Register a business" chip: S24 card with ₦35,000 drawn from the admin price record; S26 drew Takes "5 to 7 working days", You'll need "ID, 2 name options, address", Price, Bank charge, Total and "Continue · ₦35,000"; one request (`quoted`, `simple`, 35000) however Continue was tapped; S21 sign; S22 paid once: 500,000 to 465,000 (one ₦35,000 debit, transfers 4 to 5) |
+| V3 server rules | passed | `POST /legal/assistant/{id}/send` on the fixed-price matter: 409 `fixed_price_matter` (before any brief); after start it answers the same sent thread. Price follows the record: admin 35,000 to 36,000 to cleared (no `fixedPrice`, Send allowed) to 35,000. No `35000`, `35,000` or price table in either repo's non-test source (grep); `FIXED_PRICE_TERMS` holds words only |
+| route guard | passed | `POST /legal/assistant/{id}/start`: 401 without a token; 404 for another person's matter and for an unknown id; 400 for a 1-character name; owner starting twice answers the same thread, one `LegalRequest` |
+| V4 M-4 live | passed | The provider answered a real 429 (daily cap on flash-lite): the screen drew "The assistant is busy right now. Your message is saved." with Ask again, and drew the same words and button after a second and a third Ask again; a real 503 drew "taking a while" (`H1-2`, `H1-4`) |
+| web untouched | passed | web-style `POST /legal/requests` (`tax-registration`) then admin quote ₦20,000: status `quoted`, no `legal_quote_ready` notice, no `LegalChatMessage` row for it. Protected suite: 245 passed, 8 failed on the branch and the same 8 on `29a265e` with the same environment (verification and professionals routes: they need the WAWU ID service key and port 4001); no registry file, `prisma/`, `src/common`, `app.module.ts` or gate touched; only added route decorator is `@Post(':id/start')`; `contract/openapi.json` adds that path and one required `note`, removes nothing else; mobile copy equals backend `62629ec` byte for byte |
+| V5 picture | passed | S16, S24, S26 against the boards: structure and the BRIEF rows match (Price, Bank charge, Total, button with the total, "Nothing is charged yet." under Send); L-1 two-line centred title seen on S26 |
+| fingerprint | passed | in one tree and one `node_modules` (`/home/user/wt/nm-mobile2`), main `25d24f0a` and the branch give the same: Android `17ffb13d520882bf144982b61d03f3994c6e40e4`, iOS `496a3ee0`, every source hash equal. The builder's `b9901c63` and `c4fa5cc2` are not reproduced by either tree, so they came from another environment; the branch does not change the native fingerprint |
+
+Checks with EXIT lines (logs in scratchpad `vr2l2-v/`): backend tsc EXIT 0; legal specs (15 suites incl. `legal-assistant-r2-legal2`, `legal-quote-notice`, `ai-text`, rounds 2, 3, 5, ops) pass; notification-emitter, wiring and switches pass; `notification.contract.spec` fails 11 of 11 on the branch and 11 of 11 on `29a265e` (it hard-codes a mock WAWU ID on port 4001); `contract:build` EXIT 0 and `git status contract` empty; gates EXIT 0 (9 gates, 1990 files, 0 fail, 138 warn, 88 accepted); check_baseline EXIT 0. App tsc EXIT 0; jest `src/features/legal`, `notifications`, `push`, `route-guard` (`--maxWorkers=2`) 16 suites, 602 tests, EXIT 0; gates EXIT 0 (10 gates, 1421 files, 0 fail, 17 warn); check_baseline EXIT 0; check_tasks EXIT 0 (444 tasks).
+
+## Changed assertions, each against its defect (none weakened)
+
+- Backend: `legal-assistant.contract.spec.ts` +`note: 'Nothing is charged yet.'` (M-3); `legal-consultations-round3` U2 two strings "It is in your legal chat" to "Open your request to see it" (H-1 item 2, the old words were false); `ai-text.spec.ts` is new (M-1, M-2).
+- App: `LegalLive`, `model.test` fixtures gain `note`, `requestPath`, `fixedPrice` (types of the new fields); `LegalPayments` S26 block moves from the catalogue and `POST /legal/requests` to the conversation and `POST .../start` (H-2), the "needs documents" case goes with the removed documents gate (H-2); `legalModels.test` drops `startable` and `fixedPriceFor` with the functions (H-2); `LegalChatScreen.test` drops the "moved past awaiting a quote is not reopened" test, which pinned H-1, and the catalogue-driven card tests (H-2), each replaced; `everyKind` and `routes.test` only add `legal_quote_ready`.
+- One assertion group went without a stand-in: see low 3.
+
+## Findings
+
+No blocker, high or medium defect.
+
+1. **unclear (owner)**: a fixed-price matter is started with `documents: []` and the chat has no attach button (`legal-assistant.service.ts:1072`, BACKEND_GAPS G-R2-LEGAL2-1), so a person can pay ₦35,000 for a CAC filing whose ID the app cannot send as a file; the web's own route refuses this service without documents. The builder recorded it as a lead default. Repro: Bea above, S26, S21, S22: `LegalRequest.documents` is `{}` and the request is `in_progress`.
+2. **low, defect**: `readableOption` writes "Other african" and "Outside africa" as quick replies (`src/legal-intake/ai-text.ts:49`; repro: Ada's second answer, location chips). The question bank already has the words "Another African country" and "Outside Africa" (`legal-intake-questions.ts:167-168, 181-183`) but the prompt gives the model option values only. Map a known option id to its label, fall back to `readableOption`.
+3. **low, test gap**: `legalModels.test.ts:136` no longer asserts `matterCardOf('awaiting_consultation_payment')` is `'book'`, `('consultation_scheduled')` and `('delivered')` are `'open'`. The code still behaves so; add the three back.
+4. **low, web wording**: `notification-event.ts:711-712` changes the words of `legal_delivered` for every matter, web ones included, and `legal-deliverables.service.ts:206` publishes `legal.thread` on every delivery. Wording and a live frame only, no shape or route; the web reads the feed through `GET /notifications`. Say so to the owner, or key the words to a matter that began in the app.
+5. **low, differs**: S24's card is drawn while the assistant's profiling question and its taps are still shown under it, so two next steps compete (the board has the assistant say "That one has a fixed price, so you can start now." and nothing else). S26 draws the catalogue's name and blurb ("CAC business name registration") where the board says "Register your business name / With CAC. No lawyer needed." (unchanged from LEGAL-06).
+
+## NOT RUN
+
+- Tapping the `legal_quote_ready` notice in the app's Inbox (the Hub's `actionHref` was read through the API and the route is covered by `routes.test.ts`); push on it (held, G-265).
+- L-4 live: delivery while S23 is open (no delivery was made); S23.
+- Light picture of S16 (the brief needs a fourth model turn; dark taken). Light pictures taken: Legal reopened with the Open card (both fans), S24, S26, S21, S22.
+- Mutation runs (no mutant was run in this check).
+- A phone.
+- Gemini: 10 calls (4 refused by the provider: one 503, three 429 with `gemini-2.5-flash-lite`); the Hub ran on `gemini-2.5-flash` from the fifth call; the model never returned an option id this time, so M-1 is proven by `ai-text.spec` and the contract spec, not by a live id.
