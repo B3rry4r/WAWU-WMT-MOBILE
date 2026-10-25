@@ -48,10 +48,34 @@ export type ChatComposerProps = {
   testID?: string;
 };
 
+/**
+ * The + beside the field: opens "Add to chat" (I13). The one-to-one chat's own button, drawn as is in the Legal chat too (R2-LEGAL3), so the
+ * two chats put files in the same way.
+ */
+export function ChatPlusButton({ onPress, testID = 'chat-plus' }: { onPress: () => void; testID?: string }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel="Add to chat"
+      onPress={onPress}
+      {...ring.handlers}
+      style={[
+        styles.round,
+        { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: composerMetrics.ringIdle, color: colors.borderHairline, inset: true }] },
+        ring.style,
+      ]}
+    >
+      <Icon name="Plus" size={composerMetrics.plus} color={colors.textPrimary} strokeWidth={composerMetrics.plusStroke} />
+    </Pressable>
+  );
+}
+
 /** I12's composer: +, a field, and Send. */
 export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }: ChatComposerProps) {
   const { colors } = useWawu();
-  const ring = useFocusRing();
   const insets = useSafeAreaInsets();
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
@@ -75,22 +99,7 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
       testID={testID}
       style={[styles.bar, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}
     >
-      {onPlus ? (
-        <Pressable
-          testID="chat-plus"
-          accessibilityRole="button"
-          accessibilityLabel="Add to chat"
-          onPress={onPlus}
-          {...ring.handlers}
-          style={[
-            styles.round,
-            { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: composerMetrics.ringIdle, color: colors.borderHairline, inset: true }] },
-            ring.style,
-          ]}
-        >
-          <Icon name="Plus" size={composerMetrics.plus} color={colors.textPrimary} strokeWidth={composerMetrics.plusStroke} />
-        </Pressable>
-      ) : null}
+      {onPlus ? <ChatPlusButton onPress={onPlus} /> : null}
       <TextInput
         ref={input}
         testID={`${testID}-input`}

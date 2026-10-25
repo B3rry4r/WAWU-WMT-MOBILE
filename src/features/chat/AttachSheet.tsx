@@ -9,10 +9,12 @@ const SHEET_GAP = 16;
 export type AttachSheetProps = {
   visible: boolean;
   onClose: () => void;
-  /** The other person's first name: "Femi pays from their wallet". */
-  name: string;
-  onSendMoney: () => void;
-  onRequestMoney: () => void;
+  /** The other person's first name: "Femi pays from their wallet". Needed with the money rows. */
+  name?: string;
+  /** Send money (I14). Left out, the row is not drawn: the Legal chat (R2-LEGAL3) has nobody to send money to. */
+  onSendMoney?: () => void;
+  /** Request money (I16). Left out, the row is not drawn. */
+  onRequestMoney?: () => void;
   /** Photo or video (FIX-104): opens the phone's library. Left out, the row is not drawn (a paid thread takes words only, FIX-109). */
   onPickMedia?: () => void;
   /** File (FIX-104): opens the phone's files. Left out, the row is not drawn. */
@@ -31,26 +33,30 @@ export function AttachSheet({ visible, onClose, name, onSendMoney, onRequestMone
     <BottomSheet visible={visible} onClose={onClose} label="Add to chat" gap={SHEET_GAP} testID="attach-sheet">
       <Text variant="sheetTitleSm">Add to chat</Text>
       <GroupedList>
-        <ListRow
-          testID="attach-send-money"
-          lead={<IconTile icon="ArrowUpRight" tone="accent" />}
-          title="Send money"
-          subtitle="From your Naira wallet"
-          onPress={() => {
-            onClose();
-            onSendMoney();
-          }}
-        />
-        <ListRow
-          testID="attach-request-money"
-          lead={<IconTile icon="HandCoins" />}
-          title="Request money"
-          subtitle={`${name} pays from their wallet`}
-          onPress={() => {
-            onClose();
-            onRequestMoney();
-          }}
-        />
+        {onSendMoney ? (
+          <ListRow
+            testID="attach-send-money"
+            lead={<IconTile icon="ArrowUpRight" tone="accent" />}
+            title="Send money"
+            subtitle="From your Naira wallet"
+            onPress={() => {
+              onClose();
+              onSendMoney();
+            }}
+          />
+        ) : null}
+        {onRequestMoney ? (
+          <ListRow
+            testID="attach-request-money"
+            lead={<IconTile icon="HandCoins" />}
+            title="Request money"
+            subtitle={`${name ?? 'They'} pays from their wallet`}
+            onPress={() => {
+              onClose();
+              onRequestMoney();
+            }}
+          />
+        ) : null}
         {onPickMedia ? (
           <ListRow
             testID="attach-photo-video"

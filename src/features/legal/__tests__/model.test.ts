@@ -1,7 +1,7 @@
 import { ApiError } from '@/api/errors';
 
 import type { LegalThread } from '../api';
-import { briefToConfirm, canTryAgain, chatRows, failureKind, failureText, firstNameOf, hasSpoken, headerOf, isLegalLiveEvent, needsAnotherAsk, placeholderOf, tapsOf, typedBody } from '../model';
+import { briefToConfirm, canAttach, canTryAgain, chatRows, failureKind, failureText, firstNameOf, hasSpoken, headerOf, isLegalLiveEvent, needsAnotherAsk, placeholderOf, tapsOf, typedBody } from '../model';
 
 const at = '2026-10-08T10:00:00.000Z';
 const msg = (id: string, authorRole: 'client' | 'assistant' | 'consultant', body = id, consultantName: string | null = null) => ({ id, authorRole, body, createdAt: at, consultantName });
@@ -195,5 +195,32 @@ describe('isLegalLiveEvent', () => {
     expect(isLegalLiveEvent({ type: 'chat.message' })).toBe(false);
     expect(isLegalLiveEvent(null)).toBe(false);
     expect(isLegalLiveEvent('legal.thread')).toBe(false);
+  });
+});
+
+describe('R2-LEGAL3 · files in the conversation', () => {
+  const at = '2026-10-08T10:00:00.000Z';
+  const base = { createdAt: at, consultantName: null };
+  it('a line that carries a file is a file row, with the link the Hub served; a line of words stays a bubble', () => {
+    const thread = {
+      messages: [
+        { ...base, id: 'm1', authorRole: 'client', body: 'Sent a file: ID.pdf.', attachment: { url: 'https://files.test/a', contentType: 'application/pdf', bytes: 2048, name: 'ID.pdf' } },
+        { ...base, id: 'm2', authorRole: 'client', body: 'Sent a photo.', attachment: { url: null, contentType: 'image/jpeg', bytes: 10, name: null } },
+        { ...base, id: 'm3', authorRole: 'client', body: 'My address is in Lekki' },
+      ],
+      consultant: null,
+    } as unknown as Parameters<typeof chatRows>[0];
+    expect(chatRows(thread)).toEqual([
+      { kind: 'file', id: 'm1', mine: true, contentType: 'application/pdf', name: 'ID.pdf', bytes: 2048, url: 'https://files.test/a' },
+      { kind: 'file', id: 'm2', mine: true, contentType: 'image/jpeg', name: null, bytes: 10, url: null },
+      { kind: 'bubble', id: 'm3', mine: true, body: 'My address is in Lekki' },
+    ]);
+  });
+
+  it('files are sent once the matter exists and until it is delivered or cancelled', () => {
+    expect(canAttach({ legalRequestId: null, requestStatus: null })).toBe(false);
+    for (const status of ['awaiting_quote', 'quoted', 'contract_signed', 'in_progress']) expect(canAttach({ legalRequestId: 'r1', requestStatus: status })).toBe(true);
+    expect(canAttach({ legalRequestId: 'r1', requestStatus: 'delivered' })).toBe(false);
+    expect(canAttach({ legalRequestId: 'r1', requestStatus: 'cancelled' })).toBe(false);
   });
 });

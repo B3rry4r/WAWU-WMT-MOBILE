@@ -6,7 +6,8 @@ import type { components } from '@/api/schema.generated';
  * The legal assistant's calls (S14 to S17), as the Hub's contract types them (LEGAL-01):
  * - `POST /legal/assistant`: open the conversation, or pick up the unfinished one;
  * - `GET /legal/assistant/{id}`: the whole conversation;
- * - `POST /legal/assistant/{id}/messages`: typed words (`body`) or a tap (`quickReplyId`);
+ * - `POST /legal/assistant/{id}/messages`: typed words (`body`), a tap (`quickReplyId`), or a file (`attachment.key`, R2-LEGAL3);
+ * - `POST /legal/assistant/{id}/attachments`: where to upload one photo, video or PDF for the matter (R2-LEGAL3, `uploadLegalFile`);
  * - `POST /legal/assistant/{id}/reply`: ask the assistant again after a 503;
  * - `POST /legal/assistant/{id}/send`: "Send to a consultant";
  * - `POST /legal/assistant/{id}/start`: "Start this request" for a matter with a fixed price (S26);
@@ -23,8 +24,10 @@ export type LegalBrief = components['schemas']['LegalAssistantBrief'];
 export type LegalFixedPrice = components['schemas']['LegalAssistantFixedPrice'];
 type IntakeView = components['schemas']['IntakeView'];
 
-/** What one message carries: words, or the id of a tap the thread offered. Exactly one. */
-export type LegalSend = { body: string } | { quickReplyId: string };
+export type LegalAttachment = components['schemas']['LegalAssistantAttachment'];
+
+/** What one message carries: words, the id of a tap the thread offered, or a file uploaded for the matter (R2-LEGAL3). Exactly one. */
+export type LegalSend = { body: string } | { quickReplyId: string } | { attachment: { key: string; name?: string } };
 
 type Envelope<T> = { data?: T | null };
 
@@ -55,6 +58,11 @@ export async function openThread(): Promise<LegalThread> {
 
 export async function sendMessage(id: string, message: LegalSend): Promise<LegalThread> {
   return threadOf(await unwrap(api.POST('/api/hub/legal/assistant/{id}/messages', { params: { path: { id } }, body: message })));
+}
+
+/** Puts a file already uploaded for the matter into the conversation (R2-LEGAL3). Answers the conversation as it stands. */
+export async function sendLegalFile(id: string, key: string, name: string | null): Promise<LegalThread> {
+  return sendMessage(id, { attachment: { key, ...(name ? { name } : {}) } });
 }
 
 export async function askAgain(id: string): Promise<LegalThread> {

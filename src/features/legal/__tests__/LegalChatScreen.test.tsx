@@ -23,6 +23,12 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
 }));
+const mockPickMedia = jest.fn();
+const mockPickFile = jest.fn();
+jest.mock('@/features/chat/pickAttachment', () => ({
+  pickPhotoOrVideo: (...args: unknown[]) => mockPickMedia(...args),
+  pickChatFile: (...args: unknown[]) => mockPickFile(...args),
+}));
 const mockLive = new Set<(event: unknown) => void>();
 const mockSynced = new Set<() => void>();
 jest.mock('@/features/inbox/live', () => ({
@@ -57,10 +63,12 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
 }) as typeof fetch;
 
 async function answerFor(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const request = input instanceof Request ? input : new Request(String(input), init);
-  const url = new URL(request.url);
-  const key = `${request.method} ${url.pathname.replace(/^\/api\/hub/, '')}`;
-  const text = await request.clone().text();
+  // A file's bytes go straight to the storage host (R2-LEGAL3): its body is a Blob, which a Request cannot read back here, and it is not read.
+  const bytes = !(input instanceof Request) && init?.method === 'PUT';
+  const request = bytes ? null : input instanceof Request ? input : new Request(String(input), init);
+  const url = new URL(request ? request.url : String(input));
+  const key = `${request ? request.method : 'PUT'} ${url.pathname.replace(/^\/api\/hub/, '')}`;
+  const text = request ? await request.clone().text() : '';
   sent.push({ key, body: text ? JSON.parse(text) : undefined });
   const queue = answers[key];
   const answer = queue?.[0];
@@ -575,7 +583,8 @@ describe("S24 · the fixed-price card under the assistant's line", () => {
     });
 
   it('shows the service and the price WAWU set, and Start this request opens the fixed-price screen for this conversation (S26)', async () => {
-    answers[OPEN] = [ok(registering())];
+    // R2-LEGAL3: the card comes once the assistant has no tap waiting for an answer (see the next test).
+    answers[OPEN] = [ok(registering({ quickReplies: [] }))];
     await renderScreen();
     expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
     expect(rtl.screen.getByText('CAC business name registration')).toBeTruthy();
@@ -584,6 +593,26 @@ describe("S24 · the fixed-price card under the assistant's line", () => {
     await press('legal-fixed-start');
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/legal-fixed', params: { id: 'i1' } });
+  });
+
+  it('R2-LEGAL3: while the assistant still has taps waiting for an answer the card is not drawn, so two next steps do not compete; it comes once they are answered', async () => {
+    answers[OPEN] = [ok(registering())];
+    await renderScreen();
+    expect(await rtl.screen.findByTestId('legal-taps')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-fixed-card-chat')).toBeNull();
+    expect(rtl.screen.queryByTestId('legal-fixed-start')).toBeNull();
+    // The person answers; the Hub's next line has no taps: now the card.
+    answers[MESSAGES] = [ok(registering({ quickReplies: [], messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business'), line('c2', 'client', 'A sole trader'), line('a4', 'assistant', 'That one has a fixed price, so you can start now.')] }))];
+    await press('legal-tap-q:no');
+    expect(await rtl.screen.findByTestId('legal-fixed-card-chat')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('legal-taps')).toBeNull();
+  });
+
+  it('draws no card while the assistant\'s last answer is still awaited', async () => {
+    answers[OPEN] = [ok(registering({ quickReplies: [], awaitingReply: true, messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business')] }))];
+    await renderScreen();
+    await rtl.screen.findByText('I want to register my business');
+    expect(rtl.screen.queryByTestId('legal-fixed-card-chat')).toBeNull();
   });
 
   it('draws no card when the Hub names no fixed price, so there is no Start to tap', async () => {
@@ -916,5 +945,153 @@ describe('leaving and coming back', () => {
     await rtl.screen.findByText('Does the lease say anything about rent reviews?');
     await rtl.waitFor(() => expect(queryClient.isFetching()).toBe(0));
     expect(rtl.screen.getByTestId('legal-input').props.value).toBe('');
+  });
+});
+
+
+describe('R2-LEGAL3 · documents sent in the chat of an open matter (an ID picture, a PDF)', () => {
+  const RULES = 'GET /chats/attachment-rules';
+  const ATTACH = 'POST /legal/assistant/i1/attachments';
+  const PUT = 'PUT /up';
+  const CONFIRM = 'POST /uploads/confirm';
+  const RELEASE = 'POST /uploads/release';
+  const rules = ok({
+    media: { contentTypes: ['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/quicktime'], maxBytes: 104857600 },
+    file: { contentTypes: ['application/pdf'], maxBytes: 20971520 },
+  });
+  const fixedMatter = (over: Partial<LegalThread> = {}) =>
+    sentThread({ requestStatus: 'quoted', requestPath: 'simple', brief: null, messages: [line('a1', 'assistant', OPENER), line('c1', 'client', 'I want to register my business'), line('a5', 'assistant', 'Your request is open. Sign the agreement and pay to start. To file it we need: ID, 2 name options, address. Write them here and your consultant will pick them up.')], ...over });
+  const photo = { blob: new Blob(['x'], { type: 'image/jpeg' }), name: 'photo.jpg', contentType: 'image/jpeg', previewUri: 'file:///photo.jpg' };
+  const pdf = { blob: new Blob(['%PDF'], { type: 'application/pdf' }), name: 'Passport page.pdf', contentType: 'application/pdf' };
+  const fileLine = (id: string, name: string | null, contentType: string, mine = true) => ({
+    ...line(id, mine ? 'client' : 'consultant', name ? `Sent a file: ${name}.` : 'Sent a photo.'),
+    attachment: { url: `https://files.test/${id}`, contentType, bytes: 2048, name },
+  });
+
+  beforeEach(() => {
+    mockPickMedia.mockReset();
+    mockPickFile.mockReset();
+    answers[RULES] = [rules];
+  });
+
+  it('draws a + beside the box once the matter is open, and it opens Add to chat with Photo or video and File, and no money rows', async () => {
+    answers[OPEN] = [ok(fixedMatter())];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-plus');
+    await press('legal-plus');
+    expect(await rtl.screen.findByTestId('attach-sheet')).toBeTruthy();
+    expect(rtl.screen.getByTestId('attach-photo-video')).toBeTruthy();
+    expect(rtl.screen.getByTestId('attach-file')).toBeTruthy();
+    // The money rows belong to the one-to-one chat; this chat has no one to send money to.
+    expect(rtl.screen.queryByTestId('attach-send-money')).toBeNull();
+    expect(rtl.screen.queryByTestId('attach-request-money')).toBeNull();
+    expect(await rtl.screen.findByText('PDF, up to 20 MB')).toBeTruthy();
+  });
+
+  it('draws no + before the matter exists', async () => {
+    answers[OPEN] = [ok(thread())];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-taps');
+    expect(rtl.screen.queryByTestId('legal-plus')).toBeNull();
+    expect(calls(RULES)).toHaveLength(0);
+  });
+
+  it('draws no + once the matter is finished', async () => {
+    answers[OPEN] = [ok(fixedMatter({ requestStatus: 'delivered' }))];
+    await renderScreen();
+    await rtl.screen.findByText('I want to register my business');
+    expect(rtl.screen.queryByTestId('legal-plus')).toBeNull();
+    expect(calls(RULES)).toHaveLength(0);
+  });
+
+  it('a picture is uploaded, confirmed and sent on its own, and is in the conversation as a file bubble', async () => {
+    answers[OPEN] = [ok(fixedMatter())];
+    mockPickMedia.mockResolvedValueOnce(photo);
+    answers[ATTACH] = [ok({ uploadUrl: 'https://files.test/up', key: 'chat/media/u1/k1.jpg' })];
+    answers[PUT] = [{ status: 200, body: {} }];
+    answers[CONFIRM] = [ok({ status: 'confirmed' })];
+    answers[MESSAGES] = [ok(fixedMatter({ messages: [...fixedMatter().messages, fileLine('f1', null, 'image/jpeg')] }))];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-plus');
+    await press('legal-plus');
+    await press('attach-photo-video');
+    expect(await rtl.screen.findByTestId('bubble-f1')).toBeTruthy();
+    expect(calls(ATTACH)[0].body).toEqual({ contentType: 'image/jpeg', contentLength: photo.blob.size });
+    expect(calls(MESSAGES)[0].body).toEqual({ attachment: { key: 'chat/media/u1/k1.jpg' } });
+    // Nothing is waiting any more.
+    expect(rtl.screen.queryByTestId('legal-problem')).toBeNull();
+  });
+
+  it('a PDF goes with its name', async () => {
+    answers[OPEN] = [ok(fixedMatter())];
+    mockPickFile.mockResolvedValueOnce(pdf);
+    answers[ATTACH] = [ok({ uploadUrl: 'https://files.test/up', key: 'chat/file/u1/k2.pdf' })];
+    answers[PUT] = [{ status: 200, body: {} }];
+    answers[CONFIRM] = [ok({ status: 'confirmed' })];
+    answers[MESSAGES] = [ok(fixedMatter({ messages: [...fixedMatter().messages, fileLine('f2', 'Passport page.pdf', 'application/pdf')] }))];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-plus');
+    await press('legal-plus');
+    await press('attach-file');
+    expect(await rtl.screen.findByTestId('bubble-f2')).toBeTruthy();
+    expect(rtl.screen.getByText('Passport page.pdf')).toBeTruthy();
+    expect(calls(MESSAGES)[0].body).toEqual({ attachment: { key: 'chat/file/u1/k2.pdf', name: 'Passport page.pdf' } });
+    expect(mockPickFile).toHaveBeenCalledWith(['application/pdf']);
+  });
+
+  it('a file the Hub refuses stays as a failed bubble with its words; Delete gives the upload back', async () => {
+    answers[OPEN] = [ok(fixedMatter())];
+    mockPickFile.mockResolvedValueOnce(pdf);
+    answers[ATTACH] = [ok({ uploadUrl: 'https://files.test/up', key: 'chat/file/u1/k3.pdf' })];
+    answers[PUT] = [{ status: 200, body: {} }];
+    answers[CONFIRM] = [ok({ status: 'confirmed' })];
+    answers[MESSAGES] = [refuse(409, 'matter_closed', 'This request is finished, so no more files can be sent on it.')];
+    answers[RELEASE] = [ok({ released: true })];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-plus');
+    await press('legal-plus');
+    await press('attach-file');
+    expect(await rtl.screen.findByText('This request is finished, so no more files can be sent on it.')).toBeTruthy();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(rtl.screen.getByText('Delete'));
+      await settle();
+    });
+    expect(calls(RELEASE)[0].body).toEqual({ key: 'chat/file/u1/k3.pdf' });
+    expect(rtl.screen.queryByText('Passport page.pdf')).toBeNull();
+  });
+
+  it('a file that does not upload says so and Try again goes through', async () => {
+    answers[OPEN] = [ok(fixedMatter())];
+    mockPickMedia.mockResolvedValueOnce(photo);
+    answers[ATTACH] = [ok({ uploadUrl: 'https://files.test/up', key: 'chat/media/u1/k4.jpg' }), ok({ uploadUrl: 'https://files.test/up', key: 'chat/media/u1/k5.jpg' })];
+    answers[PUT] = [{ status: 500, body: {} }, { status: 200, body: {} }];
+    answers[RELEASE] = [ok({ released: true })];
+    answers[CONFIRM] = [ok({ status: 'confirmed' })];
+    answers[MESSAGES] = [ok(fixedMatter({ messages: [...fixedMatter().messages, fileLine('f5', null, 'image/jpeg')] }))];
+    await renderScreen();
+    await rtl.screen.findByTestId('legal-plus');
+    await press('legal-plus');
+    await press('attach-photo-video');
+    expect(await rtl.screen.findByText('That file did not upload. Try again.')).toBeTruthy();
+    rtl.fireEvent.press(rtl.screen.getByText('Try again'));
+    expect(await rtl.screen.findByTestId('bubble-f5')).toBeTruthy();
+    // The reservation the failed upload held was given back before the new one was asked for.
+    expect(calls(RELEASE)[0].body).toEqual({ key: 'chat/media/u1/k4.jpg' });
+    expect(calls(MESSAGES)[0].body).toEqual({ attachment: { key: 'chat/media/u1/k5.jpg' } });
+  });
+
+  it('a file that is already in the conversation is a bubble the consultant sees too, and tapping a PDF opens a fresh link', async () => {
+    const withFile = fixedMatter({ messages: [...fixedMatter().messages, fileLine('f6', 'ID.pdf', 'application/pdf')] });
+    answers[OPEN] = [ok(withFile)];
+    answers[GET] = [ok(fixedMatter({ messages: [...fixedMatter().messages, { ...fileLine('f6', 'ID.pdf', 'application/pdf'), attachment: { url: 'https://files.test/fresh', contentType: 'application/pdf', bytes: 2048, name: 'ID.pdf' } }] }))];
+    const open = jest.spyOn(require('react-native').Linking, 'openURL').mockResolvedValue(true);
+    await renderScreen();
+    expect(await rtl.screen.findByText('ID.pdf')).toBeTruthy();
+    await press('bubble-f6-open');
+    await rtl.act(async () => {
+      await settle();
+    });
+    expect(open).toHaveBeenCalledWith('https://files.test/fresh');
+    open.mockRestore();
   });
 });
