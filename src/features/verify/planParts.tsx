@@ -8,15 +8,35 @@ import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
 import { Text } from '@/components/Text';
+import { BANK_CHARGE, WAWU_FEE } from '@/features/money-attempt/refusal';
 import { copyText } from '@/features/open-wallet/copy';
 import { font, space, useWawu, type ColorToken } from '@/theme';
 
-import type { PurchaseTransfer } from './purchaseApi';
+import type { PurchaseQuote, PurchaseTransfer } from './purchaseApi';
+import { TIER_WORDS } from './purchaseModel';
 
 const RADIO = { size: 22, dot: 10 } as const;
+const ROW_VALUE = 14.5;
 /** The offer's square (kit `check`) and the Copy chip (kit.js `copyBtn`: 32 high, 12 at the sides, 6 between the glyph and the word). */
 const CHECK = { box: 22, corner: 6 } as const;
 const COPY = { height: 32, padH: 12, glyphToWord: 6, corner: 16 } as const;
+
+/**
+ * The fee as its parts then the total (BRIEF rules 3 and 4): the price, the Bank charge, WAWU's fee and the Total, each from the purchase's
+ * quote, every part drawn even at ₦0, and "No fee" never. The tier checkout (VF6) and the five-more-products sheet (VF13) both draw it;
+ * `prefix` names the rows' test ids (`<prefix>-fees`, `-price`, `-bank-charge`, `-wawu-fee`, `-total`).
+ */
+export function QuoteBreakdown({ quote, prefix }: { quote: Pick<PurchaseQuote, 'priceKobo' | 'providerFeeKobo' | 'wawuFeeKobo' | 'totalKobo'>; prefix: string }) {
+  const money = (kobo: number, weight?: 700) => <Money minorUnits={kobo} size={ROW_VALUE} weight={weight} decimals={kobo % 100 !== 0} />;
+  return (
+    <GroupedList testID={`${prefix}-fees`}>
+      <KeyValueRow testID={`${prefix}-price`} label={TIER_WORDS.price} value={money(quote.priceKobo)} />
+      <KeyValueRow testID={`${prefix}-bank-charge`} label={BANK_CHARGE} value={money(quote.providerFeeKobo)} />
+      <KeyValueRow testID={`${prefix}-wawu-fee`} label={WAWU_FEE} value={money(quote.wawuFeeKobo)} />
+      <KeyValueRow testID={`${prefix}-total`} label={TIER_WORDS.total} value={money(quote.totalKobo, 700)} />
+    </GroupedList>
+  );
+}
 
 /** The round choice mark of the tier cards, the payment methods and the offer (kit `radio`): the accent when on, a strong edge when off. */
 export function Radio({ on }: { on: boolean }) {

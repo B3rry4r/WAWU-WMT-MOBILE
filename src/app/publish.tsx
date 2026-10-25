@@ -1,7 +1,9 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { useCreatorGate } from '@/features/create/CreateEntry';
+import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
 import { PublishScreen } from '@/features/verify/PublishScreen';
 
 /**
@@ -26,6 +28,9 @@ export default function PublishRoute() {
       onYourTier={() => router.push('/your-tier')}
       onUpgrade={() => router.push('/tiers')}
       onEditDraft={() => router.push({ pathname: '/shop-product', params: { id } })}
+      onForgotPin={() => router.push('/reset-pin')}
+      onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
+      onAddMoney={(shortfall) => router.push(addMoneyHref(shortfall))}
       onOpenLibrary={() => router.push('/library')}
     />
   );

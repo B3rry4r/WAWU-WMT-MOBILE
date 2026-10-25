@@ -7,7 +7,6 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
-import { KeyValueRow } from '@/components/ListRow';
 import { Icon } from '@/components/icon';
 import { Money } from '@/components/Money';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
@@ -17,18 +16,16 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { TierBadge } from '@/components/TierBadge';
-import { BANK_CHARGE, WAWU_FEE } from '@/features/money-attempt/refusal';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { CheckRow, MethodRow, TransferCard } from './planParts';
+import { CheckRow, MethodRow, QuoteBreakdown, TransferCard } from './planParts';
 import { plansQuery } from './purchaseApi';
 import { bumpLine, naira, payLabel, pinPurposeOf, shortLine, tierLine, TIER_WORDS } from './purchaseModel';
 import { usePlanPurchase } from './usePlanPurchase';
 
 const BODY_GAP = 12;
-const ROW_VALUE = 14.5;
 
 export type CheckoutScreenProps = {
   kind: 'tier' | 'renew' | 'upgrade';
@@ -186,12 +183,7 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
           </Text>
         ) : null}
         {quote ? (
-          <GroupedList testID="checkout-fees">
-            <KeyValueRow testID="checkout-price" label={TIER_WORDS.price} value={<Money minorUnits={quote.priceKobo} size={ROW_VALUE} decimals={quote.priceKobo % 100 !== 0} />} />
-            <KeyValueRow testID="checkout-bank-charge" label={BANK_CHARGE} value={<Money minorUnits={quote.providerFeeKobo} size={ROW_VALUE} decimals={quote.providerFeeKobo % 100 !== 0} />} />
-            <KeyValueRow testID="checkout-wawu-fee" label={WAWU_FEE} value={<Money minorUnits={quote.wawuFeeKobo} size={ROW_VALUE} decimals={quote.wawuFeeKobo % 100 !== 0} />} />
-            <KeyValueRow testID="checkout-total" label={TIER_WORDS.total} value={<Money minorUnits={quote.totalKobo} size={ROW_VALUE} weight={700} decimals={quote.totalKobo % 100 !== 0} />} />
-          </GroupedList>
+          <QuoteBreakdown quote={quote} prefix="checkout" />
         ) : purchase.quoteError ? (
           <ErrorState
             testID="checkout-quote-error"

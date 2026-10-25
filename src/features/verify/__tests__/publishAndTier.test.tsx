@@ -69,7 +69,6 @@ const hub = {
   full: false,
   paused: false,
   lostFirstBuy: false,
-  quoted: 0,
 };
 const FORMATS = [{ id: 'pdf', full: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000 }, preview: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000, kind: 'extract', seconds: null } }];
 const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: 'pdf', description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: 'paid', price: 4500, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
@@ -117,7 +116,6 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return json(201, { statusCode: 201, message: 'Created', data: { id: 'c1', title: 'Brand deck template', slug: 'brand-deck', creatorWawuId: 'lennox', status: 'pending' } });
   }
   if (path === '/plans/purchases/quote') {
-    hub.quoted += 1;
     return ok({ kind: 'extra_products', currency: 'NGN', extraMinor: 150_000, products: 5, productsAllowed: hub.allowed, productsAllowedAfter: hub.allowed + 5, paymentKind: 'extra_products', payment: { kind: 'extra_products', targetId: 'extra', title: '5 more products', payee: null, priceKobo: 150_000, fee: { providerFeeKobo: 2500, wawuFeeKobo: 0, totalFeeKobo: 2500 }, totalKobo: 152_500, balanceKobo: 48_525_075, shortfallKobo: 0, willBeHeld: false, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'tok-extra', expiresAt: '2099-01-01T00:00:00.000Z' } });
   }
   if (path === '/plans/purchases' && method === 'POST') {
@@ -194,7 +192,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -217,6 +215,10 @@ const sleep = (ms: number) =>
   act(async () => {
     jest.advanceTimersByTime(ms);
   });
+
+const tap = async (digits: string) => {
+  for (const d of digits) await fireEvent.press(screen.getByRole('button', { name: d }));
+};
 
 describe('identityStateOf · the identity check is the wallet’s own state (VF15 to VF15b)', () => {
   const { identityStateOf } = require('../identityModel') as typeof import('../identityModel');
@@ -327,23 +329,44 @@ describe('VF12 · publish your first product', () => {
 });
 
 describe('VF13 · all products used', () => {
-  // RELEASE-02 second pass (M-3, L-p2-12). The board's "Add 5 more products" is an in-app digital unlock, so it follows R-86 (the app
-  // stores, IAP-02): the sheet draws no "Add 5" and no wallet path now. The two cases that bought five with the PIN (and the lost-answer
-  // case after them) pinned that path and are replaced by these.
-  it('a person on Verify at the limit sees the board’s sheet with Upgrade instead and a way to take something down, and no way to buy five', async () => {
+  // The original case (main 25d24f0a), byte for byte: the pack bought once with the PIN, a double tap, the new number.
+  it('a user at the limit adds five once with the PIN even after a double tap, and sees the new number', async () => {
     hub.used = 3;
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-upgrade')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('full-add'));
+    await fireEvent.press(screen.getByTestId('full-add'));
+    await screen.findByText(/ for 5 more products/);
+    await tap('1234');
+    expect(await screen.findByTestId('full-added-title')).toHaveTextContent('5 more products added');
+    expect(screen.getByTestId('full-added-line')).toHaveTextContent('You can publish up to 8 products now.');
+    expect(hub.buys).toHaveLength(1);
+    expect(hub.buys[0].body).toEqual({ kind: 'extra_products', method: 'wallet', expectedTotalKobo: 152_500, quoteToken: 'tok-extra' });
+  });
+
+  // RELEASE-02 second pass (M-3, L-p2-12): the sheet is worded from the tier, and the pack is offered beside the two ways on.
+  it('a person on Verify at the limit sees the pack, Upgrade instead and a way to take something down, worded from the tier, and is never told to get verified', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(screen.getByTestId('full-line')).toHaveTextContent('Add more products, or move up a tier.');
+    await screen.findByText('Add 5 for ₦1,525');
     expect(screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
     expect(screen.getByTestId('full-library')).toHaveTextContent('Open library');
-    expect(screen.queryByText(/Add 5|add 5|more products/)).toBeNull();
-    expect(screen.queryByTestId('full-add')).toBeNull();
     expect(screen.queryByText(/Get verified/)).toBeNull();
-    expect(screen.queryByRole('button', { name: '1' })).toBeNull();
-    // Nothing was asked of the wallet: no quote, no purchase.
-    expect(hub.buys).toHaveLength(0);
-    expect(hub.quoted).toBe(0);
+  });
+
+  it('M-1 for the pack (BRIEF rules 3 to 5): the price, the Bank charge, WAWU\u2019s fee and the Total are drawn, and the button carries the total', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-price')).toHaveTextContent(/Price.*₦1,500/);
+    expect(screen.getByTestId('full-bank-charge')).toHaveTextContent(/Bank charge.*₦25/);
+    expect(screen.getByTestId('full-wawu-fee')).toHaveTextContent(/WAWU.s fee.*₦0/);
+    expect(screen.getByTestId('full-total')).toHaveTextContent(/Total.*₦1,525/);
+    expect(screen.queryByText(/no fee/i)).toBeNull();
   });
 
   it('Upgrade instead opens the tiers', async () => {
@@ -360,16 +383,17 @@ describe('VF13 · all products used', () => {
     expect(await screen.findByText('My content')).toBeTruthy();
   });
 
-  it('the top tier has no Upgrade instead: only the way to take something down, worded from the tier', async () => {
+  it('the top tier has no Upgrade instead: the pack and the way to take something down remain', async () => {
     hub.used = 10;
     hub.allowed = 10;
     hub.heldTier = 'founding';
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 10 of 10');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-line')).toHaveTextContent('Add more products, or take something down.');
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
     expect(screen.getByTestId('full-library')).toBeTruthy();
-    expect(screen.queryByText(/Get verified|Add 5/)).toBeNull();
+    expect(screen.queryByText(/Get verified/)).toBeNull();
   });
 
   it('a tier no bigger than what is used is not offered (the Hub lists a tier only when it leaves room)', async () => {
@@ -378,8 +402,28 @@ describe('VF13 · all products used', () => {
     hub.heldTier = 'verify';
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 12 of 12');
+    await screen.findByText('Add 5 for ₦1,525');
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+  });
+});
+
+describe('VF13 · a lost answer on the products sheet (SWEEP-APP-3, SWEEP-APP-2 #1)', () => {
+  it('says the payment may have gone through and that the retry happens once, then sends the same key and the same body', async () => {
+    hub.used = 3;
+    hub.lostFirstBuy = true;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await screen.findByText('Add 5 for ₦1,525');
+    await fireEvent.press(screen.getByTestId('full-add'));
+    await screen.findByText(/ for 5 more products/);
+    await tap('1234');
+    expect(await screen.findByText("We didn't get an answer. Try again: it will only happen once.")).toBeTruthy();
+    expect(hub.buys).toHaveLength(1);
+    await tap('1234');
+    expect(await screen.findByTestId('full-added-title')).toHaveTextContent('5 more products added');
+    expect(hub.buys).toHaveLength(2);
+    expect(hub.buys[1].key).toBe(hub.buys[0].key);
+    expect(hub.buys[1].body).toEqual(hub.buys[0].body);
+    expect(hub.allowed).toBe(8);
   });
 });
 

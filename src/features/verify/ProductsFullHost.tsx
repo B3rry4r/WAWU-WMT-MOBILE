@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
 
+import { addMoneyHref } from '@/features/addmoney/entry';
+import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
+
 import { ProductsFullSheet } from './ProductsFullSheet';
 
 /**
- * VF13 with the app's own way out of each of its buttons: Upgrade instead opens VF5 and Open library opens My content (M28), where
- * something can be taken down. The screens that can reach the limit (Create, the upload step, the format step) show it through this.
+ * VF13 with the app's own way out of each of its buttons: Upgrade instead opens VF5, Open library opens My content (M28), Forgot PIN? opens W37, no PIN yet opens A9 and
+ * a short wallet opens Add money (W15). The screens that can reach the limit (Create, the upload step) show it through this.
  */
 export function ProductsFullHost({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -19,6 +22,9 @@ export function ProductsFullHost({ onClose }: { onClose: () => void }) {
         onClose();
         router.push('/library');
       }}
+      onForgotPin={() => router.push('/reset-pin')}
+      onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
+      onAddMoney={(shortfall) => router.push(addMoneyHref(shortfall))}
     />
   );
 }
