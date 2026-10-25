@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
-import { Card, GroupedList } from '@/components/Card';
+import { Card } from '@/components/Card';
 import { Icon } from '@/components/icon';
 import { Money } from '@/components/Money';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
@@ -121,7 +121,7 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
           <Text variant="label" accessibilityRole="header">
             {TIER_WORDS.payWith.toUpperCase()}
           </Text>
-          <GroupedList testID="checkout-methods">
+          <View testID="checkout-methods" style={styles.methods}>
             <MethodRow
               testID="checkout-method-wallet"
               icon="Wallet"
@@ -144,7 +144,7 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
                 onPress={() => purchase.setMethod('transfer')}
               />
             ) : null}
-          </GroupedList>
+          </View>
         </View>
         {purchase.short && quote ? (
           <View testID="checkout-short" accessibilityLiveRegion="polite" style={[styles.note, { backgroundColor: colors.warningTint }]}>
@@ -277,6 +277,7 @@ const styles = StyleSheet.create({
   summary: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   summaryLine: { flex: 1 },
   group: { gap: space.sm },
+  methods: { gap: space.sm },
   note: { flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.card },
   noteWords: { flex: 1, gap: space.xs },
   noteButton: { alignSelf: 'flex-start', marginTop: space.sm },

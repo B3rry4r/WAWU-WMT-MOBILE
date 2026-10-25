@@ -4,6 +4,8 @@ import { Stack, usePathname, useLocalSearchParams } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Text, View } from 'react-native';
 
+import { lightColors, radius } from '@/theme/tokens.generated';
+
 import type { ComponentType } from 'react';
 
 /*
@@ -547,6 +549,23 @@ describe('VF6a to VF6d · the states', () => {
     await fireEvent.press(screen.getByTestId('checkout-method-transfer'));
     expect(screen.getByTestId('checkout-method-transfer').props.accessibilityState.checked).toBe(true);
     expect(screen.getByTestId('checkout-pay')).toBeEnabled();
+  });
+
+  it('SWEEP-R2 (VF6): the chosen way to pay is a card of its own with the accent ring and tint, the other a hairline card; picking the other swaps them', async () => {
+    hub.shortfall = true;
+    await toCheckout();
+    const flat = (value: unknown): Record<string, unknown> => Object.assign({}, ...[value].flat(Infinity).filter(Boolean));
+    const style = (id: string) => flat(screen.getByTestId(id).props.style);
+    const ring = (id: string) => (style(id).boxShadow as { spreadDistance: number; color: string; inset: boolean }[])?.[0];
+    expect(ring('checkout-method-wallet')).toMatchObject({ spreadDistance: 2, color: lightColors.accent, inset: true });
+    expect(style('checkout-method-wallet').backgroundColor).toBe(lightColors.accentTint);
+    expect(ring('checkout-method-transfer')).toMatchObject({ spreadDistance: 1, color: lightColors.borderHairline, inset: true });
+    expect(style('checkout-method-transfer').backgroundColor).toBe(lightColors.surfaceCard);
+    expect(style('checkout-method-wallet').borderRadius).toBe(radius.card);
+    await fireEvent.press(screen.getByTestId('checkout-method-transfer'));
+    expect(ring('checkout-method-transfer')).toMatchObject({ spreadDistance: 2, color: lightColors.accent });
+    expect(style('checkout-method-transfer').backgroundColor).toBe(lightColors.accentTint);
+    expect(ring('checkout-method-wallet')).toMatchObject({ spreadDistance: 1, color: lightColors.borderHairline });
   });
 
   it('a refused payment shows the Hub’s own words, grants nothing, and can be tried again', async () => {

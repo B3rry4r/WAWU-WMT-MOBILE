@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Ellipse, Path } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { isApiError, retryAfterOf } from '@/api/errors';
 import { selfieProblem, fetchSelfieMatch } from '@/api/walletIdentity';
@@ -42,9 +42,15 @@ const PAGE = { between: 22, lift: 120, title: 18, line: 13.5, lineOpacity: 0.7, 
  * home indicator, so a taller system inset replaces it.
  */
 const FOOT_ROW = 54;
+/**
+ * The portrait guide A16 draws inside the oval where no live picture is (design/_gen/auth.js `selfie`, the board's `p1` placeholder,
+ * 600 by 800: a lilac wash lighter at the top left, a head 240 across and shoulders 500 across with a flat foot, both a white veil).
+ * It is drawn here from the app's own shapes and tokens, not with the board's picture.
+ */
+const GUIDE = { box: { width: 600, height: 800 }, head: { cx: 300, cy: 330, r: 120 }, shoulders: 'M50 760A250 250 0 0 1 550 760Z', light: 0.4, dark: 0.2, veil: 0.4 } as const;
 const CAMERA = {
   page: darkColors.surfacePage,
-  frame: darkColors.surfaceCard,
+  wash: darkColors.hueLilac,
   ink: darkColors.textOnAccent,
   idle: darkColors.textOnAccent,
   matched: lightColors.positive,
@@ -513,16 +519,34 @@ function Oval({ ring, Preview }: { ring: Ring; Preview?: SelfieCaptureReady['Pre
         </View>
       ) : null}
       <Svg width={outer.width} height={outer.height} style={StyleSheet.absoluteFill}>
+        {Preview ? null : (
+          <>
+            <Defs>
+              <ClipPath id="open-wallet-oval-clip">
+                <Ellipse cx={outer.width / 2} cy={outer.height / 2} rx={rx} ry={ry} />
+              </ClipPath>
+              <LinearGradient id="open-wallet-oval-light" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={CAMERA.ink} stopOpacity={GUIDE.light} />
+                <Stop offset="1" stopColor={CAMERA.ink} stopOpacity={0} />
+              </LinearGradient>
+              <LinearGradient id="open-wallet-oval-dark" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={CAMERA.page} stopOpacity={0} />
+                <Stop offset="1" stopColor={CAMERA.page} stopOpacity={GUIDE.dark} />
+              </LinearGradient>
+            </Defs>
+            <G clipPath="url(#open-wallet-oval-clip)">
+              <Svg x={OVAL.ring} y={OVAL.ring} width={OVAL.width} height={OVAL.height} viewBox={`0 0 ${GUIDE.box.width} ${GUIDE.box.height}`} preserveAspectRatio="xMidYMid slice">
+                <Rect testID="open-wallet-oval-guide-wash" width={GUIDE.box.width} height={GUIDE.box.height} fill={CAMERA.wash} />
+                <Rect width={GUIDE.box.width} height={GUIDE.box.height} fill="url(#open-wallet-oval-light)" />
+                <Rect width={GUIDE.box.width} height={GUIDE.box.height} fill="url(#open-wallet-oval-dark)" />
+                <Circle testID="open-wallet-oval-guide-head" cx={GUIDE.head.cx} cy={GUIDE.head.cy} r={GUIDE.head.r} fill={CAMERA.ink} fillOpacity={GUIDE.veil} />
+                <Path testID="open-wallet-oval-guide-shoulders" d={GUIDE.shoulders} fill={CAMERA.ink} fillOpacity={GUIDE.veil} />
+              </Svg>
+            </G>
+          </>
+        )}
         {Preview ? <Path testID="open-wallet-oval-mask" d={ovalMask(outer.width, outer.height, rx, ry)} fill={CAMERA.page} fillRule="evenodd" /> : null}
-        <Ellipse
-          cx={outer.width / 2}
-          cy={outer.height / 2}
-          rx={rx}
-          ry={ry}
-          fill={Preview ? 'transparent' : CAMERA.frame}
-          stroke={color}
-          strokeWidth={OVAL.ring}
-        />
+        <Ellipse cx={outer.width / 2} cy={outer.height / 2} rx={rx} ry={ry} fill="transparent" stroke={color} strokeWidth={OVAL.ring} />
       </Svg>
     </View>
   );

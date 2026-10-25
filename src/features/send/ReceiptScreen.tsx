@@ -18,7 +18,7 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { SwitchRow } from '@/components/SwitchRow';
 import { radius, space } from '@/theme';
 
-import { fetchBeneficiaries, removeBeneficiary, savedBankRowFor, savedRowFor, saveBankBeneficiary, saveWawuBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
+import { fetchBeneficiaries, removeBeneficiary, savedBankRowFor, saveBankBeneficiary, transferQuery, type Beneficiary, type Transfer } from './api';
 import { dropIntentOfTransfer } from './intent';
 import { CONFIRMING_LINE, failureLine, firstName, receiptRows, shareText, toLine } from './model';
 import { Reference } from './parts';
@@ -36,7 +36,9 @@ export type ReceiptScreenProps = {
  * send the Hub holds (`GET /money/transfers/{id}`). Share receipt opens the phone's share sheet with the receipt's text and
  * reference (R-33); Done goes back to the wallet, where the new row is on top.
  *
- * "Save as a beneficiary" is a switch that starts on, as the canvas draws it, and saves the person (lead ruling, 16 Oct 2026). A send the provider has not confirmed shows "Pending" and the still-confirming line, and is read again
+ * "Save as a beneficiary" is a switch that starts on, as the canvas draws it, and saves the bank account (lead ruling, 16 Oct 2026). It is
+ * offered after a bank send only: W8's Saved list draws saved bank accounts, and no screen draws a saved WAWU user, so a send to a WAWU
+ * user offers nothing to save (SWEEP-R2, R-47). A send the provider has not confirmed shows "Pending" and the still-confirming line, and is read again
  * until it is decided (G-710); one that failed says so in the Hub's words, with Done only.
  */
 export function ReceiptScreen({ id, onDone }: ReceiptScreenProps) {
@@ -178,20 +180,19 @@ function Receipt({ transfer }: { transfer: Transfer }) {
           ))}
         </GroupedList>
       ) : null}
-      {done && transfer.toWawuUser ? <SaveRow target={{ kind: 'wawu', wawuUserId: transfer.toWawuUser.wawuUserId, name: transfer.toWawuUser.displayName }} /> : null}
       {done && transfer.toBankAccount ? (
-        <SaveRow target={{ kind: 'bank', bankCode: transfer.toBankAccount.bankCode, accountNumber: transfer.toBankAccount.accountNumber, name: transfer.toBankAccount.accountName }} />
+        <SaveRow target={{ bankCode: transfer.toBankAccount.bankCode, accountNumber: transfer.toBankAccount.accountNumber, name: transfer.toBankAccount.accountName }} />
       ) : null}
     </>
   );
 }
 
 /**
- * W12's "Save <first name> as a beneficiary": the switch starts ON, as the canvas draws it, and the person is saved when the
- * receipt opens (a person already saved is left as is). Turning it off takes the person back out. A failed read hides the row; a
- * failed save leaves the switch off and says why, in the Hub's words.
+ * W12's "Save <first name> as a beneficiary" after a bank send: the switch starts ON, as the canvas draws it, and the account is
+ * saved when the receipt opens (an account already saved is left as is). Turning it off takes the account back out. A failed read
+ * hides the row; a failed save leaves the switch off and says why, in the Hub's words.
  */
-type SaveTarget = { kind: 'wawu'; wawuUserId: string; name: string } | { kind: 'bank'; bankCode: string; accountNumber: string; name: string };
+type SaveTarget = { bankCode: string; accountNumber: string; name: string };
 
 function SaveRow({ target }: { target: SaveTarget }) {
   const owner = useSessionAccount(undefined);
@@ -204,10 +205,7 @@ function SaveRow({ target }: { target: SaveTarget }) {
   const [problem, setProblem] = useState<string | null>(null);
   const asked = useRef(false);
   const rows = list.data;
-  const find = useCallback(
-    (list: readonly Beneficiary[]) => (target.kind === 'wawu' ? savedRowFor(list, target.wawuUserId) : savedBankRowFor(list, target.bankCode, target.accountNumber)),
-    [target],
-  );
+  const find = useCallback((list: readonly Beneficiary[]) => savedBankRowFor(list, target.bankCode, target.accountNumber), [target]);
   const row = rows ? find(rows) : undefined;
 
   const change = useCallback(
@@ -216,7 +214,7 @@ function SaveRow({ target }: { target: SaveTarget }) {
       setBusy(true);
       setProblem(null);
       try {
-        if (next) await (target.kind === 'wawu' ? saveWawuBeneficiary(target.wawuUserId) : saveBankBeneficiary(target.bankCode, target.accountNumber));
+        if (next) await saveBankBeneficiary(target.bankCode, target.accountNumber);
         else if (saved) await removeBeneficiary(saved.id);
         await list.refetch();
       } catch (error) {
