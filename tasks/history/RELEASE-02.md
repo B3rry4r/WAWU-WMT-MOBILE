@@ -20,3 +20,32 @@ Lead ruling to record, no code: the fan Inbox (I1, I35, I36) draws no filter, co
 
 Checks (logs in the scratchpad `r2s3b/`, each with its EXIT line): `npx tsc --noEmit` EXIT 0 (`tsc.log`); eslint (no fix) on every changed ts and tsx file EXIT 0 (`eslint.log`); jest `--maxWorkers=2` on feed, feedpay, home, explore, search, after-signup, visitor, movies, events/host, paid-ask, professionals, `route-guard.test.tsx` and `sharedToastFollow.test.tsx`: 45 suites, 992 tests, EXIT 0 (`jest-all.log`); gates `python3 scripts/gates/run.py` 10 run, 1429 files, 0 fail, 17 warn, EXIT 0, `check_baseline.py` EXIT 0; Android `fingerprint:generate` `17ffb13d520882bf144982b61d03f3994c6e40e4`, unchanged. Not run: the full suite (CI runs it).
 
+
+## v-R2-SOCIAL3 verifier report (25 Oct 2026, Sonnet verifier, lean T2; mobile `wmt/R2-SOCIAL3` `cb1390d2` against `origin/main` `fd47cb0a`; built none of it)
+
+**Verdict: PASS.** Nothing medium or worse. Lows go to the social sweep.
+
+**Urgent check, blank page after sign-in: NOT reproduced.** Web export of `origin/main` fd47cb0a and of `cb1390d2`, on a local stack (backend `origin/main` 44e9540, Nuvion stand-in, mock WAWU ID, seeded DB; no Fintava, no live host). Signed in through the real login as the seeded creator (Zainab) and the seeded fan (Adaeze): both render Home, Wallet (Open your wallet, no wallet yet), Inbox (two rows) and Legal (the opening chat), with no console error and no 4xx/5xx. Two ways to get a near-empty screen on the same export, so the builder's blank page was its environment, not a commit: (1) opening the export from `http://127.0.0.1:<port>` instead of `http://localhost:<port>` (the Hub's CORS list holds `localhost` only): sign-in still lands, Today reads "Today didn't load" and the Wallet tab draws only its title; (2) a cold start before the bundle paints (R2-SOCIAL2 item 13, web only). Not a regression between 7f406395 and fd47cb0a (no bisect needed).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| Diff vs report | passed | 28 files = the builder's table; no stand-in copy of a main component |
+| H10 Message · price opens I3 | passed | `H10-built-dark/light`, `I3-from-H10-dark/light`: card of a professional with a ₦4,000 price draws "Message · ₦4,000" beside Profile and the refund line "No reply in 24 hours and your ₦4,000 comes back."; the sheet quotes Question ₦4,000, Bank charge ₦0, Total ₦4,000, "Send · ₦4,000", the PIN pad says "Approve ₦4,000 to Chidi Umeh" (the Hub's quote equals the card, so the price is the professional's own, not the board's ₦1,500) |
+| H10 hidden when off | passed | `H10-paused-dark/light`: Hub pause (7 days) leaves Profile only, no Message, no refund line. With paid messages switched off the Hub drops the card from the feed, so the listing-off branch is only reachable from a cached feed: unit-tested (`ProfessionalMessage.test.tsx`), not walked live |
+| Creator rows, interest label | passed | `rows-home-rail-dark/light`, `rows-search-creators-dark/light`: "Business & Finance" for id `business_finance`; an id the sign-up list does not know (seed's free text "beauty") draws no line; never a raw id |
+| E14 helper line | passed | `E14-built-dark/light`: "Missing addresses are the top reason events get sent back." under Street address |
+| I8 one Message row | passed | `I8-built-dark/light`: one "Messages off" button and the note, no second Message row. The More menu's free Message is test-covered (`visitor-menu-message`), not walked live |
+| MV11 skeleton | NOT RUN (picture) | Flix is hidden at launch (R-80); the picture needs the Hub restarted with the partner on. Covered by the new jest test (hero, three chips, heading, three posters, no spinner, no real hero or Search) |
+| Changed assertions | passed | 6 assertions changed, each names its defect (3: raw `field` as the line; 5: the second Message row); none weakened: inputs moved to ids and labels, the checks now also assert the raw id is absent |
+| Checks | all EXIT 0 | tsc EXIT 0; jest `--maxWorkers=2` feed, feedpay, home, explore, search, after-signup, visitor, movies, events/host, paid-ask, professionals, route-guard, sharedToastFollow: 45 suites, 992 tests, EXIT 0; gates 10 run, 1429 files, 0 fail, 17 warn, EXIT 0; check_baseline EXIT 0; check_tasks (445 tasks) EXIT 0; fingerprint `17ffb13d520882bf144982b61d03f3994c6e40e4` EXIT 0, unchanged |
+
+**The two refusals: agree with both.**
+- MV10 copy (unchanged): the search screen has no filters, so "or clear the filters" and "Clear filters" would be untrue there. The same board copy is already used where filters exist (`AllMoviesScreen.tsx` line 84: "Try another word, or clear the filters."). Evidence: `SearchScreen.tsx` lines 23 to 24, 45 to 46.
+- E15 Remove (kept): EVENTS-04 U1 (`tasks/EVENTS-04.md` lines 141, 193) records it as an unclear carried note, no other way to drop a ticket type is drawn, and `editEvent.test.tsx` "a host can add a type and remove one before any ticket sells" pins it. Stays `unclear` for the designer, not a defect.
+
+**Findings (ranked)**
+1. low, defect (cosmetic): a professional card with Message hidden (paused) shows a lone Profile button about 280 px wide, not the full row. Picture `H10-paused-dark`. Sweep.
+2. low, test-gap note: the listing-off branch of `useProfessionalAsk` and the More menu's free Message have no live walk because the Hub never serves them together (card absent when off). A jest case already covers each; no extra test needed.
+3. low, note: MV11 has no picture until Flix goes live (R-80); re-check on the first phone pass with the partner on.
+
+Pictures (390 px, light and dark, beside the boards in `scratchpad/r2s3b/boards/` and `scratchpad/v-r2s3b/boards/I3-*.png`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/v-r2s3b/`. Cleanup: stack down, ports 9490 to 9509 free, database dropped, worktrees `vr2s3b-*` removed.
