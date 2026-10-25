@@ -121,3 +121,16 @@ export const pinPurpose = (quote: Pick<JobQuote, 'shortfallPoints'>): string => 
 
 /** The cap's own words: the Hub names the cap and when it resets. The title says which kind it is. */
 export const capTitle = (cap: Pick<JobCap, 'cap'>): string => (cap.cap === 'daily' ? CAP_WORDS.dailyTitle : CAP_WORDS.jobTitle);
+
+/** Four digits or more, written with thousands separators ("5000" is "5,000"). */
+const grouped = (text: string): string => text.replace(/\d{4,}/g, (digits) => formatPointsCount(Number(digits)));
+
+/**
+ * What PT7 says under the title. The daily limit is the board's sentence from the Hub's numbers ("You've used 5,000 points on AI
+ * tools today. It resets at midnight."); when the Hub gave no count used, the limit is the count. A per-job limit keeps the Hub's
+ * sentence, with its numbers written with thousands separators.
+ */
+export function capMessage(cap: Pick<JobCap, 'cap' | 'limit' | 'usedPoints' | 'message'>): string {
+  if (cap.cap === 'daily') return `You've used ${formatPointsCount(cap.usedPoints ?? cap.limit)} points on AI tools today. It resets at midnight.`;
+  return grouped(cap.message);
+}

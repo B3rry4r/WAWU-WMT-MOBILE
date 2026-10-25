@@ -433,6 +433,13 @@ describe('SC3 · Course', () => {
     expect(sent.slice().sort()).toEqual(['GET /me/saved/courses/c1', 'GET /schools/courses/c1']);
   });
 
+  it('SC11: a course the Hub serves no picture for draws no empty cover block', async () => {
+    answers['GET /schools/courses/c1'] = [ok(courseDetail())];
+    await openCourse();
+    await rtl.screen.findByText('Product Design Bootcamp');
+    expect(rtl.screen.queryByTestId('course-cover')).toBeNull();
+  });
+
   it('the fee in the bar at the foot is the course’s, in naira', async () => {
     answers['GET /schools/courses/c1'] = [ok(courseDetail({ priceKobo: 4500000 }))];
     await openCourse();

@@ -599,16 +599,14 @@ describe('PT7 · the limit', () => {
     message: "That is over today's limit of 5000 points for AI tools. You have 0 left today, and the count starts again at midnight.",
   };
 
-  it('past the daily limit the person is told the cap and when it resets, in the Hub’s words, and that their points are safe', async () => {
+  it('past the daily limit the person is told the board’s sentence, drawn from the Hub’s numbers with thousands separators', async () => {
     hub.cap = daily;
     hub.points = 1250;
     await toJob();
     await fireEvent.press(screen.getByTestId('preview-run'));
     const view = await screen.findByTestId('cap-reached');
     expect(view).toHaveTextContent("That's today's limit", { exact: false });
-    expect(view).toHaveTextContent('over today\'s limit of 5000 points for AI tools', { exact: false });
-    expect(view).toHaveTextContent('the count starts again at midnight', { exact: false });
-    expect(view).toHaveTextContent('Your points are safe.', { exact: false });
+    expect(view).toHaveTextContent("You've used 5,000 points on AI tools today. It resets at midnight.", { exact: false });
     expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
@@ -622,14 +620,14 @@ describe('PT7 · the limit', () => {
     expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
   });
 
-  it('a job over the size of one job is told in the Hub’s words, with its own title', async () => {
+  it('a job over the size of one job is told in the Hub’s words with thousands separators, and its own title', async () => {
     hub.cap = { cap: 'characters_per_job', limit: 5000, unit: 'characters', usedPoints: null, remainingPoints: null, resetsAt: null, message: 'One job can take up to 5000 characters. This one has 6000.' };
     hub.points = 1250;
     await toJob(6000);
     await fireEvent.press(screen.getByTestId('preview-run'));
     const view = await screen.findByTestId('cap-reached');
     expect(view).toHaveTextContent('That is too much for one go', { exact: false });
-    expect(view).toHaveTextContent('One job can take up to 5000 characters. This one has 6000.', { exact: false });
+    expect(view).toHaveTextContent('One job can take up to 5,000 characters. This one has 6,000.', { exact: false });
   });
 
   it('Back to AI tools leaves the limit for Studio', async () => {

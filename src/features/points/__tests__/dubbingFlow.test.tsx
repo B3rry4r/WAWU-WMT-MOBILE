@@ -635,14 +635,14 @@ describe('PT3 and PT7 · the sheets, for this tool', () => {
     expect(hub.posts).toHaveLength(0);
   });
 
-  it('past the daily limit the Hub’s own sentence names when it resets and nothing runs', async () => {
+  it('past the daily limit the board’s sentence is drawn from the Hub’s numbers and nothing runs', async () => {
     hub.cap = { cap: 'daily', limit: 50000, usedPoints: 49000, remainingPoints: 1000, resetsAt: '2026-10-24T23:00:00.000Z', message: "That is over today's limit of 50000 points for AI tools. The count starts again at midnight." };
     await toTool();
     await choose();
     await pickLanguage('yo');
     await fireEvent.press(screen.getByTestId('tool-run'));
     await screen.findByTestId('cap-reached');
-    expect(screen.getByText(/The count starts again at midnight/)).toBeTruthy();
+    expect(screen.getByText("You've used 49,000 points on AI tools today. It resets at midnight.")).toBeTruthy();
     expect(hub.posts).toHaveLength(0);
   });
 });
