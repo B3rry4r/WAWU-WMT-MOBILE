@@ -6,7 +6,7 @@ import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
 import { ProductsFullSheet } from './ProductsFullSheet';
 
 /**
- * VF13 with the app's own way out of each of its buttons: Upgrade instead opens VF5, Forgot PIN? opens W37, no PIN yet opens A9 and
+ * VF13 with the app's own way out of each of its buttons: Upgrade instead opens VF5, Open library opens My content (M28), Forgot PIN? opens W37, no PIN yet opens A9 and
  * a short wallet opens Add money (W15). The screens that can reach the limit (Create, the upload step) show it through this.
  */
 export function ProductsFullHost({ onClose }: { onClose: () => void }) {
@@ -17,6 +17,10 @@ export function ProductsFullHost({ onClose }: { onClose: () => void }) {
       onUpgrade={() => {
         onClose();
         router.push('/tiers');
+      }}
+      onOpenLibrary={() => {
+        onClose();
+        router.push('/library');
       }}
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}

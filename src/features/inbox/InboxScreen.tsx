@@ -11,6 +11,7 @@ import { Text } from '@/components/Text';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { CommunitiesView } from '@/features/communities/CommunitiesView';
+import { CreateEntry } from '@/features/create/CreateEntry';
 import { PaidQueueView, waitingQuery } from '@/features/paid-answers/PaidQueueView';
 import { fetchIsCreator, proKeys } from '@/features/pro-listing/api';
 import { layout, space, useWawu } from '@/theme';
@@ -36,6 +37,8 @@ export type InboxScreenProps = {
   renderers?: InboxRowRenderers;
   /** The round buttons at the right of the title (kit.js line 24, `Big`), each added by the task that builds the screen it opens. */
   headerActions?: ReactNode;
+  /** The floating Create button over the list (I1, I20, I24, I35, I36), for creator accounts only (R-38); it opens Create (M19). Not drawn without it. */
+  onCreate?: () => void;
 };
 
 /**
@@ -43,9 +46,10 @@ export type InboxScreenProps = {
  * (the request failed, with a retry). The list reads `GET /inbox` a page at a time, refreshes when the
  * live connection says something changed (see `unread.ts`), and when pulled down. The Communities chip
  * swaps the list for I24 (`CommunitiesView`), which reads its own rooms. A creator's Paid DMs chip (INBOX-18) swaps it for I9
- * (`PaidQueueView`), the questions waiting on their reply.
+ * (`PaidQueueView`), the questions waiting on their reply. The round + above the bar on every one of those boards is the shared Create button
+ * (kit.js `Fab`, the one Home, Explore and Me draw), a creator's way into Create (R-38); anyone else is shown none.
  */
-export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: InboxScreenProps) {
+export function InboxScreen({ renderers = inboxRowRenderers, headerActions, onCreate }: InboxScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const router = useRouter();
@@ -74,6 +78,7 @@ export function InboxScreen({ renderers = inboxRowRenderers, headerActions }: In
       ) : (
         <InboxList kind={kind} renderers={kind === 'all' ? { ...renderers, money_request: undefined, money_move: undefined } : renderers} onBrowseCommunities={() => setChip(communitiesChip)} />
       )}
+      {onCreate ? <CreateEntry onPress={onCreate} /> : null}
     </View>
   );
 }

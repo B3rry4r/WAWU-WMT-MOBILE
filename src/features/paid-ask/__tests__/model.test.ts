@@ -111,7 +111,7 @@ describe('I4, I5 and I7: the cards', () => {
     expect(card.tone).toBe('waiting');
     expect(card.title).toBe('Chidi has 17h 52m left to reply');
     // The person paid the price and the bank's charge and gets all of it back, so the line names no figure the thread cannot know.
-    expect(card.body).toBe('Your money is held by Who Made This? No reply by tomorrow 03:52 and all of it comes back to your wallet.');
+    expect(card.body).toBe('Your money is held by Who Made This? No reply by tomorrow 03:52 and it comes back to your wallet.');
     expect(card.body).not.toMatch(/₦/);
   });
   it('past the deadline says the money is on its way back, never a negative time', () => {

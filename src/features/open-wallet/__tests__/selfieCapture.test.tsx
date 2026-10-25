@@ -290,6 +290,15 @@ describe('A6 on the phone: the camera in the oval', () => {
     expect(rtl.screen.getByText('Fit your face in the oval')).toBeTruthy();
   });
 
+  it('SWEEP-R2: the portrait guide fills the oval until the camera’s picture is in it, and gives way to it', async () => {
+    await boot();
+    expect(rtl.screen.getByTestId('open-wallet-oval-guide-head', { includeHiddenElements: true })).toBeTruthy();
+    await press('open-wallet-selfie-take');
+    await rtl.waitFor(() => expect(camera()).toBeTruthy());
+    expect(rtl.screen.queryByTestId('open-wallet-oval-guide-head', { includeHiddenElements: true })).toBeNull();
+    expect(rtl.screen.queryByTestId('open-wallet-oval-guide-wash', { includeHiddenElements: true })).toBeNull();
+  });
+
   it('a user who allowed the camera before sees it in the oval at once, and one tap takes the selfie: brought down to 640, sent once as plain JPEG base64, and the account opens', async () => {
     const props = await bootAllowed();
     const image = jpeg(30_000);

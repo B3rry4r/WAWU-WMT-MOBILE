@@ -205,6 +205,13 @@ export const linkLine = (id: string): string => readableLink(contentLink(id));
 export const STAR_WORDS = ['Poor', 'Fair', 'Good', 'Really good', 'Excellent'] as const;
 export const starLine = (stars: number): string => `${stars} of 5 · ${STAR_WORDS[stars - 1] ?? ''}`;
 
+/**
+ * The heart's label on H19, H20, H24 and H25: "96% liked", from the piece's rating as the Hub serves it (`ratingPct`, a whole percent).
+ * A piece nobody has rated has no percentage, and nothing is made up for it: the label is the like count the Hub does serve.
+ */
+export const likeLabel = (ratingPct: number | null | undefined, likes: number): string =>
+  typeof ratingPct === 'number' && Number.isFinite(ratingPct) && ratingPct >= 0 && ratingPct <= 100 ? `${Math.round(ratingPct)}% liked` : compactCount(likes);
+
 /** The Rate button's label: "Rate", or "Rated 5" once the person has. */
 export const rateLabel = (mine: number | null | undefined): string => (mine ? `Rated ${mine}` : 'Rate');
 

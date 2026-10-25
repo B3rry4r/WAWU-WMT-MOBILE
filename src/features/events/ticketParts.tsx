@@ -37,6 +37,8 @@ export const cardMetrics = {
   name: 17,
   line: 12.5,
   lineOpacity: 0.8,
+  /** The whole card greyed, E11 (a called-off event). */
+  dimmed: 0.45,
   lineGap: 2,
   pad: 18,
   stack: 12,
@@ -111,13 +113,14 @@ export function Qr({ value, size, testID, label = 'Ticket QR code' }: { value: s
 }
 
 /** E7 and E12: the event's picture and name, the QR plate, the code, and who it is for. */
-export function TicketCard({ ticket, showCode, now }: { ticket: HeldTicket; showCode: boolean; now?: number }) {
+/** `dimmed` greys the whole card, as E11 draws the ticket of an event that was called off (the board's .45). */
+export function TicketCard({ ticket, showCode, now, dimmed }: { ticket: HeldTicket; showCode: boolean; now?: number; dimmed?: boolean }) {
   const { colors, gradients } = useWawu();
   const ends = gradientEnds(gradients.scrimCard.angle);
   const { event } = ticket;
   const logo = cardMetrics.plate * cardMetrics.logoShare;
   return (
-    <View testID="ticket-card" style={[styles.card, { backgroundColor: colors.surfaceCard }]}>
+    <View testID="ticket-card" style={[styles.card, { backgroundColor: colors.surfaceCard }, dimmed ? { opacity: cardMetrics.dimmed } : null]}>
       <View style={[styles.banner, { backgroundColor: colors.surfaceCardInk }]}>
         {event.bannerUrl ? <Image source={event.bannerUrl} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityElementsHidden /> : null}
         <LinearGradient

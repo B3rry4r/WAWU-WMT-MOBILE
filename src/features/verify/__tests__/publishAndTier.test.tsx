@@ -57,6 +57,8 @@ const hub = {
   until: null as string | null,
   used: 2,
   allowed: 3,
+  /** RELEASE-02 second pass (M-3): the tier the Hub says is held. */
+  heldTier: 'verify' as 'verify' | 'founding',
   wallet: 'open' as 'open' | 'opening' | 'rejected',
   walletReads: 0,
   openAfter: 0,
@@ -85,11 +87,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       return refuse(500, { message: 'Something went wrong on our side.' });
     }
     if (hub.tier === 'none') return ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
-    return ok({ state: hub.tier, tier: { id: 'verify', name: 'Verify', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: until, productsAllowed: hub.allowed, productsUsed: hub.used, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: { id: 'watch_apply', name: 'Watch live, apply' } });
+    return ok({ state: hub.tier, tier: { id: hub.heldTier, name: hub.heldTier === 'verify' ? 'Verify' : 'Founding Maker', badge: { id: 'verified', numbered: false } }, activeFrom: '2026-10-01T00:00:00.000Z', activeUntil: until, productsAllowed: hub.allowed, productsUsed: hub.used, extraProducts: 0, pointsIncluded: 100, firstVoiceIntroIncluded: true, eventPass: { id: 'watch_apply', name: 'Watch live, apply' } });
   }
   if (path === '/plans') {
-    const tier = (id: string, name: string, price: number) => ({ id, name, days: 30, products: 3, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: price, eventPass: { id: 'p', name: 'Pass' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false });
-    return ok({ currency: 'NGN', currencyFixed: false, tiers: [tier('verify', 'Verify', 100_000), tier('founding', 'Founding Maker', 500_000)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} });
+    const tier = (id: string, name: string, price: number, products = 3) => ({ id, name, days: 30, products, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: price, eventPass: { id: 'p', name: 'Pass' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false });
+    return ok({ currency: 'NGN', currencyFixed: false, tiers: [tier('verify', 'Verify', 100_000), tier('founding', 'Founding Maker', 500_000, 10)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} });
   }
   if (path === '/uploads/formats') return ok({ formats: FORMATS });
   if (path === '/money/wallet') {
@@ -176,6 +178,7 @@ beforeAll(async () => {
     'open-wallet-pin': stub('Create your PIN'),
     'add-money': stub('Add money'),
     tiers: stub('Tiers'),
+    library: stub('My content'),
     checkout: stub('Checkout'),
     shop: stub('Shop'),
     'shop-product': stub('Draft form'),
@@ -189,7 +192,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -212,6 +215,7 @@ const sleep = (ms: number) =>
   act(async () => {
     jest.advanceTimersByTime(ms);
   });
+
 const tap = async (digits: string) => {
   for (const d of digits) await fireEvent.press(screen.getByRole('button', { name: d }));
 };
@@ -325,6 +329,7 @@ describe('VF12 · publish your first product', () => {
 });
 
 describe('VF13 · all products used', () => {
+  // The original case (main 25d24f0a), byte for byte: the pack bought once with the PIN, a double tap, the new number.
   it('a user at the limit adds five once with the PIN even after a double tap, and sees the new number', async () => {
     hub.used = 3;
     await renderRouter(routes, { initialUrl: '/full' });
@@ -339,6 +344,66 @@ describe('VF13 · all products used', () => {
     expect(screen.getByTestId('full-added-line')).toHaveTextContent('You can publish up to 8 products now.');
     expect(hub.buys).toHaveLength(1);
     expect(hub.buys[0].body).toEqual({ kind: 'extra_products', method: 'wallet', expectedTotalKobo: 152_500, quoteToken: 'tok-extra' });
+  });
+
+  // RELEASE-02 second pass (M-3, L-p2-12): the sheet is worded from the tier, and the pack is offered beside the two ways on.
+  it('a person on Verify at the limit sees the pack, Upgrade instead and a way to take something down, worded from the tier, and is never told to get verified', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(screen.getByTestId('full-line')).toHaveTextContent('Add more products, or move up a tier.');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
+    expect(screen.getByTestId('full-library')).toHaveTextContent('Open library');
+    expect(screen.queryByText(/Get verified/)).toBeNull();
+  });
+
+  it('M-1 for the pack (BRIEF rules 3 to 5): the price, the Bank charge, WAWU\u2019s fee and the Total are drawn, and the button carries the total', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-price')).toHaveTextContent(/Price.*₦1,500/);
+    expect(screen.getByTestId('full-bank-charge')).toHaveTextContent(/Bank charge.*₦25/);
+    expect(screen.getByTestId('full-wawu-fee')).toHaveTextContent(/WAWU.s fee.*₦0/);
+    expect(screen.getByTestId('full-total')).toHaveTextContent(/Total.*₦1,525/);
+    expect(screen.queryByText(/no fee/i)).toBeNull();
+  });
+
+  it('Upgrade instead opens the tiers', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await fireEvent.press(await screen.findByTestId('full-upgrade'));
+    expect(await screen.findByText('Tiers')).toBeTruthy();
+  });
+
+  it('Open library takes the person to My content', async () => {
+    hub.used = 3;
+    await renderRouter(routes, { initialUrl: '/full' });
+    await fireEvent.press(await screen.findByTestId('full-library'));
+    expect(await screen.findByText('My content')).toBeTruthy();
+  });
+
+  it('the top tier has no Upgrade instead: the pack and the way to take something down remain', async () => {
+    hub.used = 10;
+    hub.allowed = 10;
+    hub.heldTier = 'founding';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 10 of 10');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-line')).toHaveTextContent('Add more products, or take something down.');
+    expect(screen.queryByTestId('full-upgrade')).toBeNull();
+    expect(screen.getByTestId('full-library')).toBeTruthy();
+    expect(screen.queryByText(/Get verified/)).toBeNull();
+  });
+
+  it('a tier no bigger than what is used is not offered (the Hub lists a tier only when it leaves room)', async () => {
+    hub.used = 12;
+    hub.allowed = 12;
+    hub.heldTier = 'verify';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 12 of 12');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.queryByTestId('full-upgrade')).toBeNull();
   });
 });
 

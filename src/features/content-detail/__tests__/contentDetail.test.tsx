@@ -333,7 +333,8 @@ describe('H19: a locked paid piece', () => {
     expect(screen.getByRole('button', { name: 'Follow' })).toBeTruthy();
     expect(screen.getByText('Unlock the full PDF')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦3,000' })).toBeTruthy();
-    expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
+    // The balance is its own read, asked once the piece has landed, so the line is waited for rather than read at once.
+    expect(await screen.findByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
     // FIX-110 (G-1723, G-HOME-03-3): "Yours forever" is drawn, since a bought piece has no end. Nothing else the Hub does not say: no 96%, no Read now or Tip while it is locked.
     expect(screen.getByText('Yours forever')).toBeTruthy();
     expect(screen.queryByText(/96%/i)).toBeNull();
@@ -375,6 +376,28 @@ describe('H19: a locked paid piece', () => {
 });
 
 describe('marks: like, save, follow, share', () => {
+  // R2-SOCIAL (e), CHECK-3 defect 5: the boards (H19, H20, H24, H25) label the heart "96% liked". The Hub serves a rating percent on a rated piece.
+  it('a rated piece\'s heart reads "96% liked" in place of the count, and still likes', async () => {
+    (base as { ratingPct: number | null }).ratingPct = 96;
+    try {
+      const { screen } = await boot(PDF);
+      const like = screen.getByTestId('detail-like');
+      expect(rtl.within(like).getByText('96% liked')).toBeTruthy();
+      expect(screen.queryByText('1.2K')).toBeNull();
+      await rtl.fireEvent.press(like);
+      await rtl.waitFor(() => expect(hub.writes).toContain('POST /content/pdf-1/like'));
+      expect(rtl.within(screen.getByTestId('detail-like')).getByText('96% liked')).toBeTruthy();
+    } finally {
+      (base as { ratingPct: number | null }).ratingPct = null;
+    }
+  });
+
+  it('a piece nobody has rated has no percentage: the heart keeps the like count the Hub serves', async () => {
+    const { screen } = await boot(PDF);
+    expect(rtl.within(screen.getByTestId('detail-like')).getByText('1.2K')).toBeTruthy();
+    expect(screen.queryByText(/% liked/)).toBeNull();
+  });
+
   it('a user likes, saves and follows, each drawn at once and written once; Saved and Following read back', async () => {
     const { screen } = await boot(PDF);
     await rtl.fireEvent.press(screen.getByTestId('detail-like'));
@@ -642,7 +665,8 @@ describe('H25: a course', () => {
     expect(rtl.within(screen.getByTestId('lesson-l2')).queryByText('Free')).toBeNull();
     expect(screen.queryByText('Lesson 5')).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlock course · ₦8,000' })).toBeTruthy();
-    expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
+    // The balance is its own read, asked once the piece has landed, so the line is waited for rather than read at once.
+    expect(await screen.findByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'See all 12 lessons' }));
     expect(screen.getByText('Lesson 12')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Show fewer lessons' }));

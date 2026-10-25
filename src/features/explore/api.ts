@@ -59,13 +59,20 @@ export async function fetchCategories(): Promise<ExploreCategory[]> {
   );
 }
 
-/** The creators an admin featured, first to last. Empty until someone is featured. */
+/**
+ * The creators the "Who Made This?" rail on X1 shows: the ones an admin featured, first to last. The Hub's list is empty until someone
+ * is featured (R2-SOCIAL (c), CHECK-3 defect 3), and an empty rail beside Home's rail, and See all's list, said there were no creators
+ * to suggest when there were. With nobody featured the rail is the first creators of All creators (X4, what See all opens), in the
+ * Hub's own order. A rail that is empty after both reads is empty for real.
+ */
 export async function fetchFeaturedCreators(): Promise<ExploreCreator[]> {
   const data = dataOf<{ items?: unknown }>(
     await unwrap(api.GET('/api/hub/explore/featured-creators', { params: { query: { limit: FEATURED_LIMIT } } })),
     'featured creators',
   );
-  return itemsOf<ExploreCreator>(data, 'featured creators');
+  const featured = itemsOf<ExploreCreator>(data, 'featured creators');
+  if (featured.length > 0) return featured;
+  return (await fetchCreatorsPage('all', 1)).items.slice(0, FEATURED_LIMIT);
 }
 
 /**

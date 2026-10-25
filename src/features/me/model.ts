@@ -276,7 +276,7 @@ export function roleLinesOf(experience: readonly Experience[]): RoleLine[] {
 }
 
 /** A tier is running while it is `active` or `ending`; `none` and `ended` have nothing to show beside the name (the Hub's PersonBadgeView rule). */
-function runningTier(tier: MyTier | null | undefined): MyTier | null {
+export function runningTier(tier: MyTier | null | undefined): MyTier | null {
   return tier && tier.tier && (tier.state === 'active' || tier.state === 'ending') ? tier : null;
 }
 

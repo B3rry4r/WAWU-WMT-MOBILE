@@ -198,6 +198,8 @@ beforeEach(() => {
   answers = {
     'GET /explore/categories': [ok({ items: categories })],
     'GET /users/me': [ok({ wawuUserId: ME })],
+    // R2-SOCIAL (c): with nobody featured the rail reads All creators' first page; a test that wants creators there answers it, and the rest find nobody.
+    [ALL_PAGE_1]: [page([], 1, 0)],
     [FEATURED_EVENT]: [noEvents],
     [UPCOMING]: [noEvents],
     [ADS]: [ok([])],
@@ -358,6 +360,60 @@ describe('X1 · Explore', () => {
     expect(rtl.within(section).getByText('New creators show up here as they join and publish.')).toBeTruthy();
     expect(rtl.screen.queryByText(/@/)).toBeNull();
     expect(rtl.screen.queryByText('Follow')).toBeNull();
+  });
+
+  // R2-SOCIAL (c), CHECK-3 defect 3: the Hub's featured list is empty until an admin features someone, so the rail said "No creators to suggest yet"
+  // beside Home's rail and See all's list, both full. Nobody featured now reads All creators' first page, the list See all opens.
+  it('with nobody featured, Who Made This? shows the first of All creators, the same people See all lists (R2-SOCIAL c)', async () => {
+    answers[featured] = [ok({ items: [] })];
+    answers[ALL_PAGE_1] = [page([card('c1', 'adaeze', 'Business strategist'), card('c2', 'funmi', 'Accountant', { following: true })], 1, 2)];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    const section = await rtl.screen.findByTestId('explore-featured');
+    expect(await rtl.within(section).findByTestId('explore-featured-c1')).toBeTruthy();
+    expect(rtl.within(section).getByTestId('explore-featured-c2')).toBeTruthy();
+    expect(rtl.within(section).getByText('@adaeze')).toBeTruthy();
+    expect(rtl.within(section).queryByTestId('explore-featured-empty')).toBeNull();
+    expect(rtl.screen.queryByText('No creators to suggest yet')).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('explore-featured-c2')).getByRole('button', { name: 'Following' })).toBeTruthy();
+  });
+
+  it('that rail takes at most the ten the featured rail asks for, in the Hub\'s order', async () => {
+    answers[featured] = [ok({ items: [] })];
+    const many = Array.from({ length: 24 }, (_, i) => card(`c${i + 1}`, `h${i + 1}`, 'Field'));
+    answers[ALL_PAGE_1] = [page(many, 1, 24)];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.screen.findByTestId('explore-featured-c1');
+    const shown = rtl.screen.getAllByTestId(/^explore-featured-c\d+$/).map((n) => n.props.testID);
+    expect(shown).toEqual(Array.from({ length: 10 }, (_, i) => `explore-featured-c${i + 1}`));
+  });
+
+  it('with creators featured, the rail is the featured ones alone and All creators is not read', async () => {
+    answers[featured] = [ok({ items: [card('c1', 'adaeze', 'Business strategist')] })];
+    answers[ALL_PAGE_1] = [page([card('c9', 'someone', 'Other')], 1, 1)];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.screen.findByTestId('explore-featured-c1');
+    await settle();
+    expect(rtl.screen.queryByTestId('explore-featured-c9')).toBeNull();
+    expect(sent).not.toContain(ALL_PAGE_1);
+  });
+
+  it('a Follow on a creator of that rail follows them, as on a featured one', async () => {
+    answers[featured] = [ok({ items: [] })];
+    answers[ALL_PAGE_1] = [page([card('c1', 'adaeze', 'Business strategist')], 1, 1)];
+    answers['POST /creators/c1/follow'] = [ok({ following: true }, 201)];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('explore-featured-c1-follow'));
+    expect(await rtl.screen.findByRole('button', { name: 'Following' })).toBeTruthy();
+    expect(sent).toContain('POST /creators/c1/follow');
+  });
+
+  it('with nobody featured and All creators refused, Explore says it could not load, never that there are no creators', async () => {
+    failAtOnce();
+    answers[featured] = [ok({ items: [] })];
+    answers[ALL_PAGE_1] = [refused(500, 'Server error')];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    expect(await rtl.screen.findByText('Couldn’t load Explore')).toBeTruthy();
+    expect(rtl.screen.queryByText('No creators to suggest yet')).toBeNull();
   });
 
   it('with no advert and no event, a user sees no slider and no empty frame for it, and no Upcoming events row (R-59, FIX-68 F-6)', async () => {

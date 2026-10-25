@@ -12,6 +12,7 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TierBadge } from '@/components/TierBadge';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { fetchFields, fieldsKey } from '@/features/profile-edit/api';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import { radius, space, useWawu } from '@/theme';
 
@@ -34,14 +35,20 @@ export type OfficialScreenProps = {
 /**
  * VF7 · You're official, and VF7a for the Founding Maker. What the person sees is what the Hub granted, read by the purchase's id so
  * it is the same after a restart or a repeated confirmation: the tier's badge, the points added (the tier's and the offer's), the
- * products to publish and the event pass. The numbered Founding badge draws its number once the Hub serves it (G-421): until then
- * it is the tier's name. The board's "Record my voice" opens VF8 and is drawn only when VERIFY-03 has built it.
+ * products to publish and the event pass. The numbered Founding badge draws the number the Hub gave it (`GET /users/me/profile-fields`
+ * `badge.number`, L-p2-4); with none served it is the tier's name. The board's "Record my voice" opens VF8 and is drawn only when VERIFY-03 has built it.
  */
 export function OfficialScreen({ purchaseId, onDone, onRecordVoice }: OfficialScreenProps) {
   const { colors } = useWawu();
   const owner = useSessionAccount(undefined);
   const read = useQuery(purchaseQuery(owner, purchaseId), queryClient);
   const grant = read.data?.status === 'paid' ? read.data.grant : null;
+  // A numbered badge (the Founding Maker's "#128") carries the number the Hub gave it, which is on the profile details, not on the purchase
+  // (RELEASE-02 second pass, L-p2-4). Only a numbered tier asks, and a number the Hub has not given yet leaves the name alone.
+  const numbered = grant?.numbered === true;
+  const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields, enabled: numbered && Boolean(owner), staleTime: 0 }, queryClient);
+  const badge = fields.data?.badge;
+  const badgeNumber = numbered && badge?.numbered === true && typeof badge.number === 'number' ? badge.number : null;
 
   let body;
   if (read.isError && !read.data) {
@@ -84,7 +91,7 @@ export function OfficialScreen({ purchaseId, onDone, onRecordVoice }: OfficialSc
         </Text>
         {grant.tierName ? (
           <View style={styles.badge}>
-            <TierBadge name={grant.tierName} testID="official-badge" />
+            <TierBadge name={grant.tierName} number={badgeNumber} testID="official-badge" />
           </View>
         ) : null}
         <GroupedList testID="official-rows" style={styles.fullWidth}>

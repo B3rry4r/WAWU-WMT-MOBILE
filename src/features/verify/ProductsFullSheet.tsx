@@ -19,7 +19,8 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { font, radius, space } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
-import { naira, pinPurposeOf } from './purchaseModel';
+import { QuoteBreakdown } from './planParts';
+import { naira, nextTiers, pinPurposeOf } from './purchaseModel';
 import { usePlanPurchase } from './usePlanPurchase';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
@@ -27,8 +28,10 @@ const MARK = 72;
 
 export type ProductsFullSheetProps = {
   onClose: () => void;
-  /** "Upgrade instead": VF5 (VF5b). */
+  /** "Upgrade instead": VF5 (VF5b). Drawn only while the Hub lists a tier above the one held that leaves room. */
   onUpgrade: () => void;
+  /** The way to take something down: My content (M28). Not drawn without it. */
+  onOpenLibrary?: () => void;
   /** Forgot PIN? (W37). */
   onForgotPin: () => void;
   /** No PIN is set yet: A9 sets one and comes back. */
@@ -43,8 +46,14 @@ export type ProductsFullSheetProps = {
  * the tier (`usePlanPurchase`): a fresh quote at every tap, the shared PIN sheet, one `Idempotency-Key`, so one tap pair is one debit.
  * A short wallet turns the button into "Add ₦X" (the pay sheets' own, WALLET-05), which opens Add money. The dollar offer (VF13a) is
  * not built at launch (R-16).
+ *
+ * RELEASE-02 second pass (M-3, L-p2-12): the sheet is worded from the tier and the Hub's limits and never tells a person who holds a tier to
+ * "Get verified". "Upgrade instead" is drawn only while the Hub lists a higher tier that leaves room (none for the top tier), and "Open library"
+ * is the way to take something down. The offer is a payment review, so it draws the fee as its parts and the total (BRIEF rules 3 to 5): the
+ * price, the Bank charge, WAWU's fee and the Total from the quote, even at ₦0, with the button and the PIN sheet showing the total. The pack
+ * keeps its wallet path until IAP-02 moves it and the tiers to the app stores (R-86; lead ruling, 25 Oct 2026).
  */
-export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, onAddMoney }: ProductsFullSheetProps) {
+export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotPin, onSetPin, onAddMoney }: ProductsFullSheetProps) {
   const owner = useSessionAccount(undefined);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
   const plans = useQuery(plansQuery(owner), queryClient);
@@ -96,14 +105,15 @@ export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, o
   } else {
     const count = extra.count;
     const total = quote?.totalKobo ?? null;
+    const up = nextTiers(plans.data?.tiers ?? [], mine.data?.tier?.id ?? null, mine.data?.extraProducts ?? 0, used).length > 0;
     body = (
       <>
         <View>
           <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {`You have used ${used} of ${allowed}`}
           </Text>
-          <Text variant="body" tone="textSecondary" style={styles.blurb}>
-            Add more products, or move up a tier.
+          <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
+            {up ? 'Add more products, or move up a tier.' : 'Add more products, or take something down.'}
           </Text>
         </View>
         <Card padded testID="full-offer">
@@ -120,6 +130,7 @@ export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, o
             <Money minorUnits={extra.priceMinor} currency={plans.data?.currency ?? 'NGN'} size={16} weight={700} decimals={extra.priceMinor % 100 !== 0} />
           </View>
         </Card>
+        {quote ? <QuoteBreakdown quote={quote} prefix="full" /> : null}
         {purchase.short && quote ? (
           <Text variant="meta" tone="danger" testID="full-short" accessibilityLiveRegion="polite" style={styles.centre}>
             {`You need ${naira(quote.shortfallKobo ?? 0)} more in your wallet.`}
@@ -147,7 +158,8 @@ export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, o
             onPress={purchase.pay}
           />
         )}
-        <Button testID="full-upgrade" label="Upgrade instead" variant="outline" full disabled={purchase.paying} onPress={onUpgrade} />
+        {up ? <Button testID="full-upgrade" label="Upgrade instead" variant="outline" full disabled={purchase.paying} onPress={onUpgrade} /> : null}
+        {onOpenLibrary ? <Button testID="full-library" label="Open library" variant="outline" full disabled={purchase.paying} onPress={onOpenLibrary} /> : null}
         {purchase.quoteError ? (
           <Text variant="meta" tone="danger" testID="full-quote-error" style={styles.centre}>
             {isApiError(purchase.quoteError) && purchase.quoteError.message ? purchase.quoteError.message : 'We could not work out the price. Try again.'}

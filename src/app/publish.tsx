@@ -31,6 +31,7 @@ export default function PublishRoute() {
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
       onAddMoney={(shortfall) => router.push(addMoneyHref(shortfall))}
+      onOpenLibrary={() => router.push('/library')}
     />
   );
 }

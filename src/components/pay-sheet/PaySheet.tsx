@@ -106,6 +106,11 @@ export type PaySheetProps = {
   walletName: string;
   /** The verb on the pay button: "Unlock" gives "Unlock · ₦2,523.25"; a send gives "Send ₦25,065". */
   actionLabel: string;
+  /**
+   * How the verb and the total are joined. `'dot'` is H14's "Unlock · ₦2,500", the purchase form's default; `'space'` is E3's
+   * "Pay ₦7,500", which is also how the send form always reads.
+   */
+  actionJoin?: 'dot' | 'space';
   /** When another person receives a set amount (a send), say what arrives. */
   recipientGetsKobo?: number;
   status: PayStatus;
@@ -240,7 +245,7 @@ function Review(p: Inner) {
       p.onOpenWallet ? <Button label="Open your wallet" onPress={p.onOpenWallet} full /> : null
     ) : (
       <Button
-        label={paying ? 'Paying' : send ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
+        label={paying ? 'Paying' : send || p.actionJoin === 'space' ? `${p.actionLabel} ${formatNaira(p.total)}` : `${p.actionLabel} · ${formatNaira(p.total)}`}
         onPress={pay}
         loading={paying}
         disabled={p.wallet.kind === 'loading'}
