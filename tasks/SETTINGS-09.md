@@ -7,7 +7,7 @@ order: 187
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [SETTINGS-06]
 decisions: [R-73]
 passes: [V1, V2, V3, V4, V9]
@@ -29,6 +29,8 @@ As of 19 Oct 2026, merging (lead): checked by an independent verifier (report `/
 - **Checks (backend, db `settings09_wawu_hub_test`, bucket stand-in on 7860-7867):** tsc EXIT 0; eslint changed files EXIT 0; new spec 16 of 16; touched specs by name 12 suites, 124 tests; gates 0 fail; protected suite 251 of 253 with the same 2 failures as `wmt/MERGE-25` (community messages `videoUrl`/`voiceUrl` widened, INBOX-22).
 - **Open:** no blocker, high or medium. Lows G-SETTINGS-09-1 and -2 in BACKEND_GAPS. G-FIX-65-1 is answered by this task. The lead adds R-73 to DECISIONS.md (check_tasks reads it from there).
 - **Next:** the batch 26 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 8c86edaf, verifier PASS in the lead's merge log, 19 Oct.
 
 ## Read first
 

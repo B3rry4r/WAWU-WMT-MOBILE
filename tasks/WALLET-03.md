@@ -7,7 +7,7 @@ order: 147
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [WALLET-02, WALLET-09, WALLET-14, MONEY-19]
 decisions: [R-10, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, builder round 1 done (Sonnet builder; mobile `wmt/WA` from `o
 - **Gaps:** G-WALLET-03-1. **Not drawn:** W13's Add money (WALLET-05).
 - **Round 2 (verifier F3, F4):** W8's unreachable-name line on Send reads "We could not check the name now." (nothing about saving; A21 keeps its "Saving checks it" line; `nameLineHint(line, 'send')`). W10's not-enough notice no longer draws "Add ₦X" (`onAddMoney` optional on `PaySheet` and `ReviewScreen`, `send/review.tsx` passes none until WALLET-05; SHARED-CHANGES WALLET-02 #4). New cases in `bankSendFlow.test.tsx` and `PaySheet.test.tsx`. F1 and F2 are backend, not changed here.
 - **Next:** the batch 10 pull request; FIX-54 for F1.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

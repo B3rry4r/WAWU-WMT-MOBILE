@@ -7,7 +7,7 @@ order: 218
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -24,6 +24,8 @@ As of 17 Oct 2026.
 - **Merged and live:** nothing of this task (the Hub half is in `wmt/MERGE-11`).
 - **Open findings:** none known. **Not run:** a real mail service (never called), the live host. GitHub CI runs on `wmt/**` pushes of both repos: run ids in the hand-back.
 - **Next:** the batch 11 pull request merges the backend; wawu-id `wmt/H1` `a984298` merges and deploys first. When SETTINGS-08 (wawu-id `01b751f`) is also on wawu-id main, `sendDataExportLink`'s select needs `status: true, deletedAt: true` (`auth.service.ts` about :1433). The two lows are in `tasks/SWEEP-MONEY.md` (link host not pinned; `fulfil` holds a transaction across the wawu-id call).
+
+Status set to review by the records sync, 25 Oct 2026: merged as wawu-id b201cfc9, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

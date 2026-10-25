@@ -7,7 +7,7 @@ order: -93
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-20]
 passes: [V1]
@@ -28,6 +28,8 @@ As of 19 Oct 2026, verifying: built by a Sonnet builder (tier T0, test infrastru
 - **Round 2 (CI on 2290418 failed two specs round 1 did not touch). `paid-dm-wallet.contract.spec.ts:735` ("two answers in a day", expected owed, got landed) and `host-share` ("a creator gets one move a day") depend on the time of day.** R-55's day is the Lagos day; the pay harness sweeps at wall time plus every pass so far, so when Lagos midnight (23:00 UTC) falls between a test's passes the later sweep rightly makes a new move. Found by logging the clock of every earnings sweep in each earnings spec and running it at the wall time that puts midnight between each pair of consecutive sweeps (a forward-only Date shim kept in the scratch folder, not the repo). Red before: paid-dm-wallet at 22:12:57 to 22:20:57 UTC (the CI run was 22:16), host-share at 22:50:53. Not red at any pair: event-host-payout, earning-sweep-start, earning-settlement-nuvion, nuvion-earnings (and tip, unlock, legal fee, daily move, which assert no day-bound outcome; earning-settlement is Fintava, not touched).
 - **The change is FIX-61's (`cc0da36`) applied unchanged**, so wmt/FIX-61 merges over it cleanly: `keepInLagosDay(hours = 2)` on the pay harness moves the sweeps' clock to the start of the next Lagos day when fewer hours are left, never backwards; the two tests call it first; `pay-harness-day.spec.ts` pins the rule on both sides of midnight. After: all 34 shifts green, 22:16 and 22:50 green, real time green.
 - **`school-report.contract.spec.ts:151` (SCHOOLS-09, two relay requests under one key, expected one) is a test race; the product is right.** The enrolment starts the first try in the background; a try claims the row (attempts + lease) before it asks the relay, so a test that waits on `attempts >= 1` sets the relay to ok and clears its requests while that try is still on its way. The late request lands in the new mode and list, and the five deliveries then send a second one under the same key (one conditional update claims, a repeated key is answered with the first mail). New `firstTryDone` waits for `attempts >= 1` and the lease let go, at the six places that waited on attempts alone. With the relay stand-in held back 200 ms in a scratch copy: 3 of 12 red before, 12 of 12 after; on the real stand-in 20 runs in a row green.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 9e46bcd0, lead acceptance in the lead's merge log, 19 Oct (FIX-93 r2 accepted, T0).
 
 ## Read first
 

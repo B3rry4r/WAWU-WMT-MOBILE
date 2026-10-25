@@ -7,7 +7,7 @@ order: -71
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-62]
 passes: [V1, V2, V3, V4, V9]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 18.
 - **Protected suite (V3):** 2 of 253 red, `GET` and `POST /communities/:id/messages` "videoUrl, voiceUrl not in the lock". They are INBOX-22's own, red on `2d311df` too, and nothing here adds a field.
 - **Merge note:** INBOX-22 round 2 changes `assertUploaded` in `community-message.service.ts`; this branch does not touch it. Functions changed in `storage.service.ts`: `objectKeyFrom` (loops `KEY_FOLDERS`), plus the new exports `KEY_FOLDERS` and `GENERATED_KEY_FOLDERS` and the import of `CHAT_UPLOAD_FOLDERS`. In `community-message.service.ts`: the constructor (adds `StorageService`), `create`, `list`, new `withFreshMedia` and `withFreshMediaAll`.
 - **Next:** the batch 18 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 6e815cd9, verifier PASS in the lead's merge log, 18 Oct (v FIX-71 PASS).
 
 ## Read first
 

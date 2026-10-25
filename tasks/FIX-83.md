@@ -7,7 +7,7 @@ order: -83
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-62]
 passes: [V1]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): accepted (T0, the lead's read; test only) and
 - **Same shape elsewhere (grep of every spec that reads a signed link: `readUrlFor`, `freshUrlFor`, `X-Amz`, `fileUrl`, `videoUrl`, `voiceUrl`, `imageUrl`, `AssetUrl`, `avatarUrl`, `coverUrl`):** none compares a whole returned signed link with a stored or sent one. `community-message-resign.contract.spec.ts` and `message-media.spec.ts` already compare key, folder and a "signed now" check; the legal, admin review and storage specs compare the path and `X-Amz-Expires`; the live, catch-up, rooms, inbox, chat, profile, explore and content specs run with storage unconfigured or a stub, so the link comes back as stored and is compared with a literal. Nothing else changed.
 - **Checks:** backend tsc EXIT 0, eslint on the spec EXIT 0, prettier clean, gates 0 fail, 129 warn, 88 accepted EXIT 0, check_baseline EXIT 0. Spec run by name; no Fintava spec run.
 - **Next:** an independent verifier; then the lead's batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, lead acceptance in this file (accepted, T0 lead read).
 
 ## Read first
 

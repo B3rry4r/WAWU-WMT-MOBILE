@@ -7,7 +7,7 @@ order: 118
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-14, UI-02, HOME-02]
 decisions: [R-6, R-10, R-64, R-53, R-69]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Not drawn (R-47, R-64):** the Naira/Dollar/USDT picker. The Add button leads to the Wallet tab, as the ticket checkout's does.
 - **Open for the lead:** SHARED-CHANGES HOME-13 #1 (export the pay sheet's wallet card; `WalletLine` copies it meanwhile); BACKEND_GAPS G-1721 (the quick amounts are the board's, PROVISIONAL TIP-QUICK-AMOUNTS).
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S1 L1 to L3).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 099cf130, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Design v2 update (16 Oct 2026)
 

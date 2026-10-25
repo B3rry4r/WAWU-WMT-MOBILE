@@ -7,7 +7,7 @@ order: 277
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [AITOOLS-01, POINTS-03, POINTS-06, DV2-COMP, ME-04, HOME-01]
 decisions: [R-43, R-61, R-68, R-47]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -26,6 +26,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **NOT RUN:** a real provider (never called); V10 on a device.
 - **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (L3) and SWEEP-MONEY (L2, N1); L1 is G-POINTS-07-1.
 - **History:** none yet. Reports go to tasks/history/POINTS-07.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 2f0657fc, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

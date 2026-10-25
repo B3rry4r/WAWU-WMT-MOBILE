@@ -7,7 +7,7 @@ order: -78
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: [R-5, R-47, R-51, R-63]
@@ -33,6 +33,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 19. Repo
 - **Pictures** (390 px, light and dark, web export over request interception, beside VF14 and A21; `pair-tier.png`, `pair-payout.png`, `pair-payout-empty.png`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fix-78-b/pics/`. Match, with recorded differences: Your tier shows a 12-month tier ("Active until 18 Oct 2027") where the board's example is Verify; no Upgrade button because the stand-in sold no higher tier; the board's "Example values" is the board's own. A21 matches in place and type; "Creators only." is left out (above); Save is shut for an account already saved (existing).
 - **Open findings:** none. Lows: none.
 - **Next:** the batch 19 pull request (the lead). FIX-79 takes FIX-78 V-1 and V-2 (the year pins in `publishAndTier.test.tsx` and `tierCheckout.test.tsx`).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app f51df55b, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

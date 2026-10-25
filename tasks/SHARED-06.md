@@ -7,7 +7,7 @@ order: 229
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [SHARED-05]
 decisions: []
 passes: [V1, V2, V5, V6, V7]
@@ -30,6 +30,8 @@ As of 17 Oct 2026 (builder, Sonnet, round 1; mobile `wmt/SHARED-06` from `origin
 - **Look changes the rows ask for (everything else matches pixel for pixel, see the report):** the pay sheet with no wallet draws "Open your wallet"; the TGIF arrow is a 16% white disc and its pills 40 high at 600; M8's Bio and P5's About are the kit's 76 high box with a border ring (P5 was 80 with an inset ring); H4's book cover is the canvas's #3B0B54; the four social rows show the logo and not the platform word; the Bank field and the name line keep their sizes.
 - **Left as is:** `src/features/wallet/statements/ValueField.tsx` is a read-only and section-label variant that WALLET-11 #1 does not cover; `Note` in `pro-listing/parts.tsx` is a second banner (not named by a row).
 - **Next:** a verifier; the lead decides HOME-02 #4 and row 11.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 62e79634, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

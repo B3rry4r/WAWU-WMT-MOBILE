@@ -7,7 +7,7 @@ order: 311
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: building
+status: review
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -36,6 +36,8 @@ As of 24 Oct 2026, built by a Sonnet builder (bundle B21, T2): backend `wmt/WALL
 
 - **Next:** round 1 verified FIX (24 Oct, section below: F8 and F9, two red coverage specs); a builder fixes those two, then a verifier runs the four coverage specs again. The owner sets `NUVION_ENCRYPTION_PUBLIC_KEY`, `ADD_MONEY_RETURN_URL` and the fee settings; Nuvion switches on naira; then the live card check.
 - **History:** none yet. Reports go to tasks/history/WALLET-25.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4e21f52, app e3eaf6ec, verifier PASS in the lead's merge log, 24 Oct (v-WALLET-25-r1 PASS on F1-F7; F8/F9 fixed, lead accepted round 3 on green Branch checks).
 
 ## Read first
 

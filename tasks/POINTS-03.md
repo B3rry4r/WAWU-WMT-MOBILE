@@ -7,7 +7,7 @@ order: 213
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [POINTS-01, POINTS-02]
 decisions: [R-43, R-38]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,6 +30,8 @@ As of 17 Oct 2026, builder round 2 done (Sonnet builder), after the verifier's `
 - **Open findings:** none known after round 2 (medium 0).
 - **Next:** the lead merges with batch 7 (stacked here by MERGE-7f on POINTS-02; POINTS-03 builds on it).
 - **History:** none yet. Reports go to tasks/history/POINTS-03.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, lead acceptance in this file (verifier FIX on one medium, accepted on review).
 
 ## Read first
 

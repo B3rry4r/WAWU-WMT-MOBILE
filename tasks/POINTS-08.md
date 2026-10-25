@@ -7,7 +7,7 @@ order: 278
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [POINTS-07, AITOOLS-01, VERIFY-01]
 decisions: [R-43, R-68]
 passes: [V1, V4, V5, V6, V9]
@@ -26,6 +26,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **NOT RUN:** a real voice provider (never called); V10 on a device; playing the audio on a phone (web export only: a click plays the stand-in's file).
 - **Next:** the batch 15 pull request (the lead). The verifier's lows are in SWEEP-APP (POINTS-08 L1, L2).
 - **History:** none yet. Reports go to tasks/history/POINTS-08.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app ec35fb48, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

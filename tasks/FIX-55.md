@@ -7,7 +7,7 @@ order: -55
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 tier: T0
 depends_on: []
 decisions: [R-47]
@@ -28,6 +28,8 @@ As of 17 Oct 2026.
 - **Checks:** see the hand-back; the full mobile check runs once per batch.
 - **Not run:** GitHub CI, a real device.
 - **Next:** the batch 10 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, lead acceptance in this file (accepted on the lead's diff check).
 
 ## Read first
 

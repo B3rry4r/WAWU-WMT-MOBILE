@@ -7,7 +7,7 @@ order: 101
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EXPLORE-03, EXPLORE-05, SETTINGS-04, UI-02, UI-03, INBOX-05]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Fixture notes:** the stack does not seed by itself: `npm run db:seed` plus extra rows were added by hand; the mock WAWU ID answers a flat shape the app cannot read, so pictures need `--with id`.
 - **Open findings:** none known. DV2-01's task file still says See all is not drawn; it is now.
 - **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-APP (EX02 F2, F4).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app d6e9aa07, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

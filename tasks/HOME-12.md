@@ -7,7 +7,7 @@ order: 127
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, HOME-15, UI-02, HOME-02]
 decisions: [R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Not drawn (R-47):** H18's Contact support (SUPPORT-01). H14's "Yours" row (G-1723). H17's Add leads to the Wallet tab, as the ticket checkout's does (W15 is WALLET-05's).
 - **Open for the lead:** SHARED-CHANGES HOME-12 #1 (a `confirming` title on the pay sheet; `StatusSheet` stands in for H18); BACKEND_GAPS G-1722, G-1723, G-1724.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (3 rows, S1 L1 to L3, shared with HOME-13).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app f8663857, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

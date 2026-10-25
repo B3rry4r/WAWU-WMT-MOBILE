@@ -7,7 +7,7 @@ order: 132
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -31,6 +31,8 @@ As of 17 Oct 2026.
 - **Order:** filed as 135, which FIX-47 holds; MERGE-10 gave it 132 (free).
 - **Sweep list (lows, not fixed, in SWEEP-MONEY):** the sweep's bank payout after a pending fee waits for `moneyTimeoutMs`; WAWU bears Nuvion's 200 kobo on the fee and the fee back (by design).
 - **Next:** the batch 10 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend c7bf0ada, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

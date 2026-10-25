@@ -7,7 +7,7 @@ order: 298
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [REF-03, DV2-05]
 decisions: [R-47, R-48, R-49]
 passes: [V1, V6, V7, V9]
@@ -30,6 +30,8 @@ As of 17 Oct 2026, round 3 built by a Sonnet builder (T1), after round 2 and the
 - **Open findings:** none graded yet. **Not run:** GitHub CI, a real phone, the real Hub or website.
 - **Next:** the batch 10 pull request (mobile); the website pull request is separate. F3 (`ResetPasswordForm.tsx:95` says "signed in on this device" in join-only mode) is in SWEEP-APP.
 - **History:** [history/LINKS-01.md](history/LINKS-01.md).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 45bc8449, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

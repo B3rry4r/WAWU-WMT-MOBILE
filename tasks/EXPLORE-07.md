@@ -7,7 +7,7 @@ order: 282
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [ADS-07, ADS-01, EXPLORE-01, HOME-16, HOME-09]
 decisions: [R-59, R-68]
 passes: [V1, V4, V5, V6, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026.
 - **Checks (builder):** typecheck clean; eslint 0 errors (7 warnings, none in these files); new `slider.test.tsx` 21 tests; the explore, events and ads suites 445 tests pass; full local check below. Pictures at 390 px, light and dark, from a web export through a local stack (Hub on backend `wmt/MERGE-7` `9c40478`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/explore-07-b/pics/` (`x1-advert-first`, `x16-event-slide`, `x17-no-events`, each `-dark` and `-light`), beside `build/design_shots/X1, X16, X17`. Two seeded neutral adverts (Gospel Night Live, Harvest Praise Night) with generated artwork; the export predates the removal of the unreachable Sponsored block, which no picture reaches.
 - **Not done / for the verifier:** the swipe is checked by scroll events in jest and by a wheel scroll on the web export (the web export does not snap a scripted scroll); a finger swipe on a phone is not run. The slider has no cap and no autoplay (none ruled); with very many adverts the dots would run long (no figure invented).
 - **Next:** the lead merges with batch 7. Then DV2-RM (see the TGIF note above: it keeps `TgifCard` and `TgifProblem`).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app bf4dcdda, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

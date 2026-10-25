@@ -7,7 +7,7 @@ order: -1
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -23,6 +23,8 @@ As of 17 Oct 2026.
 - **History:** the builder report is in [history/HARNESS-NUV.md](history/HARNESS-NUV.md).
 - **Open findings:** none yet.
 - **Next:** an independent verifier repeats the before and after runs. Backend branch `wmt/HARNESS-NUV` from `432f017` (batch 7).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 3acc0443, lead acceptance in this file (accepted on the lead's review of the diff).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: -2703
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-85]
 passes: [V1, V6, V7, V9]
@@ -34,6 +34,8 @@ As of 24 Oct 2026, built by the OPS-27 builder (T1, bundle B30). Dashboard `wmt/
 Proof: `scratchpad/dash-b30/places-1.png`, `creators-geo.png`, `content-geo-filter.png` (1440 px, looked at): 40 seeded accounts across Nigeria, Ghana, the United States and the United Kingdom, 6 with no country; the Lagos filter showed the 10 people the counts said. Checks as OPS-27 (same branches, same EXIT 0 lines).
 
 Default (lead), owner may override: the place filter is offered on the two lists the Hub filters (creators, the content queue). The KYC queue, verification, professional listings, support threads and registrations carry no country on the Hub: G-OPS-29-1.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4153fd7, dashboard 433c710, verifier PASS in the lead's merge log, 24 Oct (v-OPS-27 covered the bundle; fix round 1 under the lead's rulings).
 
 ## Read first
 

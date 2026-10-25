@@ -7,7 +7,7 @@ order: -77
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-62, R-5]
 passes: [V1, V2, V3, V4, V9]
@@ -30,6 +30,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 20.
 - **Merge (MERGE-20):** backend merged with no conflict; `community-message.service.ts` keeps FIX-71's `withFreshMedia` and this task's `imageUrl` check. One test is stale only because the two branches met: FIX-71's `community-message-resign.contract.spec.ts` ("the answer to a send, and to its repeat, carries a link that loads today") sends a link on the spec's own host (`fix71-bucket.test.invalid`, not the bucket's `fix71-bucket.fix71-bucket.test.invalid`) with no upload row behind its key, so this task's check answers 400. Fixture patch (no assertion changed; the spec then passes 9 of 9): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/mg20-m/merge20-resign-fixture.patch`, handed to the lead and not applied in MERGE-20.
 - **Lows (SWEEP-INBOX FIX-77 L1 and L2, open):** the DTO's own sentence ("imageUrl must be a full link") for a value that is not a link; the sender's own key with an unsigned or altered link is stored as sent.
 - **Next:** the batch 20 pull request (the lead). Gaps: G-FIX-77-1, G-FIX-77-2 in BACKEND_GAPS; G-FIX-71-2 and G-INBOX-22-4 are closed by this task.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 5567e8e0, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

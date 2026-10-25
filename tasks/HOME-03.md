@@ -7,7 +7,7 @@ order: 141
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [HOME-04, HOME-06, INBOX-06, UI-02, HOME-02, HOME-12, HOME-13, EXPLORE-02]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 2 (17 Oct 2026, findings 2 and 3):** Send posts once: a ref is set before the request and cleared on its answer (two presses in one frame, one POST; a failed post lets go too). The preview pill sits 12 from the picture's foot as drawn (`Pill` `flush`, SHARED-CHANGES HOME-03 #5) and the book's last line has the board's 24 under it: 6 px between the line and the pill, no shared area (H19, H20). H25's foot is HOME-08's.
 - **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (S1b F4).
 - **Copy (16 Oct 2026, R-69, R-53, DESIGN-V2-CUT):** print the app's name as "Who Made This?" with the question mark, and label the provider's part of a fee "Bank charge"; the 16 Oct boards of this task differ from the old ones only by that wording. DV2-COPY re-checks this task last.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 099cf130, verifier PASS in this file (verdict MERGE after one medium fix round).
 
 ## Read first
 

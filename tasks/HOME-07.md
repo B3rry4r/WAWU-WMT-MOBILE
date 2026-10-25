@@ -7,7 +7,7 @@ order: 148
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [HOME-04, HOME-05, PROS-02, UI-02, UI-03, HOME-08, HOME-12, PROS-01, EXPLORE-02]
 decisions: [R-18, R-69]
 passes: [V1, V4, V5, V6, V9]
@@ -25,6 +25,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Decisions (agent, owner may override):** a course plays only its public preview in the feed (the creator's first lesson; the full file is the whole course); a course or template unlocked from the feed ends the sheet on "Done" (no player to open into; SHARED-CHANGES HOME-07 #2); a professional card shows at most four service chips (`CARD_SERVICE_CHIPS`).
 - **Next:** the batch 14 pull request (the lead). The verifier's lows are in SWEEP-APP (HOME-07 F1 to F3).
 - **History:** reports go to tasks/history/HOME-07.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 79f78dc3, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Design v2 update (16 Oct 2026)
 

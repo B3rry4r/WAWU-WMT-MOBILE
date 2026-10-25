@@ -7,7 +7,7 @@ order: 111
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-18, MONEY-13, MONEY-16, WALLET-15, WALLET-16, INBOX-08, INBOX-09]
 decisions: [R-10, R-11, R-19, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -32,6 +32,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open for the lead:** the plain `holds.release` without `asEarning` stays for the hold service's own callers and the Fintava hold specs; nothing in production asks it for a payee any more. Low: G-WALLET-17-1.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B3a L1).
 - **Records:** tasks/history/INBOX-17.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

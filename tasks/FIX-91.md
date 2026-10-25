@@ -7,7 +7,7 @@ order: -91
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1]
@@ -30,6 +30,8 @@ As of 19 Oct 2026, built by a Sonnet builder (tier T0, test files only, no produ
   - batch 13, fresh DB: stand-in, then the original ai-tools: 1 red ("Expected: 1 Received: 2", as the deploy); stand-in, then the fixed one: 24 of 24; stand-in, then only "leaves it alone": green.
   - Scratch merge of both branches into `origin/wmt/MERGE-26` `adc455e` (no conflict, 4 files): both stand-ins, then the four original specs: 4 suites, 14 tests red (the deploy's 14); a stand-in again, then the four fixed: 50 of 50 green. `tsc --noEmit` EXIT 0, eslint EXIT 0, gates EXIT 0 (0 fail).
 - **Open:** G-FIX-91-1 and G-FIX-91-2 (low, in BACKEND_GAPS.md): the two polluters still leave their rows. Both are Fintava-double specs, so they were not touched; any new spec that counts globally meets them again.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 2a05924a, lead acceptance in the lead's merge log, 19 Oct (FIX-91 ACCEPTED, T0 diff read).
 
 ## Read first
 

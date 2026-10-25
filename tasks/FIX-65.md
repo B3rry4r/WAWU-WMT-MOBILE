@@ -7,7 +7,7 @@ order: -65
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-17, R-50]
 passes: [V1, V2, V3, V4, V9]
@@ -35,6 +35,8 @@ As of 18 Oct 2026, merging (lead): round 2 verified (CLEAN) and stacked in batch
 - **Round 2 checks:** `purge-files.contract.spec.ts` 7 of 7 and `purge-files.spec.ts` 6 of 6 (the two new contract cases red on `e57f29a`); with the account, purge and storage specs that do not use the Fintava double (21 suites, 349 tests passed). tsc 0, eslint 0 on the four changed files, gates 0 fail, baseline ok. Product diff: 2 files, +65 -9 lines.
 - **Open:** G-FIX-65-1 to G-FIX-65-5 in BACKEND_GAPS. The OWNER list (G-FIX-65-1) is ruled: R-73, 19 Oct 2026.
 - **Next:** an independent verifier; the lead merges it into the next batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 33b627f0, verifier PASS in this file (round 2 CLEAN).
 
 ## Read first
 

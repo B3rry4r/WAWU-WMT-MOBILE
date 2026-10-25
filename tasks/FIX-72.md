@@ -7,7 +7,7 @@ order: -72
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-10, R-12, R-19, R-31, R-39, R-42]
 passes: [V1, V2, V3, V4, V9]
@@ -26,6 +26,8 @@ As of 18 Oct 2026, merging (lead): verified (the FIX-70 and FIX-72 verifier, rep
 - **Spec (Nuvion stand-in only, no Fintava import):** new `src/schools/settlement/tests/school-settlement-failed-payout-nuvion.contract.spec.ts`, 7 of 7, the real adapter over the stand-in's socket: accepted-then-failed lands once under `-2` (one successful transfer, one completed ledger row, the failed one reversed); a second failure sends nothing more and leaves the sweep, also past the bound; a lost answer, a 5xx after the transfer was made and a 5xx before it was never start a new reference (the first two start one only on Nuvion's failed record); an unreadable failed record is asked again; an unfinished transfer goes to a person past the bound. WAWU's operational ledger equals the stand-in after each. Red on `80f5845` for the three that depend on the fix (accepted-then-failed, second failure, unreadable failed record), run alone; green after. The other four pin paths that were already right and cannot be red there. The stand-in gains `failCreateNext` and `answerAfterNext` (additive).
 - **Not done:** `school-settlement.contract.spec.ts` and `school-enrolment.contract.spec.ts` were not run (brief); CI runs them.
 - **Next:** an independent verifier (V3 protected suite, gates, the settlement and payout specs).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

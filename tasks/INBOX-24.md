@@ -7,7 +7,7 @@ order: 259
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [WALLET-17, INBOX-16, MONEY-19]
 decisions: [R-63, R-10, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -24,6 +24,8 @@ As of 18 Oct 2026, merging (lead): round 3 (backend `wmt/PASS-r3` `1fdcf7a`) sta
 - **Size:** L. **Wave:** 2 (see `tasks/DESIGN-V2-CUT.md`).
 - **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-MONEY (L1) and SWEEP-INBOX (L3, G-INBOX-24-1, G-INBOX-24-6).
 - **Records:** SHARED-CHANGES INBOX-24 #1 to #4; BACKEND_GAPS G-INBOX-24-1 to -6.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 2a05924a, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

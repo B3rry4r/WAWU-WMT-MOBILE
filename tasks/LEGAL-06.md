@@ -7,7 +7,7 @@ order: 120
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, LEGAL-02, LEGAL-04, LEGAL-05, UI-02]
 decisions: [R-14, R-6, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -32,6 +32,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 3 (verifier F1 and its low, 17 Oct 2026):** backend `wmt/B3a` `d89e47c`. `signContract` writes the signature only if the matter is still unsigned at the status, amount and note it read (`updateMany`, 409 "changed while you were signing" otherwise, nothing signed), so a re-quote, a cancel or another signature that lands between the read and the write can no longer leave a letter at the old price. `quote()` also refuses a cancelled request (409). Specs in `legal-ops.contract.spec.ts` (5 new, 4 fail on `242ce9d`; the read is held with a spy, the other writer commits, then the signature goes through).
 - **History:** `tasks/history/LEGAL-06.md`.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B3a L4, L5) and SWEEP-APP (S4 F5).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 272428ff, verifier PASS in the lead's merge log, 17 Oct (v B3a r2 MERGE: S4 F1 closed end to end).
 
 ## Read first
 

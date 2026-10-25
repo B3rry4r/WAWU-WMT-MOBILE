@@ -7,7 +7,7 @@ order: 106
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [EXPLORE-05, UI-02, INBOX-05]
 decisions: [R-37]
 passes: [V1, V4, V5, V6, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **NOT RUN:** V9 against a real Hub (batch 10's has no `/search/people`, G-EXPLORE-04-1).
 - **Open findings:** none known.
 - **Next:** the batch 13 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app ad4791c0, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

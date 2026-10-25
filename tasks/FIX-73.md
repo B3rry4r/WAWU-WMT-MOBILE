@@ -7,7 +7,7 @@ order: -73
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T0
 depends_on: []
 decisions: [R-5]
@@ -26,6 +26,8 @@ As of 18 Oct 2026, merging (lead): accepted by the lead on a diff read (T0) and 
 - **2 SWEEP-APP row 131 (AUTH-06 L3, copy):** A12's sub-line read "Pick 3 or more." where the board reads "Pick three or more." `interestsHint(minimum)` in `InterestsScreen.tsx` spells the Hub's minimum in words up to ten (digits above ten); the Hub's number is still the one used.
 - **Tests (red before, green after):** `tips/__tests__/model.test.ts` (the `12.50` assertion that pinned ₦1,250 now pins ₦12, per the row; new `12.5`, `12.`, `1,250.75`, `0.99`, `.50` and the `cleanAmountText` cases), `tips/__tests__/tipFlow.test.tsx` (a pasted `12.50` is quoted as 1200 kobo, the button reads "Tip ₦35.25", the field shows 12), `after-signup/__tests__/afterSignup.screens.test.tsx` (line 125 now the board's sentence; a new `interestsHint` case). Run on the unfixed source: 5 failed, 35 passed; on the fixed source: 40 of 40 pass (4 suites).
 - **Next:** the batch 18 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 2f22d36c, lead acceptance in this file (accepted by the lead on a diff read, T0).
 
 ## Goal
 

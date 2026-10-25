@@ -7,7 +7,7 @@ order: 139
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [INBOX-06, INBOX-07, WALLET-07]
 decisions: [R-13]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026.
 - **History:** this builder report moved to tasks/history/INBOX-15.md.
 - **Owner questions:** none.
 - **Decisions the builder took (defaults, recorded):** a request is also a chat message of kind `money_request` (its reason is the message text); its unread in the inbox is always 0, because the chat already counts that message (no double count in the badge); the Money chip is `kind=money_request` (`kind=money` stays a 400, INBOX-07's test); the asker needs an open wallet (R-6), the payer is gated at pay time; amount at least 1 kobo and at most the send's maximum, reason at most 100 characters (the send's note); decline and cancel need no wallet and stay allowed after a block.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 3acc0443, lead acceptance in this file (accepted on the lead's review of the diff after the verifier's rounds).
 
 ## Read first
 

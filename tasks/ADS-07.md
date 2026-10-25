@@ -7,7 +7,7 @@ order: 257
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [ADS-01, ADS-04, ADS-06]
 decisions: [R-59, R-68, R-15]
 passes: [V1, V2, V3, V4, V9]
@@ -34,6 +34,8 @@ As of 17 Oct 2026.
 - **Round 2 (lead's rulings):** `POST /admin/ads/:id/schedule` and `/resume` also refuse a campaign with no artwork: the same 422 "Add artwork before you save this campaign", `reason.code` `artwork_required`, nothing changed and no audit row (the 409 for a move that is not allowed from the status still comes first). `pause` and `end` are never refused for it, so a campaign saved before can always be taken off air. A spec each (schedule, resume), red first, then green; one more spec for pause and end. The Explore slider has **no cap** at launch: `GET /ads?placement=explore_slider` returns every live advert, as built (a cap would be an invented figure).
 - **Not done on purpose:** no pictures: the task draws no artboard (`artboards: []`), round 2 changes no app code, and a card with a picture looks as ADS-01 left it.
 - **Next:** the lead merges it with batch 7. Then EXPLORE-07 builds the slider on `GET /ads?placement=explore_slider`; ADS-02 (the dashboard form) marks the artwork field required.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, lead acceptance in the lead's merge log, 17 Oct (verifier FIX on mechanical items only; lead: product passes).
 
 ## Read first
 

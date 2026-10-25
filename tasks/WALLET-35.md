@@ -7,7 +7,7 @@ order: 306
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [WALLET-27, WALLET-06]
 decisions: []
 passes: [V1, V4, V5, V6, V9]
@@ -41,6 +41,8 @@ As of 16 Oct 2026, builder round 3 (two small wawu-id fixes and a corrected depl
 - **History:** reports in tasks/history/WALLET-35.md.
 - **Open findings:** blocker 0, high 0, medium 0. Lows: 5 in SWEEP-MONEY (a statement mail that fails still uses a rate slot, a burst of oversize requests, relay capacity, a keyless POST to a relay sub-path answers 401, one wawu-id spec flake under load); round 2 and 3 items R2-1 to R2-3 are fixed. They are in tasks/SWEEP-MONEY.md with the report path.
 - **Next:** the lead opens one pull request per repo from the last batch 4 head, for the owner to merge after batch 3 (PR #138); then mobile sign-off.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app ffd9d51f, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

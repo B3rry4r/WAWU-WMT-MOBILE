@@ -7,7 +7,7 @@ order: 284
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [INBOX-01, INBOX-03, INBOX-05, WALLET-17, UI-02, UI-03, AUTH-06, ME-04, ME-07, INBOX-04, INBOX-24]
 decisions: [R-62, R-63, R-47, R-69]
 passes: [V1, V4, V5, V6, V7, V9, V10]
@@ -31,6 +31,8 @@ As of 18 Oct 2026, merging (lead): round 3 accepted and stacked in batch 16.
 - **Round 3 (17 Oct 2026, Sonnet builder, tier T2):** the verifier's MEDIUM-3 closed. On a "Removed from this room" row I34 draws only "Let back in" (the Approve call); Decline is drawn only on a real request in a room that sells no pass, because the Hub keeps a removed row and Decline did nothing (R-47). Until the room is read no button is drawn; if it cannot be read, Approve alone. Tests: joinRequests 5 (3 fail before the change, all pass after); communities, community-host, community-pass jest 8 suites 172 tests EXIT 0; tsc EXIT 0; eslint on changed files EXIT 0; gates 0 fail. Branch: mobile `wmt/INBOX-14` + one commit on `977efc9a`. The backend half (HIGH-1, MEDIUM-1) is INBOX-24 round 3, backend `wmt/PASS-r3`.
 - **Next:** the lead's re-check of round 3 (HIGH-1 and MEDIUM-1 sit in the backend), then the batch.
 - **History:** reports go to tasks/history/INBOX-14.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 77994620, verifier PASS in the lead's merge log, 17 Oct (round 3 PASS, lead accepted on a diff read).
 
 ## Design v2 update (16 Oct 2026)
 

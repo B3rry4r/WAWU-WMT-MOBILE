@@ -7,7 +7,7 @@ order: -70
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-10, R-19, R-39, R-42]
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ Round 3, 18 Oct 2026, builder (tier T2), since checked: backend `wmt/FIX-70-r2` 
 - **Spec (Nuvion stand-in only, no Fintava import):** new `src/money/transfers/tests/wallet-transfer-fee-back-failed-nuvion.contract.spec.ts`, 7 of 7: accepted-then-failed lands once under `-fee-back-2` (person whole, one ledger row, no third transfer); a second failure does not loop and goes to a person past the bound; a timeout (answer lost, then Nuvion fails it) starts the new reference only on Nuvion's own failed record; a 5xx and an unfinished transfer never start one; the operational ledger equals the stand-in after each. Red on `a98af09` for the first three (the two guards cannot be red there: that code never made a new reference), green after.
 - **Read-only survey (no fix):** every other provider move in `src/money`, `src/nuvion`, `src/points`, `src/schools`. Same-reference retry of an accepted-then-failed move: one, G-FIX-70-1 (a school payout). The holds (every refund and release: bills, tickets, school enrolment, pass, legal, DM, unlock, tip, plan purchase), the earnings move, the payment, the send, the bank send, the fee leg and the points cash-out do not (new reference, or final).
 - **Next:** an independent verifier (V3 protected suite, gates, the three fee specs).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend b3594cd8, verifier PASS on rounds 1 and 2 in this file, and lead acceptance of round 3 on a diff read (lead's merge log, 18 Oct).
 
 ## Read first
 

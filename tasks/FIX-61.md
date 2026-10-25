@@ -7,7 +7,7 @@ order: -61
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-55]
 passes: [V1, V2, V3, V4, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026, merging (lead): a T0 record, accepted on the lead's diff read
 - **After:** the same spec passes at 22:11:30, 22:12, 22:14, 22:16, 22:18, 22:20, 22:20:50, 21:00, 21:55, 22:45, 22:58 and 23:05 UTC.
 - **Open findings:** none. Lows: none.
 - **Next:** the batch 15 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 96726430, lead acceptance in this file (verdict ACCEPTED on the lead's diff read).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 220
 priority: launch
 repo: wawu-id
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-72, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -24,6 +24,8 @@ As of 19 Oct 2026, merging (lead): checked by an independent verifier (report `/
 - **Merged / live:** nothing. Deploys with the next wawu-id release; no Hub change, no new variable, no migration.
 - **Findings:** L1 (low): the route mails the typed email of an account with no phone proof and an unproven email (the rule is `emailVerified || !phoneVerifiedAt`); hardening is to require `emailVerified`. Not reachable from the Hub today. Two info rows (one shared service key and no per-user rate limit; body-parser errors before the key check, pre-existing). All three are rows of `tasks/SWEEP-AUTH.md`, open for the lead.
 - **Next:** the batch 26 pull request (the lead).
+
+Status set to review by the records sync, 25 Oct 2026: merged as wawu-id cdfa4422, verifier PASS in the lead's merge log, 19 Oct.
 
 ## Read first
 

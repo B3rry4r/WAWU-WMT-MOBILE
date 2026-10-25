@@ -7,7 +7,7 @@ order: 258
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [INBOX-16, INBOX-05, WALLET-17]
 decisions: [R-62, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -32,6 +32,8 @@ As of 18 Oct 2026, merging (lead): round 2 accepted by the lead on a diff read a
 - **Fences touched:** SHARED-CHANGES INBOX-22 #1 (the schema columns, the route behaviour, `contract/openapi.json`, the two presign folders and the 2048 link limit; the row now names them).
 - **Not run:** Fintava specs and `community-pass-nuvion.contract.spec.ts` (names Fintava); the app; a real bucket upload (the stack's bucket host is a placeholder, so the confirmed-upload path ran on `StorageObject` rows).
 - **Next:** the batch 18 pull request (the lead); the owner's `relock-approved` label. Reports are in tasks/history/INBOX-22.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 6e815cd9, lead acceptance in this file (lead accepts, recorded in Current state).
 
 ## Read first
 

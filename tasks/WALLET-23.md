@@ -7,7 +7,7 @@ order: 307
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-12]
 decisions: []
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -25,6 +25,8 @@ As of 16 Oct 2026.
 - **History:** the builder report is in tasks/history/WALLET-23.md.
 - **Open findings:** blocker 0, high 0, medium 0. Lows: a balance answer with no tier keeps the old copy; the last purchase can pass by one fee over the limit; the copy is filled only by a balance read, so opening a wallet leaves W35's row hidden; a stale G-7 comment in WalletSettingsScreen.tsx. They are in tasks/SWEEP-MONEY.md with the report path.
 - **Next:** the lead opens the backend pull request from the batch 3 head (WALLET-23 first in the stack) for the owner to merge after batch 2. SHARED-CHANGES WALLET-23 #1 (migration stamp 20261022010000, sorts after batch 2's last) and #2 (contract, then npm run api, done here) are for the lead.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 12bb8c11, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

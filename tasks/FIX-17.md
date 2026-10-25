@@ -7,7 +7,7 @@ order: 196
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [FIX-07]
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -25,6 +25,8 @@ As of 17 Oct 2026 (H1 bundle, Sonnet builder, round 2 fix, tests only).
 - **Open findings:** none for the fix round. D2 was ruled by the lead and is done (below). Verifier lows stay on the sweep list: `GET /wallet/history?take=`, a repeated `token` on the export download (both 500 on main), the protected suite not wiring the pipe.
 - **Fix round (CI run 39048156767 shard 3 red):** `hub-rate-limits` and `body-parser-refusals` read `src/hub-app-config.ts` for the settings and filter and still check `main.ts` creates the app with `HUB_APP_OPTIONS` and calls `configureHubApp(app)`; `money-recipient` and `explore` build their apps with `configureHubApp` and expect 400 for a NUL. Ruled changes, no assertion weakened (SHARED-CHANGES FIX-17 #4).
 - **Next:** the batch 11 pull request. OPS-08 (PR #26) is still unmerged: follow SHARED-CHANGES FIX-17 #3 when it merges (the 410 allowance is already in).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend aef2c337, verifier PASS in this file (H1 verifier: behaviour right; the one medium closed by the test-only round 2, branch checks green).
 
 ## Read first
 

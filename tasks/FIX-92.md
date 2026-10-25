@@ -7,7 +7,7 @@ order: -92
 priority: launch
 repo: wawu-backend
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-70]
 passes: [V1]
@@ -27,6 +27,8 @@ As of 19 Oct 2026, built by a Sonnet builder (tier T0, test files only; backend 
 - **Closes G-FIX-90-1.** Its row is in `BACKEND_GAPS.md` here, marked closed by FIX-92. The row first lives on `wmt/FIX-90`, which this branch (from `MERGE-26`) does not contain, so merging both makes a one-line conflict at the end of the table: keep this branch's line.
 - **CI on the backend head:** Gates 39321949267 (green), Protected routes 39321949511, Branch checks 39321949302 (the whole suite; the lead watches it).
 - **Open:** nothing.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, lead acceptance in the lead's merge log, 19 Oct (FIX-92 accepted, T0).
 
 ## Read first
 

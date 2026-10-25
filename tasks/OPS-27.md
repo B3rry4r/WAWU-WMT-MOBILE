@@ -7,7 +7,7 @@ order: -2701
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-83, R-84]
 passes: [V1, V6, V7, V9]
@@ -37,6 +37,8 @@ Proof (local stack on the Nuvion stand-in, an admin signed in, 1440 px, each pic
 Default (lead), owner may override: (a) the money screens sit in the Money strip beside Revenue and Oversight, superadmin and finance only (the routes' own roles). (b) Fees and daily limits are the Hub's configuration, shown and not edited: G-OPS-27-1. (c) The generated contract is read at backend `f702669` (the branch); regenerate at the merged head: `HUB_API_REF=<head> npm run gen:contract gen:ops-contract gen:oversight-contract gen:money-contract` (the refs are baked into the files).
 
 Open low: the foreign list shows no person's name (the Hub names accounts by WAWU id); the provider balance shows "could not be asked" for a person with no wallet on the running provider.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4153fd7, dashboard 433c710, verifier PASS in the lead's merge log, 24 Oct (v-OPS-27 live checks; its findings fixed in fix round 1 under the lead's rulings, Branch checks green).
 
 ## Read first
 

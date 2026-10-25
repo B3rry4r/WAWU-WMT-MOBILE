@@ -7,7 +7,7 @@ order: 131
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: [R-6]
 passes: [V1, V5, V6]
@@ -24,6 +24,8 @@ As of 17 Oct 2026.
 - **Open findings:** none. **Not run:** GitHub CI, a real device.
 - **Next:** a fresh verifier; the lead merges with batch 7.
 - **History:** [history/FIX-50.md](history/FIX-50.md).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app e80c4f36, lead acceptance in this file (accepted on the lead's review, no verifier).
 
 ## Read first
 

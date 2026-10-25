@@ -7,7 +7,7 @@ order: -122
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: review
 depends_on: [AITOOLS-04]
 decisions: [R-78, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -22,6 +22,8 @@ As of 23 Oct 2026, cut (lead, from the owner's "build this thing", R-78). Status
 - **Pattern:** the one long, asynchronous tool. A file goes in, the provider makes a project and a language target, and the Hub follows it until it completes. Reuses AITOOLS-04's file intake.
 - **Provider:** the AI voice provider, through the one seam `AI_VOICE_PROVIDER`. NOT RUN against the real provider until a run with the owner's key on the Hub (its read-only access was checked 23 Oct 2026: `docs/elevenlabs/API-FACTS.md`). Built and tested against `scripts/dev/voice-standin.cjs`.
 - **Next:** a builder session (Sonnet) on branch `wmt/AITOOLS-05`; then a verifier.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 30f2435, lead acceptance in the lead's merge log, 24 Oct (verifier FIX on one medium, closed and accepted on the lead's diff read; PR #195 Branch checks green).
 
 ## Read first
 

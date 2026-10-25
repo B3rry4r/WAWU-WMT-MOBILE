@@ -7,7 +7,7 @@ order: 325
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: []
 passes: [V1, V2, V3, V4, V9]
@@ -28,6 +28,8 @@ As of 16 Oct 2026.
 - **History:** round history, the round 1 verifier report and the round 2 builder report are in tasks/history/FIX-15.md.
 - **Open findings:** blocker 0, high 0, medium 0. Lows: a refused upload confirmed at once keeps its space for 6 to 15 minutes; presign takes no part in the per-person lock; (rows 3 and 4 from round 1 are in the table already). They are in tasks/SWEEP-APP.md with the report path.
 - **Next:** the lead opens the backend pull request from the batch 3 head. The lead decides when a screen calls POST /uploads/confirm (none does yet; the app task should confirm again after 6 minutes or accept the wait).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 12bb8c11, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 185
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: review
 depends_on: [EVENTS-02]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -26,6 +26,8 @@ As of 16 Oct 2026, from the lead's log (10 Oct) and the branch.
 - **Open findings:** blocker 0, high 0, medium 0. Lows O7 and O8 are in tasks/SWEEP-EVENTS.md. NOT RUN by the verifier: the full backend suite (it needs a network namespace).
 - **Next:** the owner applies the label; the lead merges #83 and signs off mobile.
 - **Records:** on the branch, `wmt/EVENTS-11`, in tasks/EVENTS-11.md there (60 KB, not in this file on main). After the merge run `python3 scripts/tasks/compact_task.py EVENTS-11`; the history goes to tasks/history/EVENTS-11.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 33b627f0, verifier PASS in the lead's merge log, 16 Oct (v EVENTS-11 rf MERGE).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: -68
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: [R-47, R-10, R-6]
@@ -32,6 +32,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS, no findings) and stacked in b
 - **Pictures** (390 px, light and dark; `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/fix-68-b/pics/`): Your tier (no tier), Explore with nothing, the no-photo cards, Add money.
 - **Open findings:** none. Lows: none.
 - **Next:** the lean verifier; then the batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 423ada44, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

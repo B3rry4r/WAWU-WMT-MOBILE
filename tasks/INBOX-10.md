@@ -7,7 +7,7 @@ order: 166
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-02, INBOX-17, ME-02, UI-02, ME-11, HOME-07, INBOX-04, PROS-01]
 decisions: [R-6, R-10, R-19, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -34,6 +34,8 @@ Round 2, built after the check (18 Oct 2026, Sonnet builder, T2). Mobile `wmt/S3
 - **F3, F4, F5 (low) fixed:** "its own 24-hour window"; the I4 held and late lines say "your money" with no figure (the thread cannot know the total); an empty thread offers "Ask a question · ₦1,500" (lead default: the board draws no empty thread).
 - **Live (stack `s3r2_test`, 7890 to 7897, bank charge 2,325 kobo, taken down):** fan asked, paid ₦1,523.25, window passed: refunded 152,325 (stored column 150,000, transfer 152,325), I7 "you got ₦1,523.25 back"; a ₦900 wallet saw I6, Add ₦623.25, a ₦1,200 deposit, back: one fresh quote, "₦2,100.00 available", Send, paid, debit 152,325. Hub = ledger = stand-in after each step, WAWU's account too. Pictures: scratchpad `s3r2-b/e2e/pics/` (I4, I6-after-return, I7, empty-thread, light and dark).
 - **Checks:** mobile tsc 0, eslint 0, jest paid-ask, visitor, inbox, chat pass (F2 tests fail on `674a9eff`, pass now), gates 0 fail. Backend tsc 0, eslint 0, `paid-dm-wallet.contract.spec.ts` (new case fails on the old view), `wallet-hold-nuvion.contract.spec.ts`, `hold-rules.spec.ts` pass; `contract:build` no change.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app c5118ae6, verifier PASS in the lead's merge log, 18 Oct (v S3 r2 MERGE both).
 
 ## Read first
 

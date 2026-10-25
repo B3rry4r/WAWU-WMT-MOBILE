@@ -7,7 +7,7 @@ order: 145
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, INBOX-04, INBOX-15, INBOX-19, UI-02]
 decisions: [R-13, R-10, R-6, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -27,6 +27,8 @@ As of 17 Oct 2026.
 - **Open:** G-INBOX-15-1 (the Money chip holds requests only), G-883 (WAWU's fee not collected on the stack, same for a paid request). Build order was INBOX-13, INBOX-19, INBOX-20; the pay review is a bottom sheet, as the brief allows ("in the bubble, or a short review sheet").
 - **Round 2 (17 Oct, builder, F2 and F3 lows):** the pay-a-request short sheet is headed "Pay Femi", as its review is (was "Request from Femi"); a test pins it. I16 puts the cursor in the amount field a moment after the sheet opens (`autoFocus` alone did not on the web). The empty tile before that title is the shared pay sheet's header: SHARED-CHANGES INBOX-13 #3 (open). The board's larger amount type (22) is not done: `TextField` has no size.
 - **Next:** the batch 10 pull request. Passes the task needs: V1, V4, V5, V6, V7, V8, V9. NOT RUN: V10.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app a4048733, verifier PASS in this file (verdict merge).
 
 ## Read first
 

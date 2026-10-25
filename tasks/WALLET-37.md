@@ -7,7 +7,7 @@ order: 255
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [WALLET-09, WALLET-14]
 decisions: [R-51, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -31,6 +31,8 @@ As of 17 Oct 2026, round 5 built by a Sonnet builder and checked by an independe
 - **Lead decisions open:** none.
 - **Next:** the lead merges it on batch 7 (contract and API types re-synced at the merge, SHARED-CHANGES WALLET-37 #3 and #4); `NAME_CHECK_PER_HOUR` moves into the settings registry in a later task (#2).
 - **History:** `tasks/history/WALLET-37.md` (the builder reports).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

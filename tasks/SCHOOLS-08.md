@@ -7,7 +7,7 @@ order: 136
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [SCHOOLS-03, SCHOOLS-09, SCHOOLS-10, UI-02, SCHOOLS-06]
 decisions: [R-12, R-33, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -26,6 +26,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **NOT RUN:** a real phone browser opening the link (jest checks `Linking.openURL` is called with the Hub's `url`; the stack run recorded the click path through the Hub only in the unit cases), the Finished tab with rows (no class on the stack ends this year), the current-tab empty state on the stack (every seeded student holds a place).
 - **Round 2 (17 Oct 2026):** F4 fixed: SC9's "Continue to their site" no longer draws the trailing arrow the board lacks (`ApplySheet.tsx`). Same schools run: tsc EXIT 0, eslint EXIT 0, jest 156 of 156.
 - **Next:** the batch 12 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 5f0a87a4, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

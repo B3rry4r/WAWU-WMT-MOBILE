@@ -7,7 +7,7 @@ order: 297
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [EVENTS-07, EVENTS-10, TIER-06]
 decisions: [R-8, R-10, R-31, R-65]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -39,6 +39,8 @@ As of 17 Oct 2026.
 - **Open findings:** the twenty-buyers test failed 1 run of 30 on its read-latency assertion (above); nothing else known.
 - **Next:** the lead merges it with batch 7.
 - **History:** the builder report is in [history/EVENTS-13.md](history/EVENTS-13.md).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, lead acceptance in the lead's merge log, 17 Oct.
 
 ## Read first
 

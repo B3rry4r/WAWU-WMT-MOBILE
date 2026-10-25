@@ -7,7 +7,7 @@ order: 269
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [AUTH-07, AUTH-06, ME-04, ME-01, TIER-02, DV2-COMP]
 decisions: [R-43, R-6, R-47]
 passes: [V1, V4, V5, V6, V9]
@@ -38,6 +38,8 @@ As of 17 Oct 2026.
 - **Round 4** (17 Oct, lead rulings on the round-3 verifier): `wmt/VERIFY-01` now also holds AUTH-06's mobile side (`fe5b218c` merged, never rebased); `_layout.tsx` resolved as the verified `layout-resolution.diff` (verify-bonus, interests, people-to-follow, tabs with shop, creator-setup with its guard, the big group; SHARED-CHANGES VERIFY-01 #3), `docs/PROGRESS.md` by `check_tasks --write`. Medium 2 fixed: `useBonusStep(signedIn, accountType)` hides VF1 and settles its mark for an account whose sign-up progress says `user`, so a discoverer never mounts VF1, not even its loading state. New `signupWalks.route.test.tsx` (3 tests, the merged layout): creator A11, Later, VF1 once, Home next start; discoverer A12, A13, Home with VF1's route never rendered; A13 Back and A12 again. Checked: tsc 0, eslint 0, jest 26 suites 423 tests (verify, after-signup, pro-listing, auth, claim) and the 25 suites that touch the gate or layout (385 tests), `npm run gates` 0 fail.
 - **Next:** the owner's tap on batch 9; the lows are in SWEEP-APP.
 - **History:** reports go to tasks/history/VERIFY-01.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app ca29ebce, verifier PASS in the lead's merge log, 18 Oct.
 
 ## Read first
 

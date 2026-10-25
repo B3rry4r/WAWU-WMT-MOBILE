@@ -7,7 +7,7 @@ order: -150
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-85, R-27, R-47, R-29]
 passes: [V1, V4, V5, V6, V9]
@@ -42,6 +42,8 @@ As of 24 Oct 2026, built by a Sonnet builder (T1, bundle B26), mobile `wmt/GEO-0
 - **Checks (each EXIT line in the builder report, `history/GEO-03.md`):** tsc EXIT 0; eslint (no --fix) on the 33 changed `.ts`/`.tsx` files EXIT 0; jest, the folders and files this touches: 41 suites, 715 tests, EXIT 0 (`src/features/geo`, `auth`, `profile-edit`, `me`, `visitor`, three `settings` files, `schools` `enrolFlow`, and `auth-signup`, `auth-signup-channel`, `auth-guard`, `identity-contract`, `route-graph`, `components`, `textFieldTapBox`, `kit-components`, `hubSharedProps`, `session`), then after the last contract sync 13 suites, 146 tests, EXIT 0, and `placeBridge` 3 tests EXIT 0; gates 0 fail, 18 warn, 0 accepted, `check_baseline` EXIT 0; `check_tasks --write` EXIT 0. Round 1: tsc EXIT 0; eslint (no --fix) on the 6 changed `.ts`/`.tsx` files EXIT 0; jest `--maxWorkers=2` on `auth-signup`, `features/auth/__tests__/signupCountry`, `features/geo` and `features/profile-edit`, 13 suites, 238 tests, EXIT 0; gates 0 fail, 18 warn, 0 accepted, `check_baseline` EXIT 0; `check_tasks --write` EXIT 0.
 - **Pictures (390 px, light and dark):** `scratchpad/geo-03-b/pics/` (390 by 844, drawn at 2x, Chromium, dark then light): the phone field closed `phone-field-closed-<theme>.png`, open `phone-field-open-<theme>.png` and searched `phone-field-search-<theme>.png`; sign-up with Country `signup-country-<theme>.png`; Edit profile `edit-location-<theme>.png` and the region list `edit-region-open-<theme>.png`; each beside its board in `cmp-signup-<theme>.png` (A3) and `cmp-edit-profile-<theme>.png` (M8). A3 and M8 draw no country button, sheet or Country row (G-GEO-03-4); M8's board does draw Location as a tap-to-choose row with a chevron, which Country, State and City follow.
 - **Not run:** a phone; the real Hub and WAWU ID (pictures use a local stand-in that serves the Hub's own country and region data); `settingsScreens.test.tsx` (it names the Fintava double; CI runs it); the full suites.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 63a17be2, lead acceptance in the lead's merge log, 24 Oct (round 1 accepted on a diff read; v-GEO-12 PASS covers GEO-01 and GEO-02).
 
 ## Read first
 

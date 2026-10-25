@@ -7,7 +7,7 @@ order: 146
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [SCHOOLS-07, WALLET-09]
 decisions: [R-12, R-10, R-31]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -30,6 +30,8 @@ As of 17 Oct 2026.
 - **Round 2 specs:** `school-settlement.contract.spec.ts` 21 tests (six new in-flight ledger specs fail before and pass after; one cursor page spec); `school-report.contract.spec.ts` 12 (one new, fails before, passes after). tsc 0, eslint 0 on changed files. One existing SCHOOLS-09 spec (`a relay that is down`) can fail under load: it reads `nextAttemptAt` as soon as `attempts` is 1; not changed here.
 - **Next:** the batch 10 pull request. Passes V1, V2, V3, V4, V6, V7, V8, V9.
 - **History:** reports go to tasks/history/SCHOOLS-11.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend c7bf0ada, verifier PASS in the lead's merge log, 17 Oct (v SCHOOLS-11 r2 MERGE).
 
 ## Read first
 

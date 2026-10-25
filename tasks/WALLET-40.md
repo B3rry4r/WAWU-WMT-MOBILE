@@ -7,7 +7,7 @@ order: 295
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [NUV-04, INBOX-03, INBOX-21, KYC-06]
 decisions: [R-6, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -32,6 +32,8 @@ As of 17 Oct 2026. Built, and checked by an independent Sonnet verifier (report 
 - **Checks:** Backend CI on `a456db7`: Branch checks run 39005790347 green (3 suite shards, contract, netns, baseline, deploy-test-in-sync), Protected routes run 39005790342 green, Gates run 39005790374 red on one line, `content-piece.service.ts:67` (the `FlutterwaveConfigResponse` fork), the same single FAIL as base `850369a` (Gates run 39002200936), a file this task does not touch. Local: `tsc --noEmit` 0, eslint 0 on every changed file, the 3 new backend specs plus `push-policy`, `nuvion-accounts.contract` and `wallet-provider/tests` green (151 tests, stack `wallet_40` on ports 7608-7615 because another agent held 7600-7607 at the start). Mobile full check (`typecheck`, `lint`, `test --maxWorkers=2`, `gates`, `tasks`) EXIT 0: 193 suites, 3352 tests, gates 0 fail.
 - **Open question for the owner (via the lead):** should the "account number ready" push be mutable in Settings (it has no Z3 switch today)?
 - **Next:** the lead merges it with batch 7.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 18f0eb09, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

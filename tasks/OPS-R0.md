@@ -7,7 +7,7 @@ order: 33
 priority: launch
 repo: wawu-wmt-mobile
 type: setup
-status: verifying
+status: review
 depends_on: []
 decisions: [R-49]
 passes: [V1]
@@ -27,6 +27,8 @@ As of 17 Oct 2026.
 - **WORKFLOW.md:** the eight approved changes (owner approved, 17 Oct 2026): section 4 (steps 3 and 5, budgets), new section 4a (effort tiers), section 5 (passes per tier), section 6 (inbound links), section 8 (steps 1, 3, 4, new step 10 bundles), section 9 (mobile check per batch), section 10 (six cases, defaults listed). `tasks/TEMPLATE.md` shows the optional `tier` line.
 - **check_tasks.py:** unchanged. It does not reject unknown front matter keys, so `tier` already passes.
 - **Open findings:** none known. FIX-25 lists the mobile repo (the app's web build) beside the website; R-49 pauses its web half, so the lead may want a separate app-half task.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 685f4938, lead acceptance in this file (accepted by the lead on a read of the diff).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 193
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [EVENTS-11]
 decisions: [R-40]
 passes: [V1, V2, V3, V4, V9]
@@ -25,6 +25,8 @@ As of 18 Oct 2026, merging (lead): verified (PASS) and stacked in batch 17.
 - **No other answer changed:** PUT's cancelled 409 keeps its sentence (now one shared constant), and both routes work as before on a live event.
 - **Gap:** G-FIX-12-1 (low, for SWEEP-EVENTS): a sold-tickets 409 caused only by a sale on a retired tier names a tier the host sees as unsold (same name, other price); a plainer sentence needs the Hub to say which tier is hidden.
 - **Proof:** the new spec fails 3 tests on `4c52e57` (O8 and the two PATCH tests); R7, R8 and R10 hold on the old code and are pinned by mutants, all killed (5 of 5).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 33b627f0, verifier PASS in this file (same verdict as EVENTS-12: PASS).
 
 ## Read first
 

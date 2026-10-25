@@ -7,7 +7,7 @@ order: 279
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [REF-02, DV2-COMP, ME-01]
 decisions: [R-43, R-65, R-68, R-33]
 passes: [V1, V4, V5, V6, V9, V10]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, built by a Sonnet builder. Status: merging (lead). Checked by
 - **Checks:** see the builder report (history). Pictures: NOT RUN or run, see the report.
 - **Next:** a verifier checks V1, V4, V5, V6, V9, V10; the lead merges on batch 7.
 - **History:** tasks/history/REF-03.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 860dd446, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

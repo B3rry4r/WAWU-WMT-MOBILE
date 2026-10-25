@@ -7,7 +7,7 @@ order: 157
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [WALLET-16, UI-02, KYC-05]
 decisions: [R-11, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -29,6 +29,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Open findings:** none graded yet.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (L1).
 - **History:** tasks/history/WALLET-13.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app af33b6ea, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

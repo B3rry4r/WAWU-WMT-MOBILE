@@ -7,7 +7,7 @@ order: 273
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [VERIFY-01, ME-12, ME-04, TIER-02, KYC-05]
 decisions: [R-43, R-6, R-33]
 passes: [V1, V4, V5, V6, V9]
@@ -24,6 +24,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Defaults (agent), owner may override:** a published product says "with our team for review" unless the Hub says `live` (G-VERIFY-04-2); the ring has no figure (G-VERIFY-04-1).
 - **Round 2 (S7 verifier F3, the lead's ruling):** the identity pause is the Hub's. The publish gate (`PublishingGate.assertMayUpload`, so also the draft publish, `POST /content`, resubmit, an edit that carries a file and the content upload presign) refuses with `403 identity_paused` and the Hub's own sentence while the check is paused: waiting for documents, refused, stopped, or closed unfinished. Passed (a wallet is open), under way, and never started are not refused (as before); the tier is asked first, the room after; the ID document upload is never refused. The app shows that sentence as VF15b when the Hub refuses a publish or a file (`publishApi` `identity_paused`, `PublishScreen`); the wallet-read pause on arrival is unchanged. SHARED-CHANGES VERIFY-04 #1.
 - **Next:** the batch 14 pull request (the lead). No low is left open.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app dba331c1, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

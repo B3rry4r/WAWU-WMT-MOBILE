@@ -7,7 +7,7 @@ order: 335
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [WALLET-09]
 decisions: [R-10, R-39]
 passes: [V1, V2, V3, V4, V9]
@@ -23,6 +23,8 @@ As of 16 Oct 2026.
 - **History:** the builder report is in [history/FIX-41.md](history/FIX-41.md).
 - **Open findings:** none yet. Two things left for the sweep are in tasks/SWEEP-MONEY.md (F1, F2).
 - **Next:** an independent verifier checks the two rulings below against the WALLET-09 round 2 specs (R1 and N3).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend a5e48fc1, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

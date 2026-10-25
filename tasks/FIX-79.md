@@ -7,7 +7,7 @@ order: -79
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 tier: T1
 depends_on: []
 decisions: [R-47]
@@ -37,6 +37,8 @@ As of 18 Oct 2026, merging (lead): round 1 NOT clean (1 medium, G-FIX-79-1; repo
   - **Low, recorded (G-FIX-79-2, not fixed here):** `src/api/client.ts` has no request timeout, so a read that never answers (a held request) leaves a loading bar for good, here and on every other screen. On a phone the OS usually ends such a request with an error, which now lands in the error above. A client-wide timeout is its own decision (it changes every screen's read and write); the shared client is untouched. Not a backend gap.
 - **Low, noticed:** `askFlow.test.tsx` "two taps on Send open one PIN sheet and pay once" prints three "overlapping act() calls" warnings (two unawaited presses in one `act`). It passes and is not the cause of any red; left alone.
 - **Next:** the lean verifier checks round 2 (G-FIX-79-1); then the batch.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 5110e61d, verifier PASS in this file (round 2 CLEAN).
 
 ## Read first
 

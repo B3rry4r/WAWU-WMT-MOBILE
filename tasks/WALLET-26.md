@@ -7,7 +7,7 @@ order: 312
 priority: after-launch
 repo: wawu-backend
 type: third-party
-status: building
+status: review
 depends_on: [MONEY-06]
 decisions: [R-10, R-42, R-47, R-79, R-83, R-84]
 passes: [V1, V2, V3, V6, V8, V9]
@@ -30,6 +30,8 @@ As of 24 Oct 2026, built by the same Sonnet builder as WALLET-25 (bundle B21, T2
 - **Round 1 (24 Oct 2026):** the shared fixes (F1 to F7) are recorded in tasks/WALLET-25.md; for USSD and the bank checkout they are F2 (a frozen attempt is held and credits on unfreeze), F4 (the hosted bank checkout is listed first), F5 to F7 (stamp, ciphertext length for the card only, the atomic daily limit).
 - **Next:** a verifier (not the builder). Nuvion names a Nigerian USSD channel and switches on naira funding sessions.
 - **History:** none yet. Reports go to tasks/history/WALLET-26.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4e21f52, app e3eaf6ec, verifier PASS in the lead's merge log, 24 Oct (v-WALLET-25-r1, same bundle B21; lead accepted round 3 on green Branch checks).
 
 ## Read first
 

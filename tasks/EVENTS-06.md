@@ -7,7 +7,7 @@ order: 108
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, EVENTS-01, EVENTS-03, EVENTS-07, UI-02]
 decisions: [R-6, R-8, R-10, R-37]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
@@ -35,6 +35,8 @@ As of 17 Oct 2026.
 - **Provider (lead note, 17 Oct, R-39, R-45):** nothing built here names or depends on a wallet provider: the app calls the Hub's `/events/orders/wallet` routes, which go through `WALLET_PROVIDER`, and the label is "Bank charge". No Fintava code was built or touched, so the rollback is unaffected. **NOT RUN:** a purchase through a Hub with `WALLET_PROVIDER=nuvion` and the Nuvion stand-in. `scripts/dev/stack.sh` at `wmt/MERGE-7` has no `WALLET_PROVIDER` switch and the Nuvion stand-ins are in-process doubles under `test/nuvion/` that a stack cannot start, so the pictures come from the web export with a browser stand-in answering the Hub's events and wallet routes in the contract's shapes. A verifier with a stack that runs Nuvion should buy a ticket end to end (E3, PIN, E5, and E10 by making the provider answer pending).
 - **NOT RUN:** V10 on a real Android phone (the calendar screen, the biometric key, brightness); the rest of the list is in the builder report in `tasks/history/EVENTS-06.md`.
 - **History:** `tasks/history/EVENTS-06.md`.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 82a1b2ac, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

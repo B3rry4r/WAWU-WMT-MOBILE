@@ -7,7 +7,7 @@ order: -141
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: []
 decisions: [R-87, R-83, R-84, R-85, R-6, R-10, R-39, R-47, R-29, R-20]
 passes: [V1, V4, V5, V6, V8, V9]
@@ -39,6 +39,8 @@ Checks (backend, own DB `b29world_test`): tsc EXIT 0; eslint on changed files EX
 - **Verifier round 1 (24 Oct 2026): FIX.** Findings 1 to 13 are in the Verifier report below. The builder's round 1 answers them in the section after the Builder report; a second verifier checks again.
 - **Next (after the fix round):** a verifier checks the Hub side and the screens; the lead sets a first-account fee and the country list when GEO-02 lands (G-WALLET-41-4, -5); Nuvion switches on AED and Kenya (G-WALLET-41-2); sends abroad from a foreign account (G-WALLET-41-3, when NUV-11 merges). NOT RUN: a phone, the hosted selfie through the app (Nuvion's session start was answered on dev for a UK entity, `scripts/nuvion/world-dev-check.ts`), a first real webhook (the stack's stand-in sends one).
 - **History:** reports go to tasks/history/WALLET-41.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 49f49b0d, app ef35d031, verifier PASS in this file (round 1 findings fixed) and the lead's merge log, 24 Oct (v-WALLET-41-r1 PASS).
 
 ## Read first
 

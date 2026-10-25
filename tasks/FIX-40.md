@@ -7,7 +7,7 @@ order: 336
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: [WALLET-23, BILLS-04]
 decisions: [R-19]
 passes: [V1, V2, V3, V4, V9]
@@ -24,6 +24,8 @@ As of 16 Oct 2026.
 - **Not changed:** `AccountLimits.movedToday` (the provider's own daily limit on the account) still counts a refunded payment, because the provider counts the debit. No route, schema or contract change.
 - **Open findings:** none yet.
 - **Next:** an independent verifier.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend a5e48fc1, verifier PASS in the lead's merge log, 16 Oct.
 
 ## Read first
 

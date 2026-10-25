@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 41 | 0 | 0 | 0 |
-| building | 6 | 0 | 0 | 0 |
-| verifying | 162 | 0 | 0 | 0 |
-| review | 54 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
+| building | 1 | 0 | 0 | 0 |
+| verifying | 6 | 0 | 0 | 0 |
+| review | 220 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -19,12 +19,17 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-31](../tasks/WALLET-31.md) WAWU card (first slice) (You)
 - [WALLET-22](../tasks/WALLET-22.md) WAWU card (You)
 - [GEO-02](../tasks/GEO-02.md) Countries, regions and where a person is, on the Hub (lists, profile place, /me/location, admin filters and counts, phones from any country) (You)
+- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
+- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
+- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
 - [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
 - [NUV-12](../tasks/NUV-12.md) Capital: fixed-return and share-offering products from the wallet (list, reserve, confirm with the PIN, portfolio, history, early liquidation) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
 - [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
+- [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
+- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [WALLET-42](../tasks/WALLET-42.md) A person outside Nigeria sends abroad from a foreign account (and a naira person from one they hold), WAWU's fee from the same account (R-87) (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-113](../tasks/FIX-113.md) Profile, the half FIX-110 did not reach: Experience and Skills can be written on Edit profile, and a Work has a description, can be edited and can be put in order (You)
@@ -32,6 +37,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AITOOLS-02](../tasks/AITOOLS-02.md) One job pipeline for every AI tool, the job list, and Quick voice (backend) (You)
 - [AITOOLS-03](../tasks/AITOOLS-03.md) Sound effect and Music track (backend) (You)
 - [AITOOLS-04](../tasks/AITOOLS-04.md) Captions and Clean audio, with the person's own audio or video going in (backend) (You)
+- [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend) (You)
 - [DEPLOY-FAST](../tasks/DEPLOY-FAST.md) The deploy runs its tests as Branch checks' 3 shards, and skips them for a tree already tested (You)
 - [POINTS-09](../tasks/POINTS-09.md) Studio: Quick voice, Sound effect and Music track (You)
 - [POINTS-10](../tasks/POINTS-10.md) Studio: Captions and Clean audio (You)
@@ -57,30 +63,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-97](../tasks/FIX-97.md) The Nuvion name check and bank-send set-up use the shapes Nuvion DEV answers (You)
 - [FIX-96](../tasks/FIX-96.md) Every backend rollback.sql stops at its first error, so a guard that raises is never followed by the drops (You)
 - [FIX-95](../tasks/FIX-95.md) The Hub serves the consent line with the person's name, and the Voice Intro recording's shortest and longest seconds (You)
-- [FIX-112](../tasks/FIX-112.md) Every payment sheet that asks for the PIN can be approved with the fingerprint or face (You)
-- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
-- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
-- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
-- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
-- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
-- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
-- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
-- [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
-- [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
-- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
-- [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
-
-## Being verified
-
-- [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
-- [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
-- [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
 - [FIX-93](../tasks/FIX-93.md) The deploy's whole-suite run passes again: the app boot gets 30 s, and a transfer spec removes the orders it leaves waiting (You)
 - [FIX-92](../tasks/FIX-92.md) The seeded plain user survives the deploy's whole-suite run: search-popular-privacy cleans up, the identity sweep reaches only its own people (You)
 - [FIX-91](../tasks/FIX-91.md) Four backend specs count rows other specs left behind, so the live deploy's whole-suite run fails them (You)
 - [FIX-90](../tasks/FIX-90.md) Four specs and one timing case that failed the batch 26 whole-suite run stop reading rows other specs change (You)
 - [FIX-89](../tasks/FIX-89.md) Two specs that read the shared deploy database assert only on their own rows (You)
 - [FIX-88](../tasks/FIX-88.md) Three old backend specs that run on the Fintava double stop failing CI, by chance or by design (You)
+- [FIX-112](../tasks/FIX-112.md) Every payment sheet that asks for the PIN can be approved with the fingerprint or face (You)
 - [FIX-84](../tasks/FIX-84.md) Tests that compare a sent photo link with a returned one compare the object and a valid signed link, never the whole signed link (You)
 - [FIX-83](../tasks/FIX-83.md) A test that lists a message's media compares the object key and a valid signed link, never the whole signed link (You)
 - [FIX-82](../tasks/FIX-82.md) A test's clean-up never touches a database that is not a test database; the M19 test fails on the old route (You)
@@ -115,7 +104,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
 - [OPS-R0](../tasks/OPS-R0.md) Records pass and the approved workflow change (You)
+- [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes (You)
+- [OPS-08](../tasks/OPS-08.md) Retire Shop on the backend (You)
+- [ADS-02](../tasks/ADS-02.md) Admin screens: ads (You)
 - [ME-08](../tasks/ME-08.md) Create: details, price, in review, free piece (You)
+- [LEGAL-07](../tasks/LEGAL-07.md) Admin screens: legal prices (You)
 - [WALLET-16](../tasks/WALLET-16.md) Earnings land in the wallet automatically (You)
 - [EXPLORE-02](../tasks/EXPLORE-02.md) All creators and search (You)
 - [EXPLORE-04](../tasks/EXPLORE-04.md) Search: creators, communities, no results, failed (You)
@@ -126,11 +119,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-14](../tasks/HOME-14.md) Pay tips from the wallet (backend) (You)
 - [LEGAL-04](../tasks/LEGAL-04.md) Legal: book and pay a consultation (You)
 - [HOME-13](../tasks/HOME-13.md) Tip a creator (You)
+- [FLIX-01](../tasks/FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in) (You)
 - [LEGAL-06](../tasks/LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price (You)
 - [HOME-15](../tasks/HOME-15.md) Pay for unlocks from the wallet (backend) (You)
+- [FLIX-02](../tasks/FLIX-02.md) Flix movies: the Flixora adapter (You)
 - [HOME-12](../tasks/HOME-12.md) Unlock from the feed (You)
 - [FIX-54](../tasks/FIX-54.md) A bank send on Nuvion shows its true outcome (You)
 - [SCHOOLS-06](../tasks/SCHOOLS-06.md) Enrol and pay, class full (You)
+- [CHECK-1](../tasks/CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design (You)
 - [FIX-50](../tasks/FIX-50.md) The BVN step names no checker (You)
 - [FIX-52](../tasks/FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote (You)
 - [SCHOOLS-09](../tasks/SCHOOLS-09.md) Enrolment report to the school, and My courses (You)
@@ -150,6 +146,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-05](../tasks/WALLET-05.md) Add money and withdraw (You)
 - [WALLET-13](../tasks/WALLET-13.md) Earnings breakdown (You)
 - [WALLET-17](../tasks/WALLET-17.md) Hosts receive their share: community credits and event tickets (You)
+- [SWEEP-FLOWS](../tasks/SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16) (You)
 - [ME-07](../tasks/ME-07.md) Creator dashboard, my content, rejected, uploads used (You)
 - [ME-14](../tasks/ME-14.md) Saved, purchases and notifications (You)
 - [ME-02](../tasks/ME-02.md) Someone else's profile and following (You)
@@ -160,9 +157,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-06](../tasks/AUTH-06.md) After sign-up: creator setup, interests, people to follow (You)
 - [SUPPORT-01](../tasks/SUPPORT-01.md) Support chat that opens with the payment or piece it is about (You)
 - [SETTINGS-06](../tasks/SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel (You)
-- [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
 - [SETTINGS-08](../tasks/SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in (You)
 - [SETTINGS-05](../tasks/SETTINGS-05.md) Delete account (You)
+- [EVENTS-11](../tasks/EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review (You)
 - [SETTINGS-09](../tasks/SETTINGS-09.md) A deleted account's ID documents are kept hidden for 5 years, then deleted (You)
 - [FIX-12](../tasks/FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11 (You)
 - [FIX-17](../tasks/FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub (You)
@@ -172,6 +169,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-05](../tasks/TIER-05.md) Pay by bank transfer at checkout (You)
 - [POINTS-02](../tasks/POINTS-02.md) Buy points (You)
 - [POINTS-03](../tasks/POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet (You)
+- [FLIX-03](../tasks/FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails (You)
 - [FIX-45](../tasks/FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together (You)
 - [FIX-53](../tasks/FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for) (You)
 - [FIX-86](../tasks/FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick (You)
@@ -179,9 +177,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SHARED-06](../tasks/SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES (You)
 - [OPS-R1](../tasks/OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids (You)
 - [HOME-18](../tasks/HOME-18.md) Today's bell and three spacings (You)
-- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
-- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
-- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
+- [SWEEP-JOIN](../tasks/SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail (You)
 - [WALLET-37](../tasks/WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour (You)
 - [EXPLORE-06](../tasks/EXPLORE-06.md) Popular communities need 10 members (You)
 - [ADS-07](../tasks/ADS-07.md) Adverts: artwork required, and the Explore slider placement (You)
@@ -189,10 +185,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [INBOX-24](../tasks/INBOX-24.md) Private community monthly pass (backend) (You)
 - [REF-02](../tasks/REF-02.md) Referral points: invite, claim and earn (backend) (You)
 - [EVENTS-12](../tasks/EVENTS-12.md) Hosting an event needs an active tier (backend) (You)
+- [VOICE-01](../tasks/VOICE-01.md) Hear your name and the Voice Intro (backend) (You)
 - [AITOOLS-01](../tasks/AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend) (You)
 - [DV2-COMP](../tasks/DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro (You)
 - [VERIFY-01](../tasks/VERIFY-01.md) Your bonus is waiting, and the draft shop (You)
 - [ME-12](../tasks/ME-12.md) Make it official: choose a tier and pay (You)
+- [VERIFY-02](../tasks/VERIFY-02.md) Hear your name, and write your Voice Intro (You)
+- [VERIFY-03](../tasks/VERIFY-03.md) Record your voice and hear yourself (You)
 - [VERIFY-04](../tasks/VERIFY-04.md) Publish your first product, and the identity check (You)
 - [VERIFY-05](../tasks/VERIFY-05.md) Your tier, and when you have used all your products (You)
 - [POINTS-05](../tasks/POINTS-05.md) Your points, and convert them to cash (You)
@@ -221,6 +220,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LINKS-01](../tasks/LINKS-01.md) Every link WAWU sends lands somewhere that works (You)
 - [WALLET-35](../tasks/WALLET-35.md) Statements: ask for a statement by email (You)
 - [WALLET-23](../tasks/WALLET-23.md) Account limits from Fintava (You)
+- [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
+- [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
+- [WALLET-21](../tasks/WALLET-21.md) Dollar and crypto accounts, swap (You)
 - [FIX-15](../tasks/FIX-15.md) A refused upload does not count against storage quota (You)
 - [FIX-28](../tasks/FIX-28.md) The schools order spec tells lower from upper, and the communities list has a tie-break (You)
 - [FIX-33](../tasks/FIX-33.md) The Nuvion opening spec draws every client address once, so it stops failing at random (You)
@@ -232,16 +234,19 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-41](../tasks/FIX-41.md) A failed bank send that is later seen completed is put in front of a person, and a send to an unsaved account needs the name token (You)
 - [FIX-40](../tasks/FIX-40.md) The daily limit no longer counts a held payment that was refunded (You)
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
-- [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 - [OWNER-1019](../tasks/OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73 (You)
+
+## Being verified
+
+- [FIX-94](../tasks/FIX-94.md) The deploy's whole-suite run passes again: the Voice Intro stale-sweep test checks its own hold, not a global count (You)
+- [STACK-NUV](../tasks/STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in (You)
+- [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
+- [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
+- [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
+- [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 
 ## Being built (or fixing verifier findings)
 
-- [OPS-29](../tasks/OPS-29.md) Admin screens: where people are (accounts by country and region) and the country and region filters on the people lists (You)
-- [OPS-28](../tasks/OPS-28.md) Admin screens: the WAWU virtual cards (every card by account id, hold, let go, block, the card switch and fees) (You)
-- [OPS-27](../tasks/OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders) (You)
-- [WALLET-25](../tasks/WALLET-25.md) Add money by card (You)
-- [WALLET-26](../tasks/WALLET-26.md) Add money by USSD (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
@@ -429,7 +434,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-05](../tasks/AITOOLS-05.md) Dubbing (backend), [SCHOOLS-05](../tasks/SCHOOLS-05.md) Admin screens: schools, courses, intakes, [ADS-02](../tasks/ADS-02.md) Admin screens: ads
+- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

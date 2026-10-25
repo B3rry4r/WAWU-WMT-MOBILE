@@ -7,7 +7,7 @@ order: 293
 priority: launch
 repo: wawu-wmt-mobile
 type: removal
-status: verifying
+status: review
 depends_on: [DV2-01, DV2-02, DV2-03, DV2-06, EXPLORE-07, HOME-16]
 decisions: [R-52, R-59, R-61, R-43, R-42]
 passes: [V1, V3, V4, V7, V9]
@@ -25,6 +25,8 @@ As of 17 Oct 2026 (builder, Sonnet; mobile `wmt/DV2-RM` from `origin/wmt/MERGE-1
 - **Not touched:** the dead share files DV2-01 left unreferenced (`ShareSheet.tsx`, `cardFile*.ts`, the share-card fetch): this task's scope names none of them. They are the removals list's open item, filed as a low in `tasks/SWEEP-APP.md` (DV2-RM L1).
 - **Pictures** (390 px, light and dark, `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/dv2-rm-b/pics/<home|explore|wallet|settings>-<light|dark>.png`): from this branch's web export with the Hub answered by fixtures in the browser (no stack). Home: Send only, Learn and Legal only, no TGIF card. Explore: TGIF card and Upcoming events (the events fixture was empty, so the cards are placeholders). Wallet: Send, Buy points, To cash, no bills. Settings: "TGIF each morning", no "TGIF on Home". Served on port 7921 (7920 was busy); nothing of mine is listening.
 - **Next:** the batch 11 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 28ad3eea, lead acceptance in this file (accepted by the lead, diff read).
 
 ## Read first
 

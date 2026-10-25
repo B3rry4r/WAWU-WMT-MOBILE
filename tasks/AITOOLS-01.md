@@ -7,7 +7,7 @@ order: 267
 priority: launch
 repo: wawu-backend
 type: third-party
-status: verifying
+status: review
 depends_on: [POINTS-03, TIER-06]
 decisions: [R-43, R-61, R-68]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -28,6 +28,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Not done:** the other tools (one task each); "Your voice" and Save or Use in a product (G-AITOOLS-01-1, -4); the real provider run; the wire shape of the real provider is from its public description and unchecked.
 - **Next:** the batch 13 pull request (the lead). The verifier's lows are in SWEEP-MONEY (L1 to L4).
 - **History:** tasks/history/AITOOLS-01.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 2a05924a, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

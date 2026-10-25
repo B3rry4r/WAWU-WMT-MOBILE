@@ -7,7 +7,7 @@ order: 135
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: []
 decisions: [R-6, R-39]
 passes: [V1, V5, V6]
@@ -26,6 +26,8 @@ As of 17 Oct 2026.
 - **Open findings:** none. **Not run:** GitHub CI, a real device, a real Nuvion page.
 - **Next:** a fresh verifier; the lead merges with batch 7 after DV2-05.
 - **History:** tasks/history/FIX-47.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app e80c4f36, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 

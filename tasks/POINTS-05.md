@@ -7,7 +7,7 @@ order: 275
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [POINTS-04, POINTS-01, DV2-COMP, WALLET-01]
 decisions: [R-43, R-65, R-16]
 passes: [V1, V4, V5, V6, V7, V8, V9]
@@ -30,6 +30,8 @@ As of 17 Oct 2026, builder rounds 1 and 2 done (Sonnet builder; mobile `wmt/POIN
 - **Open:** none known.
 - **Next:** the verifier. DV2-02 adds the Points card on W1 (opens `/points`).
 - **History:** reports go to tasks/history/POINTS-05.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 72396213, verifier PASS in the lead's merge log, 17 Oct (v POINTS-05 MERGE; the required hide of the PT5a clause accepted on the lead's diff review).
 
 ## Read first
 

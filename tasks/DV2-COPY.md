@@ -7,7 +7,7 @@ order: 292
 priority: launch
 repo: wawu-wmt-mobile
 type: component
-status: verifying
+status: review
 depends_on: [DV2-01, DV2-02, DV2-05, DV2-06]
 decisions: [R-69, R-53, R-67, R-68, R-37]
 passes: [V1, V4, V5, V6]
@@ -24,6 +24,8 @@ As of 17 Oct 2026, built by a Sonnet builder (T0 copy); accepted by the lead.
 - **Done by OPS-R1:** SHARED-CHANGES DV2-COPY #2 (fenced): `BrandMark.tsx` `APP_NAME` and `app.json` `expo.name` now say "Who Made This?", with `brand.test` and `auth-welcome.test`. The launcher name shows from the next development build.
 - **For the owner, not changed:** the 16 Oct boards print "Who Made This? Credits" (S-series Buy Credits sheet) and "Who Made This? card", but this task and R-37's "where WAWU stays" keep WAWU Credits and the WAWU card. `HostedSelfieScreen` says "Our banking partner, Nuvion, takes your selfie" (A6, not in this task's boards; Nuvion is the bank R-67 shows).
 - **Next:** the batch 11 pull request.
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 170f8f56, lead acceptance in this file (accepted by the lead, T0).
 
 ## Read first
 

@@ -7,7 +7,7 @@ order: 98
 priority: launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: [MONEY-17, MONEY-12]
 decisions: [R-11, R-55, R-5]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -31,6 +31,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Decisions to confirm (agent defaults):** the move is made at the first sweep of the day at which the total reaches the floor, not at a fixed hour, so a creator's later sales that day wait for the next day; a held kind's release (DM, ticket, bill) is still its own transfer; no admin view of moves in review yet.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-MONEY (B1 F2, F4 to F6; R55-1 to R55-3).
 - **Records:** tasks/history/WALLET-16.md.
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend e3d2a468, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Owner rulings of 16 Oct 2026 (R-55)
 

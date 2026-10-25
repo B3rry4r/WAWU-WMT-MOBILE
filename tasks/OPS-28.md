@@ -7,7 +7,7 @@ order: -2702
 priority: launch
 repo: wawu-dashboard
 type: admin-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-84]
 passes: [V1, V6, V7, V9]
@@ -36,6 +36,8 @@ Proof: `scratchpad/dash-b30/cards-1.png`, `cards-2-block-dialog.png` (1440 px, l
 Default (lead), owner may override: Block for good is a danger button with the words "The provider deletes the card. This cannot be undone"; it is offered on a card in `creating` or `unknown` as well, because the Hub's route accepts any card that is not already gone.
 
 Open low: the three card acts leave an audit row on the Hub but ask for no reason (G-OPS-27-2).
+
+Status set to review by the records sync, 25 Oct 2026: merged as backend 4153fd7, dashboard 433c710, verifier PASS in the lead's merge log, 24 Oct (v-OPS-27 covered the bundle; fix round 1 under the lead's rulings).
 
 ## Read first
 

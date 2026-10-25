@@ -7,7 +7,7 @@ order: 116
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: review
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, LEGAL-02, LEGAL-03, LEGAL-05, UI-02]
 decisions: [R-14, R-6, R-10]
 passes: [V1, V4, V5, V6, V7, V8, V9, V10]
@@ -30,6 +30,8 @@ As of 17 Oct 2026, merging (lead): checked by an independent verifier and stacke
 - **Round 2 (17 Oct 2026, Sonnet builder; verify/S4.md F3, F4):** S18's card and button follow a changed price (the options are read again when the quote names another price, once per price); a request the Hub says cannot be paid (cancelled) draws no Pay under its sentence, and a different hour or kind draws it again. Tests: 3 new in `LegalPayments.test.tsx`; S17's Book and Open taps are tested in `LegalChatScreen.test.tsx` (5 new with S24's). The wrong file name in the LEGAL-02 comment is fixed. Not here (shared rows): F2 the blank tile in the pay sheet, F5 the PIN sheet's lost-answer line.
 - **History:** `tasks/history/LEGAL-04.md`.
 - **Next:** the batch 12 pull request (the lead). The verifier's lows are in SWEEP-APP (S4 F2, F5).
+
+Status set to review by the records sync, 25 Oct 2026: merged as app 272428ff, verifier PASS in the lead's merge log, 17 Oct.
 
 ## Read first
 
