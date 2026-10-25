@@ -115,3 +115,41 @@ Cleanup: stack down, my own Hub restart, the picture server and three worktrees 
 ## Owner sign-off
 
 _Owner: date, and "go" or what blocks it._
+
+## Verifier report: R2-SOCIAL2 (v-R2-SOCIAL2, 25 Oct 2026, lean T2; checked `wmt/R2-SOCIAL` 56c6e642 against `origin/main` a3fdaf71, change since the last check 06da5ad0..56c6e642)
+
+**Verdict: FIX.** One medium (E11 order page, below). Nothing else medium or worse. Stack: backend `origin/main` dcee8af on the Nuvion stand-in, mock WAWU ID, web export of 56c6e642, Chromium 390x844, light and dark. Data through the Hub's own routes (SQL only for the creator tier, "live" on the content piece and "published" on the events, as the audit did for the admin approval).
+
+| Check | Result | Evidence |
+|---|---|---|
+| tsc | EXIT 0 | |
+| jest (pay-sheet, communities, credits, events, paid-ask, unlock, route-guard; maxWorkers 2, once) | EXIT 0 | 42 suites, 1043 tests, 0 failed |
+| gates | EXIT 0 | 10 gates, 1415 files, 0 fail, 18 warn, baseline check EXIT 0 (0 entries) |
+| check_tasks | EXIT 0 | 443 tasks |
+| fingerprint | NOT RUN | `fingerprint:generate` was not run here (steps); the diff touches no native file, `app.json` or `package.json`, so the builder's `17ffb13d...` is expected to hold |
+| H14 and E3, fee ₦0 | passed | H14 "Price ₦2,500 / Bank charge ₦0 / Total ₦2,500", button "Unlock · ₦2,500"; E3 "Tickets ₦5,000 / Bank charge ₦0 / Total ₦5,000", button "Pay ₦5,000"; PIN sheets "Approve ₦2,500" and "Approve ₦5,000"; no "No fee" (light and dark) |
+| H14 and E3, fee ₦23.25 (stack restarted with a book fee of 2325 kobo) | passed | E3 "Bank charge ₦23.25 / Total ₦5,023.25", PIN "Approve ₦5,023.25 to WAWU Creators Summit"; H14 charged 2,523.25 |
+| Money truth | passed | one debit per pay. Fee 0: wallet 5,000,000 to 4,250,000 kobo after an order of 7,500 and a ticket of 5,000 and an unlock of 2,500 (exact). Fee 2325: 5,000,000 to 4,245,350 = 252,325 (unlock) + 502,325 (ticket), exact, nothing twice |
+| E25 call-off sheet | passed | "The 1 buyer gets the ticket price back." (light and dark); only the 1-buyer line seen, the N-buyers line is covered by the unit test only |
+| I28 credit cost line | passed | "A photo is 1 credit, a video or voice note 3." drawn from `GET /communities/message-cost` (costs 1, 3, 3), above "Credits don't expire...", then packs, "Bank charge ₦0.00 / Total ₦1,000.00", button "Buy 120 credits · ₦1,000" |
+| E11 order page of a called-off event | FAILED | defect 1 |
+| E11 greyed ticket card | NOT RUN | a refunded order leaves no ticket on the Hub (`tickets: []`), so no void ticket of a called-off event could be opened; covered by the unit test only |
+| I4/I5 held-money line | NOT RUN in the app | the ask sheet opens (I3), the paid question was not sent (steps); the copy change is in `paid-ask/model.ts` and pinned by `model.test.ts` and `askFlow.test.tsx` |
+
+**Findings**
+
+1. **medium, defect: E11 order page of a called-off event still says "Your payment didn't go through"** (audit defect 4 is not fixed against the real Hub). `src/features/events/OrderTicketScreen.tsx` (event read `useQuery({ queryFn: () => fetchEvent(orderEventId) ... retry: false })`, about line 87, and `calledOff` on the next lines). After the host calls an event off, `GET /events/{id}` answers the fan 404 "Event not found." (checked with the buyer's token), so `calledOff` stays false and the old banner stands. Repro: fan buys a ticket from the wallet, host `POST /events/{id}/cancel`, fan opens `/events/orders/<orderId>`: red "Your payment didn't go through. This event can no longer take place. Your money is back in your wallet." (order is `status failed`, `returned.returnedKobo 750000`, `failureReason` as quoted). Why the tests miss it: `buyTickets.test.tsx` answers `GET /events/:id` for the fan with a called-off event, which the Hub never does. Fix: read the call-off from what the Hub serves a buyer (an additive `cancelledAt` on the order's `event` block, or treat a failed order with `returned` and the Hub's call-off reason as called off) and pin it with the Hub's 404.
+2. **low, outside this task (reported, as the builder said): "No fee" is still drawn under `src/features/wallet/fx`**, which BRIEF rule 4 forbids: `FxReceiptScreen.tsx:46,47,60,61`, `CryptoSendScreen.tsx:324,348`, `swap/model.ts:71,84,86` (pinned by `fxModel.test.ts:144,145,170,177`, `fxSwapFlow.test.tsx:117`, `fxCryptoFlow.test.tsx:172`). Nothing else under `src/features` draws it (the other grep hits are comments, tests of the removal, or a refusal key `cards/model.ts:38` that reads "Cards are not ready yet."). Also `features/addmoney/AddMoneyScreen.tsx:196` draws a "Free" pill when the transfer-in fee is 0 (the same claim in another word); the money area's to rule.
+3. **note:** the order-page void-ticket branch (`allVoid`) draws the greyed card nowhere (`TicketCard` there has no `dimmed`), only the ticket page does; follow the unit test with the same rule if the owner wants it.
+
+**Changed or removed assertions in 06da5ad0..56c6e642** (each follows a BRIEF rule or an audit defect; none weakened):
+- `PaySheet.test.tsx`: the whole round 1 "(d)" describe (H14 and E3 "No fee", the `noFee` option, "a caller that does not ask keeps the old rows", "the send form never says No fee") removed with the `noFee` prop (BRIEF rules 3 and 4); replaced by tests that pin the breakdown at ₦0 and with a fee and `queryByText('No fee')` null.
+- `unlockFlow.test.tsx` and `buyTickets.test.tsx`: the "a quote with no fee reads Fee: No fee" tests replaced by the breakdown tests (rules 3 to 5); the `eventRow` handler and `orderView` plumbing changed for the E11 read (see finding 1: that mock is what hides the defect).
+- `organiser.test.tsx`: five "their money back" strings to "the ticket price back" (audit defect 2, BRIEF E25 and rule 6).
+- `model.test.ts`, `askFlow.test.tsx`: "and all of it comes back" to "and it comes back" (audit defect 3, rule 6).
+- `format.test.ts`, `buyCredits.test.tsx`: additions only.
+
+**Rulings**
+- HIGH I1, I20, I24 left undrawn for a fan: agree. The board's own Start-here map (Inbox Flow) says Compose "New message or community" opens I32, whose only drawn content is "New community ... Creator accounts only"; no board draws a person picker for a new message; the + is the shared Create button (R-38, creator accounts only, as on Home, Explore and Me); Settings opens I21, a creator's paid messages. A fan's version would be invented here (R-47).
+- QR hidden on a void ticket (Default (lead)): agree for the ticket page (a code that cannot be used is not shown); the board draws it greyed, so this stays a recorded difference the owner can override. Not seen in the app (finding list, NOT RUN).
+- Lows 6, 8 to 12 left as gaps: agree. 6 (a promise nothing backs), 8 (Hub field missing), 9 (no board), 10 (two buttons need a ruling), 11 (no route), 12 (shared client, fenced). Not re-tested in the app.
