@@ -125,12 +125,15 @@ export const capTitle = (cap: Pick<JobCap, 'cap'>): string => (cap.cap === 'dail
 /** Four digits or more, written with thousands separators ("5000" is "5,000"). */
 const grouped = (text: string): string => text.replace(/\d{4,}/g, (digits) => formatPointsCount(Number(digits)));
 
+/** The last sentence of PT7, on every limit: reaching it never costs the person their points. */
+const POINTS_SAFE = 'Your points are safe.';
+
 /**
- * What PT7 says under the title. The daily limit is the board's sentence from the Hub's numbers ("You've used 5,000 points on AI
- * tools today. It resets at midnight."); when the Hub gave no count used, the limit is the count. A per-job limit keeps the Hub's
- * sentence, with its numbers written with thousands separators.
+ * What PT7 says under the title. The daily limit is the board's three sentences from the Hub's numbers ("You've used 5,000 points
+ * on AI tools today. It resets at midnight. Your points are safe."); when the Hub gave no count used, the limit is the count. A
+ * per-job limit keeps the Hub's sentence, with its numbers written with thousands separators, then the same last sentence.
  */
 export function capMessage(cap: Pick<JobCap, 'cap' | 'limit' | 'usedPoints' | 'message'>): string {
-  if (cap.cap === 'daily') return `You've used ${formatPointsCount(cap.usedPoints ?? cap.limit)} points on AI tools today. It resets at midnight.`;
-  return grouped(cap.message);
+  if (cap.cap === 'daily') return `You've used ${formatPointsCount(cap.usedPoints ?? cap.limit)} points on AI tools today. It resets at midnight. ${POINTS_SAFE}`;
+  return `${grouped(cap.message)} ${POINTS_SAFE}`;
 }

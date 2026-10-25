@@ -599,7 +599,7 @@ describe('PT7 · the limit', () => {
     message: "That is over today's limit of 5000 points for AI tools. You have 0 left today, and the count starts again at midnight.",
   };
 
-  it('past the daily limit the person is told the board’s sentence, drawn from the Hub’s numbers with thousands separators', async () => {
+  it('past the daily limit the person is told the board’s three sentences, drawn from the Hub’s numbers with thousands separators', async () => {
     hub.cap = daily;
     hub.points = 1250;
     await toJob();
@@ -607,6 +607,7 @@ describe('PT7 · the limit', () => {
     const view = await screen.findByTestId('cap-reached');
     expect(view).toHaveTextContent("That's today's limit", { exact: false });
     expect(view).toHaveTextContent("You've used 5,000 points on AI tools today. It resets at midnight.", { exact: false });
+    expect(view).toHaveTextContent('Your points are safe.', { exact: false });
     expect(screen.queryByTestId('shortfall-sheet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
@@ -628,6 +629,7 @@ describe('PT7 · the limit', () => {
     const view = await screen.findByTestId('cap-reached');
     expect(view).toHaveTextContent('That is too much for one go', { exact: false });
     expect(view).toHaveTextContent('One job can take up to 5,000 characters. This one has 6,000.', { exact: false });
+    expect(view).toHaveTextContent('Your points are safe.', { exact: false });
   });
 
   it('Back to AI tools leaves the limit for Studio', async () => {
