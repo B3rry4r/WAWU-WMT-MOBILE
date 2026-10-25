@@ -12896,6 +12896,27 @@ export interface components {
             accountName: string;
             nameToken: string;
         };
+        AdminTransferLookupView: {
+            id: string;
+            kind: string;
+            status: string;
+            reference: string;
+            shortReference: string | null;
+            amountKobo: number;
+            providerFeeKobo: number;
+            wawuFeeKobo: number;
+            totalKobo: number;
+            payerWawuUserId: string | null;
+            recipientWawuUserId: string | null;
+            payerName: string | null;
+            recipientName: string | null;
+            bankName: string | null;
+            createdAt: string;
+            completedAt: string | null;
+        };
+        AdminTransferLookupResult: {
+            items: components["schemas"]["AdminTransferLookupView"][];
+        };
         RecipientView: {
             wawuUserId: string;
             displayName: string;
@@ -17776,6 +17797,7 @@ export interface components {
             location: string;
             venueName: string | null;
             bannerUrl: string | null;
+            cancelledAt: string | null;
         };
         EventOrderLineView: {
             ticketTypeId: string;

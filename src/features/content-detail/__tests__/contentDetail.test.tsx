@@ -375,6 +375,28 @@ describe('H19: a locked paid piece', () => {
 });
 
 describe('marks: like, save, follow, share', () => {
+  // R2-SOCIAL (e), CHECK-3 defect 5: the boards (H19, H20, H24, H25) label the heart "96% liked". The Hub serves a rating percent on a rated piece.
+  it('a rated piece\'s heart reads "96% liked" in place of the count, and still likes', async () => {
+    (base as { ratingPct: number | null }).ratingPct = 96;
+    try {
+      const { screen } = await boot(PDF);
+      const like = screen.getByTestId('detail-like');
+      expect(rtl.within(like).getByText('96% liked')).toBeTruthy();
+      expect(screen.queryByText('1.2K')).toBeNull();
+      await rtl.fireEvent.press(like);
+      await rtl.waitFor(() => expect(hub.writes).toContain('POST /content/pdf-1/like'));
+      expect(rtl.within(screen.getByTestId('detail-like')).getByText('96% liked')).toBeTruthy();
+    } finally {
+      (base as { ratingPct: number | null }).ratingPct = null;
+    }
+  });
+
+  it('a piece nobody has rated has no percentage: the heart keeps the like count the Hub serves', async () => {
+    const { screen } = await boot(PDF);
+    expect(rtl.within(screen.getByTestId('detail-like')).getByText('1.2K')).toBeTruthy();
+    expect(screen.queryByText(/% liked/)).toBeNull();
+  });
+
   it('a user likes, saves and follows, each drawn at once and written once; Saved and Following read back', async () => {
     const { screen } = await boot(PDF);
     await rtl.fireEvent.press(screen.getByTestId('detail-like'));

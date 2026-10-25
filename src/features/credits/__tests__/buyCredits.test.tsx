@@ -109,6 +109,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
   if (path === '/credits/packs') return ok({ packs: PACKS });
+  if (path === '/communities/message-cost') return ok({ creditsPerMessage: 1, creditsByKind: { text: 0, photo: 1, video: 3, voice: 3 } });
   if (path === '/credits' && method === 'GET') return ok({ creditBalance: hub.credits });
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
   if (path === '/credits/purchase/wallet/quote') {
@@ -234,6 +235,13 @@ describe('I28: the packs sheet', () => {
     expect((await buyButton()).props.accessibilityLabel).toContain('Buy 120 credits · ₦1,023.25');
     // The old wording is not on the sheet.
     expect(rtl.screen.queryByText(/Fintava/)).toBeNull();
+  });
+
+  // R2-SOCIAL 2 (CHECK-3 low 14, I28): the board's line above the packs, from the Hub's costs by kind.
+  it('says what a photo, a video and a voice note cost, from the Hub, above the packs', async () => {
+    await boot();
+    expect(await rtl.screen.findByTestId('credits-cost-line')).toHaveTextContent('A photo is 1 credit, a video or voice note 3.');
+    expect(rtl.screen.getByText('Credits don’t expire and can’t be cashed out.')).toBeTruthy();
   });
 
   it('picking another pack asks for its quote and puts its total on the button', async () => {

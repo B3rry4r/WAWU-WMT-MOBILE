@@ -13,6 +13,8 @@ import { PayPinSheet } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
+import { creditCostLine } from '@/features/communities/format';
+import { useMessageCost } from '@/features/communities/useCredits';
 import { WalletRow } from '@/features/money-attempt/WalletRow';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { TOTAL_LABEL, WALLET_LABEL } from '@/features/money-attempt/refusal';
@@ -49,6 +51,9 @@ export type BuyCreditsSheetProps = Omit<BuyCreditsArgs, 'onOpenWallet'> & {
 export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   const entry = useOpenWalletEntry();
   const buy = useBuyCredits({ ...props, onOpenWallet: props.onOpenWallet ?? entry.open });
+  // I28's "A photo is 1 credit, a video or voice note 3": the Hub's costs by kind, said only once they are known (never a number written here).
+  const costs = useMessageCost();
+  const costLine = costs.data ? creditCostLine(costs.data.creditsByKind) : null;
   const { visible, onClose, doneLabel } = props;
   const quote = buy.quote;
   const chosen = buy.list.find((candidate) => candidate.pack === buy.pack) ?? null;
@@ -123,6 +128,11 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
       <BottomSheet visible={visible} onClose={close} label={SHEET_TITLE} gap={SHEET_GAP} dismissible={!buy.tapping} testID="credits-sheet">
         <View style={styles.head}>
           <Text variant="sheetTitleSm">{SHEET_TITLE}</Text>
+          {costLine ? (
+            <Text variant="muted" testID="credits-cost-line">
+              {costLine}
+            </Text>
+          ) : null}
           <Text variant="muted">{SHEET_LINE}</Text>
         </View>
         <Packs buy={buy} />

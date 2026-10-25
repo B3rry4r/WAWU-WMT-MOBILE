@@ -7,8 +7,8 @@ import type { CreditPack, PackId, PackQuote } from './api';
 /** The word on I28's title. The instrument's name stays "WAWU Credits" (R-37, "where WAWU stays"). */
 export const SHEET_TITLE = 'Buy WAWU Credits';
 /**
- * I28's line. The 16 Oct board also says what each kind of message costs ("A photo is 1 credit, a video or voice note 3") and that text is
- * free; the Hub charges one credit for any message until INBOX-22 serves the costs by kind (R-47, R-62), so only what is always true is said.
+ * I28's line. The 16 Oct board also says what each kind of message costs ("A photo is 1 credit, a video or voice note 3"); the sheet draws
+ * that line above this one from the Hub's costs by kind (`creditCostLine`, R2-SOCIAL 2), and only once they are known (R-47, R-62).
  */
 export const SHEET_LINE = 'Credits don’t expire and can’t be cashed out.';
 /** I27's words. The 16 Oct board says "Text and emoji stay free ... photos, video and voice notes"; today the Hub charges every message (INBOX-22). */

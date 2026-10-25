@@ -12,7 +12,7 @@ import { Text } from '@/components/Text';
 import { layout, radius, space } from '@/theme';
 
 import { boostBrightness, canBoostBrightness } from './brightness';
-import { checkedInLine, position, refundBannerBody } from './ticketFormat';
+import { CALLED_OFF_TITLE, checkedInLine, position, refundBannerBody } from './ticketFormat';
 import { cardMetrics, Note, Page, RefreshFailed, TicketCard, TicketNav } from './ticketParts';
 import { fetchHeldTicket, fetchWalletOrder, heldTicketKey, isTicketId, walletOrderKey } from './ticketsApi';
 
@@ -111,7 +111,7 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
         />
       ) : null}
       {void_ && calledOff && refundBody ? (
-        <Banner testID="ticket-called-off" tone="danger" icon="CalendarX" title="This event was called off" body={refundBody} />
+        <Banner testID="ticket-called-off" tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={refundBody} />
       ) : null}
       {void_ && !(calledOff && refundBody) ? (
         <Note
@@ -122,7 +122,7 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
           body={data.event.cancelledAt ? 'The event was called off, so this ticket cannot be used.' : 'This ticket cannot be used at the door.'}
         />
       ) : null}
-      <TicketCard ticket={data} showCode={!void_} now={now} />
+      <TicketCard ticket={data} showCode={!void_} now={now} dimmed={void_ && calledOff} />
       {canBoostBrightness && data.status === 'valid' ? (
         <Text variant="muted" style={styles.centered} testID="ticket-brightness">
           Brightness goes up when this opens.

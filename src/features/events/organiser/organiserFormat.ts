@@ -80,12 +80,15 @@ export function linksLine(links: readonly { ticketsSold: number }[]): string {
 /** "Regular, VIP": the names of the ticket types the Hub lists. */
 export const tiersLine = (tiers: readonly { name: string }[]) => tiers.map((t) => t.name).join(', ');
 
-/** E25's second line under "This refunds real money": how many people get their money back, from the Hub's dashboard. */
+/**
+ * E25's second line under "This refunds real money": how many people get the ticket price back, from the Hub's dashboard. It names the price,
+ * never "their money": the bank's charge on each ticket is not returned, so "their money back" would promise more (BRIEF E25, rule 6).
+ */
 export function refundLine(buyers: number | null): string {
   // The Hub's count did not arrive: say it without a number, never with a made-up one.
-  if (buyers === null) return 'Everyone who paid for a ticket gets their money back.';
+  if (buyers === null) return 'Everyone who paid for a ticket gets the ticket price back.';
   if (buyers === 0) return 'Nobody has paid for a ticket, so no money moves.';
-  return buyers === 1 ? 'The 1 buyer gets their money back.' : `All ${buyers.toLocaleString('en-US')} buyers get their money back.`;
+  return buyers === 1 ? 'The 1 buyer gets the ticket price back.' : `All ${buyers.toLocaleString('en-US')} buyers get the ticket price back.`;
 }
 
 /** A reason is long enough and not too long, counting what the host typed without the spaces around it. */

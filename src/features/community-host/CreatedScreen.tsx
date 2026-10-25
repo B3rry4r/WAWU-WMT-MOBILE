@@ -14,6 +14,8 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fetchRoom, roomKey } from '@/features/communities/api';
+import { memberCostLine } from '@/features/communities/format';
+import { useMessageCost } from '@/features/communities/useCredits';
 import { copyText } from '@/features/open-wallet/copy';
 import { readableLink, sendableRoomLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
@@ -44,7 +46,8 @@ function BackBar({ onBack }: { onBack?: () => void }) {
 /**
  * I33 · Created (INBOX-14). "<name> is live", what kind of room it is and that the person hosts it, the room's share link `wawu/c/<slug>`
  * as the Hub made it, Copy, Share link and Open room. The name, the kind and the link are the Hub's own, read from the room. The board's
- * "Members pay 1 credit a message" is left out: the figure is not served here (G-INBOX-14-1).
+ * "Members pay 1 credit a message and reading is free." is written from what the Hub says a message costs (`GET /communities/message-cost`,
+ * R-62: text is free, so the words follow the prices, R2-SOCIAL g); until that is read the line is only the first sentence.
  */
 export function CreatedScreen({ id, onOpenRoom, onBack }: CreatedScreenProps) {
   const { colors } = useWawu();
@@ -60,6 +63,8 @@ export function CreatedScreen({ id, onOpenRoom, onBack }: CreatedScreenProps) {
     [],
   );
   const ring = useFocusRing();
+  // What members pay is the Hub's (`GET /communities/message-cost`, R-62): nothing is said until it is read, and never a figure of the board's.
+  const cost = useMessageCost();
 
   if (room.isError && !room.data) {
     return (
@@ -141,8 +146,8 @@ export function CreatedScreen({ id, onOpenRoom, onBack }: CreatedScreenProps) {
             We couldn’t copy the link. Try Share link.
           </Text>
         ) : null}
-        <Text variant="muted" style={styles.centred}>
-          Share the link or post your first message.
+        <Text variant="muted" style={styles.centred} testID="created-line">
+          {cost.data ? `Share the link or post your first message. ${memberCostLine(cost.data.creditsByKind)}` : 'Share the link or post your first message.'}
         </Text>
       </View>
       <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
