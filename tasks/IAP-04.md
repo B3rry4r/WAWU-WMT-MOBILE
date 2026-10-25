@@ -113,3 +113,16 @@ The owner can map every store product to what it grants, switch and set the cut 
 | `check:oversight-contract`, `check:money-contract` | current (EXIT 0) |
 | `check:contract`, `check:ops-contract` | stale on `433c710` and on `5cb78a3` alike (header lines only), not caused by this branch |
 | mobile `python3 scripts/tasks/check_tasks.py` on `19bb7354` | EXIT 0, 446 tasks |
+
+## Round 2: the verifier's lows (builder IAP-03 r3, 25 Oct 2026)
+
+Dashboard `wmt/IAP-04` `2adb286` (on `5cb78a3`), backend `wmt/IAP-03` `a2ed812` (on `25a2edf`). Never Fintava, never a live host.
+
+| # | Low | After |
+|---|---|---|
+| 1 | Store entry stays in the nav for support and reviewer | Left as recorded: the nav has no role field and the sidebar shows every entry to every role (`nav.ts`), so hiding one entry is a nav-wide change, not IAP-04's. Those roles are shown the refusal and send no request |
+| 2 | a 5xx refusal joined the Hub's words and "Nothing was changed." with no stop | `endSentence` (in `storeMath.ts`, tested by `node --test`): a full stop only when the Hub's words have none, so it reads "Internal server error. Nothing was changed."; test written first (the export did not exist), then green |
+| 3 | the Purchases "Until" column was blank for a pass bought once | The Hub's admin purchase view (`GET /admin/store/purchases`, `/refunds`) carries `passEndsAt` (optional, nullable): the end of the pass row the purchase granted (a take-back moves it to that moment), null for any other kind; spec first on the backend (`store-pass-one-time.contract.spec.ts`), `contract:build` committed (4 lines). The dashboard store contract was regenerated at `a2ed812` (`npm run gen:store-contract`, one line `passEndsAt?: string | null`; `check:store-contract` current at `a2ed812`). The column shows `untilOf` (the pass end, else the store's own period end) as "Runs to" or, when it is past, "Ran to"; a taken-back purchase still reads "Ended ..." |
+| 4 | the 16 pictures were taken on `04d5069` | Not retaken (no local Hub was run this round); the Until column is pinned by the `untilOf` unit test and the Hub's spec |
+
+Checks: dashboard `tsc --noEmit`, eslint on `src/components/store` and the contract, `npm test` (15 tests, 2 new), `python3 scripts/gates/run.py` (222 files, 0 fail), `check_baseline`, `check:invariants`, `check:contrast`, `check:store-contract` all EXIT 0. Backend `tsc`, the six store specs and `community-pass-rules` (7 suites, 107 tests), `contract:build`, gates and `check_baseline` EXIT 0. The task's last capability check (against the merged IAP-03 head) still wants one look after the merge.
