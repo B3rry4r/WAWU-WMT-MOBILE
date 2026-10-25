@@ -27,6 +27,8 @@ export default function PurchasesRoute() {
         return router.push('/schools/mine');
       case 'room':
         return router.push({ pathname: '/community/[id]', params: { id: target.id } });
+      case 'matter':
+        return router.push({ pathname: '/legal-matter', params: { id: target.id } });
     }
   };
   return <PurchasesScreen onBack={leave} onOpen={open} />;

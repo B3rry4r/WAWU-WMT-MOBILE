@@ -1,6 +1,7 @@
 import { formatMoney } from '@/components/Money';
 import { koboOfText, pressKey } from '@/components/amount-entry';
 import { BANK_CHARGE, feeLinesOf } from '@/features/send/model';
+import { shortReference } from '@/features/send/reference';
 import type { FeeQuote, Transfer } from '@/features/send/api';
 import { FEE_LABELS } from '@/features/wallet/history/model';
 import { clockTime, longDateTime } from '@/features/wallet/history/lagosTime';
@@ -195,7 +196,7 @@ export type ReceiptRow = { key: string; label: string; value?: string; money?: n
 
 export function withdrawReceiptRows(transfer: Pick<Transfer, 'reference' | 'fee' | 'totalKobo'>): ReceiptRow[] {
   return [
-    { key: 'reference', label: 'Reference', value: transfer.reference, copy: true },
+    { key: 'reference', label: 'Reference', value: shortReference(transfer.reference), copy: true },
     { key: 'provider', label: BANK_CHARGE, money: transfer.fee.providerFeeKobo },
     { key: 'wawu', label: FEE_LABELS.wawu, money: transfer.fee.wawuFeeKobo },
     { key: 'fees', label: 'Fees', money: transfer.fee.providerFeeKobo + transfer.fee.wawuFeeKobo },
@@ -212,6 +213,6 @@ export function withdrawShareText(transfer: Transfer): string {
     if (row.key === 'reference') continue;
     lines.push(`${row.label}: ${money(row.money ?? 0)}`);
   }
-  lines.push(`Reference: ${transfer.reference}`);
+  lines.push(`Reference: ${shortReference(transfer.reference)}`);
   return lines.join('\n');
 }

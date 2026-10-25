@@ -1,6 +1,8 @@
 import { shortReference } from '../reference';
 import { failedRows, receiptRows, shareText } from '../model';
 import type { Transfer } from '../api';
+import { withdrawReceiptRows } from '@/features/withdraw/model';
+import { fxReference, swapRows, sendRows } from '@/features/wallet/fx/FxReceiptScreen';
 
 /*
  * R2-MONEY D-03: the receipt shows the board's short reference "WAW-XXXX-XXXX", derived from the stored one by a fixed rule that the Hub's
@@ -34,5 +36,19 @@ describe('where a send shows its reference', () => {
   it('W14 shows the short reference too', () => {
     const rows = failedRows({ amountKobo: 500_000, reference: `wawu-bank-${ID}`, createdAt: '2026-10-24T10:00:00.000Z', completedAt: null, reversal: null });
     expect(rows.find((r) => r.key === 'reference')?.value).toBe('WAW-8F2A-91C3');
+  });
+
+  it('R2-MONEY2 M-03: the withdraw receipt (W19) shows the short reference, never the stored one', () => {
+    const rows = withdrawReceiptRows({ reference: `wawu-bank-${ID}`, fee: { providerFeeKobo: 4000, wawuFeeKobo: 2500, totalFeeKobo: 6500 }, totalKobo: 506_500 } as never);
+    expect(rows.find((r) => r.key === 'reference')?.value).toBe('WAW-8F2A-91C3');
+  });
+
+  it('R2-MONEY2 M-03: a swap (W21) and a crypto send show the short reference from their id, never the id', () => {
+    expect(fxReference(ID)).toBe('WAW-8F2A-91C3');
+    expect(shortReference(`wawu-fx-${ID}`)).toBe('WAW-8F2A-91C3');
+    const swap = swapRows({ id: ID, status: 'completed', fromCurrency: 'NGN', toCurrency: 'USD', fromAccountId: null, toAccountId: 'a', amountFromMinor: 15_000_000, amountToMinor: 10_000, fromDecimals: 2, toDecimals: 2, rate: '0.000666', providerFeeMinor: 0, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null } as never);
+    expect(swap.find((r) => r.key === 'ref')?.value).toBe('WAW-8F2A-91C3');
+    const send = sendRows({ id: ID, status: 'completed', accountId: 'a', currency: 'USDT', chain: 'base', decimals: 6, address: '0x4f2a9c1d00000000000000000000000000009c1d', amountMinor: 1_000_000, providerFeeMinor: 0, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null } as never);
+    expect(send.find((r) => r.key === 'ref')?.value).toBe('WAW-8F2A-91C3');
   });
 });

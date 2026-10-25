@@ -16,7 +16,7 @@ import { ListSection } from '@/components/ListRow';
 import { font, layout, useWawu } from '@/theme';
 
 import { normal } from '../look';
-import { matterKeys } from '../matter/api';
+import { fetchRequest, matterKeys } from '../matter/api';
 import { matterMetrics as m } from '../look2';
 import { PaySheets } from '../pay/PaySheets';
 import { useLegalFeePay, type FeePayArgs } from '../pay/useLegalFeePay';
@@ -54,11 +54,16 @@ export function BookScreen({ requestId, onBack, onBooked, wallet }: BookArgs) {
     enabled: call !== null,
     staleTime: 0,
   });
-  const days = useMemo(() => (slots.data ? dayChips(slots.data) : []), [slots.data]);
+  // The person's own unpaid booking holds its hour: it is theirs to pick again, so it is not drawn as taken (S19).
+  const held = useQuery({ queryKey: matterKeys.request(requestId), queryFn: () => fetchRequest(requestId), staleTime: 0 });
+  const ownHold = call !== null && held.data?.status === 'awaiting_consultation_payment' && held.data.consultationMedium === call ? (held.data.scheduledFor ?? null) : null;
+  const days = useMemo(() => (slots.data ? dayChips(slots.data, ownHold) : []), [slots.data, ownHold]);
   const [dayDate, setDayDate] = useState<string | null>(null);
   const [slotAt, setSlotAt] = useState<string | null>(null);
-  const day = days.find((d) => d.date === dayDate) ?? days[0] ?? null;
-  const slot = day?.slots.find((s) => s.startsAt === slotAt && s.available) ?? null;
+  // With nothing picked yet, the person's own held hour is their choice (and its day the one shown).
+  const day = days.find((d) => d.date === dayDate) ?? days.find((d) => d.slots.some((s) => s.mine)) ?? days[0] ?? null;
+  const pickedAt = slotAt ?? day?.slots.find((s) => s.mine)?.startsAt ?? null;
+  const slot = day?.slots.find((s) => s.startsAt === pickedAt && s.available) ?? null;
 
   const [booking, setBooking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);

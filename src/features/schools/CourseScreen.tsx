@@ -21,7 +21,7 @@ import { fetchCourse, fetchCourseSaved, schoolsKeys, setCourseSaved } from './ap
 import { joinable, upcoming } from './enrolModel';
 import { ClassFullFoot } from './enrolParts';
 import { classesLine, dayLabel, nonEmpty, upcomingIntake, weeksLabel, youGetLine } from './model';
-import { Cover, Fee } from './parts';
+import { Fee } from './parts';
 import { useToday } from './useToday';
 
 /**
@@ -36,7 +36,6 @@ import { useToday } from './useToday';
 export const courseMetrics = {
   bodyTop: space.sm,
   partGap: 16,
-  cover: 170,
   nameGap: 4,
   school: 13,
   title: 24,
@@ -169,7 +168,7 @@ export function CourseScreen({ id, onBack, onEnroll }: CourseScreenProps) {
         }
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.body, { paddingBottom: footHeight + courseMetrics.partGap }]}>
-        <Cover height={courseMetrics.cover} style={styles.cover} testID="course-cover" />
+        {/* The Hub serves no course picture (G-624), so no block holds its place: an empty cover reads as a broken image (CHECK-3 SC11). */}
         <View style={styles.names}>
           <Text variant="body" tone="textMuted" style={styles.school} testID="course-school">
             {data.school.name}
@@ -277,7 +276,6 @@ function CourseSkeleton() {
   return (
     <LoadingView label="Loading the course" testID="course-loading">
       <View style={styles.skeleton}>
-        <Skeleton height={courseMetrics.cover} radius={radius.card} />
         <Skeleton width="40%" height={courseMetrics.school} />
         <Skeleton width="75%" height={courseMetrics.title} />
         {Array.from({ length: courseMetrics.skeletonRows }, (_, i) => (
@@ -291,7 +289,6 @@ function CourseSkeleton() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   body: { paddingTop: courseMetrics.bodyTop, paddingHorizontal: layout.gutter, gap: courseMetrics.partGap },
-  cover: { borderRadius: radius.card },
   names: { gap: courseMetrics.nameGap },
   school: { ...font(600), fontSize: courseMetrics.school, lineHeight: canvasNormalLineHeight(courseMetrics.school) },
   title: { ...font(700), fontSize: courseMetrics.title, letterSpacing: courseMetrics.titleTracking * courseMetrics.title, lineHeight: courseMetrics.title * courseMetrics.titleLeading },
