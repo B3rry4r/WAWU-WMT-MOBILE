@@ -32,6 +32,7 @@ export const TIER_WORDS = {
   dollarsTitle: "Paying in dollars isn't open yet",
   dollarsBody: 'Your tiers are priced in dollars. Paying for a tier from a dollar account is not switched on yet. Add a dollar account to your wallet so you are ready.',
   dollarsAdd: 'Add a dollar account',
+  price: 'Price',
   total: 'Total',
   paying: 'Paying...',
   officialTitle: "You're official",
@@ -66,6 +67,16 @@ export const startingTier = (tiers: readonly PlanTier[]): PlanTier | null => tie
 export const higherTiers = (tiers: readonly PlanTier[], heldId: string): PlanTier[] => {
   const held = tiers.find((t) => t.id === heldId);
   return held ? tiers.filter((t) => t.priceMinor > held.priceMinor) : [];
+};
+
+/**
+ * The tiers VF13's "Upgrade instead" can lead to: the ones above the held tier (they cost more) that would leave room, as the Hub offers on a
+ * `product_limit_reached` refusal (a tier counts only when its products plus the extras held are more than what is used). A person with no
+ * running tier is offered every tier that leaves room; the top tier gets none.
+ */
+export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, extraProducts: number, used: number): PlanTier[] => {
+  const above = heldId === null ? [...tiers] : higherTiers(tiers, heldId);
+  return above.filter((t) => t.products + extraProducts > used);
 };
 
 /** "Add 1,000 points for ₦800": the checkout offer, from the Hub's own figures. */

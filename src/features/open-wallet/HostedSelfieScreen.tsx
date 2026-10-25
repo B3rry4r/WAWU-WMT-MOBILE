@@ -5,7 +5,7 @@ import { AppState, Linking, StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
-import { IconTile, type IconTileTone } from '@/components/IconTile';
+import { IconTile } from '@/components/IconTile';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -15,6 +15,7 @@ import { AuthFrame } from '@/features/auth/AuthFrame';
 
 import { isSecurePage, livenessProblem, LIVENESS_KEY, fetchLiveness, startLiveness, type Liveness } from './api/liveness';
 import { OpenWalletEnd } from './OpenWalletEnd';
+import { CameraPage, Words } from './CameraPage';
 import { forgetSelfieDrop, noteSelfieDropped } from './selfieDrop';
 import { useSessionAccount } from './sessionAccount';
 
@@ -220,26 +221,38 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
     );
   }
   const refused = view?.state === 'not_passed';
-  const tone: IconTileTone = refused ? 'danger' : 'accent';
+  if (refused) {
+    // A16 (RELEASE-02 second pass, M-4): the board's dark page, the red-ringed oval and a Try again button. The words claim only what the
+    // Hub's answer says: Nuvion's check says approved or not approved, so there is no "couldn't match your face" and no BVN photo here.
+    return (
+      <CameraPage
+        testID="open-wallet-selfie-not-passed"
+        onClose={onBack}
+        ring="refused"
+        words={<Words title={failure?.title ?? RETRY_TITLE} line={failure?.body ?? RETRY_LINE} live />}
+        foot={<Button label="Try again" variant="white" full loading={busy} onPress={() => void start()} testID="open-wallet-selfie-continue" />}
+      />
+    );
+  }
   return (
     <AuthFrame
       testID="open-wallet-selfie-hand-off"
       navTitle={NAV_TITLE}
       onBack={onBack}
-      footer={<Button label={refused ? 'Try again' : 'Continue to secure page'} full loading={busy} onPress={() => void start()} testID="open-wallet-selfie-continue" />}
+      footer={<Button label="Continue to secure page" full loading={busy} onPress={() => void start()} testID="open-wallet-selfie-continue" />}
     >
       <View style={styles.body}>
         {failure ? <Banner tone="danger" title={failure.title} body={failure.body} testID="open-wallet-selfie-banner" /> : null}
         <View style={styles.centre}>
-          <IconTile icon={refused ? 'X' : 'ShieldCheck'} tone={tone} size={HAND_OFF.circle} />
+          <IconTile icon="ShieldCheck" tone="accent" size={HAND_OFF.circle} />
           <Text
             variant="h1"
             style={[styles.title, { fontSize: HAND_OFF.title, lineHeight: HAND_OFF.title * HAND_OFF.titleLeading, letterSpacing: HAND_OFF.titleTracking * HAND_OFF.title }]}
           >
-            {refused ? RETRY_TITLE : HAND_OFF_TITLE}
+            {HAND_OFF_TITLE}
           </Text>
           <Text variant="secondary" style={styles.line}>
-            {refused ? RETRY_LINE : HAND_OFF_LINE}
+            {HAND_OFF_LINE}
           </Text>
         </View>
       </View>

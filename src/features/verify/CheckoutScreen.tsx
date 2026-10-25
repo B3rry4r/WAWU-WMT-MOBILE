@@ -20,7 +20,7 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { CheckRow, MethodRow, TransferCard } from './planParts';
+import { CheckRow, MethodRow, QuoteBreakdown, TransferCard } from './planParts';
 import { plansQuery } from './purchaseApi';
 import { bumpLine, naira, payLabel, pinPurposeOf, shortLine, tierLine, TIER_WORDS } from './purchaseModel';
 import { usePlanPurchase } from './usePlanPurchase';
@@ -48,7 +48,8 @@ export type CheckoutScreenProps = {
  * The payment is `usePlanPurchase`: one `Idempotency-Key` per attempt, the PIN through the shared PIN sheet, a lost answer sent again
  * as it was. Bank transfer is offered only when the wallet is short (POINTS-06's ruling, FIX-55; kept on the tier checkout by the lead on
  * 25 Oct 2026, because the Hub settles a transfer order from a covering wallet); the wallet's own account to send to is
- * the Hub's, given with the PIN. The board's Reference line is not drawn: the Hub serves none.
+ * the Hub's, given with the PIN. The fee is always drawn as its parts then the total (BRIEF rule 3; RELEASE-02 second pass M-1): the price, the
+ * Bank charge, WAWU's fee and the Total, each from the quote, even when a part is 0. "No fee" is never drawn (rule 4). The board's Reference line is not drawn: the Hub serves none.
  */
 export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSetPin, onAddMoney }: CheckoutScreenProps) {
   const { colors } = useWawu();
@@ -182,19 +183,7 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid, onForgotPin, onSe
           </Text>
         ) : null}
         {quote ? (
-          <Card padded testID="checkout-total">
-            <View style={styles.totalRow}>
-              <Text variant="body" tone="textSecondary">
-                {TIER_WORDS.total}
-              </Text>
-              <Money minorUnits={quote.totalKobo} size={16} weight={700} decimals={quote.totalKobo % 100 !== 0} />
-            </View>
-            {quote.feeKobo > 0 ? (
-              <Text variant="meta" tone="textMuted" testID="checkout-fees" style={styles.fees}>
-                {`${naira(quote.priceKobo)} + ${naira(quote.feeKobo)} Bank charge`}
-              </Text>
-            ) : null}
-          </Card>
+          <QuoteBreakdown quote={quote} prefix="checkout" />
         ) : purchase.quoteError ? (
           <ErrorState
             testID="checkout-quote-error"
@@ -281,8 +270,6 @@ const styles = StyleSheet.create({
   note: { flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.card },
   noteWords: { flex: 1, gap: space.xs },
   noteButton: { alignSelf: 'flex-start', marginTop: space.sm },
-  totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  fees: { marginTop: space.xs },
   centre: { textAlign: 'center' },
   loading: { gap: BODY_GAP },
 });

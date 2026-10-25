@@ -333,7 +333,8 @@ describe('H19: a locked paid piece', () => {
     expect(screen.getByRole('button', { name: 'Follow' })).toBeTruthy();
     expect(screen.getByText('Unlock the full PDF')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦3,000' })).toBeTruthy();
-    expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
+    // The balance is its own read, asked once the piece has landed, so the line is waited for rather than read at once.
+    expect(await screen.findByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
     // FIX-110 (G-1723, G-HOME-03-3): "Yours forever" is drawn, since a bought piece has no end. Nothing else the Hub does not say: no 96%, no Read now or Tip while it is locked.
     expect(screen.getByText('Yours forever')).toBeTruthy();
     expect(screen.queryByText(/96%/i)).toBeNull();
@@ -664,7 +665,8 @@ describe('H25: a course', () => {
     expect(rtl.within(screen.getByTestId('lesson-l2')).queryByText('Free')).toBeNull();
     expect(screen.queryByText('Lesson 5')).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlock course · ₦8,000' })).toBeTruthy();
-    expect(screen.getByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
+    // The balance is its own read, asked once the piece has landed, so the line is waited for rather than read at once.
+    expect(await screen.findByText('Pay from wallet · ₦485,250 available')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'See all 12 lessons' }));
     expect(screen.getByText('Lesson 12')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByRole('button', { name: 'Show fewer lessons' }));
