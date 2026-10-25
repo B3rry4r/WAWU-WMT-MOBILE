@@ -192,3 +192,23 @@ Checks (logs in the scratchpad `r2s3b/`, each with its EXIT line): `npx tsc --no
 3. low, note: MV11 has no picture until Flix goes live (R-80); re-check on the first phone pass with the partner on.
 
 Pictures (390 px, light and dark, beside the boards in `scratchpad/r2s3b/boards/` and `scratchpad/v-r2s3b/boards/I3-*.png`): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/v-r2s3b/`. Cleanup: stack down, ports 9490 to 9509 free, database dropped, worktrees `vr2s3b-*` removed.
+
+
+## API-ADMIN-TAGS (25 Oct 2026, Sonnet builder, T1; mobile `wmt/API-ADMIN-TAGS` from origin/main `044f465c`)
+
+The app's generated API types left out admin routes by tag (`^Admin`, `Ops$`). Six admin controllers whose tag ends in Admin slipped through. `contract/mobile-exclusions.json` gains one tag rule, `Admin$` (task `API-ADMIN-TAGS`, printed on every sync run). Regenerated with `python3 scripts/api/sync_contract.py` (= `npm run api`); `contract/openapi.json` and `SOURCE_COMMIT` (`f76ab08`) are untouched, so the diff is the exclusion and nothing else (backend origin/main has moved on with IAP-03 contract changes; the task that syncs those owns that bump).
+
+| Tag now excluded | Routes removed from the generated paths |
+|---|---|
+| AbroadAdmin | 6 (`/admin/money/abroad/...`) |
+| FxAdmin | 6 (`/admin/money/fx/...`) |
+| WorldAdmin | 4 (`/admin/money/world/openings...`) |
+| SchoolSettlementAdmin | 5 (`/admin/school-settlements`, `/admin/schools/{id}/payee`, `/admin/school-enrolments/{id}/refund`, `/admin/school-intakes/{id}/cancel`) |
+| WaitlistAdmin | 3 (`/admin/waitlist/registrations...`) |
+| ReferralAdmin | 3 (`/admin/waitlist/referral-codes...`) |
+
+27 operations over 25 paths; nothing added. The rules now exclude 45 tags (206 operations): 35 Admin tags (29 starting with Admin, the six above), 8 Ops tags, `PaymentWebhook` and `Shop`. Before the change 39 tags (179 operations) were excluded; the six above are the whole difference. No other tag in the contract ends in Admin.
+
+Callers: `grep -rnE` for each of the 25 paths (with `{id}` read as a segment) over `src` and `app`, generated files left out: 0 hits for every path, 0 uses of an excluded operation name. The only `admin/` text in `src` is a comment in `src/features/send/reference.ts` that names `GET /admin/money/transfers/lookup` (not one of the removed routes).
+
+Checks (logs in the scratchpad `api-admin-tags-b/`, each with its EXIT line): `npx tsc --noEmit` EXIT 0; CI's "API types match the contract and its exclusion list" (`sync_contract.py` then `git diff --exit-code contract/openapi.mobile.json src/api/schema.generated.ts`, run on the committed tree) EXIT 0; jest `--maxWorkers=2` `src/__tests__/route-guard.test.tsx` 1 suite, 293 tests EXIT 0; gates 10 run, 1432 files, 0 fail, 18 warn EXIT 0; `check_baseline.py` EXIT 0; `check_tasks.py` (446 tasks) EXIT 0.

@@ -7,6 +7,11 @@
       "task": "permanent"
     },
     {
+      "pattern": "Admin$",
+      "why": "Admin controllers whose tag ends in Admin (AbroadAdmin, FxAdmin, ReferralAdmin, SchoolSettlementAdmin, WaitlistAdmin, WorldAdmin) are for the dashboard, never the app.",
+      "task": "API-ADMIN-TAGS"
+    },
+    {
       "pattern": "Ops$",
       "why": "Ops endpoints are for staff tooling, not the app.",
       "task": "permanent"
