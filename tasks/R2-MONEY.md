@@ -7,7 +7,7 @@ order: -301
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: verifying
+status: building
 depends_on: []
 decisions: [R-10, R-23, R-27, R-47, R-87]
 passes: [V1, V4, V5, V6, V9]
@@ -75,3 +75,34 @@ Fix the CHECK-3 money-work defects the lead ruled on, so the screens match their
 - Pictures (390 px, dark and light, board on the left, built screen on the right): W35 wallet settings, W26 history, the world Wallet tab (board W2), W20 swap with nothing to swap, W15 add money with no way available, /cards with no wallet. They are made from the web export of this branch with STAND-IN Hub answers (not the Nuvion stack), so they show layout, not Hub behaviour. NOT drawn: W10 and W12 (their text is held by `sendFlow.test.tsx`, `bankSendFlow.test.tsx` and `reference.test.ts`), P1.
 - NOT RUN: a phone, the Nuvion stack, `npm run check` (the merge agent runs it), the mobile contract copy (`npm run api`; the new Hub route is admin only and the app does not call it).
 - Hub side of D-03: `GET /api/hub/admin/money/transfers/lookup?reference=WAW-8F2A-91C3` (also takes `wawu-send-<id>` or `wawu-bank-<id>`), roles superadmin, finance, support. The short form is the first eight hex digits of the send id, so two sends can share one; the lookup answers up to ten, newest first. The admin dashboard has no screen for it yet (dashboard task, not built here).
+
+## Verifier report
+
+25 Oct 2026, Sonnet verifier (T1 lean check; built none of it). Mobile `95c71f66` against `a3fdaf71`; backend `4f865f2` against `dcee8af`. Local stack on the Nuvion stand-in and the mock WAWU ID (backend branch), web export at 390x844, real login for each user. Pictures and logs: scratchpad `r2-money-v/` (lead's session). **Verdict: FIX** (one high, one medium).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 gates | passed | app gates 0 fail, 18 warn, 1418 files, EXIT 0; check_tasks EXIT 0; fingerprint 17ffb13d520882bf144982b61d03f3994c6e40e4 (unchanged); backend gates 0 fail, 138 warn, 88 accepted, 1983 files, EXIT 0; check_baseline EXIT 0 |
+| tests | passed | app tsc EXIT 0; jest (wallet, send, addmoney, cards, professionals, pay-sheet, both route-guard files, maxWorkers=2) 58 suites, 1008 passed, EXIT 0; backend tsc EXIT 0; eslint (no fix) on the 7 changed files EXIT 0; new spec + 5 route inventories 6 suites, 113 passed, EXIT 0; contract:build EXIT 0, no diff to `contract/openapi.json` |
+| V4 protected | same as main | `test:protected` after `db:seed`: branch 245 passed, 8 failed; main 245 passed, 8 failed; the same 8 (GET /professionals/:id, PATCH /professionals/applications/:id/listing, POST /admin/professionals/:id/approve and /unlist, POST /admin/verification/:id/approve, /ticks/:wawuUserId/grant and /revoke, POST /verification/purchase/verify; "WAWU ID verification-tier update failed" from the mock ID). The builder's five `/learn/*` and `/creators/:id/evg` failures did not occur once `db:seed` had run on either tree: they were an empty test database, not the branch |
+| V5 picture | partly | boards rendered (W2, W10, W15, W20, W26, W35) and built screens captured dark and light in `shots/`; compared by text and layout, no phone |
+| V6 states | passed except below | frozen world account, no wallet, nothing to swap with, no add-money way: reached by their real causes |
+| V9 live seam | passed | signed in through the real login (mock WAWU ID) for four users; every figure below came from the Hub |
+
+### Findings, ranked
+
+1. **high, defect: D-02 contradicts BRIEF rule 5 and W10/W11.** `src/components/pay-sheet/PaySheet.tsx:243` builds the send button from `p.recipientGetsKobo ?? p.total` and `:251` drops the "They get" line (`!send &&`). Repro on the stack: Send, a WAWU user, 5,000, Continue: button "Send ₦5,000", Total row "₦5,010.00" above it, PIN sheet "Approve ₦5,010 to Ada Seeded", wallet debited ₦5,010 (₦50,000.00 to ₦44,990.00). The pay button and the PIN sheet disagree and the button names less than leaves the wallet. BRIEF rule 5 and W10: the button shows the total ("Send ₦5,010"), with "They get ₦5,000" as its own line. Fix: restore the total on the button and the "They get" line (the chat send shares the sheet), and revert SHARED-CHANGES row R2-MONEY #1. The assertions the builder changed for this (`sendFlow.test.tsx`, `bankSendFlow.test.tsx`, `PaySheet.test.tsx`: "Send ₦25,065", "Send ₦25,075", "Send ₦25,025.75", "Send ₦25,035.75", "They get ₦25,000") pinned the BRIEF-correct behaviour, not a defect: restore them.
+2. **medium, defect: D-05 Beneficiaries opens a list that does not hold what the count counts.** `src/app/wallet-settings.tsx` sends the row to `/send/bank`; the Hub's `beneficiaryCount` counts WAWU users too (`visibleBeneficiaries`, wawu-backend `src/money/saved-accounts/beneficiary.service.ts:~384`), and a send to a WAWU user saves them on its own. W8's Saved list draws bank accounts only (`src/features/send/BankRecipientScreen.tsx:101`). Repro: send to a WAWU user, Wallet settings: "Beneficiaries, 1 saved"; tap it: W8 with no Saved section. Fix: count only bank accounts for this row, or open a list that shows both.
+3. **low, note: D-03 support cannot use the lookup from a screen today.** The dashboard (`wawu-dashboard` `c1dfca6`) has no screen or call for `GET /admin/money/transfers/lookup`; support can only call it with an admin token. The route itself is right: superadmin, finance, support 200; reviewer 403; no token 401; a user token 401; whole reference, lower case and the short form each find the send; an unknown short reference answers an empty list; a 3-character query is 400; two sends sharing the first eight digits both come back, newest first; the answer holds ids, names, kobo, status, dates and the bank's name, never an account number, note or failure reason (the abroad admin send view already shows ids and names). It does not filter on the `provider` column, so it also finds sends from before the provider switch (fine for support).
+4. **low: world home with every account frozen draws no activity.** `src/features/wallet/world/WorldHome.tsx` shows Transactions only when an account is open, so a frozen person cannot see their movements. The frozen banner, no Send abroad, no Swap and Get paid from abroad all showed correctly.
+5. **low (D-10, D-14):** the W26 icon opens Statements; P1 intro now reads "Vetted practitioners. Pay to send the first message." (no BRIEF entry; the paid first message is real). The W26 icon was not compared in a picture.
+
+### Capability checks
+
+- D-01 world wallet (KE person, USD $125.50 and EUR €40.00 funded on the stand-in): a balance card per account with the Hub's own figure, never added up, then Send abroad, Swap, Get paid from abroad per account, Transactions, Add a currency; nothing naira. Frozen: banner "This account is frozen", no Send abroad or Swap, Get paid from abroad stays. **Coin: NOT RUN** (the stand-in makes fiat only, `provider_declined`).
+- D-03 on the receipt: "WAW-1194-3E9D" on W12 for send `wawu-send-11943e9d-...`; the lookup of that short form finds it. W14 and W27 take the same function (`reference.ts`), not driven (no failed send).
+- D-04: the Hub lists no available way for naira here, so the app draws no "Other ways" section.
+- D-06: /swap with a naira wallet and no foreign account says "You have no account to swap with" with Go to your wallet; /cards with no wallet says "You don't have a wallet yet" with Open your wallet, no Try again. The real-failure path is held by `swapEmpty.test.tsx` and `cardsScreen.test.tsx` (passed), not driven.
+- D-05 switch for a biometric key: the web export shows none (the phone keeps the key); NOT RUN on a phone.
+- Changed assertions: D-02 ones above (restore); `otherWays` three inert rows (D-04), `WalletSettingsScreen` and `walletSettingsFlow` no Beneficiaries row (D-05), `worldAccountCard` padding and GBP code text (D-01 rebuild), `professionals/screens` intro (D-14), `historyScreens` (D-10): each pinned the named defect only.
+- D-18 (backend read): yes, an unpaid place ends. `src/schools/enrolment/school-enrolment-rules.ts:22-29` sets `reservedUntil` to now plus 30 minutes (`SCHOOL_RESERVATION_MINUTES`, 5 to 1440); `school-enrolment.service.ts:546-575` `releaseExpired` sets status `released` and gives the seat back; `:577` runs it every minute; `:205-210` a full class releases its expired places before it says no; `:66` a pending or completed payment keeps the seat; `rules.ts:34-40` caps a student at 3 unpaid places. Not exercised on the stack: the seed holds no future class with a free seat (NOT RUN).

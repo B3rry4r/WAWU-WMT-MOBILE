@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
-| verifying | 4 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
+| verifying | 3 | 0 | 0 | 0 |
 | review | 223 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -241,13 +241,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
-- [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
 
 ## Being built (or fixing verifier findings)
 
+- [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
