@@ -49,7 +49,7 @@ const about = { bankName: 'Test Bank', licenceLine: 'Licence line the owner wrot
 
 async function bootAbout() {
   const { AboutScreen } = require('../AboutScreen') as typeof import('../AboutScreen');
-  const props = { onBack: jest.fn(), onOpenTerms: jest.fn(), onOpenPrivacy: jest.fn() };
+  const props = { onBack: jest.fn() };
   await render(<AboutScreen {...props} />);
   return props;
 }
@@ -161,11 +161,11 @@ describe('Z9 · About', () => {
     }
   });
 
-  it('wraps every row title whole, so "Privacy policy" and "Contact support" are never cut with an ellipsis at a large font', async () => {
+  it('wraps every row title whole, so "Contact support" and "Banking by" are never cut with an ellipsis at a large font', async () => {
     answers['/about'] = [ok(about)];
     await bootAbout();
     await rtl.screen.findByText('Banking by Test Bank');
-    for (const title of ['Contact support', 'Rate the app', 'Terms', 'Privacy policy', 'Banking by Test Bank']) {
+    for (const title of ['Contact support', 'Rate the app', 'Banking by Test Bank']) {
       expect(rtl.screen.getByText(title).props.numberOfLines).toBeUndefined();
     }
   });
@@ -194,13 +194,15 @@ describe('Z9 · About', () => {
     expect(rtl.screen.queryByTestId('about-rate')).toBeNull();
   });
 
-  it('a user can open the Terms and the Privacy policy from here', async () => {
+  it('draws the three rows Z9 draws and no Terms or Privacy policy row (they are Settings\' and the sign-up consent\'s; RELEASE-02, CHECK-3 D-4, the one assertion that pinned the two extra rows)', async () => {
     answers['/about'] = [ok(about)];
-    const props = await bootAbout();
-    await rtl.fireEvent.press(await rtl.screen.findByTestId('about-terms'));
-    await rtl.fireEvent.press(rtl.screen.getByTestId('about-privacy'));
-    expect(props.onOpenTerms).toHaveBeenCalledTimes(1);
-    expect(props.onOpenPrivacy).toHaveBeenCalledTimes(1);
+    await bootAbout();
+    await rtl.screen.findByText('Banking by Test Bank');
+    expect(rtl.screen.getByTestId('about-bank')).toBeTruthy();
+    expect(rtl.screen.getByTestId('about-support')).toBeTruthy();
+    expect(rtl.screen.getByTestId('about-rate')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('about-terms')).toBeNull();
+    expect(rtl.screen.queryByTestId('about-privacy')).toBeNull();
   });
 
   it('shows a loading state, then an offline state that retries into the page', async () => {

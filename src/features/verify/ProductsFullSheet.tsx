@@ -117,7 +117,7 @@ export function ProductsFullSheet({ onClose, onUpgrade, onForgotPin, onSetPin, o
                 Until your tier ends
               </Text>
             </View>
-            <Money minorUnits={extra.priceMinor} size={16} weight={700} decimals={extra.priceMinor % 100 !== 0} />
+            <Money minorUnits={extra.priceMinor} currency={plans.data?.currency ?? 'NGN'} size={16} weight={700} decimals={extra.priceMinor % 100 !== 0} />
           </View>
         </Card>
         {purchase.short && quote ? (

@@ -38,7 +38,7 @@ import {
  * payers use), and that account's activity. One more account can be added in any currency that is on. No board draws this tab for them
  * (R-29); it is built from W1's and W2's own parts. Nothing here is naira.
  */
-export function WorldHome({ owner }: { owner: string }) {
+export function WorldHome({ owner, adding = null }: { owner: string; adding?: string | null }) {
   const client = useQueryClient();
   const accounts = useQuery({
     queryKey: [...WORLD_ACCOUNTS_KEY, owner],
@@ -76,8 +76,19 @@ export function WorldHome({ owner }: { owner: string }) {
   const swaps = currencies.data?.products.swap === true && open.length > 1;
 
   const refresh = () => client.invalidateQueries({ queryKey: ["money"] });
-  const add = async (code: string) => {
+  // Sent here to add one currency ("Add a dollar account" on /tiers): the add-a-currency sheet is open on arrival when the Hub lists
+  // that currency as one that can still be added, until the person closes it or picks one. A currency already held, or one that is off,
+  // opens nothing.
+  const [dismissed, setDismissed] = useState(false);
+  const canAdd = adding !== null && accounts.data !== undefined && addable.data !== undefined && more.some((c) => c.code === adding);
+  const sheetOpen = picking || (canAdd && !dismissed);
+  const closeSheet = () => {
     setPicking(false);
+    setDismissed(true);
+  };
+
+  const add = async (code: string) => {
+    closeSheet();
     setBusy(true);
     setProblem(null);
     try {
@@ -159,8 +170,8 @@ export function WorldHome({ owner }: { owner: string }) {
         />
       ) : null}
       <ChoiceSheet
-        visible={picking}
-        onClose={() => setPicking(false)}
+        visible={sheetOpen}
+        onClose={closeSheet}
         title="Add a currency"
         options={more.map((c) => ({ value: c.code, label: c.name }))}
         selected={null}

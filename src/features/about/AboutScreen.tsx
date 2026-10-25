@@ -26,24 +26,25 @@ export const COULD_NOT_OPEN_STORE = 'The store could not be opened. Try again la
 
 export type AboutScreenProps = {
   onBack: () => void;
-  onOpenTerms: () => void;
-  onOpenPrivacy: () => void;
 };
 
 /**
  * Z9 · About. Every value comes from the app (its version, from the app config) or
  * the Hub (`GET /about`: the bank, the licence line and the support address, all
  * filled in by the owner, R-1). A line the owner has not filled in is left out or
- * says so; no wording is written here.
+ * says so; no wording is written here. The board draws three rows (Banking by, Contact support, Rate the app) and no Terms or
+ * Privacy policy rows: those are Settings' (Z2) and the sign-up consent's (RELEASE-02, CHECK-3 D-4). "Banking by" needs the bank
+ * name set in admin settings and "Rate the app" needs the store link in the app's config; until the owner sets them the rows are not
+ * drawn (R-47), and BACKEND_GAPS G-R2-AUTHME-3 lists both for the release.
  */
-export function AboutScreen({ onBack, onOpenTerms, onOpenPrivacy }: AboutScreenProps) {
+export function AboutScreen({ onBack }: AboutScreenProps) {
   const about = useQuery({ queryKey: aboutKey, queryFn: fetchAbout });
   const offline = isApiError(about.error) && about.error.kind === 'network';
   return (
     <ScreenFrame idPrefix="about" title="About Who Made This?" onBack={onBack} gap={aboutMetrics.between} testID="about-screen">
       <Header />
       {about.data ? (
-        <Rows about={about.data} onOpenTerms={onOpenTerms} onOpenPrivacy={onOpenPrivacy} />
+        <Rows about={about.data} />
       ) : about.isError ? (
         <ErrorState
           testID="about-error"
@@ -81,9 +82,7 @@ function licenceOf(about: About): string | undefined {
   return about.licenceLine?.trim() || undefined;
 }
 
-type RowsProps = { about: About; onOpenTerms: () => void; onOpenPrivacy: () => void };
-
-function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
+function Rows({ about }: { about: About }) {
   const [problem, setProblem] = useState<string | null>(null);
   // Signed in, Contact support opens the support chat (R-30), as Wallet settings' "Help with a payment" does. About is also public: a visitor
   // has no chat to open, so for them the row is the support address when the owner has set one, and is not drawn when not (R-47).
@@ -139,10 +138,6 @@ function Rows({ about, onOpenTerms, onOpenPrivacy }: RowsProps) {
           {problem ?? support.error}
         </Text>
       ) : null}
-      <GroupedList testID="about-legal">
-        <ListRow testID="about-terms" lead={<IconTile icon="FileText" size={aboutMetrics.tile} />} title="Terms" titleLines={0} onPress={onOpenTerms} />
-        <ListRow testID="about-privacy" lead={<IconTile icon="Shield" size={aboutMetrics.tile} />} title="Privacy policy" titleLines={0} onPress={onOpenPrivacy} />
-      </GroupedList>
     </>
   );
 }

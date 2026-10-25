@@ -28,6 +28,8 @@ export type HeldTier = {
   state: 'active' | 'ending' | 'ended';
   /** The tier's own name as the Hub sends it; null when it names none. */
   name: string | null;
+  /** The tier's id as the Hub sends it, from which the step up is worked out; null when it names none. */
+  id?: string | null;
   /** ISO 8601, when the tier runs out (or ran out). */
   until: string | null;
 };
@@ -41,7 +43,8 @@ export async function fetchHeldTier(): Promise<HeldTier | null> {
   if (!view || typeof view !== 'object' || !tierStates.includes(view.state as (typeof tierStates)[number])) throw unreadable('tier');
   if (view.state === 'none') return null;
   const name = view.tier && filled(view.tier.name) ? view.tier.name.trim() : null;
-  return { state: view.state as HeldTier['state'], name, until: filled(view.activeUntil) ? view.activeUntil : null };
+  const id = view.tier && filled(view.tier.id) ? view.tier.id : null;
+  return { state: view.state as HeldTier['state'], name, id, until: filled(view.activeUntil) ? view.activeUntil : null };
 }
 
 export type PendingPurchase = { id: string };

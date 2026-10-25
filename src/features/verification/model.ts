@@ -98,3 +98,26 @@ export function tierRow(tier: HeldTier): TierRow {
 
 export const STILL_CONFIRMING_TITLE = 'Paid, still confirming';
 export const STILL_CONFIRMING_BODY = "Don't pay again. Check back in a minute.";
+
+/** "10 GB" from the Hub's bytes (its own GB is 1024 cubed): whole gigabytes, never a figure the app made up. */
+export const gbWords = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1024 ** 3))} GB`;
+
+/**
+ * M16 and M17's "Every tick gives you": the four rows the board draws. The uploads and the library space are the Hub's own figures
+ * (`GET /uploads/allowance`: the tick's level and the free level); a row whose figure the Hub did not give is not drawn (R-47). The
+ * reach and the tick beside the name carry no figure, so they are the board's own words.
+ */
+export type GiveRow = { id: 'uploads' | 'space' | 'reach' | 'tick'; title: string; line: string | null };
+
+export function givesOf(allowance: { free: { uploads: number; storageBytes?: number }; withTick: { uploads: number; storageBytes?: number } } | null): GiveRow[] {
+  const rows: GiveRow[] = [];
+  if (allowance && allowance.withTick.uploads > 0) {
+    rows.push({ id: 'uploads', title: `Up to ${allowance.withTick.uploads} uploads`, line: allowance.free.uploads > 0 ? `Free accounts get ${allowance.free.uploads}` : null });
+  }
+  if (allowance?.withTick.storageBytes) {
+    rows.push({ id: 'space', title: `${gbWords(allowance.withTick.storageBytes)} library space`, line: allowance.free.storageBytes ? `Free accounts get ${gbWords(allowance.free.storageBytes)}` : null });
+  }
+  rows.push({ id: 'reach', title: 'Reach more people', line: 'Your content is pushed further' });
+  rows.push({ id: 'tick', title: 'Tick beside your name', line: 'And you can host events' });
+  return rows;
+}

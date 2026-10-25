@@ -15,5 +15,5 @@ export default function VerificationRoute() {
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
-  return <VerificationScreen onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} onOpenWallet={entry.open} />;
+  return <VerificationScreen onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} onOpenWallet={entry.open} onGetTick={() => router.push('/tiers')} />;
 }

@@ -125,10 +125,12 @@ describe('signed out, cold start', () => {
     expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
   });
 
-  it('has no back button on sign in when there is no screen behind it', async () => {
+  it('has a Back button on sign in when there is no screen behind it, and it goes to the welcome screen (RELEASE-02, CHECK-3 L-8; this one assertion pinned "no Back button")', async () => {
     await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    expect(screen.queryByText('Welcome back')).toBeNull();
   });
 });
 

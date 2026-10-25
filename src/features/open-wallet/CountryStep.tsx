@@ -49,6 +49,8 @@ export type CountryChoice = { country: string; currency: FiatCode | null };
 export type CountryStepProps = {
   /** The country on the account (WAWU ID's claim): shown as it is, with no list to pick from. Null asks the person. */
   fixedCountry?: string | null;
+  /** The currency the person asked for on the way in (R-87), used as the first account when the Hub has it on; the person can change it. */
+  preferredCurrency?: FiatCode;
   onClose: () => void;
   /** Nigeria was chosen: the BVN and NIN step follows, unchanged (R-6). */
   onNigeria: () => void;
@@ -66,6 +68,7 @@ export type CountryStepProps = {
  */
 export function CountryStep({
   fixedCountry = null,
+  preferredCurrency,
   onClose,
   onNigeria,
   onAbroad,
@@ -133,7 +136,8 @@ export function CountryStep({
 
   const abroad = country !== null && country.code !== "NG";
   const info: WorldOptions | undefined = abroad ? options.data : undefined;
-  const currency: FiatCode | null = pickedCurrency ?? info?.suggested ?? null;
+  const asked = preferredCurrency && info?.choices.some((c) => c.code === preferredCurrency && c.enabled) ? preferredCurrency : null;
+  const currency: FiatCode | null = pickedCurrency ?? asked ?? info?.suggested ?? null;
   const choices = info?.choices.filter((c) => c.enabled) ?? [];
   const blocked =
     info && !info.available

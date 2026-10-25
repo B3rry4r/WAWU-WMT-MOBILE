@@ -33,7 +33,7 @@ async function boot() {
   await rtl.render(
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-        <AboutScreen onBack={jest.fn()} onOpenTerms={jest.fn()} onOpenPrivacy={jest.fn()} />
+        <AboutScreen onBack={jest.fn()} />
       </SafeAreaProvider>
     </QueryClientProvider>,
   );
