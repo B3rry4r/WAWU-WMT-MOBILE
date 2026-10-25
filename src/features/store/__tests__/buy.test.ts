@@ -47,7 +47,7 @@ const passProduct = (platform: 'android' | 'ios'): HubProduct => ({
   storeProductId: 'africa.wawu.pass.month',
   kind: 'pass',
   title: 'Monthly pass',
-  subscription: true,
+  subscription: false,
   grants: { points: null, credits: null, tierId: null, days: 30 },
 });
 const itemOf = (product: HubProduct, offerToken: string | null = null): StoreItem => ({ product, price: '₦2,500.00', offerToken });
@@ -332,6 +332,118 @@ describe('the account token binds every purchase to the person', () => {
     hub.answer = 'ok';
     expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(1);
     expect(fakeStore.finished).toEqual([{ productId: product.storeProductId, isConsumable: true }]);
+  });
+});
+
+const ROOM_B = 'b1b1b1b1-2c2c-4d3d-8e4e-5f5f5f5f5f5f';
+const roomIntent = () => require('../roomIntent') as typeof import('../roomIntent');
+
+describe('a community pass is bought once, for one room (IAP-03 round 2)', () => {
+  it('on Google Play the pass is an in-app product that carries its room, and is consumed once the Hub has it, so it can be bought again for another room', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const product = passProduct('android');
+    hub.products = [product];
+    const first = await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM });
+    const second = await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM_B });
+    expect(first).toMatchObject({ kind: 'granted', finished: true });
+    expect(second).toMatchObject({ kind: 'granted', finished: true });
+    expect(hub.bodies.map((b) => b.communityId)).toEqual([ROOM, ROOM_B]);
+    expect(fakeStore.finished).toEqual([
+      { productId: product.storeProductId, isConsumable: true },
+      { productId: product.storeProductId, isConsumable: true },
+    ]);
+    expect(asked(0).type).toBe('in-app');
+    expect(asked(1).request.google.obfuscatedProfileId).toBe(ROOM_B);
+  });
+
+  it('on the App Store the room is kept against the transaction the moment the store hands it back; a recovery finishes it with that room and lets it go', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    hub.answer = 'network';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toEqual({ kind: 'unreachable' });
+    expect(await roomIntent().roomOf(TOKEN, '1001')).toBe(ROOM);
+    // What the person was buying is no longer the thing owed: the transaction is.
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toBeNull();
+    fakeStore.owned = [{ id: 'tx-1', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '1001' }];
+    hub.answer = 'ok';
+    const found = await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(found.granted).toHaveLength(1);
+    expect(hub.bodies.at(-1)).toMatchObject({ transactionId: '1001', communityId: ROOM });
+    expect(fakeStore.finished).toEqual([{ productId: product.storeProductId, isConsumable: true }]);
+    expect(await roomIntent().roomOf(TOKEN, '1001')).toBeNull();
+  });
+
+  it('a payment held for room A is never given to room B, though B is what the person was last buying (F2b)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    hub.answer = 'network';
+    await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM });
+    // The person opens room B and taps Buy; a slow payment keeps what they were trying to buy.
+    fakeStore.next = { kind: 'pending' };
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM_B })).toEqual({ kind: 'store_pending' });
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toEqual({ communityId: ROOM_B });
+    hub.answer = 'ok';
+    hub.bodies = [];
+    fakeStore.owned = [{ id: 'tx-1', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'jws', transactionId: '1001' }];
+    await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '1001', communityId: ROOM }]);
+  });
+
+  it('a held pass nothing was kept for is placed by what the person was buying only when it is the single such payment', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    fakeStore.next = { kind: 'pending' };
+    await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM_B });
+    const held = (id: string) => ({ id: `tx-${id}`, productId: product.storeProductId, purchaseState: 'purchased' as const, purchaseToken: 'jws', transactionId: id });
+    // Two payments nothing was kept for: neither can be placed, so neither is sent.
+    fakeStore.owned = [held('2001'), held('2002')];
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(0);
+    expect(hub.bodies).toEqual([]);
+    // One such payment is the one that was being bought.
+    fakeStore.owned = [held('2001')];
+    expect((await buyModule().recover([product], { platform: 'ios', all: false, accountToken: TOKEN })).granted).toHaveLength(1);
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: product.storeProductId, transactionId: '2001', communityId: ROOM_B }]);
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toBeNull();
+  });
+
+  it('cancelling the store sheet leaves nothing owed; a slow payment keeps what was being bought', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const product = passProduct('ios');
+    hub.products = [product];
+    fakeStore.next = { kind: 'error', code: 'user-cancelled' };
+    expect(await buyModule().purchase(itemOf(product), { platform: 'ios', accountToken: TOKEN, communityId: ROOM })).toEqual({ kind: 'cancelled' });
+    expect(await roomIntent().pendingBuy(TOKEN, product.storeProductId)).toBeNull();
+  });
+
+  it('a held pass is handed over with its own room: another room’s is given to that room and says so; one with no room is not sent; the same room is the purchase', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const product = passProduct('android');
+    hub.products = [product];
+    fakeStore.next = { kind: 'error', code: 'already-owned' };
+    fakeStore.owned = [{ id: 'h', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'held', isAcknowledgedAndroid: false, obfuscatedProfileIdAndroid: ROOM_B }];
+    const other = await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM });
+    expect(other).toMatchObject({ kind: 'earlier_room', purchase: { grant: { communityId: ROOM_B } } });
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: product.storeProductId, purchaseToken: 'held', communityId: ROOM_B }]);
+    hub.bodies = [];
+    fakeStore.owned = [{ id: 'h', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'held', isAcknowledgedAndroid: false, obfuscatedProfileIdAndroid: null }];
+    expect(await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM })).toEqual({ kind: 'already_owned' });
+    expect(hub.bodies).toEqual([]);
+    fakeStore.owned = [{ id: 'h', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'held', isAcknowledgedAndroid: false, obfuscatedProfileIdAndroid: ROOM }];
+    expect(await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM })).toMatchObject({ kind: 'granted', purchase: { grant: { communityId: ROOM } } });
+  });
+
+  it('the Hub saying a payment belongs to another room is "room_mismatch" for a buy and is left alone, not retried as unconfirmed, by a recovery', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const product = passProduct('android');
+    hub.products = [product];
+    hub.answer = 'store_purchase_other_room';
+    expect(await buyModule().purchase(itemOf(product), { platform: 'android', accountToken: TOKEN, communityId: ROOM })).toEqual({ kind: 'room_mismatch' });
+    expect(fakeStore.finished).toEqual([]);
+    fakeStore.owned = [{ id: 'h', productId: product.storeProductId, purchaseState: 'purchased', purchaseToken: 'held', isAcknowledgedAndroid: false, obfuscatedProfileIdAndroid: ROOM }];
+    expect(await buyModule().recover([product], { platform: 'android', all: false })).toMatchObject({ granted: [], left: 0 });
   });
 });
 

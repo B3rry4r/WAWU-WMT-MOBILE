@@ -130,6 +130,64 @@ describe('VF13 · Add 5 more products in the store sheet', () => {
   });
 });
 
+describe('VF13 · the pack is offered only where the Hub would sell it (F1)', () => {
+  const mine = (over: Record<string, unknown>) => ({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 3, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...over });
+  const { packOffered } = require('../purchaseModel') as typeof import('../purchaseModel');
+
+  it('packOffered follows the Hub’s own rule: a running tier, and the pack lifts the limit above what is published', () => {
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
+    expect(packOffered({ state: 'ending', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
+    // Not a running tier: no tier at all, a tier that ended, or only a tick (the Hub refuses the pack to all three).
+    for (const state of ['none', 'ended'] as const) expect(packOffered({ state, productsAllowed: 3, productsUsed: 3 }, 5)).toBe(false);
+    expect(packOffered({ state: 'none', productsAllowed: 25, productsUsed: 25 }, 5)).toBe(false);
+    // Running, but five more would still leave fewer places than there are products published.
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 8 }, 5)).toBe(false);
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 7 }, 5)).toBe(true);
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 0)).toBe(false);
+  });
+
+  it('a person with only a verification tick (no tier) is not offered the pack, though the store has it, and nothing is asked of the store sheet', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'none', tier: null, productsAllowed: 25, productsUsed: 25, activeUntil: null });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 25 of 25');
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer-loading')).toBeNull();
+    expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
+    expect(rtl.screen.getByTestId('full-library')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a tier that has ended is not offered the pack either', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'ended', productsAllowed: 3, productsUsed: 25 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toBeTruthy();
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+  });
+
+  it('a tier that is ending still is', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'ending' });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-add')).toHaveTextContent('Add 5 · $4.99');
+  });
+
+  it('a pack that would still leave fewer places than there are products published is not offered', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ productsAllowed: 3, productsUsed: 9 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 9 of 3');
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+  });
+});
+
 describe('G-IAP-02-5 · the price on M16, VF14 Renew and E21 is the store’s, never the Hub’s plan price', () => {
   const { tierItemOf } = require('@/features/store/model') as typeof import('@/features/store/model');
   const { getTickOf } = require('@/features/verification/TicksSection') as typeof import('@/features/verification/TicksSection');
@@ -160,5 +218,56 @@ describe('G-IAP-02-5 · the price on M16, VF14 Renew and E21 is the store’s, n
     expect(fromLine(ready(item('plus', '$19.99'), item('verify', '$9.99')), null, { lowestTier: { id: 'plus', name: 'Verify Plus', priceMinor: 300_000 } } as never)).toBe('From $19.99.');
     expect(fromLine({ kind: 'loading' }, plans)).toBeNull();
     expect(fromLine({ kind: 'not_open', why: 'disabled' }, plans)).toBeNull();
+  });
+});
+
+describe('G-IAP-02-5 · on the screens themselves (F4)', () => {
+  it('E21: the host gate draws "From" with the store’s price of the cheapest tier it sells, and nothing while the store is still loading', async () => {
+    const { HostGateScreen } = require('@/features/events/host/HostGateScreen') as typeof import('@/features/events/host/HostGateScreen');
+    serve({ products: [tierProduct('verify'), tierProduct('plus')], prices: { 'africa.wawu.tier.verify': '$9.99', 'africa.wawu.tier.plus': '$19.99' } });
+    let release: () => void = () => undefined;
+    hub.hold = new Promise<void>((r) => (release = r));
+    await renderSignedIn(<HostGateScreen refusal={null} onBack={jest.fn()} />);
+    await rtl.screen.findByText(/Verify/);
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
+    await rtl.act(async () => release());
+    expect(await rtl.screen.findByText('From $9.99.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/₦/)).toBeNull();
+  });
+
+  it('E21: a store that sells no tier leaves the "From" line out', async () => {
+    const { HostGateScreen } = require('@/features/events/host/HostGateScreen') as typeof import('@/features/events/host/HostGateScreen');
+    serve({ products: [pack] });
+    await renderSignedIn(<HostGateScreen refusal={null} onBack={jest.fn()} />);
+    await rtl.screen.findByText(/Verify/);
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByText(/From/)).toBeNull();
+  });
+
+  it('VF14: Renew carries the store’s price of the tier held, and says only "Renew" until the store has answered', async () => {
+    const { YourTierScreen } = require('../YourTierScreen') as typeof import('../YourTierScreen');
+    serve({ products: [tierProduct('verify')], prices: { 'africa.wawu.tier.verify': '$9.99' } });
+    hub.routes['GET /me/tier'] = { state: 'ending', tier: { id: 'verify', name: 'Verify', badge: null }, activeFrom: '2026-01-01T00:00:00.000Z', activeUntil: '2026-11-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 1, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+    let release: () => void = () => undefined;
+    hub.hold = new Promise<void>((r) => (release = r));
+    const renew = jest.fn();
+    await renderSignedIn(<YourTierScreen onBack={jest.fn()} onRenew={renew} onUpgrade={jest.fn()} onSeeTiers={jest.fn()} />);
+    expect(await rtl.screen.findByTestId('your-tier-renew')).toHaveTextContent(/^Renew$/);
+    await rtl.act(async () => release());
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('your-tier-renew')).toHaveTextContent('Renew · $9.99'));
+    expect(rtl.screen.queryByText(/₦/)).toBeNull();
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('your-tier-renew')));
+    expect(renew).toHaveBeenCalledWith('verify');
+  });
+
+  it('VF14: a tier the store does not sell has no price on Renew, never the Hub’s plan price', async () => {
+    const { YourTierScreen } = require('../YourTierScreen') as typeof import('../YourTierScreen');
+    serve({ products: [tierProduct('plus')], prices: { 'africa.wawu.tier.plus': '$19.99' } });
+    hub.routes['GET /me/tier'] = { state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeFrom: '2026-01-01T00:00:00.000Z', activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 1, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+    await renderSignedIn(<YourTierScreen onBack={jest.fn()} onRenew={jest.fn()} onUpgrade={jest.fn()} onSeeTiers={jest.fn()} />);
+    const renew = await rtl.screen.findByTestId('your-tier-renew');
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(renew).toHaveTextContent(/^Renew$/);
+    expect(rtl.screen.queryByText(/₦|1,000/)).toBeNull();
   });
 });

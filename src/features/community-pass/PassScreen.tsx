@@ -5,7 +5,6 @@ import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
-import { Banner } from '@/components/Banner';
 import { Button, IconButton } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow, ListRow } from '@/components/ListRow';
@@ -18,12 +17,12 @@ import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
-import { buyLabel, perPeriod, periodOf, type StoreItem } from '@/features/store/model';
+import { buyLabel, forDays, type StoreItem } from '@/features/store/model';
 import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchHostHandle, fetchPass, hostKey, passKey, type PassView } from './api';
-import { BLOCKED_LINE, CANCEL_IN_STORE_LINE, endedLine, GATE_LINE, joinedLine, runningLine } from './model';
+import { BLOCKED_LINE, endedLine, GATE_LINE, joinedLine, runningLine } from './model';
 
 const GAP = 16;
 const BODY_TOP = 26;
@@ -34,12 +33,11 @@ export type PassScreenProps = {
 };
 
 /**
- * I30 · Private, pay to join, and I31 · Joined (INBOX-14, R-63). One screen for a private room that sells a monthly pass, read from
- * `GET /communities/{id}/pass` and the room: a person with no pass sees the host's price and pays it from the wallet with the PIN
- * ("Join"); a member sees "You're in" with the day the pass ends and one tap to renew; a person whose pass ended is shown the way back
- * in ("Renew"). The host is inside already. The price, the pass end and the member count are the Hub's, and the total with the bank's
- * charge and WAWU's fee comes from the Hub's quote, never added up here. There is no request to the host and nothing is debited by time:
- * a pass is paid for by a PIN-confirmed tap.
+ * I30 · Private, pay to join, and I31 · Joined (INBOX-14, R-63, R-86). One screen for a private room that sells a 30-day pass, read from
+ * `GET /communities/{id}/pass` and the room: a person with no pass sees the STORE's price and buys it in the store sheet ("Join"); a member
+ * sees "You're in" with the day the pass ends and one tap to renew; a person whose pass ended is shown the way back in ("Renew"). The host
+ * is inside already. The pass end and the member count are the Hub's. A pass is bought ONCE for this room (IAP-03 round 2): nothing renews
+ * it and nothing is charged by time, so renewing is buying again, and the new days stack behind the days left. There is no request to the host.
  */
 export function PassScreen({ id, onBack }: PassScreenProps) {
   const { colors } = useWawu();
@@ -147,21 +145,29 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
     body = (
       <>
         <EmptyState testID="pass-blocked" icon="Lock" title="Removed by the host" message={BLOCKED_LINE} />
-        {pass.cancelInStore ? <Banner testID="pass-cancel-in-store" tone="warning" title="Cancel it in the store" body={CANCEL_IN_STORE_LINE} /> : null}
       </>
     );
     footer = null;
   } else if (pass.active) {
-    // I31 reopened: a running pass. The store renews it until the person cancels there; Restore brings it back on a new phone.
+    // I31 reopened: a running pass. Nothing renews it: Renew buys the next 30 days at the store's price, and they stack behind the days left.
+    const problem = pass.canBuy && store.state.kind !== 'ready' && store.state.kind !== 'loading';
     body = (
       <>
         <Joined headline="You’re in" line={runningLine(pass.passUntil)} />
-        <Details room={room} pass={pass} handle={handle} selected={selected} withCard={false} />
-        <RestoreRow buyer={buyer} testID="pass-restore" />
+        {pass.canBuy ? <PassOptions items={items} selected={selected} onChoose={setChosen} /> : null}
+        {problem ? <StoreUnready state={store.state} onRetry={store.refetch} testID="pass-store" /> : null}
         <SaidBanner said={buyer.said} testID="pass-said" />
+        <RestoreRow buyer={buyer} testID="pass-restore" />
       </>
     );
-    footer = <Button label="Open the room" full onPress={enter} testID="pass-open" />;
+    footer = (
+      <View style={styles.footerStack}>
+        <Button label="Open the room" full onPress={enter} testID="pass-open" />
+        {pass.canBuy && selected ? (
+          <Button testID="pass-pay" label={buyer.busy ? 'Buying...' : buyLabel(selected, 'Renew')} variant="secondary" full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buyer.buy(selected, { communityId: id })} />
+        ) : null}
+      </View>
+    );
   } else if (pass.sellsPass && pass.canBuy) {
     // I30: no pass running (new, or ended): the store's price for the pass.
     const ended = pass.canRenew && pass.passUntil !== null;
@@ -187,21 +193,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
           <StoreUnready state={store.state.kind === 'ready' ? { kind: 'not_open', why: 'not_configured' } : store.state} onRetry={store.refetch} testID="pass-store" />
         ) : (
           <>
-            {items.length > 1 ? (
-              <GroupedList testID="pass-options">
-                {items.map((item) => (
-                  <ListRow
-                    key={item.product.id}
-                    testID={`pass-option-${item.product.id}`}
-                    title={item.product.title}
-                    subtitle={periodOf(item.product.grants.days)}
-                    trailing={<Text variant="body" style={font(700)}>{item.price}</Text>}
-                    accessibilityLabel={`${item.product.title}, ${item.price}${item.product.id === selected?.product.id ? ', chosen' : ''}`}
-                    onPress={() => setChosen(item.product.id)}
-                  />
-                ))}
-              </GroupedList>
-            ) : null}
+            <PassOptions items={items} selected={selected} onChoose={setChosen} />
             <Details room={room} pass={pass} handle={handle} selected={selected} withCard />
           </>
         )}
@@ -226,6 +218,26 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
       </ScrollView>
       {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View> : null}
     </>
+  );
+}
+
+/** The price points the store sells a pass at, when there is more than one to choose from. */
+function PassOptions({ items, selected, onChoose }: { items: StoreItem[]; selected: StoreItem | null; onChoose: (id: string) => void }) {
+  if (items.length < 2) return null;
+  return (
+    <GroupedList testID="pass-options">
+      {items.map((item) => (
+        <ListRow
+          key={item.product.id}
+          testID={`pass-option-${item.product.id}`}
+          title={item.product.title}
+          subtitle={forDays(item.product.grants.days)}
+          trailing={<Text variant="body" style={font(700)}>{item.price}</Text>}
+          accessibilityLabel={`${item.product.title}, ${item.price}${item.product.id === selected?.product.id ? ', chosen' : ''}`}
+          onPress={() => onChoose(item.product.id)}
+        />
+      ))}
+    </GroupedList>
   );
 }
 
@@ -254,7 +266,7 @@ function Details({ room, pass, handle, selected, withCard }: { room: RoomView; p
   if (!withCard) return null;
   return (
     <GroupedList testID="pass-card">
-      {pass.sellsPass && selected ? <KeyValueRow label="Price" value={[selected.price, perPeriod(selected.product.grants.days)].filter(Boolean).join(' ')} testID="pass-price" /> : null}
+      {pass.sellsPass && selected ? <KeyValueRow label="Price" value={[selected.price, forDays(selected.product.grants.days)].filter(Boolean).join(' ')} testID="pass-price" /> : null}
       <KeyValueRow label="Members" value={String(room.memberCount)} testID="pass-members" />
       {handle ? <KeyValueRow label="Host" value={`@${handle}`} testID="pass-host" /> : null}
     </GroupedList>

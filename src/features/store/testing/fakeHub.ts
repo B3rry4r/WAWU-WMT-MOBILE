@@ -54,6 +54,7 @@ const STATUS: Record<string, number> = {
   store_purchase_invalid: 422,
   store_purchase_pending: 409,
   store_purchase_taken: 409,
+  store_purchase_other_room: 409,
   store_pass_not_available: 409,
   store_unreachable: 503,
   store_account_token_missing: 422,
@@ -71,7 +72,7 @@ export function viewOf(product: HubProduct, alreadyGranted: boolean, communityId
     kind: product.kind,
     status: 'granted',
     alreadyGranted,
-    grant: { points: product.grants.points, credits: product.grants.credits, tierId: product.grants.tierId, extraProducts: product.grants.extraProducts ?? null, until: product.subscription ? '2026-12-01T00:00:00.000Z' : null, communityId },
+    grant: { points: product.grants.points, credits: product.grants.credits, tierId: product.grants.tierId, extraProducts: product.grants.extraProducts ?? null, until: product.subscription || product.kind === 'pass' ? '2026-12-01T00:00:00.000Z' : null, communityId },
     purchasedAt: '2026-11-01T00:00:00.000Z',
     expiresAt: product.subscription ? '2026-12-01T00:00:00.000Z' : null,
   };

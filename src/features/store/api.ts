@@ -64,6 +64,8 @@ export type SendOutcome =
   | { kind: 'unreachable' }
   /** `store_purchase_taken`: another person already uses this store purchase or subscription, or it was made with another person's token. */
   | { kind: 'taken' }
+  /** `store_purchase_other_room` (409): a pass payment the Hub already gave to another room (or the store recorded for another room). It is never given to this one. */
+  | { kind: 'room_mismatch' }
   /** `store_account_token_missing` (422): the purchase carries no account token, so this version of the app did not bind it to the person. Update the app. */
   | { kind: 'update_app' }
   /** `store_grant_failed` (500): the store has the payment and the Hub could not finish giving it. The transaction stays open and goes again. */
@@ -109,6 +111,8 @@ export async function sendPurchase(input: SendInput): Promise<SendOutcome> {
         return { kind: 'unreachable' };
       case 'store_purchase_taken':
         return { kind: 'taken' };
+      case 'store_purchase_other_room':
+        return { kind: 'room_mismatch' };
       case 'store_account_token_missing':
         return { kind: 'update_app' };
       case 'store_grant_failed':

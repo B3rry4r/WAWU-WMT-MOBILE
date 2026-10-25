@@ -64,7 +64,7 @@ export const moduleMock = {
   fetchProducts: jest.fn(async ({ skus, type }: { skus: string[]; type: string }) => {
     fakeStore.fetches.push({ skus, type });
     return fakeStore.products
-      .filter((p) => skus.includes(p.id) && p.type === type)
+      .filter((p) => skus.includes(p.id) && (type === 'all' || p.type === type))
       .map((p) => ({
         id: p.id,
         title: p.id,

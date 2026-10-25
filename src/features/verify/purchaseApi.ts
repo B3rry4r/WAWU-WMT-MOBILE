@@ -5,10 +5,11 @@ import { unreadable, type Envelope } from '@/features/wallet/api/home';
 /**
  * The Hub's plans, as the screens read them (ME-12: VF5 to VF7a):
  *
- * - `GET /plans`: the tiers (`id`, `name`, `priceMinor`, `days`, `products`, `bonusPoints`, `eventPass`, `preselected`), the checkout
- *   offer (`checkoutBump`) and the five-more offer (`extraProducts`). What a tier gives and how long it lasts are read from here, never
- *   typed. The naira `priceMinor` figures are the website's: a tier, the upload pack and every other store-bought item is bought in the
- *   store sheet at the STORE's price (R-86, IAP-02, IAP-03), so no screen draws a plan price.
+ * - `GET /plans`: the tiers (`id`, `name`, `priceMinor`, `days`, `products`, `bonusPoints`, `eventPass`, `preselected`). What a tier gives
+ *   and how long it lasts are read from here, never typed. The naira `priceMinor` figures are the website's: a tier, the upload pack and
+ *   every other store-bought item is bought in the store sheet at the STORE's price (R-86, IAP-02, IAP-03), so no screen draws a plan
+ *   price. The checkout offer (`checkoutBump`) and the five-more offer's naira price (`extraProducts.priceMinor`) were read here and drawn
+ *   by nothing once the wallet checkout went; they are no longer read (IAP-03 round 2, F5).
  *
  * The wallet purchase calls that used to live here (`GET /plans/purchases/quote`, `POST /plans/purchases`, `GET /plans/purchases/{id}`)
  * were unreachable once R-86 moved the app to the store sheet, and were removed by IAP-03. The Hub's routes stay for the website.
@@ -20,12 +21,10 @@ export type PlanEventPass = components['schemas']['PlanEventPassView'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const whole = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
-/** The plans, the checkout offer and the five-more offer. An answer that is not whole is refused, never drawn as "no tiers". */
+/** The plans. An answer that is not whole is refused, never drawn as "no tiers". */
 export type Plans = {
   currency: 'NGN' | 'USD';
   tiers: PlanTier[];
-  extraProducts: { count: number; priceMinor: number };
-  checkoutBump: { points: number; priceMinor: number };
 };
 
 export function readPlans(value: unknown): Plans {
@@ -36,10 +35,7 @@ export function readPlans(value: unknown): Plans {
     if (!tier || !filled(tier.id) || !filled(tier.name) || !whole(tier.priceMinor) || tier.priceMinor <= 0 || !whole(tier.days) || !whole(tier.products) || !whole(tier.bonusPoints)) throw unreadable('tiers');
     return tier as PlanTier;
   });
-  const extra = v.extraProducts;
-  const bump = v.checkoutBump;
-  if (!extra || !whole(extra.count) || !whole(extra.priceMinor) || !bump || !whole(bump.points) || !whole(bump.priceMinor)) throw unreadable('tiers');
-  return { currency: v.currency, tiers, extraProducts: { count: extra.count, priceMinor: extra.priceMinor }, checkoutBump: { points: bump.points, priceMinor: bump.priceMinor } };
+  return { currency: v.currency, tiers };
 }
 
 export async function fetchPlans(): Promise<Plans> {

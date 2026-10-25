@@ -23,8 +23,9 @@ async function load(os: 'android' | 'ios'): Promise<Loaded> {
   if (!catalog.available || catalog.products.length === 0) return { catalog, items: [], storeFailed: false };
   try {
     const prices = await iap.fetchPrices({
-      packs: catalog.products.filter((p) => !p.subscription).map((p) => p.storeProductId),
+      packs: catalog.products.filter((p) => !p.subscription && p.kind !== 'pass').map((p) => p.storeProductId),
       subscriptions: catalog.products.filter((p) => p.subscription).map((p) => p.storeProductId),
+      passes: catalog.products.filter((p) => p.kind === 'pass').map((p) => p.storeProductId),
     });
     const items = catalog.products.flatMap((product) => {
       const price = prices.get(product.storeProductId);
@@ -144,7 +145,8 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
           refreshAfterGrant();
         } else {
           setLine(said(result, os, item.product.subscription));
-          if (result.kind === 'unreachable' || result.kind === 'grant_failed') refreshAfterGrant();
+          // A held payment for another room was granted there, so the rooms read the Hub again.
+          if (result.kind === 'unreachable' || result.kind === 'grant_failed' || result.kind === 'earlier_room') refreshAfterGrant();
         }
         return result;
       } finally {

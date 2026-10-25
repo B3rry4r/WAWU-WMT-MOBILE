@@ -19,7 +19,7 @@ import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
-import { nextTiers } from './purchaseModel';
+import { nextTiers, packOffered } from './purchaseModel';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
 const MARK = 72;
@@ -41,8 +41,10 @@ export type ProductsFullSheetProps = {
  * "Add 5 more products" (IAP-03, R-65) is an in-app digital unlock, so it is bought in the store sheet with the same parts as points and
  * credits (`useStoreCatalog`, `useStoreBuyer`, R-86): the Hub's upload-pack product (`kind: extra_products`, the count it adds), the store's own
  * price in the person's own currency, and the Hub checks the purchase with the store before it adds the products. While the store is
- * loading there is no price, never a wrong one; a store that is not open, or has no such pack, draws no offer (R-47). The wallet is not
- * used and no naira figure is drawn. The dollar offer (VF13a) is not built at launch (R-16).
+ * loading there is no price, never a wrong one; a store that is not open, or has no such pack, draws no offer (R-47). The offer is drawn
+ * only when the Hub would sell it (`packOffered`: a running tier, and the pack lifts the limit), never to a person with only a tick or no tier,
+ * whom the Hub refuses after the store has taken the payment (F1). The wallet is not used and no naira figure is drawn. The dollar offer
+ * (VF13a) is not built at launch (R-16).
  */
 export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: ProductsFullSheetProps) {
   const owner = useSessionAccount(undefined);
@@ -98,6 +100,9 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
     );
   } else {
     const count = pack?.product.grants.extraProducts ?? 0;
+    const running = mine.data.state === 'active' || mine.data.state === 'ending';
+    // The pack only where the Hub would sell it; `offer` is the product when it is drawn.
+    const offer = pack !== null && count > 0 && packOffered(mine.data, count) ? pack : null;
     const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
     body = (
       <>
@@ -106,11 +111,11 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
             {`You have used ${used} of ${allowed}`}
           </Text>
           <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {pack ? (up ? 'Add more products, or move up a tier.' : 'Add more products, or take something down.') : up ? 'Move up a tier, or take something down.' : 'Take something down to make room for a new one.'}
+            {offer ? (up ? 'Add more products, or move up a tier.' : 'Add more products, or take something down.') : up ? 'Move up a tier, or take something down.' : 'Take something down to make room for a new one.'}
           </Text>
         </View>
-        {store.state.kind === 'loading' ? <Skeleton testID="full-offer-loading" height={72} radius={radius.card} /> : null}
-        {pack && count > 0 ? (
+        {running && store.state.kind === 'loading' ? <Skeleton testID="full-offer-loading" height={72} radius={radius.card} /> : null}
+        {offer ? (
           <Card padded testID="full-offer">
             <View style={styles.offer}>
               <IconTile icon="Plus" tone="accent" size={44} />
@@ -123,23 +128,23 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
                 </Text>
               </View>
               <Text variant="body" testID="full-offer-price" style={font(700)}>
-                {pack.price}
+                {offer.price}
               </Text>
             </View>
           </Card>
         ) : null}
-        {store.state.kind !== 'loading' && store.state.kind !== 'ready' ? <StoreUnready state={store.state} onRetry={store.refetch} testID="full-store" /> : null}
+        {running && store.state.kind !== 'loading' && store.state.kind !== 'ready' ? <StoreUnready state={store.state} onRetry={store.refetch} testID="full-store" /> : null}
         <SaidBanner said={buyer.said} testID="full-said" />
-        {pack && count > 0 ? (
+        {offer ? (
           <Button
             testID="full-add"
-            label={buyer.busy ? 'Buying...' : buyLabel(pack, `Add ${count}`)}
+            label={buyer.busy ? 'Buying...' : buyLabel(offer, `Add ${count}`)}
             full
             loading={buyer.busy}
             disabled={buyer.busy}
             onPress={() => {
               setBefore(allowed);
-              void buyer.buy(pack);
+              void buyer.buy(offer);
             }}
           />
         ) : null}

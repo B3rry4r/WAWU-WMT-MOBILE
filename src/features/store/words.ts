@@ -9,7 +9,7 @@ export const STILL_CONFIRMING = 'The store has taken your payment and we are sti
 
 export const GRANT_FAILED = 'The store has your payment and we could not finish adding it yet. It is safe: open this screen again in a moment and we will finish it. Do not buy again.';
 
-/** The sentence for a result that is not a grant. `subscription` is true for a tier or a pass, which Restore purchases brings back. */
+/** The sentence for a result that is not a grant. `subscription` is true for a tier, which Restore purchases brings back. */
 export function said(result: PurchaseResult, os: Os | null, subscription: boolean): Said | null {
   switch (result.kind) {
     case 'granted':
@@ -35,6 +35,10 @@ export function said(result: PurchaseResult, os: Os | null, subscription: boolea
       return { tone: 'warning', line: STILL_CONFIRMING };
     case 'taken':
       return { tone: 'danger', line: 'Another WAWU account already uses this store purchase or subscription. Sign in to that account, or cancel it in the store.' };
+    case 'room_mismatch':
+      return { tone: 'danger', line: 'That payment was already used for a different room. To join this one, buy its pass again.' };
+    case 'earlier_room':
+      return { tone: 'warning', line: 'A payment you made earlier for another room was still waiting, and it has now been added to that room. Tap Buy to get a pass for this one.' };
     case 'update_app':
       return { tone: 'danger', line: 'This version of the app can not take this purchase. Update the app, then try again.' };
     case 'grant_failed':

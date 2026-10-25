@@ -158,15 +158,18 @@ function offerOf(product: Priced): { price: string; token: string | null } {
  * The store's price for each product it knows, keyed by the store's own id. A product the store does not list is left out. Throws
  * `StoreFailure` when the store cannot be reached.
  */
-export async function fetchPrices(ids: { packs: string[]; subscriptions: string[] }): Promise<Map<string, StorePrice>> {
+export async function fetchPrices(ids: { packs: string[]; subscriptions: string[]; passes?: string[] }): Promise<Map<string, StorePrice>> {
   const m = iap();
   if (!m || storeOs() === null) throw new StoreFailure('store_unavailable');
   if (!(await connect())) throw new StoreFailure('store_unavailable');
   const out = new Map<string, StorePrice>();
   try {
-    const asked: [string[], 'in-app' | 'subs'][] = [
+    const asked: [string[], 'in-app' | 'subs' | 'all'][] = [
       [ids.packs, 'in-app'],
       [ids.subscriptions, 'subs'],
+      // A community pass is bought once: a consumable in-app product on Google Play, a non-renewing subscription on the App Store. The App
+      // Store files that under neither "in-app" nor "subs" for certain, so its passes are asked for by id with every type (IAP-03 round 2).
+      [ids.passes ?? [], storeOs() === 'ios' ? 'all' : 'in-app'],
     ];
     for (const [skus, type] of asked) {
       if (skus.length === 0) continue;
@@ -258,7 +261,7 @@ export async function buy(request: BuyRequest): Promise<BuyResult> {
 }
 
 /**
- * Tells the store the purchase is delivered: a pack is consumed (so it can be bought again), a subscription acknowledged. Called only
+ * Tells the store the purchase is delivered: a pack or a pass is consumed (so it can be bought again), a subscription acknowledged. Called only
  * after the Hub has answered 201. Never throws: the grant stands whether or not the store takes this (the Hub also acknowledges on its side),
  * and a transaction left open is seen and finished on the next ask.
  */

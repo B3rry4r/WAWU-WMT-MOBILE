@@ -9734,7 +9734,7 @@ export interface paths {
          *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
          *     `store_product_unknown` (404), `store_receipt_missing` (400),
          *     `store_purchase_invalid` (422), `store_purchase_pending`,
-         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),
          *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
          */
         post: operations["StoreController_buy"];
@@ -12376,7 +12376,7 @@ export interface components {
             pack?: "starter" | "popular" | "pro";
             /** @description tier: a tier of the live plan, by id. */
             tierId?: string;
-            /** @description pass: the days one period runs. */
+            /** @description pass: the days one purchase gives the room. */
             days?: number;
             /** @description extra_products: the products one purchase adds. Defaults to the plan's count when left out. */
             extraProducts?: number;
@@ -17733,7 +17733,6 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
-            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;

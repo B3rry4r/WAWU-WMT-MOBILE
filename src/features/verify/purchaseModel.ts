@@ -1,4 +1,5 @@
 import { formatPoints } from '@/components/PointsFigure';
+import type { MyTier } from '@/features/me/api';
 import { lastsText } from '@/features/points/buyModel';
 import { dateWords } from '@/features/wallet/history/lagosTime';
 
@@ -69,6 +70,15 @@ export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, ext
   const above = heldId === null ? [...tiers] : higherTiers(tiers, heldId);
   return above.filter((t) => t.products + extraProducts > used);
 };
+
+/**
+ * Whether the Hub would sell VF13's "Add 5 more products" to this person now, by the rule it refuses with (`limitOffers`, TIER-02): the pack is
+ * bought on a RUNNING tier (`active` or `ending`, never none, ended, or a verification tick alone, whose cap the pack does not raise) and it
+ * must lift the limit above what is published. The Hub's refusal carries `extraProducts: null` otherwise; the sheet reads the same facts from
+ * `GET /me/tier` so it never draws an offer the Hub would refuse after the store has taken the payment (IAP-03 round 2, F1).
+ */
+export const packOffered = (mine: Pick<MyTier, 'state' | 'productsAllowed' | 'productsUsed'>, count: number): boolean =>
+  (mine.state === 'active' || mine.state === 'ending') && count > 0 && mine.productsAllowed + count > mine.productsUsed;
 
 /** VF7's three rows, from what the Hub granted: the points (the tier's and the offer's, "600 + 1,000"), the products, the event pass. A row the grant does not carry is not drawn. */
 export type GrantRow = { id: 'points' | 'products' | 'pass'; label: string; value: string };
