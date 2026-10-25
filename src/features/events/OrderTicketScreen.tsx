@@ -13,10 +13,12 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
+import { detailKey, fetchEvent } from './api';
 import { fetchOrder, walletOrderKey, type WalletOrder } from './buyApi';
 import { CONFIRMING_LINE, CONFIRMING_TITLE, FAILED_TITLE, failedLine } from './buyModel';
 import { addToCalendar } from './calendar';
-import { cardMetrics, navMetrics, Page, TicketCard } from './ticketParts';
+import { CALLED_OFF_TITLE, refundBannerBody } from './ticketFormat';
+import { cardMetrics, navMetrics, Note, Page, TicketCard } from './ticketParts';
 import type { HeldTicket } from './ticketsApi';
 
 /** design/_gen/events.js `ticketView`: 14 between the note, the card and the line under it. */
@@ -76,6 +78,13 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
   });
   const [index, setIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  // E11: an order that ended refunded, or whose tickets were all voided, may belong to an event the host called off. The order carries no
+  // such flag, so the event is read for it (`cancelledAt`); the plain failed or "not valid" words stand until it says so, or if it cannot be read.
+  const orderEventId = order.data?.event.id ?? '';
+  const failed = order.data?.status === 'failed';
+  const allVoid = order.data?.status === 'paid' && order.data.tickets.length > 0 && order.data.tickets.every((t) => t.status === 'void');
+  const event = useQuery({ queryKey: detailKey(orderEventId), queryFn: () => fetchEvent(orderEventId), enabled: failed || allVoid, retry: false });
+  const calledOff = Boolean(event.data?.cancelledAt) || event.data?.status === 'cancelled';
 
   const frame = (body: React.ReactNode, title = 'Your ticket') => (
     <Page testID="order-ticket-screen" insetTop={insets.top}>
@@ -90,15 +99,14 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     </Page>
   );
 
-  if (order.isPending) {
-    return frame(
-      <LoadingView label="Loading your ticket" testID="order-ticket-loading">
-        <View style={styles.body}>
-          <Skeleton height={cardMetrics.banner + cardMetrics.plate + cardMetrics.pad * 2 + cardMetrics.stack * 2} radius={radius.money} />
-        </View>
-      </LoadingView>,
-    );
-  }
+  const loading = frame(
+    <LoadingView label="Loading your ticket" testID="order-ticket-loading">
+      <View style={styles.body}>
+        <Skeleton height={cardMetrics.banner + cardMetrics.plate + cardMetrics.pad * 2 + cardMetrics.stack * 2} radius={radius.money} />
+      </View>
+    </LoadingView>,
+  );
+  if (order.isPending) return loading;
   if (order.isError) {
     if (isApiError(order.error) && order.error.kind === 'not_found') {
       return frame(
@@ -125,6 +133,17 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     );
   }
   if (data.status === 'failed') {
+    if (event.isLoading) {
+      return loading;
+    }
+    if (calledOff) {
+      // The same state the ticket page draws for the same purchase (E11): the event was called off and what came back to the wallet.
+      return frame(
+        <View style={styles.body}>
+          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data) : null) ?? failedLine(data)} testID="order-ticket-called-off" />
+        </View>,
+      );
+    }
     return frame(
       <View style={styles.body}>
         <Banner tone="danger" title={FAILED_TITLE} body={failedLine(data)} testID="order-ticket-failed" />
@@ -137,6 +156,9 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     );
   }
 
+  if (allVoid && event.isLoading) {
+    return loading;
+  }
   const at = Math.min(index, data.tickets.length - 1);
   const many = data.tickets.length > 1;
   const calendar = async () => {
@@ -146,10 +168,16 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
   return frame(
     <>
       <ScrollView contentContainerStyle={[styles.body, styles.scroll]} showsVerticalScrollIndicator={false}>
-        <View testID="order-ticket-note" accessibilityRole="summary" style={[styles.note, { backgroundColor: colors.successTint }]}>
-          <Icon name="CircleCheck" size={20} color={colors.success} strokeWidth={2.2} />
-          <Text variant="kvValue">{"You're in. Show this at the door."}</Text>
-        </View>
+        {allVoid && calledOff ? (
+          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data) : null) ?? 'The event was called off, so this ticket cannot be used.'} testID="order-ticket-called-off" />
+        ) : allVoid ? (
+          <Note testID="order-ticket-void" tone="warning" icon="CircleAlert" title="This ticket is not valid" body="This ticket cannot be used at the door." />
+        ) : (
+          <View testID="order-ticket-note" accessibilityRole="summary" style={[styles.note, { backgroundColor: colors.successTint }]}>
+            <Icon name="CircleCheck" size={20} color={colors.success} strokeWidth={2.2} />
+            <Text variant="kvValue">{"You're in. Show this at the door."}</Text>
+          </View>
+        )}
         <TicketCard ticket={heldOf(data, at)} showCode={data.tickets[at].status !== 'void'} />
         {many ? (
           <View style={styles.pager} testID="order-ticket-pager">

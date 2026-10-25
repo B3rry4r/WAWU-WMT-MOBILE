@@ -61,7 +61,7 @@ type Kind = 'video' | 'course' | 'template';
 const hub = {
   /** What the feed's one post is (HOME-07: a course or a template is unlocked from the feed as a video is). */
   kind: 'video' as Kind,
-  /** The piece's preview file: a clip for a video, a picture for a template (R2-SOCIAL d: H14's thumbnail). */
+  /** The piece's preview file: a clip for a video, a picture for a template (R2-SOCIAL: H14's thumbnail). */
   preview: 'https://cdn.test/preview.webm',
   mode: 'paid' as Mode,
   balanceKobo: 48_525_075,
@@ -290,14 +290,14 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(screen.queryByText(/Fintava/)).toBeNull();
   });
 
-  // R2-SOCIAL (d), CHECK-3 defect 4: a quote with no fee at all is H14 as the board draws it, and only then.
-  it('a quote with no fee reads Price, Yours, "Fee: No fee" and no Total, with "Unlock · ₦2,500"', async () => {
+  // R2-SOCIAL 2 (BRIEF rules 3 and 4, H14): the fee is its parts then the Total, also when the charge is ₦0; "No fee" is never drawn.
+  it('a quote with a ₦0 charge still reads Price, Yours, "Bank charge ₦0", the Total, and "Unlock · ₦2,500"', async () => {
     hub.feeKobo = 0;
     const screen = await openSheet();
-    expect(screen.getByText('Fee')).toBeTruthy();
-    expect(screen.getByText('No fee')).toBeTruthy();
-    expect(screen.queryByText('Bank charge')).toBeNull();
-    expect(screen.queryByText('Total')).toBeNull();
+    expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('₦0')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
   });
@@ -315,9 +315,10 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(screen.getByTestId('pay-sheet-head').children).toHaveLength(1);
   });
 
-  it('a quote with a fee never says "No fee"', async () => {
+  it('a quote with a fee never says "No fee": the charge, the Total and the button carry the total', async () => {
     const screen = await openSheet();
     expect(screen.queryByText('No fee')).toBeNull();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
   });
 

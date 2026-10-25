@@ -138,7 +138,7 @@ type PayMode = 'paid' | 'processing' | 'failed' | 'lost_before' | 'lost_after' |
 const hub = {
   mode: 'paid' as PayMode,
   balanceKobo: 48_525_075,
-  /** The bank's part of the quoted fee. Zero is a quote with no fee at all (R2-SOCIAL d). */
+  /** The bank's part of the quoted fee. Zero is a quote whose charge is ₦0 (R2-SOCIAL 2). */
   providerFeeKobo: 1575,
   tiers: [REGULAR, VIP] as unknown[],
   /** How many times the page asked for the tier list. */
@@ -158,6 +158,10 @@ const hub = {
   lines: [] as { ticketTypeId: string; quantity: number }[],
   orderReads: 0,
   noWalletOnPay: false,
+  /** The event the host called off (E11): the Hub's event read carries `cancelledAt`. */
+  eventCancelled: false,
+  /** Fields the order read answers over the default view (E11: what came back). */
+  orderOver: {} as Record<string, unknown>,
 };
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -165,7 +169,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
-  if (path === '/events/e-1' && method === 'GET') return ok(eventRow);
+  if (path === '/events/e-1' && method === 'GET') return ok(hub.eventCancelled ? { ...eventRow, status: 'cancelled', cancelledAt: '2026-10-20T10:00:00.000Z' } : eventRow);
   if (path === '/events/e-1/tickets') {
     hub.tierReads += 1;
     return ok(hub.tiers);
@@ -225,7 +229,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === `/events/orders/wallet/${ORDER_ID}` && method === 'GET') {
     hub.orderReads += 1;
-    return ok(orderView(hub.orderStatus, hub.lines));
+    return ok(orderView(hub.orderStatus, hub.lines, hub.orderOver));
   }
   throw new Error(`no answer for ${method} ${path}`);
 }) as typeof fetch;
@@ -267,6 +271,8 @@ beforeEach(() => {
     lines: [],
     orderReads: 0,
     noWalletOnPay: false,
+    eventCancelled: false,
+    orderOver: {},
   });
 });
 
@@ -306,7 +312,7 @@ async function enterPin(pin: string) {
   for (const d of pin) await user.press(await rtl.screen.findByRole('button', { name: d }));
 }
 
-// R2-SOCIAL (d): E3's button is the verb and the total with no dot, "Pay ₦7,500" (the board); this line pinned "Pay · ".
+// R2-SOCIAL: E3's button is the verb and the total with no dot, "Pay ₦7,515.75" (the board and BRIEF E3); this line pinned "Pay · ".
 const payButton = () => rtl.screen.findByRole('button', { name: /^Pay ₦/ });
 
 async function reachPin() {
@@ -357,15 +363,15 @@ describe('E2: the picker beside Get tickets', () => {
 });
 
 describe('E3 and E4: pay and PIN', () => {
-  // R2-SOCIAL (d), CHECK-3 defect 4: with no fee in the Hub's quote the sheet is the board's: "Fee: No fee", the Total and "Pay ₦7,500".
-  it('a quote with no fee reads Tickets, "Fee: No fee", Total, and the button "Pay ₦7,500" with no dot', async () => {
+  // R2-SOCIAL 2 (BRIEF rules 3 to 5, E3): the charge and the Total are drawn also when the charge is ₦0; "No fee" is never drawn.
+  it('a quote with a ₦0 charge still reads Tickets, "Bank charge ₦0", Total, and the button "Pay ₦7,500"', async () => {
     hub.providerFeeKobo = 0;
     await bootDetail();
     await getTickets();
     await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
-    expect(rtl.screen.getByText('No fee')).toBeTruthy();
-    expect(rtl.screen.getByText('Fee')).toBeTruthy();
-    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
+    expect(rtl.screen.queryByText('No fee')).toBeNull();
+    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('₦0')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,500' })).toBeTruthy();
     expect(rtl.screen.queryByRole('button', { name: /^Pay · / })).toBeNull();
@@ -678,6 +684,66 @@ describe('E5: the ticket', () => {
     await rtl.fireEvent.press(rtl.screen.getByTestId('order-ticket-next'));
     expect(rtl.screen.getByText('Ticket 2 of 2')).toBeTruthy();
     expect(rtl.screen.getByText('K7QX-4M2P-9WLA-3RT1')).toBeTruthy();
+  });
+
+  // R2-SOCIAL 2, CHECK-3 defect 4 (E11): the order page of a called-off event draws the state the ticket page draws for the same purchase.
+  const REFUNDED = { holdStatus: 'refunded', returned: true, returnedKobo: 750_000 };
+  const CALLED_OFF_REASON = 'This event can no longer take place. Your money is back in your wallet.';
+
+  it('E11: an order refunded because the host called the event off says so and what came back, never "Your payment didn\'t go through"', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: REFUNDED };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-called-off')).toBeTruthy();
+    expect(rtl.screen.getByText('This event was called off')).toBeTruthy();
+    expect(rtl.screen.getByText('₦7,500 is back in your Naira wallet.')).toBeTruthy();
+    expect(rtl.screen.queryByText("Your payment didn't go through")).toBeNull();
+    expect(rtl.screen.queryByTestId('order-ticket-failed')).toBeNull();
+  });
+
+  it('E11: a refund still on its way reads as the ticket page reads it', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: { holdStatus: 'held', returned: false, returnedKobo: null } };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByText('Your refund is on its way to your Naira wallet.')).toBeTruthy();
+    expect(rtl.screen.queryByText("Your payment didn't go through")).toBeNull();
+  });
+
+  it('E11: an order the Hub gave no return record for still names the called-off event, with the Hub\'s own reason', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    hub.eventCancelled = true;
+    hub.orderOver = { failureReason: CALLED_OFF_REASON, returned: null };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByText('This event was called off')).toBeTruthy();
+    expect(rtl.screen.getByText(CALLED_OFF_REASON)).toBeTruthy();
+  });
+
+  it('a failed order of an event that is still on keeps the failed words', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'failed';
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-failed')).toBeTruthy();
+    expect(rtl.screen.getByText("Your payment didn't go through")).toBeTruthy();
+    expect(rtl.screen.queryByText('This event was called off')).toBeNull();
+  });
+
+  it('E11: a paid order whose tickets were all voided by a call-off is not "You\'re in": it says the event was called off', async () => {
+    hub.lines = [{ ticketTypeId: 't-reg', quantity: 1 }];
+    hub.orderStatus = 'paid';
+    hub.eventCancelled = true;
+    hub.orderOver = {
+      tickets: [{ id: '55555555-5555-4555-8555-555555555550', code: 'K7QX-4M2P-9WLA-3RT0', tierName: 'Regular', status: 'void' }],
+      returned: REFUNDED,
+    };
+    await render(<OrderTicketScreen {...props()} />);
+    expect(await rtl.screen.findByTestId('order-ticket-called-off')).toBeTruthy();
+    expect(rtl.screen.queryByText("You're in. Show this at the door.")).toBeNull();
+    expect(rtl.screen.queryByTestId('ticket-qr')).toBeNull();
   });
 
   it('says still confirming, with Refresh, for an order the Hub has not finished', async () => {

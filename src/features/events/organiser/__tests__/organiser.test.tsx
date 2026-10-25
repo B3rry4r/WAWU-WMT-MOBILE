@@ -110,10 +110,10 @@ describe('E17 to E25 · the words come from the Hub', () => {
   });
 
   it('the sheet says how many buyers are refunded, and a reason needs ten characters', () => {
-    expect(refundLine(64)).toBe('All 64 buyers get their money back.');
-    expect(refundLine(1)).toBe('The 1 buyer gets their money back.');
+    expect(refundLine(64)).toBe('All 64 buyers get the ticket price back.');
+    expect(refundLine(1)).toBe('The 1 buyer gets the ticket price back.');
     expect(refundLine(0)).toBe('Nobody has paid for a ticket, so no money moves.');
-    expect(refundLine(null)).toBe('Everyone who paid for a ticket gets their money back.');
+    expect(refundLine(null)).toBe('Everyone who paid for a ticket gets the ticket price back.');
     expect(reasonError('too short')).toBeDefined();
     expect(reasonError('The venue withdrew.')).toBeUndefined();
     expect(reasonError(' '.repeat(20))).toBeDefined();
@@ -270,7 +270,7 @@ describe('E18 and E25 · the dashboard and calling it off', () => {
     handler = (c) => (c.path.endsWith('/call-off') ? { status: 500, body: { statusCode: 500, message: 'no' } } : base(c));
     const { client } = await boot();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('dash-call-off'));
-    expect(await rtl.screen.findByText('Everyone who paid for a ticket gets their money back.')).toBeTruthy();
+    expect(await rtl.screen.findByText('Everyone who paid for a ticket gets the ticket price back.')).toBeTruthy();
     client.clear();
   });
 
@@ -279,7 +279,7 @@ describe('E18 and E25 · the dashboard and calling it off', () => {
     const { client } = await boot();
     await rtl.fireEvent.press(await rtl.screen.findByTestId('dash-call-off'));
     expect(await rtl.screen.findByText('This refunds real money')).toBeTruthy();
-    expect(rtl.screen.getByText('All 40 buyers get their money back.')).toBeTruthy();
+    expect(rtl.screen.getByText('All 40 buyers get the ticket price back.')).toBeTruthy();
     await rtl.fireEvent.changeText(rtl.screen.getByTestId('cancel-reason'), 'too short');
     await rtl.fireEvent.press(rtl.screen.getByTestId('cancel-confirm'));
     expect(await rtl.screen.findByText('Give a reason of at least 10 characters.')).toBeTruthy();
@@ -388,6 +388,8 @@ describe('E11 · called off', () => {
     expect(rtl.screen.getByText('₦7,500 is back in your Naira wallet.')).toBeTruthy();
     expect(rtl.screen.queryByText('This ticket is not valid')).toBeNull();
     expect(rtl.screen.queryByTestId('ticket-qr')).toBeNull();
+    // R2-SOCIAL 2 (CHECK-3 low 15): the board greys the whole ticket card of a called-off event.
+    expect(rtl.screen.getByTestId('ticket-card')).toHaveStyle({ opacity: 0.45 });
     client.clear();
   });
 
@@ -395,6 +397,8 @@ describe('E11 · called off', () => {
     const { client } = await boot({ status: 500, body: { statusCode: 500, message: 'down' } });
     expect(await rtl.screen.findByText('This ticket is not valid')).toBeTruthy();
     expect(rtl.screen.queryByText(/is back in your Naira wallet/)).toBeNull();
+    // The event was still called off, so the card is greyed whether or not the refund line could be read.
+    expect(rtl.screen.getByTestId('ticket-card')).toHaveStyle({ opacity: 0.45 });
     client.clear();
   });
 });

@@ -27,8 +27,8 @@ const MARK_STROKE = ICON_STROKE.fab;
 
 /**
  * H14 to H18, and the states between. H14 and H17 are the shared pay sheet (the piece, Price, the bank's charge, the total, Pay from
- * wallet, "Unlock · ₦2,523.25"; "Not enough in your Naira wallet" with the shortfall and Add). When the Hub's quote carries no fee at all
- * H14 is as the board draws it, "Fee: No fee" and no Total (R2-SOCIAL d). Pay opens H15, the shared PIN sheet,
+ * wallet, "Unlock · ₦2,523.25"; "Not enough in your Naira wallet" with the shortfall and Add). The fee is always its parts then the Total, also when a
+ * part is ₦0, never "No fee" (BRIEF rules 3 and 4, H14). Pay opens H15, the shared PIN sheet,
  * "Approve ₦2,523.25 to Chidi Eze". A paid unlock ends on H16. When the money has left and the opening is not finished, H18, whose
  * Contact support opens the support chat (I12) with this payment already attached as its first message (SUPPORT-01, R-30).
  */
@@ -125,7 +125,7 @@ export function UnlockSheets({
       <PaySheet
         visible={!flow.pinOpen}
         // H14's thumbnail is the piece's own still: the Hub's preview when that is a picture (a template, a photo, a cover). A video's preview
-        // is a clip, not a still, and the Hub serves no poster for one, so the head is the words alone there, with no empty square (R2-SOCIAL d).
+        // is a clip, not a still, and the Hub serves no poster for one, so the head is the words alone there, with no empty square (R2-SOCIAL).
         item={{
           title: quote.title,
           by: payee,
@@ -138,7 +138,6 @@ export function UnlockSheets({
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
         details={YOURS}
-        noFee="no-total"
         actionLabel="Unlock"
         status={status}
         onPay={flow.pay}

@@ -150,6 +150,22 @@ export function priceLine(costs: CostsByKind): string | null {
 }
 
 /**
+ * I28's line above the packs, from the Hub's costs: "A photo is 1 credit, a video or voice note 3". A video and a voice note that cost
+ * the same share a clause. Null when the Hub prices neither a photo, a video nor a voice note, so nothing is said that is not so.
+ */
+export function creditCostLine(costs: CostsByKind): string | null {
+  const parts: string[] = [];
+  if (costs.photo > 0) parts.push(`a photo is ${formatCredits(costs.photo)}`);
+  if (costs.video > 0 && costs.video === costs.voice) {
+    parts.push(`a video or voice note ${costs.video}`);
+  } else {
+    if (costs.video > 0) parts.push(`a video ${costs.video}`);
+    if (costs.voice > 0) parts.push(`a voice note ${costs.voice}`);
+  }
+  return parts.length > 0 ? `${upFirst(parts.join(', '))}.` : null;
+}
+
+/**
  * I27's words, from the Hub's costs: "Text and emoji stay free. Buy credits to send photos, video and voice notes." Null when the Hub
  * prices no kind, because then there is nothing to buy credits for.
  */
