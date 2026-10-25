@@ -13,7 +13,7 @@ import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { Skeleton } from '@/components/Skeleton';
-import { ErrorState } from '@/components/StateViews';
+import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -23,11 +23,12 @@ import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { canvasNormalLineHeight, font, radius, space, type, useWawu } from '@/theme';
 
 import { deleteLastKey, formatMinor, formatTrim, minorOfText, pressAmountKey, rateLine, secondsUntil } from '../amount';
+import { walletHomeQuery } from '../../api/home';
 import { accountsQuery, currenciesQuery, fetchQuote, type FxQuote, type FxSwap } from '../api';
 import { fxProblem, sentenceOf } from '../model';
 import { FxAmount, FxFlag, HoldPill } from '../parts';
 import { useNow } from '../useNow';
-import { feeSummary, quoteProblem, sidesOf, startingSides, type Side } from './model';
+import { feeSplit, feeSummary, quoteProblem, sidesOf, startingSides, type Side } from './model';
 import { SwapReview } from './SwapReview';
 import { useSwapPay } from './useSwapPay';
 
@@ -41,6 +42,8 @@ export type SwapScreenProps = {
   to?: string;
   onBack: () => void;
   onSwapped: (swap: FxSwap) => void;
+  /** With nothing to swap between: the wallet, where an account is opened. Left out, the empty state has no button. */
+  onOpenAccounts?: () => void;
   onForgotPin: () => void;
   onSetPin: () => void;
 };
@@ -58,7 +61,10 @@ export function SwapScreen(props: SwapScreenProps) {
   const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(owner) }, queryClient);
   const currencies = useQuery(currenciesQuery(owner), queryClient);
   const accounts = useQuery(accountsQuery(owner), queryClient);
-  const sides = useMemo(() => sidesOf(currencies.data ?? null, accounts.data ?? null, balance.data?.availableKobo ?? null), [currencies.data, accounts.data, balance.data]);
+  // A person who opened from outside Nigeria has no naira account to swap from or into (WALLET-41): their swap is between their own accounts.
+  const home = useQuery({ ...walletHomeQuery(owner), enabled: Boolean(owner) }, queryClient);
+  const world = home.data?.world !== undefined;
+  const sides = useMemo(() => sidesOf(currencies.data ?? null, accounts.data ?? null, balance.data?.availableKobo ?? null, !world), [currencies.data, accounts.data, balance.data, world]);
 
   const [pick, setPick] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
   const start = useMemo(() => startingSides(sides, props.from, props.to), [sides, props.from, props.to]);
@@ -171,7 +177,24 @@ export function SwapScreen(props: SwapScreenProps) {
   const canReview = Boolean(quote) && !expired && !over && !swapOff;
   const approvalText = review && from && to ? `Approve swapping ${formatTrim(review.amountFromMinor, from.code, from.decimals)} for ${formatTrim(review.amountToMinor, to.code, to.decimals)}` : 'Approve this swap';
 
-  if (readError || (!loading && (!from || !to))) {
+  // Nothing to swap between is not a fault of the connection (R2-MONEY D-06): it says what is missing and leads to where an account is opened.
+  if (!readError && !loading && (!from || !to)) {
+    return (
+      <AuthFrame testID="swap-screen" navTitle="Swap" onBack={props.onBack}>
+        <View style={styles.state}>
+          <EmptyState
+            testID="swap-empty"
+            icon="ArrowLeftRight"
+            title={world ? 'You need two accounts to swap' : 'You have no account to swap with'}
+            message={world ? 'Open another currency account in your wallet, then swap between them.' : 'Open a dollar or other currency account in your wallet, then swap with your naira.'}
+            action={props.onOpenAccounts ? { label: 'Go to your wallet', onPress: props.onOpenAccounts } : undefined}
+            actionVariant="primary"
+          />
+        </View>
+      </AuthFrame>
+    );
+  }
+  if (readError) {
     return (
       <AuthFrame testID="swap-screen" navTitle="Swap" onBack={props.onBack}>
         <View style={styles.state}>
@@ -260,9 +283,16 @@ export function SwapScreen(props: SwapScreenProps) {
               <Text variant="body" tone="textSecondary" style={styles.infoLabel}>
                 Fee
               </Text>
-              <Text variant="body" tone={quote ? 'textPrimary' : 'textMuted'} style={font(700)} testID="swap-fee">
-                {quote ? feeSummary(quote) : 'Shown with the rate'}
-              </Text>
+              <View style={styles.feeEnd}>
+                <Text variant="body" tone={quote ? 'textPrimary' : 'textMuted'} style={font(700)} testID="swap-fee">
+                  {quote ? feeSummary(quote) : 'Shown with the rate'}
+                </Text>
+                {quote ? (
+                  <Text variant="meta" tone="textMuted" testID="swap-fee-split">
+                    {feeSplit(quote)}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           </View>
 
@@ -448,6 +478,7 @@ const styles = StyleSheet.create({
   info: { borderRadius: radius.card + 6, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: CARD.pad },
   infoRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   infoLabel: { fontSize: type.size.body },
+  feeEnd: { alignItems: 'flex-end', flexShrink: 1, gap: space.xs },
   rateEnd: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
   rate: { fontSize: 16, flexShrink: 1 },
   rule: { height: StyleSheet.hairlineWidth },

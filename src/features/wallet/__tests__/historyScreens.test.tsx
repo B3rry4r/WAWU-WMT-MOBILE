@@ -160,7 +160,7 @@ function tokenFor(sub: string) {
 const frame = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const handlers = { onBack: jest.fn(), onOpenTransaction: jest.fn(), onOpenGroup: jest.fn() };
 
-async function history(props: { group?: string } = {}) {
+async function history(props: { group?: string; onOpenStatements?: () => void } = {}) {
   const { HistoryScreen } = require('../history/HistoryScreen') as typeof import('../history/HistoryScreen');
   await rtl.render(
     <SafeAreaProvider initialMetrics={frame}>
@@ -251,7 +251,7 @@ describe('W26 · Transaction history', () => {
     expect(app.screen.getByRole('header', { name: 'Transactions' })).toBeTruthy();
     expect(app.screen.getByLabelText('Search transactions')).toBeTruthy();
     expect(app.screen.getAllByRole('radio').map((r) => r.props.accessibilityLabel)).toEqual(['All', 'Money in', 'Money out', 'Content']);
-    // The export icon beside the title leads to statements (WALLET-35), and Report a problem is SUPPORT-01's.
+    // The export icon beside the title leads to statements (WALLET-35) when the route gives it somewhere to go (below), and Report a problem is SUPPORT-01's.
     expect(app.screen.queryByRole('button', { name: /statement|export|download|report/i })).toBeNull();
     // The only buttons are Back and the rows.
     expect(buttonNames(app).filter((n) => !/Bayo|Ngozi|Test Power/.test(n))).toEqual(['Back']);
@@ -363,6 +363,19 @@ describe('W26 · Transaction history', () => {
     await app.fireEvent.press(await app.screen.findByTestId('history-row-send-1'));
     expect(handlers.onOpenTransaction).toHaveBeenCalledWith('send-1');
     expect(handlers.onOpenGroup).not.toHaveBeenCalled();
+  });
+
+  it('a user taps the export icon beside the title and Statements opens (R2-MONEY D-10)', async () => {
+    const onOpenStatements = jest.fn();
+    const app = await history({ onOpenStatements });
+    await app.fireEvent.press(await app.screen.findByRole('button', { name: 'Statements' }));
+    expect(onOpenStatements).toHaveBeenCalledTimes(1);
+  });
+
+  it('a grouped list has no export icon', async () => {
+    await history({ group: 'unlock', onOpenStatements: jest.fn() });
+    await rtl.screen.findByTestId('history-screen');
+    expect(rtl.screen.queryByRole('button', { name: 'Statements' })).toBeNull();
   });
 
   it('a user can go back', async () => {

@@ -11,9 +11,8 @@ import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow, rowMetrics } from '@/components/ListRow';
-import { Money } from '@/components/Money';
+import { formatMoney, Money } from '@/components/Money';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
-import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
@@ -21,7 +20,7 @@ import { copyText } from '@/features/open-wallet/copy';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { walletHomeQuery, type WalletHome } from '@/features/wallet/api/home';
-import { FREE_PILL, sendArrivesLine, usuallyAbout } from '@/features/wallet/arrival';
+import { sendArrivesLine, usuallyAbout } from '@/features/wallet/arrival';
 import { font, radius, space, type, useWawu } from '@/theme';
 
 import {
@@ -29,6 +28,7 @@ import {
   ACCOUNT_HEAD,
   ACCOUNT_LINE,
   ADD_TITLE,
+  feeRows,
   manyReceived,
   POLL_MS,
   senderLine,
@@ -71,9 +71,9 @@ export type AddMoneyScreenProps = {
  * W15 · Add money, with W45 (waiting) and W46 (received) as its states (WALLET-05, the 16 Oct board, R-42).
  *
  * Adding money is a bank transfer to the person's own wallet account, so the card draws what the Hub holds: the account name, the
- * account number and the bank's name, each with Copy, and Share details (the phone's share sheet, R-33). The board's "Free" and its
- * "arrives in a few minutes" are the Hub's words (FIX-109): "Free" only when `transferIn.feeKobo` is 0, and the line from
- * `transferIn.arrivalMinutes`, each drawn only when the Hub sent it. After the
+ * account number and the bank's name, each with Copy, and Share details (the phone's share sheet, R-33). The board's "Free" pill is not
+ * drawn (BRIEF rule 4): the fee is the bank's charge and the total fee, a figure even at ₦0.00, from `transferIn.feeKobo`. Its
+ * "arrives in a few minutes" is the Hub's word (FIX-109), the line from `transferIn.arrivalMinutes`; each is drawn only when the Hub sent it. After the
  * person copies or shares the details the screen waits (W45): the bank's balance is asked for every few seconds, and when it changes
  * with a transfer in on the ledger, W46 shows that transfer, the new balance and its reference; when more than one landed, W46 says
  * how many and lists each. Nothing on this screen is a sum of our own records.
@@ -193,7 +193,6 @@ function AccountCard({ account, waiting, transferIn, notice, onSent, onNotice }:
           <Text variant="label" style={styles.headLabel}>
             {ACCOUNT_HEAD}
           </Text>
-          {transferIn?.feeKobo === 0 ? <StatusPill testID="add-money-free" label={FREE_PILL} tone="positive" /> : null}
         </View>
         <Text variant="secondary" style={styles.line}>
           {ACCOUNT_LINE}
@@ -215,6 +214,24 @@ function AccountCard({ account, waiting, transferIn, notice, onSent, onNotice }:
             />
           </View>
         ))}
+        {feeRows(transferIn?.feeKobo).length > 0 ? (
+          <View testID="add-money-fee">
+            {feeRows(transferIn?.feeKobo).map((row) => (
+              <View key={row.key}>
+                <View style={[styles.divider, { backgroundColor: colors.borderHairline }]} />
+                <KeyValueRow
+                  testID={`add-money-fee-${row.key}`}
+                  label={row.label}
+                  value={
+                    <Text variant="body" numberOfLines={1} style={[font(600), styles.value]}>
+                      {formatMoney(row.kobo)}
+                    </Text>
+                  }
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
         <View style={styles.share}>
           <Button testID="add-money-share" label={SHARE_LABEL} icon="Share" variant="secondary" full onPress={() => void share()} />
         </View>

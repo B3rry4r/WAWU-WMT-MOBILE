@@ -25,12 +25,17 @@ const ICON: Record<AddMoneyRail, "CreditCard" | "Smartphone" | "Landmark"> = {
   open_banking: "Landmark",
 };
 
-/** The ways the screen draws: Apple Pay only on an iPhone (Nuvion takes it through a page that needs Safari's wallet). */
+/**
+ * The ways the screen draws (R2-MONEY D-04): only a way the Hub lists as available for this account's currency, so no row answers
+ * "not available yet" and opens nothing (R-47). Apple Pay only on an iPhone (Nuvion takes it through a page that needs Safari's wallet).
+ */
 export function waysToDraw(
   rails: readonly AddMoneyRailView[],
   os: string = Platform.OS,
 ): AddMoneyRailView[] {
-  return rails.filter((r) => r.rail !== "apple_pay" || os === "ios");
+  return rails.filter(
+    (r) => r.available && (r.rail !== "apple_pay" || os === "ios"),
+  );
 }
 
 export type OtherWaysProps = { onOpen: (rail: AddMoneyRail) => void };
@@ -38,8 +43,8 @@ export type OtherWaysProps = { onOpen: (rail: AddMoneyRail) => void };
 /**
  * W15's "other ways to add money" (WALLET-25 card and Apple Pay, WALLET-26 USSD and the bank checkout, R-84). No board draws this
  * list since the 16 Oct board (R-42), so it is built from W15's own parts, a card of rows, and filed for the designer (R-29). A way is a
- * row the person can open, or, when the Hub says it cannot be used now, a row that says why in the Hub's own words and opens nothing
- * (no do-nothing buttons, R-47). Nothing is drawn while the Hub has not answered, or when it answered with no way at all.
+ * row the person can open; a way the Hub says cannot be used now is not drawn at all (no do-nothing rows, R-47, R2-MONEY D-04). Nothing
+ * is drawn while the Hub has not answered, or when it answered with no way that can be used.
  */
 export function OtherWays({ onOpen }: OtherWaysProps) {
   const options = useQuery(optionsQuery, queryClient);
@@ -55,17 +60,11 @@ export function OtherWays({ onOpen }: OtherWaysProps) {
           <ListRow
             key={r.rail}
             testID={`add-money-way-${r.rail}`}
-            lead={
-              <IconTile
-                icon={ICON[r.rail]}
-                tone={r.available ? "accent" : "neutral"}
-              />
-            }
+            lead={<IconTile icon={ICON[r.rail]} tone="accent" />}
             title={RAIL_TITLE[r.rail]}
-            subtitle={railLine(r.rail, r.reason)}
+            subtitle={railLine(r.rail, null)}
             subtitleLines={2}
-            onPress={r.available ? () => onOpen(r.rail) : undefined}
-            trailing={r.available ? undefined : <View />}
+            onPress={() => onOpen(r.rail)}
           />
         ))}
       </GroupedList>

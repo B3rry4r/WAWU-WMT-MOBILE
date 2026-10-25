@@ -30,5 +30,3 @@ export const sendArrivesLine = (minutes: number): string => `Money you send arri
 /** W45's line under "Waiting for your transfer". */
 export const usuallyAbout = (minutes: number): string => `Usually about ${durationWords(minutes)}`;
 
-/** W15's pill: the Hub said the transfer in costs nothing. A fee above nothing is not a pill (no board draws it). */
-export const FREE_PILL = 'Free';

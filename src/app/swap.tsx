@@ -24,6 +24,7 @@ export default function SwapRoute() {
       from={one(params.from)}
       to={one(params.to)}
       onBack={leave}
+      onOpenAccounts={() => router.replace('/wallet')}
       onSwapped={(swap) => router.replace({ pathname: '/fx-receipt', params: { kind: 'swap', id: swap.id } })}
       onForgotPin={() => router.push('/reset-pin')}
       onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}

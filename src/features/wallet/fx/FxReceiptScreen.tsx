@@ -33,6 +33,18 @@ export function shortAddress(address: string): string {
 
 type Row = { key: string; label: string; value: string; wrap?: boolean };
 
+/** The fee as the Hub's parts, Fees, then the total paid (BRIEF rules 3 and 4, R-23): a zero is a figure, never "No fee". A part the provider has not named says so, and the total says it is still coming. */
+function feeRows(parts: { provider: number | null; wawu: number; amount: number; providerLabel: string; money: (minor: number) => string }): Row[] {
+  const { provider, wawu, amount, providerLabel, money } = parts;
+  const rows: Row[] = [
+    { key: 'provider', label: providerLabel, value: provider === null ? 'None stated' : money(provider) },
+    { key: 'wawu', label: 'WAWU fee', value: money(wawu) },
+  ];
+  if (provider !== null) rows.push({ key: 'fees', label: 'Fees', value: money(provider + wawu) });
+  rows.push({ key: 'total', label: 'Total paid', value: provider === null ? `${money(amount + wawu)} + ${providerLabel.toLowerCase()}` : money(amount + provider + wawu) });
+  return rows;
+}
+
 /** The receipt's rows for a swap: each is the Hub's (the rate and the fees are the quote's, the dates the swap's). */
 export function swapRows(s: FxSwap): Row[] {
   const from = s.fromCurrency as QuoteCode;
@@ -43,22 +55,22 @@ export function swapRows(s: FxSwap): Row[] {
     { key: 'gave', label: 'You swapped', value: formatMinor(s.amountFromMinor, from, s.fromDecimals) },
     { key: 'got', label: 'You got', value: formatMinor(s.amountToMinor, to, s.toDecimals) },
     { key: 'rate', label: 'Rate', value: rateLine({ fromCurrency: from, toCurrency: to, fromDecimals: s.fromDecimals, toDecimals: s.toDecimals, rate: s.rate }) ?? 'Not available' },
-    { key: 'provider', label: 'Nuvion fee', value: s.providerFeeMinor === null ? 'None stated' : s.providerFeeMinor === 0 ? 'No fee' : formatMinor(s.providerFeeMinor, from, s.fromDecimals) },
-    { key: 'wawu', label: 'WAWU fee', value: s.wawuFeeMinor === 0 ? 'No fee' : formatMinor(s.wawuFeeMinor, from, s.fromDecimals) },
+    ...feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountFromMinor, providerLabel: 'Bank charge', money: (m) => formatMinor(m, from, s.fromDecimals) }),
     { key: 'date', label: 'Date', value: longDateTime(s.createdAt) },
     { key: 'ref', label: 'Reference', value: s.id, wrap: true },
   ];
 }
 
-/** The receipt's rows for a crypto send. The network's fee is what the provider charged on top, named only once it has taken the send. */
+/** The receipt's rows for a crypto send. The network's fee is what the provider charged on top, named only once it has taken the send; the total is what W23 added up before the send (the amount and WAWU's fee). */
 export function sendRows(s: FxSend): Row[] {
   const code = s.currency as QuoteCode;
+  const money = (m: number) => formatMinor(m, code, s.decimals);
+  const parts = feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountMinor, providerLabel: 'Network fee', money });
   return [
     { key: 'network', label: 'Network', value: chainName(s.chain as FxChain) },
     { key: 'to', label: 'To', value: s.address, wrap: true },
-    { key: 'amount', label: 'Amount', value: formatMinor(s.amountMinor, code, s.decimals) },
-    { key: 'provider', label: 'Network fee', value: s.providerFeeMinor === null ? 'None stated' : s.providerFeeMinor === 0 ? 'No fee' : formatMinor(s.providerFeeMinor, code, s.decimals) },
-    { key: 'wawu', label: 'WAWU fee', value: s.wawuFeeMinor === 0 ? 'No fee' : formatMinor(s.wawuFeeMinor, code, s.decimals) },
+    { key: 'amount', label: 'Amount', value: money(s.amountMinor) },
+    ...parts,
     { key: 'date', label: 'Date', value: longDateTime(s.createdAt) },
     { key: 'ref', label: 'Reference', value: s.id, wrap: true },
   ];
@@ -218,7 +230,7 @@ function SwapReceipt({ swap }: { swap: FxSwap }) {
         }
         line={`From ${formatTrim(swap.amountFromMinor, from, swap.fromDecimals)} of your ${SHORT_NAME[from].toLowerCase()}`}
         confirming={SWAP_CONFIRMING}
-        failure={swap.failureReason?.trim() || 'This swap did not go through. Nothing moved.'}
+        failure="This swap did not go through. Nothing moved."
       />
       {swap.status !== 'failed' ? <Rows rows={swapRows(swap)} /> : null}
     </>
@@ -243,7 +255,7 @@ function SendReceipt({ send }: { send: FxSend }) {
         }
         line={`To ${shortAddress(send.address)} on ${chainName(send.chain as FxChain)}`}
         confirming={SEND_CONFIRMING}
-        failure={send.failureReason?.trim() || 'This send did not go through. Nothing left your account.'}
+        failure="This send did not go through. Nothing left your account."
       />
       {send.status !== 'failed' ? <Rows rows={sendRows(send)} /> : null}
     </>

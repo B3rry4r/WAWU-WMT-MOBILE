@@ -169,7 +169,9 @@ describe('W23 · Crypto · send', () => {
     await send();
     await fill();
     expect(hub.sendQuotes).toEqual([`?accountId=${USDT_ID}&currency=USDT&chain=eth&amountMinor=12000`]);
-    expect(rtl.screen.getByText('No fee')).toBeTruthy();
+    // BRIEF rules 3 and 4: WAWU's part is drawn as a figure even at zero, never "No fee".
+    expect(rtl.screen.getByText('0.00 USDT')).toBeTruthy();
+    expect(rtl.screen.queryByText(/No fee/)).toBeNull();
     expect(rtl.screen.getByText('120.00 USDT + network fee')).toBeTruthy();
     expect([rtl.screen.getByTestId('crypto-send-balance').props.children].flat().join('')).toBe('Balance 320.00 USDT');
     expect(rtl.screen.queryByText(/Arrives|About 2 minutes|TRC-20/)).toBeNull();
@@ -202,6 +204,13 @@ describe('W23 · Crypto · send', () => {
     await fill();
     await fireEvent.press(rtl.screen.getByTestId('crypto-send-review'));
     expect(rtl.screen.getByTestId('crypto-send-review-title').props.children.join('')).toBe('Send 120.00 USDT');
+    // The review sheet draws the fee as its parts and then the total (BRIEF rules 3 and 4): WAWU's part as a figure, never "No fee".
+    const card = rtl.within(rtl.screen.getByTestId('crypto-send-review-card'));
+    expect(card.getByText('WAWU fee')).toBeTruthy();
+    expect(card.getByText('0.00 USDT')).toBeTruthy();
+    expect(card.getByText('Total')).toBeTruthy();
+    expect(card.getByText('120.00 USDT + network fee')).toBeTruthy();
+    expect(card.queryByText(/No fee/)).toBeNull();
     await fireEvent.press(rtl.screen.getByTestId('crypto-send-confirm'));
     expect(await rtl.screen.findByText(/^Approve sending 120.00 USDT to 0x5290/)).toBeTruthy();
     await pin('1111');
@@ -215,7 +224,7 @@ describe('W23 · Crypto · send', () => {
     expect(sent.mock.calls[0]?.[0]).toMatchObject({ id: SEND_ID, status: 'completed' });
   });
 
-  it('draws the provider\'s refusal, in its own words, as the plain refusal it is: nothing hidden, nothing faked', async () => {
+  it('draws the provider\'s refusal as one plain sentence, never its words (M-02): nothing hidden, nothing faked', async () => {
     hub.sendMode = 'declined';
     await send();
     await fill();
@@ -224,7 +233,8 @@ describe('W23 · Crypto · send', () => {
     await rtl.screen.findByText(/^Approve sending/);
     await pin('1234');
     expect(await rtl.screen.findByText('This send was not taken', {}, patient)).toBeTruthy();
-    expect(rtl.screen.getByText('Nuvion cannot send USDT on dev.')).toBeTruthy();
+    expect(rtl.screen.getByText("We couldn't send this right now. Nothing left your account. Try again later.")).toBeTruthy();
+    expect(rtl.screen.queryByText(/Nuvion|on dev/)).toBeNull();
     expect(sent).not.toHaveBeenCalled();
   });
 

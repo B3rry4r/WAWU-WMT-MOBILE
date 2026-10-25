@@ -53,6 +53,13 @@ const ok = (data: unknown): Reply => ({ status: 200, body: { statusCode: 200, me
 const view = (over: Record<string, unknown> = {}) =>
   ok({ state: 'open', account: ACCOUNT, limits: null, pin: pin(), bankTransfers: { allowed: true, blockedBy: null }, beneficiaryCount: 6, ...over });
 
+/** The Hub's saved list (`GET /money/beneficiaries`): two bank accounts and one WAWU user, as a send to a person saves on its own. */
+const BANK_ROWS = [
+  { id: 'b-1', kind: 'bank_account', wawuUser: null, bankAccount: { bankCode: '058', bankName: 'GTBank', accountNumber: '0112233445', accountName: 'Femi Bankole' }, createdAt: '2026-10-12T09:00:00.000Z' },
+  { id: 'b-2', kind: 'bank_account', wawuUser: null, bankAccount: { bankCode: '090267', bankName: 'Kuda MFB', accountNumber: '2011458890', accountName: 'Tunde Adeyemi' }, createdAt: '2026-10-11T09:00:00.000Z' },
+];
+const WAWU_ROW = { id: 'b-3', kind: 'wawu_user', wawuUser: { wawuUserId: 'u-9', displayName: 'Ada Seeded', handle: 'ada', avatarUrl: null, tick: null }, bankAccount: null, createdAt: '2026-10-13T09:00:00.000Z' };
+
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const url = new URL(request.url);
@@ -73,11 +80,11 @@ function tokenFor(sub: string) {
   return `${part({ alg: 'RS256' })}.${part({ sub })}.signature`;
 }
 
-type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock };
+type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock; onOpenBeneficiaries?: jest.Mock };
 
-async function boot(): Promise<Props> {
+async function boot(extra: Partial<Props> = {}): Promise<Props> {
   const { WalletSettingsScreen } = require('../settings/WalletSettingsScreen') as typeof import('../settings/WalletSettingsScreen');
-  const props = { onBack: jest.fn(), onOpenPin: jest.fn(), onCreatePin: jest.fn(), onOpenWallet: jest.fn() };
+  const props = { onBack: jest.fn(), onOpenPin: jest.fn(), onCreatePin: jest.fn(), onOpenWallet: jest.fn(), ...extra };
   await rtl.render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <WalletSettingsScreen {...props} />
@@ -109,7 +116,7 @@ beforeEach(() => {
   mockVault.clear();
   mockVault.set('wawu.session.access', tokenFor(OWNER));
   mockVault.set('wawu.session.refresh', 'refresh-1');
-  fallback = { 'GET /money/wallet': view() };
+  fallback = { 'GET /money/wallet': view(), 'GET /money/beneficiaries': ok([...BANK_ROWS, WAWU_ROW]) };
   (require('@/api/session') as typeof import('@/api/session')).resetSessionForTests();
 });
 
@@ -128,7 +135,7 @@ afterAll(() => {
 });
 
 describe('W35 · Wallet settings', () => {
-  it('a user sees Transaction PIN with its age and Account details with the bank and the number, all from the wallet read (no Beneficiaries row, SWEEP-FLOWS B9)', async () => {
+  it('a user sees Transaction PIN with its age and Account details with the bank and the number, all from the wallet read (no destination given, so no Beneficiaries row)', async () => {
     await boot();
     expect(await rtl.screen.findByTestId('wallet-settings-pin')).toBeTruthy();
     expect(rtl.screen.getByRole('header', { name: 'Wallet settings' })).toBeTruthy();
@@ -208,19 +215,48 @@ describe('W35 · Wallet settings', () => {
     expect(props.onOpenPin).not.toHaveBeenCalled();
   });
 
-  it('Beneficiaries is not drawn: no screen lists the saved recipients, so a row that opens nothing is left out (R-47, SWEEP-FLOWS B9)', async () => {
+  it('a user sees Beneficiaries counting the saved bank accounts the Saved list draws, and taps it to open them (R2-MONEY D-05)', async () => {
+    // The Hub's own count (6) also counts a saved WAWU user; W8's Saved list draws bank accounts only, so the row counts the two it will show.
+    const props = await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.getByText('Beneficiaries')).toBeTruthy();
+    expect(await rtl.screen.findByText('2 saved')).toBeTruthy();
+    expect(rtl.screen.queryByText('6 saved')).toBeNull();
+    expect(rtl.screen.queryByText('3 saved')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-settings-beneficiaries'));
+    expect(props.onOpenBeneficiaries).toHaveBeenCalledTimes(1);
+  });
+
+  it('with only a WAWU user saved the Beneficiaries row says "None saved", as the list it opens holds no bank account', async () => {
+    fallback['GET /money/beneficiaries'] = ok([WAWU_ROW]);
+    await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(await rtl.screen.findByText('None saved')).toBeTruthy();
+  });
+
+  it('with none saved the Beneficiaries row says "None saved"', async () => {
+    fallback['GET /money/wallet'] = view({ beneficiaryCount: 0 });
+    fallback['GET /money/beneficiaries'] = ok([]);
+    await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(await rtl.screen.findByText('None saved')).toBeTruthy();
+  });
+
+  it('when the saved list cannot be read the Beneficiaries row stays, with no count, and still opens the list', async () => {
+    fallback['GET /money/beneficiaries'] = 'offline';
+    const props = await boot({ onOpenBeneficiaries: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    await rtl.waitFor(() => expect(sent.some((c) => c.path === '/api/hub/money/beneficiaries')).toBe(true));
+    expect(rtl.screen.getByText('Beneficiaries')).toBeTruthy();
+    expect(rtl.screen.queryByText(/saved/)).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-settings-beneficiaries'));
+    expect(props.onOpenBeneficiaries).toHaveBeenCalledTimes(1);
+  });
+
+  it('where the route gives Beneficiaries nowhere to go, the row is not drawn (R-47)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-settings-pin');
     expect(rtl.screen.queryByTestId('wallet-settings-beneficiaries')).toBeNull();
-    expect(rtl.screen.queryByText('Beneficiaries')).toBeNull();
-    expect(rtl.screen.queryByLabelText('Beneficiaries, 6 saved')).toBeNull();
-  });
-
-  it('with none saved there is still no Beneficiaries row and no "None saved"', async () => {
-    fallback['GET /money/wallet'] = view({ beneficiaryCount: 0 });
-    await boot();
-    await rtl.screen.findByTestId('wallet-settings-pin');
-    expect(rtl.screen.queryByText('None saved')).toBeNull();
   });
 
   it('a user can open Account details and read the holder, the number and the bank, and copy the number as sent', async () => {

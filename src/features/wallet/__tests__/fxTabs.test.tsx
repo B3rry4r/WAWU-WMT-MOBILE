@@ -38,6 +38,8 @@ const OWNER = '00000000-0000-4000-8000-0000000000f1';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
 let walletState = 'open';
+/** The bank does not answer the naira balance: `503 provider_unreachable`, in the provider's own flavour of words. */
+let balanceDown = false;
 let sent: string[] = [];
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -56,7 +58,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       beneficiaryCount: 0,
     });
   }
-  if (path === '/money/wallet/balance') return ok({ availableKobo: 48_525_075, asOf: '2026-10-07T09:00:00.000Z' });
+  if (path === '/money/wallet/balance') {
+    if (balanceDown) return json(503, { statusCode: 503, message: 'API endpoint does not exist', data: null, reason: { code: 'provider_unreachable', message: 'API endpoint does not exist' } });
+    return ok({ availableKobo: 48_525_075, asOf: '2026-10-07T09:00:00.000Z' });
+  }
   if (path === '/money/transactions') return ok({ items: [], nextCursor: null });
   throw new Error(`no answer for ${request.method} ${path}`);
 }) as typeof fetch;
@@ -87,6 +92,7 @@ beforeEach(() => {
   Dimensions.set({ window: { width: 390, height: 844, scale: 2, fontScale: 1 } });
   resetFxHub();
   walletState = 'open';
+  balanceDown = false;
   sent = [];
   mockCopied.length = 0;
   mockPushed.length = 0;
@@ -107,6 +113,26 @@ afterEach(async () => {
 });
 afterAll(() => {
   (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
+});
+
+describe('W6 · can\u2019t reach your account keeps the tab strip (R2-MONEY round 1, M-04)', () => {
+  it('draws the tabs, the board\u2019s line and Try again when the naira balance answers 503 provider_unreachable, never the provider\u2019s words', async () => {
+    balanceDown = true;
+    await boot();
+    expect(await rtl.screen.findByTestId('wallet-unreachable')).toBeTruthy();
+    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Dollar', 'Euro', 'Pound', 'CAD', 'Dirham', 'Cedi', 'Crypto']));
+    expect(rtl.screen.getByText("We couldn't reach your account")).toBeTruthy();
+    expect(rtl.screen.getByText('Your money is safe. This is a connection problem between us and the bank.')).toBeTruthy();
+    expect(rtl.screen.queryByText(/API endpoint/)).toBeNull();
+    expect(rtl.screen.queryByTestId('wallet-balance-card')).toBeNull();
+    // The bank not answering is not told to the other tabs: a Dollar account is read for itself and still opens.
+    await openTab('Dollar');
+    expect(await rtl.screen.findByTestId('fx-balance')).toBeTruthy();
+    await openTab('Naira');
+    balanceDown = false;
+    await rtl.fireEvent.press(await rtl.screen.findByText('Try again'));
+    expect(await rtl.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+  });
 });
 
 describe('W1 · the tabs', () => {

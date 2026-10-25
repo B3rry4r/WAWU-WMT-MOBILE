@@ -49,7 +49,7 @@ export function tabsOf(currencies: FxCurrencies | null, accounts: readonly FxAcc
 }
 
 /** How many places a currency's smallest unit has: the naira's two, or what the Hub says for that currency. */
-export function decimalsFor(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null, code: QuoteCode): number {
+export function decimalsFor(currencies: FxCurrencies | null, accounts: readonly { currency: string; decimals: number }[] | null, code: QuoteCode): number {
   if (code === 'NGN') return currencies?.naira.decimals ?? NAIRA_DECIMALS;
   return currencyOf(currencies, code)?.decimals ?? (accounts ?? []).find((a) => a.currency === code)?.decimals ?? NAIRA_DECIMALS;
 }
@@ -120,9 +120,9 @@ export function fxProblem(error: unknown): FxProblem {
   }
 }
 
-/** The Hub's own sentence for a refusal, or the line given. */
+/** The Hub's own sentence for a refusal, or the line given. A provider's refusal (`provider_declined`) carries the provider's words, which are never drawn (M-02): the line given stands in. */
 export function sentenceOf(error: unknown, fallback: string): string {
-  return error instanceof ApiError && error.message.trim() ? error.message : fallback;
+  return error instanceof ApiError && error.code !== 'provider_declined' && error.message.trim() ? error.message : fallback;
 }
 
 export const NOT_NAIRA_NAME = (code: QuoteCode): string => SHORT_NAME[code];

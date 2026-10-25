@@ -13,12 +13,13 @@ import { useRowRoom } from './useRowRoom';
  * design/_gen/wallet.js line 65, W4: the real layout in quiet blocks. The balance card is a 196 block with a 28 corner;
  * each row is a 44 circle, two lines (150 x 13 and 96 x 11, corner 6, 8 apart) and a 64 x 13 figure, 13 between the
  * parts and 18 between rows. The action tiles are a 54 square at the tile corner with a 44 by 10 bar under it (corner 5),
- * in the board's five columns: only the built ones have shapes (R-47), packed from the left. The canvas also draws shapes for the account
- * tabs; they stand for parts that are not built (R-47), so they are not drawn. The Points card is one half-width block (the Passes
+ * in the board's five columns: only the built ones have shapes (R-47), packed from the left. The tab-pill row above the card (42 high, a pill) is drawn: the tabs are built
+ * (WALLET-21; round 1 of R2-MONEY). The board's scan icon is not: it has no screen (WALLET-20, R-47). The Points card is one half-width block (the Passes
  * card has no shape: it is drawn only when the person has a pass). The title bar is the screen's own, drawn live.
  */
 const W4 = {
   card: 196,
+  tabs: 42,
   tileBar: 44,
   mini: 86,
   tileBarH: 10,
@@ -71,6 +72,7 @@ export function WalletSkeleton({ tiles = 0 }: { tiles?: number }) {
   return (
     <LoadingView label="Loading your wallet" testID="wallet-loading">
       <View style={styles.body}>
+        <Skeleton testID="wallet-loading-tabs" height={W4.tabs} radius={W4.tabs / 2} />
         <Skeleton testID="wallet-loading-card" height={W4.card} radius={ACCT.radius} />
         <Skeleton testID="wallet-loading-points" width={(room - W4.tileGap) / 2} height={W4.mini} radius={W4.miniRadius} />
         <View testID="wallet-loading-actions" style={styles.tiles}>

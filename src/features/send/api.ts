@@ -373,6 +373,15 @@ export async function removeBeneficiary(id: string): Promise<void> {
   await unwrap(api.DELETE('/api/hub/money/beneficiaries/{id}', { params: { path: { id } } }));
 }
 
+/** The saved list's query: W8's Saved list and W35's Beneficiaries count read it under one key, so the number and the list cannot disagree. */
+export const beneficiariesQuery = (owner: string | null | undefined) =>
+  ({ queryKey: ['money', 'beneficiaries', owner ?? ''] as const, queryFn: fetchBeneficiaries, staleTime: 0, enabled: Boolean(owner), retry: false }) as const;
+
+/** The saved bank accounts: the rows W8's Saved list draws, and the ones W35's Beneficiaries row counts (R2-MONEY D-05). A saved WAWU user is in the Hub's list but is not drawn there. */
+export function savedBankRows(rows: readonly Beneficiary[]): Beneficiary[] {
+  return rows.filter((row) => row.kind === 'bank_account' && row.bankAccount);
+}
+
 /** The saved row for this bank account, if there is one. */
 export function savedBankRowFor(rows: readonly Beneficiary[], bankCode: string, accountNumber: string): Beneficiary | undefined {
   return rows.find((row) => row.kind === 'bank_account' && row.bankAccount?.bankCode === bankCode && row.bankAccount?.accountNumber === accountNumber);

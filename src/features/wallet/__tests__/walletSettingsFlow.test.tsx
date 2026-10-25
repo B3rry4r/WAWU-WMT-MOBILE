@@ -60,6 +60,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
         bankTransfers: { allowed: true, blockedBy: null },
         beneficiaryCount: 3,
       });
+    case 'GET /money/beneficiaries':
+      return ok([
+        { id: 'b-1', kind: 'bank_account', wawuUser: null, bankAccount: { bankCode: '058', bankName: 'GTBank', accountNumber: '0112233445', accountName: 'Femi Bankole' }, createdAt: '2026-10-12T09:00:00.000Z' },
+        { id: 'b-2', kind: 'wawu_user', wawuUser: { wawuUserId: 'u-9', displayName: 'Ada Seeded', handle: 'ada', avatarUrl: null, tick: null }, bankAccount: null, createdAt: '2026-10-13T09:00:00.000Z' },
+      ]);
     case 'GET /money/wallet/balance':
       return ok({ availableKobo: 0, asOf: '2026-10-07T09:00:00.000Z' });
     case 'GET /money/transactions':
@@ -175,7 +180,7 @@ afterAll(async () => {
 });
 
 describe('from the Wallet tab to Wallet settings', () => {
-  it('a user on the Wallet tab taps the settings icon and lands on W35, with the PIN and the account from the Hub (no Beneficiaries row: no screen lists them, SWEEP-FLOWS B9)', async () => {
+  it('a user on the Wallet tab taps the settings icon and lands on W35, with the PIN, Beneficiaries (1 saved bank account, R2-MONEY D-05) and the account from the Hub', async () => {
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
     expect(await screen.findByText('No transactions yet')).toBeTruthy();
@@ -183,6 +188,9 @@ describe('from the Wallet tab to Wallet settings', () => {
     expect(await screen.findByTestId('wallet-settings-screen')).toBeTruthy();
     expect(pathname()).toBe('/wallet-settings');
     expect(await screen.findByText('Changed 3 months ago')).toBeTruthy();
+    expect(screen.getByText('Beneficiaries')).toBeTruthy();
+    // The Hub's count is 3 (a saved WAWU user is counted); W8's list draws the one bank account, so the row says 1.
+    expect(await screen.findByText('1 saved')).toBeTruthy();
     expect(screen.queryByText('3 saved')).toBeNull();
     expect(screen.getByText('Ekiti Trial MFB · 810 000 0528')).toBeTruthy();
     // Back returns to the tab.

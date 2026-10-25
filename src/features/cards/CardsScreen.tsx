@@ -10,6 +10,7 @@ import { ListRow } from '@/components/ListRow';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
+import { isNoWallet } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { radius, space } from '@/theme';
 
@@ -24,7 +25,8 @@ export type CardsScreenProps = Omit<GetCardScreenProps, 'bare'> & {
 
 /**
  * The person's cards (W31's entry; no board draws a list, so it is built from the app's own rows, gap G-WALLET-22-1). With no card yet, this is
- * W29 itself: the screen that gets one. Cards switched off at the Hub: nothing is offered.
+ * W29 itself: the screen that gets one. Cards switched off at the Hub: nothing is offered. A person with no wallet yet (R-6) is not a failure
+ * to read: the screen says so and leads to Open your wallet, with no Try again (R2-MONEY D-06); a read that really failed still says it did.
  */
 export function CardsScreen(props: CardsScreenProps) {
   const owner = useSessionAccount(undefined);
@@ -43,6 +45,19 @@ export function CardsScreen(props: CardsScreenProps) {
           <Skeleton height={64} radius={radius.card} />
           <Skeleton height={64} radius={radius.card} />
         </LoadingView>
+      </ScreenFrame>
+    );
+  }
+  if (cards.isError && isNoWallet(cards.error)) {
+    return (
+      <ScreenFrame {...frame} testID="cards-screen">
+        <EmptyState
+          testID="cards-no-wallet"
+          icon="Wallet"
+          title="You don't have a wallet yet"
+          message="Open your wallet to get a card."
+          action={{ label: 'Open your wallet', onPress: props.onOpenWallet }}
+        />
       </ScreenFrame>
     );
   }

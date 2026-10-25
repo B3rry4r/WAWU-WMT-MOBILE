@@ -103,19 +103,27 @@ beforeEach(() => {
 });
 
 describe("W15: the other ways to add money", () => {
-  it("draws each way the Hub lists: one that can be used opens its screen, one that cannot says why in the Hub's words and opens nothing", async () => {
+  it("draws only the ways the Hub says can be used: one that can opens its screen, one that cannot is not drawn (R2-MONEY D-04)", async () => {
     const onOpen = jest.fn();
     await render(<OtherWays onOpen={onOpen} />);
     expect(await screen.findByTestId("add-money-way-card")).toBeTruthy();
     expect(screen.getByText("Debit card")).toBeTruthy();
-    expect(
-      screen.getByText("USSD is not available for Nigerian phone numbers yet."),
-    ).toBeTruthy();
+    expect(screen.queryByTestId("add-money-way-ussd")).toBeNull();
+    expect(screen.queryByTestId("add-money-way-open_banking")).toBeNull();
+    expect(screen.queryByText(/not available/i)).toBeNull();
     fireEvent.press(screen.getByTestId("add-money-way-card"));
     expect(onOpen).toHaveBeenCalledWith("card");
-    fireEvent.press(screen.getByTestId("add-money-way-ussd"));
-    fireEvent.press(screen.getByTestId("add-money-way-open_banking"));
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws no section at all when the Hub lists no way that can be used", async () => {
+    mocked.fetchOptions.mockResolvedValue({
+      ...OPTIONS,
+      rails: [rail("card", false, "This is not available yet."), rail("ussd", false, "Not yet.")],
+    });
+    await render(<OtherWays onOpen={jest.fn()} />);
+    await waitFor(() => expect(mocked.fetchOptions).toHaveBeenCalled());
+    expect(screen.queryByTestId("add-money-other-ways")).toBeNull();
   });
 
   it("draws nothing while the Hub has not answered, when it names no way, and Apple Pay only on an iPhone", async () => {
@@ -126,8 +134,6 @@ describe("W15: the other ways to add money", () => {
     a.unmount();
     expect(waysToDraw(OPTIONS.rails, "android").map((r) => r.rail)).toEqual([
       "card",
-      "ussd",
-      "open_banking",
     ]);
     expect(waysToDraw(OPTIONS.rails, "ios").map((r) => r.rail)).toContain(
       "apple_pay",

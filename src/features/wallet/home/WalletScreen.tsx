@@ -92,7 +92,9 @@ export function WalletScreen({ add }: { add?: string } = {}) {
   const capital = useQuery({ ...availabilityQuery(owner), enabled: Boolean(owner) && open }, queryClient);
 
   const view = homeView(wallet, balance);
-  const fx = useFxHome(owner, open && view.kind === 'ready');
+  // W6 keeps the tab strip (M-04): the bank not answering the naira balance says nothing of the other accounts, which are read for themselves.
+  const tabbed = view.kind === 'ready' || view.kind === 'unreachable';
+  const fx = useFxHome(owner, open && tabbed);
   // The tab the person chose; none yet means the one they were sent to add (below), or Naira.
   const [tab, setTab] = useState<string | null>(null);
   // Sent here to add a currency account: that currency's tab is the one in front once the Hub lists it, until the person moves off it.
@@ -145,8 +147,8 @@ export function WalletScreen({ add }: { add?: string } = {}) {
           <WalletSkeleton tiles={actions.length} />
         ) : (
           <>
-            {view.kind === 'ready' && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} /> : null}
-            {view.kind === 'ready' && activeTab !== NAIRA_TAB ? (
+            {tabbed && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} /> : null}
+            {tabbed && activeTab !== NAIRA_TAB ? (
               <FxTabBody
                 tab={activeTab}
                 owner={owner}
@@ -192,6 +194,9 @@ export function WalletScreen({ add }: { add?: string } = {}) {
     </View>
   );
 }
+
+/** W6's line under "We couldn't reach your account": the board's words, in place of the sentence the Hub sends (which can carry the provider's own text). */
+const W6_LINE = 'Your money is safe. This is a connection problem between us and the bank.';
 
 type BodyProps = {
   owner: string;
@@ -257,7 +262,7 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
     case 'unreachable':
       return (
         <StateCard>
-          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} onRetry={onRetryBalance} />
+          <ErrorState testID="wallet-unreachable" icon="CloudOff" {...stateWords(view)} message={W6_LINE} onRetry={onRetryBalance} />
         </StateCard>
       );
     case 'frozen':

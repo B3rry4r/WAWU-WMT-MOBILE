@@ -411,9 +411,14 @@ describe('W9 and W13 · the amount', () => {
     expect(screen.getByTestId('send-continue').props.accessibilityState?.disabled).toBe(true);
     // W13's "Add money" (WALLET-05) opens W15 with what the amount is over the balance by: ₦500,000 less ₦485,250.75.
     expect(screen.getByRole('button', { name: 'Add money' })).toBeTruthy();
+    // W13 draws neither the quick amounts nor the note field while the amount is over the balance (round 1, low).
+    expect(screen.queryByTestId('send-presets')).toBeNull();
+    expect(screen.queryByTestId('send-note')).toBeNull();
     await fireEvent.press(screen.getByTestId('amount-key-delete'));
     expect(screen.queryByTestId('send-over-balance')).toBeNull();
     expect(screen.getByTestId('send-balance')).toBeTruthy();
+    expect(screen.getByTestId('send-presets')).toBeTruthy();
+    expect(screen.getByTestId('send-note')).toBeTruthy();
     expect(screen.getByTestId('send-continue').props.accessibilityState?.disabled).toBeFalsy();
   });
 });
