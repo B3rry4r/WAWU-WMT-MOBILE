@@ -349,6 +349,84 @@ describe("residence decides, not the phone (round 1)", () => {
   });
 });
 
+describe("the first account asked for on the way in (RELEASE-02 fix round 1, R-87)", () => {
+  /** A Ghana account, as "Add a dollar account" on /tiers leads to it: the cedi is the country's own, the dollar is asked for. */
+  const ghana = () => {
+    residenceClaim = "GH";
+    mockVault.set("wawu.session.access", tokenFor(OWNER));
+    serve();
+    optionsFor = (country) => options(country, { suggested: "GHS" });
+  };
+
+  it("a person from Ghana sent to add a dollar account sees US dollar as Your first account, not the cedi, and goes on with USD", async () => {
+    ghana();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen
+        onClose={onClose}
+        onContinue={onContinue}
+        firstCurrency="USD"
+      />
+    ));
+    expect(await app.screen.findByText("Ghana")).toBeTruthy();
+    expect(await app.screen.findByText("US dollar")).toBeTruthy();
+    expect(app.screen.queryByText("Ghana cedi")).toBeNull();
+    await rtl.fireEvent.press(
+      app.screen.getByTestId("open-wallet-country-continue"),
+    );
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
+    expect(kept.readWorld(OWNER)).toEqual({ country: "GH", currency: "USD" });
+  });
+
+  it("the same person sent in with no currency asked for is offered the cedi, the country's own", async () => {
+    ghana();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen onClose={onClose} onContinue={onContinue} />
+    ));
+    expect(await app.screen.findByText("Ghana cedi")).toBeTruthy();
+    expect(app.screen.queryByText("US dollar")).toBeNull();
+    await rtl.fireEvent.press(
+      app.screen.getByTestId("open-wallet-country-continue"),
+    );
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
+    expect(kept.readWorld(OWNER)).toEqual({ country: "GH", currency: "GHS" });
+  });
+
+  it("a currency the Hub has switched off is not used: the country's own is offered instead", async () => {
+    ghana();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen
+        onClose={onClose}
+        onContinue={onContinue}
+        firstCurrency="CAD"
+      />
+    ));
+    expect(await app.screen.findByText("Ghana cedi")).toBeTruthy();
+    expect(app.screen.queryByText("Canadian dollar")).toBeNull();
+  });
+
+  it("the person may still change it: the choice they make wins over the one asked for", async () => {
+    ghana();
+    const app = await boot((onContinue, onClose) => (
+      <OpenWalletScreen
+        onClose={onClose}
+        onContinue={onContinue}
+        firstCurrency="USD"
+      />
+    ));
+    await rtl.fireEvent.press(
+      await app.screen.findByTestId("open-wallet-currency-field"),
+    );
+    await rtl.fireEvent.press(
+      await app.screen.findByTestId("open-wallet-currency-GHS"),
+    );
+    await rtl.fireEvent.press(
+      app.screen.getByTestId("open-wallet-country-continue"),
+    );
+    await rtl.waitFor(() => expect(app.onContinue).toHaveBeenCalledTimes(1));
+    expect(kept.readWorld(OWNER)).toEqual({ country: "GH", currency: "GHS" });
+  });
+});
+
 describe("a refused opening names its fields (round 1)", () => {
   const { markFields } =
     require("../hubFields") as typeof import("../hubFields");

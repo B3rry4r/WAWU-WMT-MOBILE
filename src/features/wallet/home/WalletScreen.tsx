@@ -10,7 +10,8 @@ import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
-import { OPEN_WALLET_ACCOUNT_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
+import { isFiat, type FiatCode } from '@/features/open-wallet/api/world';
+import { OPEN_WALLET_ACCOUNT_PATH, OPEN_WALLET_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { layout, radius, useWawu } from '@/theme';
 
@@ -65,13 +66,17 @@ const INFO_SKELETON = 86;
  * Nobody has a wallet until they open one (R-6): with none, tapping the tab opens Open your wallet
  * (A26). Coming back without opening one shows the way in again; coming back from A10 shows W5.
  */
-export function WalletScreen() {
+export function WalletScreen({ add }: { add?: string } = {}) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const router = useRouter();
+  // `add`: a currency account the person was sent here to add ("Add a dollar account" on /tiers, R-87). Without a wallet it is the
+  // first account asked for in Open your wallet; with one, its tab (or the add-a-currency sheet of a world wallet) is where they land.
+  const adding: FiatCode | null = isFiat(add) ? add : null;
+  const openFlow = useCallback(() => (adding ? router.push({ pathname: OPEN_WALLET_PATH, params: { currency: adding } }) : entry.open()), [adding, entry, router]);
 
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
   const state = wallet.data?.state;
@@ -88,8 +93,12 @@ export function WalletScreen() {
 
   const view = homeView(wallet, balance);
   const fx = useFxHome(owner, open && view.kind === 'ready');
-  const [tab, setTab] = useState(NAIRA_TAB);
-  const activeTab = fx.tabs.some((t) => t.key === tab) ? tab : NAIRA_TAB;
+  // The tab the person chose; none yet means the one they were sent to add (below), or Naira.
+  const [tab, setTab] = useState<string | null>(null);
+  // Sent here to add a currency account: that currency's tab is the one in front once the Hub lists it, until the person moves off it.
+  const addingTab = adding !== null && fx.tabs.some((t) => t.key === adding);
+  const wanted = tab ?? (addingTab ? adding : NAIRA_TAB);
+  const activeTab = fx.tabs.some((t) => t.key === wanted) ? wanted : NAIRA_TAB;
   const [hidden, setHidden] = useState(false);
   const [pulled, setPulled] = useState(false);
 
@@ -107,7 +116,7 @@ export function WalletScreen() {
   }, [focused, refreshAll]);
 
   const actions = builtActions(router);
-  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, entry.open);
+  const openWallet = useLeadToOpenWallet(view.kind === 'no_wallet', focused, openFlow);
   // The account opened and no PIN is set (it landed while the tab said "Your account is opening", or while the app was closed): the
   // board's step after the account is "Create your transaction PIN", so the person is led there once, never left on W1 unasked (U3b).
   useLeadToCreatePin(owner, open && wallet.data?.pinIsSet === false, focused, () => router.push(OPEN_WALLET_ACCOUNT_PATH));
@@ -152,6 +161,7 @@ export function WalletScreen() {
             ) : (
           <Body
             owner={owner}
+            adding={adding}
             view={view}
             hidden={hidden}
             onToggleHidden={() => setHidden((was) => !was)}
@@ -185,6 +195,8 @@ export function WalletScreen() {
 
 type BodyProps = {
   owner: string;
+  /** The currency account the person was sent here to add, if any (a world wallet then opens its add-a-currency sheet on it). */
+  adding: FiatCode | null;
   view: HomeView;
   hidden: boolean;
   onToggleHidden: () => void;
@@ -205,7 +217,7 @@ type BodyProps = {
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ owner, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
@@ -266,7 +278,7 @@ function Body({ owner, view, hidden, onToggleHidden, onOpenWallet, actions, poin
         </StateCard>
       );
     case 'world':
-      return <WorldHome owner={owner} />;
+      return <WorldHome owner={owner} adding={adding} />;
     case 'ready':
       return (
         <>

@@ -394,10 +394,8 @@ describe('VF6 and VF7 · pay with the PIN', () => {
     expect(screen.getByTestId('checkout-fees')).toHaveTextContent('₦5,000 + ₦25 Bank charge');
     expect(screen.getByText('Pay ₦5,025')).toBeTruthy();
     expect(hub.quotes.every((q) => q.bump === 'false')).toBe(true);
-    // VF6 draws the Bank transfer row beside the wallet from the first paint, the wallet chosen, even when the wallet covers the total
-    // (RELEASE-02, CHECK-3 D-3; this one assertion pinned the 17 Oct rule that offered it only to a short wallet).
-    expect(screen.getByTestId('checkout-method-transfer')).toBeTruthy();
-    expect(screen.getByTestId('checkout-method-wallet').props.accessibilityState.checked).toBe(true);
+    // The wallet covers it, so the Hub pays from the wallet and no transfer card is offered (POINTS-06's ruling).
+    expect(screen.queryByTestId('checkout-method-transfer')).toBeNull();
     await pay();
     expect(await screen.findByTestId('official-title')).toHaveTextContent("You're official");
     expect(screen.getByTestId('official-points')).toHaveTextContent(/^Points added600$/);
@@ -528,6 +526,29 @@ describe('VF6a to VF6d · the states', () => {
     expect(hub.buys).toHaveLength(1);
   });
 
+  it('RELEASE-02 fix round 1: a wallet that covers the total draws no Bank transfer row, and Pay sends method wallet (the Hub settles a transfer order from a covering wallet, so the row would charge the wallet)', async () => {
+    await toCheckout();
+    expect(screen.getByText('Balance ₦485,250.75')).toBeTruthy();
+    expect(screen.queryByTestId('checkout-method-transfer')).toBeNull();
+    expect(screen.queryByText('Bank transfer')).toBeNull();
+    expect(screen.getByTestId('checkout-method-wallet').props.accessibilityState.checked).toBe(true);
+    await pay();
+    await screen.findByTestId('official-title');
+    expect(hub.buys).toHaveLength(1);
+    expect(hub.buys[0].body).toMatchObject({ method: 'wallet' });
+  });
+
+  it('RELEASE-02 fix round 1: a short wallet draws the Bank transfer row beside the wallet, the wallet chosen, and the row can be picked', async () => {
+    hub.shortfall = true;
+    await toCheckout();
+    expect(screen.getByTestId('checkout-method-transfer')).toBeTruthy();
+    expect(screen.getByText('Bank transfer')).toBeTruthy();
+    expect(screen.getByTestId('checkout-method-wallet').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(screen.getByTestId('checkout-method-transfer'));
+    expect(screen.getByTestId('checkout-method-transfer').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('checkout-pay')).toBeEnabled();
+  });
+
   it('a refused payment shows the Hub’s own words, grants nothing, and can be tried again', async () => {
     hub.mode = 'failed';
     await toCheckout();
@@ -564,7 +585,8 @@ describe('RELEASE-02 · CHECK-3 D-1, a person the Hub bills in dollars', () => {
     await screen.findByTestId('tiers-list');
     await fireEvent.press(screen.getByTestId('tiers-continue'));
     await fireEvent.press(await screen.findByText('Add a dollar account'));
-    expect(await screen.findByTestId('where')).toHaveTextContent('/wallet?');
+    // The dollar account is asked for through the route (`add`), so the wallet opens with US dollar as the first account.
+    expect(await screen.findByTestId('where')).toHaveTextContent('/wallet?add=USD');
     expect(screen.queryByText('Open your wallet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });

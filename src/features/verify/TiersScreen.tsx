@@ -29,8 +29,8 @@ export type TiersScreenProps = {
   onClose: () => void;
   /** The button: `tier` for a person with none (or an ended one), `upgrade` for a person whose tier is running. */
   onContinue: (kind: 'tier' | 'upgrade', tierId: string) => void;
-  /** A person billed in dollars: the Hub takes no tier payment from a dollar account yet, so Continue says so and this opens the wallet to add one. */
-  onAddAccount?: () => void;
+  /** A person billed in dollars: the Hub takes no tier payment from a dollar account yet, so Continue says so and this opens the wallet to add one, with the Hub's currency (R-87). */
+  onAddAccount?: (currency: Currency) => void;
 };
 
 /** A person's tier is running (the Hub's `active` or `ending`): the choice is then the step up, paid as the difference. */
@@ -117,7 +117,7 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
         icon="Wallet"
         title={TIER_WORDS.dollarsTitle}
         message={TIER_WORDS.dollarsBody}
-        action={onAddAccount ? { label: TIER_WORDS.dollarsAdd, onPress: onAddAccount } : undefined}
+        action={onAddAccount ? { label: TIER_WORDS.dollarsAdd, onPress: () => onAddAccount(currency) } : undefined}
         actionVariant="primary"
       />
     );

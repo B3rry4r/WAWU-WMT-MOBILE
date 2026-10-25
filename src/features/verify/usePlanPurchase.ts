@@ -157,10 +157,10 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
 
   const walletShort = quote !== null && quote.shortfallKobo !== null && quote.shortfallKobo > 0;
   const paying = busy || watching !== null;
-  // Bank transfer is a row of its own from the first paint, as VF6 draws it beside the wallet (RELEASE-02, CHECK-3 D-3, the lead's
-  // ruling of 25 Oct 2026; it replaces the 17 Oct rule that offered it only when the wallet was short). The wallet stays the one chosen
-  // until the person picks the transfer. A short wallet still turns Pay off while the wallet is the way chosen.
-  const method: 'wallet' | 'transfer' = picked === 'transfer' ? 'transfer' : 'wallet';
+  // Bank transfer is offered only when the wallet is short (POINTS-06, the lead's ruling of 17 Oct 2026): a wallet that covers the
+  // total is paid from by the Hub. A transfer already under way (kept on the phone, awaiting the money, or with its PIN open) stays.
+  const transferOffered = walletShort || paying || resend || pinOpen;
+  const method: 'wallet' | 'transfer' = picked === 'transfer' && transferOffered ? 'transfer' : 'wallet';
   const short = method === 'wallet' && walletShort;
 
   const pay = async () => {
@@ -305,6 +305,7 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
     retryQuote: () => setRound((r) => r + 1),
     method,
     setMethod: setPicked,
+    transferOffered,
     walletShort,
     short,
     busy,

@@ -23,6 +23,7 @@ import { openingProgressQuery } from './api/review';
 import { checkBvn } from '@/api/walletIdentity';
 import { checkFailure, type CheckFailure } from './checkFailure';
 import { CountryStep } from './CountryStep';
+import type { FiatCode } from './api/world';
 import { forgetKeptCheck, isKeptFor, keepCheck, keepNumbers, keepWorld, readNumbers, ticketFor, ticketIsLive, useCheckNotice, useKeptCheck, type KeptCheck } from './keptCheck';
 import { groupIdNumber, idDigits, isWholeIdNumber, maskedIdNumber } from './numbers';
 import { OpenWalletEnd } from './OpenWalletEnd';
@@ -60,6 +61,12 @@ export type OpenWalletScreenProps = {
    * on top of A26, so A26 stays mounted and the kept details with it.
    */
   onContinue: () => void;
+  /**
+   * The first account the person asked for on the way in (R-87: they may choose a currency other than their country's own), for
+   * example "US dollar" from /tiers. It only starts the "Your first account" choice there; the person can still change it, and a
+   * currency the Hub has switched off is not used.
+   */
+  firstCurrency?: FiatCode;
 };
 
 type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' };
@@ -72,7 +79,7 @@ type Ended = { end: 'not_available'; message: string } | { end: 'wallet_open' };
  * under the phone; an unknown BVN puts the server's under the BVN. An account
  * without a Nigerian BVN ends at "Not available yet", never an error.
  */
-export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps) {
+export function OpenWalletScreen({ onClose, onContinue, firstCurrency }: OpenWalletScreenProps) {
   const queryClient = useQueryClient();
   // One visit of the step: its account read is never answered from a cache
   // another session filled (the app keeps one query cache for every account).
@@ -177,6 +184,7 @@ export function OpenWalletScreen({ onClose, onContinue }: OpenWalletScreenProps)
     return (
       <CountryStep
         fixedCountry={residence}
+        preferredCurrency={firstCurrency}
         onClose={onClose}
         onNigeria={() => setNigeria(true)}
         onAbroad={(choice) => {
