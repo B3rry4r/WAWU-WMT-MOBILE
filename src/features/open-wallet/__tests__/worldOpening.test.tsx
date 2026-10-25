@@ -206,8 +206,9 @@ describe("A31 for a person whose number is from outside Nigeria", () => {
     ));
     expect(await app.screen.findByText("Where do you live?")).toBeTruthy();
     expect(app.screen.queryByTestId("open-wallet-bvn")).toBeNull();
+    // The title is drawn at once; the country field only once the Hub's list of countries has come (under load, later): wait for it.
     await rtl.fireEvent.press(
-      app.screen.getByTestId("open-wallet-country-field"),
+      await app.screen.findByTestId("open-wallet-country-field"),
     );
     await rtl.fireEvent.press(await app.screen.findByTestId("country-GB"));
     // The country's own currency, from the Hub's table, is already chosen.

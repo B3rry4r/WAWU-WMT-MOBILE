@@ -100,3 +100,16 @@ Before the fix (source files put back to `a09e523b`, tests kept): 7 of 57 failed
 `tsc.log` EXIT 0; `eslint.log` EXIT 0 on the 13 changed source and test files (no --fix); `jest.log` EXIT 0, 46 suites, 942 tests (wallet tab and world, open-wallet, verify, route-guard, the new `walletAddCurrency`); `gates.log` and `tasks.log` below; `fingerprint.log` EXIT 0, `17ffb13d520882bf144982b61d03f3994c6e40e4` (android, unchanged).
 
 NOT RUN: the signed phone build, a Ghana person with an open wallet in the web export (jest covers it), the dark theme pictures, a non-zero fee breakdown.
+
+## Fix round 2 (25 Oct 2026, T1, CI only, builder R2-AUTHME on `wmt/R2-AUTHME` `df1b952e`)
+
+Two tests failed in GitHub's full jest on `df1b952e` and `a09e523b`; main `a3fdaf71` was green. Tests only, no source change, no route file, no native change.
+
+| # | Failure | Cause | Fix |
+|---|---|---|---|
+| 1 | `auth-sign-in.test.tsx` "has no back button on sign in when there is no screen behind it" | The branch's: round 0's L-8 (CHECK-3) draws a Back arrow on a cold Sign in that goes to the welcome screen, and updated `auth-welcome.test.tsx` but not this file. Lead ruling: this one assertion follows L-8 | That assertion now presses Back and waits for the welcome screen (the same rule `auth-welcome.test.tsx` asserts). Nothing else in the file |
+| 2 | `worldOpening.test.tsx` A31 "asks where they live first ..." (`open-wallet-country-field` not found) | Not the branch's code: a race in a test that is byte-identical on main. The title "Where do you live?" is drawn at once, the country field only after the Hub's country list arrives; the test used a synchronous `getByTestId` right after the title. CI's slower worker lost the race, the builder's lone run won it | `await findByTestId` (as the other tests in the file already do) before pressing the field. No timeout lengthened, nothing skipped |
+
+Proof for 2: with the countries answer held back 400 ms in a scratch copy of the file (not committed), A31 fails with the same message on main `a3fdaf71` (1 failed, 19 passed) and on this branch before the fix; after the fix all 24 pass. The branch's `CountryStep` change (`preferredCurrency`) does not touch the loading path.
+
+Checks (logs in `scratchpad/r2-authme-b/`): `tsc.log` EXIT 0; `eslint.log` EXIT 0 on the two files (no --fix); `two.log` EXIT 0 (2 suites, 65 tests); `ow.log` open-wallet folder EXIT 0 (24 suites, 374 tests); `auth.log` auth folder, the five `auth-*` tests and `route-guard.test.tsx` EXIT 0 (8 suites, 513 tests); `gates.log` EXIT 0 (0 fail, 18 warn, 0 accepted); `baseline.log` EXIT 0; `tasks.log` EXIT 0 (443 tasks).
