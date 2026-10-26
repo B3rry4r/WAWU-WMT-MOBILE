@@ -21,7 +21,8 @@ const docMetrics = { between: 18, headingSpace: 6, date: 12.5, heading: 16, body
 /** The bars of the loading view stand in for the date, a heading and two lines of text. */
 const skeleton = { date: 12.5, heading: 18, line: 14, dateW: '40%', headingW: '45%', lineW: '95%', lastW: '70%', block: 6 } as const;
 
-const TITLES: Record<PolicySlug, string> = { terms: 'Terms', privacy: 'Privacy policy' };
+/** The two documents Settings has always named; the other seven are named by the title the owner gave them (the Hub's `title`). */
+const TITLES: Partial<Record<PolicySlug, string>> = { terms: 'Terms', privacy: 'Privacy policy' };
 
 export type PolicyScreenProps = {
   slug: PolicySlug;
@@ -31,14 +32,15 @@ export type PolicyScreenProps = {
 };
 
 /**
- * Z10 · Terms and Z11 · Privacy policy. The words and their date are the owner's, served
+ * Z10 · Terms and Z11 · Privacy policy, and the owner's seven other documents in the same reader (LEGAL-DOCS). The words and their date are the owner's, served
  * by the Hub (`GET /policies/{slug}`, SETTINGS-02); the canvas's text is layout only. Until
  * the owner has put the document in, the screen says it is not available yet and shows no
  * wording of its own.
  */
 export function PolicyScreen({ slug, onBack, onOpenOther }: PolicyScreenProps) {
   const policy = useQuery({ queryKey: policyKey(slug), queryFn: () => fetchPolicy(slug) });
-  const title = TITLES[slug];
+  const named = TITLES[slug];
+  const title = named ?? policy.data?.title ?? 'Legal';
   const offline = isApiError(policy.error) && policy.error.kind === 'network';
   return (
     <ScreenFrame idPrefix="about" title={title} onBack={onBack} gap={docMetrics.between} testID={`policy-${slug}`}>
@@ -60,7 +62,7 @@ export function PolicyScreen({ slug, onBack, onOpenOther }: PolicyScreenProps) {
           onRetry={() => void policy.refetch()}
         />
       ) : (
-        <LoadingView label={`Loading the ${title.toLowerCase()}`} testID={`policy-${slug}-loading`}>
+        <LoadingView label={named ? `Loading the ${named.toLowerCase()}` : 'Loading the document'} testID={`policy-${slug}-loading`}>
           <View style={styles.skeleton}>
             <Skeleton width={skeleton.dateW} height={skeleton.date} radius={radius.input} />
             {[0, 1, 2].map((i) => (

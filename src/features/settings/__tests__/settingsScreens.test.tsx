@@ -530,6 +530,26 @@ describe('Z2 · Settings', () => {
     expect(p.onOpenProfile).toHaveBeenCalledTimes(1);
   });
 
+  it('LEGAL-DOCS · a user can open the Legal list from a Legal row, and Privacy policy stays reachable beside it', async () => {
+    serve();
+    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
+    const p = { ...props(), onOpenLegal: jest.fn() };
+    await render(frame(<SettingsScreen {...p} />));
+    await screen.findByText('Lennox Emmanuel');
+    expect(screen.getByText('Legal')).toBeTruthy();
+    await tap('settings-legal');
+    expect(p.onOpenLegal).toHaveBeenCalledTimes(1);
+    await tap('settings-policy');
+    expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
+  });
+
+  it('LEGAL-DOCS · draws no Legal row where the route gives no place to open it (R-47)', async () => {
+    serve();
+    await boot();
+    await screen.findByText('Lennox Emmanuel');
+    expect(screen.queryByTestId('settings-legal')).toBeNull();
+  });
+
   it('DV2-06 · the switch reads "TGIF each morning" with the notification line, names no time, and keeps writing /settings/tgif', async () => {
     serve({ [TGIF_SET]: ok({ show: false }) });
     await boot();

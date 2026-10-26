@@ -6654,6 +6654,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The published documents in the owner's order: slug, title and effective
+         *     date, no text. Empty until the owner has published one.
+         */
+        get: operations["AboutController_policyList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/policies/{slug}": {
         parameters: {
             query?: never;
@@ -6661,10 +6681,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `terms` or `privacy`; `available: false` until the owner fills it in. */
+        /** One of the nine slugs; `available: false` until the owner fills it in. */
         get: operations["AboutController_policy"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/policies/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PolicyAcceptanceController_accept"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9274,7 +9310,7 @@ export interface paths {
          *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
          *     `store_product_unknown` (404), `store_receipt_missing` (400),
          *     `store_purchase_invalid` (422), `store_purchase_pending`,
-         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),
          *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
          */
         post: operations["StoreController_buy"];
@@ -11356,6 +11392,10 @@ export interface components {
             recapText?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
         };
+        AcceptPoliciesDto: {
+            /** @enum {string} */
+            how: "signup";
+        };
         PolicySectionDto: {
             heading: string;
             body: string;
@@ -11923,8 +11963,10 @@ export interface components {
             pack?: "starter" | "popular" | "pro";
             /** @description tier: a tier of the live plan, by id. */
             tierId?: string;
-            /** @description pass: the days one period runs. */
+            /** @description pass: the days one purchase gives the room. */
             days?: number;
+            /** @description extra_products: the products one purchase adds. Defaults to the plan's count when left out. */
+            extraProducts?: number;
         };
         CreateStoreProductDto: {
             /** @enum {string} */
@@ -11935,7 +11977,7 @@ export interface components {
              * @description Fixed once created.
              * @enum {string}
              */
-            kind: "points" | "credits" | "tier" | "pass";
+            kind: "points" | "credits" | "tier" | "pass" | "extra_products";
             title: string;
             grants: components["schemas"]["StoreProductGrantsDto"];
             /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
@@ -15582,17 +15624,35 @@ export interface components {
             licenceLine: string | null;
             supportEmail: string | null;
         };
+        PolicySummaryView: {
+            /** @enum {string} */
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
+            title: string;
+            effectiveDate: string;
+        };
+        PolicyListView: {
+            items: components["schemas"]["PolicySummaryView"][];
+        };
         PolicySectionView: {
             heading: string;
             body: string;
         };
         PolicyView: {
             /** @enum {string} */
-            slug: "terms" | "privacy";
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
             available: boolean;
             title: string | null;
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
+        };
+        PolicyAcceptedView: {
+            /** @enum {string} */
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
+            effectiveDate: string;
+            acceptedAt: string;
+        };
+        PolicyAcceptanceView: {
+            items: components["schemas"]["PolicyAcceptedView"][];
         };
         SchoolPayeeView: {
             schoolId: string;
@@ -17290,7 +17350,6 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
-            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;
@@ -18147,12 +18206,14 @@ export interface components {
             pack: "starter" | "popular" | "pro" | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         StoreGrantsView: {
             points: number | null;
             credits: number | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         AdminStoreProductView: {
             id: string;
@@ -18160,7 +18221,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             grants: components["schemas"]["StoreProductGrantsConfig"];
             resolved: components["schemas"]["StoreGrantsView"];
@@ -18192,7 +18253,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             environment: string;
@@ -18207,6 +18268,7 @@ export interface components {
             creatorShareKobo: number | null;
             purchasedAt: string;
             expiresAt: string | null;
+            passEndsAt?: string | null;
             endedAt: string | null;
             endReason: string | null;
             takenBack: {
@@ -18225,7 +18287,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             subscription: boolean;
             grants: components["schemas"]["StoreGrantsView"];
@@ -18243,6 +18305,7 @@ export interface components {
             points: number | null;
             credits: number | null;
             tierId: string | null;
+            extraProducts: number | null;
             until: string | null;
             communityId: string | null;
         };
@@ -18252,7 +18315,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             alreadyGranted: boolean;
@@ -32169,6 +32232,25 @@ export interface operations {
             };
         };
     };
+    AboutController_policyList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyListView"];
+                };
+            };
+        };
+    };
     AboutController_policy: {
         parameters: {
             query?: never;
@@ -32186,6 +32268,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyView"];
+                };
+            };
+        };
+    };
+    PolicyAcceptanceController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptPoliciesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyAcceptanceView"];
                 };
             };
         };

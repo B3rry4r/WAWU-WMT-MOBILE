@@ -25,6 +25,7 @@ export default function SettingsRoute() {
       onOpenAbout={() => router.push('/about')}
       onOpenTerms={() => router.push('/terms')}
       onOpenPolicy={() => router.push('/privacy-policy')}
+      onOpenLegal={() => router.push('/legal-documents')}
       onSignedOut={() => router.replace('/welcome')}
     />
   );
