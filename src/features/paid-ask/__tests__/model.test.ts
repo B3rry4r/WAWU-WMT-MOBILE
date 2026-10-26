@@ -241,12 +241,15 @@ describe('PAY-FX (R-91): a paid question from a dollar account says the dollar a
   });
 
   it('a refund names the USD account and the dollar amount that went back', () => {
-    const wallet = { status: 'refunded', payment: { source: refunded, hold: { refundedKobo: 10000, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
-    const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', wallet, new Date(at(25)).getTime());
+    // The wallet's record of the question (GET /dm/send/wallet/{id}) carries no `source`; the account comes from the payment record.
+    const wallet = { status: 'refunded', payment: { hold: { refundedKobo: 10000, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
+    const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', wallet, new Date(at(25)).getTime(), refunded);
     expect(card.title).toBe('No reply in 24 hours, so you got $0.23 back');
     expect(card.body).toMatch(/^It went back to your USD account /);
-    const moving = { status: 'refunding', payment: { source: usd, hold: { refundedKobo: 10000, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
-    const onItsWay = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW);
+    const moving = { status: 'refunding', payment: { hold: { refundedKobo: 10000, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    const onItsWay = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW, usd);
+    // A question whose payment record is not known names the Naira wallet.
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).body).toBe('It is on its way to your Naira wallet. Zainab earned nothing.');
     expect(onItsWay.title).toBe('No reply in 24 hours, so $0.23 is coming back');
     expect(onItsWay.body).toBe('It is on its way to your USD account. Zainab earned nothing.');
   });

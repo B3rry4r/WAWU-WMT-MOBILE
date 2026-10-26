@@ -227,20 +227,22 @@ export function answeredCard(name: string | null | undefined, followUp: FollowUp
 
 /**
  * A question that went unanswered (I7). The amount and the time are the wallet's own record of the refund (the hold's
- * `refundedKobo` and `settledAt`); a question that has no wallet record says only that it was refunded.
+ * `refundedKobo` and `settledAt`); a question that has no wallet record says only that it was refunded. `from` is the account that paid
+ * (null for the Naira wallet).
  */
 export function refundedCard(
   q: Pick<ThreadQuestion, 'sentAt' | 'deadlineAt'>,
   name: string | null | undefined,
   wallet: QuestionView | null,
   now: number,
+  from?: PaidFrom | null,
 ): StatusCard {
   const hours = windowHoursOf(q);
   const within = hours === null ? 'No reply in time' : `No reply in ${windowWords(hours)}`;
   const hold = wallet?.payment?.hold ?? null;
   const back = hold?.refundedKobo;
-  // PAY-FX (R-91): a question paid from another currency's account goes back to that account, in its currency.
-  const from = wallet?.payment?.source ?? null;
+  // PAY-FX (R-91): a question paid from another currency's account goes back to that account, in its currency. `from` is the payment
+  // record's `source` (GET /money/payments/{id}); the wallet's record of the question carries none.
   const dest = from ? `your ${accountNameOf(from.currency)}` : 'your Naira wallet';
   if (wallet && typeof back === 'number' && back > 0) {
     const sum = from ? paidFromBackText(from) : formatNaira(back);
