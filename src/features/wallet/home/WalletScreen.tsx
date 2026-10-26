@@ -59,7 +59,8 @@ const INFO_SKELETON = 86;
  * drawn: the scan icon (WALLET-20). The WAWU card row is built (WALLET-22, R-84): drawn while the Hub says cards are on. The tabs under the title (WALLET-21, R-83, R-84) are one for each
  * currency account the Hub says exists or can be opened, and Crypto; Naira is the tab below, as it was, and a person whose wallet is
  * not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
- * is drawn when `GET /me/tier` has an event pass, beside the Points card (wallet.js line 47, 10 apart). The settings icon is built
+ * is always drawn beside the Points card (wallet.js line 47, 10 apart): the Hub's event pass from `GET /me/tier` when there is one, else its
+ * empty card, which opens the tiers (owner, 26 Oct 2026, R-97). The Capital row is drawn only for a person who holds something (R-97). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
  * money beyond the reads above.
  *
@@ -87,11 +88,13 @@ export function WalletScreen({ add }: { add?: string } = {}) {
   const open = (state === 'open' || state === 'frozen') && !wallet.data?.world;
   const balance = useQuery(homeBalanceQuery(owner, open), queryClient);
   const recent = useQuery(recentTransactionsQuery(owner, open), queryClient);
-  // The Passes card: drawn only when the Hub says the person has a pass (WALLET-38). A read that fails draws nothing here.
+  // The Passes card: always drawn beside Points for an open wallet (owner, 26 Oct 2026, R-97). The Hub's pass fills it (WALLET-38); with no pass,
+  // or a read that failed, it is the empty card, which opens the tiers.
   const pass = useQuery(myPassQuery(owner), queryClient);
   // The Points card: the Hub's balance as a count. Nothing is drawn for a read that failed (never a 0 the Hub did not say).
   const points = useQuery(myPointsQuery(owner), queryClient);
-  // The Capital row: drawn when the Hub says Capital is on and served, or the person holds something (the way out stays open when it is switched off, NUV-12). A failed read draws nothing.
+  // The Capital row (R-97, owner, 26 Oct 2026: WAWU offers no investments): drawn only when the person already holds something, so the way out stays open
+  // (NUV-12). Whether the Hub takes new orders (`available`) no longer draws it. A failed read draws nothing.
   const capital = useQuery({ ...availabilityQuery(owner), enabled: Boolean(owner) && open }, queryClient);
 
   const view = homeView(wallet, balance);
@@ -178,9 +181,10 @@ export function WalletScreen({ add }: { add?: string } = {}) {
             actions={actions}
             points={points.isSuccess ? points.data : points.isPending && points.isFetching ? 'loading' : null}
             onOpenPoints={() => router.push('/points')}
-            pass={pass.data ?? null}
+            pass={pass.data ? pass.data : pass.isPending && pass.isFetching ? 'loading' : null}
             onOpenPass={() => router.push('/pass')}
-            capital={capital.data?.available === true || capital.data?.holding === true}
+            onOpenTiers={() => router.push('/tiers')}
+            capital={capital.data?.holding === true}
             onOpenCapital={() => router.push('/capital')}
             onRetryWallet={() => void wallet.refetch()}
             onRetryBalance={() => void balance.refetch()}
@@ -219,10 +223,12 @@ type BodyProps = {
   /** The Hub's points, `'loading'` while the first read is out, or null when it has none to show (a failed read draws nothing). */
   points: MyPoints | 'loading' | null;
   onOpenPoints: () => void;
-  /** The person's event pass, or null when the Hub has none (or has not answered): no Passes card then. */
-  pass: MyPass | null;
+  /** The person's event pass, `'loading'` while the first read is out, or null when the Hub has none (or could not say): the card is the empty one then. */
+  pass: MyPass | 'loading' | null;
   onOpenPass: () => void;
-  /** Capital is on and served: its row is drawn (NUV-12). */
+  /** The empty Passes card opens the tiers (VF5), where the pass comes with a tier. */
+  onOpenTiers: () => void;
+  /** The person holds something in Capital: its row is drawn so they can read it and take it out (NUV-12, R-97). */
   capital: boolean;
   onOpenCapital: () => void;
   onRetryWallet: () => void;
@@ -230,7 +236,7 @@ type BodyProps = {
   recent: Pick<Parameters<typeof RecentTransactions>[0], 'rows' | 'pending' | 'failed' | 'onRetry' | 'onSeeAll' | 'onOpen' | 'onOpenGroup'>;
 };
 
-function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
+function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actions, points, onOpenPoints, pass, onOpenPass, onOpenTiers, capital, onOpenCapital, onRetryWallet, onRetryBalance, recent }: BodyProps) {
   switch (view.kind) {
     case 'loading':
       return <WalletSkeleton tiles={actions.length} />;
@@ -305,17 +311,19 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
             />
             <PoweredByNuvion style={styles.powered} />
           </View>
-          {points !== null || pass ? (
-            <View testID="wallet-info-row" style={styles.infoRow}>
-              {points === 'loading' ? (
-                <Skeleton testID="wallet-points-loading" height={INFO_SKELETON} radius={radius.card} style={styles.half} />
-              ) : points ? (
-                <PointsTile points={points} now={new Date()} onPress={onOpenPoints} />
-              ) : null}
-              {pass ? <PassesTile pass={pass} onPress={onOpenPass} /> : null}
-              {(points !== null ? 1 : 0) + (pass ? 1 : 0) === 1 ? <View style={styles.half} /> : null}
-            </View>
-          ) : null}
+          <View testID="wallet-info-row" style={styles.infoRow}>
+            {points === 'loading' ? (
+              <Skeleton testID="wallet-points-loading" height={INFO_SKELETON} radius={radius.card} style={styles.half} />
+            ) : points ? (
+              <PointsTile points={points} now={new Date()} onPress={onOpenPoints} />
+            ) : null}
+            {pass === 'loading' ? (
+              <Skeleton testID="wallet-passes-loading" height={INFO_SKELETON} radius={radius.card} style={styles.half} />
+            ) : (
+              <PassesTile pass={pass} onPress={pass ? onOpenPass : onOpenTiers} />
+            )}
+            {points === null ? <View style={styles.half} /> : null}
+          </View>
           {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
           <CardRow />
