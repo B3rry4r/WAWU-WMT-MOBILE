@@ -105,29 +105,33 @@ describe('A1: welcome', () => {
     expect([art.props.source].flat()[0]).toEqual(require('../../assets/images/welcome-mark.png'));
     expect(art.props.contentFit).toBe('contain');
     expect(screen.getAllByRole('image', { name: 'Who Made This?' })).toHaveLength(1);
-    // Centred on both axes, over the whole screen, and out of the way of the buttons.
-    const stage = native.getByTestId('welcome-mark').parent;
-    expect(StyleSheet.flatten(stage?.props.style)).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' });
-    expect(stage?.props.pointerEvents).toBe('none');
+    // Out of the way of the buttons: the layer holding the mark takes no touches.
+    expect(native.getByTestId('welcome-stage').props.pointerEvents).toBe('none');
     // No photo, no gradient laid over one, and the horizontal logo is gone.
     expect(native.queryByTestId('welcome-cover', { includeHiddenElements: true })).toBeNull();
   });
 
-  it('a user on a short phone sees the mark kept clear of the headline, and on a tall one exactly in the middle', async () => {
+  it('a user sees the mark centred between the top safe area and the headline: equal room above and below, at least 16 below on a short phone', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    const layoutOf = (testID: string, layout: { y: number; height: number }) =>
-      act(() => {
-        fireEvent(native.getByTestId(testID), 'layout', { nativeEvent: { layout: { x: 0, width: 390, ...layout } } });
-      });
-    const liftOf = () => StyleSheet.flatten(native.getByTestId('welcome-mark').props.style).transform[0].translateY as number;
-    await layoutOf('welcome', { y: 0, height: 844 });
-    await layoutOf('welcome-words', { y: 572, height: 136 });
-    expect(liftOf()).toBe(0);
-    await layoutOf('welcome', { y: 0, height: 667 });
-    await layoutOf('welcome-words', { y: 389, height: 136 });
-    // Its lower edge (middle 333.5 + 103.5 = 437) is pulled up to 16 above the headline at 389.
-    expect(liftOf()).toBeCloseTo(389 - 16 - 437, 5);
+    const style = (testID: string) => StyleSheet.flatten(native.getByTestId(testID, { includeHiddenElements: true }).props.style);
+    // The stage is the room above the words (the layout gives it everything the words and buttons leave) and
+    // starts under the safe area; the mark sits between two spacers that share what the mark leaves.
+    const stage = native.getByTestId('welcome-stage', { includeHiddenElements: true });
+    expect(style('welcome-stage')).toMatchObject({ flex: 1, alignItems: 'center' });
+    expect(typeof style('welcome-stage').paddingTop).toBe('number');
+    expect(stage.children.map((child) => (typeof child === 'string' ? child : child.props.testID))).toEqual(['welcome-above', 'welcome-mark', 'welcome-below']);
+    expect(style('welcome-above').flex).toBe(1);
+    expect(style('welcome-below').flex).toBe(style('welcome-above').flex);
+    // The only difference between the spacers: a short phone keeps 16 below the mark, whatever the share.
+    expect(style('welcome-below').minHeight).toBe(16);
+    expect(style('welcome-above').minHeight).toBeUndefined();
+    // The mark is its own 190 x 207, never squeezed; its glow is drawn out past that box and takes no room.
+    expect(style('welcome-mark')).toMatchObject({ width: 190, height: 207, flexShrink: 0 });
+    expect(style('welcome-mark-art')).toMatchObject({ position: 'absolute', top: -80, left: -80, width: 350, height: 367 });
+    // The stage is the first of the three layers over the page, the words next, so the headline bounds it from below.
+    const layers = native.getByTestId('welcome').children.map((child) => (typeof child === 'string' ? undefined : child.props.testID));
+    expect(layers.filter(Boolean)).toEqual(['welcome-stage', 'welcome-words']);
   });
 
   it('says nothing that no source backs: no bank claim', async () => {

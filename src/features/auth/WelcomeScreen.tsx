@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_NAME } from '@/components/BrandMark';
@@ -27,10 +26,10 @@ const BUTTONS = { between: 10, wordsAbove: 28 } as const;
  */
 export const WELCOME_MARK = require('../../../assets/images/welcome-mark.png') as number;
 /**
- * The picture's size in points: the mark is 190 wide and 207 high with 80 of glow on every side (the 1x file's
- * own pixels). `maxWidth` keeps it inside a phone narrower than the picture.
+ * The pictures' size in points (the 1x file's own pixels): the mark itself is 190 wide and 207 high, with 80 of
+ * glow on every side. Only the mark takes room in the layout; the glow is drawn out past its box.
  */
-const MARK = { width: 350, height: 367, mark: 207, pad: 80 } as const;
+const MARK = { width: 350, height: 367, markWidth: 190, markHeight: 207, pad: 80 } as const;
 /** The least room kept between the mark's lower edge and the headline, for a short phone. */
 const MARK_ABOVE_WORDS = 16;
 
@@ -42,9 +41,11 @@ export type WelcomeScreenProps = {
 };
 
 /**
- * A1: the screen a signed-out user first sees (R-90, owner, 26 Oct 2026): the vertical mark centred on the
+ * A1: the screen a signed-out user first sees (R-90, owner, 26 Oct 2026): the vertical mark in the middle of the
  * dark page with a purple glow, and the words and buttons below. The page is always dark, so the words and
  * the status bar are always light, whatever the phone's theme. No horizontal logo and no photo.
+ * The mark is centred in the room between the top safe area and the headline, so the gap above it equals the gap
+ * below it; on a phone too short for that, the gap below stays at least 16 and the mark moves up.
  * "and bank it all in one app" is left out of the line under the title: it
  * implies a bank account for everyone, which nothing backs (G-34).
  */
@@ -52,30 +53,18 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
   const insets = useSafeAreaInsets();
   /** The welcome screen stays mounted under the screens pushed on it; its light bar must not outlive its turn on screen. */
   const focused = useIsFocused();
-  const [height, setHeight] = useState(0);
-  const [wordsTop, setWordsTop] = useState(0);
-  /**
-   * The mark sits at the middle of the screen. On a phone too short for that (its lower edge would touch the
-   * headline) it moves up, never past the status bar.
-   */
-  const middleTop = height / 2 - MARK.mark / 2;
-  const lift = height > 0 && wordsTop > 0 ? Math.max(Math.min(0, wordsTop - MARK_ABOVE_WORDS - (middleTop + MARK.mark)), insets.top - middleTop) : 0;
   return (
-    <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfacePage }]} onLayout={(e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height)}>
+    <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfacePage }]}>
       {focused ? <StatusBar style="light" /> : null}
-      <View pointerEvents="none" style={styles.stage}>
-        <View
-          testID="welcome-mark"
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={APP_NAME}
-          style={[styles.mark, { transform: [{ translateY: lift }] }]}
-        >
+      <View testID="welcome-stage" pointerEvents="none" style={[styles.stage, { paddingTop: insets.top }]}>
+        <View testID="welcome-above" style={styles.above} />
+        <View testID="welcome-mark" accessible accessibilityRole="image" accessibilityLabel={APP_NAME} style={styles.mark}>
           <Image testID="welcome-mark-art" source={WELCOME_MARK} contentFit="contain" accessible={false} style={styles.markArt} />
         </View>
+        <View testID="welcome-below" style={styles.below} />
       </View>
-      <View style={styles.words}>
-        <View testID="welcome-words" style={styles.wordsText} onLayout={(e: LayoutChangeEvent) => setWordsTop(e.nativeEvent.layout.y)}>
+      <View testID="welcome-words" style={styles.words}>
+        <View style={styles.wordsText}>
           <Text
             variant="display"
             tone="textOnAccent"
@@ -102,10 +91,13 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  stage: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
-  mark: { width: MARK.width, maxWidth: '100%', aspectRatio: MARK.width / MARK.height },
-  markArt: { width: '100%', height: '100%' },
-  words: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: WORDS.side, paddingBottom: BUTTONS.wordsAbove },
+  /** Fills the room above the words; the mark and its two equal spacers share it. */
+  stage: { flex: 1, alignItems: 'center' },
+  above: { flex: 1 },
+  below: { flex: 1, minHeight: MARK_ABOVE_WORDS },
+  mark: { width: MARK.markWidth, height: MARK.markHeight, flexShrink: 0 },
+  markArt: { position: 'absolute', top: -MARK.pad, left: -MARK.pad, width: MARK.width, height: MARK.height },
+  words: { paddingHorizontal: WORDS.side, paddingBottom: BUTTONS.wordsAbove },
   wordsText: { gap: WORDS.between },
   buttons: { paddingHorizontal: layout.gutter, gap: BUTTONS.between },
 });
