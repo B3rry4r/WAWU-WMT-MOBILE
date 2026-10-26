@@ -41,11 +41,19 @@ let walletState = 'open';
 /** The bank does not answer the naira balance: `503 provider_unreachable`, in the provider's own flavour of words. */
 let balanceDown = false;
 let sent: string[] = [];
+/** While set, the Hub holds the answer to "open an account" until it is released (the real call takes about ten seconds). */
+let gate: Promise<void> | null = null;
+/** When set, the Hub refuses "open an account" with this status. */
+let refuseOpen: number | null = null;
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
   sent.push(`${request.method} ${path}`);
+  if (request.method === 'POST' && path === '/money/fx/accounts') {
+    if (gate) await gate;
+    if (refuseOpen) return json(refuseOpen, { statusCode: refuseOpen, message: 'The provider declined', data: null, reason: { code: 'provider_declined', message: 'Nuvion declined on dev.' } });
+  }
   const fx = await fxFetch(request, path);
   if (fx) return fx;
   if (path === '/money/wallet') {
@@ -88,9 +96,12 @@ beforeEach(() => {
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, retry: false, gcTime: 0 } });
   Dimensions.set({ window: { width: 390, height: 844, scale: 2, fontScale: 1 } });
   resetFxHub();
+  (require('../fx/opening') as typeof import('../fx/opening')).resetOpening();
   walletState = 'open';
   balanceDown = false;
   sent = [];
+  gate = null;
+  refuseOpen = null;
   mockCopied.length = 0;
   mockPushed.length = 0;
   mockVault.clear();
@@ -150,6 +161,50 @@ describe('the tab strip reaches every currency (FX-POLISH P1)', () => {
     await rtl.fireEvent.press(await rtl.screen.findByTestId('add-currency-USDC'));
     expect(mockPushed).toEqual([{ pathname: '/crypto-receive', params: { coin: 'USDC' } }]);
     expect(hub.opened).toEqual([]);
+  });
+
+  it('shows the pick is opening at once: the tab in front says so, and the same currency is not offered or opened twice (L1)', async () => {
+    hub.accounts = [usdAccount];
+    let release: () => void = () => undefined;
+    gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('wallet-tab-add'));
+    const pound = await rtl.screen.findByTestId('add-currency-GBP');
+    // A double tap: both presses reach the handler the sheet drew, before anything is drawn again.
+    await rtl.act(async () => {
+      await rtl.fireEvent.press(pound);
+      await rtl.fireEvent.press(pound);
+    });
+    // The call is still out, and already the pound tab is in front and says it is opening.
+    expect(rtl.screen.getByTestId('wallet-tab-GBP').props.accessibilityState.selected).toBe(true);
+    expect(await rtl.screen.findByTestId('fx-opening')).toBeTruthy();
+    expect(rtl.screen.getByText('Your pound account is opening')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('fx-none')).toBeNull();
+    expect(sent.filter((s) => s === 'POST /money/fx/accounts')).toHaveLength(1);
+    // Asking for the choice again does not offer it.
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-tab-add'));
+    expect(await rtl.screen.findByTestId('add-currency-EUR')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('add-currency-GBP')).toBeNull();
+    await rtl.act(async () => {
+      release();
+    });
+    await rtl.waitFor(() => expect(hub.opened).toEqual([{ currency: 'GBP' }]));
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('fx-opening')).toBeTruthy());
+    expect(sent.filter((s) => s === 'POST /money/fx/accounts')).toHaveLength(1);
+  });
+
+  it('puts the opening cue away and offers the currency again when the Hub could not open it (L1)', async () => {
+    hub.accounts = [usdAccount];
+    refuseOpen = 409;
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('wallet-tab-add'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('add-currency-GBP'));
+    expect(await rtl.screen.findByTestId('add-currency-problem')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('fx-opening')).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-tab-add'));
+    expect(await rtl.screen.findByTestId('add-currency-GBP')).toBeTruthy();
   });
 
   it('draws no + Add when there is nothing the person can add (the Hub has opening accounts off)', async () => {
@@ -245,6 +300,48 @@ describe('Accounts and currencies (D3)', () => {
     expect(rtl.screen.getByTestId(`accounts-${USD_ID}-balance`).props.children).toBe('$1,240.50');
     expect(rtl.screen.getByText('USDT on Ethereum')).toBeTruthy();
     expect(rtl.screen.getByText('320.00 USDT')).toBeTruthy();
+  });
+
+  it('shows the Naira wallet with the bank\'s own figure, as the other rows show theirs (L2)', async () => {
+    hub.accounts = [usdAccount];
+    await bootAccounts();
+    expect((await rtl.screen.findByTestId('accounts-naira-balance')).props.children).toBe('₦485,250.75');
+    expect(rtl.screen.getByTestId(`accounts-${USD_ID}-balance`).props.children).toBe('$1,240.50');
+  });
+
+  it('draws no Naira figure while the bank does not answer, and no 0 in its place (L2)', async () => {
+    hub.accounts = [usdAccount];
+    balanceDown = true;
+    await bootAccounts();
+    await rtl.screen.findByTestId('accounts-naira');
+    await rtl.waitFor(() => expect(sent).toContain('GET /money/wallet/balance'));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(rtl.screen.queryByTestId('accounts-naira-balance')).toBeNull();
+  });
+
+  it('draws the pick as an Opening row at once, and offers it no more (L1)', async () => {
+    hub.accounts = [usdAccount];
+    let release: () => void = () => undefined;
+    gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await bootAccounts();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('accounts-add'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('add-currency-GBP'));
+    const row = await rtl.screen.findByTestId('accounts-opening-GBP');
+    expect(rtl.within(row).getByText('Pound account')).toBeTruthy();
+    expect(rtl.within(row).getByText('Opening')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('accounts-add'));
+    expect(await rtl.screen.findByTestId('add-currency-EUR')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('add-currency-GBP')).toBeNull();
+    await rtl.act(async () => {
+      release();
+    });
+    await rtl.waitFor(() => expect(rtl.screen.queryByTestId('accounts-opening-GBP')).toBeNull());
+    expect(rtl.within(rtl.screen.getByTestId(`accounts-a0000000-0000-4000-8000-00000000101`)).getByText('Opening')).toBeTruthy();
+    expect(hub.opened).toEqual([{ currency: 'GBP' }]);
   });
 
   it('opens Add a currency from its button while the Hub offers one, and draws no button when it offers none', async () => {

@@ -3,7 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useSession } from '@/api/session';
 import { AccountsScreen } from '@/features/wallet/accounts/AccountsScreen';
 
-/** Accounts and currencies (`/accounts`): opened from Wallet settings, which draws its row only with a wallet open. Signed in only. */
+/** Accounts and currencies (`/accounts`): opened from Wallet settings and from Settings, which draw their rows only with a wallet open. Signed in only. */
 export default function AccountsRoute() {
   const router = useRouter();
   const { status } = useSession();

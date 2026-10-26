@@ -105,8 +105,8 @@ export function WalletScreen({ add }: { add?: string } = {}) {
   const activeTab = fx.tabs.some((t) => t.key === wanted) ? wanted : NAIRA_TAB;
   const [hidden, setHidden] = useState(false);
   const [pulled, setPulled] = useState(false);
-  // The strip's last item: "+ Add" opens the add-a-currency choice; a currency opened from it is the tab in front (FX-POLISH P1).
-  const adder = useAddCurrency(tabbed ? owner : null, setTab);
+  // The strip's last item: "+ Add" opens the add-a-currency choice; a currency picked there is the tab in front from the pick, saying it is opening (P1, L1).
+  const adder = useAddCurrency(tabbed ? owner : null, setTab, setTab);
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];

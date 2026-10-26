@@ -20,6 +20,7 @@ import { chainList, SHORT_NAME, WORD, WORDS, type FxCode } from './amount';
 import { openAccount, transactionsQuery, type FxAccount, type FxCurrencies, type FxTransaction } from './api';
 import { FxDetailsSheet } from './FxDetailsSheet';
 import { FxBalanceCard } from './FxBalanceCard';
+import { beginOpening, endOpening, useOpening } from './opening';
 import {
   accountsIn,
   canOpen,
@@ -103,7 +104,7 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   const name = SHORT_NAME[code];
 
   if (!account) {
-    return <OpenCard code={code} allowed={canOpen(props.currencies, code)} onOpened={props.onRetry} />;
+    return <OpenCard code={code} owner={props.owner} allowed={canOpen(props.currencies, code)} />;
   }
   if (account.status === 'opening') {
     return (
@@ -150,21 +151,33 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   );
 }
 
-/** The one thing a person with no account in a currency can do: open it, when the Hub lets them. Never a button for a switched-off one. */
-function OpenCard({ code, allowed, onOpened }: { code: FxCode; allowed: boolean; onOpened: () => void }) {
-  const [busy, setBusy] = useState(false);
+/**
+ * The one thing a person with no account in a currency can do: open it, when the Hub lets them. Never a button for a switched-off one.
+ * From the ask (here, or from "Add a currency") until the Hub has answered and the accounts are read again it says the account is opening
+ * (FX-POLISH L1), and it cannot be asked for twice.
+ */
+function OpenCard({ code, owner, allowed }: { code: FxCode; owner: string | null; allowed: boolean }) {
+  const key = owner ?? '';
+  const opening = useOpening(owner).has(code);
   const [problem, setProblem] = useState<string | null>(null);
   if (!allowed) return null;
+  if (opening) {
+    return (
+      <Card style={styles.state}>
+        <EmptyState testID="fx-opening" icon="Clock" title={`Your ${WORD[code]} account is opening`} message="It takes a short while." />
+      </Card>
+    );
+  }
   const open = async () => {
-    setBusy(true);
+    if (!beginOpening(key, code)) return;
     setProblem(null);
     try {
       await openAccount(code);
-      onOpened();
+      await queryClient.invalidateQueries({ queryKey: ['money', 'fx'] });
     } catch (error) {
       setProblem(sentenceOf(error, 'We couldn’t open it. Try again.'));
     } finally {
-      setBusy(false);
+      endOpening(key, code);
     }
   };
   return (
@@ -174,7 +187,7 @@ function OpenCard({ code, allowed, onOpened }: { code: FxCode; allowed: boolean;
         icon="Wallet"
         title={`Open a ${WORD[code]} account`}
         message={problem ?? `Get paid in ${WORDS[code]}, hold them, and swap to naira when you want.`}
-        action={{ label: busy ? 'Opening' : `Open ${WORD[code]} account`, onPress: () => void open() }}
+        action={{ label: `Open ${WORD[code]} account`, onPress: () => void open() }}
         actionVariant="primary"
       />
     </Card>

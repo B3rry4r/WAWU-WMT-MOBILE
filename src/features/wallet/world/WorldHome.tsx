@@ -148,6 +148,8 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
           available: options.length > 0,
           options: [...more.map((c) => ({ value: c.code as FxCode, label: c.name, coin: false })), ...coins],
           accounts: fxAccounts.data ?? null,
+          // This screen has its own picker, whose button shows a spinner while the account is opening and takes no second tap.
+          opening: new Set<FxCode>(),
           show: () => setPicking(true),
           sheet: null,
           notice: null,
