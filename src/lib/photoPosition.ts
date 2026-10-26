@@ -21,8 +21,9 @@ export type Placement = { left: number; top: number; width: number; height: numb
 
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 4;
-const RATIO_MIN = 0.05;
-const RATIO_MAX = 20;
+/** The shapes a photo can be placed in: from 1 wide to 5 tall to 5 wide to 1 tall. Past that it is drawn centred (the Hub refuses a position beyond this too). */
+export const RATIO_MIN = 0.2;
+export const RATIO_MAX = 5;
 
 const NAME = 'wmt-pos';
 const NUMBER = '(\\d+(?:\\.\\d+)?)';
@@ -54,8 +55,11 @@ export function withPhotoPosition(uri: string, position: PhotoPosition | null): 
   return position ? `${splitPhotoLink(uri).uri}#${formatPhotoPosition(position)}` : splitPhotoLink(uri).uri;
 }
 
+/** Whether a photo of this shape can be given a position. */
+export const canPlace = (ratio: number): boolean => within(ratio, RATIO_MIN, RATIO_MAX);
+
 /** The photo as it first shows: filling the frame, its middle at the frame's middle. */
-export const centred = (ratio: number): PhotoPosition => ({ x: 0.5, y: 0.5, zoom: ZOOM_MIN, ratio: within(ratio, RATIO_MIN, RATIO_MAX) ? ratio : 1 });
+export const centred = (ratio: number): PhotoPosition => ({ x: 0.5, y: 0.5, zoom: ZOOM_MIN, ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1 });
 
 export const isCentred = (position: PhotoPosition): boolean => position.zoom === ZOOM_MIN && position.x === 0.5 && position.y === 0.5;
 
@@ -113,3 +117,28 @@ export function movedBy(frame: Frame, position: PhotoPosition, dx: number, dy: n
 export function zoomedTo(frame: Frame, position: PhotoPosition, zoom: number): PhotoPosition {
   return clampPosition(frame, { ...position, zoom });
 }
+
+/**
+ * The position at a new zoom, about `point` (in the frame's own pixels, from its top left corner; it may lie outside the frame):
+ * the part of the photo under that point stays under it, as when a thumb and finger pinch on a spot of a photo.
+ */
+export function zoomedAbout(frame: Frame, position: PhotoPosition, zoom: number, point: { x: number; y: number }): PhotoPosition {
+  const before = shown(frame, position);
+  const next = { ...position, zoom: clamp(zoom, ZOOM_MIN, ZOOM_MAX) };
+  const after = shown(frame, next);
+  return clampPosition(frame, {
+    ...next,
+    x: position.x + (point.x - frame.width / 2) * (1 / before.width - 1 / after.width),
+    y: position.y + (point.y - frame.height / 2) * (1 / before.height - 1 / after.height),
+  });
+}
+
+/**
+ * How much one turn of a mouse wheel, or one frame of a trackpad pinch (the browser sends it as a wheel with the control key
+ * down), multiplies the zoom by. Up or an opening pinch (negative `deltaY`) zooms in. `deltaMode` 1 counts lines, as Firefox sends.
+ */
+export function wheelZoomFactor(deltaY: number, deltaMode: number, pinch: boolean): number {
+  const pixels = deltaMode === 1 ? deltaY * 16 : deltaY;
+  return Math.exp(-pixels * (pinch ? 0.01 : 0.0025));
+}
+

@@ -7,6 +7,7 @@ import { font, radius, space, useWawu, type GradientToken } from '@/theme';
 
 import { Button } from './Button';
 import { useFocusRing } from './focusRing';
+import { PositionedImage } from './PositionedImage';
 import { Text } from './Text';
 
 /** Sizes from the unlock sheet (design/_gen/home.js `unlockSheet`) and the Explore cards the loading view stands in for. */
@@ -204,10 +205,19 @@ export function MediaCard({
           {placeholder}
         </View>
       ) : null}
-      {hasPicture ? (
+      {hasPicture && typeof src === 'string' ? (
+        // A person's picture (a creator card, the pay sheet's header) carries where they placed it (R-96); any other link has none and is cover-fitted as before.
+        <PositionedImage
+          testID={testID ? `${testID}-image` : undefined}
+          uri={src}
+          frame={typeof frame.width === 'number' && typeof frame.height === 'number' ? { width: frame.width, height: frame.height } : undefined}
+          accessibilityLabel={imageLabel}
+          accessible={Boolean(imageLabel)}
+        />
+      ) : hasPicture ? (
         <Image
           testID={testID ? `${testID}-image` : undefined}
-          source={typeof src === 'string' ? { uri: src } : src}
+          source={src}
           accessibilityLabel={imageLabel}
           accessible={Boolean(imageLabel)}
           contentFit="cover"

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { Image as NativeImage } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -62,14 +63,14 @@ describe('/photo-position (R-96)', () => {
     expect(screen.getAllByTestId('redirect').length).toBeGreaterThan(0);
   });
 
-  it('a user who places the profile picture and presses Done leaves the form holding the link with its position, and goes back', async () => {
+  it('a user who repositions the profile picture and presses Save leaves the form holding the link with its position, and goes back', async () => {
     draft.ensureDraft('u1', form);
     await render(frame(<PhotoPositionRoute />));
     await screen.findByTestId('position-stage');
-    await fireEvent.press(screen.getByTestId('position-zoom-in'));
-    await fireEvent.press(screen.getByTestId('position-zoom-in'));
-    await fireEvent.press(screen.getByTestId('position-left'));
-    await fireEvent.press(screen.getByTestId('position-done'));
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('position-pinch'), [{ scale: 1 }, { scale: 1.5 }, { scale: 1.5 }]);
+    });
+    await fireEvent.press(screen.getByTestId('position-save'));
     const link = draft.readDraft()?.form.avatarUrl ?? '';
     expect(link.startsWith(`${AVATAR}#wmt-pos=`)).toBe(true);
     expect(link).toMatch(/#wmt-pos=[\d.]+,[\d.]+,1\.5,1\.5$/);
@@ -78,14 +79,76 @@ describe('/photo-position (R-96)', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
-  it('a user who goes back without Done leaves the form as it was', async () => {
+  it('a user who presses Cancel leaves the form as it was', async () => {
     draft.ensureDraft('u1', form);
     await render(frame(<PhotoPositionRoute />));
     await screen.findByTestId('position-stage');
-    await fireEvent.press(screen.getByTestId('position-zoom-in'));
-    await fireEvent.press(screen.getByTestId('position-back'));
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('position-pinch'), [{ scale: 1 }, { scale: 1.5 }, { scale: 1.5 }]);
+    });
+    await fireEvent.press(screen.getByTestId('position-cancel'));
     expect(draft.readDraft()?.form.avatarUrl).toBe(AVATAR);
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
-});
 
+  describe('a photo just chosen from the phone', () => {
+    const place = jest.fn();
+    const discard = jest.fn();
+    beforeEach(() => {
+      place.mockReset();
+      discard.mockReset();
+      draft.ensureDraft('u1', form);
+      draft.holdPendingPhoto({
+        kind: 'avatar',
+        picked: { blob: new Blob(['x']), contentType: 'image/jpeg', extension: 'jpg', previewUri: 'file:///cache/new.jpg', discard },
+        place,
+      });
+    });
+    afterEach(() => draft.dropPendingPhoto());
+
+    it('is shown from the phone, and Save hands its position on for the upload while the form still holds the old picture', async () => {
+      await render(frame(<PhotoPositionRoute />));
+      await screen.findByTestId('position-stage');
+      expect(screen.getByTestId('position-image').props.source).toEqual([{ uri: 'file:///cache/new.jpg' }]);
+      await act(async () => {
+        fireGestureHandler(getByGestureTestId('position-pinch'), [{ scale: 1 }, { scale: 2 }, { scale: 2 }]);
+      });
+      await fireEvent.press(screen.getByTestId('position-save'));
+      expect(place).toHaveBeenCalledTimes(1);
+      expect(place.mock.calls[0][0]).toMatchObject({ zoom: 2, ratio: 1.5 });
+      expect(draft.readPendingPhoto()).toBeNull();
+      expect(discard).not.toHaveBeenCalled();
+      expect(draft.readDraft()?.form.avatarUrl).toBe(AVATAR);
+      expect(mockBack).toHaveBeenCalledTimes(1);
+    });
+
+    it('Save on a photo left alone places it centred', async () => {
+      await render(frame(<PhotoPositionRoute />));
+      await screen.findByTestId('position-stage');
+      await fireEvent.press(screen.getByTestId('position-save'));
+      expect(place).toHaveBeenCalledWith(null);
+    });
+
+    it('Cancel drops the photo, uploads nothing and keeps the old picture', async () => {
+      await render(frame(<PhotoPositionRoute />));
+      await screen.findByTestId('position-stage');
+      await fireEvent.press(screen.getByTestId('position-cancel'));
+      expect(place).not.toHaveBeenCalled();
+      expect(draft.readPendingPhoto()).toBeNull();
+      expect(discard).toHaveBeenCalledTimes(1);
+      expect(draft.readDraft()?.form.avatarUrl).toBe(AVATAR);
+      expect(mockBack).toHaveBeenCalledTimes(1);
+    });
+
+    it('a photo chosen for the cover is not the profile picture\'s: Reposition of the avatar shows the avatar', async () => {
+      draft.holdPendingPhoto({
+        kind: 'cover',
+        picked: { blob: new Blob(['x']), contentType: 'image/jpeg', extension: 'jpg', previewUri: 'file:///cache/cover.jpg' },
+        place,
+      });
+      await render(frame(<PhotoPositionRoute />));
+      await screen.findByTestId('position-stage');
+      expect(screen.getByTestId('position-image').props.source).toEqual([{ uri: AVATAR }]);
+    });
+  });
+});

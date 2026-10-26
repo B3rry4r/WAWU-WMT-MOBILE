@@ -20,7 +20,7 @@ import { profileLink, readableLink } from '@/lib/appLinks';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { changeHandle, fetchFieldsWithPlace, fetchMe, fieldsKey, meKey, patchFields, patchMe } from './api';
-import { clearDraft, ensureDraft, rebaseDraft, updateDraft, useDraft } from './draft';
+import { clearDraft, dropPendingPhoto, ensureDraft, holdPendingPhoto, rebaseDraft, updateDraft, useDraft } from './draft';
 import { ScreenFrame } from '@/components/ScreenFrame';
 import { PICK_FAILED, handleFailure, readFailure, saveFailure, uploadFailure, type SaveFailure } from './failure';
 import { addedOf, changesOf, formFrom, hasProblems, heldCountry, isDirty, problemsOf, rebased, type ProfileForm } from './form';
@@ -28,7 +28,7 @@ import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { ExperienceSection, SkillsSection, useSkillInput } from './AboutSections';
 import { PictureHeader } from './PictureHeader';
-import { splitPhotoLink, withPhotoPosition } from '@/lib/photoPosition';
+import { splitPhotoLink, withPhotoPosition, type PhotoPosition } from '@/lib/photoPosition';
 import { roleLinesOf } from '@/features/me/model';
 import { addSkill } from './skills';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
@@ -119,10 +119,13 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
   return <EditForm {...props} account={me.data.wawuUserId} initial={formFrom(me.data, fields.data)} roles={roleLinesOf(me.data.experience ?? [])} />;
 }
 
-/** What M8 draws for a picture: the photo just chosen (shown before it is up) wears the position the form's link holds, so Reposition shows at once. */
-function shownLink(preview: string | undefined, link: string | null): string | null {
+/**
+ * What M8 draws for a picture: the photo just chosen (shown before it is up) wears the position it was placed at while it goes up,
+ * and after that the one the form's link holds, so Reposition shows at once.
+ */
+function shownLink(preview: string | undefined, link: string | null, placing: PhotoPosition | null | undefined): string | null {
   if (!preview) return link;
-  return withPhotoPosition(preview, link ? splitPhotoLink(link).position : null);
+  return withPhotoPosition(preview, placing !== undefined ? placing : link ? splitPhotoLink(link).position : null);
 }
 
 type FormProps = EditProfileScreenProps & { account: string; initial: ProfileForm; roles: ReturnType<typeof roleLinesOf> };
@@ -138,6 +141,8 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
   const [failure, setFailure] = useState<SaveFailure>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<'avatar' | 'cover' | null>(null);
+  // Where the picture on its way up was placed: it shows there until its link replaces the old one.
+  const [placing, setPlacing] = useState<{ kind: 'avatar' | 'cover'; position: PhotoPosition | null } | null>(null);
   const [previews, setPreviews] = useState<{ avatar?: string; cover?: string }>({});
   const [leaving, setLeaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -216,6 +221,33 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
     if (save.isError) save.reset();
   };
 
+  /**
+   * Uploads a chosen picture and puts its link, with the position the person placed it at, in the form. The picture shows in the
+   * header at that position while it goes up.
+   */
+  const upload = async (kind: 'avatar' | 'cover', picked: PickedImage, position: PhotoPosition | null) => {
+    const folder: PictureFolder = kind === 'avatar' ? 'avatars' : 'profile/cover';
+    setUploadError(null);
+    setUploading(kind);
+    setPlacing({ kind, position });
+    const before = previews[kind];
+    setPreviews((current) => ({ ...current, [kind]: picked.previewUri }));
+    try {
+      const url = await uploadPicture(folder, picked);
+      // On a phone the app's own copy is deleted once it is up (SHARED-04, F3), so the preview is the uploaded picture.
+      const preview = picked.discard ? url : picked.previewUri;
+      setPreviews((current) => ({ ...current, [kind]: preview }));
+      edit((current) => ({ ...current, [kind === 'avatar' ? 'avatarUrl' : 'coverUrl']: withPhotoPosition(url, position) }));
+    } catch (error) {
+      // The picture did not go up: the one that was there stays.
+      setPreviews((current) => ({ ...current, [kind]: before }));
+      setUploadError(uploadFailure(error));
+    } finally {
+      setUploading(null);
+      setPlacing(null);
+    }
+  };
+
   const choose = async (kind: 'avatar' | 'cover') => {
     let picked: PickedImage | null;
     try {
@@ -226,22 +258,20 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
       return;
     }
     if (!picked) return;
-    const folder: PictureFolder = kind === 'avatar' ? 'avatars' : 'profile/cover';
-    setUploadError(null);
-    setUploading(kind);
-    try {
-      const url = await uploadPicture(folder, picked);
-      // On a phone the app's own copy is deleted once it is up (SHARED-04, F3), so the preview is the uploaded picture.
-      const preview = picked.discard ? url : picked.previewUri;
-      setPreviews((current) => ({ ...current, [kind]: preview }));
-      // A new photo starts centred: its link carries no position. The person then places it, or leaves it as it is.
-      edit((current) => ({ ...current, [kind === 'avatar' ? 'avatarUrl' : 'coverUrl']: url }));
-      onPositionPhoto?.(kind);
-    } catch (error) {
-      setUploadError(uploadFailure(error));
-    } finally {
-      setUploading(null);
+    if (!onPositionPhoto) {
+      await upload(kind, picked, null);
+      return;
     }
+    // A new photo opens the position screen at once, from the phone (R-96). Its Save uploads it, placed; its Cancel drops it and the
+    // old picture stays.
+    holdPendingPhoto({ kind, picked, place: (position) => void upload(kind, picked, position) });
+    onPositionPhoto(kind);
+  };
+
+  /** "Reposition" on a picture already set: nothing is being chosen, so no photo waits. */
+  const reposition = (kind: 'avatar' | 'cover') => {
+    dropPendingPhoto();
+    onPositionPhoto?.(kind);
   };
 
   // Fields lock only while the request is on its way; Save stays off once it has gone through.
@@ -280,13 +310,13 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
         {banner ? <Banner tone="danger" title="That did not work" body={banner} testID="edit-banner" /> : null}
         <PictureHeader
           name={form.name}
-          avatarUri={shownLink(previews.avatar, form.avatarUrl)}
-          coverUri={shownLink(previews.cover, form.coverUrl)}
+          avatarUri={shownLink(previews.avatar, form.avatarUrl, placing?.kind === 'avatar' ? placing.position : undefined)}
+          coverUri={shownLink(previews.cover, form.coverUrl, placing?.kind === 'cover' ? placing.position : undefined)}
           canPick={canPickImage}
           busy={uploading}
           onPickAvatar={() => void choose('avatar')}
           onPickCover={() => void choose('cover')}
-          onReposition={onPositionPhoto}
+          onReposition={onPositionPhoto ? reposition : undefined}
         />
         <AuthField
           scrollRef={scrollRef}

@@ -1,4 +1,23 @@
-import { ZOOM_MAX, ZOOM_MIN, centred, clampPosition, formatPhotoPosition, isCentred, movedBy, placement, settled, splitPhotoLink, withPhotoPosition, zoomedTo, type Frame } from '@/lib/photoPosition';
+import {
+  RATIO_MAX,
+  RATIO_MIN,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  canPlace,
+  centred,
+  clampPosition,
+  formatPhotoPosition,
+  isCentred,
+  movedBy,
+  placement,
+  settled,
+  splitPhotoLink,
+  wheelZoomFactor,
+  withPhotoPosition,
+  zoomedAbout,
+  zoomedTo,
+  type Frame,
+} from '@/lib/photoPosition';
 
 /** R-96: where a person put their picture in its frame. The fragment matches the Hub's, and the placement never uncovers the frame. */
 const square: Frame = { width: 100, height: 100 };
@@ -18,6 +37,20 @@ describe('the position in a picture link', () => {
     expect(splitPhotoLink('https://h/a.jpg#wmt-pos=0.5,0.5,9,1').position).toBeNull();
     expect(splitPhotoLink('https://h/a.jpg#wmt-pos=0.5,0.5,9,1').uri).toBe('https://h/a.jpg');
     expect(splitPhotoLink('https://h/a.jpg#top').position).toBeNull();
+  });
+
+  it('draws a photo whose declared shape is far from any real photo centred, never as a huge stretched element', () => {
+    // The shape that drew a 384 by 7680 avatar on Me.
+    expect(splitPhotoLink('https://h/a.jpg#wmt-pos=0.5,0.5,4,0.05').position).toBeNull();
+    expect(splitPhotoLink('https://h/a.jpg#wmt-pos=0.5,0.5,4,20').position).toBeNull();
+    expect(splitPhotoLink(`https://h/a.jpg#wmt-pos=0.5,0.5,4,${RATIO_MIN}`).position?.ratio).toBe(RATIO_MIN);
+    expect(splitPhotoLink(`https://h/a.jpg#wmt-pos=0.5,0.5,4,${RATIO_MAX}`).position?.ratio).toBe(RATIO_MAX);
+    expect(canPlace(0.1)).toBe(false);
+    expect(canPlace(0.75)).toBe(true);
+    // The largest a placed photo can be is its range at the greatest zoom: twenty times the frame, never more.
+    const tallest = placement(square, { x: 0.5, y: 0.5, zoom: ZOOM_MAX, ratio: RATIO_MIN });
+    expect(tallest.height).toBeLessThanOrEqual(20 * square.height);
+    expect(tallest.width).toBe(ZOOM_MAX * square.width);
   });
 
   it('writes the exact fragment the Hub stores, and one position at most', () => {
@@ -98,6 +131,36 @@ describe('placing a picture in a frame', () => {
     const other = settled(banner, { x: 0.3333333, y: 0.6666667, zoom: 1.2345678, ratio: 1.5 });
     expect(Number.isInteger(Math.round(other.x * 1e8) / 1e4)).toBe(true);
     expect(other.zoom).toBe(1.235);
+  });
+
+  it('zooms about the spot under the fingers, which stays under them', () => {
+    const start = { x: 0.5, y: 0.5, zoom: 1, ratio: 1 };
+    const spot = { x: 75, y: 25 };
+    const zoomed = zoomedAbout(square, start, 2, spot);
+    expect(zoomed.zoom).toBe(2);
+    // The part of the photo that was under the spot is under it still.
+    const before = placement(square, start);
+    const after = placement(square, zoomed);
+    expect((spot.x - before.left) / before.width).toBeCloseTo((spot.x - after.left) / after.width, 6);
+    expect((spot.y - before.top) / before.height).toBeCloseTo((spot.y - after.top) / after.height, 6);
+    // About the middle it is the same as zooming in place.
+    expect(zoomedAbout(square, start, 2, { x: 50, y: 50 })).toEqual(zoomedTo(square, start, 2));
+    // A spot in a corner cannot uncover the frame: the photo stops at its edge.
+    const corner = zoomedAbout(square, start, 4, { x: 0, y: 0 });
+    const box = placement(square, corner);
+    expect(box.left).toBeLessThanOrEqual(0);
+    expect(box.top).toBeLessThanOrEqual(0);
+    expect(box.left + box.width).toBeGreaterThanOrEqual(square.width);
+    expect(zoomedAbout(square, start, 99, spot).zoom).toBe(ZOOM_MAX);
+  });
+
+  it('turns a wheel or a trackpad pinch into a zoom: forward or opening zooms in, a pinch is more sensitive', () => {
+    expect(wheelZoomFactor(-100, 0, false)).toBeGreaterThan(1);
+    expect(wheelZoomFactor(100, 0, false)).toBeLessThan(1);
+    expect(wheelZoomFactor(0, 0, false)).toBe(1);
+    expect(wheelZoomFactor(-5, 0, true)).toBeGreaterThan(wheelZoomFactor(-5, 0, false));
+    // A line-counting wheel (Firefox) is scaled to pixels.
+    expect(wheelZoomFactor(-3, 1, false)).toBeCloseTo(wheelZoomFactor(-48, 0, false));
   });
 
   it('knows a photo that has not been moved or zoomed', () => {

@@ -1213,15 +1213,17 @@ here is redrawn.
 
 ### M8 · Edit profile, position a picture (PHOTO-POSITION, no artboard)
 - **Now:** a chosen profile picture or cover is drawn cover-fitted and centred, everywhere.
-- **Instead:** after a photo is chosen, and from a small "Reposition" pill beside each
-  picture already set (on the cover's bottom left, and to the right of the avatar), one screen
-  built from the app's own parts: the photo under the exact frame it will show in (the avatar's
-  circle, or the profile header's banner shape), the rest of the photo dimmed outside it. Drag to
-  move, pinch to zoom; a zoom slider with minus and plus buttons; four round move buttons; a
-  "Centre" button; "Done" in the bar. The photo can never be dragged off its edge, and zooms from
-  filling the frame to four times that. Every avatar and cover then shows that part of the photo.
-- **Why:** R-96 (owner, 26 Oct 2026). Not on the canvas, so it is drawn from the kit's round
-  buttons, the accent track and the page colours.
+- **Instead:** a choice, then one full-screen editor, as Facebook's and Instagram's profile picture editors are.
+  Tapping the profile picture on Edit profile opens a sheet with "Choose a new photo" and "Reposition" (with no
+  picture it goes straight to choosing one); the cover keeps a small glass "Reposition" beside its camera. Choosing
+  a photo opens the editor at once. The editor is a dark stage with the photo filling it, a clear circle (the
+  banner shape, for the cover) and the rest dimmed; one finger drags, two pinch (the wheel or a trackpad pinch on
+  the web). The bar is "Cancel", the title ("Profile picture" or "Cover photo") and "Save", nothing else, and a hint
+  "Drag to reposition" under the stage that fades after the first move. No slider, no plus or minus, no arrows, no
+  Centre. A screen reader gets the same moves as actions on the stage. The photo can never be dragged off its edge
+  and zooms from filling the frame to four times that. Every avatar and cover then shows that part of the photo.
+- **Why:** R-96 (owner, 26 Oct 2026; round 2 the same day, after the first version's slider and buttons). Not on
+  the canvas, so it is drawn from the camera page's dark ground, the accent and the page colours.
 
 ## Not built at launch
 
