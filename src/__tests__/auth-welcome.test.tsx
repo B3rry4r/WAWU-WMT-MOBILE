@@ -18,6 +18,7 @@ import { resetSessionForTests, signIn, signOut } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { AccountTypeScreen, pickByKey } from '@/features/auth/AccountTypeScreen';
 import { pickedAccountType, clearAccountType } from '@/features/auth/accountType';
+import { darkColors } from '@/theme/tokens.generated';
 
 const mockVault = new Map<string, string>();
 
@@ -93,23 +94,40 @@ describe('A1: welcome', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
-  it.each(['light', 'dark'] as const)('a user sees the website picture as the cover, under the shade, in the %s theme (BRAND-01)', async (scheme) => {
+  it.each(['light', 'dark'] as const)('a user sees the vertical mark with its glow in the middle of the dark page, and no logo strip or photo, in the %s theme (R-90)', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    const cover = native.getByTestId('welcome-cover', { includeHiddenElements: true });
-    expect([cover.props.source].flat()[0]).toEqual(require('../../assets/images/welcome-cover.jpg'));
-    expect(cover.props.contentFit).toBe('cover');
-    const style = StyleSheet.flatten(cover.props.style);
-    expect(style).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 });
-    // The picture is the first thing drawn in the screen, so the shade, the words and the buttons are over it.
     const root = native.getByTestId('welcome');
-    const layers = [...root.props.children]
-      .flat()
-      .filter(Boolean)
-      .map((child: { props: { testID?: string; colors?: unknown } }) => child.props.testID ?? (child.props.colors ? 'shade' : 'other'))
-      .filter((layer: string) => layer !== 'other');
-    expect(layers.slice(0, 2)).toEqual(['welcome-cover', 'shade']);
+    expect(StyleSheet.flatten(root.props.style).backgroundColor).toBe(darkColors.surfacePage);
+    // One picture of the mark, glow included, drawn from the pre-rendered file.
+    const art = native.getByTestId('welcome-mark-art', { includeHiddenElements: true });
+    expect([art.props.source].flat()[0]).toEqual(require('../../assets/images/welcome-mark.png'));
+    expect(art.props.contentFit).toBe('contain');
+    expect(screen.getAllByRole('image', { name: 'Who Made This?' })).toHaveLength(1);
+    // Centred on both axes, over the whole screen, and out of the way of the buttons.
+    const stage = native.getByTestId('welcome-mark').parent;
+    expect(StyleSheet.flatten(stage?.props.style)).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' });
+    expect(stage?.props.pointerEvents).toBe('none');
+    // No photo, no gradient laid over one, and the horizontal logo is gone.
+    expect(native.queryByTestId('welcome-cover', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('a user on a short phone sees the mark kept clear of the headline, and on a tall one exactly in the middle', async () => {
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    const layoutOf = (testID: string, layout: { y: number; height: number }) =>
+      act(() => {
+        fireEvent(native.getByTestId(testID), 'layout', { nativeEvent: { layout: { x: 0, width: 390, ...layout } } });
+      });
+    const liftOf = () => StyleSheet.flatten(native.getByTestId('welcome-mark').props.style).transform[0].translateY as number;
+    await layoutOf('welcome', { y: 0, height: 844 });
+    await layoutOf('welcome-words', { y: 572, height: 136 });
+    expect(liftOf()).toBe(0);
+    await layoutOf('welcome', { y: 0, height: 667 });
+    await layoutOf('welcome-words', { y: 389, height: 136 });
+    // Its lower edge (middle 333.5 + 103.5 = 437) is pulled up to 16 above the headline at 389.
+    expect(liftOf()).toBeCloseTo(389 - 16 - 437, 5);
   });
 
   it('says nothing that no source backs: no bank claim', async () => {
