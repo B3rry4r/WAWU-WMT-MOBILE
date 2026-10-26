@@ -22,6 +22,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } fr
 
 import { NOTE_MAX, QUICK_AMOUNTS_KOBO, noteEcho, sentHeading, tipTitle, WALLET_NAME } from './model';
 import type { TipState } from './useTip';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** design/_gen/home.js `tipSheet`: the sheet's parts 14 apart, the chips 48 high with a 16 corner, the fields 50 high. */
 const SHEET_GAP = space.md + space.xs / 2;
@@ -226,10 +227,11 @@ export function TipSheets({
   onForgotPin: () => void;
 }) {
   const { flow, quote, target } = tip;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: tip.open, requote: flow.ask });
   if (!tip.open || !target) return null;
   if (flow.stage === 'paid') return <SentSheet tip={tip} />;
 
-  const short = quote !== null && tip.balanceKobo !== null && quote.payment.totalKobo > tip.balanceKobo;
+  const short = paySource === undefined && quote !== null && tip.balanceKobo !== null && quote.payment.totalKobo > tip.balanceKobo;
   const reviewing = flow.status.kind === 'review' && !short && flow.stage === null;
   const name = target.name?.trim() || 'this creator';
   return (
@@ -243,6 +245,7 @@ export function TipSheets({
           amountKobo={quote.amountKobo}
           amountLabel="Tip"
           fees={tip.fees}
+          source={paySource}
           wallet={tip.balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo: tip.balanceKobo }}
           walletName={WALLET_NAME}
           actionLabel="Tip"

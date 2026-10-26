@@ -7,6 +7,7 @@ import { WALLET_NAME } from '@/features/events/buyModel';
 
 import { approvalPurpose } from './model';
 import type { LegalFeePay } from './useLegalFeePay';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** S19's head draws the call's icon in a 44 accent tile before "Video consultation" (SWEEP-APP-4 row 140). */
 const LEAD_TILE = 44;
@@ -18,6 +19,7 @@ const LEAD_TILE = 44;
  */
 export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; title: string; subtitle: string; icon?: IconName }) {
   const quote = pay.quote;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: pay.payOpen, requote: pay.tryAgain });
   if (!quote) return null;
   const { payment } = quote;
   return (
@@ -27,6 +29,7 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
         item={{ title, subtitle, lead: icon ? <IconTile icon={icon} tone="accent" size={LEAD_TILE} /> : undefined }}
         amountKobo={payment.priceKobo}
         fees={pay.fees}
+        source={paySource}
         wallet={pay.wallet}
         walletName={WALLET_NAME}
         actionLabel="Pay"

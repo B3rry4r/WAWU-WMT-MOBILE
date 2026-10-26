@@ -46,6 +46,42 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
     wallet: open(48525075),
     status: { kind: 'review' },
   },
+  // PAY-FX (R-91): the same unlock bought from a dollar account. The naira price stays; the account, the firm amount and its fee come
+  // from the Hub's quote (these are example figures, not a rate).
+  usd: {
+    ...unlock,
+    fees: [],
+    wallet: { kind: 'loading' },
+    status: { kind: 'review' },
+    source: {
+      currency: 'USD',
+      accountName: 'USD account',
+      decimals: 2,
+      amountMinor: 190,
+      providerFeeMinor: 0,
+      wawuFeeMinor: 0,
+      availableMinor: 12050,
+      choices: [
+        { id: 'NGN', label: 'Naira wallet', selected: false },
+        { id: 'USD', label: 'USD account', selected: true },
+      ],
+      onRefresh: () => undefined,
+    },
+  },
+  'usd-short': {
+    ...unlock,
+    fees: [],
+    wallet: { kind: 'loading' },
+    status: { kind: 'review' },
+    source: { currency: 'USD', accountName: 'USD account', decimals: 2, amountMinor: 190, providerFeeMinor: 0, wawuFeeMinor: 0, availableMinor: 120, onRefresh: () => undefined },
+  },
+  'usd-expired': {
+    ...unlock,
+    fees: [],
+    wallet: { kind: 'loading' },
+    status: { kind: 'review' },
+    source: { currency: 'USD', accountName: 'USD account', decimals: 2, amountMinor: 190, providerFeeMinor: 0, wawuFeeMinor: 0, availableMinor: 12050, expired: true, onRefresh: () => undefined },
+  },
   send: {
     variant: 'send',
     item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },

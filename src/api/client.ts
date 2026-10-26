@@ -2,6 +2,7 @@ import createClient, { type Middleware } from 'openapi-fetch';
 
 import { apiBaseUrl } from './env';
 import { ApiError, networkError, NO_ANSWER_CODE, noAnswerError, toApiError } from './errors';
+import { paySourceCode } from './paySource';
 import { getAccessToken, isCurrentSessionToken, refreshAccessToken } from './session';
 import type { paths } from './schema.generated';
 
@@ -120,6 +121,17 @@ const auth: Middleware = {
   },
 };
 
+/** PAY-FX (R-91): the account that pays a wallet payment rides on one header every paying route reads; none is the naira wallet. */
+const paySource: Middleware = {
+  onRequest({ request }) {
+    const code = paySourceCode();
+    if (!code) return undefined;
+    request.headers.set('x-pay-source-currency', code);
+    return request;
+  },
+};
+
+api.use(paySource);
 api.use(auth);
 
 type Result<T, E> = { data?: T; error?: E; response: Response };

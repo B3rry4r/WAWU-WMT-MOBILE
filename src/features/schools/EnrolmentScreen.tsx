@@ -28,6 +28,7 @@ import { classRow, CLOSED_LINE, CLOSED_TITLE, CONFIRMING_LINE, CONFIRMING_TITLE,
 import { DetailRow, DetailsCard, EnrolBar, enrolMetrics } from './enrolParts';
 import { SchoolLogo } from './parts';
 import { useEnrolPay } from './useEnrolPay';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 export type EnrolmentScreenProps = {
   id: string;
@@ -150,6 +151,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
     onAddMoney: props.onAddMoney,
   });
   const sheet = pay.sheet;
+  const paySource = usePaySource({ payment: sheet?.payment ?? null, open: Boolean(sheet?.payOpen), requote: sheet?.tryAgain ?? (() => undefined) });
   const name = [me.data?.firstName, me.data?.lastName].filter(Boolean).join(' ');
   const school = enrolment.school.name;
   const when = shortDay(enrolment.intake.startDate);
@@ -204,6 +206,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
             amountKobo={sheet.payment.priceKobo}
             amountLabel="Course fee"
             fees={sheet.fees}
+            source={paySource}
             wallet={sheet.wallet}
             walletName={WALLET_NAME}
             actionLabel="Pay"

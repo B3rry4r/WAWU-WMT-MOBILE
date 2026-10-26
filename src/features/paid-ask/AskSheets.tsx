@@ -20,6 +20,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } fr
 
 import { heldLine, refundLine, shortLine, SHORT_TITLE, usualReplyLine, whoOf, windowLine } from './model';
 import { MAX_QUESTION, type AskState } from './useAsk';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** design/_gen/inbox.js `composeSheet`: the sheet's parts 16 apart; the head 12 between; the field 110 high, 18 corner, 14 by 16 inside, 15 on a 1.45 line; the three lines 10 apart with a 17 mark; the avatar 44. */
 const SHEET_GAP = space.lg;
@@ -199,6 +200,7 @@ export function AskSheets({
   onForgotPin: () => void;
 }) {
   const { flow, quote, target } = ask;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: ask.open, requote: flow.ask });
   if (!ask.open || !target) return null;
   const name = whoOf(target.name);
   const reviewing = flow.status.kind === 'review' && flow.stage === null;
@@ -213,6 +215,7 @@ export function AskSheets({
           amountKobo={quote.question.priceKobo}
           amountLabel="Question"
           fees={ask.fees}
+          source={paySource}
           wallet={ask.balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo: ask.balanceKobo }}
           walletName={WALLET_NAME}
           actionLabel="Send"

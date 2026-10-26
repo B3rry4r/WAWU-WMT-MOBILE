@@ -4,6 +4,7 @@ import { PayPinSheet } from '@/features/device-approval';
 
 import { WALLET_NAME } from './buyModel';
 import type { BuySheet } from './useTicketBuy';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /**
  * E3 · Pay and E4 · PIN, over E2. E3 is the shared pay sheet in its purchase form: the tickets, the bank's charge and WAWU's own
@@ -14,6 +15,7 @@ import type { BuySheet } from './useTicketBuy';
  */
 export function BuySheets({ sheet }: { sheet: BuySheet }) {
   const { order, payment } = sheet.quote;
+  const paySource = usePaySource({ payment, open: sheet.payOpen, requote: sheet.tryAgain });
   return (
     <>
       <PaySheet
@@ -22,6 +24,7 @@ export function BuySheets({ sheet }: { sheet: BuySheet }) {
         amountKobo={payment.priceKobo}
         amountLabel="Tickets"
         fees={sheet.fees}
+        source={paySource}
         wallet={sheet.wallet}
         walletName={WALLET_NAME}
         actionLabel="Pay"

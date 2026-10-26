@@ -20,6 +20,7 @@ import { ICON_STROKE } from '@/components/icon';
 
 import { openIcon, openingLine, openLabel, PRICE_MOVED_TITLE, sheetSubtitle, tickOf, unlockedLine, unlockPayee, WALLET_NAME } from './model';
 import type { UnlockState } from './useUnlock';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** H16's and H18's round mark: 72 across, its glyph stroked at 2.4 (design/_gen/home.js lines 138 and 140). */
 const MARK = layout.tapMin + space.s3xl - space.xs;
@@ -47,6 +48,7 @@ export function UnlockSheets({
   onForgotPin: () => void;
 }) {
   const { flow, item, quote, fees, balanceKobo } = unlock;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: flow.payOpen, requote: flow.ask });
   const support = useOpenSupport();
   if (!item) return null;
 
@@ -135,6 +137,7 @@ export function UnlockSheets({
         }}
         amountKobo={quote.payment.priceKobo}
         fees={fees}
+        source={paySource}
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
         details={YOURS}

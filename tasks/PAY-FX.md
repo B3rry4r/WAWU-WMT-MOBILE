@@ -30,7 +30,8 @@ Facts (Nuvion DEV, 26 Oct 2026, `docs/nuvion/DEV-RESULTS.md` "PAY-FX"): a USD bu
 
 Migration `20261205120000_pay_fx`: one nullable column and one new table, rollback in its header. Fees: `PAYMENT_FX_FEE_<CODE>_MINOR` (WAWU's conversion fee, default 0, Default (lead), owner may override) and `PAYMENT_FX_PROVIDER_FEE_<CODE>_MINOR` (shown and counted, default 0, Nuvion names none on dev).
 
-- **Not done:** (1) The callers of the pay sheet (unlock, tips, paid ask, event tickets, school and legal fees, chat paid DM, community pass) do not yet fetch the person's other accounts, ask for a quote with `sourceCurrency`, pass `source` or send `sourceCurrency` with the payment; they still pay in naira. One follow-up task per caller or a shared hook. (2) Pictures of the sheet at 390 px (naira buyer, USD buyer, quote expired) were not made; the sheet is covered by 6 jest tests. (3) The community pass's prorated refund (R-71) still waits for a naira wallet for a buyer who paid in another currency. (4) A GBP or EUR buyer, a pending or failed FX transfer and WAWU's conversion fee above 0 were not run on dev (specs cover the pending, failed and lost cases on a stand-in).
+- **Round 2 (26 Oct 2026):** origin/main (mobile `e16d1126`, backend `97a11d6`) merged into both branches; R-91 sits after R-88 to R-90. The account that pays rides on ONE header, `X-Pay-Source-Currency`, which every paying route reads (the unlock, tip, paid question, event order, legal fee, community pass and school fee routes all wrap the same payment service), so the app has one shared hook, `usePaySource` (`src/features/pay-source/`), and the Hub one middleware, not eight copies. The app starts a payment from naira, or from the main currency of a person with no naira wallet (read from the Hub's wallet and accounts at start); when the naira wallet cannot cover it the main currency pays and the others are offered; the quote is asked again when the account changes or the firm quote runs out, and the flow's fresh quote before the PIN now also compares the firm amount. Wired: unlock, tips, paid question, event tickets, legal fees, school fees. WAWU's conversion fee above 0 has a spec (3 tests) and a dev run (11 of 11: shown, charged 28 cents for a 23 cent conversion plus 5, collected +5 in WAWU's dollar account).
+- **Not done:** (1) The PIN sheet still names the naira price ("Approve ₦300"), not the amount in the buyer's currency. (2) The community pass sheet (store-bought under R-86), credit packs (R-86), chat money requests and sends (transfers, not purchases) are not wired. (3) The community pass's prorated refund (R-71) still waits for a naira wallet for a buyer who paid in another currency. (4) A GBP or EUR buyer and a pending or failed FX transfer were not run on dev (specs cover the pending, failed and lost cases on a stand-in). (5) On a phone: NOT RUN.
 - **Next:** a verifier checks the Hub side on dev and the sheet.
 - **History:** reports go to tasks/history/PAY-FX.md.
 
@@ -57,8 +58,8 @@ Backend: `src/money/payments/**`, `src/money/holds/wallet-hold.service.ts`, `src
 - [x] A held ticket paid in dollars is refunded to the dollar account, the same amount, once.
 - [x] On Nuvion DEV through the Hub's own routes: 9 of 9 (`scripts/nuvion/pay-fx-dev-check.ts`).
 - [x] The pay sheet draws the source: the naira price, the account, the firm amount, fees only when the quote has them, the expired state, the other accounts to use; a sheet without a source is unchanged.
-- [ ] The screens that open the pay sheet pass it a source and send `sourceCurrency`: NOT DONE.
-- [ ] Pictures at 390 px, dark and light: NOT DONE.
+- [x] The screens that open the pay sheet (unlock, tips, paid question, tickets, legal, school) pass it a source through one hook and name the paying account on every request.
+- [x] Pictures at 390 px, dark and light, in `audits/PAY-FX/`.
 - [ ] On a phone: NOT RUN (no device in this session).
 
 ## Builder report
