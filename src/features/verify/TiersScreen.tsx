@@ -176,7 +176,7 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
 type Mark = 'best' | 'mine';
 
 /** One tier: its name and mark, its price (or the difference), what it gives, and the choice mark. The tier a person holds has no choice mark. */
-function TierCard({ tier, fallbackName, mark, on, only, onPress, currency }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; only?: number | null; onPress?: () => void; currency: Currency }) {
+export function TierCard({ tier, fallbackName, mark, on, only, onPress, currency }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; only?: number | null; onPress?: () => void; currency: Currency }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const name = tier?.name ?? fallbackName ?? '';

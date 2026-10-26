@@ -12,6 +12,8 @@ import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
+import { useTierOfferStep } from '@/features/tier-offer/offerStep';
+import { TierOfferBridge } from '@/features/tier-offer/TierOfferBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
@@ -84,6 +86,9 @@ function useStoredTheme(): boolean {
  * goes back to the checklist, since the tabs are not open yet.
  * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
  * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
+ * "Choose your tier" (TIER-OFFER, R-94, `/tier-offer`) comes once after the sign-up steps and before "Your bonus" and Home: the Hub says whether it is
+ * this person's to see (a creator account not yet shown it, with no running tier), the tabs wait while it is on screen, and its X or Not now (by the
+ * admin setting) or a Subscribe ends it; Subscribe's checkout is opened by `TierOfferBridge` once the offer is gone.
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
  * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
@@ -97,9 +102,11 @@ export default function RootLayout() {
   // LEGAL-DOCS: a sign-up whose agreement could not reach the Hub sends it again once the person is signed in.
   useAcceptanceRetry(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
+  // TIER-OFFER (R-94): the Hub is asked once the sign-up gate is open; the splash waits for the answer (bounded), so Home is never drawn first.
+  const tierOffer = useTierOfferStep(signedIn && gate.phase === 'ready', gate.progress?.accountType);
   const themed = useStoredTheme();
-  const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
-  const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !bonus.visible;
+  const ready = themed && status !== 'restoring' && (!signedIn || (gate.phase === 'ready' && !tierOffer.holding));
+  const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && !bonus.visible;
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -125,7 +132,10 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && bonus.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && tierOffer.visible}>
+          <Stack.Screen name="tier-offer" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !tierOffer.visible && bonus.visible}>
           <Stack.Screen name="verify-bonus" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'interests'}>
@@ -134,13 +144,13 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'follows'}>
           <Stack.Screen name="people-to-follow" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !bonus.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !tierOffer.visible && !bonus.visible}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="shop" />
           <Stack.Screen name="shop-product" />
           <Stack.Screen name="hear-name" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !tierOffer.visible && !bonus.visible))}>
           <Stack.Screen name="creator-setup" />
           <Stack.Screen name="voice-intro" />
           <Stack.Screen name="voice-consent" />
@@ -304,6 +314,7 @@ export default function RootLayout() {
         <Stack.Screen name="legal-documents/index" />
         <Stack.Screen name="legal-documents/[slug]" />
       </Stack>
+      <TierOfferBridge checkout={tierOffer.checkout} />
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
     </QueryClientProvider>
