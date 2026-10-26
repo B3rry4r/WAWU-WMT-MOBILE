@@ -24453,7 +24453,10 @@ export interface operations {
                  */
                 sourceCurrency?: string;
             };
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -24524,6 +24527,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -33919,6 +33924,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34007,7 +34014,10 @@ export interface operations {
     CommunityPassController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34100,7 +34110,10 @@ export interface operations {
                 /** @description The tip in kobo, chosen by the payer: a whole number of naira (100 to 1,000,000,000). */
                 amountKobo: number;
             };
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -34171,6 +34184,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -34287,7 +34302,10 @@ export interface operations {
     UnlockWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34351,6 +34369,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34470,7 +34490,10 @@ export interface operations {
     LegalFeeWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34534,6 +34557,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34656,6 +34681,8 @@ export interface operations {
             header?: {
                 /** @description Optional. One value per tap on Get tickets (a UUID); sent again unchanged on a retry, it answers the same order. */
                 "Idempotency-Key"?: string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34706,6 +34733,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -34792,7 +34821,10 @@ export interface operations {
     EventWalletOrdersController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 orderId: string;
             };
@@ -34882,6 +34914,8 @@ export interface operations {
             header?: {
                 /** @description Optional. One value per tap on Send (a UUID); sent again unchanged on a retry, it answers the same draft. The same key with another question is 409 idempotency_key_reused, and a malformed key is 400 idempotency_key_required. */
                 "Idempotency-Key"?: string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 creatorWawuId: string;
@@ -34950,6 +34984,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -35036,7 +35072,10 @@ export interface operations {
     PaidDmWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 questionId: string;
             };

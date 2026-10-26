@@ -41,11 +41,14 @@ export function usePaySource(args: {
     live.current = requote;
   });
 
-  // The person's other accounts: asked only while the sheet is open. A Hub that does not serve them (no foreign accounts) is "none".
+  // The person's other accounts: asked only while the sheet is open AND another account could matter: they pay from one now, they
+  // have no naira wallet, or the naira wallet cannot cover this payment. A person with only a naira wallet that covers it never
+  // causes the call. A Hub that does not serve them (no foreign accounts) is "none".
+  const short = (payment?.shortfallKobo ?? 0) > 0;
   const accountsQuery = useQuery({
     queryKey: WORLD_ACCOUNTS_KEY,
     queryFn: fetchWorldAccounts,
-    enabled: open,
+    enabled: open && (code !== null || !paySourceHasNaira() || short),
     staleTime: 30_000,
     retry: false,
   });
@@ -62,12 +65,11 @@ export function usePaySource(args: {
       switched.current = false;
       return;
     }
-    const short = payment?.shortfallKobo ?? 0;
-    if (!switched.current && code === null && payment && payment.balanceKobo !== null && short > 0 && main !== null) {
+    if (!switched.current && code === null && payment && payment.balanceKobo !== null && short && main !== null) {
       switched.current = true;
       choosePaySource(main);
     }
-  }, [open, code, payment, main]);
+  }, [open, code, payment, main, short]);
 
   // A different account was chosen: ask for the quote against it. (The quote on screen names the account it was made for.)
   const asked = useRef<string | null | undefined>(undefined);

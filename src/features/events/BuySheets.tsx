@@ -1,4 +1,4 @@
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, sourceApproval } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 
@@ -39,7 +39,7 @@ export function BuySheets({ sheet }: { sheet: BuySheet }) {
       <PayPinSheet
         visible={sheet.pinOpen}
         onClose={sheet.closePin}
-        approval={{ totalKobo: payment.totalKobo, payee: sheet.eventName }}
+        approval={{ totalKobo: payment.totalKobo, payee: sheet.eventName, ...sourceApproval(paySource) }}
         run={sheet.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={sheet.forgotPin}

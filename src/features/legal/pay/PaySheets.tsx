@@ -1,6 +1,6 @@
 import type { IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, sourceApproval, type PaySource } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { WALLET_NAME } from '@/features/events/buyModel';
@@ -44,7 +44,7 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
       <PayPinSheet
         visible={pay.pinOpen}
         onClose={pay.closePin}
-        approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
+        approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage), ...sourceApproval(paySource) }}
         run={pay.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={pay.forgotPin}
@@ -55,14 +55,14 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
 }
 
 /** S22 and S26 draw the fee on the page, so only the shared PIN sheet opens over it. */
-export function PayPin({ pay }: { pay: LegalFeePay }) {
+export function PayPin({ pay, source: paySource }: { pay: LegalFeePay; source?: PaySource }) {
   const quote = pay.quote;
   if (!quote) return null;
   return (
     <PayPinSheet
       visible={pay.pinOpen}
       onClose={pay.closePin}
-      approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
+      approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage), ...sourceApproval(paySource) }}
       run={pay.run}
       unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={pay.forgotPin}

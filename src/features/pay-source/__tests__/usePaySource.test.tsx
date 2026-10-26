@@ -68,7 +68,11 @@ describe('usePaySource', () => {
     mockAccounts.mockResolvedValue([]);
     const requote = jest.fn();
     const { result } = await renderHook(() => usePaySource({ payment: naira(0), open: true, requote }), { wrapper: wrapper() });
-    await waitFor(() => expect(mockAccounts).toHaveBeenCalled());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    // Round 3 (F5): the other accounts are not even asked for when the naira wallet covers the payment.
+    expect(mockAccounts).not.toHaveBeenCalled();
     expect(result.current).toBeUndefined();
     expect(requote).not.toHaveBeenCalled();
     expect(paySourceCode()).toBeNull();
@@ -78,9 +82,23 @@ describe('usePaySource', () => {
     mockAccounts.mockResolvedValue([account('USD')]);
     const requote = jest.fn();
     await renderHook(() => usePaySource({ payment: naira(0), open: true, requote }), { wrapper: wrapper() });
-    await waitFor(() => expect(mockAccounts).toHaveBeenCalled());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(mockAccounts).not.toHaveBeenCalled();
     expect(paySourceCode()).toBeNull();
     expect(requote).not.toHaveBeenCalled();
+  });
+
+  it('asks for the other accounts only when another could matter: no naira wallet, or the naira wallet is short', async () => {
+    mockAccounts.mockResolvedValue([account('USD')]);
+    setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    await renderHook(() => usePaySource({ payment: dollars(), open: true, requote: jest.fn() }), { wrapper: wrapper() });
+    await waitFor(() => expect(mockAccounts).toHaveBeenCalledTimes(1));
+    clearPaySource();
+    mockAccounts.mockClear();
+    await renderHook(() => usePaySource({ payment: naira(20000), open: true, requote: jest.fn() }), { wrapper: wrapper() });
+    await waitFor(() => expect(mockAccounts).toHaveBeenCalledTimes(1));
   });
 
   it('naira that does not hold enough: the main currency pays, and the quote is asked again against it', async () => {

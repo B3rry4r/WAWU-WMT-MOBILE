@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 
 import { motion } from '@/theme';
 
-import { PaySheet, type PaySheetProps } from '..';
+import { PaySheet, formatSource, sourceApproval, sourceTotalText, type PaySheetProps } from '..';
 
 const charge = { label: "Bank charge", amountKobo: 2325 };
 
@@ -422,8 +422,9 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
       await render(<PaySheet {...p} />);
       expect(screen.getByText('₦300')).toBeTruthy();
       expect(screen.getByText('US dollar account')).toBeTruthy();
-      expect(screen.getAllByText('0.23 USD').length).toBeGreaterThan(0);
-      await fireEvent.press(screen.getByRole('button', { name: 'Unlock · 0.23 USD' }));
+      expect(screen.getAllByText('$0.23').length).toBeGreaterThan(0);
+      expect(screen.queryByText(/0\.23 USD/)).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock · $0.23' }));
       expect(p.onPay).toHaveBeenCalledTimes(1);
     });
 
@@ -432,7 +433,7 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
       await render(<PaySheet {...p} />);
       expect(screen.getByText('Bank charge')).toBeTruthy();
       expect(screen.getByText('Conversion fee')).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Unlock · 0.30 USD' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Unlock · $0.30' })).toBeTruthy();
     });
 
     it('a quote that ran out holds Pay back and asks for a new one', async () => {
@@ -450,7 +451,7 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
       const p = props({ amountKobo: 30000, fees: [], source: source({ availableMinor: 10 }) });
       await render(<PaySheet {...p} />);
       expect(screen.getByText('Not enough in your US dollar account')).toBeTruthy();
-      expect(screen.getByText('This costs 0.23 USD. You have 0.10 USD.')).toBeTruthy();
+      expect(screen.getByText('This costs $0.23. You have $0.10.')).toBeTruthy();
       expect(screen.queryByRole('button', { name: /Unlock/ })).toBeNull();
     });
 
@@ -464,6 +465,39 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
       await render(<PaySheet {...p} />);
       await fireEvent.press(screen.getByRole('button', { name: 'Use Naira wallet' }));
       expect(choose).toHaveBeenCalledWith('NGN');
+    });
+
+    it('writes an amount with the currency sign the platform has for it: $1.90, £1.50, €1.75 (R-91, owner 26 Oct 2026)', () => {
+      expect(formatSource(190, 2, 'USD')).toBe('$1.90');
+      expect(formatSource(150, 2, 'GBP')).toBe('£1.50');
+      expect(formatSource(175, 2, 'EUR')).toBe('€1.75');
+      expect(formatSource(123_456, 2, 'USD')).toBe('$1,234.56');
+      expect(formatSource(5, 0, 'JPY')).toBe('¥5');
+    });
+
+    it('where Intl cannot write it, the digits and the code the Hub named: no table, no rate, no fee', () => {
+      const real = Intl.NumberFormat;
+      (Intl as { NumberFormat: unknown }).NumberFormat = function () {
+        throw new RangeError('no currency data');
+      };
+      try {
+        expect(formatSource(190, 2, 'USD')).toBe('1.90 USD');
+        expect(formatSource(123_456, 2, 'GBP')).toBe('1,234.56 GBP');
+      } finally {
+        (Intl as { NumberFormat: unknown }).NumberFormat = real;
+      }
+    });
+
+    it('the PIN sheet is told what leaves the account: sourceApproval gives the total with its sign, and nothing without a source', () => {
+      expect(sourceApproval(source({ providerFeeMinor: 5, wawuFeeMinor: 2 }))).toEqual({ amountText: '$0.30' });
+      expect(sourceApproval(undefined)).toEqual({});
+      expect(sourceTotalText(source({ amountMinor: 190 }))).toBe('$1.90');
+    });
+
+    it('a payment still confirming or failed names the amount in the buyer currency, not the naira', async () => {
+      const p = props({ amountKobo: 30000, fees: [], source: source(), status: { kind: 'confirming' } });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText(/Your payment of \$0\.23 hasn't been confirmed yet/)).toBeTruthy();
     });
 
     it('a sheet with no source is the naira sheet, unchanged', async () => {

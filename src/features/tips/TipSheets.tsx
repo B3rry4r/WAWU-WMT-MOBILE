@@ -11,7 +11,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, ICON_STROKE } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet, feesTotalKobo, formatNaira } from '@/components/pay-sheet';
+import { PaySheet, SourceFooter, feesTotalKobo, formatNaira, sourceApproval, sourceRows, type PaySource } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { Text } from '@/components/Text';
@@ -94,7 +94,7 @@ function WalletLine({ balanceKobo }: { balanceKobo: number | null }) {
 }
 
 /** The breakdown above Pay from wallet (BRIEF H26, R-10): the tip, the bank's charge, WAWU's fee when it has one, the total. */
-function Breakdown({ tip }: { tip: TipState }) {
+function Breakdown({ tip, source }: { tip: TipState; source?: PaySource }) {
   const q = tip.quote;
   const row = (label: string, kobo: number | null, key: string) => (
     <KeyValueRow
@@ -105,7 +105,10 @@ function Breakdown({ tip }: { tip: TipState }) {
     />
   );
   const rows = [row('Tip', q ? q.amountKobo : tip.amountKobo, 'tip')];
-  if (q) {
+  if (source) {
+    // Paying from another currency (PAY-FX, R-91): the account and the firm amount, drawn by the same piece as the pay sheet.
+    rows.push(...sourceRows(source));
+  } else if (q) {
     for (const f of tip.fees) rows.push(row(f.label, f.amountKobo, f.label));
     if (tip.fees.length > 1) rows.push(row('Fees', feesTotalKobo(tip.fees), 'fees'));
     rows.push(row('Total', q.payment.totalKobo, 'total'));
@@ -120,7 +123,7 @@ function Breakdown({ tip }: { tip: TipState }) {
  * R-10), Pay from wallet and "Tip ₦2,023.25". The Naira, Dollar and USDT picker is not drawn (R-64). Tip opens H27, the shared
  * PIN sheet, and a paid tip ends on H28.
  */
-function TipSheet({ tip }: { tip: TipState }) {
+function TipSheet({ tip, source }: { tip: TipState; source?: PaySource }) {
   const { colors } = useWawu();
   const lift = useKeyboardLift();
   const { flow, quote, target } = tip;
@@ -172,16 +175,31 @@ function TipSheet({ tip }: { tip: TipState }) {
           style={[styles.input, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
         />
       </Box>
-      <Breakdown tip={tip} />
-      <WalletLine balanceKobo={tip.balanceKobo} />
-      <Button
-        testID="tip-pay"
-        label={quote ? `Tip ${formatNaira(quote.payment.totalKobo)}` : 'Tip'}
-        onPress={() => void flow.pay()}
-        loading={flow.asking}
-        disabled={!ready || blank}
-        full
-      />
+      <Breakdown tip={tip} source={source} />
+      {source ? (
+        <SourceFooter
+          source={source}
+          actionLabel="Tip"
+          actionJoin="space"
+          onPay={() => void flow.pay()}
+          statusKind={flow.status.kind}
+          loading={flow.asking}
+          disabled={!ready || blank}
+          testID="tip-pay"
+        />
+      ) : (
+        <>
+          <WalletLine balanceKobo={tip.balanceKobo} />
+          <Button
+            testID="tip-pay"
+            label={quote ? `Tip ${formatNaira(quote.payment.totalKobo)}` : 'Tip'}
+            onPress={() => void flow.pay()}
+            loading={flow.asking}
+            disabled={!ready || blank}
+            full
+          />
+        </>
+      )}
       {lift > 0 ? <View style={{ height: lift }} /> : null}
     </BottomSheet>
   );
@@ -237,7 +255,7 @@ export function TipSheets({
   return (
     <>
       {reviewing || !quote ? (
-        <TipSheet tip={tip} />
+        <TipSheet tip={tip} source={paySource} />
       ) : (
         <PaySheet
           visible={!flow.pinOpen}
@@ -262,7 +280,7 @@ export function TipSheets({
         <PayPinSheet
           visible={flow.pinOpen}
           onClose={flow.closePin}
-          approval={{ totalKobo: quote.payment.totalKobo, payee: name }}
+          approval={{ totalKobo: quote.payment.totalKobo, payee: name, ...sourceApproval(paySource) }}
           run={flow.run}
           unansweredLine={PAYMENT_UNANSWERED_LINE}
           onForgotPin={() => {

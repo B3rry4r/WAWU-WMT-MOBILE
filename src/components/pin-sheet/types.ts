@@ -73,14 +73,16 @@ export type BiometricResult =
  *
  * With `payee`: "Approve ₦25,065 to Chidinma Okoro" (W11, H15).
  * With `totalKobo` and `purpose`: "₦2,023.25 for the professional tick" (M13).
+ * With `amountText` (PAY-FX, R-91): what leaves the payer's account when it is not naira, already written with the currency's sign
+ * ("Approve $1.90 to Chidi"); it stands where the naira total would, and `totalKobo` is then only the naira price it pays for.
  * With `purpose` alone: the purpose as the line, for a PIN that moves no money
  * (W35 turning on fingerprint or face: "Turn on fingerprint for payments";
  * SHARED-CHANGES WALLET-06 #1).
  */
 export type PinApproval =
-  | { totalKobo: number; payee: string; purpose?: never }
-  | { totalKobo: number; purpose: string; payee?: never }
-  | { totalKobo?: never; purpose: string; payee?: never };
+  | { totalKobo: number; payee: string; purpose?: never; amountText?: string }
+  | { totalKobo: number; purpose: string; payee?: never; amountText?: string }
+  | { totalKobo?: never; purpose: string; payee?: never; amountText?: never };
 
 /**
  * The phone's biometric standing in for the PIN. The sheet reads which one the

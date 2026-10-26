@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Avatar, type AvatarHue } from '@/components/Avatar';
@@ -262,36 +262,92 @@ function feeRows(p: PaySheetProps) {
   return rows;
 }
 
-/** "0.23 USD": digits to the quote's own places, then the code the Hub named. No symbol table. */
-export function formatSource(minor: number, decimals: number, currency: string): string {
+/** Digits to the quote's own places, grouped by thousands ("1,240.50"). */
+function sourceDigits(minor: number, decimals: number): string {
   const unit = 10 ** decimals;
   const whole = Math.floor(minor / unit);
   const frac = String(minor % unit).padStart(decimals, '0');
   const digits = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${digits}${decimals > 0 ? `.${frac}` : ''} ${currency}`;
+  return `${digits}${decimals > 0 ? `.${frac}` : ''}`;
 }
 
-/** The review of a payment from another currency: the naira price, the account that pays, the firm amount and its fees. */
-function SourceReview(p: Inner & { source: PaySource }) {
-  const { source: s } = p;
-  const paying = p.status.kind === 'paying';
-  const pay = usePayOnce(p.onPay, p.status.kind);
-  const total = s.amountMinor + s.providerFeeMinor + s.wawuFeeMinor;
+/**
+ * An amount in the buyer's currency with the currency's own sign, as the platform writes it: "$1.90", "£1.50", "€1.75" (owner,
+ * 26 Oct 2026: not "1.90 USD"). It is `Intl.NumberFormat` in English with `currencyDisplay: 'symbol'`, so the app keeps no table of
+ * signs; a currency the platform has no sign for comes out with its code before the digits ("AED 4.50"). Where the engine has no
+ * `Intl` for this (or throws on the code), the digits and the code the Hub named, "1.90 USD": never a rate, a fee or a guess.
+ */
+export function formatSource(minor: number, decimals: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'symbol',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(minor / 10 ** decimals);
+  } catch {
+    return `${sourceDigits(minor, decimals)} ${currency}`;
+  }
+}
+
+/** What leaves the buyer's account: the firm amount and its fees, in the smallest unit. */
+export function sourceTotalMinor(s: Pick<PaySource, 'amountMinor' | 'providerFeeMinor' | 'wawuFeeMinor'>): number {
+  return s.amountMinor + s.providerFeeMinor + s.wawuFeeMinor;
+}
+
+/** The same, written with the currency's sign ("$1.90"): the pay button, the PIN sheet and every line that names what is paid. */
+export function sourceTotalText(s: PaySource): string {
+  return formatSource(sourceTotalMinor(s), s.decimals, s.currency);
+}
+
+/**
+ * For the PIN sheet's `approval`: spread it in when the payment comes from another currency, so the sheet says what leaves the
+ * account ("Approve $1.90") and not the naira price. Without a source it adds nothing.
+ */
+export function sourceApproval(source: PaySource | undefined): { amountText?: string } {
+  return source ? { amountText: sourceTotalText(source) } : {};
+}
+
+/**
+ * The rows that say who pays and what it costs them: the account, the firm amount, the fees when there are any and the total.
+ * ONE piece, drawn by the pay sheet and by the tip sheet's own review, so no screen words the account or the amount its own way.
+ */
+export function sourceRows(s: PaySource): ReactElement[] {
   const fmt = (n: number) => formatSource(n, s.decimals, s.currency);
+  return [
+    <KeyValueRow key="from" label="Pay from" value={s.accountName} testID="source-from" />,
+    <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} testID="source-amount" />,
+    ...(s.providerFeeMinor > 0 ? [<KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} />] : []),
+    ...(s.wawuFeeMinor > 0 ? [<KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} />] : []),
+    <KeyValueRow key="total" label="Total" value={fmt(sourceTotalMinor(s))} testID="source-total" />,
+  ];
+}
+
+/**
+ * Under the rows: the other accounts to pay from, then one of three things. The rate ran out: say so and offer a new one. The
+ * account holds too little: say so. Otherwise the pay button, "Unlock · $1.90". Shared with the tip sheet like `sourceRows`.
+ */
+export function SourceFooter(p: {
+  source: PaySource;
+  actionLabel: string;
+  actionJoin?: 'dot' | 'space';
+  onPay: PaySheetProps['onPay'];
+  statusKind: PayStatus['kind'];
+  disabled?: boolean;
+  /** The caller is busy with its own step before the PIN (a fresh quote): the button spins as it does for naira. */
+  loading?: boolean;
+  testID?: string;
+}) {
+  const { source: s } = p;
+  const paying = p.statusKind === 'paying' || p.loading === true;
+  const pay = usePayOnce(p.onPay, p.statusKind);
+  const total = sourceTotalMinor(s);
   const short = s.availableMinor !== null && total > s.availableMinor ? total - s.availableMinor : 0;
   const join = p.actionJoin === 'space' ? ' ' : ' · ';
+  const fmt = (n: number) => formatSource(n, s.decimals, s.currency);
   return (
     <>
-      <Header item={p.item} />
-      <GroupedList>
-        <KeyValueRow key="price" label={p.amountLabel ?? 'Price'} value={money(p, p.amountKobo)} />
-        {p.details?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
-        <KeyValueRow key="from" label="Pay from" value={s.accountName} />
-        <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} />
-        {s.providerFeeMinor > 0 ? <KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} /> : null}
-        {s.wawuFeeMinor > 0 ? <KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} /> : null}
-        <KeyValueRow key="total" label="Total" value={fmt(total)} />
-      </GroupedList>
       {s.choices && s.choices.length > 1
         ? s.choices
             .filter((c) => !c.selected)
@@ -310,8 +366,31 @@ function SourceReview(p: Inner & { source: PaySource }) {
           body={`This costs ${fmt(total)}. You have ${fmt(s.availableMinor ?? 0)}.`}
         />
       ) : (
-        <Button label={paying ? 'Paying' : `${p.actionLabel}${join}${fmt(total)}`} onPress={pay} loading={paying} full />
+        <Button
+          testID={p.testID}
+          label={paying ? 'Paying' : `${p.actionLabel}${join}${sourceTotalText(s)}`}
+          onPress={pay}
+          loading={paying}
+          disabled={p.disabled}
+          full
+        />
       )}
+    </>
+  );
+}
+
+/** The review of a payment from another currency: the naira price, then the shared account and amount rows, then the shared footer. */
+function SourceReview(p: Inner & { source: PaySource }) {
+  const { source: s } = p;
+  return (
+    <>
+      <Header item={p.item} />
+      <GroupedList>
+        <KeyValueRow key="price" label={p.amountLabel ?? 'Price'} value={money(p, p.amountKobo)} />
+        {p.details?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
+        {sourceRows(s)}
+      </GroupedList>
+      <SourceFooter source={s} actionLabel={p.actionLabel} actionJoin={p.actionJoin} onPay={p.onPay} statusKind={p.status.kind} />
     </>
   );
 }
@@ -446,7 +525,7 @@ function Confirming(p: Inner & { line?: string }) {
         <Status
           icon={<IconTile icon="Clock" tone="warn" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
           title="Still confirming"
-          line={p.line ?? `Your payment of ${formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
+          line={p.line ?? `Your payment of ${p.source ? sourceTotalText(p.source) : formatNaira(p.total)} hasn't been confirmed yet. Check again before you pay a second time.`}
         />
       }
       buttons={
@@ -468,7 +547,7 @@ function Failed(p: Inner & { message?: string }) {
         <Status
           icon={<IconTile icon="X" tone="danger" size={STATUS_MARK} strokeWidth={STATUS_STROKE} />}
           title="Payment didn't go through"
-          line={p.message ?? `Your payment of ${formatNaira(p.total)} didn't complete. Check your ${p.walletName} before you try again.`}
+          line={p.message ?? `Your payment of ${p.source ? sourceTotalText(p.source) : formatNaira(p.total)} didn't complete. Check your ${p.source ? p.source.accountName : p.walletName} before you try again.`}
         />
       }
       buttons={

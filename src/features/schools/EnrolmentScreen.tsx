@@ -10,7 +10,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, sourceApproval } from '@/components/pay-sheet';
 import { formatNaira } from '@/components/pay-sheet/money';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
@@ -220,7 +220,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
           <PayPinSheet
             visible={sheet.pinOpen}
             onClose={sheet.closePin}
-            approval={{ totalKobo: sheet.payment.totalKobo, payee: school }}
+            approval={{ totalKobo: sheet.payment.totalKobo, payee: school, ...sourceApproval(paySource) }}
             run={sheet.run}
             unansweredLine={PAYMENT_UNANSWERED_LINE}
             onForgotPin={sheet.forgotPin}

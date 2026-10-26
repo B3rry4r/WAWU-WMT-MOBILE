@@ -6,7 +6,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, sourceApproval } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
@@ -156,7 +156,7 @@ export function UnlockSheets({
       <PayPinSheet
         visible={flow.pinOpen}
         onClose={flow.closePin}
-        approval={{ totalKobo: quote.payment.totalKobo, payee }}
+        approval={{ totalKobo: quote.payment.totalKobo, payee, ...sourceApproval(paySource) }}
         run={flow.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={() => {
