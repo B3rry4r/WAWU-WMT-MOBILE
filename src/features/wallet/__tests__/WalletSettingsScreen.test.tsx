@@ -80,7 +80,7 @@ function tokenFor(sub: string) {
   return `${part({ alg: 'RS256' })}.${part({ sub })}.signature`;
 }
 
-type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock; onOpenBeneficiaries?: jest.Mock };
+type Props = { onBack: jest.Mock; onOpenPin: jest.Mock; onCreatePin: jest.Mock; onOpenWallet: jest.Mock; onOpenBeneficiaries?: jest.Mock; onOpenAccounts?: jest.Mock };
 
 async function boot(extra: Partial<Props> = {}): Promise<Props> {
   const { WalletSettingsScreen } = require('../settings/WalletSettingsScreen') as typeof import('../settings/WalletSettingsScreen');
@@ -225,6 +225,25 @@ describe('W35 · Wallet settings', () => {
     expect(rtl.screen.queryByText('3 saved')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-settings-beneficiaries'));
     expect(props.onOpenBeneficiaries).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws Accounts and currencies when it has somewhere to lead, and opens it (D3)', async () => {
+    const props = await boot({ onOpenAccounts: jest.fn() });
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.getByText('Accounts and currencies')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-settings-accounts'));
+    expect(props.onOpenAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no Accounts and currencies row without a place to open it, nor with no wallet (D3)', async () => {
+    await boot();
+    await rtl.screen.findByTestId('wallet-settings-pin');
+    expect(rtl.screen.queryByText('Accounts and currencies')).toBeNull();
+    await rtl.cleanup();
+    fallback['GET /money/wallet'] = view({ state: 'not_open', account: null, pin: pin({ isSet: false, changedAt: null }) });
+    await boot({ onOpenAccounts: jest.fn() });
+    expect(await rtl.screen.findByText("You don't have a wallet yet")).toBeTruthy();
+    expect(rtl.screen.queryByText('Accounts and currencies')).toBeNull();
   });
 
   it('with only a WAWU user saved the Beneficiaries row says "None saved", as the list it opens holds no bank account', async () => {

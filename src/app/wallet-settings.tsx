@@ -26,6 +26,7 @@ export default function WalletSettingsRoute() {
       onOpenWallet={entry.open}
       onOpenStatements={() => router.push('/wallet-statement')}
       onOpenBeneficiaries={() => router.push('/send/bank')}
+      onOpenAccounts={() => router.push('/accounts')}
       cards={cards ? { subtitle: cards.subtitle, onOpen: () => router.push('/cards') } : undefined}
     />
   );

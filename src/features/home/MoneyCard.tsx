@@ -5,8 +5,11 @@ import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { Money } from '@/components/Money';
+import { formatMinor } from '@/features/wallet/fx/amount';
+import type { OtherBalance } from '@/features/wallet/fx/model';
+import { FxFlag } from '@/features/wallet/fx/parts';
 import { ACCT, BalanceEye, FittedBalance, MoneyGround } from '@/features/wallet/home/BalanceCard';
-import { radius, useWawu } from '@/theme';
+import { radius, space, useWawu } from '@/theme';
 
 import { cardInk, todayMetrics as m, todayWords } from './look';
 import type { MoneyCardState } from './model';
@@ -27,6 +30,10 @@ export type MoneyCardProps = {
   onSend: () => void;
   /** Opens Add money (W15, WALLET-05). */
   onAdd: () => void;
+  /** The other currencies the person holds, each the provider's own figure in its own sign (never added into one). Nothing drawn when empty. */
+  others?: readonly OtherBalance[];
+  /** "Add a currency": drawn only while the Hub offers one to add. */
+  onAddCurrency?: () => void;
 };
 
 /**
@@ -39,7 +46,7 @@ export type MoneyCardProps = {
  * (R-27, R-41), each in the canvas's order, packed from the left. There is no Bills button: bills are off (R-52, DV2-RM). The chip's
  * currency switch comes with the Dollar and Crypto accounts (WALLET-21), so the chip is a label until then.
  */
-export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd }: MoneyCardProps) {
+export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd, others = [], onAddCurrency }: MoneyCardProps) {
   const { shadows } = useWawu();
 
   let body;
@@ -96,10 +103,32 @@ export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWa
         {state.kind === 'figure' ? <BalanceEye testID="today-balance-eye" hidden={masked} onPress={onToggleMask} /> : null}
       </View>
       {body}
+      {state.kind === 'figure' && (others.length > 0 || onAddCurrency) ? <OtherMoney others={others} masked={masked} onAddCurrency={onAddCurrency} /> : null}
       <View style={styles.actions}>
         <CardAction testID="today-action-send" icon="ArrowUpRight" label="Send" accent onPress={onSend} />
         <CardAction testID="today-action-add" icon="Plus" label="Add" onPress={onAdd} />
       </View>
+    </View>
+  );
+}
+
+/** Under the Naira figure: each other balance in its own currency, and the way to add a currency. Glass chips on the card, as the Naira chip is. */
+function OtherMoney({ others, masked, onAddCurrency }: { others: readonly OtherBalance[]; masked: boolean; onAddCurrency?: () => void }) {
+  const ring = useFocusRing();
+  return (
+    <View testID="today-other-balances" style={styles.others}>
+      {others.map((o) => (
+        <View key={o.code} testID={`today-other-${o.code}`} accessible accessibilityLabel={masked ? `${o.code} balance hidden` : `${o.code} balance ${formatMinor(o.minor, o.code, o.decimals)}`} style={[styles.otherChip, { backgroundColor: cardInk.chip }]}>
+          <FxFlag currency={o.code} size={m.flag} />
+          <Text style={[todayWords.chip, { color: cardInk.ink }]}>{masked ? '••••' : formatMinor(o.minor, o.code, o.decimals)}</Text>
+        </View>
+      ))}
+      {onAddCurrency ? (
+        <Pressable testID="today-add-currency" accessibilityRole="button" accessibilityLabel="Add a currency" onPress={onAddCurrency} {...ring.handlers} style={[styles.otherChip, { backgroundColor: cardInk.chip }, ring.style]}>
+          <Icon name="Plus" size={m.flag * 0.7} color={cardInk.ink} strokeWidth={m.actionStroke} />
+          <Text style={[todayWords.chip, { color: cardInk.ink }]}>Add a currency</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -137,6 +166,8 @@ const styles = StyleSheet.create({
   },
   /** H1's 14 under the chip row, of which the shared fitted figure keeps W1's 10 itself. */
   figure: { marginTop: m.figureTop - ACCT.figureTop },
+  others: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: m.noticeGap },
+  otherChip: { height: m.chipHeight, borderRadius: radius.chip, paddingLeft: m.chipPadLeft, paddingRight: m.chipPadRight, flexDirection: 'row', alignItems: 'center', gap: m.chipGap },
   loadingFigure: { marginTop: m.figureTop },
   notice: { marginTop: m.noticeTop, alignItems: 'flex-start' },
   actions: { marginTop: m.actionsTop, flexDirection: 'row', justifyContent: 'flex-start' },

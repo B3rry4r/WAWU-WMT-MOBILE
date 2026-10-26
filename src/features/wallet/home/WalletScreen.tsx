@@ -24,6 +24,8 @@ import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../a
 import { myPassQuery, type MyPass } from '../api/pass';
 import { FxTabBody } from '../fx/FxTabBody';
 import { NAIRA_TAB } from '../fx/model';
+import { useAddCurrency } from '../fx/AddCurrency';
+import { CurrencyNote } from '../fx/CurrencyNote';
 import { WalletTabs } from '../fx/parts';
 import { useFxHome } from '../fx/useFx';
 import { PassesTile } from '../pass/PassesTile';
@@ -103,6 +105,8 @@ export function WalletScreen({ add }: { add?: string } = {}) {
   const activeTab = fx.tabs.some((t) => t.key === wanted) ? wanted : NAIRA_TAB;
   const [hidden, setHidden] = useState(false);
   const [pulled, setPulled] = useState(false);
+  // The strip's last item: "+ Add" opens the add-a-currency choice; a currency picked there is the tab in front from the pick, saying it is opening (P1, L1).
+  const adder = useAddCurrency(tabbed ? owner : null, setTab, setTab);
 
   const refreshAll = useCallback(async () => {
     const asked: Promise<unknown>[] = [wallet.refetch()];
@@ -147,7 +151,9 @@ export function WalletScreen({ add }: { add?: string } = {}) {
           <WalletSkeleton tiles={actions.length} />
         ) : (
           <>
-            {tabbed && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} /> : null}
+            {tabbed && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} onAdd={adder.available ? adder.show : undefined} /> : null}
+            {tabbed ? adder.notice : null}
+            {view.kind === 'ready' ? <CurrencyNote owner={owner} adder={adder} /> : null}
             {tabbed && activeTab !== NAIRA_TAB ? (
               <FxTabBody
                 tab={activeTab}
@@ -191,6 +197,7 @@ export function WalletScreen({ add }: { add?: string } = {}) {
           </>
         )}
       </ScrollView>
+      {tabbed ? adder.sheet : null}
     </View>
   );
 }

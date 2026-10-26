@@ -50,6 +50,8 @@ export type WalletSettingsScreenProps = {
   cards?: { subtitle: string; onOpen: () => void };
   /** Beneficiaries (WALLET-14, W35): where the saved accounts are, the Saved list on W8. Without it the row is not drawn. */
   onOpenBeneficiaries?: () => void;
+  /** Accounts and currencies (D3): the accounts held, and Add a currency. Without it the row is not drawn. */
+  onOpenAccounts?: () => void;
 };
 
 /**
@@ -70,7 +72,7 @@ export type WalletSettingsScreenProps = {
  * The Tier row stays out: no tier is served (WALLET-19). The fingerprint or face switch is drawn wherever the phone can keep that key; the
  * CHECK-3 audit ran on a web export, which cannot, so it did not show there.
  */
-export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards, onOpenBeneficiaries }: WalletSettingsScreenProps) {
+export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards, onOpenBeneficiaries, onOpenAccounts }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
   const [showAccount, setShowAccount] = useState(false);
@@ -170,6 +172,7 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
         onOpenStatements={onOpenStatements}
         cards={cards}
         onOpenBeneficiaries={onOpenBeneficiaries}
+        onOpenAccounts={onOpenAccounts}
         savedCount={savedCount}
         onOpenHelp={() => void support.open()}
         biometric={
@@ -212,12 +215,13 @@ type SettingsProps = {
   onOpenStatements?: () => void;
   cards?: { subtitle: string; onOpen: () => void };
   onOpenBeneficiaries?: () => void;
+  onOpenAccounts?: () => void;
   /** The saved bank accounts W8 will show; null until the list is read (or when it cannot be), when the row has no second line. */
   savedCount: number | null;
   onOpenHelp: () => void;
 };
 
-function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, savedCount, onOpenHelp }: SettingsProps) {
+function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, onOpenAccounts, savedCount, onOpenHelp }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -257,6 +261,15 @@ function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOp
         ) : null}
       </GroupedList>
       <GroupedList testID="wallet-settings-account">
+        {onOpenAccounts ? (
+          <ListRow
+            testID="wallet-settings-accounts"
+            lead={<IconTile icon="Coins" size={ROW_TILE} />}
+            title="Accounts and currencies"
+            subtitle="Your accounts, and add a currency"
+            onPress={onOpenAccounts}
+          />
+        ) : null}
         {onOpenStatements ? (
           <ListRow
             testID="wallet-settings-statements"

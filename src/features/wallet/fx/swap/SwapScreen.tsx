@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
@@ -28,7 +28,7 @@ import { accountsQuery, currenciesQuery, fetchQuote, type FxQuote, type FxSwap }
 import { fxProblem, sentenceOf } from '../model';
 import { FxAmount, FxFlag, HoldPill } from '../parts';
 import { useNow } from '../useNow';
-import { feeSplit, feeSummary, quoteProblem, sidesOf, startingSides, type Side } from './model';
+import { feeRows, quoteProblem, sidesOf, startingSides, type Side } from './model';
 import { SwapReview } from './SwapReview';
 import { useSwapPay } from './useSwapPay';
 
@@ -278,22 +278,19 @@ export function SwapScreen(props: SwapScreenProps) {
                 </Text>
               )}
             </View>
-            <View style={[styles.rule, { backgroundColor: colors.borderHairline }]} />
-            <View style={styles.infoRow}>
-              <Text variant="body" tone="textSecondary" style={styles.infoLabel}>
-                Fee
-              </Text>
-              <View style={styles.feeEnd}>
-                <Text variant="body" tone={quote ? 'textPrimary' : 'textMuted'} style={font(700)} testID="swap-fee">
-                  {quote ? feeSummary(quote) : 'Shown with the rate'}
-                </Text>
-                {quote ? (
-                  <Text variant="meta" tone="textMuted" testID="swap-fee-split">
-                    {feeSplit(quote)}
+            {(quote ? feeRows(quote).slice(0, 2).map((row) => ({ ...row, key: row.label === 'WAWU fee' ? 'wawu' : 'bank', muted: false })) : [{ label: 'Fees', value: 'Shown with the rate', key: 'pending', muted: true }]).map((row) => (
+              <Fragment key={row.key}>
+                <View style={[styles.rule, { backgroundColor: colors.borderHairline }]} />
+                <View style={styles.infoRow}>
+                  <Text variant="body" tone="textSecondary" style={styles.infoLabel}>
+                    {row.label}
                   </Text>
-                ) : null}
-              </View>
-            </View>
+                  <Text variant="body" tone={row.muted ? 'textMuted' : 'textPrimary'} numberOfLines={1} style={[font(700), styles.rate]} testID={`swap-fee-${row.key}`}>
+                    {row.value}
+                  </Text>
+                </View>
+              </Fragment>
+            ))}
           </View>
 
           {swapOff ? <Banner tone="warning" title="Swaps are switched off" body="Try again later." testID="swap-off" /> : null}
@@ -478,7 +475,6 @@ const styles = StyleSheet.create({
   info: { borderRadius: radius.card + 6, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: CARD.pad },
   infoRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   infoLabel: { fontSize: type.size.body },
-  feeEnd: { alignItems: 'flex-end', flexShrink: 1, gap: space.xs },
   rateEnd: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
   rate: { fontSize: 16, flexShrink: 1 },
   rule: { height: StyleSheet.hairlineWidth },
