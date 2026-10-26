@@ -46,4 +46,15 @@ describe('W1 · the Passes card', () => {
     await rtl.render(<PassesTile pass={{ name: 'Maker Pass', eventDate: '2026-12-20', eventName: null }} onPress={() => undefined} />);
     expect(rtl.screen.getByTestId('wallet-passes-when')).toHaveTextContent('Sun 20 Dec 2026');
   });
+
+  it('with no pass it is the empty card in the same place: Passes, No event pass yet, Comes with Founding Maker, and a tap calls what it was given (R-97)', async () => {
+    const onPress = jest.fn();
+    await rtl.render(<PassesTile pass={null} onPress={onPress} />);
+    expect(rtl.screen.getByText('Passes')).toBeTruthy();
+    expect(rtl.screen.getByTestId('wallet-passes-name')).toHaveTextContent('No event pass yet');
+    expect(rtl.screen.getByTestId('wallet-passes-when')).toHaveTextContent('Comes with Founding Maker');
+    expect(rtl.screen.getByLabelText('Passes, No event pass yet, Comes with Founding Maker')).toBeTruthy();
+    rtl.fireEvent.press(rtl.screen.getByTestId('wallet-passes'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
 });
