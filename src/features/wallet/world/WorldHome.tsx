@@ -284,7 +284,7 @@ export function AccountCard({
           onRetry={onRetry}
           testID={`wallet-world-${account.currency}-card`}
         />
-        {poweredBy ? <PoweredByNuvion style={styles.powered} /> : null}
+        {poweredBy ? <PoweredByNuvion style={styles.powered} hidden={sheet} /> : null}
       </View>
       {frozen ? (
         <Banner

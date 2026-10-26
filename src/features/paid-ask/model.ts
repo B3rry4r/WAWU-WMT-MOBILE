@@ -157,10 +157,19 @@ export function atWords(iso: string, now: number): string {
   return `${word} at ${clock(d)}`;
 }
 
-/** The small line under a question bubble: "09:51 · ₦1,500 paid", and the weekday on another day ("Mon 14:10 · ₦200 paid"). */
-export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFrom | null): string {
+/**
+ * Which account paid a question, as the screen knows it: the account, none (the Naira wallet), or `SOURCE_PENDING` while the reads that say
+ * which are still on their way. Until they are over, the lines that name the money (the stamp, the waiting card's words) are held, so a
+ * buyer in another currency never sees naira wording flash before their own (SWEEP-1026 row 3).
+ */
+export const SOURCE_PENDING = 'pending' as const;
+export type PaidFromState = PaidFrom | null | typeof SOURCE_PENDING;
+
+/** The small line under a question bubble: "09:51 · ₦1,500 paid", and the weekday on another day ("Mon 14:10 · ₦200 paid"). Held to the time alone while the account is not known. */
+export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFromState): string {
   const d = new Date(iso);
   const when = sameDay(d, new Date(now)) ? clock(d) : `${WEEKDAYS[d.getDay()].slice(0, 3)} ${clock(d)}`;
+  if (from === SOURCE_PENDING) return when;
   return `${when} · ${from ? paidFromText(from) : formatNaira(amountKobo)} paid`;
 }
 
@@ -184,15 +193,16 @@ export type StatusCard = { tone: CardTone; title: string; body: string | null };
  * The lines say "your money" and no figure: the thread carries the question's price, and what the person paid (and gets back, every
  * naira) is the price and the bank's charge, which the thread does not carry (I3 and I7 say the Hub's own total).
  */
-export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFrom | null): StatusCard {
+export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFromState): StatusCard {
   const left = Date.parse(q.deadlineAt) - now;
+  // Where the money is held, and where it goes back to, depend on the account that paid: the words wait for it (a loading line, never a guess).
   if (left <= 0) {
-    return { tone: 'late', title: 'No reply in time', body: `Your money is on its way back to ${backTo(from)}.` };
+    return { tone: 'late', title: 'No reply in time', body: from === SOURCE_PENDING ? null : `Your money is on its way back to ${backTo(from)}.` };
   }
   return {
     tone: 'waiting',
     title: `${whoOf(name)} has ${leftLong(left)} left to reply`,
-    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to ${backTo(from)}.`,
+    body: from === SOURCE_PENDING ? null : `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to ${backTo(from)}.`,
   };
 }
 
@@ -267,7 +277,7 @@ export type ThreadEntry =
   | { kind: 'card'; key: string; questionId: string; status: ThreadQuestion['status']; question: ThreadQuestion; last: boolean };
 
 /** The thread as the Hub sends it (newest first) turned around: a day label, the question, its replies, its card. */
-export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFrom | null): ThreadEntry[] {
+export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFromState): ThreadEntry[] {
   const ordered = [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
   const out: ThreadEntry[] = [];
   let lastDay = '';
@@ -295,6 +305,11 @@ export function headerLine(latest: ThreadQuestion | null): { text: string; tone:
   if (latest.status === 'refunded') return { text: 'Paid DM · refunded', tone: 'muted' };
   const hours = windowHoursOf(latest);
   return { text: hours === null ? 'Paid DM' : `Paid DM · replies within ${hours}h`, tone: 'muted' };
+}
+
+/** True while a question of theirs is still open at the Hub, also past its time (the Hub pays it back after that): the thread is read again until it is. */
+export function isOpen(questions: readonly ThreadQuestion[]): boolean {
+  return questions.some((q) => q.mine && q.status === 'awaiting_response');
 }
 
 /** True while the person cannot ask again: a question is open and its window has not closed (I4's locked composer). */

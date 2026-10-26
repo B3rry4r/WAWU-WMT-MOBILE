@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text as NativeText, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type TextStyle } from 'react-native';
 
 import { CurrencyFlag } from '@/components/CurrencyFlag';
@@ -233,19 +233,29 @@ function ScrollTabs({ tabs, value, onChange, onAdd }: WalletTabsProps) {
   const hiddenRight = view.content - view.width - view.x > END_SLACK;
   const hiddenLeft = view.x > END_SLACK;
 
+  // What the layout callbacks need to know, read when they fire (a tab's own layout can arrive after the render that chose it).
+  const latest = useRef({ value, view });
+  useLayoutEffect(() => {
+    latest.current = { value, view };
+  });
+
   const reveal = (key: string) => {
     const spot = spots.current[key];
-    if (!spot || view.width === 0) return;
-    if (spot.x < view.x || spot.x + spot.width > view.x + view.width) scroller.current?.scrollTo({ x: Math.max(0, spot.x - REVEAL_LEAD), animated: true });
+    const now = latest.current.view;
+    if (!spot || now.width === 0) return;
+    if (spot.x < now.x || spot.x + spot.width > now.x + now.width) scroller.current?.scrollTo({ x: Math.max(0, spot.x - REVEAL_LEAD), animated: true });
   };
   useEffect(() => {
     reveal(value);
     // The tab in front is brought into view when it changes or the strip is first measured, never while the person is scrolling it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, view.width, view.content]);
 
+  // A tab that is new (the one just added from "+ Add") has no place when it is chosen, and its layout can arrive after the strip's
+  // own size did: so its arrival is the moment to bring it into view when it is the one in front (SWEEP-1026 row 5).
   const note = (key: string) => (e: LayoutChangeEvent) => {
+    const before = spots.current[key];
     spots.current[key] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
+    if (key === latest.current.value && (!before || before.x !== e.nativeEvent.layout.x || before.width !== e.nativeEvent.layout.width)) reveal(key);
   };
   return (
     <View testID="wallet-tabs" accessibilityRole="tablist" accessibilityLabel="Accounts" style={[styles.track, { backgroundColor: colors.surfaceSunken }]}>

@@ -105,7 +105,7 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
                 ad={slide.ad}
                 reserveRight={reserve}
                 onOpen={() => {
-                  reports.tapOf(slide.ad.id);
+                  reports.tapOf(slide.ad);
                   openAd(slide.ad, onOpenEvent);
                 }}
               />

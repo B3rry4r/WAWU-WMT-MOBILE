@@ -186,6 +186,17 @@ export function PhotoPositionScreen({ kind, link, onSave, onCancel }: PhotoPosit
   };
   const grip = useState(createGrip)[0];
 
+  const stageRef = useRef<View>(null);
+  // On the web, gesture-handler reports a pinch's focal point in page coordinates (on a phone it is the stage's own), so a touch pinch
+  // zoomed about a point as far below the fingers as the stage is below the top of the page (the bar's height). The stage's place on
+  // the page is read when the stage is laid out (web only) and taken off there and only there (SWEEP-1026 row 11).
+  const [pageAt, setPageAt] = useState<Point>({ x: 0, y: 0 });
+  const stagePoint = (x: number, y: number): Point => (Platform.OS === 'web' ? { x: x - pageAt.x, y: y - pageAt.y } : { x, y });
+  const focalOf = (event: { focalX: number; focalY: number }, fallback: Point): Point => {
+    const at = stagePoint(event.focalX, event.focalY);
+    return { x: Number.isFinite(at.x) ? at.x : fallback.x, y: Number.isFinite(at.y) ? at.y : fallback.y };
+  };
+
   const pan = Gesture.Pan()
     .withTestId('position-pan')
     .runOnJS(true)
@@ -202,22 +213,20 @@ export function PhotoPositionScreen({ kind, link, onSave, onCancel }: PhotoPosit
     .runOnJS(true)
     .onBegin(() => grip.hold(current))
     .onStart((event) => {
-      const focal = { x: Number.isFinite(event.focalX) ? event.focalX : stage.width / 2, y: Number.isFinite(event.focalY) ? event.focalY : stage.height / 2 };
-      grip.hold(current, focal);
+      grip.hold(current, focalOf(event, { x: stage.width / 2, y: stage.height / 2 }));
     })
     .onUpdate((event) => {
       const from = grip.from();
       if (!from) return;
       // The spot between the fingers stays under them as the photo grows, and follows them as they move.
       const start = grip.anchor() ?? { x: stage.width / 2, y: stage.height / 2 };
-      const focal = { x: Number.isFinite(event.focalX) ? event.focalX : start.x, y: Number.isFinite(event.focalY) ? event.focalY : start.y };
+      const focal = focalOf(event, start);
       const grown = zoomedAbout(frame, from, from.zoom * event.scale, { x: start.x - origin.x, y: start.y - origin.y });
       update(movedBy(frame, grown, focal.x - start.x, focal.y - start.y));
     });
   const gestures = Gesture.Simultaneous(pan, pinch);
 
   // The web's wheel and a trackpad pinch zoom about the pointer. The handler reads what the screen holds now, not what it held when it was added.
-  const stageRef = useRef<View>(null);
   const latest = useRef({ current, frame, origin, update });
   useEffect(() => {
     latest.current = { current, frame, origin, update };
@@ -319,6 +328,11 @@ export function PhotoPositionScreen({ kind, link, onSave, onCancel }: PhotoPosit
                 accessibilityActions={ACTIONS}
                 onAccessibilityAction={onAction}
                 onLayout={(event: LayoutChangeEvent) => {
+                  if (Platform.OS === 'web') {
+                    const box = (stageRef.current as unknown as { getBoundingClientRect?: () => { left: number; top: number } } | null)?.getBoundingClientRect?.();
+                    const page = globalThis as { scrollX?: number; scrollY?: number };
+                    if (box) setPageAt({ x: box.left + (page.scrollX ?? 0), y: box.top + (page.scrollY ?? 0) });
+                  }
                   const { width, height } = event.nativeEvent.layout;
                   setMeasured((now) => (now && now.width === width && now.height === height ? now : { width, height }));
                 }}

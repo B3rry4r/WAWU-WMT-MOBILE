@@ -232,6 +232,40 @@ describe('the tab strip reaches every currency (FX-POLISH P1)', () => {
   });
 });
 
+describe('a tab added from + Add is brought into view (SWEEP-1026 row 5)', () => {
+  const { WalletTabs } = require('../fx/parts') as typeof import('../fx/parts');
+  const { ScrollView } = require('react-native') as typeof import('react-native');
+  const tabs = (n: number) => Array.from({ length: n }, (_, i) => ({ key: `t${i}`, label: `Tab ${i}` }));
+
+  it('scrolls to the new tab when its own place arrives after the strip\u2019s new size did', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype as unknown as { scrollTo: (o: { x: number }) => void }, 'scrollTo').mockImplementation(() => undefined);
+    const tree = (n: number, value: string) => <WalletTabs tabs={tabs(n)} value={value} onChange={() => undefined} onAdd={() => undefined} />;
+    const view = await rtl.render(tree(6, 't0'));
+    const scroller = view.getByTestId('wallet-tabs-scroll');
+    await rtl.act(async () => {
+      scroller.props.onLayout({ nativeEvent: { layout: { width: 358, height: 40 } } });
+      scroller.props.onContentSizeChange(600, 40);
+    });
+    // The strip was scrolled to its end (where + Add is), then a seventh tab is added and put in front.
+    await rtl.act(async () => {
+      scroller.props.onScroll({ nativeEvent: { contentOffset: { x: 242, y: 0 } } });
+    });
+    scrollTo.mockClear();
+    await view.rerender(tree(7, 't6'));
+    // The strip's size is known first, the tab's own place after it (the order a phone or a browser may give them).
+    await rtl.act(async () => {
+      scroller.props.onContentSizeChange(690, 40);
+    });
+    expect(scrollTo).not.toHaveBeenCalled();
+    await rtl.act(async () => {
+      view.getByTestId('wallet-tab-t6').props.onLayout({ nativeEvent: { layout: { x: 560, y: 0, width: 80, height: 34 } } });
+    });
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ x: 536 }));
+    scrollTo.mockRestore();
+  });
+});
+
 describe('the one-time note after a wallet opens (D2)', () => {
   const noteKey = () => `wmt.note.currencies.${OWNER}`;
 

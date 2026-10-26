@@ -15,11 +15,11 @@ import { eventLine, PASSES_EMPTY } from './model';
  */
 const TILE = { radius: 20, padV: 12, padH: 14, stack: 4, head: 12.5, headGap: 6, icon: 15, title: 18, titleTracking: -0.02, sub: 12 } as const;
 /**
- * The empty card's title ("No event pass yet") is longer than a pass's name, so it is set a little smaller to stay on one line in half a row.
- * Its last line ("Comes with Founding Maker") is the owner's words and a little wider than half a row at 390, so it may take a second line
- * rather than be cut (the Points card beside it stretches to the same height).
+ * The empty card's title ("No event pass yet") is the same 18 / 700 as a pass's name and the Points card's count (W1 draws one size for
+ * the card's title; SWEEP-1026 row 9). It is longer than a pass's name, so in half a row it may take a second line rather than be set
+ * smaller. Its last line ("Comes with Founding Maker") is the owner's words and a little wider than half a row at 390, so it may take a
+ * second line too (the Points card beside it stretches to the same height).
  */
-const EMPTY_TITLE = 15;
 
 /**
  * W1's Passes card: the Hub's name for the person's pass and when the event is. Tapping it opens W44. It shares a row
@@ -34,7 +34,6 @@ export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eve
   const ring = useFocusRing();
   const title = pass ? pass.name : PASSES_EMPTY.title;
   const when = pass ? (pass.eventName ?? eventLine(pass.eventDate)) : PASSES_EMPTY.line;
-  const titleSize = pass ? TILE.title : EMPTY_TITLE;
   return (
     <Pressable
       testID="wallet-passes"
@@ -59,9 +58,9 @@ export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eve
       </View>
       <Text
         variant="body"
-        numberOfLines={1}
+        numberOfLines={pass ? 1 : 2}
         testID="wallet-passes-name"
-        style={[font(700), { fontSize: titleSize, letterSpacing: TILE.titleTracking * titleSize, lineHeight: canvasNormalLineHeight(TILE.title) }]}
+        style={[font(700), { fontSize: TILE.title, letterSpacing: TILE.titleTracking * TILE.title, lineHeight: canvasNormalLineHeight(TILE.title) }]}
       >
         {title}
       </Text>

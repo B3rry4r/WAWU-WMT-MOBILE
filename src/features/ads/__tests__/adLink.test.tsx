@@ -218,3 +218,45 @@ describe('the Explore slide', () => {
     expect(sent.filter((s) => s.key === `POST /ads/${base.id}/events`).map((s) => (s.body as { type: string }).type)).toEqual(['view']);
   });
 });
+
+describe('what the Hub is told about a tap (SWEEP-1026 row 1)', () => {
+  const { useAdReports } = require('../useAd') as typeof import('../useAd');
+  const { Pressable, Text } = require('react-native') as typeof import('react-native');
+  const { QueryClient, QueryClientProvider } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
+  // A screen that calls both ways of reporting a tap, as the three places do from their press handlers.
+  function Taps({ ad }: { ad: ReturnType<typeof card> }) {
+    const reports = useAdReports(ad, true);
+    return (
+      <Pressable
+        testID="taps"
+        onPress={() => {
+          reports.tap();
+          reports.tapOf(ad);
+        }}
+      >
+        <Text>tap</Text>
+      </Pressable>
+    );
+  }
+  const kinds = (id: string) => sent.filter((s) => s.key === `POST /ads/${id}/events`).map((s) => (s.body as { type: string }).type);
+  const wrapped = (ad: ReturnType<typeof card>) => (
+    <QueryClientProvider client={new QueryClient()}>
+      <Taps ad={ad} />
+    </QueryClientProvider>
+  );
+
+  it('an ad that does nothing sends a view and never a tap, whatever calls for one', async () => {
+    const screen = await rtl.render(wrapped(card('none')));
+    await rtl.fireEvent.press(screen.getByTestId('taps'));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(kinds(base.id)).toEqual(['view']);
+  });
+
+  it('a link ad still sends its one tap', async () => {
+    const screen = await rtl.render(wrapped(card('link')));
+    await rtl.fireEvent.press(screen.getByTestId('taps'));
+    await rtl.waitFor(() => expect(kinds(base.id)).toEqual(['view', 'tap']));
+  });
+});

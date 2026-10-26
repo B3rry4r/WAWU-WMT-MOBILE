@@ -58,7 +58,7 @@ const hub = {
    * the terms shows the screen as a slow phone does: the thread, and not yet the creator's terms. Holding the thread shows the loading state.
    * `pause` holds only the Hub's pause read, so the profile can be here (or fail on a second read) while the pause is still on its way.
    */
-  gate: { thread: null as null | Promise<void>, terms: null as null | Promise<void>, pause: null as null | Promise<void> },
+  gate: { thread: null as null | Promise<void>, terms: null as null | Promise<void>, pause: null as null | Promise<void>, record: null as null | Promise<void> },
 };
 
 const person = { wawuUserId: CREATOR, displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, tick: 'creator' };
@@ -211,7 +211,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (!hub.oldQuestion) return json(404, { statusCode: 404, message: 'We could not find that question.', data: null });
     return ok(hub.oldQuestion);
   }
-  if (path === '/dm/send/wallet/w1' && method === 'GET' && hub.waitingQuestion) return ok(hub.waitingQuestion);
+  if (path === '/dm/send/wallet/w1' && method === 'GET' && hub.waitingQuestion) {
+    if (hub.gate.record) await hub.gate.record;
+    return ok(hub.waitingQuestion);
+  }
   if (path === '/money/payments/pay-1' && method === 'GET') {
     hub.paymentReads += 1;
     return ok({ ...questionView('asked', 'x').payment, ...(hub.paymentSource ? { source: hub.paymentSource } : {}) });
@@ -271,7 +274,7 @@ beforeEach(() => {
     threadReads: 0,
     profile: 'ok',
     profileReads: 0,
-    gate: { thread: null, terms: null, pause: null },
+    gate: { thread: null, terms: null, pause: null, record: null },
   });
 });
 
@@ -283,7 +286,7 @@ afterEach(async () => {
 });
 
 /** Holds one of the Hub's answers (the thread, the creator's terms, or only the pause) until the returned function is called. */
-function hold(what: 'thread' | 'terms' | 'pause'): () => void {
+function hold(what: 'thread' | 'terms' | 'pause' | 'record'): () => void {
   let open = () => {};
   hub.gate[what] = new Promise<void>((resolve) => {
     open = resolve;
@@ -879,6 +882,48 @@ describe('PAY-FX (R-91): a paid question from a dollar account', () => {
     await rtl.waitFor(() => expect(hub.paymentReads).toBe(1));
     expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/and it comes back to your wallet\.$/);
     expect(rtl.screen.getByText(/₦1,500 paid$/)).toBeTruthy();
+  });
+
+  it('holds the stamp\u2019s amount and the card\u2019s words until the account is known, so naira never flashes before the dollars (SWEEP-1026 row 3)', async () => {
+    hub.thread = threadOf([waitingQ()]);
+    hub.waitingQuestion = { ...dmRecord('w1', 'asked', null), priceKobo: PRICE, deadlineAt: iso(17 * HOUR + 52 * 60_000) };
+    hub.paymentSource = USD_PAID;
+    const open = hold('record');
+    await boot();
+    const card = await rtl.screen.findByTestId('paid-card-w1');
+    // The thread is drawn and the account is not known: the countdown shows, the money's words are a loading line, the stamp is the time.
+    expect(rtl.within(card).getByTestId('paid-card-w1-title').props.children).toMatch(/left to reply$/);
+    expect(rtl.within(card).getByTestId('paid-card-w1-body-loading')).toBeTruthy();
+    expect(rtl.screen.queryByText(/₦1,500/)).toBeNull();
+    expect(rtl.screen.queryByText(/paid$/)).toBeNull();
+    expect(rtl.screen.queryByText(/comes back to your wallet/)).toBeNull();
+    open();
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/and it comes back to your USD account\.$/));
+    expect(rtl.screen.getByText(/ · \$0\.23 paid$/)).toBeTruthy();
+    expect(rtl.screen.queryByText(/₦1,500 paid/)).toBeNull();
+  });
+
+  it('a card that says the money is on its way back turns to the refund when it lands, without reopening the thread (SWEEP-1026 row 4)', async () => {
+    jest.useFakeTimers({ doNotFake: ['queueMicrotask'] });
+    try {
+      hub.thread = threadOf([waitingQ({ deadlineAt: iso(-60_000) })]);
+      hub.waitingQuestion = { ...dmRecord('w1', 'asked', null), priceKobo: PRICE, deadlineAt: iso(-60_000) };
+      await boot();
+      const card = await rtl.screen.findByTestId('paid-card-w1');
+      await rtl.waitFor(() => expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toBe('Your money is on its way back to your wallet.'));
+      // Past its time and still open at the Hub: the thread is read again. The Hub pays it back and says so.
+      const before = hub.threadReads;
+      hub.thread = threadOf([waitingQ({ status: 'refunded', deadlineAt: iso(-60_000) })]);
+      hub.waitingQuestion = dmRecord('w1', 'refunded', { id: 'h1', status: 'refunded', amountKobo: PRICE, refundedKobo: PRICE + FEE, settledAt: iso(-1000), heldAt: iso(-6 * HOUR) });
+      await rtl.act(async () => {
+        jest.advanceTimersByTime(16_000);
+      });
+      await rtl.waitFor(() => expect(hub.threadReads).toBeGreaterThan(before));
+      await rtl.waitFor(() => expect(rtl.within(rtl.screen.getByTestId('paid-card-w1')).getByTestId('paid-card-w1-title').props.children).toMatch(/so you got ₦1,523\.25 back$/));
+      expect(rtl.within(rtl.screen.getByTestId('paid-card-w1')).getByTestId('paid-card-w1-body').props.children).toMatch(/^It went back to your Naira wallet /);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('the ask sheet names the USD account from the first moment, not "Checking your balance"', async () => {

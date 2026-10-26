@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Animated, Image as NativeImage } from 'react-native';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -154,6 +154,37 @@ describe('The picture editor (R-96), the way Facebook and Instagram do it', () =
     await pinch(9);
     await save();
     expect(splitPhotoLink(onSave.mock.calls[1][0] as string).position?.zoom).toBe(4);
+  });
+
+  it('on the web a touch pinch zooms about the spot between the fingers, not a spot as far below them as the stage is below the page top (SWEEP-1026 row 11)', async () => {
+    const { Platform, View } = require('react-native') as typeof import('react-native');
+    // gesture-handler on the web reports page coordinates: the stage starts 56 below the top of the page (the bar), so the same finger
+    // is 56 lower in the report than on a phone, where the report is the stage's own.
+    const BAR = 56;
+    const at = { focalX: 195 + 120, focalY: 370 };
+    const laidOut = () => fireEvent(screen.getByTestId('position-stage'), 'layout', { nativeEvent: { layout: { x: 0, y: BAR, width: 390, height: 700 } } });
+    const onPhone = await open('avatar', HOST);
+    await laidOut();
+    await pinch(2.5, at);
+    await save();
+    const phone = splitPhotoLink(onPhone.onSave.mock.calls[0][0] as string).position!;
+    await cleanup();
+
+    const proto = View.prototype as unknown as { getBoundingClientRect?: () => { left: number; top: number } };
+    proto.getBoundingClientRect = () => ({ left: 0, top: BAR });
+    const replaced = jest.replaceProperty(Platform, 'OS', 'web');
+    try {
+      const onWeb = await open('avatar', HOST);
+      await laidOut();
+      await pinch(2.5, { focalX: at.focalX, focalY: at.focalY + BAR });
+      await save();
+      const web = splitPhotoLink(onWeb.onSave.mock.calls[0][0] as string).position!;
+      expect(web.x).toBeCloseTo(phone.x, 6);
+      expect(web.y).toBeCloseTo(phone.y, 6);
+    } finally {
+      replaced.restore();
+      delete proto.getBoundingClientRect;
+    }
   });
 
   it('a user with a screen reader has every move as an action on the stage, and the stage says what it is', async () => {

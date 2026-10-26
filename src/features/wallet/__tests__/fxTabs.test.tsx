@@ -41,6 +41,9 @@ let walletState = 'open';
 /** The bank does not answer the naira balance: `503 provider_unreachable`, in the provider's own flavour of words. */
 let balanceDown = false;
 let sent: string[] = [];
+/** What GET /about answers (the provider's bank name); null leaves it unanswered, as before. A held answer is released by `releaseAbout`. */
+let aboutBank: string | null = null;
+let aboutHeld: Promise<void> | null = null;
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
@@ -63,6 +66,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return ok({ availableKobo: 48_525_075, asOf: '2026-10-07T09:00:00.000Z' });
   }
   if (path === '/money/transactions') return ok({ items: [], nextCursor: null });
+  if (path === '/about' && aboutBank !== null) {
+    if (aboutHeld) await aboutHeld;
+    return ok({ bankName: aboutBank, licenceLine: null, supportEmail: null });
+  }
   throw new Error(`no answer for ${request.method} ${path}`);
 }) as typeof fetch;
 
@@ -94,6 +101,8 @@ beforeEach(() => {
   walletState = 'open';
   balanceDown = false;
   sent = [];
+  aboutBank = null;
+  aboutHeld = null;
   mockCopied.length = 0;
   mockPushed.length = 0;
   mockVault.clear();
@@ -301,5 +310,60 @@ describe('W3 · Crypto', () => {
     await openTab('Crypto');
     await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Get an address' }));
     expect(mockPushed).toEqual(['/crypto-receive']);
+  });
+});
+
+describe('R-95 · Powered by Nuvion on a foreign account (SWEEP-1026 rows 6, 7 and 8)', () => {
+  const lineCount = () => rtl.screen.queryAllByText('Powered by Nuvion').length;
+  const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+
+  it('draws the line once under a dollar account card, and not under it when the Hub names another bank', async () => {
+    aboutBank = 'Nuvion';
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    await rtl.cleanup();
+    queryClient.clear();
+    aboutBank = 'Loma Bank';
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    await rtl.waitFor(() => expect(sent.filter((s) => s === 'GET /about').length).toBe(2));
+    expect(lineCount()).toBe(0);
+    expect(rtl.screen.queryByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('a details sheet opened over the account shows the line once, not the page\u2019s and the sheet\u2019s (row 6)', async () => {
+    aboutBank = 'Nuvion';
+    await boot();
+    await openTab('Dollar');
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: /Get paid in dollars/ }));
+    expect(await rtl.screen.findByText('USD account details')).toBeTruthy();
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    // The page keeps the line's room under the sheet, so nothing moves; shut, the page has its line again.
+    expect(rtl.screen.getByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('keeps the line\u2019s room until GET /about answers, so the page does not jump when it is late (row 7)', async () => {
+    const { StyleSheet } = require('react-native') as typeof import('react-native');
+    const { text } = require('@/theme') as typeof import('@/theme');
+    aboutBank = 'Nuvion';
+    let release: () => void = () => undefined;
+    aboutHeld = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await boot();
+    await openTab('Dollar');
+    const room = await rtl.screen.findByTestId('powered-by-nuvion-room', { includeHiddenElements: true });
+    expect(lineCount()).toBe(0);
+    expect((StyleSheet.flatten(room.props.style) as { height: number }).height).toBe(text.caption.lineHeight);
+    await rtl.act(async () => {
+      release();
+    });
+    const line = await rtl.screen.findByText('Powered by Nuvion');
+    expect(rtl.screen.queryByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeNull();
+    expect(line).toBeTruthy();
   });
 });

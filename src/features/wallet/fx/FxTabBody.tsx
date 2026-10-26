@@ -137,7 +137,7 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
           detailsNote={account.detailsNote}
           onRetry={props.onRetry}
         />
-        <PoweredByNuvion style={styles.powered} />
+        <PoweredByNuvion style={styles.powered} hidden={sheet} />
       </View>
       {frozen ? <Banner tone="warning" title="This account is frozen" body="Money can arrive, but it cannot be swapped or sent until it is opened again." testID="fx-frozen" /> : null}
       {swaps ? (

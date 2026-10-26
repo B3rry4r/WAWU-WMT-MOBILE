@@ -1,7 +1,7 @@
 import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { adKey, adListKey, fetchAd, fetchAdList, reportAd, type AdCard, type AdEventKind, type AdListPlacement, type AdPlacement } from './api';
+import { adKey, adListKey, adOpensSomething, fetchAd, fetchAdList, reportAd, type AdCard, type AdEventKind, type AdListPlacement, type AdPlacement } from './api';
 
 /**
  * The live card for a place. A sponsored card is never a reason to draw a frame or an error: while it is on its
@@ -46,7 +46,8 @@ export function useAdList(placement: AdListPlacement, enabled = true, client?: Q
  * What the Hub is told about a card (ADS-05): one view when it is on screen, one tap when its button is pressed, one
  * skip when Skip is. Each is sent at most once for a card by this screen; the Hub itself keeps one of each kind per
  * person per day, so a screen opened again changes nothing. A report that cannot be sent is not shown to anyone,
- * only the day's count misses one.
+ * only the day's count misses one. A card that does nothing (R-92, `none`) is viewed and never tapped: nothing on it is a tap, so
+ * no tap is sent for it whatever calls `tap` (SWEEP-1026 row 1).
  */
 export function useAdReports(ad: AdCard | null | undefined, showing: boolean) {
   const sent = useRef(new Set<string>());
@@ -65,8 +66,8 @@ export function useAdReports(ad: AdCard | null | undefined, showing: boolean) {
 
   return {
     tap: useCallback(() => {
-      if (id) report(id, 'tap');
-    }, [id, report]),
+      if (id && ad && adOpensSomething(ad)) report(id, 'tap');
+    }, [id, ad, report]),
     skip: useCallback(() => {
       if (id) report(id, 'skip');
     }, [id, report]),
@@ -74,6 +75,11 @@ export function useAdReports(ad: AdCard | null | undefined, showing: boolean) {
      * A tap on a card that is not the one this hook was given (EXPLORE-07 L1): the Explore slider is bound to the slide on
      * screen, and a press can land on a slide beside it while the strip is between two. The tap is for the card pressed.
      */
-    tapOf: useCallback((card: string) => report(card, 'tap'), [report]),
+    tapOf: useCallback(
+      (card: AdCard) => {
+        if (adOpensSomething(card)) report(card.id, 'tap');
+      },
+      [report],
+    ),
   };
 }

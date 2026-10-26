@@ -1,5 +1,7 @@
 import * as rtl from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
+import { POINTS_TILE } from '../home/PointsTile';
 import { PassCard } from '../pass/PassCard';
 import { PassesTile } from '../pass/PassesTile';
 
@@ -56,5 +58,17 @@ describe('W1 · the Passes card', () => {
     expect(rtl.screen.getByLabelText('Passes, No event pass yet, Comes with Founding Maker')).toBeTruthy();
     rtl.fireEvent.press(rtl.screen.getByTestId('wallet-passes'));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('the empty card title is the same size as the Points card count and a pass name (18), with room for a second line (SWEEP-1026 row 9)', async () => {
+    const size = () => (StyleSheet.flatten(rtl.screen.getByTestId('wallet-passes-name').props.style) as { fontSize: number }).fontSize;
+    await rtl.render(<PassesTile pass={null} onPress={() => undefined} />);
+    const empty = size();
+    expect(rtl.screen.getByTestId('wallet-passes-name').props.numberOfLines).toBe(2);
+    await rtl.cleanup();
+    await rtl.render(<PassesTile pass={{ name: 'Maker Pass', eventDate: '2026-12-20', eventName: null }} onPress={() => undefined} />);
+    expect(size()).toBe(empty);
+    expect(empty).toBe(18);
+    expect(POINTS_TILE.sub).toBe(12);
   });
 });
