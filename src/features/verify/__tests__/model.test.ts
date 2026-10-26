@@ -25,7 +25,7 @@ const tier = (over: Record<string, unknown> = {}) => ({
   products: 10,
   bonusPoints: 600,
   bonusPointsExpireDays: 365,
-  priceMinor: 500000,
+  priceMinor: 999900,
   eventPass: { id: 'maker_pass_priority', name: 'Maker Pass, priority', benefits: null, eventDate: null },
   badge: { id: 'founding', numbered: true },
   packBonusPercent: 10,

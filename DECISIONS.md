@@ -486,6 +486,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 
 **Carried out by:** the design round 2 brief (`docs/designer/CLAUDE-DESIGN-ROUND-2.md`), then tasks cut from the new boards.
 *Updated by R-65 (owner, 16 Oct 2026): the open figures are launch settings in admin settings.*
+*Updated by R-89 (owner, 26 Oct 2026): the tier prices and lengths are set.*
 
 ### R-50 · Deleting an account keeps what buyers paid for
 *Owner, 16 Oct 2026 ("buyers KEEP the paid content they bought").* When a creator deletes their account (R-17), what buyers already paid for stays available to those buyers: content they unlocked, tickets they hold and services they booked. The creator's profile and unsold listings go. Updates R-17.
@@ -550,6 +551,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 
 ### R-65 · The new money figures are launch settings in admin settings
 *Owner, 16 Oct 2026 ("USE THE DESIGN'S FIGURES AS LAUNCH SETTINGS, changeable at any time").* Launch values: tiers ₦1,000, ₦3,000 and ₦5,000 (dollar prices wait for dollar accounts); add 5 products ₦1,500 (this also answers the 5-place pack price and TIER-02's D9); 1,000 points = ₦500; points last 12 months; a cap of 5,000 points a day; referral multipliers ×1 to ×3 and +500 points at 5 verified; a 7-day referral hold. 85/15 stays the one split (R-5). Any other figure drawn on a VF, PT or RF board loads as a PROVISIONAL setting with the board's value and is listed for the owner in the task's report. Updates R-43's open figures; points and WAWU Credits stay two balances.
+*Updated by R-89 (owner, 26 Oct 2026): the three tiers are ₦2,999, ₦5,999 and ₦9,999, each for one year.*
 **Carried out by:** TIER-06 (admin settings, new), which also names where each figure is used.
 
 ### R-66 · The Voice Intro player says "Bio" and carries an "AI voice" tag
@@ -646,3 +648,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-87 · A person outside Nigeria opens a wallet in their own currency, and may add others
 *Owner, 24 Oct 2026 ("Yes ... that's a duh!!! Infact it should work based on region or something and also choice too").* Answers R-85's open question. A person whose country of residence is not Nigeria opens a wallet without a BVN: Nuvion checks their identity with their own country's ID document and a liveness check, as Nuvion requires for that country. Their first account is their country's currency where Nuvion serves it (USD for the United States, GBP for the United Kingdom, EUR for the euro countries, CAD for Canada, AED for the United Arab Emirates, GHS for Ghana), otherwise USD; they can choose a different first currency and add any other currency or coin afterwards (R-84). A person in Nigeria keeps the BVN naira wallet (R-6) and may add the others. Facts about which IDs Nuvion accepts per country come from Nuvion's docs and dev answers.
 **Carried out by:** WALLET-41 (Hub and app).
+
+### R-89 · The three tiers last one year each, at ₦2,999, ₦5,999 and ₦9,999
+*Owner, 26 Oct 2026 ("All yearly").* Verify costs ₦2,999, Verify Plus ₦5,999 and Founding Maker ₦9,999, and each lasts one year (365 days). R-65's launch values were ₦1,000 for 30 days, ₦3,000 for 180 days and ₦5,000 for 365 days. They are still launch settings an admin can change (R-65); dollar prices still wait for dollar accounts. The Hub's seed and its admin settings defaults carry the new figures, and a migration moves any saved admin figure for the six settings (price and length of each tier) to them. A person who holds a tier keeps the length they bought. The app draws the store's price (R-86) and the Hub's length, so it holds no tier figure of its own. In the stores each tier is a 1-year subscription, and a tier product's store period must equal the tier's days (365): `wawu.tier.verify`, `wawu.tier.plus` and `wawu.tier.founding` are all 1-year subscriptions, at ₦2,999, ₦5,999 and ₦9,999 before tax. VAT, taxes and the store's own price steps can make the final store price differ from the naira figure, and nobody can know it exactly in advance; the person is always shown the store's price. The event registration offer (R-48) is its own figure and does not change.
+**Carried out by:** TIER-YEARLY (Hub and app).
