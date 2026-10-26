@@ -36,5 +36,12 @@
         "EXPO_PUBLIC_ID_URL": "https://id.wawuafrica.com"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6827108525"
+      }
+    }
   }
 }
