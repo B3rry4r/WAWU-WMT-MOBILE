@@ -11912,11 +11912,30 @@ export interface components {
              *     refusal is a 422 and not the validation pipe's 400.
              */
             artworkUrl?: string | null;
+            /**
+             * @description The landscape picture (R-92): 16:9, 1920 x 1080, an https link (the one an
+             *     upload to `POST /admin/ads/artwork` returns, or one that is hosted already).
+             *     It shows in the Explore slider AND on the Today strip. Optional; a booking
+             *     needs this, `portraitUrl` or both (422 "Add artwork ..." otherwise).
+             */
+            landscapeUrl?: string | null;
+            /**
+             * @description The portrait picture (R-92): 1080 x 2340, the shape of a phone screen. It
+             *     shows in the TGIF full screen. Optional, as `landscapeUrl`.
+             */
+            portraitUrl?: string | null;
         };
         CreateAdCampaignDto: {
             advertiser: string;
-            /** @enum {string} */
-            placement: "tgif_card" | "today_slot" | "explore_slider";
+            /**
+             * @description Only for a booking made with the single `creative.artworkUrl` (the body the
+             *     dashboard sent until R-92's two shapes), where it is required: 400 without
+             *     it. A booking made with `creative.landscapeUrl` or `portraitUrl` takes none,
+             *     and is refused with 400 if one is sent: where it shows follows from its
+             *     pictures.
+             * @enum {string}
+             */
+            placement?: "tgif_card" | "today_slot" | "explore_slider";
             /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
             startsAt: string;
             /** @description UTC. Must come after startsAt, and must not have passed yet. */
@@ -11934,8 +11953,17 @@ export interface components {
             ctaDestinationId?: string;
             /** @description A new address for a `link` card. Only a card that opens a link has one. */
             ctaUrl?: string;
-            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). */
+            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). Only for a booking saved before the two shapes. */
             artworkUrl?: string | null;
+            /**
+             * @description A new landscape picture (16:9, 1920 x 1080), or null to take it away. Sending
+             *     it for a booking that has the single `artworkUrl` moves the booking to the
+             *     two shapes: its own picture stays where it showed (as the landscape or the
+             *     portrait picture) unless this request names that shape.
+             */
+            landscapeUrl?: string | null;
+            /** @description A new portrait picture (1080 x 2340), or null to take it away. */
+            portraitUrl?: string | null;
         };
         UpdateAdCampaignDto: {
             advertiser?: string;
@@ -18354,6 +18382,10 @@ export interface components {
             ctaUrl?: string | null;
             artworkUrl: string | null;
             artworkPreviewUrl?: string | null;
+            landscapeUrl: string | null;
+            landscapePreviewUrl?: string | null;
+            portraitUrl: string | null;
+            portraitPreviewUrl?: string | null;
         };
         AdEventView: {
             id: string;
@@ -18377,6 +18409,7 @@ export interface components {
             advertiser: string;
             /** @enum {string} */
             placement: "tgif_card" | "today_slot" | "explore_slider";
+            shows: ("tgif_card" | "today_slot" | "explore_slider")[];
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -18490,6 +18523,7 @@ export interface components {
             advertiser: string;
             /** @enum {string} */
             placement: "tgif_card" | "today_slot" | "explore_slider";
+            shows: ("tgif_card" | "today_slot" | "explore_slider")[];
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -18512,6 +18546,11 @@ export interface components {
         AdCampaignChangeView: {
             campaign: components["schemas"]["AdCampaignDetailView"];
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        AdArtworkUploadView: {
+            artworkUrl: string;
+            previewUrl: string;
+            bytes: number;
         };
         AdDayCounts: {
             day: string;
