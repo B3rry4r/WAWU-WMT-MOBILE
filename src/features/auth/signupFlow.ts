@@ -18,6 +18,7 @@ import { maskedNumber } from '@/features/geo/phone';
 import { noteContactProved } from '@/features/claim/freshToken';
 import { markOfferPending } from '@/features/claim/offerStep';
 import { markBonusPending } from '@/features/verify/bonusStep';
+import { markAcceptancePending, recordSignupAcceptance } from '@/features/about/acceptance';
 
 import { wireAccountType, type AccountType } from './accountType';
 import { askUsername } from './identityApi';
@@ -129,8 +130,13 @@ export async function confirmSignupCode(code: string, emailCode: string): Promis
   await markOfferPending(tokens.accessToken);
   // VERIFY-01: and, after that, once to "Your bonus is waiting" (VF1), the same way (SHARED-CHANGES VERIFY-01 #1).
   await markBonusPending(tokens.accessToken);
+  // LEGAL-DOCS: A3 will not Continue unticked, so this account agreed to the owner's documents; the Hub is told after the session exists.
+  await markAcceptancePending(tokens.accessToken);
   // SIGNUP-NAMES: once the session is adopted the username chosen on the form is claimed on the Hub; the gate waits for it.
   await claimSignupUsername(() => adoptSession(tokens), username);
+  // LEGAL-DOCS: the Hub keeps what was agreed to, now that the session exists; a failed try is made again on the next start
+  // (the mark above), and nothing here can stop the sign-up.
+  void recordSignupAcceptance(tokens.accessToken);
 }
 
 /** A4 Resend: another code for the same sign-up, by the channel it started with. Resolves with the server's `resendIn`. */

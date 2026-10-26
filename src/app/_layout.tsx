@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
+import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
@@ -93,6 +94,8 @@ export default function RootLayout() {
   const gate = useSignupGate();
   const signedIn = status === 'signedIn';
   const offer = useClaimOfferStep(signedIn);
+  // LEGAL-DOCS: a sign-up whose agreement could not reach the Hub sends it again once the person is signed in.
+  useAcceptanceRetry(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || gate.phase === 'ready');
@@ -297,6 +300,8 @@ export default function RootLayout() {
         <Stack.Screen name="about" />
         <Stack.Screen name="terms" />
         <Stack.Screen name="privacy-policy" />
+        <Stack.Screen name="legal-documents/index" />
+        <Stack.Screen name="legal-documents/[slug]" />
       </Stack>
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />

@@ -211,27 +211,55 @@ describe('BRAND-01: the opening screen', () => {
   });
 });
 
-describe('BRAND-01: the welcome cover picture', () => {
-  const cover = read('assets/images/welcome-cover.jpg');
+describe('ONBOARD-LOGO (R-90): the welcome screen\'s mark and its glow', () => {
+  /** The three files `scripts/design/make_welcome_mark.py` writes: 190 pt of mark and 80 pt of glow on every side, at 1x, 2x and 3x. */
+  const files = [
+    { path: 'assets/images/welcome-mark.png', scale: 1 },
+    { path: 'assets/images/welcome-mark@2x.png', scale: 2 },
+    { path: 'assets/images/welcome-mark@3x.png', scale: 3 },
+  ];
 
-  /** The size a JPEG says it is: the first start-of-frame marker. */
-  function jpegSize(file: Buffer): { width: number; height: number } {
-    let at = 2;
-    while (at < file.length) {
-      if (file[at] !== 0xff) throw new Error('not a JPEG marker');
-      const marker = file[at + 1];
-      const length = file.readUInt16BE(at + 2);
-      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) return { height: file.readUInt16BE(at + 5), width: file.readUInt16BE(at + 7) };
-      at += 2 + length;
+  it.each(files)('is $scale x as many pixels across in $path as the 350 x 367 pt picture the screen draws', ({ path, scale }) => {
+    const png = decodePng(read(path));
+    expect(png.channels).toBe(4);
+    expect(png.width).toBe(350 * scale);
+    expect(png.height).toBe(367 * scale);
+  });
+
+  it.each(files)('lets the glow fade to nothing before the edge of $path, so the page shows no box around the mark', ({ path }) => {
+    const png = decodePng(read(path));
+    let strongest = 0;
+    for (let x = 0; x < png.width; x++) strongest = Math.max(strongest, alphaOf(png, x, 0), alphaOf(png, x, png.height - 1));
+    for (let y = 0; y < png.height; y++) strongest = Math.max(strongest, alphaOf(png, 0, y), alphaOf(png, png.width - 1, y));
+    expect(strongest).toBeLessThanOrEqual(2);
+  });
+
+  it('holds the white logo and lights it with the accent colour, not another purple', () => {
+    const png = decodePng(read('assets/images/welcome-mark@3x.png'));
+    let white = 0;
+    let glow = 0;
+    let glowInAccent = 0;
+    for (let y = 0; y < png.height; y++) {
+      for (let x = 0; x < png.width; x++) {
+        const a = alphaOf(png, x, y);
+        if (a === 255 && rgbOf(png, x, y).every((v) => v >= 0xf0)) white++;
+        else if (a > 30 && a < 255) {
+          glow++;
+          if (hex(rgbOf(png, x, y)) === darkColors.accent) glowInAccent++;
+        }
+      }
     }
-    throw new Error('no frame header');
-  }
+    expect(white).toBeGreaterThan(20_000);
+    expect(glow).toBeGreaterThan(100_000);
+    expect(glowInAccent / glow).toBeGreaterThan(0.9);
+  });
 
-  it('is a portrait picture sharp enough for a phone and small enough for the app bundle', () => {
-    const { width, height } = jpegSize(cover);
-    expect(width).toBeGreaterThanOrEqual(780);
-    expect(height / width).toBeGreaterThan(2);
-    expect(height / width).toBeLessThan(2.4);
-    expect(statSync(join(ROOT, 'assets/images/welcome-cover.jpg')).size).toBeLessThan(400 * 1024);
+  it('stays small enough for the app bundle (all three files under 400 KB)', () => {
+    const bytes = files.reduce((sum, { path }) => sum + statSync(join(ROOT, path)).size, 0);
+    expect(bytes).toBeLessThan(400 * 1024);
+  });
+
+  it('no longer ships the welcome photo', () => {
+    expect(() => statSync(join(ROOT, 'assets/images/welcome-cover.jpg'))).toThrow();
   });
 });

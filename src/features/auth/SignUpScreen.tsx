@@ -58,9 +58,8 @@ export type SignUpScreenProps = {
    * person types, after a pause; left out, the field checks nothing until Continue.
    */
   checkUsername?: (username: string) => Promise<UsernameAnswer>;
-  /** The terms and the privacy policy behind the consent line's two words (public screens, readable before sign-up). */
-  onOpenTerms?: () => void;
-  onOpenPrivacy?: () => void;
+  /** The Legal list behind the consent line's "Read them": the owner's nine documents, each readable before sign-up (LEGAL-DOCS). */
+  onOpenLegal?: () => void;
   /** The Hub's countries (`GET /geo/countries`): the phone field's list and the country of residence. Undefined while they load. */
   countries?: readonly GeoCountry[];
   /** The list of countries could not be read. */
@@ -76,7 +75,7 @@ export type SignUpScreenProps = {
 
 type Missing = { firstName?: string; lastName?: string; username?: string; email?: string; phone?: string; password?: string; agreed?: string };
 
-/** A3's consent line is required: the sign-up goes ahead only with it ticked (R-67). */
+/** A3's consent line is required: the sign-up goes ahead only with it ticked (R-67; one box for all of the owner's documents, LEGAL-DOCS). */
 const AGREE_NEEDS = 'Tick the box to agree before you continue.';
 
 /**
@@ -86,7 +85,7 @@ const AGREE_NEEDS = 'Tick the box to agree before you continue.';
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms, onOpenPrivacy, checkUsername, channel, countries, countriesFailed, onRetryCountries, region, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenLegal, checkUsername, channel, countries, countriesFailed, onRetryCountries, region, initial, initialFailure }: SignUpScreenProps) {
   const [firstName, setFirstName] = useState(initial?.firstName ?? '');
   const [lastName, setLastName] = useState(initial?.lastName ?? '');
   const [username, setUsername] = useState(initial?.username ?? '');
@@ -319,8 +318,7 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenTerms,
           agreed={agreed}
           busy={busy}
           problem={missing.agreed}
-          onOpenTerms={onOpenTerms}
-          onOpenPrivacy={onOpenPrivacy}
+          onOpenAll={onOpenLegal}
           onToggle={() => {
             setAgreed((now) => !now);
             setMissing((now) => ({ ...now, agreed: undefined }));

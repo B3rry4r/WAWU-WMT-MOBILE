@@ -6667,6 +6667,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The published documents in the owner's order: slug, title and effective
+         *     date, no text. Empty until the owner has published one.
+         */
+        get: operations["AboutController_policyList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/policies/{slug}": {
         parameters: {
             query?: never;
@@ -6674,10 +6694,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `terms` or `privacy`; `available: false` until the owner fills it in. */
+        /** One of the nine slugs; `available: false` until the owner fills it in. */
         get: operations["AboutController_policy"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/policies/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PolicyAcceptanceController_accept"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11377,6 +11413,10 @@ export interface components {
             recapText?: string;
             speakers?: components["schemas"]["EventSpeakerDto"][];
         };
+        AcceptPoliciesDto: {
+            /** @enum {string} */
+            how: "signup";
+        };
         PolicySectionDto: {
             heading: string;
             body: string;
@@ -15629,17 +15669,35 @@ export interface components {
             licenceLine: string | null;
             supportEmail: string | null;
         };
+        PolicySummaryView: {
+            /** @enum {string} */
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
+            title: string;
+            effectiveDate: string;
+        };
+        PolicyListView: {
+            items: components["schemas"]["PolicySummaryView"][];
+        };
         PolicySectionView: {
             heading: string;
             body: string;
         };
         PolicyView: {
             /** @enum {string} */
-            slug: "terms" | "privacy";
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
             available: boolean;
             title: string | null;
             effectiveDate: string | null;
             sections: components["schemas"]["PolicySectionView"][];
+        };
+        PolicyAcceptedView: {
+            /** @enum {string} */
+            slug: "privacy" | "terms" | "cookies" | "creator-monetization" | "verification-refund" | "acceptable-use" | "partner-dpa" | "community-guidelines" | "disclaimer";
+            effectiveDate: string;
+            acceptedAt: string;
+        };
+        PolicyAcceptanceView: {
+            items: components["schemas"]["PolicyAcceptedView"][];
         };
         SchoolPayeeView: {
             schoolId: string;
@@ -32225,6 +32283,25 @@ export interface operations {
             };
         };
     };
+    AboutController_policyList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyListView"];
+                };
+            };
+        };
+    };
     AboutController_policy: {
         parameters: {
             query?: never;
@@ -32242,6 +32319,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyView"];
+                };
+            };
+        };
+    };
+    PolicyAcceptanceController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptPoliciesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyAcceptanceView"];
                 };
             };
         };

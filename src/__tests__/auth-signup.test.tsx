@@ -20,7 +20,9 @@ import { apiBaseUrl } from '@/api/env';
 import { queryClient } from '@/api/query';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
+import { retryPendingAcceptance } from '@/features/about/acceptance';
 import { clearAccountType } from '@/features/auth/accountType';
+import * as aboutApi from '@/features/about/api';
 import * as identityApi from '@/features/auth/identityApi';
 import * as geoApi from '@/features/geo/geoApi';
 import { forgetSignupChannel, knownSignupChannel, signupChannel } from '@/features/auth/signupFlow';
@@ -56,6 +58,8 @@ jest.mock('@/features/auth/identityApi', () => ({
  * this suite answers the list at the module that makes the call. By default no list arrives, as before the task; a case that wants
  * one calls `serveCountries()`.
  */
+// LEGAL-DOCS: the Hub's side of the sign-up agreement. The Hub client binds `fetch` when it loads, so this file's fetch stand-in cannot answer it.
+jest.mock('@/features/about/api', () => ({ ...jest.requireActual('@/features/about/api'), acceptPolicies: jest.fn() }));
 jest.mock('@/features/geo/geoApi', () => ({
   ...jest.requireActual('@/features/geo/geoApi'),
   fetchCountries: jest.fn(),
@@ -79,6 +83,8 @@ const routes = {
   // DV2-05: the consent line's two words open these (public screens; their own tests live with the About feature).
   terms: () => <NativeText>Terms page</NativeText>,
   'privacy-policy': () => <NativeText>Privacy policy page</NativeText>,
+  // LEGAL-DOCS: A3's "Read them" opens the Legal list.
+  'legal-documents/index': () => <NativeText>Legal list page</NativeText>,
 };
 
 type Call = { method: string; path: string; url: string; body: Record<string, unknown>; auth: string | null };
@@ -216,6 +222,7 @@ beforeEach(async () => {
   calls = [];
   jest.mocked(identityApi.askUsername).mockClear();
   jest.mocked(identityApi.putIdentity).mockClear();
+  jest.mocked(aboutApi.acceptPolicies).mockReset().mockResolvedValue({ items: [] });
   // No country list unless a case serves one, and none kept from an earlier case (the list is cached for the run).
   jest.mocked(geoApi.fetchCountries).mockReset().mockRejectedValue(new TypeError('Network request failed'));
   queryClient.clear();
@@ -451,6 +458,48 @@ describe('A4: the phone code', () => {
     expect(mockVault.get(ACCESS_KEY)).toBe('access-new');
     expect(mockVault.get(REFRESH_KEY)).toBe('refresh-new');
     expect(callsTo('/auth/signup/progress')[0].auth).toBe('Bearer access-new');
+  });
+
+  /** An access token that carries who the account is, as the Hub's own tokens do; the other cases use a plain word. */
+  const tokenFor = (sub: string) => `h.${Buffer.from(JSON.stringify({ sub })).toString('base64url')}.s`;
+
+  it('LEGAL-DOCS: once the new account has its session, the app tells the Hub what A3\'s box agreed to, and remembers it was done', async () => {
+    answers['POST /auth/phone/verify/confirm'] = ok({ accessToken: tokenFor('u-new'), refreshToken: 'refresh-new', user: { id: 'u-new' } });
+    await toA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(aboutApi.acceptPolicies).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockVault.get('wmt.legal.accept.u-new')).toBe('done'));
+  });
+
+  it('LEGAL-DOCS: a sign-up that goes through the plain-token cases sends nothing (an account the app cannot name has no mark)', async () => {
+    await toA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
+    expect(aboutApi.acceptPolicies).not.toHaveBeenCalled();
+    expect([...mockVault.keys()].filter((key) => key.startsWith('wmt.legal.accept.'))).toEqual([]);
+  });
+
+  it('LEGAL-DOCS: when the Hub cannot be reached the person is still signed in, the agreement waits, and the next start sends it again', async () => {
+    answers['POST /auth/phone/verify/confirm'] = ok({ accessToken: tokenFor('u-wait'), refreshToken: 'refresh-new', user: { id: 'u-wait' } });
+    jest.mocked(aboutApi.acceptPolicies).mockRejectedValue(new TypeError('Network request failed'));
+    await toA4();
+    await typeDigits('481902');
+    await waitFor(() => expect(aboutApi.acceptPolicies).toHaveBeenCalled());
+    // Signed in all the same: the session is kept, only the agreement waits.
+    await waitFor(() => expect(mockVault.get(ACCESS_KEY)).toBe(tokenFor('u-wait')));
+    expect(mockVault.get('wmt.legal.accept.u-wait')).toBe('pending');
+    const before = jest.mocked(aboutApi.acceptPolicies).mock.calls.length;
+    jest.mocked(aboutApi.acceptPolicies).mockResolvedValue({ items: [] });
+    await act(async () => {
+      await retryPendingAcceptance();
+    });
+    expect(jest.mocked(aboutApi.acceptPolicies).mock.calls.length).toBe(before + 1);
+    expect(mockVault.get('wmt.legal.accept.u-wait')).toBe('done');
+    // Settled: another start sends nothing more.
+    await act(async () => {
+      await retryPendingAcceptance();
+    });
+    expect(jest.mocked(aboutApi.acceptPolicies).mock.calls.length).toBe(before + 1);
   });
 
   it('shows the resend countdown from the server\'s resendIn and a Resend code button when it reaches zero', async () => {
@@ -1345,7 +1394,8 @@ describe('AUTH-07 round 3: A3 names the channel A4 will name (F-D), and A4 says 
 describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the terms line)', () => {
   it('a new person is asked for email, phone, password and the terms line, and never for a BVN', async () => {
     await toA3();
-    expect(screen.getByLabelText('I agree to the terms and privacy policy')).toBeTruthy();
+    // LEGAL-DOCS (owner, 26 Oct 2026): one box for all of the owner's documents; the label was "I agree to the terms and privacy policy".
+    expect(screen.getByLabelText('I agree to the Terms of Service, Privacy Policy and our other policies')).toBeTruthy();
     expect(screen.queryByText(/BVN|NIN|selfie/i)).toBeNull();
     expect(screen.getByTestId('sign-up-consent').props.accessibilityState).toMatchObject({ checked: false });
   });
@@ -1368,19 +1418,20 @@ describe('DV2-05: A3 follows the 16 Oct board (email, phone, password and the te
     expect(Object.keys(callsTo('/auth/signup')[0].body).sort()).toEqual(['accountType', 'email', 'firstName', 'lastName', 'password', 'phone']);
   });
 
-  it('the words "terms" and "privacy policy" open the Terms and the Privacy policy, and what was typed stays', async () => {
+  it('"Read them" opens the Legal list, and what was typed stays', async () => {
     await toA3();
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'lennox@wawu.africa');
-    await fireEvent.press(screen.getByTestId('sign-up-consent-terms'));
-    await waitFor(() => expect(screen.getByText('Terms page')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('sign-up-consent-read'));
+    await waitFor(() => expect(screen.getByText('Legal list page')).toBeTruthy());
     expect(sentCalls()).toEqual([]);
   });
 
-  it('the privacy policy word opens the Privacy policy and leaves the box as it was', async () => {
+  it('the line has no separate terms or privacy policy word any more: one box, one "Read them"', async () => {
     await toA3();
-    await fireEvent.press(screen.getByTestId('sign-up-consent-privacy'));
-    await waitFor(() => expect(screen.getByText('Privacy policy page')).toBeTruthy());
-    expect(sentCalls()).toEqual([]);
+    expect(screen.queryByTestId('sign-up-consent-terms')).toBeNull();
+    expect(screen.queryByTestId('sign-up-consent-privacy')).toBeNull();
+    expect(screen.getByText(/I agree to the Terms of Service, Privacy Policy and our other policies\./)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Read them' })).toBeTruthy();
   });
 });
 

@@ -65,8 +65,8 @@ const plansView = () => ({
   actions: [{ id: 'voiceover_per_min', points: 250, per: 'minute' }],
   caps: { dailyPoints: 5000, maxCharactersPerJob: 5000, maxAudioMinutesPerJob: 10 },
   tiers: [
-    { id: 'verify', name: 'Verify', days: 30, products: 3, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: 100000, eventPass: { id: 'a', name: 'Watch live, apply' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false },
-    { id: 'founding', name: 'Founding Maker', days: 365, products: 10, bonusPoints: 600, bonusPointsExpireDays: 365, priceMinor: 500000, eventPass: { id: 'c', name: 'Maker Pass, priority' }, badge: { id: 'founding', numbered: true }, packBonusPercent: 10, firstVoiceIntroIncluded: true, preselected: true },
+    { id: 'verify', name: 'Verify', days: 365, products: 3, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: 299900, eventPass: { id: 'a', name: 'Watch live, apply' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false },
+    { id: 'founding', name: 'Founding Maker', days: 365, products: 10, bonusPoints: 600, bonusPointsExpireDays: 365, priceMinor: 999900, eventPass: { id: 'c', name: 'Maker Pass, priority' }, badge: { id: 'founding', numbered: true }, packBonusPercent: 10, firstVoiceIntroIncluded: true, preselected: true },
   ],
 });
 
