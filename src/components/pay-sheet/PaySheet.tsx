@@ -309,6 +309,43 @@ export function sourceApproval(source: PaySource | undefined): { amountText?: st
   return source ? { amountText: sourceTotalText(source) } : {};
 }
 
+/** The account a foreign payment came from, as the person knows it ("USD account"): one place writes it. */
+export const accountNameOf = (currency: string): string => `${currency} account`;
+
+/**
+ * What a finished payment took from the buyer's other-currency account: the Hub's `PaymentView.source`. A naira payment has none,
+ * and every receipt then reads as it always did.
+ */
+export type PaidFrom = {
+  currency: string;
+  decimals: number;
+  totalMinor: number;
+  refundedMinor?: number | null;
+};
+
+/** What left the account, with the currency's sign ("$0.23"). */
+export const paidFromText = (s: Pick<PaidFrom, 'currency' | 'decimals' | 'totalMinor'>): string => formatSource(s.totalMinor, s.decimals, s.currency);
+
+/** What goes back to the account on a refund: what the Hub says it returned, else the whole amount that left ("$0.23"). */
+export const paidFromBackText = (s: PaidFrom): string => formatSource(s.refundedMinor ?? s.totalMinor, s.decimals, s.currency);
+
+/**
+ * A receipt's money rows for a payment that left another currency's account: "Paid $0.23", "From USD account", and the naira price
+ * when the receipt shows one. ONE piece for the unlock, tip and school receipts, so none writes the account or the amount itself.
+ */
+export function paidFromRows(
+  from: PaidFrom,
+  o: { paidLabel: string; priceKobo?: number; paidTestID?: string; fromTestID?: string; paidSize?: number },
+): ReactElement[] {
+  return [
+    <KeyValueRow key="paid" label={o.paidLabel} value={paidFromText(from)} testID={o.paidTestID} />,
+    <KeyValueRow key="from" label="From" value={accountNameOf(from.currency)} testID={o.fromTestID} />,
+    ...(o.priceKobo === undefined
+      ? []
+      : [<KeyValueRow key="price" label="Price" value={<Money minorUnits={o.priceKobo} size={o.paidSize ?? ROW_VALUE} decimals={o.priceKobo % 100 !== 0} />} />]),
+  ];
+}
+
 /**
  * The rows that say who pays and what it costs them: the account, the firm amount, the fees when there are any and the total.
  * ONE piece, drawn by the pay sheet and by the tip sheet's own review, so no screen words the account or the amount its own way.

@@ -11,7 +11,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, ICON_STROKE } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet, SourceFooter, feesTotalKobo, formatNaira, sourceApproval, sourceRows, type PaySource } from '@/components/pay-sheet';
+import { PaySheet, SourceFooter, feesTotalKobo, formatNaira, paidFromRows, sourceApproval, sourceRows, type PaySource } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { Text } from '@/components/Text';
@@ -222,7 +222,12 @@ function SentSheet({ tip }: { tip: TipState }) {
       line={echo ? `"${echo}"` : null}
     >
       <GroupedList testID="tip-total-paid">
-        <KeyValueRow label="Total paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} decimals={view.payment.totalKobo % 100 !== 0} />} />
+        {view.payment.source ? (
+          // PAY-FX (R-91): what left the buyer's own account and which account; the heading keeps the naira tip.
+          paidFromRows(view.payment.source, { paidLabel: 'Total paid' })
+        ) : (
+          <KeyValueRow label="Total paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} decimals={view.payment.totalKobo % 100 !== 0} />} />
+        )}
       </GroupedList>
       <Button testID="tip-done" label="Done" onPress={tip.close} full />
     </StatusSheet>

@@ -2,7 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { IconButton } from '@/components/Button';
-import { PaySheet, type PaySheetProps } from '@/components/pay-sheet';
+import { GroupedList } from '@/components/Card';
+import { IconTile } from '@/components/IconTile';
+import { PaySheet, paidFromRows, type PaySheetProps } from '@/components/pay-sheet';
+import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { font, layout, space, type, useWawu } from '@/theme';
 import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 
@@ -116,11 +119,29 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
   },
 };
 
+/** PAY-FX (R-91): the unlock receipt of a buyer who paid from a dollar account, drawn by the same rows the screens use (example figures). */
+function ReceiptPreview() {
+  return (
+    <StatusSheet
+      visible
+      onClose={() => router.setParams({ state: 'enough' })}
+      label="Unlocked"
+      testID="unlock-done"
+      mark={<IconTile icon="Check" tone="in" size={72} strokeWidth={2.4} />}
+      title="Unlocked"
+      line="The full video is yours, and it's in My purchases from now on."
+    >
+      <GroupedList testID="unlock-receipt">{paidFromRows({ currency: 'USD', decimals: 2, totalMinor: 190 }, { paidLabel: 'Paid', priceKobo: 250000 })}</GroupedList>
+    </StatusSheet>
+  );
+}
+
 export default function PaySheetPreview() {
   const { colors } = useWawu();
   const { state, tick } = useLocalSearchParams<{ state?: string; tick?: string }>();
   if (!__DEV__) return <LeaveDevRoute />;
 
+  if (state === 'receipt-usd') return <ReceiptPreview />;
   const shown = cases[state ?? 'enough'] ?? cases.enough;
   const go = (next: string) => router.setParams({ state: next });
 

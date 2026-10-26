@@ -6,7 +6,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet, sourceApproval } from '@/components/pay-sheet';
+import { PaySheet, paidFromRows, sourceApproval } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
@@ -65,8 +65,15 @@ export function UnlockSheets({
         line={unlockedLine(item)}
       >
         <GroupedList testID="unlock-receipt">
-          <KeyValueRow label="Paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} />} />
-          <KeyValueRow label="From" value={WALLET_NAME} />
+          {view.payment.source ? (
+            // PAY-FX (R-91): what left the buyer's own account, in its currency, and where from; the naira price beside it.
+            paidFromRows(view.payment.source, { paidLabel: 'Paid', priceKobo: view.payment.priceKobo, paidSize: text.kvValue.fontSize })
+          ) : (
+            [
+              <KeyValueRow key="paid" label="Paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} />} />,
+              <KeyValueRow key="from" label="From" value={WALLET_NAME} />,
+            ]
+          )}
           <KeyValueRow
             label="Reference"
             value={
@@ -90,7 +97,7 @@ export function UnlockSheets({
         testID="unlock-opening"
         mark={<IconTile icon="Clock" tone="warn" size={MARK} strokeWidth={MARK_STROKE} />}
         title="Paid, still opening"
-        line={openingLine(item, view.payment.totalKobo)}
+        line={openingLine(item, view.payment.totalKobo, view.payment.source)}
       >
         <Button testID="unlock-refresh" label="Refresh" icon="RotateCcw" onPress={flow.refresh} loading={flow.refreshing} full />
         <Button

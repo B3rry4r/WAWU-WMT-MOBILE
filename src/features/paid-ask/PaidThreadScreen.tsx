@@ -79,7 +79,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   const tick = other ? tickOf(other) : profile.data ? tickOf({ verification: profile.data.profile.verification }) : undefined;
 
   // A question the Hub refunded: where the money went is the wallet's own record (the hold), read for each, and again while it is on its way.
-  const refunded = useMemo(() => questions.filter((q) => q.mine && q.status === 'refunded'), [questions]);
+  // A question still waiting is read too (PAY-FX, R-91): its payment says which account paid, so the card names the one the money returns to.
+  const refunded = useMemo(() => questions.filter((q) => q.mine && (q.status === 'refunded' || q.status === 'awaiting_response')), [questions]);
   const records = useQueries({
     queries: refunded.map((q) => ({
       queryKey: questionKey(q.id),
@@ -101,7 +102,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     focused,
   );
 
-  const entries = useMemo(() => threadEntries(questions, now), [questions, now]);
+  const fromOf = (id: string) => recordOf(id)?.payment?.source ?? null;
+  const entries = useMemo(() => threadEntries(questions, now, fromOf), [questions, now, records]); // eslint-disable-line react-hooks/exhaustive-deps
   const latest = useMemo(() => [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))[0] ?? null, [questions]);
   const waiting = isWaiting(questions, now);
   const sub = headerLine(latest);
@@ -166,7 +168,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
           const q = entry.question;
           const card =
             entry.status === 'awaiting_response'
-              ? waitingCard(q, name, now)
+              ? waitingCard(q, name, now, fromOf(q.id))
               : entry.status === 'responded'
                 ? answeredCard(name, entry.last ? followUpOf(terms, termsFailed) : null)
                 : refundedCard(q, name, recordOf(q.id), now);

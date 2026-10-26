@@ -1,4 +1,4 @@
-import { formatNaira } from '@/components/pay-sheet';
+import { accountNameOf, formatNaira, paidFromText, type PaidFrom } from '@/components/pay-sheet';
 import type { FeedItem } from '@/features/feed/api';
 import { creatorName, durationSeconds, pillFor, postKind, UNNAMED_CREATOR, type PostKind } from '@/features/feed/model';
 
@@ -69,9 +69,13 @@ export function openIcon(item: FeedItem): 'Play' | 'BookOpen' | 'Images' | 'Chec
 
 const OPENING: Record<PostKind, string> = { video: 'the video', audio: 'the audio', pdf: 'the PDF', photos: 'the set', course: 'the course', template: 'the template' };
 
-/** H18's words: the total that left the wallet (the one H14 showed) and what could not be finished. */
-export function openingLine(item: FeedItem, totalKobo: number): string {
-  return `${formatNaira(totalKobo)} left your wallet and we couldn't finish opening ${OPENING[kindOf(item)]}. You won't be charged twice.`;
+/**
+ * H18's words: the total that left the wallet (the one H14 showed) and what could not be finished. A buyer who paid from another
+ * currency's account (PAY-FX, R-91) is told what left that account, in its currency.
+ */
+export function openingLine(item: FeedItem, totalKobo: number, from?: PaidFrom | null): string {
+  const left = from ? `${paidFromText(from)} left your ${accountNameOf(from.currency)}` : `${formatNaira(totalKobo)} left your wallet`;
+  return `${left} and we couldn't finish opening ${OPENING[kindOf(item)]}. You won't be charged twice.`;
 }
 
 /** The tick beside the creator's name on H14: purple for a creator, blue for a professional. */

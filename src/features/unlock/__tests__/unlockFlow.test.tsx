@@ -81,7 +81,12 @@ const hub = {
   /** While set, POST /support/thread waits for it. */
   supportHold: null as null | Promise<void>,
   state: 'pending' as 'pending' | 'opening' | 'paid' | 'refunded',
+  /** PAY-FX: the buyer pays from a dollar account (the quote and the payment carry the Hub's `source`). */
+  usd: false,
 };
+
+const USD_QUOTE = { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', availableMinor: 500, shortfallMinor: 0, expiresAt: '2099-01-01T00:00:00.000Z' };
+const USD_PAID = { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', refundedMinor: null };
 
 const quoteView = () => ({
   contentId: PIECE,
@@ -103,6 +108,7 @@ const quoteView = () => ({
     remainingTodayKobo: null,
     quoteToken: `tok-${hub.feeKobo}`,
     expiresAt: '2099-01-01T00:00:00.000Z',
+    ...(hub.usd ? { source: USD_QUOTE } : {}),
   },
 });
 
@@ -134,6 +140,7 @@ function unlockView(state: typeof hub.state) {
       statusMessage: null,
       createdAt: '2026-10-17T09:42:00.000Z',
       completedAt: paid ? '2026-10-17T09:42:05.000Z' : null,
+      ...(hub.usd ? { source: USD_PAID } : {}),
     },
     createdAt: '2026-10-17T09:42:00.000Z',
     paidAt: paid ? '2026-10-17T09:42:05.000Z' : null,
@@ -152,6 +159,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return ok([{ kind: 'content', content: opened ? { ...item, fullAssetLocked: false, fullAssetUrl: 'https://cdn.test/full.webm' } : item }], { pagination: { currentPage: 1, nextPage: null, perPage: 10, total: 1 } });
   }
   if (path === '/users/me') return ok({ wawuUserId: ME });
+  if (path === '/money/fx/accounts') return ok([]);
   if (path.endsWith('/view')) return ok({ views: 1, counted: true });
   if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2026-10-17T09:00:00.000Z' });
   if (path === `/content/${PIECE}/media`) return ok({ contentId: PIECE, contentType: hub.kind, durationLabel: hub.kind === 'video' ? '18:04' : null, pageCount: null, frameCount: 0, frames: [] });
@@ -241,7 +249,8 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { kind: 'video', preview: 'https://cdn.test/preview.webm', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending' });
+  Object.assign(hub, { kind: 'video', preview: 'https://cdn.test/preview.webm', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending', usd: false });
+  (require('@/api/paySource') as typeof import('@/api/paySource')).clearPaySource();
   mockPush.mockClear();
 });
 
@@ -264,6 +273,14 @@ async function openSheet() {
   const screen = await boot();
   await rtl.fireEvent.press(screen.getByTestId(`offer-${PIECE}`));
   await unlockButton();
+  return screen;
+}
+
+/** The offer bar, then the sheet, for a buyer whose first button is a dollar one. */
+async function openSheet2() {
+  const screen = await boot();
+  await rtl.fireEvent.press(screen.getByTestId(`offer-${PIECE}`));
+  await screen.findByRole('button', { name: /^Unlock · \$0\.23$/ });
   return screen;
 }
 
@@ -398,6 +415,40 @@ describe('HOME-07: a course or a template unlocked from the feed', () => {
     await rtl.waitFor(() => expect(screen.queryByTestId(`offer-${PIECE}`)).toBeNull());
     expect(mockPush).not.toHaveBeenCalled();
     expect(hub.pays).toHaveLength(1);
+  });
+});
+
+describe('PAY-FX (R-91): the receipts of a buyer who paid from a dollar account', () => {
+  const asDollarBuyer = () => {
+    hub.usd = true;
+    (require('@/api/paySource') as typeof import('@/api/paySource')).setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+  };
+
+  it('Unlocked says what left the dollar account, from which account, and the naira price; never a naira wallet', async () => {
+    asDollarBuyer();
+    const screen = await openSheet2();
+    await rtl.fireEvent.press(await screen.findByRole('button', { name: /^Unlock · \$0\.23$/ }));
+    await screen.findByText('Approve $0.23 to Chidi Eze');
+    await enterPin('4829');
+    await screen.findByText('Unlocked');
+    const receipt = rtl.within(screen.getByTestId('unlock-receipt'));
+    expect(receipt.getByText('$0.23')).toBeTruthy();
+    expect(receipt.getByText('USD account')).toBeTruthy();
+    expect(receipt.getByLabelText('2,500 naira')).toBeTruthy();
+    expect(receipt.queryByText('Naira wallet')).toBeNull();
+    expect(receipt.queryByLabelText('2,523 naira 25 kobo')).toBeNull();
+  });
+
+  it('Paid, still opening names the dollar amount and the dollar account, not the naira total or the wallet', async () => {
+    asDollarBuyer();
+    hub.mode = 'opening';
+    const screen = await openSheet2();
+    await rtl.fireEvent.press(await screen.findByRole('button', { name: /^Unlock · \$0\.23$/ }));
+    await screen.findByText(/^Approve /);
+    await enterPin('4829');
+    await screen.findByText('Paid, still opening');
+    expect(screen.getByText("$0.23 left your USD account and we couldn't finish opening the video. You won't be charged twice.")).toBeTruthy();
+    expect(screen.queryByText(/₦2,523\.25 left/)).toBeNull();
   });
 });
 

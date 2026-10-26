@@ -141,6 +141,9 @@ function tipView(status: 'pending' | 'paid' | 'failed', body: Record<string, unk
       statusMessage: null,
       createdAt: '2026-10-17T09:42:00.000Z',
       completedAt: status === 'paid' ? '2026-10-17T09:42:05.000Z' : null,
+      ...(hub.usd
+        ? { source: { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', refundedMinor: null } }
+        : {}),
     },
     createdAt: '2026-10-17T09:42:00.000Z',
     paidAt: status === 'paid' ? '2026-10-17T09:42:05.000Z' : null,
@@ -555,6 +558,24 @@ describe('PAY-FX (R-91): the tip sheet for a buyer paying from a dollar account'
     // The PIN sheet says the same amount, not the naira.
     await screen.findByText('Approve $0.23 to Tife Adeola');
     expect(screen.queryByText(/Approve ₦/)).toBeNull();
+  });
+
+  it('Tip sent says what left the dollar account and which account, with the naira tip in the heading; never "Total paid ₦"', async () => {
+    hub.usd = true;
+    hub.balanceKobo = 0;
+    (require('@/api/paySource') as typeof import('@/api/paySource')).setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    const screen = await boot();
+    await rtl.fireEvent.press(screen.getByTestId('tip-a'));
+    await screen.findByTestId('source-total');
+    await rtl.fireEvent.press(await screen.findByRole('button', { name: 'Tip $0.23' }));
+    await screen.findByText('Approve $0.23 to Tife Adeola');
+    await enterPin('4829');
+    await screen.findByText('₦2,000 sent to Tife');
+    const total = rtl.within(screen.getByTestId('tip-total-paid'));
+    expect(total.getByText('Total paid')).toBeTruthy();
+    expect(total.getByText('$0.23')).toBeTruthy();
+    expect(total.getByText('USD account')).toBeTruthy();
+    expect(total.queryByLabelText('2,023 naira 25 kobo')).toBeNull();
   });
 
   it('names the account on the quote and on nothing else; a naira buyer never asks for the other accounts', async () => {

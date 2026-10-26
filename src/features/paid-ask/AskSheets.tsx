@@ -11,7 +11,7 @@ import { browserOutlineOff } from '@/components/focusRing';
 import { Icon, ICON_STROKE, VerifiedTick, type IconName } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet, SourceFooter, feesTotalKobo, formatNaira, shortfallKobo, sourceApproval, sourceRows, type PaySource } from '@/components/pay-sheet';
+import { PaySheet, SourceFooter, accountNameOf, feesTotalKobo, formatNaira, shortfallKobo, sourceApproval, sourceRows, sourceTotalMinor, type PaySource } from '@/components/pay-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { Text } from '@/components/Text';
 import { WALLET_NAME } from '@/features/events/buyModel';
@@ -21,6 +21,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } fr
 import { heldLine, refundLine, shortLine, SHORT_TITLE, usualReplyLine, whoOf, windowLine } from './model';
 import { MAX_QUESTION, type AskState } from './useAsk';
 import { usePaySource } from '@/features/pay-source/usePaySource';
+import { usePaySourceCode } from '@/api/paySource';
 
 /** design/_gen/inbox.js `composeSheet`: the sheet's parts 16 apart; the head 12 between; the field 110 high, 18 corner, 14 by 16 inside, 15 on a 1.45 line; the three lines 10 apart with a 17 mark; the avatar 44. */
 const SHEET_GAP = space.lg;
@@ -42,8 +43,22 @@ const lines: { icon: IconName; key: 'window' | 'refund' | 'held' }[] = [
 ];
 
 /** The kit's `fromWallet` card: the Naira coin, "Pay from wallet", the balance, and the tick of the one wallet there is. */
-function WalletLine({ balanceKobo }: { balanceKobo: number | null }) {
+function WalletLine({ balanceKobo, accountCode }: { balanceKobo: number | null; accountCode?: string | null }) {
   const { colors } = useWawu();
+  // PAY-FX (R-91): the person already pays from another currency's account, so the sheet says which as soon as that is known and does
+  // not read "Checking your balance" (a naira balance they are not paying from) while the Hub drafts the question and prices it.
+  if (accountCode) {
+    return (
+      <Card style={styles.walletCard} testID="ask-wallet">
+        <View style={styles.flex}>
+          <Text variant="cardTitle">Pay from</Text>
+          <Text variant="meta" style={styles.walletLine} testID="ask-wallet-account">
+            {accountNameOf(accountCode)}
+          </Text>
+        </View>
+      </Card>
+    );
+  }
   return (
     <Card style={styles.walletCard} testID="ask-wallet">
       <CurrencyFlag currency="NGN" />
@@ -99,6 +114,7 @@ function AskSheet({ ask, onAddMoney, source }: { ask: AskState; onAddMoney: (sho
   const lift = useKeyboardLift();
   const [focused, setFocused] = useState(false);
   const { flow, quote, target } = ask;
+  const code = usePaySourceCode();
   const name = target?.name ?? null;
   const total = quote?.payment.totalKobo ?? null;
   const balance = ask.balanceKobo;
@@ -108,7 +124,7 @@ function AskSheet({ ask, onAddMoney, source }: { ask: AskState; onAddMoney: (sho
   const price = quote?.question.priceKobo ?? target?.priceKobo ?? null;
   const usual = usualReplyLine(quote?.question.usualReplyMinutes);
   const hours = quote?.question.replyWindowHours ?? target?.windowHours ?? null;
-  const words: Record<(typeof lines)[number]['key'], string> = { window: windowLine(name, hours), refund: refundLine(total), held: heldLine(name) };
+  const words: Record<(typeof lines)[number]['key'], string> = { window: windowLine(name, hours), refund: refundLine(total, source ? { currency: source.currency, decimals: source.decimals, totalMinor: sourceTotalMinor(source) } : null), held: heldLine(name) };
   return (
     <BottomSheet visible={ask.open && !flow.pinOpen} onClose={ask.close} label={`Ask ${whoOf(name)}`} gap={SHEET_GAP} testID="ask-sheet">
       <View style={styles.head}>
@@ -180,7 +196,7 @@ function AskSheet({ ask, onAddMoney, source }: { ask: AskState; onAddMoney: (sho
         </>
       ) : (
         <>
-          <WalletLine balanceKobo={balance} />
+          <WalletLine balanceKobo={balance} accountCode={code} />
           <Button
             testID="ask-send"
             label={quote ? `Send · ${formatNaira(quote.payment.totalKobo)}` : 'Send'}

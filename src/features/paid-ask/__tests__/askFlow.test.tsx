@@ -799,3 +799,34 @@ describe('states', () => {
     expect(rtl.screen.queryByTestId('paid-thread-loading')).toBeNull();
   });
 });
+
+describe('PAY-FX (R-91): a paid question from a dollar account', () => {
+  const paySourceApi = () => require('@/api/paySource') as typeof import('@/api/paySource');
+  const USD_BACK = { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', refundedMinor: 23 };
+  beforeEach(() => {
+    hub.thread = threadOf([refundedQ()]);
+  });
+  afterEach(() => paySourceApi().clearPaySource());
+
+  it('a refund says what went back to the USD account, in dollars, never the Naira wallet', async () => {
+    hub.oldQuestion = {
+      ...questionView('asked', 'x'),
+      id: OLD_Q,
+      status: 'refunded',
+      payment: { ...questionView('asked', 'x').payment, status: 'completed', source: USD_BACK, hold: { id: 'h1', status: 'refunded', amountKobo: PRICE, refundedKobo: PRICE + FEE, settledAt: iso(-23 * HOUR), heldAt: iso(-48 * HOUR) } },
+    };
+    await boot();
+    const card = await rtl.screen.findByTestId(`paid-card-${OLD_Q}`);
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so you got $0.23 back'));
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toMatch(/^It went back to your USD account /);
+  });
+
+  it('the ask sheet names the USD account from the first moment, not "Checking your balance"', async () => {
+    paySourceApi().setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: /^Try again · / }));
+    await rtl.screen.findByTestId('ask-sheet');
+    expect(rtl.screen.getByTestId('ask-wallet-account').props.children).toBe('USD account');
+    expect(rtl.screen.queryByText('Checking your balance')).toBeNull();
+  });
+});

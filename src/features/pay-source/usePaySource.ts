@@ -10,7 +10,7 @@ import {
   usePaySourceCode,
 } from '@/api/paySource';
 import { onSessionEnd } from '@/api/session';
-import type { PaySource } from '@/components/pay-sheet';
+import { accountNameOf, type PaySource } from '@/components/pay-sheet';
 import type { PaymentQuote } from '@/features/events/buyApi';
 import { fetchWalletHome } from '@/features/wallet/api/home';
 import { fetchWorldAccounts, WORLD_ACCOUNTS_KEY, type WorldAccount } from '@/features/wallet/world/api';
@@ -108,7 +108,7 @@ export function usePaySource(args: {
   const choices = useMemo(
     () => [
       ...(hasNaira ? [{ id: 'NGN', label: 'Naira wallet', selected: code === null }] : []),
-      ...accounts.map((a) => ({ id: a.currency, label: `${a.currency} account`, selected: code === a.currency })),
+      ...accounts.map((a) => ({ id: a.currency, label: accountNameOf(a.currency), selected: code === a.currency })),
     ],
     [hasNaira, accounts, code],
   );
@@ -116,7 +116,7 @@ export function usePaySource(args: {
   if (!source || code === null) return undefined;
   return {
     currency: source.currency,
-    accountName: `${source.currency} account`,
+    accountName: accountNameOf(source.currency),
     decimals: source.decimals,
     amountMinor: source.amountMinor,
     providerFeeMinor: source.providerFeeMinor,

@@ -60,9 +60,20 @@ Backend: `src/money/payments/**`, `src/money/holds/wallet-hold.service.ts`, `src
 - [x] On Nuvion DEV through the Hub's own routes: 9 of 9 (`scripts/nuvion/pay-fx-dev-check.ts`).
 - [x] The pay sheet draws the source: the naira price, the account, the firm amount, fees only when the quote has them, the expired state, the other accounts to use; a sheet without a source is unchanged.
 - [x] The screens that open the pay sheet (unlock, tips, paid question, tickets, legal, school) pass it a source through one hook and name the paying account on every request.
-- [x] Pictures at 390 px, dark and light, in `audits/PAY-FX/`.
+- [x] Pictures at 390 px in `audits/PAY-FX/`: the verifier's walk of the six review sheets (a dollar buyer) and the unlock receipt of a dollar buyer (round 4).
 - [ ] On a phone: NOT RUN (no device in this session).
 
 ## Builder report
 
 Sonnet builder (T3, 26 Oct 2026). Backend `wmt/PAY-FX` `fc261a7` from `origin/main` `c8eba66`; mobile `wmt/PAY-FX` from `origin/main` `904da284`. Checks (EXIT 0 unless said): backend tsc; eslint on changed files; contract:build; gates (0 fail) and check_baseline; specs `payment-fx.contract` 13, `nuvion-fx-merchant` 2, and the payments, fx, world, holds, tip, unlock, money-contract and gate-coverage specs that do not import the Fintava double (21 suites, 309 tests); the dev proof 9 of 9. Mobile: tsc; eslint on `src/components/pay-sheet`; jest on the pay sheet, wallet, unlock, tips, send, schools, events and chat features (88 suites, 1,378 tests). No native module was added.
+
+## Round 4 (app)
+
+Verifier F-A (MEDIUM): after a payment from a USD account the receipts still described a naira payment. Fixed through one set of shared pieces in `@/components/pay-sheet` (`paidFromRows`, `paidFromText`, `paidFromBackText`, `accountNameOf`, over `formatSource`) and one hook, `usePaidFrom`, for screens that hold only a payment id.
+- Unlock: Paid, From and the naira Price in the dollar buyer's own currency and account; "Paid, still opening" says what left the USD account.
+- Tip: Total paid and From; the heading keeps the naira tip. School: Paid, From, Price; a refund names the account.
+- Paid question: the sheet's refund line, the waiting card, the stamp and the refunded card name the USD account and the dollar amount.
+- Ticket refund banners (E5, E11) and the legal fee's refunded line name the account. The ticket (E5) and the legal matter draw no money on a paid screen, so nothing there changes.
+- LOW (a): the paid-question sheet names the account ("Pay from USD account") from the first moment instead of "Checking your balance".
+- Naira buyers: unchanged (every new branch needs the Hub's `source` on the payment).
+

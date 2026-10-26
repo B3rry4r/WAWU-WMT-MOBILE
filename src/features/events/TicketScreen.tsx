@@ -11,6 +11,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { layout, radius, space } from '@/theme';
 
+import { usePaidFrom } from '@/features/pay-source/usePaidFrom';
+
 import { boostBrightness, canBoostBrightness } from './brightness';
 import { CALLED_OFF_TITLE, checkedInLine, position, refundBannerBody } from './ticketFormat';
 import { cardMetrics, Note, Page, RefreshFailed, TicketCard, TicketNav } from './ticketParts';
@@ -44,7 +46,8 @@ export function TicketScreen({ id, onBack, onOpenTicket }: TicketScreenProps) {
     enabled: calledOff,
     retry: false,
   });
-  const refundBody = order.data ? refundBannerBody(order.data) : null;
+  const { from: paidFrom } = usePaidFrom(order.data?.returned ? order.data.paymentId : null);
+  const refundBody = order.data ? refundBannerBody(order.data, paidFrom) : null;
 
   useEffect(() => (status === 'valid' && canBoostBrightness ? boostBrightness() : undefined), [status]);
 

@@ -1,5 +1,5 @@
 import { nairaToKobo } from '@/api/kobo';
-import { formatNaira } from '@/components/pay-sheet';
+import { accountNameOf, formatNaira, paidFromBackText, paidFromText, type PaidFrom } from '@/components/pay-sheet';
 import { APP_NAME_COPY } from '@/lib/appName';
 
 import type { Availability, QuestionView, ThreadQuestion } from './api';
@@ -71,8 +71,16 @@ export function usualReplyLine(minutes: number | null | undefined): string | nul
 
 /** I3's three lines under the question. The refund line names what the Hub gives back: every naira, the charge too (backend B3a round 2). */
 export const windowLine = (name: string | null | undefined, hours: number | null): string => `${whoOf(name)} has ${hours === null ? 'a set time' : windowWords(hours)} to reply`;
-export const refundLine = (totalKobo: number | null): string =>
-  totalKobo === null ? 'No reply in time, your money comes back' : `No reply in time, your ${formatNaira(totalKobo)} comes back`;
+export const refundLine = (totalKobo: number | null, from?: PaidFrom | null): string =>
+  // PAY-FX (R-91): a buyer paying from another currency's account is told what comes back to that account, in its currency.
+  from
+    ? `No reply in time, your ${paidFromText(from)} comes back to your ${accountNameOf(from.currency)}`
+    : totalKobo === null
+      ? 'No reply in time, your money comes back'
+      : `No reply in time, your ${formatNaira(totalKobo)} comes back`;
+
+/** Where a refund lands: the buyer's own account when another currency paid, else the wallet. */
+const backTo = (from?: PaidFrom | null): string => (from ? `your ${accountNameOf(from.currency)}` : 'your wallet');
 export const heldLine = (name: string | null | undefined): string => `Held by ${APP_NAME_COPY} until ${whoOf(name)} answers`;
 
 /** What the pay sheet says when the wallet is short (I6). */
@@ -150,10 +158,10 @@ export function atWords(iso: string, now: number): string {
 }
 
 /** The small line under a question bubble: "09:51 · ₦1,500 paid", and the weekday on another day ("Mon 14:10 · ₦200 paid"). */
-export function paidStamp(iso: string, amountKobo: number, now: number): string {
+export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFrom | null): string {
   const d = new Date(iso);
   const when = sameDay(d, new Date(now)) ? clock(d) : `${WEEKDAYS[d.getDay()].slice(0, 3)} ${clock(d)}`;
-  return `${when} · ${formatNaira(amountKobo)} paid`;
+  return `${when} · ${from ? paidFromText(from) : formatNaira(amountKobo)} paid`;
 }
 
 /** The time under a reply bubble: "12:05". */
@@ -176,15 +184,15 @@ export type StatusCard = { tone: CardTone; title: string; body: string | null };
  * The lines say "your money" and no figure: the thread carries the question's price, and what the person paid (and gets back, every
  * naira) is the price and the bank's charge, which the thread does not carry (I3 and I7 say the Hub's own total).
  */
-export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number): StatusCard {
+export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFrom | null): StatusCard {
   const left = Date.parse(q.deadlineAt) - now;
   if (left <= 0) {
-    return { tone: 'late', title: 'No reply in time', body: 'Your money is on its way back to your wallet.' };
+    return { tone: 'late', title: 'No reply in time', body: `Your money is on its way back to ${backTo(from)}.` };
   }
   return {
     tone: 'waiting',
     title: `${whoOf(name)} has ${leftLong(left)} left to reply`,
-    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to your wallet.`,
+    body: `Your money is held by ${APP_NAME_COPY} No reply by ${deadlineWords(q.deadlineAt, now)} and it comes back to ${backTo(from)}.`,
   };
 }
 
@@ -231,16 +239,20 @@ export function refundedCard(
   const within = hours === null ? 'No reply in time' : `No reply in ${windowWords(hours)}`;
   const hold = wallet?.payment?.hold ?? null;
   const back = hold?.refundedKobo;
+  // PAY-FX (R-91): a question paid from another currency's account goes back to that account, in its currency.
+  const from = wallet?.payment?.source ?? null;
+  const dest = from ? `your ${accountNameOf(from.currency)}` : 'your Naira wallet';
   if (wallet && typeof back === 'number' && back > 0) {
+    const sum = from ? paidFromBackText(from) : formatNaira(back);
     if (wallet.status === 'refunding' || !hold?.settledAt) {
-      return { tone: 'refunded', title: `${within}, so ${formatNaira(back)} is coming back`, body: `It is on its way to your Naira wallet. ${whoOf(name)} earned nothing.` };
+      return { tone: 'refunded', title: `${within}, so ${sum} is coming back`, body: `It is on its way to ${dest}. ${whoOf(name)} earned nothing.` };
     }
-    return { tone: 'refunded', title: `${within}, so you got ${formatNaira(back)} back`, body: `It went back to your Naira wallet ${atWords(hold.settledAt, now)}. ${whoOf(name)} earned nothing.` };
+    return { tone: 'refunded', title: `${within}, so you got ${sum} back`, body: `It went back to ${dest} ${atWords(hold.settledAt, now)}. ${whoOf(name)} earned nothing.` };
   }
   // INBOX-10 N1: while the refund is still moving the hold has no figure yet (it is written when the refund settles), so there is
   // nothing to print; say the money is on its way instead of saying it was refunded.
   if (wallet && (wallet.status === 'refunding' || (hold !== null && !hold.settledAt))) {
-    return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to your Naira wallet. ${whoOf(name)} earned nothing.` };
+    return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to ${dest}. ${whoOf(name)} earned nothing.` };
   }
   return { tone: 'refunded', title: `${within}, so this question was refunded`, body: `${whoOf(name)} earned nothing.` };
 }
@@ -253,7 +265,7 @@ export type ThreadEntry =
   | { kind: 'card'; key: string; questionId: string; status: ThreadQuestion['status']; question: ThreadQuestion; last: boolean };
 
 /** The thread as the Hub sends it (newest first) turned around: a day label, the question, its replies, its card. */
-export function threadEntries(questions: readonly ThreadQuestion[], now: number): ThreadEntry[] {
+export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFrom | null): ThreadEntry[] {
   const ordered = [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
   const out: ThreadEntry[] = [];
   let lastDay = '';
@@ -264,7 +276,7 @@ export function threadEntries(questions: readonly ThreadQuestion[], now: number)
       out.push({ kind: 'day', key: `day-${q.id}`, label });
       lastDay = dayKey;
     }
-    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now) });
+    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now, fromOf?.(q.id)) });
     for (const reply of q.replies) out.push({ kind: 'reply', key: `r-${reply.id}`, text: reply.text, stamp: replyStamp(reply.createdAt) });
     out.push({ kind: 'card', key: `c-${q.id}`, questionId: q.id, status: q.status, question: q, last: i === ordered.length - 1 });
   });
