@@ -47,6 +47,8 @@ export const hub = {
   currencies: currenciesBody() as ReturnType<typeof currenciesBody>,
   accountsFault: null as null | { status: number; code: string; message: string },
   quoteSeconds: 90,
+  /** What a swap quote says the bank charges and WAWU takes, in the smallest unit given up; null: the Hub names no bank charge. */
+  quoteFee: { providerFeeMinor: 0 as number | null, wawuFeeMinor: 0 },
   quotes: [] as Record<string, unknown>[],
   swapMode: 'ok' as SwapMode,
   sendMode: 'ok' as SendMode,
@@ -66,6 +68,7 @@ export function resetFxHub() {
   hub.currencies = currenciesBody();
   hub.accountsFault = null;
   hub.quoteSeconds = 90;
+  hub.quoteFee = { providerFeeMinor: 0, wawuFeeMinor: 0 };
   hub.quotes = [];
   hub.swapMode = 'ok';
   hub.sendMode = 'ok';
@@ -140,9 +143,9 @@ export async function fxFetch(request: Request, path: string): Promise<Response 
       fromDecimals: 2,
       toDecimals: 2,
       rate: String(rate),
-      providerFeeMinor: 0,
-      wawuFeeMinor: 0,
-      totalFromMinor: amountFromMinor,
+      providerFeeMinor: hub.quoteFee.providerFeeMinor,
+      wawuFeeMinor: hub.quoteFee.wawuFeeMinor,
+      totalFromMinor: amountFromMinor + (hub.quoteFee.providerFeeMinor ?? 0) + hub.quoteFee.wawuFeeMinor,
       expiresAt: new Date(Date.now() + hub.quoteSeconds * 1000).toISOString(),
       validForSeconds: hub.quoteSeconds,
     };

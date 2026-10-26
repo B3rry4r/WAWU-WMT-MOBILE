@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Share, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { Icon } from '@/components/icon';
-import { KeyValueRow, rowMetrics } from '@/components/ListRow';
+import { rowMetrics } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
 import { font, radius, space, useWawu } from '@/theme';
@@ -29,12 +29,20 @@ const FIELDS: readonly Field[] = [
   { key: 'bankAddress', label: 'Bank address' },
 ];
 
-/** The rows of the sheet: each field the Hub filled in, with its label. */
+const squeezed = (value: string): string => value.replace(/\s/g, '').toUpperCase();
+
+/**
+ * The rows of the sheet: each field the Hub filled in, with its label. A bank that gives one number as both the account number and the
+ * IBAN shows it once, under both names, so a payer never reads the same long number twice.
+ */
 export function detailRows(details: FxDetails | null): { key: string; label: string; value: string }[] {
   if (!details || details.status !== 'active') return [];
+  const same = typeof details.accountNumber === 'string' && typeof details.iban === 'string' && details.accountNumber.trim() !== '' && squeezed(details.accountNumber) === squeezed(details.iban);
   return FIELDS.flatMap((f) => {
     const value = details[f.key];
-    return typeof value === 'string' && value.trim() ? [{ key: f.key, label: f.label, value: value.trim() }] : [];
+    if (typeof value !== 'string' || !value.trim()) return [];
+    if (same && f.key === 'iban') return [];
+    return [{ key: f.key, label: same && f.key === 'accountNumber' ? 'Account number (IBAN)' : f.label, value: value.trim() }];
   });
 }
 
@@ -58,19 +66,17 @@ export function FxDetailsSheet({ visible, onClose, account, name }: FxDetailsShe
       </Text>
       <GroupedList testID="fx-details-card">
         {rows.map((r) => (
-          <KeyValueRow
-            key={r.key}
-            label={r.label}
-            testID={`fx-detail-${r.key}`}
-            value={
-              <>
-                <Text variant="body" numberOfLines={3} selectable style={[font(600), styles.value]}>
-                  {r.value}
-                </Text>
-                <CopyButton value={r.value} label={r.label} />
-              </>
-            }
-          />
+          <View key={r.key} testID={`fx-detail-${r.key}`} accessible style={styles.detail}>
+            <View style={styles.detailWords}>
+              <Text variant="secondary" tone="textMuted" style={styles.detailLabel}>
+                {r.label}
+              </Text>
+              <Text variant="body" selectable style={[font(600), styles.value]}>
+                {r.value}
+              </Text>
+            </View>
+            <CopyButton value={r.value} label={r.label} />
+          </View>
         ))}
       </GroupedList>
       <Button
@@ -120,7 +126,11 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
 const styles = StyleSheet.create({
   title: { textAlign: 'center' },
-  value: { fontSize: rowMetrics.pairValue, flexShrink: 1, textAlign: 'right' },
+  // A label over its value, Copy beside them: a long IBAN or address has the whole width under its label to wrap in, and never meets it.
+  detail: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.pairGap, minHeight: rowMetrics.pairMinHeight, paddingVertical: rowMetrics.padV },
+  detailWords: { flex: 1, minWidth: 0, gap: space.xs },
+  detailLabel: { fontSize: rowMetrics.pairLabel },
+  value: { fontSize: rowMetrics.pairValue },
   copy: { height: COPY.height, paddingHorizontal: COPY.padX, borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: COPY.iconGap, flexShrink: 0 },
   copyLabel: { fontSize: COPY.label },
 });

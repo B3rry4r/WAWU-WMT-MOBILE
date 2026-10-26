@@ -1,7 +1,7 @@
 import { ApiError, isApiError } from '@/api/errors';
 
 import type { FxChain, FxCode, QuoteCode } from './amount';
-import { NAIRA_DECIMALS, SHORT_NAME } from './amount';
+import { NAIRA_DECIMALS, SHORT_NAME, WORDS } from './amount';
 import type { FxAccount, FxCurrencies, FxCurrency } from './api';
 import type { WalletTab } from './parts';
 
@@ -46,6 +46,54 @@ export function tabsOf(currencies: FxCurrencies | null, accounts: readonly FxAcc
   const coins = COIN_ORDER.filter((code) => accountsIn(accounts, code).length > 0 || canOpen(currencies, code));
   if (coins.length > 0) tabs.push({ key: CRYPTO_TAB, label: 'Crypto' });
   return tabs;
+}
+
+export type AddOption = { value: FxCode; label: string; coin: boolean };
+
+/**
+ * What the add-a-currency choice offers (R-83, R-84, R-87): every currency and every coin the Hub lists as on, that the person has no
+ * account in yet, in the Hub's own order and words. Nothing is offered while the Hub has opening accounts switched off. A coin the person
+ * already holds is not listed again: another network for it is opened from its own Receive screen.
+ */
+export function addOptions(currencies: FxCurrencies | null, held: ReadonlySet<string>): AddOption[] {
+  if (!currencies?.products.openAccount) return [];
+  return currencies.currencies.flatMap((c) => {
+    if (!c.enabled || held.has(c.code)) return [];
+    const coin = c.kind === 'stablecoin';
+    return [{ value: c.code as FxCode, label: coin ? `${c.name} (${c.code})` : c.name, coin }];
+  });
+}
+
+/**
+ * The currencies in a sentence, from what the Hub offers this person and in its order: "dollars, euros and crypto". Every coin the Hub offers
+ * is one word, "crypto", at the end. Nothing is named that the Hub did not offer.
+ */
+export function offerWords(options: readonly AddOption[]): string {
+  const words = options.filter((o) => !o.coin).map((o) => WORDS[o.value]);
+  if (options.some((o) => o.coin)) words.push('crypto');
+  if (words.length <= 1) return words.join('');
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
+
+export type OtherBalance = { code: FxCode; minor: number; decimals: number };
+
+/**
+ * The balances a person holds besides naira, one for each currency in its own sign, for Home's money card. Each is the provider's own
+ * figure for that account; none is added to another (a coin held on two networks is one coin, its networks' figures together). An account
+ * whose balance could not be read, or is not open, is left out: a 0 the provider did not say is never drawn.
+ */
+export function otherBalances(accounts: readonly FxAccount[] | null): OtherBalance[] {
+  const open = (accounts ?? []).filter((a) => a.status === 'open');
+  const fiat = FIAT_ORDER.flatMap((code) => {
+    const a = open.find((x) => x.currency === code && x.balance !== null);
+    return a?.balance ? [{ code, minor: a.balance.availableMinor, decimals: a.decimals }] : [];
+  });
+  const coins = COIN_ORDER.flatMap((code) => {
+    const own = open.filter((x) => x.currency === code);
+    if (own.length === 0 || own.some((x) => x.balance === null)) return [];
+    return [{ code, minor: own.reduce((sum, x) => sum + (x.balance?.availableMinor ?? 0), 0), decimals: own[0]?.decimals ?? NAIRA_DECIMALS }];
+  });
+  return [...fiat, ...coins];
 }
 
 /** How many places a currency's smallest unit has: the naira's two, or what the Hub says for that currency. */

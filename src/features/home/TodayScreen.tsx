@@ -30,6 +30,8 @@ import { HomeTabs } from './HomeTabs';
 import { gutter, todayMetrics as m } from './look';
 import { discoverable, homeViews, moneyCard, todayPhase, type HomeView } from './model';
 import { useTodayClient } from './client';
+import { useAddCurrency } from '@/features/wallet/fx/AddCurrency';
+import { otherBalances } from '@/features/wallet/fx/model';
 import { MoneyCard } from './MoneyCard';
 import { Services } from './Services';
 import { TodayLoading } from './TodayLoading';
@@ -107,6 +109,8 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
   const wallet = useQuery(walletHomeQuery(owner), client);
   const open = wallet.data?.state === 'open' || wallet.data?.state === 'frozen';
   const balance = useQuery(homeBalanceQuery(owner, open), client);
+  // D1: the other currencies held, and the way to add one (only with a naira wallet open: the card is its own).
+  const adder = useAddCurrency(open && !wallet.data?.world ? owner : null);
   // The ad card is always in TGIF's old place (R-59).
   const ad = useAd('today_slot', true, client);
   const creators = useQuery({ queryKey: suggestionsKey, queryFn: fetchCreatorSuggestions }, client);
@@ -170,8 +174,12 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
           retrying={wallet.isFetching || balance.isFetching}
           onSend={() => router.push('/send')}
           onAdd={() => router.push('/add-money')}
+          others={otherBalances(adder.accounts)}
+          onAddCurrency={adder.available ? adder.show : undefined}
         />
       )}
+      {adder.notice}
+      {adder.sheet}
       {sponsored ? (
         <SponsoredSlot
           ad={sponsored}

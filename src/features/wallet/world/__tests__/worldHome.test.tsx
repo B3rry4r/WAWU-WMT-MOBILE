@@ -6,6 +6,8 @@ import { Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
+import { currenciesBody, usdtAccount } from '../../fx/testing/fxHub';
+
 /*
  * R2-MONEY D-01 (see worldSendAbroad.test.tsx for the scaffold): a person outside Nigeria sees, for each open foreign account, a balance card
  * with the provider's own figure and the controls built for them. WALLET-42: a person who opened a wallet outside Nigeria sees "Send abroad" on a foreign account (WALLET-41's Wallet tab). It opens
@@ -62,13 +64,13 @@ const MOVEMENT = {
   occurredAt: '2026-10-20T10:00:00.000Z',
   conversion: null,
 };
-const hub = { enabled: true, swap: true, quotes: [] as { fromCurrency: string; amountMinor: number }[], accounts: ACCOUNTS as readonly object[], movements: [] as object[] };
+const hub = { enabled: true, swap: true, listed: [] as { code: string; name: string; kind: string; decimals: number; chains: string[]; enabled: boolean }[], quotes: [] as { fromCurrency: string; amountMinor: number }[], accounts: ACCOUNTS as readonly object[], movements: [] as object[] };
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
   if (path === '/money/fx/accounts') return ok({ accounts: hub.accounts });
-  if (path === '/money/fx/currencies') return ok({ currencies: [], products: { openAccount: false, swap: hub.swap } });
+  if (path === '/money/fx/currencies') return ok({ currencies: hub.listed, products: { openAccount: hub.listed.length > 0, swap: hub.swap, cryptoSend: true } });
   if (path.startsWith('/money/fx/accounts/') && path.endsWith('/transactions')) return ok({ items: path.includes('/a1/') ? hub.movements : [], nextCursor: null });
   if (path === '/money/abroad/corridors') return ok({ enabled: hub.enabled, minReceiveMinor: 100, wawuFeeKobo: 0, countries: [] });
   if (path === '/money/abroad/sources') return ok({ sources: SOURCES });
@@ -133,6 +135,7 @@ beforeAll(async () => {
     wallet: WalletStandIn,
     welcome: () => <Text accessibilityRole="header">Welcome</Text>,
     swap: () => <Text accessibilityRole="header">Swap screen</Text>,
+    'crypto-receive': () => <Text accessibilityRole="header">Crypto receive screen</Text>,
     'send/abroad/index': page('@/app/send/abroad/index'),
     'send/abroad/new': page('@/app/send/abroad/new'),
     'send/abroad/amount': page('@/app/send/abroad/amount'),
@@ -144,6 +147,7 @@ beforeAll(async () => {
 beforeEach(() => {
   hub.enabled = true;
   hub.swap = true;
+  hub.listed = [];
   hub.quotes = [];
   hub.accounts = ACCOUNTS;
   hub.movements = [];
@@ -158,6 +162,55 @@ beforeEach(() => {
 afterAll(async () => {
   await queryClient.cancelQueries();
   queryClient.clear();
+});
+
+describe('the world Wallet tab offers coins as the naira wallet does (FX-POLISH P2, R-87)', () => {
+  const listed = () => currenciesBody().currencies.filter((c) => ['CAD', 'USDT', 'USDC', 'RLUSD'].includes(c.code));
+
+  it('lists the coins the Hub offers beside the currencies it offers, in its words, and a coin leads to the network picker', async () => {
+    hub.listed = listed();
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Add a currency' }));
+    expect(await screen.findByText('Canadian dollar')).toBeTruthy();
+    expect(screen.getByText('Tether (USDT)')).toBeTruthy();
+    expect(screen.getByText('USD Coin (USDC)')).toBeTruthy();
+    // The Hub has Ripple USD switched off: it is not offered, and no list of ours puts it back.
+    expect(screen.queryByText(/Ripple/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('wallet-world-add-USDT'));
+    expect(await screen.findByRole('header', { name: 'Crypto receive screen' })).toBeTruthy();
+  });
+
+  it('says once, after a wallet opens, which currencies and coins can be added, in what the Hub offers, and never again once put away (D2)', async () => {
+    hub.accounts = [{ ...ACCOUNTS[0], balance: { availableMinor: 729, bookedMinor: 729 } }];
+    hub.listed = listed();
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    expect((await screen.findByTestId('currency-note-line')).props.children).toBe('You can also hold Canadian dollars and crypto.');
+    await fireEvent.press(screen.getByTestId('currency-note-dismiss'));
+    expect(screen.queryByTestId('currency-note')).toBeNull();
+    // Its Add a currency is the sheet of this tab.
+    expect(await screen.findByRole('button', { name: 'Add a currency' })).toBeTruthy();
+  });
+
+  it('offers no coin, and no way in, when the Hub lists none', async () => {
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    await screen.findByTestId('wallet-world-GBP-card');
+    await waitFor(() => expect(queryClient.getQueryData(['money', 'fx', 'currencies', OWNER])).toBeDefined());
+    expect(screen.queryByRole('button', { name: 'Add a currency' })).toBeNull();
+  });
+
+  it('draws a coin they hold as the Crypto tab does: its holding, and Receive, not a card for each network', async () => {
+    // The Hub's accounts carry the booked figure beside the available one (the world stand-in above leaves it out); the coin holdings read the same list.
+    hub.accounts = [...ACCOUNTS.map((a) => (a.balance ? { ...a, balance: { ...a.balance, bookedMinor: a.balance.availableMinor } } : a)), usdtAccount];
+    hub.listed = listed();
+    await renderRouter(routes, { initialUrl: '/wallet' });
+    expect(await screen.findByTestId('fx-holding-USDT')).toBeTruthy();
+    expect(screen.getByTestId('fx-receive')).toBeTruthy();
+    expect(screen.queryByTestId('wallet-world-USDT-card')).toBeNull();
+    // Held, so it is not offered to add again.
+    await fireEvent.press(await screen.findByRole('button', { name: 'Add a currency' }));
+    expect(screen.queryByText('Tether (USDT)')).toBeNull();
+    expect(screen.getByText('USD Coin (USDC)')).toBeTruthy();
+  });
 });
 
 describe('the world Wallet tab (R2-MONEY D-01)', () => {

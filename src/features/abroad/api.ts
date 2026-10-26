@@ -161,6 +161,33 @@ export async function requestQuote(input: {
   }
 }
 
+/** The Hub's refusals that mean no rate can be had for this pair, however much is asked (the corridor, or the provider's rate service). */
+const NO_RATE_CODES = new Set(['rate_unavailable', 'corridor_not_supported', 'currency_not_supported']);
+
+export type RateProbe = { state: 'ok' } | { state: 'none'; message: string };
+
+/**
+ * Can a rate be had from this account for this recipient? Asked once, for the least the corridor delivers (a quote moves nothing), so
+ * an account with no rate is said so, and left out of "Send from", before the person types an amount. A refusal about the amount or the
+ * balance, or no answer, still means a rate exists: only the Hub saying it has none counts.
+ */
+export async function probeRate(input: { recipientId: string; fromCurrency: string; amountMinor: number }): Promise<RateProbe> {
+  const result = await requestQuote({ ...input, side: 'receive' });
+  if (result.kind === 'refused' && result.refusal.code !== null && NO_RATE_CODES.has(result.refusal.code)) {
+    return { state: 'none', message: result.refusal.message };
+  }
+  return { state: 'ok' };
+}
+export const rateProbeQuery = (owner: string | null, recipientId: string, fromCurrency: string, amountMinor: number, on: boolean) =>
+  ({
+    queryKey: ['money', 'abroad', 'rate-probe', owner ?? '', recipientId, fromCurrency, amountMinor] as const,
+    queryFn: () => probeRate({ recipientId, fromCurrency, amountMinor }),
+    staleTime: 60_000,
+    gcTime: 120_000,
+    retry: false,
+    enabled: Boolean(owner) && on,
+  }) as const;
+
 export async function fetchSend(id: string): Promise<AbroadSend> {
   return read<AbroadSend>(
     await unwrap(api.GET('/api/hub/money/abroad/sends/{id}', { params: { path: { id } } })),

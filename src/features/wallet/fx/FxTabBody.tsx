@@ -207,9 +207,6 @@ function CryptoBody(props: FxTabBodyProps) {
   const groups = coinGroups(props.currencies, props.accounts);
   const coinAccounts = groups.flatMap((g) => g.accounts);
   const coinsOpenable = COIN_ORDER.some((code) => canOpen(props.currencies, code));
-  const sends = Boolean(props.currencies?.products.cryptoSend) && coinAccounts.some((a) => a.status === 'open');
-  const swaps = swapOffered(props.currencies, props.accounts);
-  const first = groups.find((g) => g.accounts.some((a) => a.status === 'open'));
 
   if (groups.length === 0) {
     if (!coinsOpenable) return null;
@@ -228,16 +225,41 @@ function CryptoBody(props: FxTabBodyProps) {
   }
   return (
     <View style={styles.stack} testID="fx-body-crypto">
+      <CryptoSection currencies={props.currencies} accounts={props.accounts} hidden={props.hidden} />
+      <Transactions owner={props.owner} accounts={coinAccounts} currencies={props.currencies} allAccounts={props.accounts} noun="crypto" />
+    </View>
+  );
+}
+
+/**
+ * The coins a person holds and what they can do with them: Receive, Send and Swap, then each coin's holding. The Wallet's Crypto tab and
+ * the Wallet of a person outside Nigeria draw the same one (R-87). Nothing is drawn with no coin held. A person with a naira wallet swaps
+ * to naira; one without swaps between their own accounts.
+ */
+export function CryptoSection({ currencies, accounts, hidden, toNaira = true }: { currencies: FxCurrencies | null; accounts: readonly FxAccount[] | null; hidden: boolean; toNaira?: boolean }) {
+  const router = useRouter();
+  const groups = coinGroups(currencies, accounts);
+  if (groups.length === 0) return null;
+  const coinAccounts = groups.flatMap((g) => g.accounts);
+  const sends = Boolean(currencies?.products.cryptoSend) && coinAccounts.some((a) => a.status === 'open');
+  const swaps = swapOffered(currencies, accounts);
+  const first = groups.find((g) => g.accounts.some((a) => a.status === 'open'));
+  return (
+    <>
       <View style={styles.actions} testID="fx-actions">
         <ActionPill testID="fx-receive" icon="ArrowDownLeft" label="Receive" onPress={() => router.push('/crypto-receive')} />
         {sends ? <ActionPill testID="fx-send" icon="ArrowUpRight" label="Send" onPress={() => router.push('/crypto-send')} /> : null}
         {swaps && first ? (
-          <ActionRound testID="fx-swap" icon="ArrowLeftRight" label={`Swap ${first.code} to naira`} onPress={() => router.push({ pathname: '/swap', params: { from: first.code, to: 'NGN' } })} />
+          <ActionRound
+            testID="fx-swap"
+            icon="ArrowLeftRight"
+            label={toNaira ? `Swap ${first.code} to naira` : `Swap ${first.code}`}
+            onPress={() => router.push({ pathname: '/swap', params: toNaira ? { from: first.code, to: 'NGN' } : { from: first.code } })}
+          />
         ) : null}
       </View>
-      <Holdings groups={groups} hidden={props.hidden} onOpen={(code) => router.push({ pathname: '/crypto-receive', params: { coin: code } })} />
-      <Transactions owner={props.owner} accounts={coinAccounts} currencies={props.currencies} allAccounts={props.accounts} noun="crypto" />
-    </View>
+      <Holdings groups={groups} hidden={hidden} onOpen={(code) => router.push({ pathname: '/crypto-receive', params: { coin: code } })} />
+    </>
   );
 }
 

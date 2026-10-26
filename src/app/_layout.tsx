@@ -283,6 +283,7 @@ export default function RootLayout() {
           <Stack.Screen name="transactions/index" />
           <Stack.Screen name="verification" />
           <Stack.Screen name="wallet-settings" />
+          <Stack.Screen name="accounts" />
           <Stack.Screen name="wallet-statement" />
           <Stack.Screen name="withdraw/failed" />
           <Stack.Screen name="withdraw/index" />

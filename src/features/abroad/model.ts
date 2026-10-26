@@ -1,5 +1,7 @@
 import type { components } from '@/api/schema.generated';
 
+import type { Refusal } from './api';
+
 /**
  * Send abroad (NUV-11, R-84): the words and the pure rules of the screens. No board draws this flow, so it is built from naira Send's
  * parts (W7 to W12) and filed for the designer (R-29, BACKEND_GAPS G-NUV-11-1). Every figure is the Hub's: a `...Minor` amount beside
@@ -70,8 +72,49 @@ export function wawuFeeText(fee: { wawuFeeKobo: number; wawuFeeMinor?: number; f
   return fee.fromCurrency === 'NGN' ? formatMinor(0, 'NGN') : formatMinor(0, fee.fromCurrency, fee.fromDecimals);
 }
 
-/** The kobo parser of the keypad reads two decimals; so does every currency Nuvion pays (`decimals` 2). */
+/** The places a typed amount takes when a currency's own are not known yet: two, as every currency Nuvion pays today has. */
 export const KEYPAD_DECIMALS = 2;
+
+/**
+ * The amount as it is being typed, in the currency's own sign: the whole part grouped by thousands ("£1,250") and, once a point is
+ * typed, the places padded to the currency's decimals ("£0.50"), as the figures in the quote read. Nothing typed is "0".
+ */
+export function typedAmountLine(currency: string, text: string, decimals: number): string {
+  const sign = formatMinor(0, currency, decimals).replace(/[0-9.,]+$/, '');
+  const [whole = '', fraction] = text.split('.');
+  const grouped = (whole === '' ? '0' : whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${sign}${grouped}${fraction === undefined || decimals <= 0 ? '' : `.${fraction.padEnd(decimals, '0')}`}`;
+}
+
+/**
+ * The sentence for an amount the corridor will not take. The Hub always sends the least a corridor delivers, and the most when it has
+ * one, so the tail must follow which way the amount went: under the least says the least, over the most says the most. Which way is
+ * read from what was typed when they receive that amount, else from the Hub's own first sentence ("less than" or "more than"); a corridor
+ * with no most can only have been under its least. With no word on the way, the whole range is given. Figures are the recipient's currency.
+ */
+export function rangeLine(r: Refusal, side: 'send' | 'receive', amountMinor: number, fallbackCurrency: string, decimals = 2): string {
+  const money = (minor: number) => formatMinor(minor, r.currency ?? fallbackCurrency, decimals);
+  const said = r.message.toLowerCase();
+  let way: 'under' | 'over' | null = null;
+  if (side === 'receive' && r.minimumMinor !== null && amountMinor < r.minimumMinor) way = 'under';
+  else if (side === 'receive' && r.maximumMinor !== null && amountMinor > r.maximumMinor) way = 'over';
+  else if (said.includes('less than')) way = 'under';
+  else if (said.includes('more than')) way = 'over';
+  else if (r.maximumMinor === null) way = 'under';
+  const first = (word: string) => (r.message.trim() ? r.message.trim() : `That is ${word} this corridor can deliver.`);
+  if (way === 'under' && r.minimumMinor !== null) return `${r.message.trim() && said.includes('less than') ? r.message.trim() : 'That is less than this corridor can deliver.'} The least they can get is ${money(r.minimumMinor)}.`;
+  if (way === 'over') {
+    const head = r.message.trim() && said.includes('more than') ? r.message.trim() : 'That is more than this corridor can deliver.';
+    return r.maximumMinor === null ? head : `${head} The most they can get is ${money(r.maximumMinor)}.`;
+  }
+  if (r.minimumMinor !== null && r.maximumMinor !== null) return `${first('outside what')} This corridor delivers from ${money(r.minimumMinor)} to ${money(r.maximumMinor)}.`;
+  return first('outside what');
+}
+
+/** An amount typed in the sending currency that is more than the account holds: said before the Hub is asked. */
+export function overBalanceLine(accountName: string, availableMinor: number, currency: string, decimals: number): string {
+  return `That is more than the ${formatMinor(availableMinor, currency, decimals)} in your ${accountName}.`;
+}
 
 export function speedLine(speed: string): string {
   return speed === 'Instant' ? 'Arrives in minutes' : `Arrives: ${speed.charAt(0).toLowerCase()}${speed.slice(1)}`;
