@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { Icon } from '@/components/icon';
 import { rowMetrics } from '@/components/ListRow';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
 import { font, radius, space, useWawu } from '@/theme';
@@ -86,6 +87,7 @@ export function FxDetailsSheet({ visible, onClose, account, name }: FxDetailsShe
         onPress={() => void Share.share({ message: shareText(account.currency, rows) })}
         testID="fx-details-share"
       />
+      <PoweredByNuvion />
     </BottomSheet>
   );
 }

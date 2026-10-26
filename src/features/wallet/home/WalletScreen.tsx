@@ -8,6 +8,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { isFiat, type FiatCode } from '@/features/open-wallet/api/world';
@@ -294,13 +295,16 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
     case 'ready':
       return (
         <>
-          <BalanceCard
-            availableKobo={view.availableKobo}
-            accountNumber={view.account.accountNumber}
-            bankName={view.account.bankName}
-            hidden={hidden}
-            onToggleHidden={onToggleHidden}
-          />
+          <View>
+            <BalanceCard
+              availableKobo={view.availableKobo}
+              accountNumber={view.account.accountNumber}
+              bankName={view.account.bankName}
+              hidden={hidden}
+              onToggleHidden={onToggleHidden}
+            />
+            <PoweredByNuvion style={styles.powered} />
+          </View>
           {points !== null || pass ? (
             <View testID="wallet-info-row" style={styles.infoRow}>
               {points === 'loading' ? (
@@ -395,5 +399,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', gap: HOME.infoGap },
   // One card of the two, when the other is not drawn: it keeps the half it has beside the other.
   half: { flex: 1, minWidth: 0 },
+  // Under the card, 10 down, so it reads as the card's own line and not the Points and Passes row's.
+  powered: { marginTop: HOME.infoGap },
   state: { borderRadius: ACCT.radius, paddingVertical: HOME.statePadV, paddingHorizontal: HOME.statePadH },
 });

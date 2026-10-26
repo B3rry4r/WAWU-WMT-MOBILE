@@ -129,6 +129,7 @@ function AccountOpened({ wallet, onCreatePin, onDone }: { wallet: OpenedWallet; 
         onAction={wallet.pinIsSet ? onDone : onCreatePin}
         top={A8.top}
         between={A8.between}
+        poweredBy
       />
     );
   }
@@ -146,6 +147,7 @@ function AccountOpened({ wallet, onCreatePin, onDone }: { wallet: OpenedWallet; 
       onAction={wallet.pinIsSet ? onDone : onCreatePin}
       top={A8.top}
       between={A8.between}
+      poweredBy
     >
       <GroupedList testID="open-wallet-account-card">
         <KeyValueRow label="Account name" value={account.accountName} testID="open-wallet-account-name" />

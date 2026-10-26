@@ -36,6 +36,8 @@ export type OpenWalletEndProps = {
   /** Space above the result and between it and what follows, where a screen draws its own (A8: `pt: 60`, `gap: 18`). */
   top?: number;
   between?: number;
+  /** "Powered by Nuvion" at the foot (R-95): the screens that show an account the wallet provider opened. */
+  poweredBy?: boolean;
   testID?: string;
 };
 
@@ -60,6 +62,7 @@ export function OpenWalletEnd({
   navTitle,
   top,
   between,
+  poweredBy,
   testID,
 }: OpenWalletEndProps) {
   return (
@@ -69,6 +72,7 @@ export function OpenWalletEnd({
       onBack={onBack}
       navTitle={navTitle}
       contentTop={top ?? (onBack ? undefined : RESULT.top)}
+      poweredBy={poweredBy}
       footer={
         <>
           <Button label={actionLabel} iconRight={actionIcon} full onPress={onAction} testID="open-wallet-end-action" />

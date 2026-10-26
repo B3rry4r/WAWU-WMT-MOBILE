@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, ScrollView, StyleSheet, View, type RefreshControl
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
 
@@ -31,6 +32,8 @@ export type AuthFrameProps = {
   children: ReactNode;
   /** Space above the content, where a screen sits lower than the form screens (A24). */
   contentTop?: number;
+  /** The money screens of Open your wallet: "Powered by Nuvion" at the foot of the content, once (R-95). Left off, nothing is added. */
+  poweredBy?: boolean;
   testID?: string;
 };
 
@@ -45,7 +48,7 @@ export type AuthFrameProps = {
  * case). Where the window is resized anyway nothing overlaps and it adds
  * nothing; the web has no keyboard events, the browser shrinks the viewport.
  */
-export function AuthFrame({ navTitle, navStep, navAction, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, testID }: AuthFrameProps) {
+export function AuthFrame({ navTitle, navStep, navAction, onBack, bare, footer, children, contentTop, scrollRef, refreshControl, poweredBy, testID }: AuthFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
@@ -78,6 +81,7 @@ export function AuthFrame({ navTitle, navStep, navAction, onBack, bare, footer, 
         contentContainerStyle={[styles.content, contentTop !== undefined && { paddingTop: contentTop }]}
       >
         {children}
+        {poweredBy ? <PoweredByNuvion style={styles.powered} /> : null}
       </ScrollView>
       {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
     </KeyboardAvoidingView>
@@ -92,5 +96,6 @@ const styles = StyleSheet.create({
   step: { fontSize: navMetrics.step, textAlign: 'right' },
   scroll: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: space.sm, paddingBottom: space.lg },
+  powered: { marginTop: space.lg },
   footer: { paddingTop: space.md, paddingHorizontal: layout.gutter, gap: footGap },
 });

@@ -410,6 +410,7 @@ function BvnNinForm({ account, review, onClose, onEnded, onPassed }: FormProps) 
     <AuthFrame
       testID="open-wallet"
       scrollRef={scrollRef}
+      poweredBy
       navTitle={NAV_TITLE}
       navStep={NAV_STEP}
       onBack={onClose}

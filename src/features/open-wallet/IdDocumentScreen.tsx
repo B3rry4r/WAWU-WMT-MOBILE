@@ -203,6 +203,7 @@ export function IdDocumentScreen({ onBack, onContinue, onChecking, onOpened, onL
     <AuthFrame
       testID="open-wallet-id"
       scrollRef={scrollRef}
+      poweredBy
       navTitle={NAV_TITLE}
       onBack={onBack}
       footer={<Button label="Continue" full disabled={!photosIn} onPress={goOn} testID="open-wallet-id-continue" />}

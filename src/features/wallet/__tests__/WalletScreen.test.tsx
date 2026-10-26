@@ -838,3 +838,31 @@ describe('W1 · an open wallet with no PIN leads to Create your transaction PIN'
     expect(mockPushed).toEqual([]);
   });
 });
+
+describe('R-95 · Powered by Nuvion on the Wallet', () => {
+  const about = (bankName: string) => ok({ bankName, licenceLine: null, supportEmail: null });
+
+  it('draws the line once, under the balance card, when the Hub says the wallets run on Nuvion', async () => {
+    fallback['GET /about'] = about('Nuvion');
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    expect(await app.screen.findByText('Powered by Nuvion')).toBeTruthy();
+    expect(app.screen.getAllByText('Powered by Nuvion')).toHaveLength(1);
+  });
+
+  it('draws nothing when the Hub names another bank, and nothing when that read fails', async () => {
+    fallback['GET /about'] = about('Loma Bank');
+    const named = await boot();
+    expect(await named.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(asked('/about')).toBe(1));
+    expect(named.screen.queryByText('Powered by Nuvion')).toBeNull();
+    await rtl.cleanup();
+    const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+    queryClient.clear();
+    fallback['GET /about'] = refusal(500, 'internal', 'Something went wrong.');
+    const failed = await boot();
+    expect(await failed.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(asked('/about')).toBe(2));
+    expect(failed.screen.queryByText('Powered by Nuvion')).toBeNull();
+  });
+});
