@@ -28,6 +28,7 @@ import { HANDLE_PATTERN, limits } from './limits';
 import { canPickImage, pickImage, type PickedImage } from './pickImage';
 import { ExperienceSection, SkillsSection, useSkillInput } from './AboutSections';
 import { PictureHeader } from './PictureHeader';
+import { splitPhotoLink, withPhotoPosition } from '@/lib/photoPosition';
 import { roleLinesOf } from '@/features/me/model';
 import { addSkill } from './skills';
 import { PLATFORMS, SOCIAL, bareHandle } from './social';
@@ -62,6 +63,11 @@ export type EditProfileScreenProps = {
    * shows M10's own notice (SHARED-CHANGES ME-01 F1).
    */
   ownNotice?: boolean;
+  /**
+   * Opens the position screen for the profile picture or the cover (R-96): after a new photo is chosen, and from "Reposition" on a
+   * photo already there. Left out, a photo is just chosen and no "Reposition" is drawn: there is no screen to open (R-47).
+   */
+  onPositionPhoto?: (kind: 'avatar' | 'cover') => void;
 };
 
 /**
@@ -113,9 +119,15 @@ export function EditProfileScreen(props: EditProfileScreenProps) {
   return <EditForm {...props} account={me.data.wawuUserId} initial={formFrom(me.data, fields.data)} roles={roleLinesOf(me.data.experience ?? [])} />;
 }
 
+/** What M8 draws for a picture: the photo just chosen (shown before it is up) wears the position the form's link holds, so Reposition shows at once. */
+function shownLink(preview: string | undefined, link: string | null): string | null {
+  if (!preview) return link;
+  return withPhotoPosition(preview, link ? splitPhotoLink(link).position : null);
+}
+
 type FormProps = EditProfileScreenProps & { account: string; initial: ProfileForm; roles: ReturnType<typeof roleLinesOf> };
 
-function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, onSaved, ownNotice = true }: FormProps) {
+function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, onSaved, ownNotice = true, onPositionPhoto }: FormProps) {
   const queryClient = useQueryClient();
   const scrollRef = useRef<ScrollView>(null);
   // Idempotent: it starts the draft once per account, and an effect cleanup that ran and re-ran (development) finds it again.
@@ -222,7 +234,9 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
       // On a phone the app's own copy is deleted once it is up (SHARED-04, F3), so the preview is the uploaded picture.
       const preview = picked.discard ? url : picked.previewUri;
       setPreviews((current) => ({ ...current, [kind]: preview }));
+      // A new photo starts centred: its link carries no position. The person then places it, or leaves it as it is.
       edit((current) => ({ ...current, [kind === 'avatar' ? 'avatarUrl' : 'coverUrl']: url }));
+      onPositionPhoto?.(kind);
     } catch (error) {
       setUploadError(uploadFailure(error));
     } finally {
@@ -266,12 +280,13 @@ function EditForm({ account, initial, roles, onBack, onOpenSocial, onOpenRole, o
         {banner ? <Banner tone="danger" title="That did not work" body={banner} testID="edit-banner" /> : null}
         <PictureHeader
           name={form.name}
-          avatarUri={previews.avatar ?? form.avatarUrl}
-          coverUri={previews.cover ?? form.coverUrl}
+          avatarUri={shownLink(previews.avatar, form.avatarUrl)}
+          coverUri={shownLink(previews.cover, form.coverUrl)}
           canPick={canPickImage}
           busy={uploading}
           onPickAvatar={() => void choose('avatar')}
           onPickCover={() => void choose('cover')}
+          onReposition={onPositionPhoto}
         />
         <AuthField
           scrollRef={scrollRef}

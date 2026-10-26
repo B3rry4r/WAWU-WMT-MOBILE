@@ -1211,6 +1211,18 @@ here is redrawn.
   withdrawals.
 - **Why:** R-28: it has no real cause today.
 
+### M8 · Edit profile, position a picture (PHOTO-POSITION, no artboard)
+- **Now:** a chosen profile picture or cover is drawn cover-fitted and centred, everywhere.
+- **Instead:** after a photo is chosen, and from a small "Reposition" pill beside each
+  picture already set (on the cover's bottom left, and to the right of the avatar), one screen
+  built from the app's own parts: the photo under the exact frame it will show in (the avatar's
+  circle, or the profile header's banner shape), the rest of the photo dimmed outside it. Drag to
+  move, pinch to zoom; a zoom slider with minus and plus buttons; four round move buttons; a
+  "Centre" button; "Done" in the bar. The photo can never be dragged off its edge, and zooms from
+  filling the frame to four times that. Every avatar and cover then shows that part of the photo.
+- **Why:** R-96 (owner, 26 Oct 2026). Not on the canvas, so it is drawn from the kit's round
+  buttons, the accent track and the page colours.
+
 ## Not built at launch
 
 Entries drawn on launch screens whose screens come after launch. Each is added,

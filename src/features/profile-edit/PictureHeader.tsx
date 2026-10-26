@@ -1,11 +1,12 @@
-import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
-import { radius, space, useWawu } from '@/theme';
+import { PositionedImage } from '@/components/PositionedImage';
+import { Text } from '@/components/Text';
+import { font, radius, space, useWawu } from '@/theme';
 
 /**
  * design/_gen/me.js line 36 (M8): a 110 high cover with a 20 corner; the 72
@@ -13,7 +14,7 @@ import { radius, space, useWawu } from '@/theme';
  * a 28 camera badge on the avatar ringed 3; a 42 glass camera 10 in from the
  * cover's right and bottom edges; 26 of room before the first field.
  */
-const headerMetrics = { cover: 110, avatar: 72, avatarRing: 4, avatarLeft: 16, avatarHang: 34, badge: 28, badgeRing: 3, badgeInset: -2, badgeIcon: 14, glassInset: 10, after: 26 } as const;
+const headerMetrics = { pillH: 34, pillPad: 14, pillText: 13.5, cover: 110, avatar: 72, avatarRing: 4, avatarLeft: 16, avatarHang: 34, badge: 28, badgeRing: 3, badgeInset: -2, badgeIcon: 14, glassInset: 10, after: 26 } as const;
 
 export type PictureHeaderProps = {
   name: string;
@@ -24,16 +25,23 @@ export type PictureHeaderProps = {
   busy: 'avatar' | 'cover' | null;
   onPickAvatar: () => void;
   onPickCover: () => void;
+  /** Opens the position screen for a picture already chosen (R-96). Left out, no "Reposition" is drawn: there is nowhere to go (R-47). */
+  onReposition?: (kind: 'avatar' | 'cover') => void;
 };
 
 /** M8's top: the cover picture, and the avatar over its bottom edge, each with a camera button to change it. */
-export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPickAvatar, onPickCover }: PictureHeaderProps) {
+export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPickAvatar, onPickCover, onReposition }: PictureHeaderProps) {
   const { colors } = useWawu();
   const badgeRing = useFocusRing();
   return (
     <View style={styles.root}>
       <View testID="edit-cover" style={[styles.cover, { backgroundColor: colors.surfaceSunken }]}>
-        {coverUri ? <Image source={{ uri: coverUri }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Your cover picture" /> : null}
+        {coverUri ? <PositionedImage uri={coverUri} accessibilityLabel="Your cover picture" testID="edit-cover-image" /> : null}
+        {coverUri && onReposition ? (
+          <View style={styles.reposition}>
+            <RepositionPill label="Reposition cover picture" onPress={() => onReposition('cover')} disabled={busy !== null} testID="edit-cover-reposition" glass />
+          </View>
+        ) : null}
         {canPick ? (
           <View style={styles.glass}>
             <IconButton icon="Camera" label={coverUri ? 'Change cover picture' : 'Add a cover picture'} tone="glass" onPress={onPickCover} disabled={busy !== null} testID="edit-cover-pick" />
@@ -57,7 +65,39 @@ export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPick
           </Pressable>
         ) : null}
       </View>
+      {avatarUri && onReposition ? (
+        <View style={styles.avatarReposition}>
+          <RepositionPill label="Reposition profile picture" onPress={() => onReposition('avatar')} disabled={busy !== null} testID="edit-avatar-reposition" />
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+/** A small pill that reads "Reposition"; a screen reader hears which picture it moves. On the cover it is glass, like the camera. */
+function RepositionPill({ label, onPress, disabled, testID, glass }: { label: string; onPress: () => void; disabled: boolean; testID: string; glass?: boolean }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={space.xs}
+      {...ring.handlers}
+      style={[
+        styles.pill,
+        glass ? { backgroundColor: colors.surfaceScrim } : { backgroundColor: colors.surfaceCard, borderColor: colors.borderStrong, borderWidth: StyleSheet.hairlineWidth },
+        ring.style,
+      ]}
+    >
+      <Text variant="body" style={[font(600), styles.pillText, { color: glass ? colors.textOnAccent : disabled ? colors.textDisabled : colors.textPrimary }]}>
+        Reposition
+      </Text>
+    </Pressable>
   );
 }
 
@@ -67,6 +107,10 @@ const styles = StyleSheet.create({
   root: { marginBottom: headerMetrics.after },
   cover: { height: headerMetrics.cover, borderRadius: radius.media, overflow: 'hidden' },
   glass: { position: 'absolute', right: headerMetrics.glassInset, bottom: headerMetrics.glassInset },
+  reposition: { position: 'absolute', left: headerMetrics.glassInset, bottom: headerMetrics.glassInset },
+  avatarReposition: { position: 'absolute', left: headerMetrics.avatarLeft + headerMetrics.avatar + space.md, top: headerMetrics.cover + space.sm },
+  pill: { height: headerMetrics.pillH, paddingHorizontal: headerMetrics.pillPad, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontSize: headerMetrics.pillText },
   avatarRing: {
     position: 'absolute',
     left: headerMetrics.avatarLeft - headerMetrics.avatarRing,

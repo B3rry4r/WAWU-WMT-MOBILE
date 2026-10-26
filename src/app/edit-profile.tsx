@@ -24,6 +24,7 @@ export default function EditProfileRoute() {
     <EditProfileScreen
       onBack={leave}
       onOpenSocial={() => router.push('/social-links')}
+      onPositionPhoto={(kind) => router.push({ pathname: '/photo-position', params: { kind } })}
       onOpenRole={(id) => router.push(id ? { pathname: '/role', params: { id } } : '/role')}
       ownNotice={!toMeTab && !toProfile}
       onSaved={() => {
