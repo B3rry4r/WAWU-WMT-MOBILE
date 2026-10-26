@@ -6,6 +6,7 @@ import { hubNeedsType, readHubAccountType, setHubAccountType, type HubAccountTyp
 
 import { readMine } from '@/features/profile-edit/api';
 
+import { noteAccountTypeWrite, resetAccountTypeWrite } from './accountTypeWrite';
 import { claimSettled, readIdentityNeed, resetIdentityStep, type IdentityNeed } from './identityStep';
 import { authed } from './signupApi';
 
@@ -75,10 +76,11 @@ export async function refreshSignupGate(): Promise<void> {
 /**
  * While the sign-up's steps are open the write is made, idempotent. Once they are done (a cold start of a finished account) the Hub is asked
  * first and written to only when it still lacks the type, so an ordinary start sends no write (FIX-68 F-4). A read that fails sends nothing.
+ * Resolves with the type the Hub answered for a write that was made, or null when none was needed.
  */
-async function copyOnce(type: HubAccountType, finished: boolean, mine: () => Promise<{ accountType?: unknown }>): Promise<void> {
-  if (finished && !hubNeedsType(await readHubAccountType(mine), type)) return;
-  await setHubAccountType(type);
+async function copyOnce(type: HubAccountType, finished: boolean, mine: () => Promise<{ accountType?: unknown }>): Promise<HubAccountType | null> {
+  if (finished && !hubNeedsType(await readHubAccountType(mine), type)) return null;
+  return setHubAccountType(type);
 }
 
 /** Copies the sign-up's account type to the Hub's profile once per session. Never throws: the next read tries again. */
@@ -88,8 +90,11 @@ async function copyAccountType(progress: SignupProgress | null, mine: () => Prom
   const finished = progress?.step === 'done';
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    const write = copyOnce(type, finished, mine);
+    // The tier offer asks the Hub once more when this write lands after it said no (TIER-OFFER round 2, F1): it is told how the write ended.
+    noteAccountTypeWrite(write);
     await Promise.race([
-      copyOnce(type, finished, mine).then(() => {
+      write.then(() => {
         copiedToHub = type;
       }),
       new Promise<void>((resolve) => {
@@ -130,6 +135,7 @@ export function closeInterests() {
 export function resetSignupGate() {
   generation += 1;
   copiedToHub = null;
+  resetAccountTypeWrite();
   resetIdentityStep();
   if (gate.phase !== 'idle' || gate.reopened || gate.identity) change({ phase: 'idle', progress: null, reopened: false, identity: null });
 }

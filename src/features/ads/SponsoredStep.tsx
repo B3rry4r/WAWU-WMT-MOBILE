@@ -45,7 +45,7 @@ export function SponsoredBackdrop({ ad, onFail, onLoad }: SponsoredBackdropProps
 
 export type SponsoredStepProps = {
   ad: AdCard;
-  /** The button: opens what the card is for (its event). */
+  /** The button: opens what the card is for (its web link, or its event). Never called for a card that does nothing. */
   onOpen: () => void;
   /** Skip: on to the next card. */
   onSkip: () => void;
@@ -56,7 +56,8 @@ export type SponsoredStepProps = {
 /**
  * H33 · The sponsored card in the TGIF reader, before the takeaway: SPONSORED, the headline, the line under it, the
  * button and Skip. Every word but SPONSORED and Skip is the advertiser's, from `GET /ads`. Nothing else on the card
- * moves on: a tap outside the button or Skip does nothing, so the card is never skipped by accident.
+ * moves on: a tap outside the button or Skip does nothing, so the card is never skipped by accident. A card that does nothing
+ * (R-92, `none`) draws no button at all; Skip stays, because it is the reader's own way on and not part of the advert.
  */
 export function SponsoredStep({ ad, onOpen, onSkip, bottomInset }: SponsoredStepProps) {
   return (
@@ -77,7 +78,7 @@ export function SponsoredStep({ ad, onOpen, onSkip, bottomInset }: SponsoredStep
           {ad.subline}
         </Text>
       ) : null}
-      <Button testID="sponsored-cta" label={ad.ctaLabel} variant="white" size="lg" full onPress={onOpen} />
+      {ad.ctaDestination !== 'none' ? <Button testID="sponsored-cta" label={ad.ctaLabel} variant="white" size="lg" full onPress={onOpen} /> : null}
       <View style={styles.row}>
         <Pressable testID="sponsored-skip" accessibilityRole="button" accessibilityLabel="Skip" onPress={onSkip} hitSlop={skipSlop}>
           <Text style={adWords.skip}>{'Skip ›'}</Text>

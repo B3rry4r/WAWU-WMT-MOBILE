@@ -72,6 +72,10 @@ const hub = {
   quoteNoWallet: false,
   reads: 0,
   tipStatus: 'pending' as 'pending' | 'paid' | 'failed',
+  /** PAY-FX: the quote carries the firm amount in a dollar account. */
+  usd: false,
+  /** Every request's path and the paying account it named (PAY-FX round 3: only the paying requests name one). */
+  calls: [] as { path: string; account: string | null }[],
 };
 
 const quoteView = (amountKobo: number) => ({
@@ -92,6 +96,22 @@ const quoteView = (amountKobo: number) => ({
     remainingTodayKobo: null,
     quoteToken: `tok-${amountKobo}-${hub.feeKobo}`,
     expiresAt: '2099-01-01T00:00:00.000Z',
+    ...(hub.usd
+      ? {
+          source: {
+            currency: 'USD',
+            decimals: 2,
+            amountMinor: 23,
+            providerFeeMinor: 0,
+            wawuFeeMinor: 0,
+            totalMinor: 23,
+            rate: '0.000741',
+            availableMinor: 500,
+            shortfallMinor: 0,
+            expiresAt: '2099-01-01T00:00:00.000Z',
+          },
+        }
+      : {}),
   },
 });
 
@@ -121,6 +141,9 @@ function tipView(status: 'pending' | 'paid' | 'failed', body: Record<string, unk
       statusMessage: null,
       createdAt: '2026-10-17T09:42:00.000Z',
       completedAt: status === 'paid' ? '2026-10-17T09:42:05.000Z' : null,
+      ...(hub.usd
+        ? { source: { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', refundedMinor: null } }
+        : {}),
     },
     createdAt: '2026-10-17T09:42:00.000Z',
     paidAt: status === 'paid' ? '2026-10-17T09:42:05.000Z' : null,
@@ -134,6 +157,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const method = request.method;
+  hub.calls.push({ path, account: request.headers.get('x-pay-source-currency') });
+  if (path === '/money/fx/accounts') return ok([]);
   if (path === '/feed/entries') {
     return feedBody([
       { kind: 'content', content: item('a', CREATOR) },
@@ -231,7 +256,10 @@ beforeEach(() => {
     quoteNoWallet: false,
     reads: 0,
     tipStatus: 'pending',
+    usd: false,
+    calls: [],
   });
+  (require('@/api/paySource') as typeof import('@/api/paySource')).clearPaySource();
 });
 
 afterEach(async () => {
@@ -502,5 +530,71 @@ describe('H26 to H28: paying', () => {
     await screen.findByText(/^Approve /);
     await enterPin('4829');
     await rtl.waitFor(() => expect(pay.onOpenWallet).toHaveBeenCalledTimes(1));
+  });
+});
+
+
+describe('PAY-FX (R-91): the tip sheet for a buyer paying from a dollar account', () => {
+  it('names the account and the firm amount before the PIN, never a naira total or "Checking your balance"', async () => {
+    hub.usd = true;
+    hub.balanceKobo = 0;
+    // A buyer with no naira wallet (R-87): the layout reads that once and every payment starts from the main currency.
+    (require('@/api/paySource') as typeof import('@/api/paySource')).setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    const screen = await boot();
+    await rtl.fireEvent.press(screen.getByTestId('tip-a'));
+    await screen.findByTestId('tip-sheet');
+    await screen.findByTestId('source-total');
+    const rows = screen.getByTestId('tip-breakdown');
+    // The naira tip stays; the account and the firm amount come from the one piece the pay sheet draws.
+    expect(rtl.within(rows).getByLabelText('2,000 naira')).toBeTruthy();
+    expect(rtl.within(rows).getByText('Pay from')).toBeTruthy();
+    expect(rtl.within(rows).getByText('USD account')).toBeTruthy();
+    expect(rtl.within(rows).getAllByText('$0.23').length).toBe(2);
+    expect(screen.queryByText('Checking your balance')).toBeNull();
+    expect(screen.queryByText('Pay from wallet')).toBeNull();
+    expect(screen.queryByText('Bank charge')).toBeNull();
+    // The button says what leaves the account, in its currency, with its sign.
+    await rtl.fireEvent.press(await screen.findByRole('button', { name: 'Tip $0.23' }));
+    // The PIN sheet says the same amount, not the naira.
+    await screen.findByText('Approve $0.23 to Tife Adeola');
+    expect(screen.queryByText(/Approve ₦/)).toBeNull();
+  });
+
+  it('Tip sent says what left the dollar account and which account, with the naira tip in the heading; never "Total paid ₦"', async () => {
+    hub.usd = true;
+    hub.balanceKobo = 0;
+    (require('@/api/paySource') as typeof import('@/api/paySource')).setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    const screen = await boot();
+    await rtl.fireEvent.press(screen.getByTestId('tip-a'));
+    await screen.findByTestId('source-total');
+    await rtl.fireEvent.press(await screen.findByRole('button', { name: 'Tip $0.23' }));
+    await screen.findByText('Approve $0.23 to Tife Adeola');
+    await enterPin('4829');
+    await screen.findByText('₦2,000 sent to Tife');
+    const total = rtl.within(screen.getByTestId('tip-total-paid'));
+    expect(total.getByText('Total paid')).toBeTruthy();
+    expect(total.getByText('$0.23')).toBeTruthy();
+    expect(total.getByText('USD account')).toBeTruthy();
+    expect(total.queryByLabelText('2,023 naira 25 kobo')).toBeNull();
+  });
+
+  it('names the account on the quote and on nothing else; a naira buyer never asks for the other accounts', async () => {
+    hub.usd = true;
+    // A buyer with no naira wallet (R-87): the layout reads that once and every payment starts from the main currency.
+    (require('@/api/paySource') as typeof import('@/api/paySource')).setPaySourceDefaults({ fallback: 'USD', hasNaira: false });
+    const screen = await boot();
+    await rtl.fireEvent.press(screen.getByTestId('tip-a'));
+    await screen.findByTestId('source-total');
+    const named = hub.calls.filter((c) => c.account !== null).map((c) => c.path);
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.every((p) => p === '/tips/wallet/quote')).toBe(true);
+    expect(hub.calls.filter((c) => c.path === '/feed/entries').every((c) => c.account === null)).toBe(true);
+  });
+
+  it('a person with only a naira wallet that covers the tip never fetches the other accounts or names an account', async () => {
+    const screen = await openSheet();
+    expect(screen.queryByTestId('source-total')).toBeNull();
+    expect(hub.calls.some((c) => c.path === '/money/fx/accounts')).toBe(false);
+    expect(hub.calls.every((c) => c.account === null)).toBe(true);
   });
 });

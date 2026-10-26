@@ -1,3 +1,5 @@
+import { accountNameOf, type PaidFrom } from '@/components/pay-sheet';
+
 import type { LegalRequest } from '../matter/api';
 import type { FeeQuote, FeePayment } from './api';
 
@@ -13,10 +15,13 @@ export function feeSettled(request: Pick<LegalRequest, 'consultationPaidAt' | 's
 export const approvalPurpose = (stage: FeeQuote['stage']): string => (stage === 'consultation' ? 'your consultation' : 'starting your request');
 
 /** The line a payment that failed, or was paid back, ends on: the Hub's own sentence, or a plain one. */
-export function failedPaymentLine(payment: Pick<FeePayment, 'status' | 'statusMessage'>): string {
+export function failedPaymentLine(payment: Pick<FeePayment, 'status' | 'statusMessage'> & { payment?: { source?: PaidFrom | null } | null }): string {
   const said = payment.statusMessage?.trim();
   if (said) return said;
-  return payment.status === 'refunded' ? 'This fee could not be applied, so the price is going back to your wallet.' : "Your payment didn't go through. Nothing was kept.";
+  // PAY-FX (R-91): a fee paid from another currency's account goes back to that account.
+  const from = payment.payment?.source ?? null;
+  const back = from ? `your ${accountNameOf(from.currency)}` : 'your wallet';
+  return payment.status === 'refunded' ? `This fee could not be applied, so the price is going back to ${back}.` : "Your payment didn't go through. Nothing was kept.";
 }
 
 export const CONFIRMING_LINE = "Don't pay again. Your request updates in a minute.";

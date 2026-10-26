@@ -6,7 +6,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, paidFromRows, sourceApproval } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
@@ -20,6 +20,7 @@ import { ICON_STROKE } from '@/components/icon';
 
 import { openIcon, openingLine, openLabel, PRICE_MOVED_TITLE, sheetSubtitle, tickOf, unlockedLine, unlockPayee, WALLET_NAME } from './model';
 import type { UnlockState } from './useUnlock';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** H16's and H18's round mark: 72 across, its glyph stroked at 2.4 (design/_gen/home.js lines 138 and 140). */
 const MARK = layout.tapMin + space.s3xl - space.xs;
@@ -47,6 +48,7 @@ export function UnlockSheets({
   onForgotPin: () => void;
 }) {
   const { flow, item, quote, fees, balanceKobo } = unlock;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: flow.payOpen, requote: flow.ask });
   const support = useOpenSupport();
   if (!item) return null;
 
@@ -63,8 +65,15 @@ export function UnlockSheets({
         line={unlockedLine(item)}
       >
         <GroupedList testID="unlock-receipt">
-          <KeyValueRow label="Paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} />} />
-          <KeyValueRow label="From" value={WALLET_NAME} />
+          {view.payment.source ? (
+            // PAY-FX (R-91): what left the buyer's own account, in its currency, and where from; the naira price beside it.
+            paidFromRows(view.payment.source, { paidLabel: 'Paid', priceKobo: view.payment.priceKobo, paidSize: text.kvValue.fontSize })
+          ) : (
+            [
+              <KeyValueRow key="paid" label="Paid" value={<Money minorUnits={view.payment.totalKobo} size={text.kvValue.fontSize} />} />,
+              <KeyValueRow key="from" label="From" value={WALLET_NAME} />,
+            ]
+          )}
           <KeyValueRow
             label="Reference"
             value={
@@ -88,7 +97,7 @@ export function UnlockSheets({
         testID="unlock-opening"
         mark={<IconTile icon="Clock" tone="warn" size={MARK} strokeWidth={MARK_STROKE} />}
         title="Paid, still opening"
-        line={openingLine(item, view.payment.totalKobo)}
+        line={openingLine(item, view.payment.totalKobo, view.payment.source)}
       >
         <Button testID="unlock-refresh" label="Refresh" icon="RotateCcw" onPress={flow.refresh} loading={flow.refreshing} full />
         <Button
@@ -135,6 +144,7 @@ export function UnlockSheets({
         }}
         amountKobo={quote.payment.priceKobo}
         fees={fees}
+        source={paySource}
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
         details={YOURS}
@@ -153,7 +163,7 @@ export function UnlockSheets({
       <PayPinSheet
         visible={flow.pinOpen}
         onClose={flow.closePin}
-        approval={{ totalKobo: quote.payment.totalKobo, payee }}
+        approval={{ totalKobo: quote.payment.totalKobo, payee, ...sourceApproval(paySource) }}
         run={flow.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={() => {

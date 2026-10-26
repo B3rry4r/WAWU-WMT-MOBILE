@@ -1,12 +1,13 @@
 import type { IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, sourceApproval, type PaySource } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { WALLET_NAME } from '@/features/events/buyModel';
 
 import { approvalPurpose } from './model';
 import type { LegalFeePay } from './useLegalFeePay';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** S19's head draws the call's icon in a 44 accent tile before "Video consultation" (SWEEP-APP-4 row 140). */
 const LEAD_TILE = 44;
@@ -18,6 +19,7 @@ const LEAD_TILE = 44;
  */
 export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; title: string; subtitle: string; icon?: IconName }) {
   const quote = pay.quote;
+  const paySource = usePaySource({ payment: quote?.payment ?? null, open: pay.payOpen, requote: pay.tryAgain });
   if (!quote) return null;
   const { payment } = quote;
   return (
@@ -27,6 +29,7 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
         item={{ title, subtitle, lead: icon ? <IconTile icon={icon} tone="accent" size={LEAD_TILE} /> : undefined }}
         amountKobo={payment.priceKobo}
         fees={pay.fees}
+        source={paySource}
         wallet={pay.wallet}
         walletName={WALLET_NAME}
         actionLabel="Pay"
@@ -41,7 +44,7 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
       <PayPinSheet
         visible={pay.pinOpen}
         onClose={pay.closePin}
-        approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
+        approval={{ totalKobo: payment.totalKobo, purpose: approvalPurpose(quote.stage), ...sourceApproval(paySource) }}
         run={pay.run}
         unansweredLine={PAYMENT_UNANSWERED_LINE}
         onForgotPin={pay.forgotPin}
@@ -52,14 +55,14 @@ export function PaySheets({ pay, title, subtitle, icon }: { pay: LegalFeePay; ti
 }
 
 /** S22 and S26 draw the fee on the page, so only the shared PIN sheet opens over it. */
-export function PayPin({ pay }: { pay: LegalFeePay }) {
+export function PayPin({ pay, source: paySource }: { pay: LegalFeePay; source?: PaySource }) {
   const quote = pay.quote;
   if (!quote) return null;
   return (
     <PayPinSheet
       visible={pay.pinOpen}
       onClose={pay.closePin}
-      approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage) }}
+      approval={{ totalKobo: quote.payment.totalKobo, purpose: approvalPurpose(quote.stage), ...sourceApproval(paySource) }}
       run={pay.run}
       unansweredLine={PAYMENT_UNANSWERED_LINE}
       onForgotPin={pay.forgotPin}

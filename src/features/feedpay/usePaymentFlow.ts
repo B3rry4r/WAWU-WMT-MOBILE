@@ -191,7 +191,9 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
       const before = quoteRef.current;
       const again = await ask();
       if (!again) return;
-      if (before && again.payment.totalKobo !== before.payment.totalKobo) {
+      // A payment from another currency keeps its naira total: what moved is the firm amount in that currency (PAY-FX, R-91).
+      const owed = (q: Q) => q.payment.source?.totalMinor ?? null;
+      if (before && (again.payment.totalKobo !== before.payment.totalKobo || owed(again) !== owed(before))) {
         setNotice(PRICE_CHANGED_LINE);
         return;
       }

@@ -10,7 +10,7 @@ import { ICON_STROKE, Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow, ListRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import type { PayFeeLine, PayWallet } from '@/components/pay-sheet';
+import { sourceRows, type PayFeeLine, type PaySource, type PayWallet } from '@/components/pay-sheet';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { WALLET_NAME } from '@/features/events/buyModel';
@@ -142,19 +142,24 @@ type FeeCardProps = {
   priceKobo: number;
   fees: readonly PayFeeLine[];
   totalKobo: number;
+  /** Paying from another currency (PAY-FX, R-91): the account and the firm amount replace the fees and the naira total. */
+  source?: PaySource;
 };
 
 /** S22: "Signed as", the price, the bank's charge and the total (BRIEF S22), all from the Hub's quote. */
-export function FeeCard({ signedAs, priceKobo, fees, totalKobo }: FeeCardProps) {
+export function FeeCard({ signedAs, priceKobo, fees, totalKobo, source }: FeeCardProps) {
   const money = (kobo: number) => <Money minorUnits={kobo} size={text.kvValue.fontSize} decimals={kobo % 100 !== 0} />;
   return (
     <GroupedList testID="legal-fee-card">
       {signedAs ? <KeyValueRow label="Signed as" value={signedAs} testID="legal-signed-as" /> : null}
       <KeyValueRow label="Price" value={money(priceKobo)} />
-      {fees.map((f) => (
-        <KeyValueRow key={f.label} label={f.label} value={money(f.amountKobo)} />
-      ))}
-      <KeyValueRow label="Total" value={money(totalKobo)} testID="legal-fee-total" />
+      {source
+        ? // PAY-FX (R-91): the account and the firm amount, drawn by the same piece as the pay sheet.
+          sourceRows(source)
+        : [
+            ...fees.map((f) => <KeyValueRow key={f.label} label={f.label} value={money(f.amountKobo)} />),
+            <KeyValueRow key="total" label="Total" value={money(totalKobo)} testID="legal-fee-total" />,
+          ]}
     </GroupedList>
   );
 }

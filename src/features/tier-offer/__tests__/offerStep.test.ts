@@ -16,8 +16,10 @@ jest.mock('@/api/session', () => ({
 }));
 
 const step = require('../offerStep') as typeof import('../offerStep');
+const { noteAccountTypeWrite, resetAccountTypeWrite } = require('@/features/auth/accountTypeWrite') as typeof import('@/features/auth/accountTypeWrite');
 
 beforeEach(() => {
+  resetAccountTypeWrite();
   mockFetchOffer.mockReset();
   mockMarkSeen.mockReset().mockResolvedValue(undefined);
   step.resetTierOffer();
@@ -115,5 +117,95 @@ describe('the tier offer step (TIER-OFFER, R-94)', () => {
     });
     expect(step.takeTierOfferCheckout()).toBeNull();
     await act(async () => step.resetTierOffer());
+  });
+});
+
+describe('the tier offer step asks again after the account type was written (TIER-OFFER round 2, F1)', () => {
+  const no = { show: false, closeButton: true };
+  const yes = { show: true, closeButton: false };
+
+  it('asks once more when the Hub said no while a creator type was just written, and shows the offer on the second answer', async () => {
+    noteAccountTypeWrite(Promise.resolve('creator'));
+    mockFetchOffer.mockResolvedValueOnce(no).mockResolvedValueOnce(yes);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.visible).toBe(true));
+    expect(mockFetchOffer).toHaveBeenCalledTimes(2);
+    expect(result.current.closeButton).toBe(false);
+  });
+
+  it('asks once more when the first ask failed, too', async () => {
+    noteAccountTypeWrite(Promise.resolve('creator'));
+    mockFetchOffer.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(yes);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.visible).toBe(true));
+    expect(mockFetchOffer).toHaveBeenCalledTimes(2);
+  });
+
+  it('never asks twice when the Hub already said show (no extra wait)', async () => {
+    noteAccountTypeWrite(Promise.resolve('creator'));
+    mockFetchOffer.mockResolvedValue(yes);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.visible).toBe(true));
+    expect(mockFetchOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['an ordinary start that wrote nothing', () => Promise.resolve(null)],
+    ["a write that left the account a fan's", () => Promise.resolve('user' as const)],
+    ['a write that failed', () => Promise.reject(new Error('refused'))],
+  ])('asks once after %s', async (_name, write) => {
+    noteAccountTypeWrite(write());
+    mockFetchOffer.mockResolvedValue(no);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.holding).toBe(false));
+    expect(result.current.visible).toBe(false);
+    expect(mockFetchOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks once when no write was noted at all', async () => {
+    mockFetchOffer.mockResolvedValue(no);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.holding).toBe(false));
+    expect(mockFetchOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps holding for a write still on its way, then asks once more', async () => {
+    let landed: (type: 'creator') => void = () => undefined;
+    noteAccountTypeWrite(new Promise((resolve) => (landed = resolve)));
+    mockFetchOffer.mockResolvedValueOnce(no).mockResolvedValueOnce(yes);
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(mockFetchOffer).toHaveBeenCalledTimes(1));
+    expect(result.current).toMatchObject({ holding: true, visible: false });
+    await act(async () => {
+      landed('creator');
+    });
+    await waitFor(() => expect(result.current.visible).toBe(true));
+    expect(mockFetchOffer).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not hold the splash for ever on a write that never finishes', async () => {
+    jest.useFakeTimers();
+    try {
+      noteAccountTypeWrite(new Promise(() => undefined));
+      mockFetchOffer.mockResolvedValue(no);
+      const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(step.TIER_OFFER_WAIT_MS * 2 + 50);
+      });
+      expect(result.current).toMatchObject({ holding: false, visible: false });
+      expect(mockFetchOffer).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps no offer when the second ask fails too, and marks nothing', async () => {
+    noteAccountTypeWrite(Promise.resolve('creator'));
+    mockFetchOffer.mockResolvedValueOnce(no).mockRejectedValueOnce(new Error('offline'));
+    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    await waitFor(() => expect(result.current.holding).toBe(false));
+    expect(result.current.visible).toBe(false);
+    expect(mockFetchOffer).toHaveBeenCalledTimes(2);
+    expect(mockMarkSeen).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import { useDefaultPaySource } from '@/features/pay-source/usePaySource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -101,6 +102,8 @@ export default function RootLayout() {
   const offer = useClaimOfferStep(signedIn);
   // LEGAL-DOCS: a sign-up whose agreement could not reach the Hub sends it again once the person is signed in.
   useAcceptanceRetry(signedIn);
+  // PAY-FX (R-91): where a wallet payment starts from (naira, or the main currency of a person with no naira wallet).
+  useDefaultPaySource(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
   // TIER-OFFER (R-94): the Hub is asked once the sign-up gate is open; the splash waits for the answer (bounded), so Home is never drawn first.
   const tierOffer = useTierOfferStep(signedIn && gate.phase === 'ready', gate.progress?.accountType);

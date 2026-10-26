@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 
 import { getAccessToken, onSessionEnd } from '@/api/session';
+import { accountTypeWriteResult } from '@/features/auth/accountTypeWrite';
 import { readClaims } from '@/features/claim/tokenClaims';
 
 import { fetchTierOffer, markTierOfferSeen } from './api';
@@ -14,6 +15,9 @@ import { fetchTierOffer, markTierOfferSeen } from './api';
  *     Hub by then, and the sign-up's own steps (access code, A11 to A13) come first: the layout shows the offer only after them.
  *   - The answer is waited for a short, bounded time (`TIER_OFFER_WAIT_MS`). An answer that fails or comes late means no offer this
  *     session; the next start asks again, because nothing was marked.
+ *   - When the Hub does not say show while the sign-up has just written a creator account type to it (the write is what makes a new person
+ *     one the Hub offers the tiers to), the Hub is asked once more, within one more bounded wait that also covers the write still being
+ *     on its way. An answer that already says show is never asked twice, and a start that wrote nothing asks once (F1, round 2).
  *   - "Shown once" lives on the Hub, so it holds across phones: the screen tells the Hub the moment it is drawn (`settleTierOffer`),
  *     so closing the app on it never brings it back.
  *   - Subscribe ends the step and hands the tier to the layout's bridge, which opens the checkout (VF6) once the offer is gone.
@@ -51,7 +55,20 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-/** Asks the Hub once for this session. Never throws; a failure or a late answer is "no offer". */
+/** The work, or null once `ms` have passed. */
+async function within<T>(work: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), ms);
+  });
+  try {
+    return await Promise.race([work, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Asks the Hub once for this session (twice, when a creator type was just written and the first answer was not "show"). Never throws; a failure or a late answer is "no offer". */
 async function ask(): Promise<void> {
   if (started) return;
   started = true;
@@ -61,12 +78,15 @@ async function ask(): Promise<void> {
     return;
   }
   publish({ ...state, sub, phase: 'asking' });
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), TIER_OFFER_WAIT_MS);
-  });
-  const answer = await Promise.race([fetchTierOffer().catch(() => null), late]);
-  clearTimeout(timer);
+  let answer = await within(fetchTierOffer().catch(() => null), TIER_OFFER_WAIT_MS);
+  if (!answer?.show && state.sub === sub && state.phase === 'asking') {
+    // The write of a creator account type may have landed after the Hub answered: one more look, never more.
+    const again = await within(
+      accountTypeWriteResult().then((held) => (held === 'creator' ? fetchTierOffer().catch(() => null) : null)),
+      TIER_OFFER_WAIT_MS,
+    );
+    answer = again ?? answer;
+  }
   // The session may have ended while the Hub was answering: its answer is for someone else now.
   if (state.sub !== sub || state.phase !== 'asking') return;
   publish(answer?.show ? { ...state, phase: 'visible', closeButton: answer.closeButton } : { ...state, phase: 'done' });

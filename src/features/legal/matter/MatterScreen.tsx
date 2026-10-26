@@ -5,7 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
-import { formatNaira, shortfallKobo } from '@/components/pay-sheet';
+import { SourceFooter, formatNaira, shortfallKobo } from '@/components/pay-sheet';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { ListSection } from '@/components/ListRow';
@@ -59,6 +60,8 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
   // matter moves under the page (a new quote, a new status): the fee drawn is dropped and the page shows what the Hub answers now.
   const { reload } = pay;
   const wantsFee = ask === 'pay';
+  // PAY-FX (R-91): a buyer paying from another currency sees the account and the firm amount here, not the naira total.
+  const paySource = usePaySource({ payment: pay.quote?.payment ?? null, open: ask === 'pay', requote: pay.tryAgain });
   const shape = data ? `${data.status}|${data.quoteAmount}|${data.contractSignedAt ?? ''}` : '';
   useEffect(() => {
     if (wantsFee) void reload();
@@ -130,7 +133,7 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
     );
   } else {
     const quotePayment = pay.quote?.payment ?? null;
-    const short = quotePayment && pay.wallet.kind === 'open' ? shortfallKobo(quotePayment.totalKobo, pay.wallet.balanceKobo) : 0;
+    const short = !paySource && quotePayment && pay.wallet.kind === 'open' ? shortfallKobo(quotePayment.totalKobo, pay.wallet.balanceKobo) : 0;
     body = (
       <>
         {consultationBooked(data) ? <GoodNote testID="legal-booked-note" text="Consultation booked." /> : null}
@@ -162,11 +165,11 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
         {ask === 'pay' ? (
           <>
             {quotePayment ? (
-              <FeeCard signedAs={data.contractSignedAs} priceKobo={quotePayment.priceKobo} fees={pay.fees} totalKobo={quotePayment.totalKobo} />
+              <FeeCard signedAs={data.contractSignedAs} priceKobo={quotePayment.priceKobo} fees={pay.fees} totalKobo={quotePayment.totalKobo} source={paySource} />
             ) : pay.loading || (!pay.problem && !pay.noWallet) ? (
               <Skeleton height={m.stepPadY * 2 + 124} radius={m.mediumCorner} testID="legal-fee-loading" />
             ) : null}
-            {quotePayment || pay.noWallet ? <WalletCard wallet={pay.noWallet ? { kind: 'none' } : pay.wallet} /> : null}
+            {(quotePayment || pay.noWallet) && !paySource ? <WalletCard wallet={pay.noWallet ? { kind: 'none' } : pay.wallet} /> : null}
             {pay.problem ? (
               <Banner tone="danger" title={pay.unpayable ? 'Nothing to pay right now' : "We couldn't ask for the price"} body={pay.problem} testID="legal-fee-problem" />
             ) : null}
@@ -213,6 +216,8 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
       else if (short > 0 && quotePayment && pay.status.kind === 'review') foot = <Button label={`Add ${formatNaira(short)}`} onPress={() => pay.addMoney(short)} icon="Plus" full testID="legal-add-money" />;
       else if (pay.status.kind === 'failed' || pay.status.kind === 'blocked') {
         foot = <Button label="Try again" onPress={pay.tryAgain} full testID="legal-fee-retry" />;
+      } else if (paySource) {
+        foot = <SourceFooter source={paySource} actionLabel="Pay" actionJoin="space" onPay={() => void pay.pay()} statusKind={pay.status.kind} testID="legal-pay-start" />;
       } else {
         foot = (
           <Button
@@ -234,7 +239,7 @@ export function MatterScreen({ requestId, onBack, wallet }: MatterArgs) {
         {body}
       </LegalFrame>
       <LetterSheet visible={letterOpen} onClose={() => setLetterOpen(false)} letter={letter.data} failed={letter.isError} onRetry={() => void letter.refetch()} />
-      <PayPin pay={pay} />
+      <PayPin pay={pay} source={paySource} />
     </>
   );
 }

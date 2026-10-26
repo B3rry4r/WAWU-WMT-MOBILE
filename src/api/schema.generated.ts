@@ -3076,6 +3076,13 @@ export interface paths {
          *     payer already has an open payment for the item (a second phone),
          *     `payment_in_progress` with `reason.paymentId`, as the payment itself
          *     answers it: no live Pay is drawn. Every other kind is quoted as before.
+         *
+         *     PAY-FX (R-91): with `sourceCurrency` (USD, GBP, EUR ...) the price stays
+         *     naira and the answer carries `source`: the firm amount the buyer's own
+         *     account in that currency pays for exactly that naira price, its fees and
+         *     the provider's real expiry; `quoteToken` is then that quote's, `totalKobo`
+         *     the naira price and `fee` zero. Absent (or `NGN`) is the naira wallet,
+         *     exactly as before.
          */
         get: operations["MoneyPaymentsController_quote"];
         put?: never;
@@ -3106,6 +3113,12 @@ export interface paths {
          *     (`Idempotent-Replayed: true`) without checking the PIN. fees_not_set
          *     comes before the wallet gate, the key and the PIN; limit_reached (WAWU's
          *     limit or the provider's) before anything is sent.
+         *
+         *     PAY-FX (R-91): with `sourceCurrency` the buyer's account in that currency
+         *     pays at the firm quote named by `quoteToken`; WAWU converts, the naira
+         *     lands in its own account and the payee is credited as for a naira
+         *     payment. A quote that has run out or been used is `409 quote_changed`
+         *     with a fresh one in `reason.paymentQuote`.
          */
         post: operations["MoneyPaymentsController_pay"];
         delete?: never;
@@ -10403,6 +10416,14 @@ export interface components {
             /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
             expectedTotalKobo: number;
             /**
+             * @description PAY-FX (R-91): pay from the buyer's account in this currency instead of
+             *     the naira wallet. Absent (or `NGN`) is the naira wallet, exactly as
+             *     before. Then `quoteToken` is the one the quote answered with
+             *     `sourceCurrency` set, and `expectedTotalKobo` its `totalKobo`.
+             * @example USD
+             */
+            sourceCurrency?: string;
+            /**
              * @description `quoteToken` from that payment quote (MONEY-17, BACKEND_GAPS G-64): the
              *     server checks it is its own, for this person and this price, and not
              *     past `expiresAt`; otherwise `409 quote_changed` with the new quote.
@@ -11918,14 +11939,27 @@ export interface components {
             headline: string;
             /** @description Place, date and price as the team types them. Leave it out for no second line. */
             subline?: string | null;
-            ctaLabel: string;
             /**
-             * @description What the button opens. The allow-list is the AdCtaDestination enum: `event` today.
+             * @description The button's words. Required for `event` and `link`; a `none` card has no
+             *     button, so it must not carry one. Which of the two applies is checked in
+             *     the service, with the rest of the destination's rules.
+             */
+            ctaLabel?: string;
+            /**
+             * @description What a tap does (R-92): `link` opens `ctaUrl` in the phone's browser,
+             *     `none` does nothing, `event` opens an event (kept for the campaigns that
+             *     already use it; the dashboard no longer offers it).
              * @enum {string}
              */
-            ctaDestination: "event";
-            /** @description For `event`, an Event id. The event must be published and not over. */
-            ctaDestinationId: string;
+            ctaDestination: "event" | "link" | "none";
+            /** @description For `event` only, an Event id. The event must be published and not over. */
+            ctaDestinationId?: string;
+            /**
+             * @description For `link` only: the https address the card opens, as the artwork link is
+             *     checked (public host, no password, no spaces, at most AD_LINK_URL_MAX),
+             *     stored in its normal form.
+             */
+            ctaUrl?: string;
             /**
              * @description An https link to the picture. REQUIRED (R-59): a campaign without artwork
              *     is refused with 422 "Add artwork before you save this campaign". It is
@@ -11933,11 +11967,30 @@ export interface components {
              *     refusal is a 422 and not the validation pipe's 400.
              */
             artworkUrl?: string | null;
+            /**
+             * @description The landscape picture (R-92): 16:9, 1920 x 1080, an https link (the one an
+             *     upload to `POST /admin/ads/artwork` returns, or one that is hosted already).
+             *     It shows in the Explore slider AND on the Today strip. Optional; a booking
+             *     needs this, `portraitUrl` or both (422 "Add artwork ..." otherwise).
+             */
+            landscapeUrl?: string | null;
+            /**
+             * @description The portrait picture (R-92): 1080 x 2340, the shape of a phone screen. It
+             *     shows in the TGIF full screen. Optional, as `landscapeUrl`.
+             */
+            portraitUrl?: string | null;
         };
         CreateAdCampaignDto: {
             advertiser: string;
-            /** @enum {string} */
-            placement: "tgif_card" | "today_slot" | "explore_slider";
+            /**
+             * @description Only for a booking made with the single `creative.artworkUrl` (the body the
+             *     dashboard sent until R-92's two shapes), where it is required: 400 without
+             *     it. A booking made with `creative.landscapeUrl` or `portraitUrl` takes none,
+             *     and is refused with 400 if one is sent: where it shows follows from its
+             *     pictures.
+             * @enum {string}
+             */
+            placement?: "tgif_card" | "today_slot" | "explore_slider";
             /** @description UTC, ISO 8601 ending in Z. It may be in the past: the card then starts when scheduled. */
             startsAt: string;
             /** @description UTC. Must come after startsAt, and must not have passed yet. */
@@ -11951,10 +12004,21 @@ export interface components {
             subline?: string | null;
             ctaLabel?: string;
             /** @enum {string} */
-            ctaDestination?: "event";
+            ctaDestination?: "event" | "link" | "none";
             ctaDestinationId?: string;
-            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). */
+            /** @description A new address for a `link` card. Only a card that opens a link has one. */
+            ctaUrl?: string;
+            /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). Only for a booking saved before the two shapes. */
             artworkUrl?: string | null;
+            /**
+             * @description A new landscape picture (16:9, 1920 x 1080), or null to take it away. Sending
+             *     it for a booking that has the single `artworkUrl` moves the booking to the
+             *     two shapes: its own picture stays where it showed (as the landscape or the
+             *     portrait picture) unless this request names that shape.
+             */
+            landscapeUrl?: string | null;
+            /** @description A new portrait picture (1080 x 2340), or null to take it away. */
+            portraitUrl?: string | null;
         };
         UpdateAdCampaignDto: {
             advertiser?: string;
@@ -12460,6 +12524,18 @@ export interface components {
             items: components["schemas"]["EarningContentView"][];
             nextCursor: string | null;
         };
+        PaymentSourceView: {
+            currency: string;
+            decimals: number;
+            amountMinor: number;
+            providerFeeMinor: number;
+            wawuFeeMinor: number;
+            totalMinor: number;
+            rate: string;
+            availableMinor: number | null;
+            shortfallMinor: number | null;
+            expiresAt: string;
+        };
         PaymentQuoteView: {
             /** @enum {string} */
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
@@ -12476,6 +12552,17 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
+            source?: components["schemas"]["PaymentSourceView"] | null;
+        };
+        PaymentPaidFromView: {
+            currency: string;
+            decimals: number;
+            amountMinor: number;
+            providerFeeMinor: number;
+            wawuFeeMinor: number;
+            totalMinor: number;
+            rate: string;
+            refundedMinor: number | null;
         };
         PaymentView: {
             id: string;
@@ -12495,6 +12582,7 @@ export interface components {
             statusMessage: string | null;
             createdAt: string;
             completedAt: string | null;
+            source?: components["schemas"]["PaymentPaidFromView"] | null;
         };
         TransferTimelineEntry: {
             /** @enum {string} */
@@ -15829,10 +15917,11 @@ export interface components {
             advertiser: string;
             headline: string;
             subline: string | null;
-            ctaLabel: string;
+            ctaLabel?: string | null;
             /** @enum {string} */
-            ctaDestination: "event";
-            ctaDestinationId: string;
+            ctaDestination: "none" | "event" | "link";
+            ctaDestinationId?: string | null;
+            ctaUrl?: string | null;
             artworkUrl: string;
         };
         AccountDeletionResponse: {
@@ -18372,11 +18461,17 @@ export interface components {
         AdCreativeView: {
             headline: string;
             subline: string | null;
-            ctaLabel: string;
+            ctaLabel: string | null;
             /** @enum {string} */
-            ctaDestination: "event";
-            ctaDestinationId: string;
+            ctaDestination: "none" | "event" | "link";
+            ctaDestinationId: string | null;
+            ctaUrl?: string | null;
             artworkUrl: string | null;
+            artworkPreviewUrl?: string | null;
+            landscapeUrl: string | null;
+            landscapePreviewUrl?: string | null;
+            portraitUrl: string | null;
+            portraitPreviewUrl?: string | null;
         };
         AdEventView: {
             id: string;
@@ -18400,6 +18495,7 @@ export interface components {
             advertiser: string;
             /** @enum {string} */
             placement: "tgif_card" | "today_slot" | "explore_slider";
+            shows: ("tgif_card" | "today_slot" | "explore_slider")[];
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -18513,6 +18609,7 @@ export interface components {
             advertiser: string;
             /** @enum {string} */
             placement: "tgif_card" | "today_slot" | "explore_slider";
+            shows: ("tgif_card" | "today_slot" | "explore_slider")[];
             /** @enum {string} */
             status: "ended" | "live" | "paused" | "draft" | "scheduled";
             /** @enum {string} */
@@ -18535,6 +18632,11 @@ export interface components {
         AdCampaignChangeView: {
             campaign: components["schemas"]["AdCampaignDetailView"];
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        AdArtworkUploadView: {
+            artworkUrl: string;
+            previewUrl: string;
+            bytes: number;
         };
         AdDayCounts: {
             day: string;
@@ -24480,8 +24582,17 @@ export interface operations {
                  *     `10,000` is a 400, never read as some other number of kobo.
                  */
                 amountKobo?: number;
+                /**
+                 * @description PAY-FX (R-91): quote the price against the buyer's account in this
+                 *     currency (a firm quote for the exact naira price). Absent or `NGN`: the
+                 *     naira wallet, as before.
+                 */
+                sourceCurrency?: string;
             };
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -24513,7 +24624,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -24531,7 +24642,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: fees_not_set */
+            /** @description reason.code: fees_not_set, provider_unreachable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -24552,6 +24663,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -24606,7 +24719,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -33947,6 +34060,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34035,7 +34150,10 @@ export interface operations {
     CommunityPassController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34128,7 +34246,10 @@ export interface operations {
                 /** @description The tip in kobo, chosen by the payer: a whole number of naira (100 to 1,000,000,000). */
                 amountKobo: number;
             };
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -34199,6 +34320,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -34315,7 +34438,10 @@ export interface operations {
     UnlockWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34379,6 +34505,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34498,7 +34626,10 @@ export interface operations {
     LegalFeeWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 id: string;
             };
@@ -34562,6 +34693,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34684,6 +34817,8 @@ export interface operations {
             header?: {
                 /** @description Optional. One value per tap on Get tickets (a UUID); sent again unchanged on a retry, it answers the same order. */
                 "Idempotency-Key"?: string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 id: string;
@@ -34734,6 +34869,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -34820,7 +34957,10 @@ export interface operations {
     EventWalletOrdersController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 orderId: string;
             };
@@ -34910,6 +35050,8 @@ export interface operations {
             header?: {
                 /** @description Optional. One value per tap on Send (a UUID); sent again unchanged on a retry, it answers the same draft. The same key with another question is 409 idempotency_key_reused, and a malformed key is 400 idempotency_key_required. */
                 "Idempotency-Key"?: string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path: {
                 creatorWawuId: string;
@@ -34978,6 +35120,8 @@ export interface operations {
                 "X-Device-Approval"?: string;
                 /** @description One value per payment intent, made by the app when the person first taps (a UUID). Sent again unchanged on every retry of that intent. */
                 "Idempotency-Key": string;
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
             };
             path?: never;
             cookie?: never;
@@ -35064,7 +35208,10 @@ export interface operations {
     PaidDmWalletController_quote: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it. */
+                "X-Pay-Source-Currency"?: string;
+            };
             path: {
                 questionId: string;
             };
