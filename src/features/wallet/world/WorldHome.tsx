@@ -7,6 +7,7 @@ import { isApiError } from "@/api/errors";
 import { Banner } from "@/components/Banner";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { PoweredByNuvion } from "@/components/PoweredByNuvion";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { space } from "@/theme";
@@ -131,6 +132,8 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
       />
     );
   }
+  // "Powered by Nuvion" (R-95) once on the screen: under the first account whose card is drawn (an opening one has no card).
+  const lineOn = fiat.find((account) => account.status !== "opening")?.id;
   if (accounts.data === undefined) {
     return (
       <View style={styles.body} testID="wallet-world-loading">
@@ -167,6 +170,7 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
         <AccountCard
           key={account.id}
           account={account}
+          poweredBy={account.id === lineOn}
           hidden={hidden}
           onToggleHidden={() => setHidden((was) => !was)}
           onRetry={() => void refresh()}
@@ -223,6 +227,7 @@ export function AccountCard({
   hidden = false,
   onToggleHidden = () => undefined,
   onRetry = () => undefined,
+  poweredBy = false,
 }: {
   account: WorldAccount;
   canSendAbroad?: boolean;
@@ -230,6 +235,8 @@ export function AccountCard({
   hidden?: boolean;
   onToggleHidden?: () => void;
   onRetry?: () => void;
+  /** "Powered by Nuvion" under the card (R-95): the Wallet draws it on one account, not on every one. */
+  poweredBy?: boolean;
 }) {
   const router = useRouter();
   const [sheet, setSheet] = useState(false);
@@ -257,25 +264,28 @@ export function AccountCard({
   const frozen = account.status === "frozen";
   return (
     <View style={styles.account} testID={`wallet-world-${account.currency}`}>
-      <FxBalanceCard
-        label={`${name} balance`}
-        availableMinor={account.availableMinor}
-        code={code}
-        decimals={account.decimals}
-        hidden={hidden}
-        onToggleHidden={onToggleHidden}
-        line={
-          chain
-            ? `${account.currency} · ${chainName(chain)}`
-            : `${account.currency} account`
-        }
-        maskedNumber={number ? maskedNumber(number) : null}
-        copyValue={number}
-        detailsStatus={account.detailsStatus}
-        detailsNote={account.detailsNote}
-        onRetry={onRetry}
-        testID={`wallet-world-${account.currency}-card`}
-      />
+      <View>
+        <FxBalanceCard
+          label={`${name} balance`}
+          availableMinor={account.availableMinor}
+          code={code}
+          decimals={account.decimals}
+          hidden={hidden}
+          onToggleHidden={onToggleHidden}
+          line={
+            chain
+              ? `${account.currency} · ${chainName(chain)}`
+              : `${account.currency} account`
+          }
+          maskedNumber={number ? maskedNumber(number) : null}
+          copyValue={number}
+          detailsStatus={account.detailsStatus}
+          detailsNote={account.detailsNote}
+          onRetry={onRetry}
+          testID={`wallet-world-${account.currency}-card`}
+        />
+        {poweredBy ? <PoweredByNuvion style={styles.powered} /> : null}
+      </View>
       {frozen ? (
         <Banner
           tone="warning"
@@ -337,6 +347,8 @@ export function AccountCard({
 const styles = StyleSheet.create({
   body: { gap: space.lg },
   account: { gap: space.lg },
+  // Under the balance card, close to it, so it reads as that card's own line.
+  powered: { marginTop: space.sm },
   // The padding comes from `padded` on the Card: a `padding` here loses to the Card's own `paddingVertical`.
   card: { gap: space.md },
   actions: { flexDirection: "row", gap: space.sm, alignItems: "center" },

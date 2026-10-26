@@ -119,6 +119,7 @@ export function FirstAccountProblem({
     <AuthFrame
       testID="open-wallet-first-account-problem"
       bare
+      poweredBy
       footer={
         <Button
           label="Close"

@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -121,20 +122,23 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   const swaps = swapOffered(props.currencies, props.accounts) && !frozen;
   return (
     <View style={styles.stack} testID={`fx-body-${code}`}>
-      <FxBalanceCard
-        label={`${name} balance`}
-        availableMinor={account.balance?.availableMinor ?? null}
-        code={code}
-        decimals={account.decimals}
-        hidden={props.hidden}
-        onToggleHidden={props.onToggleHidden}
-        line={bank ? `${code} account · ${bank}` : `${code} account`}
-        maskedNumber={number ? maskedNumber(number) : null}
-        copyValue={number}
-        detailsStatus={account.detailsStatus}
-        detailsNote={account.detailsNote}
-        onRetry={props.onRetry}
-      />
+      <View>
+        <FxBalanceCard
+          label={`${name} balance`}
+          availableMinor={account.balance?.availableMinor ?? null}
+          code={code}
+          decimals={account.decimals}
+          hidden={props.hidden}
+          onToggleHidden={props.onToggleHidden}
+          line={bank ? `${code} account · ${bank}` : `${code} account`}
+          maskedNumber={number ? maskedNumber(number) : null}
+          copyValue={number}
+          detailsStatus={account.detailsStatus}
+          detailsNote={account.detailsNote}
+          onRetry={props.onRetry}
+        />
+        <PoweredByNuvion style={styles.powered} />
+      </View>
       {frozen ? <Banner tone="warning" title="This account is frozen" body="Money can arrive, but it cannot be swapped or sent until it is opened again." testID="fx-frozen" /> : null}
       {swaps ? (
         <View style={styles.actions} testID="fx-actions">
@@ -240,6 +244,7 @@ function CryptoBody(props: FxTabBodyProps) {
     <View style={styles.stack} testID="fx-body-crypto">
       <CryptoSection currencies={props.currencies} accounts={props.accounts} hidden={props.hidden} />
       <Transactions owner={props.owner} accounts={coinAccounts} currencies={props.currencies} allAccounts={props.accounts} noun="crypto" />
+      <PoweredByNuvion />
     </View>
   );
 }
@@ -404,6 +409,8 @@ export function ActionRound({ icon, label, onPress, testID }: { icon: IconName; 
 
 const styles = StyleSheet.create({
   stack: { gap: space.lg },
+  // Under the balance card, close to it, so it reads as that card's own line.
+  powered: { marginTop: space.sm },
   state: { borderRadius: ACCT.radius, paddingVertical: space.md - 2, paddingHorizontal: space.lg },
   actions: { flexDirection: 'row', gap: ACTION.gap, alignItems: 'center' },
   pill: { flex: 1, height: ACTION.height, borderRadius: radius.chip, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingHorizontal: space.md },

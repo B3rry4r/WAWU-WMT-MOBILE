@@ -163,6 +163,7 @@ export function CountryStep({
   return (
     <AuthFrame
       testID="open-wallet-country"
+      poweredBy
       navTitle={NAV_TITLE}
       navStep={NAV_STEP}
       onBack={onClose}

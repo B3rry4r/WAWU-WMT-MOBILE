@@ -268,6 +268,7 @@ function DetailsForm({ owner, prefill, identity, address, occupation: keptOccupa
     <AuthFrame
       testID="open-wallet-details"
       scrollRef={scrollRef}
+      poweredBy
       navTitle={NAV_TITLE}
       onBack={onBack}
       footer={<Button label="Continue" full loading={busy} onPress={() => void submit()} testID="open-wallet-details-continue" />}

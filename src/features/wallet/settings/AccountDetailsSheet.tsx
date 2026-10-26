@@ -5,6 +5,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { GroupedList } from '@/components/Card';
 import { Icon } from '@/components/icon';
 import { KeyValueRow, rowMetrics } from '@/components/ListRow';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Text } from '@/components/Text';
 import { copyText } from '@/features/open-wallet/copy';
 import { groupedAccountNumber } from '@/features/open-wallet/pin';
@@ -73,6 +74,7 @@ export function AccountDetailsSheet({ visible, onClose, account }: AccountDetail
           )}
         </View>
       ) : null}
+      <PoweredByNuvion />
     </BottomSheet>
   );
 }

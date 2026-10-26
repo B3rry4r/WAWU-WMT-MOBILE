@@ -269,6 +269,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     <AuthFrame
       testID="open-wallet-address"
       scrollRef={scrollRef}
+      poweredBy
       navTitle={NAV_TITLE}
       onBack={onBack}
       footer={
