@@ -50,8 +50,7 @@ export default function SignUpRoute() {
         }
         router.push('/phone-code');
       }}
-      onOpenTerms={() => router.push('/terms')}
-      onOpenPrivacy={() => router.push('/privacy-policy')}
+      onOpenLegal={() => router.push('/legal-documents')}
       onEnterSentCode={held ? () => router.push('/phone-code') : undefined}
       onBack={router.canGoBack() ? () => router.back() : undefined}
     />

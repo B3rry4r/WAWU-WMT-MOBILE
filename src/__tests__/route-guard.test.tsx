@@ -84,6 +84,8 @@ const PUBLIC: Record<string, string> = {
   about: 'readable before sign-up (SETTINGS-02 R1)',
   terms: 'the Terms must be readable before sign-up (SETTINGS-02 R1)',
   'privacy-policy': 'readable before sign-up (SETTINGS-02 R1)',
+  'legal-documents/index': "the owner's nine documents must be readable before sign-up: A3's \"Read them\" opens the list (LEGAL-DOCS)",
+  'legal-documents/[slug]': 'one of the nine, readable before sign-up, from the Legal list (LEGAL-DOCS)',
   'r/[code]': 'app link (LINKS-01): the invite, kept until sign-up, signed out goes to the welcome screen',
   selfie: 'app link (LINKS-01): the hosted selfie page, signed out goes to the welcome screen',
   activate: 'app link (LINKS-01): the activation email, signed out goes to sign-in',

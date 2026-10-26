@@ -18,11 +18,23 @@ export type ConsentBoxProps = {
   onOpenTerms?: () => void;
   /** Opens the privacy policy, the same. */
   onOpenPrivacy?: () => void;
+  /**
+   * Sign-up's form of the line (LEGAL-DOCS, owner, 26 Oct 2026): one box for all of the owner's documents, "I agree to WAWU's Terms of
+   * Service, Privacy Policy and our other policies." with "Read them" opening the Legal list. When given, `onOpenTerms` and
+   * `onOpenPrivacy` are not used.
+   */
+  onOpenAll?: () => void;
   testID?: string;
 };
 
-/** "I agree to the terms and privacy policy" (R-67): A5's box, shared by both of the details step's forms, and A3's. */
-export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpenPrivacy, testID = 'open-wallet-consent' }: ConsentBoxProps) {
+/** The line sign-up draws (LEGAL-DOCS); the wallet's boxes keep "I agree to the terms and privacy policy" (R-67). */
+export const SIGNUP_CONSENT_LINE = 'I agree to the Terms of Service, Privacy Policy and our other policies.';
+
+/**
+ * "I agree to the terms and privacy policy" (R-67): A5's box, shared by both of the details step's forms and the movie step's. Sign-up
+ * (A3) passes `onOpenAll` and gets the one-box form for all of the owner's documents instead.
+ */
+export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpenPrivacy, onOpenAll, testID = 'open-wallet-consent' }: ConsentBoxProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
@@ -32,7 +44,7 @@ export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpe
         accessibilityRole="checkbox"
         accessibilityState={{ checked: agreed, disabled: busy }}
         aria-checked={agreed}
-        accessibilityLabel="I agree to the terms and privacy policy"
+        accessibilityLabel={onOpenAll ? SIGNUP_CONSENT_LINE.replace(/\.$/, '') : 'I agree to the terms and privacy policy'}
         accessibilityHint={problem}
         disabled={busy}
         onPress={onToggle}
@@ -47,16 +59,25 @@ export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpe
         >
           {agreed ? <Icon name="Check" size={CONSENT.tick} color={colors.textOnAccent} strokeWidth={CONSENT.tickStroke} /> : null}
         </View>
-        <Text variant="secondary" style={styles.text}>
-          {'I agree to the '}
-          <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole={onOpenTerms ? 'link' : undefined} onPress={onOpenTerms} testID={`${testID}-terms`}>
-            terms
+        {onOpenAll ? (
+          <Text variant="secondary" style={styles.text}>
+            {`${SIGNUP_CONSENT_LINE} `}
+            <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole="link" onPress={onOpenAll} testID={`${testID}-read`}>
+              Read them
+            </Text>
           </Text>
-          {' and '}
-          <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole={onOpenPrivacy ? 'link' : undefined} onPress={onOpenPrivacy} testID={`${testID}-privacy`}>
-            privacy policy
+        ) : (
+          <Text variant="secondary" style={styles.text}>
+            {'I agree to the '}
+            <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole={onOpenTerms ? 'link' : undefined} onPress={onOpenTerms} testID={`${testID}-terms`}>
+              terms
+            </Text>
+            {' and '}
+            <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole={onOpenPrivacy ? 'link' : undefined} onPress={onOpenPrivacy} testID={`${testID}-privacy`}>
+              privacy policy
+            </Text>
           </Text>
-        </Text>
+        )}
       </Pressable>
       {problem ? (
         <Text variant="caption" tone="danger" accessibilityRole="alert" testID={`${testID}-error`}>

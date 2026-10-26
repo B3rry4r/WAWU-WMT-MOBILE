@@ -130,6 +130,7 @@ export default function AuthPreviewRoute() {
         channel={p.channel === 'none' ? null : p.channel === 'phone' || p.channel === 'sms' ? 'phone' : 'email'}
         initial={{ email, phone: p.phone ?? '', password: p.password ?? '' }}
         onContinue={answer}
+        onOpenLegal={() => router.push('/legal-documents')}
         onBack={() => router.back()}
       />
     );
