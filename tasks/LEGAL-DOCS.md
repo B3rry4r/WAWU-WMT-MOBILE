@@ -60,7 +60,15 @@ Disclaimer), received 26 Oct 2026. Nothing in the app or the Hub invents wording
 
 ## Builder report
 
-Filled in by the builder at hand-back (heads, checks with EXIT lines, pictures under audits/LEGAL-DOCS/).
+Part A, 26 Oct 2026 (Sonnet builder, T2). Backend `wmt/LEGAL-DOCS` `07c6f55` on `origin/main` `c8eba66`; mobile `wmt/LEGAL-DOCS` on `origin/main` `904da284`.
+- Backend checks (each with its EXIT line in the builder's logs): `tsc --noEmit` EXIT 0; eslint on the changed source files EXIT 0; the changed specs on a test database, 75 passed
+  (about folder with the three new specs, the account purge map, the data export map, the rollback stop line) EXIT 0; `contract:build` EXIT 0 (committed); gates 0 fail EXIT 0;
+  `check_baseline.py` EXIT 0; protected route suite 236 of 244 on the branch and the same 8 failures on `origin/main` (verification and professionals routes, environment).
+- App checks: `tsc --noEmit` EXIT 0; eslint on the changed files EXIT 0; jest (auth-signup, auth, about, settings, route-guard, route-graph, open-wallet consent, movies, `--maxWorkers=2`) 20 suites, 704 tests, EXIT 0;
+  gates 0 fail EXIT 0; `check_baseline.py` EXIT 0; `check_tasks.py` EXIT 0; Android fingerprint `17ffb13d520882bf144982b61d03f3994c6e40e4` (unchanged).
+- Pictures at 390 px, light and dark: `audits/LEGAL-DOCS/` (A3's line, the Legal list, one document), from a web export against a local Hub on the Nuvion stand-in and the mock WAWU ID.
+- Existing assertions changed, and why: backend `about.contract.spec.ts` used `cookies` as an unknown slug (it is one of the nine now), so it uses `imprint`; mobile `auth-signup.test.tsx` DV2-05 pinned the old two-word line (the label, and the two words opening Terms and Privacy policy), replaced for the owner's one-box line.
+- Left for the owner or the lead: the Terms (section 5) say the verification fee is ₦2,000 a year and the Verification and Refund Policy says the minimum is ₦2,999; the documents mention biometric liveness checks; the dashboard's publishing screen is part B.
 
 ## Verifier report
 
