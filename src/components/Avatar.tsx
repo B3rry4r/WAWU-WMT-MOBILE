@@ -4,6 +4,7 @@ import { StyleSheet, Text as NativeText, View, type StyleProp, type ViewStyle } 
 import { font, useWawu, type ColorToken } from '@/theme';
 
 import { APP_NAME, BrandMark } from './BrandMark';
+import { PositionedImage } from './PositionedImage';
 
 type HueToken = Extract<ColorToken, `hue${string}`>;
 /** The design's avatar palette, read from the `--hue-*` tokens: 'lilac', 'coral', ... */
@@ -70,12 +71,12 @@ export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decora
       {brand ? (
         <BrandMark width={Math.round(size * brandScale)} decorative testID={testID ? `${testID}-brand` : undefined} />
       ) : source ? (
-        <Image
-          testID={testID ? `${testID}-image` : undefined}
-          source={typeof source === 'string' ? { uri: source } : source}
-          contentFit="cover"
-          style={StyleSheet.absoluteFill}
-        />
+        typeof source === 'string' ? (
+          // The Hub's link may carry where the person placed the photo (R-96): every avatar, at any size, shows that part of it.
+          <PositionedImage testID={testID ? `${testID}-image` : undefined} uri={source} frame={{ width: size, height: size }} />
+        ) : (
+          <Image testID={testID ? `${testID}-image` : undefined} source={source} contentFit="cover" style={StyleSheet.absoluteFill} />
+        )
       ) : (
         <NativeText
           style={[font(700), { fontSize, letterSpacing: initialsTracking * fontSize, color: colors.textOnLight }]}

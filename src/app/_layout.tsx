@@ -166,6 +166,7 @@ export default function RootLayout() {
           <Stack.Screen name="payout-account" />
           <Stack.Screen name="edit-profile" />
           <Stack.Screen name="social-links" />
+          <Stack.Screen name="photo-position" />
           <Stack.Screen name="open-wallet" />
           <Stack.Screen name="open-wallet-details" />
           <Stack.Screen name="open-wallet-selfie" />

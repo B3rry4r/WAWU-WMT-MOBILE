@@ -1,10 +1,10 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Children, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
+import { PositionedImage } from '@/components/PositionedImage';
 import { useIsCreator } from '@/features/create/CreateEntry';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
 import { setFollowing } from '@/features/home/api';
@@ -36,7 +36,7 @@ export type CardFrameProps = {
 
 function Portrait({ uri, wawuId, chromeTop }: { uri: string | null; wawuId: string; chromeTop: number }) {
   const { colors } = useWawu();
-  if (uri) return <Image testID="card-portrait" source={{ uri }} contentFit="cover" style={StyleSheet.absoluteFill} />;
+  if (uri) return <PositionedImage testID="card-portrait" uri={uri} />;
   const hue = hueFor(wawuId);
   const token = `hue${hue.charAt(0).toUpperCase()}${hue.slice(1)}` as ColorToken;
   return (

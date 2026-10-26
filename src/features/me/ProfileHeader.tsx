@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -7,6 +6,7 @@ import { Button, IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { VerifiedTick } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
+import { PositionedImage } from '@/components/PositionedImage';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { TierBadge, tierBadgeLabel } from '@/components/TierBadge';
@@ -81,7 +81,7 @@ export function ProfileTop({ coverUrl, top, canShare, onShare, onOpenInvite, onO
     <>
       {/* The page's name for a screen reader: the tab is "Me", and M1 draws no title over the cover. */}
       <View testID="me-cover" accessible accessibilityRole="header" accessibilityLabel="Me" style={[styles.cover, { height: coverHeight(top), backgroundColor: colors.surfaceSunken }]}>
-        {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
+        {coverUrl ? <PositionedImage uri={coverUrl} testID="me-cover-image" /> : null}
         <LinearGradient
           pointerEvents="none"
           colors={[colors.mediaBlack30, colors.mediaBlack0]}
