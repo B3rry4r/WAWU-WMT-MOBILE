@@ -77,6 +77,34 @@ export type PayStatus =
    */
   | { kind: 'blocked'; title: string; message: string; tryAgain?: boolean };
 
+/**
+ * Paying a naira price from an account in another currency (PAY-FX, R-91). The price above stays naira; this is what the person's
+ * own account in `currency` pays for it, firm until `expired`. Every figure comes from the Hub's quote (`PaymentQuoteView.source`):
+ * the sheet carries no currency list, rate or fee of its own, and writes an amount as digits and the code the Hub named.
+ */
+export type PaySource = {
+  /** The currency of the account that pays, as the Hub names it ("USD"). */
+  currency: string;
+  /** The account's name as the person knows it ("US dollar account"). */
+  accountName: string;
+  /** Places in the smallest unit, from the quote. */
+  decimals: number;
+  /** What the firm quote takes for exactly the naira price, in the smallest unit. */
+  amountMinor: number;
+  /** The provider's charge and WAWU's conversion fee, each in the smallest unit; zero is not drawn. */
+  providerFeeMinor: number;
+  wawuFeeMinor: number;
+  /** The account's available balance; null when the Hub could not read it. */
+  availableMinor: number | null;
+  /** The quote ran out or was used: Pay is held back and `onRefresh` gets a new one (`quote_changed`). */
+  expired?: boolean;
+  /** The other accounts the person can pay from, naira first when it holds enough. With more than one, the sheet offers the others. */
+  choices?: readonly { id: string; label: string; selected: boolean }[];
+  onChoose?: (id: string) => void;
+  /** Ask the Hub for a new firm quote. */
+  onRefresh: () => void;
+};
+
 export type PaySheetProps = {
   /**
    * `purchase` (default): the bottom sheet of H14 and H17, whole-naira prices.
@@ -101,6 +129,11 @@ export type PaySheetProps = {
   fees: readonly PayFeeLine[];
   /** Rows after Total that are not money (W10's Note). */
   notes?: readonly PayDetailRow[];
+  /**
+   * PAY-FX (R-91): pay from an account in another currency. Left out, the sheet is as it always was (naira from the wallet). Only
+   * the purchase variant draws it.
+   */
+  source?: PaySource;
   wallet: PayWallet;
   /** The wallet's name, e.g. "Naira wallet". */
   walletName: string;
@@ -161,6 +194,8 @@ export function PaySheet(props: PaySheetProps) {
     body = <Failed {...props} total={total} message={status.message} />;
   } else if (status.kind === 'blocked') {
     body = <Blocked {...props} total={total} title={status.title} message={status.message} tryAgain={status.tryAgain === true} />;
+  } else if (props.source && !send) {
+    body = <SourceReview {...props} total={total} source={props.source} />;
   } else if (wallet.kind === 'open' && short > 0 && status.kind === 'review') {
     body = <NotEnough {...props} total={total} balanceKobo={wallet.balanceKobo} short={short} />;
   } else {
@@ -225,6 +260,60 @@ function feeRows(p: PaySheetProps) {
   const rows = p.fees.map((f) => <KeyValueRow key={f.label} label={f.label} value={money(p, f.amountKobo)} />);
   if (p.fees.length > 1) rows.push(<KeyValueRow key="fees" label="Fees" value={money(p, feesTotalKobo(p.fees))} />);
   return rows;
+}
+
+/** "0.23 USD": digits to the quote's own places, then the code the Hub named. No symbol table. */
+export function formatSource(minor: number, decimals: number, currency: string): string {
+  const unit = 10 ** decimals;
+  const whole = Math.floor(minor / unit);
+  const frac = String(minor % unit).padStart(decimals, '0');
+  const digits = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${digits}${decimals > 0 ? `.${frac}` : ''} ${currency}`;
+}
+
+/** The review of a payment from another currency: the naira price, the account that pays, the firm amount and its fees. */
+function SourceReview(p: Inner & { source: PaySource }) {
+  const { source: s } = p;
+  const paying = p.status.kind === 'paying';
+  const pay = usePayOnce(p.onPay, p.status.kind);
+  const total = s.amountMinor + s.providerFeeMinor + s.wawuFeeMinor;
+  const fmt = (n: number) => formatSource(n, s.decimals, s.currency);
+  const short = s.availableMinor !== null && total > s.availableMinor ? total - s.availableMinor : 0;
+  const join = p.actionJoin === 'space' ? ' ' : ' · ';
+  return (
+    <>
+      <Header item={p.item} />
+      <GroupedList>
+        <KeyValueRow key="price" label={p.amountLabel ?? 'Price'} value={money(p, p.amountKobo)} />
+        {p.details?.map((d) => <KeyValueRow key={d.label} label={d.label} value={d.value} />)}
+        <KeyValueRow key="from" label="Pay from" value={s.accountName} />
+        <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} />
+        {s.providerFeeMinor > 0 ? <KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} /> : null}
+        {s.wawuFeeMinor > 0 ? <KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} /> : null}
+        <KeyValueRow key="total" label="Total" value={fmt(total)} />
+      </GroupedList>
+      {s.choices && s.choices.length > 1
+        ? s.choices
+            .filter((c) => !c.selected)
+            .map((c) => <Button key={c.id} label={`Use ${c.label}`} onPress={() => s.onChoose?.(c.id)} variant="secondary" full />)
+        : null}
+      {s.expired ? (
+        <>
+          <Banner tone="warning" icon="Clock" title="This rate has run out" body="Get a new one to see what it costs now." />
+          <Button label="Get a new rate" onPress={s.onRefresh} full />
+        </>
+      ) : short > 0 ? (
+        <Banner
+          tone="warning"
+          icon="Wallet"
+          title={`Not enough in your ${s.accountName}`}
+          body={`This costs ${fmt(total)}. You have ${fmt(s.availableMinor ?? 0)}.`}
+        />
+      ) : (
+        <Button label={paying ? 'Paying' : `${p.actionLabel}${join}${fmt(total)}`} onPress={pay} loading={paying} full />
+      )}
+    </>
+  );
 }
 
 function Review(p: Inner) {

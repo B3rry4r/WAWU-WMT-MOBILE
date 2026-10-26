@@ -403,4 +403,72 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
     expect(screen.queryByText('No fee')).toBeNull();
     expect(screen.getByText('Bank charge')).toBeTruthy();
   });
+
+  describe('paying from another currency (PAY-FX, R-91)', () => {
+    const source = (o: Partial<NonNullable<PaySheetProps['source']>> = {}): NonNullable<PaySheetProps['source']> => ({
+      currency: 'USD',
+      accountName: 'US dollar account',
+      decimals: 2,
+      amountMinor: 23,
+      providerFeeMinor: 0,
+      wawuFeeMinor: 0,
+      availableMinor: 500,
+      onRefresh: jest.fn(),
+      ...o,
+    });
+
+    it('keeps the naira price, names the account, and pays the firm amount in its own currency', async () => {
+      const p = props({ amountKobo: 30000, fees: [], source: source() });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText('₦300')).toBeTruthy();
+      expect(screen.getByText('US dollar account')).toBeTruthy();
+      expect(screen.getAllByText('0.23 USD').length).toBeGreaterThan(0);
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock · 0.23 USD' }));
+      expect(p.onPay).toHaveBeenCalledTimes(1);
+    });
+
+    it('draws a fee only when the quote has one, and adds it to the total', async () => {
+      const p = props({ amountKobo: 30000, fees: [], source: source({ providerFeeMinor: 5, wawuFeeMinor: 2 }) });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText('Bank charge')).toBeTruthy();
+      expect(screen.getByText('Conversion fee')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Unlock · 0.30 USD' })).toBeTruthy();
+    });
+
+    it('a quote that ran out holds Pay back and asks for a new one', async () => {
+      const refresh = jest.fn();
+      const p = props({ amountKobo: 30000, fees: [], source: source({ expired: true, onRefresh: refresh }) });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText('This rate has run out')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Unlock/ })).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: 'Get a new rate' }));
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(p.onPay).not.toHaveBeenCalled();
+    });
+
+    it('says plainly when the account holds less than the firm amount', async () => {
+      const p = props({ amountKobo: 30000, fees: [], source: source({ availableMinor: 10 }) });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText('Not enough in your US dollar account')).toBeTruthy();
+      expect(screen.getByText('This costs 0.23 USD. You have 0.10 USD.')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Unlock/ })).toBeNull();
+    });
+
+    it('offers the other accounts to pay from when there is a choice, and changes on a tap', async () => {
+      const choose = jest.fn();
+      const choices = [
+        { id: 'NGN', label: 'Naira wallet', selected: false },
+        { id: 'USD', label: 'US dollar account', selected: true },
+      ];
+      const p = props({ amountKobo: 30000, fees: [], source: source({ choices, onChoose: choose }) });
+      await render(<PaySheet {...p} />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Use Naira wallet' }));
+      expect(choose).toHaveBeenCalledWith('NGN');
+    });
+
+    it('a sheet with no source is the naira sheet, unchanged', async () => {
+      await render(<PaySheet {...props()} />);
+      expect(screen.queryByText('Pay from')).toBeNull();
+    });
+  });
 });

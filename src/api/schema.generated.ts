@@ -3042,6 +3042,13 @@ export interface paths {
          *     payer already has an open payment for the item (a second phone),
          *     `payment_in_progress` with `reason.paymentId`, as the payment itself
          *     answers it: no live Pay is drawn. Every other kind is quoted as before.
+         *
+         *     PAY-FX (R-91): with `sourceCurrency` (USD, GBP, EUR ...) the price stays
+         *     naira and the answer carries `source`: the firm amount the buyer's own
+         *     account in that currency pays for exactly that naira price, its fees and
+         *     the provider's real expiry; `quoteToken` is then that quote's, `totalKobo`
+         *     the naira price and `fee` zero. Absent (or `NGN`) is the naira wallet,
+         *     exactly as before.
          */
         get: operations["MoneyPaymentsController_quote"];
         put?: never;
@@ -3072,6 +3079,12 @@ export interface paths {
          *     (`Idempotent-Replayed: true`) without checking the PIN. fees_not_set
          *     comes before the wallet gate, the key and the PIN; limit_reached (WAWU's
          *     limit or the provider's) before anything is sent.
+         *
+         *     PAY-FX (R-91): with `sourceCurrency` the buyer's account in that currency
+         *     pays at the firm quote named by `quoteToken`; WAWU converts, the naira
+         *     lands in its own account and the payee is credited as for a naira
+         *     payment. A quote that has run out or been used is `409 quote_changed`
+         *     with a fresh one in `reason.paymentQuote`.
          */
         post: operations["MoneyPaymentsController_pay"];
         delete?: never;
@@ -9274,7 +9287,7 @@ export interface paths {
          *     Refusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,
          *     `store_product_unknown` (404), `store_receipt_missing` (400),
          *     `store_purchase_invalid` (422), `store_purchase_pending`,
-         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_account_token_missing` (422, the purchase carries no account token),
+         *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),
          *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
          */
         post: operations["StoreController_buy"];
@@ -10332,6 +10345,14 @@ export interface components {
             amountKobo?: number;
             /** @description `totalKobo` from the payment quote the person saw. A different server total is `quote_changed`. */
             expectedTotalKobo: number;
+            /**
+             * @description PAY-FX (R-91): pay from the buyer's account in this currency instead of
+             *     the naira wallet. Absent (or `NGN`) is the naira wallet, exactly as
+             *     before. Then `quoteToken` is the one the quote answered with
+             *     `sourceCurrency` set, and `expectedTotalKobo` its `totalKobo`.
+             * @example USD
+             */
+            sourceCurrency?: string;
             /**
              * @description `quoteToken` from that payment quote (MONEY-17, BACKEND_GAPS G-64): the
              *     server checks it is its own, for this person and this price, and not
@@ -11923,8 +11944,10 @@ export interface components {
             pack?: "starter" | "popular" | "pro";
             /** @description tier: a tier of the live plan, by id. */
             tierId?: string;
-            /** @description pass: the days one period runs. */
+            /** @description pass: the days one purchase gives the room. */
             days?: number;
+            /** @description extra_products: the products one purchase adds. Defaults to the plan's count when left out. */
+            extraProducts?: number;
         };
         CreateStoreProductDto: {
             /** @enum {string} */
@@ -11935,7 +11958,7 @@ export interface components {
              * @description Fixed once created.
              * @enum {string}
              */
-            kind: "points" | "credits" | "tier" | "pass";
+            kind: "points" | "credits" | "tier" | "pass" | "extra_products";
             title: string;
             grants: components["schemas"]["StoreProductGrantsDto"];
             /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
@@ -12384,6 +12407,18 @@ export interface components {
             items: components["schemas"]["EarningContentView"][];
             nextCursor: string | null;
         };
+        PaymentSourceView: {
+            currency: string;
+            decimals: number;
+            amountMinor: number;
+            providerFeeMinor: number;
+            wawuFeeMinor: number;
+            totalMinor: number;
+            rate: string;
+            availableMinor: number | null;
+            shortfallMinor: number | null;
+            expiresAt: string;
+        };
         PaymentQuoteView: {
             /** @enum {string} */
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
@@ -12400,6 +12435,17 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
+            source?: components["schemas"]["PaymentSourceView"] | null;
+        };
+        PaymentPaidFromView: {
+            currency: string;
+            decimals: number;
+            amountMinor: number;
+            providerFeeMinor: number;
+            wawuFeeMinor: number;
+            totalMinor: number;
+            rate: string;
+            refundedMinor: number | null;
         };
         PaymentView: {
             id: string;
@@ -12419,6 +12465,7 @@ export interface components {
             statusMessage: string | null;
             createdAt: string;
             completedAt: string | null;
+            source?: components["schemas"]["PaymentPaidFromView"] | null;
         };
         TransferTimelineEntry: {
             /** @enum {string} */
@@ -17290,7 +17337,6 @@ export interface components {
             canRenew: boolean;
             canBuy: boolean;
             isHost: boolean;
-            cancelInStore?: boolean | null;
         };
         CommunityPassQuoteView: {
             communityId: string;
@@ -18147,12 +18193,14 @@ export interface components {
             pack: "starter" | "popular" | "pro" | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         StoreGrantsView: {
             points: number | null;
             credits: number | null;
             tierId: string | null;
             days: number | null;
+            extraProducts?: number | null;
         };
         AdminStoreProductView: {
             id: string;
@@ -18160,7 +18208,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             grants: components["schemas"]["StoreProductGrantsConfig"];
             resolved: components["schemas"]["StoreGrantsView"];
@@ -18192,7 +18240,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             environment: string;
@@ -18207,6 +18255,7 @@ export interface components {
             creatorShareKobo: number | null;
             purchasedAt: string;
             expiresAt: string | null;
+            passEndsAt?: string | null;
             endedAt: string | null;
             endReason: string | null;
             takenBack: {
@@ -18225,7 +18274,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             title: string;
             subscription: boolean;
             grants: components["schemas"]["StoreGrantsView"];
@@ -18243,6 +18292,7 @@ export interface components {
             points: number | null;
             credits: number | null;
             tierId: string | null;
+            extraProducts: number | null;
             until: string | null;
             communityId: string | null;
         };
@@ -18252,7 +18302,7 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             alreadyGranted: boolean;
@@ -24338,6 +24388,12 @@ export interface operations {
                  *     `10,000` is a 400, never read as some other number of kobo.
                  */
                 amountKobo?: number;
+                /**
+                 * @description PAY-FX (R-91): quote the price against the buyer's account in this
+                 *     currency (a firm quote for the exact naira price). Absent or `NGN`: the
+                 *     naira wallet, as before.
+                 */
+                sourceCurrency?: string;
             };
             header?: never;
             path?: never;
@@ -24371,7 +24427,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -24389,7 +24445,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: fees_not_set */
+            /** @description reason.code: fees_not_set, provider_unreachable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -24464,7 +24520,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined */
             409: {
                 headers: {
                     [name: string]: unknown;
