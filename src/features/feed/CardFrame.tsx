@@ -5,6 +5,7 @@ import { Children, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
+import { useIsCreator } from '@/features/create/CreateEntry';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
 import { setFollowing } from '@/features/home/api';
 import { radius, useWawu, type ColorToken } from '@/theme';
@@ -143,13 +144,19 @@ export function CardButton({
 
 /**
  * The row of buttons at the foot, stopping short of the Create button as the boards draw it (Message and Profile, Follow and Profile).
- * A lone button (the other is hidden: Message off, no Profile wired) is the whole row, not the narrower width the boards leave for
- * two (SWEEP-R3, R2-SOCIAL3 verifier low 1).
+ * A lone button (the other is hidden: Message off, no Profile wired) fills that same row for a viewer who sees the Create button, so
+ * it never runs under it, and the whole row for anyone else (SWEEP-R3, R2-SOCIAL3 verifier low 1, lead ruling).
  */
 export function ButtonRow({ children }: { children: ReactNode }) {
-  const alone = Children.toArray(children).length === 1;
+  if (Children.toArray(children).length !== 1) return <View testID="card-buttons" style={styles.buttons}>{children}</View>;
+  return <LoneButtonRow>{children}</LoneButtonRow>;
+}
+
+/** Only a lone button asks who is looking: `useIsCreator` is the answer that decides the Create button, so the two always agree. */
+function LoneButtonRow({ children }: { children: ReactNode }) {
+  const clearOfCreate = useIsCreator();
   return (
-    <View testID="card-buttons" style={[styles.buttons, alone && styles.buttonsAlone]}>
+    <View testID="card-buttons" style={[styles.buttons, !clearOfCreate && styles.buttonsAlone]}>
       {children}
     </View>
   );

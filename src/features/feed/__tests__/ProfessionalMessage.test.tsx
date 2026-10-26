@@ -173,24 +173,43 @@ describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
     expect(screen.queryByTestId('card-message')).toBeNull();
   });
 
-  // SWEEP-R3 (R2-SOCIAL3 verifier, low 1): with Message hidden the lone Profile is the whole row, not a 280 wide button with the
-  // Message slot's width left empty. Beside Message the row keeps the board's 70 clear of the Create button.
-  it('draws Profile across the whole row when Message is hidden (paused), and keeps the board\'s two-button row when Message is drawn', async () => {
-    answers[FOR_YOU] = [page([professionalCard()])];
-    const first = await boot(wired());
-    await first.findByTestId('card-message');
-    expect(first.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 });
-    await first.unmount();
-    answers[FOR_YOU] = [page([professionalCard()])];
+  // SWEEP-R3 (R2-SOCIAL3 verifier, low 1; lead ruling): with Message hidden the lone Profile is a whole row. A viewer who sees the Create
+  // button (a creator account) gets the board's row (70 clear of the button), so it never runs under it; anyone else gets the whole 350.
+  // Beside Message the row keeps the board's two buttons and the same 70 clear.
+  const paused = () => {
     answers['GET /paid-dm/creators/p1/availability'] = [ok({ creatorWawuId: 'p1', paused: true, pausedUntil: '2026-11-01T00:00:00Z' })];
+  };
+  const loneRow = async (accountType: 'creator' | 'user') => {
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType })];
+    answers[FOR_YOU] = [page([professionalCard()])];
+    paused();
     const screen = await boot(wired());
     await screen.findByTestId('professional-card-l1');
-    await rtl.act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
+    await rtl.waitFor(() => expect(screen.queryByTestId('card-note')).toBeNull());
     expect(screen.queryByTestId('card-message')).toBeNull();
     expect(screen.getByTestId('card-profile')).toBeTruthy();
-    expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 0 });
+    return screen;
+  };
+
+  it('a creator viewer (who sees the Create button) gets a lone Profile in the board\'s row, clear of the Create button', async () => {
+    await (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
+    const screen = await loneRow('creator');
+    await rtl.waitFor(() => expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 }));
+  });
+
+  it('a viewer with no Create button gets a lone Profile across the whole row', async () => {
+    await (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
+    const screen = await loneRow('user');
+    await rtl.waitFor(() => expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 0 }));
+  });
+
+  it('keeps the board\'s two-button row beside Message', async () => {
+    await (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
+    answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType: 'user' })];
+    answers[FOR_YOU] = [page([professionalCard()])];
+    const screen = await boot(wired());
+    await screen.findByTestId('card-message');
+    expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 });
   });
 
   it('has no Message on the viewer\'s own card', async () => {
