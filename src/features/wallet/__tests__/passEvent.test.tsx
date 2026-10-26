@@ -49,22 +49,23 @@ describe('W1 · the Passes card', () => {
     expect(rtl.screen.getByTestId('wallet-passes-when')).toHaveTextContent('Sun 20 Dec 2026');
   });
 
-  it('with no pass it is the empty card in the same place: Passes, No event pass yet, Comes with Founding Maker, and a tap calls what it was given (R-97)', async () => {
+  it('with no pass it is the empty card in the same place: Passes, No pass yet, With Founding Maker, and a tap calls what it was given (R-97)', async () => {
     const onPress = jest.fn();
     await rtl.render(<PassesTile pass={null} onPress={onPress} />);
     expect(rtl.screen.getByText('Passes')).toBeTruthy();
-    expect(rtl.screen.getByTestId('wallet-passes-name')).toHaveTextContent('No event pass yet');
-    expect(rtl.screen.getByTestId('wallet-passes-when')).toHaveTextContent('Comes with Founding Maker');
-    expect(rtl.screen.getByLabelText('Passes, No event pass yet, Comes with Founding Maker')).toBeTruthy();
+    expect(rtl.screen.getByTestId('wallet-passes-name')).toHaveTextContent('No pass yet');
+    expect(rtl.screen.getByTestId('wallet-passes-when')).toHaveTextContent('With Founding Maker');
+    expect(rtl.screen.getByLabelText('Passes, No pass yet, With Founding Maker')).toBeTruthy();
     rtl.fireEvent.press(rtl.screen.getByTestId('wallet-passes'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('the empty card title is the same size as the Points card count and a pass name (18), with room for a second line (SWEEP-1026 row 9)', async () => {
+  it('the empty card title is the same size as the Points card count and a pass name (18), on one line (SWEEP-1026 row 9)', async () => {
     const size = () => (StyleSheet.flatten(rtl.screen.getByTestId('wallet-passes-name').props.style) as { fontSize: number }).fontSize;
     await rtl.render(<PassesTile pass={null} onPress={() => undefined} />);
     const empty = size();
-    expect(rtl.screen.getByTestId('wallet-passes-name').props.numberOfLines).toBe(2);
+    expect(rtl.screen.getByTestId('wallet-passes-name').props.numberOfLines).toBe(1);
+    expect(rtl.screen.getByTestId('wallet-passes-when').props.numberOfLines).toBe(1);
     await rtl.cleanup();
     await rtl.render(<PassesTile pass={{ name: 'Maker Pass', eventDate: '2026-12-20', eventName: null }} onPress={() => undefined} />);
     expect(size()).toBe(empty);

@@ -181,8 +181,8 @@ describe('W1 · the Passes card', () => {
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByTestId('wallet-passes')).toBeTruthy();
     expect(app.screen.getByText('Passes')).toBeTruthy();
-    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No event pass yet');
-    expect(app.screen.getByTestId('wallet-passes-when').props.children).toBe('Comes with Founding Maker');
+    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
+    expect(app.screen.getByTestId('wallet-passes-when').props.children).toBe('With Founding Maker');
     // In the info row, where Points sits (WalletScreen.test.tsx checks the two together).
     expect(rtl.within(app.screen.getByTestId('wallet-info-row')).getByTestId('wallet-passes')).toBeTruthy();
     await rtl.act(async () => {
@@ -197,7 +197,7 @@ describe('W1 · the Passes card', () => {
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     await rtl.waitFor(() => expect(asked('/me/tier')).toBeGreaterThan(0));
     expect(await app.screen.findByTestId('wallet-passes')).toBeTruthy();
-    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No event pass yet');
+    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
     expect(app.screen.queryByTestId('wallet-error')).toBeNull();
     await rtl.act(async () => {
       rtl.fireEvent.press(app.screen.getByTestId('wallet-passes'));

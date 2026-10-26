@@ -179,7 +179,7 @@ const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'to-cash'];
 /** The Points card, as a button: the Hub's own balance and the day the soonest points end (`POINTS` below). */
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
 /** The Passes card is always drawn beside Points (owner, 26 Oct 2026, R-97); this suite gives it no pass, so it is the empty card. */
-const PASSES_BUTTON = 'Passes, No event pass yet, Comes with Founding Maker';
+const PASSES_BUTTON = 'Passes, No pass yet, With Founding Maker';
 const NOT_BUILT_IDS = [
   'wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
   'wallet-loading-bills', 'wallet-bills',
@@ -408,8 +408,8 @@ describe('W1 · Wallet · Naira', () => {
     const row = app.screen.getByTestId('wallet-info-row');
     expect(rtl.within(row).getByTestId('wallet-points')).toBeTruthy();
     expect(rtl.within(row).getByTestId('wallet-passes')).toBeTruthy();
-    expect(rtl.within(row).getByTestId('wallet-passes-name').props.children).toBe('No event pass yet');
-    expect(rtl.within(row).getByTestId('wallet-passes-when').props.children).toBe('Comes with Founding Maker');
+    expect(rtl.within(row).getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
+    expect(rtl.within(row).getByTestId('wallet-passes-when').props.children).toBe('With Founding Maker');
   });
 
   it('a transaction row says who, what, how much and when, and a user can tap it to open that transaction (W27)', async () => {

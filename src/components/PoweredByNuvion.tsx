@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import { queryClient } from '@/api/query';
 import { aboutKey, fetchAbout } from '@/features/about/api';
@@ -45,7 +45,7 @@ export function PoweredByNuvion({ style, testID = 'powered-by-nuvion', hidden = 
   const nuvion = isNuvion(about.data?.bankName);
   // Until the Hub has answered, the line's room is kept, so the screen does not jump when the answer comes late (SWEEP-1026 row 7).
   // Once it has answered that the wallets are not on Nuvion, or the read failed, there is no line and no room.
-  if (about.isPending || (nuvion && hidden)) return <View testID={`${testID}-room`} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[style, { height: LINE_HEIGHT }]} />;
+  if (about.isPending || (nuvion && hidden)) return <View testID={`${testID}-room`} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[style as StyleProp<ViewStyle>, { height: LINE_HEIGHT }]} />;
   if (!nuvion) return null;
   return (
     <Text variant="caption" tone="textMuted" style={[styles.line, style]} testID={testID}>

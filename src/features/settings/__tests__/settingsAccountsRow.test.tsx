@@ -27,12 +27,15 @@ const OWNER = '00000000-0000-4000-8000-0000000000f1';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 let walletState = 'open';
 let sent: string[] = [];
+/** While set, the Hub holds its answer to the wallet read until the test releases it. */
+let walletGate: Promise<void> | null = null;
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
   sent.push(`${request.method} ${path}`);
   if (path === '/money/wallet') {
+    if (walletGate) await walletGate;
     return json(200, {
       statusCode: 200,
       message: 'OK',
@@ -122,8 +125,19 @@ describe('Settings has an Accounts and currencies row for a person with a wallet
   });
 
   it('draws no row while the wallet has not been read (nothing is drawn that is not known to lead somewhere)', async () => {
-    await boot();
-    expect(rtl.screen.queryByTestId('settings-accounts')).toBeNull();
-    await rtl.screen.findByTestId('settings-accounts');
+    // The wallet read is held until the "absent" check is made, then released: without the hold the answer can already be in under load.
+    let release: () => void = () => undefined;
+    walletGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      await boot();
+      expect(rtl.screen.queryByTestId('settings-accounts')).toBeNull();
+      release();
+      await rtl.screen.findByTestId('settings-accounts');
+    } finally {
+      release();
+      walletGate = null;
+    }
   });
 });
