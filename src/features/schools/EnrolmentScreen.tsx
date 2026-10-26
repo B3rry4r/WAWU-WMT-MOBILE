@@ -10,7 +10,7 @@ import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
-import { PaySheet } from '@/components/pay-sheet';
+import { PaySheet, accountNameOf, paidFromBackText, paidFromRows, sourceApproval, type PaidFrom } from '@/components/pay-sheet';
 import { formatNaira } from '@/components/pay-sheet/money';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
@@ -28,6 +28,8 @@ import { classRow, CLOSED_LINE, CLOSED_TITLE, CONFIRMING_LINE, CONFIRMING_TITLE,
 import { DetailRow, DetailsCard, EnrolBar, enrolMetrics } from './enrolParts';
 import { SchoolLogo } from './parts';
 import { useEnrolPay } from './useEnrolPay';
+import { usePaidFrom } from '@/features/pay-source/usePaidFrom';
+import { usePaySource } from '@/features/pay-source/usePaySource';
 
 export type EnrolmentScreenProps = {
   id: string;
@@ -61,6 +63,8 @@ export function EnrolmentScreen(props: EnrolmentScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const read = useQuery({ queryKey: enrolKeys.enrolment(props.id), queryFn: () => fetchEnrolment(props.id) }, queryClient);
+  // PAY-FX (R-91): a refund goes back to the account that paid, and the line names it.
+  const { from: refundFrom } = usePaidFrom(read.data?.status === 'refunded' ? read.data.paymentId : null);
 
   if (read.isPending) {
     return (
@@ -104,7 +108,7 @@ export function EnrolmentScreen(props: EnrolmentScreenProps) {
         testID="enrolment-closed"
         icon={refunded ? 'Wallet' : 'CalendarX'}
         title={refunded ? REFUNDED_TITLE : CLOSED_TITLE}
-        message={refunded ? refundLine(enrolment) : CLOSED_LINE}
+        message={refunded ? refundLine(enrolment, refundFrom) : CLOSED_LINE}
         action={{ label: 'See the course', onPress: () => props.onCourse(enrolment.course.id) }}
       />
     </Frame>
@@ -112,8 +116,13 @@ export function EnrolmentScreen(props: EnrolmentScreenProps) {
 }
 
 /** What a refunded enrolment says: the class filled before the payment landed, and where the money is. */
-function refundLine(e: Enrolment): string {
+function refundLine(e: Enrolment, from: PaidFrom | null): string {
   const back = e.returned.returnedKobo;
+  if (from) {
+    const account = accountNameOf(from.currency);
+    if (e.returned.returned) return `We took your payment and the class had no seat left. ${paidFromBackText(from)} went back to your ${account}.`;
+    return `We took your payment and the class had no seat left. Your money is on its way back to your ${account}.`;
+  }
   if (e.returned.returned && back !== null) return `We took your payment and the class had no seat left. ${formatNaira(back)} went back to your wallet.`;
   return 'We took your payment and the class had no seat left. Your money is on its way back to your wallet.';
 }
@@ -150,6 +159,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
     onAddMoney: props.onAddMoney,
   });
   const sheet = pay.sheet;
+  const paySource = usePaySource({ payment: sheet?.payment ?? null, open: Boolean(sheet?.payOpen), requote: sheet?.tryAgain ?? (() => undefined) });
   const name = [me.data?.firstName, me.data?.lastName].filter(Boolean).join(' ');
   const school = enrolment.school.name;
   const when = shortDay(enrolment.intake.startDate);
@@ -204,6 +214,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
             amountKobo={sheet.payment.priceKobo}
             amountLabel="Course fee"
             fees={sheet.fees}
+            source={paySource}
             wallet={sheet.wallet}
             walletName={WALLET_NAME}
             actionLabel="Pay"
@@ -217,7 +228,7 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
           <PayPinSheet
             visible={sheet.pinOpen}
             onClose={sheet.closePin}
-            approval={{ totalKobo: sheet.payment.totalKobo, payee: school }}
+            approval={{ totalKobo: sheet.payment.totalKobo, payee: school, ...sourceApproval(paySource) }}
             run={sheet.run}
             unansweredLine={PAYMENT_UNANSWERED_LINE}
             onForgotPin={sheet.forgotPin}
@@ -238,6 +249,8 @@ function PayView(props: EnrolmentScreenProps & { enrolment: Enrolment }) {
 function Receipt({ enrolment, onMyCourses }: { enrolment: Enrolment; onMyCourses: () => void }) {
   const [notice, setNotice] = useState<string | null>(null);
   const paid = enrolment.totalKobo;
+  // PAY-FX (R-91): a fee paid from another currency's account is told in that currency, and the account is named.
+  const { from, settled } = usePaidFrom(paid === null ? null : enrolment.paymentId);
   const share = async () => {
     setNotice(null);
     try {
@@ -284,8 +297,10 @@ function Receipt({ enrolment, onMyCourses }: { enrolment: Enrolment; onMyCourses
           {classRow(enrolment.intake) === '' ? null : <KeyValueRow testID="enrolment-class" label="Class" value={classRow(enrolment.intake)} />}
           {paid === null ? (
             <KeyValueRow testID="enrolment-fee" label="Course fee" value="Free" />
+          ) : from ? (
+            paidFromRows(from, { paidLabel: 'Paid', priceKobo: enrolment.priceKobo, paidTestID: 'enrolment-paid', paidSize: RECEIPT.paid })
           ) : (
-            <KeyValueRow testID="enrolment-paid" label="Paid" value={<Money minorUnits={paid} size={RECEIPT.paid} weight={600} decimals={paid % 100 !== 0} />} />
+            <KeyValueRow testID="enrolment-paid" label="Paid" value={<Money minorUnits={paid} size={RECEIPT.paid} weight={600} decimals={paid % 100 !== 0} loading={!settled} />} />
           )}
           <KeyValueRow testID="enrolment-reference" label="Reference" value={enrolment.reference} />
         </GroupedList>

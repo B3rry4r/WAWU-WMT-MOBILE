@@ -13,6 +13,8 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
+import { usePaidFrom } from '@/features/pay-source/usePaidFrom';
+
 import { fetchOrder, walletOrderKey, type WalletOrder } from './buyApi';
 import { CONFIRMING_LINE, CONFIRMING_TITLE, FAILED_TITLE, failedLine } from './buyModel';
 import { addToCalendar } from './calendar';
@@ -75,6 +77,8 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     queryFn: () => fetchOrder(orderId),
     refetchInterval: (query) => (query.state.data?.status === 'processing' ? POLL_MS : false),
   });
+  // PAY-FX (R-91): tickets paid from another currency's account are refunded to that account, and the banner names it.
+  const { from: paidFrom } = usePaidFrom(order.data?.returned ? order.data.paymentId : null);
   const [index, setIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   // E11: an order that ended refunded, or whose tickets were all voided, may belong to an event the host called off. The buyer cannot read
@@ -133,7 +137,7 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
       // The same state the ticket page draws for the same purchase (E11): the event was called off and what came back to the wallet.
       return frame(
         <View style={styles.body}>
-          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data) : null) ?? failedLine(data)} testID="order-ticket-called-off" />
+          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data, paidFrom) : null) ?? failedLine(data)} testID="order-ticket-called-off" />
         </View>,
       );
     }
@@ -159,7 +163,7 @@ export function OrderTicketScreen({ orderId, onClose, onMyTickets }: OrderTicket
     <>
       <ScrollView contentContainerStyle={[styles.body, styles.scroll]} showsVerticalScrollIndicator={false}>
         {allVoid && calledOff ? (
-          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data) : null) ?? 'The event was called off, so this ticket cannot be used.'} testID="order-ticket-called-off" />
+          <Banner tone="danger" icon="CalendarX" title={CALLED_OFF_TITLE} body={(data.returned ? refundBannerBody(data, paidFrom) : null) ?? 'The event was called off, so this ticket cannot be used.'} testID="order-ticket-called-off" />
         ) : allVoid ? (
           <Note testID="order-ticket-void" tone="warning" icon="CircleAlert" title="This ticket is not valid" body="This ticket cannot be used at the door." />
         ) : (

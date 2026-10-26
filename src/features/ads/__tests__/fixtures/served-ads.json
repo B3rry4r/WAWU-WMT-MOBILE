@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "id": "b54a53cc-9ada-46df-9bbe-9c3403569ec8",
+      "advertiser": "ADSLINK-e2e Explore slider link",
+      "headline": "Shop with Acme",
+      "subline": "Lagos · open daily",
+      "ctaLabel": "Visit us",
+      "ctaDestination": "link",
+      "ctaUrl": "https://acme.example.com/shop?ref=wawu",
+      "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/8ca48269-6db2-4b10-952f-8126ad335595.png"
+    },
+    {
+      "id": "dbb389f9-4505-4b2d-8e7c-e7c45b207ed3",
+      "advertiser": "ADSLINK-e2e Explore slider none",
+      "headline": "Harvest Praise Night",
+      "subline": "Abuja · Sat 8 November",
+      "ctaDestination": "none",
+      "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/2d8bfc6a-279f-40f3-93d0-7d4855f10a6f.png"
+    },
+    {
+      "id": "50afb5f6-26d9-4c6c-82ec-5550bb064301",
+      "advertiser": "ADSLINK-e2e legacy event",
+      "headline": "Gospel Night Live",
+      "subline": "Abuja · Sat 8 November",
+      "ctaLabel": "Get tickets",
+      "ctaDestination": "event",
+      "ctaDestinationId": "adc00000-0000-4000-8000-000000000001",
+      "artworkUrl": "https://cdn.example.com/ads/gospel.png"
+    }
+  ],
+  "single": {
+    "link": {
+      "id": "d49db3ed-7052-4ce9-8199-820b01a85da3",
+      "advertiser": "ADSLINK-e2e Today strip link",
+      "headline": "Shop with Acme",
+      "subline": "Lagos · open daily",
+      "ctaLabel": "Visit us",
+      "ctaDestination": "link",
+      "ctaUrl": "https://acme.example.com/shop?ref=wawu",
+      "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/5ee4dc23-5eef-4247-9331-328bd03ea132.png"
+    },
+    "none": {
+      "id": "d8f9c2d4-0f29-4336-8668-3ed5bedbae41",
+      "advertiser": "ADSLINK-e2e Today strip none",
+      "headline": "Harvest Praise Night",
+      "subline": "Abuja · Sat 8 November",
+      "ctaDestination": "none",
+      "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/062430d8-55a1-4a6d-b768-778833673490.png"
+    }
+  }
+}

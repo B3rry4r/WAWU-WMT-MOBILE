@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 393.**
+**Launch tasks done: 176 of 395.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 4 | 0 | 0 | 0 |
-| review | 226 | 0 | 0 | 0 |
+| review | 228 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -30,10 +30,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
+- [ADS-LINK](../tasks/ADS-LINK.md) An ad opens the advertiser's web link or does nothing; the Today strip is the Explore card; upload the picture (R-92) (You)
 - [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
 - [LEGAL-DOCS](../tasks/LEGAL-DOCS.md) The owner's nine legal documents: one box at sign-up, a Legal list, one reader (You)
 - [WALLET-41](../tasks/WALLET-41.md) A person outside Nigeria opens a wallet without a BVN, in their own currency (R-87) (You)
 - [WALLET-42](../tasks/WALLET-42.md) A person outside Nigeria sends abroad from a foreign account (and a naira person from one they hold), WAWU's fee from the same account (R-87) (You)
+- [PAY-FX](../tasks/PAY-FX.md) Convert at payment: a buyer in another currency pays a naira price from their own account (R-91) (You)
 - [FIX-104](../tasks/FIX-104.md) A person sends a photo, a video or a file in a chat, and the other person opens it (You)
 - [FIX-113](../tasks/FIX-113.md) Profile, the half FIX-110 did not reach: Experience and Skills can be written on Edit profile, and a Work has a description, can be edited and can be put in order (You)
 - [SIGNUP-NAMES](../tasks/SIGNUP-NAMES.md) Sign-up asks for a first name, a last name and a username (R-82) (You)

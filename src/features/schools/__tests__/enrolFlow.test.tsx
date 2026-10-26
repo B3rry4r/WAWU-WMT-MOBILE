@@ -33,7 +33,10 @@ jest.mock('expo-router', () => ({ useFocusEffect: () => undefined }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
-const paymentView = (status: string) => ({ id: 'pay-1', kind: 'school_fee', targetId: ENR, title: 'Product Design Bootcamp', status, priceKobo: 15_000_000, fee: { providerFeeKobo: 1575, wawuFeeKobo: 0, totalFeeKobo: 1575 }, totalKobo: 15_001_575, reference: 'WAW-PAY', hold: null, failureReason: status === 'failed' ? 'The bank did not take it.' : null, delivered: status === 'completed', statusMessage: null, createdAt: '2026-10-16T09:42:00.000Z', completedAt: null });
+/** PAY-FX: the payment the Hub holds left a dollar account. */
+const paidFromUsd = { on: false };
+const USD_PAID = { currency: 'USD', decimals: 2, amountMinor: 23, providerFeeMinor: 0, wawuFeeMinor: 0, totalMinor: 23, rate: '0.000741', refundedMinor: null };
+const paymentView = (status: string) => ({ ...(paidFromUsd.on ? { source: USD_PAID } : {}), id: 'pay-1', kind: 'school_fee', targetId: ENR, title: 'Product Design Bootcamp', status, priceKobo: 15_000_000, fee: { providerFeeKobo: 1575, wawuFeeKobo: 0, totalFeeKobo: 1575 }, totalKobo: 15_001_575, reference: 'WAW-PAY', hold: null, failureReason: status === 'failed' ? 'The bank did not take it.' : null, delivered: status === 'completed', statusMessage: null, createdAt: '2026-10-16T09:42:00.000Z', completedAt: null });
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 const ENR = '66666666-6666-4666-8666-666666666666';
@@ -193,6 +196,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  paidFromUsd.on = false;
   mockVault.clear();
   forgetEnrolIntentsInMemory();
   queryClient.clear();
@@ -638,6 +642,21 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     await render(<EnrolmentScreen id={ENR} {...handlers()} />);
     await rtl.screen.findByText('The class filled up');
     expect(rtl.screen.getByText(/Your money is on its way back to your wallet/)).toBeTruthy();
+  });
+});
+
+describe('PAY-FX (R-91): the receipt of a buyer who paid from a dollar account', () => {
+  it('SC7 says what left the dollar account, which account, and the naira fee; never a naira total', async () => {
+    paidFromUsd.on = true;
+    hub.status = 'enrolled';
+    hub.payment = 'completed';
+    await render(<EnrolmentScreen id={ENR} onBack={jest.fn()} onMyCourses={jest.fn()} onCourse={jest.fn()} onOpenWallet={jest.fn()} onSetPin={jest.fn()} onForgotPin={jest.fn()} onAddMoney={jest.fn()} />);
+    await rtl.screen.findByTestId('enrolment-receipt');
+    const paid = await rtl.screen.findByTestId('enrolment-paid');
+    expect(rtl.within(paid).getByText('$0.23')).toBeTruthy();
+    expect(rtl.within(rtl.screen.getByTestId('enrolment-card')).getByText('USD account')).toBeTruthy();
+    expect(rtl.within(rtl.screen.getByTestId('enrolment-card')).getByLabelText('150,000 naira')).toBeTruthy();
+    expect(rtl.screen.queryByLabelText('150,015 naira 75 kobo')).toBeNull();
   });
 });
 

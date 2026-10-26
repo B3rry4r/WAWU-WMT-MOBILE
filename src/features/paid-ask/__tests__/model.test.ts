@@ -12,6 +12,7 @@ import {
   leftLong,
   offBody,
   offTitle,
+  paidStamp,
   priceKoboOf,
   refundLine,
   refundedCard,
@@ -214,5 +215,42 @@ describe('the thread', () => {
     expect(headerLine(waiting)).toEqual({ text: 'Paid DM · replies within 24h', tone: 'muted' });
     expect(headerLine(answered)).toEqual({ text: 'Replied in 2h 14m', tone: 'positive' });
     expect(headerLine(q({ status: 'refunded' }))).toEqual({ text: 'Paid DM · refunded', tone: 'muted' });
+  });
+});
+
+describe('PAY-FX (R-91): a paid question from a dollar account says the dollar amount and the dollar account', () => {
+  const usd = { currency: 'USD', decimals: 2, totalMinor: 23, refundedMinor: null };
+  const refunded = { currency: 'USD', decimals: 2, totalMinor: 23, refundedMinor: 23 };
+
+  it('the sheet says what comes back, in dollars, to the USD account', () => {
+    expect(refundLine(152325, usd)).toBe('No reply in time, your $0.23 comes back to your USD account');
+    expect(refundLine(152325)).toBe('No reply in time, your ₦1,523.25 comes back');
+  });
+
+  it('the waiting card says the money comes back to the USD account, not the wallet', () => {
+    const card = waitingCard(q({ deadlineAt: at(17, 52) }), 'Chidi Eze', NOW, usd);
+    expect(card.body).toContain('and it comes back to your USD account.');
+    expect(card.body).not.toContain('wallet');
+    expect(waitingCard(q({ deadlineAt: at(-1) }), 'Chidi Eze', NOW, usd).body).toBe('Your money is on its way back to your USD account.');
+    expect(waitingCard(q({ deadlineAt: at(17, 52) }), 'Chidi Eze', NOW).body).toContain('comes back to your wallet.');
+  });
+
+  it('the stamp under the question says what left the account', () => {
+    expect(paidStamp(at(0), 10000, NOW, usd)).toMatch(/ · \$0\.23 paid$/);
+    expect(paidStamp(at(0), 10000, NOW)).toMatch(/ · ₦100 paid$/);
+  });
+
+  it('a refund names the USD account and the dollar amount that went back', () => {
+    // The wallet's record of the question (GET /dm/send/wallet/{id}) carries no `source`; the account comes from the payment record.
+    const wallet = { status: 'refunded', payment: { hold: { refundedKobo: 10000, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
+    const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', wallet, new Date(at(25)).getTime(), refunded);
+    expect(card.title).toBe('No reply in 24 hours, so you got $0.23 back');
+    expect(card.body).toMatch(/^It went back to your USD account /);
+    const moving = { status: 'refunding', payment: { hold: { refundedKobo: 10000, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    const onItsWay = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW, usd);
+    // A question whose payment record is not known names the Naira wallet.
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).body).toBe('It is on its way to your Naira wallet. Zainab earned nothing.');
+    expect(onItsWay.title).toBe('No reply in 24 hours, so $0.23 is coming back');
+    expect(onItsWay.body).toBe('It is on its way to your USD account. Zainab earned nothing.');
   });
 });

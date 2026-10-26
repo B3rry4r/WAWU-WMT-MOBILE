@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import { queryClient } from '@/api/query';
+import { paidFromKey } from '@/features/pay-source/usePaidFrom';
 import type { PayStatus, PayWallet } from '@/components/pay-sheet';
 import type { PaymentQuote } from '@/features/events/buyApi';
 import { feeLines, limitLine, NO_TOTAL_TITLE, NOT_READY_LINE, OVER_LIMIT_TITLE, PRICE_CHANGED_LINE, quoteAddsUp } from '@/features/events/buyModel';
@@ -358,6 +359,8 @@ export function useEnrolPay(args: EnrolPayArgs) {
         }
         // Completed or pending: the Hub has the payment. The enrolment and the payment are read until it is decided; the person is never
         // asked to pay again.
+        // PAY-FX (R-91): the receipt names the account that paid; the payment just answered already says which, so it is not read again.
+        queryClient.setQueryData(paidFromKey(outcome.payment.id), outcome.payment.source ?? null);
         void keep({ ...sending, phase: 'processing', paymentId: outcome.payment.id });
         closeSheets();
         afterMoney();

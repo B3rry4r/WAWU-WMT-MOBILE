@@ -16,6 +16,7 @@ import { tickOf } from '@/features/chat/api';
 import { DayLabel, TextBubble } from '@/features/chat/Bubbles';
 import { hueFor } from '@/features/feed/model';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
+import { usePaidFromMany, type PaidFromRead } from '@/features/pay-source/usePaidFrom';
 import { readFailure } from '@/features/profile-edit/failure';
 import { fetchVisitorProfile, visitorKey } from '@/features/visitor/api';
 import { visitorName } from '@/features/visitor/model';
@@ -79,7 +80,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   const tick = other ? tickOf(other) : profile.data ? tickOf({ verification: profile.data.profile.verification }) : undefined;
 
   // A question the Hub refunded: where the money went is the wallet's own record (the hold), read for each, and again while it is on its way.
-  const refunded = useMemo(() => questions.filter((q) => q.mine && q.status === 'refunded'), [questions]);
+  // A question still waiting is read too (PAY-FX, R-91): its payment says which account paid, so the card names the one the money returns to.
+  const refunded = useMemo(() => questions.filter((q) => q.mine && (q.status === 'refunded' || q.status === 'awaiting_response')), [questions]);
   const records = useQueries({
     queries: refunded.map((q) => ({
       queryKey: questionKey(q.id),
@@ -91,6 +93,13 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     combine: (results) => results.map((r) => r.data ?? null),
   });
   const recordOf = (id: string): QuestionView | null => records[refunded.findIndex((q) => q.id === id)] ?? null;
+  // Which account paid is the PAYMENT's record (PAY-FX, R-91): the wallet's record of a question names the payment but not its source, so
+  // each payment is read once (`GET /money/payments/{id}`, kept five minutes) and the cards and stamps read the account from that.
+  const sources = usePaidFromMany(
+    records.map((r) => r?.payment?.id ?? null),
+    cache,
+  );
+  const sourceOf = (id: string): PaidFromRead => sources[refunded.findIndex((q) => q.id === id)] ?? { from: null, settled: true };
 
   const ask = useAsk(
     pay,
@@ -101,7 +110,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     focused,
   );
 
-  const entries = useMemo(() => threadEntries(questions, now), [questions, now]);
+  const fromOf = (id: string) => sourceOf(id).from;
+  const entries = useMemo(() => threadEntries(questions, now, fromOf), [questions, now, records, sources]); // eslint-disable-line react-hooks/exhaustive-deps
   const latest = useMemo(() => [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))[0] ?? null, [questions]);
   const waiting = isWaiting(questions, now);
   const sub = headerLine(latest);
@@ -166,10 +176,11 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
           const q = entry.question;
           const card =
             entry.status === 'awaiting_response'
-              ? waitingCard(q, name, now)
+              ? waitingCard(q, name, now, fromOf(q.id))
               : entry.status === 'responded'
                 ? answeredCard(name, entry.last ? followUpOf(terms, termsFailed) : null)
-                : refundedCard(q, name, recordOf(q.id), now);
+                : // The refund's words name the account, so they wait for the payment's record (the card says only "refunded" until then).
+                  refundedCard(q, name, sourceOf(q.id).settled ? recordOf(q.id) : null, now, fromOf(q.id));
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}
       </ScrollView>

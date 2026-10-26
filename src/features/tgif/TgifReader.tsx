@@ -9,6 +9,7 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import type { AdCard } from '@/features/ads/api';
+import { openAd } from '@/features/ads/api';
 import { SponsoredBackdrop, SponsoredStep } from '@/features/ads/SponsoredStep';
 import { useAd, useAdReports } from '@/features/ads/useAd';
 import { font, layout, space, useWawu } from '@/theme';
@@ -214,10 +215,10 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
     setAt(here - 1);
   };
   const tapCard = (event?: GestureResponderEvent) => (tapGoesBack(event?.nativeEvent?.pageX, width) ? back() : advance());
-  const openEvent = () => {
+  const openOffer = () => {
     if (!offer || !onOpenEvent) return;
     reports.tap();
-    onOpenEvent(offer.ctaDestinationId);
+    openAd(offer, onOpenEvent);
   };
   const skipAd = () => {
     reports.skip();
@@ -261,7 +262,7 @@ function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
         </View>
       </View>
       {sponsored && offer ? (
-        <SponsoredStep ad={offer} onOpen={openEvent} onSkip={skipAd} bottomInset={insets.bottom} />
+        <SponsoredStep ad={offer} onOpen={openOffer} onSkip={skipAd} bottomInset={insets.bottom} />
       ) : (
         <>
         <ScrollView
