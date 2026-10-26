@@ -37,14 +37,14 @@ export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPick
     <View style={styles.root}>
       <View testID="edit-cover" style={[styles.cover, { backgroundColor: colors.surfaceSunken }]}>
         {coverUri ? <PositionedImage uri={coverUri} accessibilityLabel="Your cover picture" testID="edit-cover-image" /> : null}
-        {coverUri && onReposition ? (
-          <View style={styles.reposition}>
-            <RepositionPill label="Reposition cover picture" onPress={() => onReposition('cover')} disabled={busy !== null} testID="edit-cover-reposition" glass />
-          </View>
-        ) : null}
-        {canPick ? (
+        {canPick || (coverUri && onReposition) ? (
           <View style={styles.glass}>
-            <IconButton icon="Camera" label={coverUri ? 'Change cover picture' : 'Add a cover picture'} tone="glass" onPress={onPickCover} disabled={busy !== null} testID="edit-cover-pick" />
+            {coverUri && onReposition ? (
+              <RepositionPill label="Reposition cover picture" onPress={() => onReposition('cover')} disabled={busy !== null} testID="edit-cover-reposition" glass />
+            ) : null}
+            {canPick ? (
+              <IconButton icon="Camera" label={coverUri ? 'Change cover picture' : 'Add a cover picture'} tone="glass" onPress={onPickCover} disabled={busy !== null} testID="edit-cover-pick" />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -106,8 +106,7 @@ export const pictureHeaderMetrics = headerMetrics;
 const styles = StyleSheet.create({
   root: { marginBottom: headerMetrics.after },
   cover: { height: headerMetrics.cover, borderRadius: radius.media, overflow: 'hidden' },
-  glass: { position: 'absolute', right: headerMetrics.glassInset, bottom: headerMetrics.glassInset },
-  reposition: { position: 'absolute', left: headerMetrics.glassInset, bottom: headerMetrics.glassInset },
+  glass: { position: 'absolute', right: headerMetrics.glassInset, bottom: headerMetrics.glassInset, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   avatarReposition: { position: 'absolute', left: headerMetrics.avatarLeft + headerMetrics.avatar + space.md, top: headerMetrics.cover + space.sm },
   pill: { height: headerMetrics.pillH, paddingHorizontal: headerMetrics.pillPad, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontSize: headerMetrics.pillText },

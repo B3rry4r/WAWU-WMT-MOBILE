@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image as NativeImage, Pressable, StyleSheet, useWindowDimensions, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native';
+import { Image as NativeImage, Platform, Pressable, StyleSheet, useWindowDimensions, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -199,14 +199,17 @@ export function PhotoPositionScreen({ kind, link, onDone, onClose }: PhotoPositi
                 testID="position-stage"
                 accessible
                 accessibilityLabel={copy.stage}
-                style={[styles.stage, { width: stage.width, height: stage.height, backgroundColor: colors.surfaceSunken }]}
+                style={[styles.stage, { width: stage.width, height: stage.height, backgroundColor: colors.surfaceSunken }, webTouch]}
               >
-                <Image
-                  testID="position-image"
-                  source={{ uri }}
-                  contentFit="fill"
-                  style={{ position: 'absolute', left: origin.x + placed.left, top: origin.y + placed.top, width: placed.width, height: placed.height }}
-                />
+                {/* The picture takes no touches itself: on the web an image is dragged away by the browser, and the stage must keep the finger. */}
+                <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                  <Image
+                    testID="position-image"
+                    source={{ uri }}
+                    contentFit="fill"
+                    style={{ position: 'absolute', left: origin.x + placed.left, top: origin.y + placed.top, width: placed.width, height: placed.height }}
+                  />
+                </View>
                 <Veil kind={kind} stage={stage} frame={frame} origin={origin} />
               </View>
             </GestureDetector>
@@ -298,6 +301,9 @@ function ZoomSlider({ value, onChange }: { value: number; onChange: (zoom: numbe
     </GestureDetector>
   );
 }
+
+/** On the web a finger on the stage moves the photo, never the page, and nothing under it is selected. */
+const webTouch = Platform.OS === 'web' ? ({ touchAction: 'none', userSelect: 'none' } as object) : null;
 
 const arrows = { left: 'ChevronLeft', right: 'ChevronRight', down: 'ChevronDown', up: 'ChevronDown' } as const;
 
