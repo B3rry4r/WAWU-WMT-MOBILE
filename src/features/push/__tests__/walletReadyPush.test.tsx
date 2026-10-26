@@ -23,7 +23,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ navigate: (...a: unknown[]) => mockNavigate(...a) }),
   useRootNavigationState: () => ({ key: 'root' }),
 }));
-jest.mock('@/api/session', () => ({ useSession: () => ({ status: 'signedIn' }) }));
+jest.mock('@/api/session', () => ({ ...jest.requireActual('@/api/session'), useSession: () => ({ status: 'signedIn' }) }));
 jest.mock('@/features/open-wallet/sessionAccount', () => ({ useSessionAccount: () => 'u1' }));
 jest.mock('@/features/open-wallet/api/review', () => {
   const actual = jest.requireActual('@/features/open-wallet/api/review');
