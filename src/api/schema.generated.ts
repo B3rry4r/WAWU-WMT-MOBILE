@@ -652,6 +652,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/tier-offer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether to draw the offer now, and whether it has its close X. `no-store`: the answer is the caller's own. */
+        get: operations["TierOfferController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/tier-offer/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The offer has been drawn for this person: it is not offered again, on any phone. */
+        post: operations["TierOfferController_seen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/me/points": {
         parameters: {
             query?: never;
@@ -13446,6 +13480,13 @@ export interface components {
             actions: components["schemas"]["PlanActionView"][];
             caps: components["schemas"]["PlanCapsView"];
         };
+        TierOfferView: {
+            show: boolean;
+            closeButton: boolean;
+        };
+        TierOfferSeenView: {
+            seenAt: string;
+        };
         UploadFormatView: {
             /** @enum {string} */
             id: "video" | "course" | "audio" | "pdf" | "image" | "template";
@@ -19566,6 +19607,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyTierView"];
+                };
+            };
+        };
+    };
+    TierOfferController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierOfferView"];
+                };
+            };
+        };
+    };
+    TierOfferController_seen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierOfferSeenView"];
                 };
             };
         };
