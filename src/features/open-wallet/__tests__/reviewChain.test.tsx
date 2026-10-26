@@ -262,3 +262,39 @@ describe('the typed details', () => {
     expect(person.personProblems({ ...good, lastName: '<b>' }, now).lastName).toBe('Use letters only for your last name.');
   });
 });
+
+describe('R-95 · Powered by Nuvion on the details step under the review opening', () => {
+  const about = (bankName: string): Reply => ok({ bankName, licenceLine: null, supportEmail: null });
+  const aboutAsked = () => sent.filter((s) => s.method === 'GET' && s.path.endsWith('/about')).length;
+  // The line reads the Hub's /about through the app's own query client, which keeps the answer for minutes: each test starts it empty.
+  const emptyAppClient = () => (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
+  // The route component, not the form: a held review is what makes A5 draw ReviewDetailsForm in place of its own form.
+  const renderConfirmDetails = () => {
+    const { ConfirmDetailsScreen } = require('../ConfirmDetailsScreen') as typeof import('../ConfirmDetailsScreen');
+    expect(kept.keepNumbers(kept.ticketFor(OWNER), { bvn: BVN, nin: NIN })).toBe(true);
+    return boot((onContinue, onClose) => (
+      <ConfirmDetailsScreen onBack={onClose} onContinue={onContinue} onRestart={jest.fn()} onLeave={jest.fn()} />
+    ));
+  };
+
+  it('draws the line once under a Nuvion /about', async () => {
+    emptyAppClient();
+    serve('review');
+    fallback['GET /about'] = about('Nuvion');
+    const app = await renderConfirmDetails();
+    expect(await app.screen.findByTestId('open-wallet-details')).toBeTruthy();
+    expect(app.screen.getByTestId('open-wallet-first-name')).toBeTruthy();
+    expect(await app.screen.findByText('Powered by Nuvion')).toBeTruthy();
+    expect(app.screen.getAllByText('Powered by Nuvion')).toHaveLength(1);
+  });
+
+  it('draws nothing under another bank', async () => {
+    emptyAppClient();
+    serve('review');
+    fallback['GET /about'] = about('Loma Bank');
+    const app = await renderConfirmDetails();
+    expect(await app.screen.findByTestId('open-wallet-details')).toBeTruthy();
+    await rtl.waitFor(() => expect(aboutAsked()).toBe(1));
+    expect(app.screen.queryByText('Powered by Nuvion')).toBeNull();
+  });
+});

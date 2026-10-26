@@ -733,3 +733,51 @@ describe("the Wallet tab of a person outside Nigeria", () => {
     ).toBe("wallet_error");
   });
 });
+
+describe("R-95 · Powered by Nuvion on the world wallet's first-account screen", () => {
+  const { FirstAccountProblem } =
+    require("../WorldFirstAccount") as typeof import("../WorldFirstAccount");
+  const about = (bankName: string): Reply =>
+    ok({ bankName, licenceLine: null, supportEmail: null });
+  const aboutAsked = () =>
+    sent.filter((s) => s.method === "GET" && s.path.endsWith("/about")).length;
+  // The line reads the Hub's /about through the app's own query client, which keeps the answer for minutes: each test starts it empty.
+  const emptyAppClient = () =>
+    (
+      require("@/api/query") as typeof import("@/api/query")
+    ).queryClient.clear();
+  const renderProblem = () =>
+    boot(() => (
+      <FirstAccountProblem
+        country="GH"
+        problem="The bank does not give that currency in Ghana."
+        busy={false}
+        onPick={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    ));
+
+  it("draws the line once under a Nuvion /about", async () => {
+    emptyAppClient();
+    serve();
+    fallback["GET /about"] = about("Nuvion");
+    const app = await renderProblem();
+    expect(
+      await app.screen.findByTestId("open-wallet-first-account-problem"),
+    ).toBeTruthy();
+    expect(await app.screen.findByText("Powered by Nuvion")).toBeTruthy();
+    expect(app.screen.getAllByText("Powered by Nuvion")).toHaveLength(1);
+  });
+
+  it("draws nothing under another bank", async () => {
+    emptyAppClient();
+    serve();
+    fallback["GET /about"] = about("Loma Bank");
+    const app = await renderProblem();
+    expect(
+      await app.screen.findByTestId("open-wallet-first-account-problem"),
+    ).toBeTruthy();
+    await rtl.waitFor(() => expect(aboutAsked()).toBe(1));
+    expect(app.screen.queryByText("Powered by Nuvion")).toBeNull();
+  });
+});
