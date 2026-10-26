@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/api/session';
 import { IconButton } from '@/components/Button';
 import { ErrorState } from '@/components/StateViews';
+import { openAd } from '@/features/ads/api';
 import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
 import { useAd, useAdReports } from '@/features/ads/useAd';
 import { fetchMyId, meKey } from '@/features/feed/api';
@@ -178,7 +179,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
           onPictureLoad={() => setPictureOf(sponsored.artworkUrl)}
           onOpen={() => {
             reports.tap();
-            router.push({ pathname: '/events/[id]', params: { id: sponsored.ctaDestinationId } });
+            openAd(sponsored, (id) => router.push({ pathname: '/events/[id]', params: { id } }));
           }}
         />
       ) : null}

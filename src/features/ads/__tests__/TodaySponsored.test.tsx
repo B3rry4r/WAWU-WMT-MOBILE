@@ -171,8 +171,9 @@ describe('H1 and H36 · the ad card on Today', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
     expect(calls(T.ads)).toHaveLength(1);
     expect(calls(T.ads)[0].query).toBe('?placement=today_slot');
-    expect(screen.getByText('AD')).toBeTruthy();
-    expect(screen.queryByText('SPONSORED')).toBeNull();
+    // R-92: the Today strip is the Explore advert slide, so its chip says SPONSORED, not AD.
+    expect(screen.getByText('SPONSORED')).toBeTruthy();
+    expect(screen.queryByText('AD')).toBeNull();
     expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Harvest Praise Night');
     expect(screen.getByTestId('today-sponsored-subline')).toHaveTextContent('Lagos · Sun 2 November · from ₦3,500');
     expect(screen.getByTestId('today-sponsored-cta')).toHaveTextContent('Book a seat');
@@ -190,7 +191,7 @@ describe('H1 and H36 · the ad card on Today', () => {
       rtl.fireEvent(screen.getByTestId('today-sponsored-artwork', hiddenOk), 'error', { nativeEvent: { error: 'Not found' } });
     });
     expect(screen.queryByTestId('today-sponsored')).toBeNull();
-    expect(screen.queryByText('AD')).toBeNull();
+    expect(screen.queryByText('SPONSORED')).toBeNull();
   });
 
   it('sits right after the money card and before the services', async () => {
@@ -283,7 +284,7 @@ describe('Today has no TGIF card: the ad card holds its old place alone (R-59, D
     await settle();
     expect(screen.queryByTestId('today-tgif')).toBeNull();
     expect(screen.queryByTestId('today-sponsored')).toBeNull();
-    expect(screen.queryByText('AD')).toBeNull();
+    expect(screen.queryByText('SPONSORED')).toBeNull();
   });
 });
 
@@ -295,7 +296,7 @@ describe('Today with nothing sponsored to show', () => {
     await rtl.waitFor(() => expect(calls(T.ads)).toHaveLength(1));
     await settle();
     expect(screen.queryByTestId('today-sponsored')).toBeNull();
-    expect(screen.queryByText('AD')).toBeNull();
+    expect(screen.queryByText('SPONSORED')).toBeNull();
     expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy();
     expect(calls(T.events)).toHaveLength(0);
   });

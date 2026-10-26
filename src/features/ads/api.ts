@@ -1,3 +1,5 @@
+import * as Linking from 'expo-linking';
+
 import { api, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 
@@ -16,8 +18,20 @@ export type AdPlacement = 'tgif_card' | 'today_slot';
 export type AdListPlacement = 'explore_slider';
 export type AdEventKind = 'view' | 'tap' | 'skip';
 
-/** What `GET /ads` serves for a card, once it has been checked to be drawable. */
-export type AdCard = components['schemas']['AdCardView'];
+/**
+ * What a tap on a card does (R-92: an ad opens the advertiser's web link, or does nothing; ads are not tied to events):
+ * - `link`: the card, or its button, opens the address in the phone's browser;
+ * - `none`: the card is only shown. Nothing on it is pressable and no button is drawn;
+ * - `event`: opens that event. Campaigns saved before R-92 still use it, so it keeps working exactly as it did.
+ */
+type Wire = components['schemas']['AdCardView'];
+/** The words every card has, once `drawable` has checked them. The subline is a string or null, never blank. */
+type AdBase = Pick<Wire, 'id' | 'advertiser' | 'headline' | 'artworkUrl'> & { subline: string | null };
+/** Each kind with the fields it needs, narrowed from the contract's kinds so a kind the Hub drops from the contract fails to compile here. */
+export type AdCard =
+  | (AdBase & { ctaDestination: Extract<Wire['ctaDestination'], 'event'>; ctaLabel: string; ctaDestinationId: string })
+  | (AdBase & { ctaDestination: Extract<Wire['ctaDestination'], 'link'>; ctaLabel: string; ctaUrl: string })
+  | (AdBase & { ctaDestination: Extract<Wire['ctaDestination'], 'none'> });
 
 type Envelope<T> = { statusCode?: number; message?: string; data?: T | null };
 
@@ -25,19 +39,29 @@ export const adKey = (placement: AdPlacement) => ['ads', placement] as const;
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 
+/** An address the phone's browser may be sent to: https, and a real address (the Hub checks the same, so this is a second lock). */
+const webAddress = (value: unknown): value is string => {
+  if (!text(value) || !/^https:\/\//i.test(value)) return false;
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 /**
- * A card the app can draw: the words it must show, a picture (an http or https address) and an event to open.
- * Anything else (a destination this build does not know, a card with no words, a card with no picture) is treated
- * as no card, never drawn half-built. A campaign needs artwork before it is saved (R-59), so a card without a
- * picture is not one the Hub serves; if one ever arrives it is dropped here as well.
+ * A card the app can draw: the words it must show, a picture (an http or https address) and what a tap does, with what that
+ * needs (an event to open, an address to open, or nothing at all). Anything else (a destination this build does not know, a
+ * link that is not https, a button with no words, a card with no words, a card with no picture) is treated as no card, never
+ * drawn half-built. A campaign needs artwork before it is saved (R-59), so a card without a picture is not one the Hub serves;
+ * if one ever arrives it is dropped here as well.
  */
 export function drawable(value: unknown): AdCard | null {
   if (!value || typeof value !== 'object') return null;
-  const card = value as Partial<AdCard>;
-  if (!text(card.id) || !text(card.headline) || !text(card.ctaLabel) || !text(card.ctaDestinationId)) return null;
-  if (card.ctaDestination !== 'event') return null;
+  const card = value as Record<string, unknown>;
+  if (!text(card.id) || !text(card.headline)) return null;
   if (typeof card.artworkUrl !== 'string' || !/^https?:\/\//i.test(card.artworkUrl)) return null;
-  return {
+  const base: AdBase = {
     id: card.id,
     // Carried, read by no screen: the chip on every sponsored card is the fixed word SPONSORED, as the canvases draw it, and
     // not "SPONSORED · <advertiser>" (the Hub's own comment in ads-text-limits.ts words it that way). A longer chip would
@@ -45,11 +69,31 @@ export function drawable(value: unknown): AdCard | null {
     advertiser: typeof card.advertiser === 'string' ? card.advertiser : '',
     headline: card.headline,
     subline: text(card.subline) ? card.subline : null,
-    ctaLabel: card.ctaLabel,
-    ctaDestination: 'event',
-    ctaDestinationId: card.ctaDestinationId,
     artworkUrl: card.artworkUrl,
   };
+  if (card.ctaDestination === 'event') {
+    if (!text(card.ctaLabel) || !text(card.ctaDestinationId)) return null;
+    return { ...base, ctaDestination: 'event', ctaLabel: card.ctaLabel, ctaDestinationId: card.ctaDestinationId };
+  }
+  if (card.ctaDestination === 'link') {
+    if (!text(card.ctaLabel) || !webAddress(card.ctaUrl)) return null;
+    return { ...base, ctaDestination: 'link', ctaLabel: card.ctaLabel, ctaUrl: card.ctaUrl };
+  }
+  if (card.ctaDestination === 'none') return { ...base, ctaDestination: 'none' };
+  return null;
+}
+
+/** Whether a tap on the card does anything. A card that does nothing is drawn with no button and nothing pressable. */
+export const adOpensSomething = (ad: AdCard): boolean => ad.ctaDestination !== 'none';
+
+/**
+ * What a tap on the card does: `link` sends the phone's browser to the address (expo-linking; a browser that cannot be reached
+ * is a tap that does nothing, never an error on screen), `event` hands the event's id to the screen's own way of opening one,
+ * and `none` does nothing at all.
+ */
+export function openAd(ad: AdCard, openEvent: (eventId: string) => void): void {
+  if (ad.ctaDestination === 'event') openEvent(ad.ctaDestinationId);
+  else if (ad.ctaDestination === 'link') void Linking.openURL(ad.ctaUrl).catch(() => undefined);
 }
 
 /** The live card for a place; `null` when there is none (a 200 with `data: null`) or it cannot be drawn. */

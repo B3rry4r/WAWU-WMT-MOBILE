@@ -11884,14 +11884,27 @@ export interface components {
             headline: string;
             /** @description Place, date and price as the team types them. Leave it out for no second line. */
             subline?: string | null;
-            ctaLabel: string;
             /**
-             * @description What the button opens. The allow-list is the AdCtaDestination enum: `event` today.
+             * @description The button's words. Required for `event` and `link`; a `none` card has no
+             *     button, so it must not carry one. Which of the two applies is checked in
+             *     the service, with the rest of the destination's rules.
+             */
+            ctaLabel?: string;
+            /**
+             * @description What a tap does (R-92): `link` opens `ctaUrl` in the phone's browser,
+             *     `none` does nothing, `event` opens an event (kept for the campaigns that
+             *     already use it; the dashboard no longer offers it).
              * @enum {string}
              */
-            ctaDestination: "event";
-            /** @description For `event`, an Event id. The event must be published and not over. */
-            ctaDestinationId: string;
+            ctaDestination: "event" | "link" | "none";
+            /** @description For `event` only, an Event id. The event must be published and not over. */
+            ctaDestinationId?: string;
+            /**
+             * @description For `link` only: the https address the card opens, as the artwork link is
+             *     checked (public host, no password, no spaces, at most AD_LINK_URL_MAX),
+             *     stored in its normal form.
+             */
+            ctaUrl?: string;
             /**
              * @description An https link to the picture. REQUIRED (R-59): a campaign without artwork
              *     is refused with 422 "Add artwork before you save this campaign". It is
@@ -11917,8 +11930,10 @@ export interface components {
             subline?: string | null;
             ctaLabel?: string;
             /** @enum {string} */
-            ctaDestination?: "event";
+            ctaDestination?: "event" | "link" | "none";
             ctaDestinationId?: string;
+            /** @description A new address for a `link` card. Only a card that opens a link has one. */
+            ctaUrl?: string;
             /** @description A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). */
             artworkUrl?: string | null;
         };
@@ -15788,10 +15803,11 @@ export interface components {
             advertiser: string;
             headline: string;
             subline: string | null;
-            ctaLabel: string;
+            ctaLabel?: string | null;
             /** @enum {string} */
-            ctaDestination: "event";
-            ctaDestinationId: string;
+            ctaDestination: "none" | "event" | "link";
+            ctaDestinationId?: string | null;
+            ctaUrl?: string | null;
             artworkUrl: string;
         };
         AccountDeletionResponse: {
@@ -18331,11 +18347,13 @@ export interface components {
         AdCreativeView: {
             headline: string;
             subline: string | null;
-            ctaLabel: string;
+            ctaLabel: string | null;
             /** @enum {string} */
-            ctaDestination: "event";
-            ctaDestinationId: string;
+            ctaDestination: "none" | "event" | "link";
+            ctaDestinationId: string | null;
+            ctaUrl?: string | null;
             artworkUrl: string | null;
+            artworkPreviewUrl?: string | null;
         };
         AdEventView: {
             id: string;
