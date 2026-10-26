@@ -311,6 +311,33 @@ describe('VF12 · publish your first product', () => {
     expect(await screen.findByTestId('publish-submit')).toBeTruthy();
   });
 
+  // SWEEP-R3 (CHECK-3 auth-me pass 4, L-p4-1 and L-p4-2): the boards draw VF15, VF15a and VF15b full-bleed, with no Publish bar and no
+  // back button; VF15's ring is 96 across (design/_gen/verify.js `ring(70, 96)`) and its title 22. G-VERIFY-04-1 only rules the figure.
+  it('VF15 and VF15a are full-bleed (no Publish bar, no back button); VF15 draws a 96 ring and a 22 title', async () => {
+    hub.wallet = 'opening';
+    hub.openAfter = 1;
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    expect(await screen.findByTestId('identity-ring')).toBeTruthy();
+    expect(screen.queryByTestId('points-back')).toBeNull();
+    expect(screen.queryByText('Publish')).toBeNull();
+    expect(screen.getByTestId('identity-title')).toHaveStyle({ fontSize: 22 });
+    expect(JSON.stringify(screen.toJSON())).toMatch(/"type":"RNSVGSvgView","props":\{"width":96,"height":96/);
+    expect(screen.getByTestId('identity-ring')).toHaveProp('accessibilityRole', 'progressbar');
+    await sleep(3100);
+    expect(await screen.findByTestId('identity-passed-mark')).toBeTruthy();
+    expect(screen.queryByTestId('points-back')).toBeNull();
+    expect(screen.queryByText('Publish')).toBeNull();
+    expect(screen.getByTestId('identity-continue')).toBeTruthy();
+  });
+
+  it('VF15b is full-bleed too: no Publish bar and no back button above Uploads are paused', async () => {
+    hub.wallet = 'rejected';
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    expect(await screen.findByTestId('identity-title')).toHaveTextContent('Uploads are paused');
+    expect(screen.queryByTestId('points-back')).toBeNull();
+    expect(screen.queryByText('Publish')).toBeNull();
+  });
+
   it('a full tier answers the publish with the Hub’s limit and VF13 opens', async () => {
     hub.full = true;
     hub.category = 'technology';

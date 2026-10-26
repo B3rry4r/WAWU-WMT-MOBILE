@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { Children, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
+import { useIsCreator } from '@/features/create/CreateEntry';
 import { Icon, VerifiedTick, type IconName } from '@/components/icon';
 import { setFollowing } from '@/features/home/api';
 import { radius, useWawu, type ColorToken } from '@/theme';
@@ -141,9 +142,24 @@ export function CardButton({
   );
 }
 
-/** The row of buttons at the foot, stopping short of the Create button. */
+/**
+ * The row of buttons at the foot, stopping short of the Create button as the boards draw it (Message and Profile, Follow and Profile).
+ * A lone button (the other is hidden: Message off, no Profile wired) fills that same row for a viewer who sees the Create button, so
+ * it never runs under it, and the whole row for anyone else (SWEEP-R3, R2-SOCIAL3 verifier low 1, lead ruling).
+ */
 export function ButtonRow({ children }: { children: ReactNode }) {
-  return <View style={styles.buttons}>{children}</View>;
+  if (Children.toArray(children).length !== 1) return <View testID="card-buttons" style={styles.buttons}>{children}</View>;
+  return <LoneButtonRow>{children}</LoneButtonRow>;
+}
+
+/** Only a lone button asks who is looking: `useIsCreator` is the answer that decides the Create button, so the two always agree. */
+function LoneButtonRow({ children }: { children: ReactNode }) {
+  const clearOfCreate = useIsCreator();
+  return (
+    <View testID="card-buttons" style={[styles.buttons, !clearOfCreate && styles.buttonsAlone]}>
+      {children}
+    </View>
+  );
 }
 
 /**
@@ -193,6 +209,7 @@ const styles = StyleSheet.create({
   stat: { flex: 1, gap: m.statGap },
   statValue: { flexDirection: 'row', alignItems: 'center', gap: m.starGap },
   buttons: { flexDirection: 'row', gap: m.buttonGap, marginRight: m.buttonRight },
+  buttonsAlone: { marginRight: 0 },
   button: {
     flexBasis: 0,
     height: m.buttonH,

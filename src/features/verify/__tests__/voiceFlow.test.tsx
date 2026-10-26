@@ -515,7 +515,10 @@ describe('VF10 and VF10a · Making your intro', () => {
     await toMaking();
     answers[`GET ${INTRO}`] = ok(failedView());
     expect(await screen.findByText("We couldn't make your intro", {}, { timeout: 6000 })).toBeTruthy();
-    expect(screen.getByTestId('voice-failed-line')).toHaveTextContent(failedRun);
+    // SWEEP-R3 (CHECK-3 auth-me pass 4, L-p4-6): the board's line is "No points were taken. Try again." under the title; the Hub's own
+    // opening sentence ("That didn't work.") repeats the title, so it is left off. (This assertion held the whole Hub sentence.)
+    expect(screen.getByTestId('voice-failed-line')).toHaveTextContent(/^No points were taken\. Try again\.$/);
+    expect(screen.getByTestId('voice-failed-line')).not.toHaveTextContent("That didn't work");
     expect(screen.queryByTestId('voice-hear-screen')).toBeNull();
     answers[`POST ${GENERATE}`] = ok(working(), 202);
     answers[`GET ${INTRO}`] = ok(working());
@@ -597,6 +600,16 @@ describe('the recording model', () => {
   it('the script is the consent line exactly as served, then the person\'s words', () => {
     expect(model.scriptFor(HUB_LINE, '  Hello there.  ')).toBe(`${HUB_LINE} Hello there.`);
     expect(model.scriptFor(HUB_LINE, null)).toBe(HUB_LINE);
+  });
+
+  it('the failed line drops the Hub\'s opening "That didn\'t work." (the title says it) and keeps every other sentence (VF10a)', () => {
+    expect(model.failedLineOf("That didn't work. No points were taken. Try again.")).toBe('No points were taken. Try again.');
+    expect(model.failedLineOf('That didn\u2019t work. No points were taken.')).toBe('No points were taken.');
+    expect(model.failedLineOf('You need 200 points to make this. No points were taken.')).toBe('You need 200 points to make this. No points were taken.');
+    expect(model.failedLineOf('The audio did not finish')).toBe('The audio did not finish');
+    expect(model.failedLineOf("That didn't work.")).toBe(model.FAILED_FALLBACK);
+    expect(model.failedLineOf('  ')).toBe(model.FAILED_FALLBACK);
+    expect(model.failedLineOf(null)).toBe(model.FAILED_FALLBACK);
   });
 
   it('the Hub\'s answer to a poll is still working, done with audio, or failed with its own words', () => {
