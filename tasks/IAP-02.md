@@ -50,12 +50,14 @@ Nothing here creates them; the ids below are suggestions, and the admin product 
 | `wawu.credits.popular` | consumable | 120 WAWU Credits (`popular`) | ₦1,000 |
 | `wawu.credits.pro` | consumable | 300 WAWU Credits (`pro`) | ₦2,000 |
 | `wawu.more.products.5` | consumable | "Add 5 more products": 5 places on the tier held (`extra_products`, IAP-03) | ₦1,500 (R-65) |
-| `wawu.tier.verify` | auto-renewing subscription, 1 month (30 days) | tier Verify: 3 products, 100 bonus points | ₦1,000 |
-| `wawu.tier.plus` | auto-renewing subscription, 6 months (180 days) | tier Verify Plus: 6 products, 300 bonus points | ₦3,000 |
-| `wawu.tier.founding` | auto-renewing subscription, 1 year (365 days) | tier Founding Maker: 10 products, 600 bonus points, the numbered badge and event pass | ₦5,000 |
+| `wawu.tier.verify` | auto-renewing subscription, 1 year (365 days) | tier Verify: 3 products, 100 bonus points | ₦2,999 |
+| `wawu.tier.plus` | auto-renewing subscription, 1 year (365 days) | tier Verify Plus: 6 products, 300 bonus points | ₦5,999 |
+| `wawu.tier.founding` | auto-renewing subscription, 1 year (365 days) | tier Founding Maker: 10 products, 600 bonus points, the numbered badge and event pass | ₦9,999 |
 | `wawu.pass.30.a`, `wawu.pass.30.b`, and so on (one per price point the owner offers) | Google Play: one-time consumable product. App Store: non-renewing subscription | one purchase is a 30-day community pass for the room named in it; buy again to renew (IAP-03 round 2) | no Hub default: the host sets each room's own naira price today; the owner picks the store price points and states each product's worth (`referenceKobo`) in the admin map |
 
 The tiers' period must be one the stores sell (Play: 1 week, 1, 3, 6 months, 1 year; App Store: 1 week, 1, 2, 3, 6 months, 1 year), so a tier whose days are not one of these cannot be sold as it is.
+
+**The three tiers are 1-year subscriptions at ₦2,999, ₦5,999 and ₦9,999** (owner, 26 Oct 2026, "All yearly"; R-89 in DECISIONS.md, TIER-YEARLY; the Hub's tiers are 365 days each at those prices). They were 1 month at ₦1,000, 6 months at ₦3,000 and 1 year at ₦5,000. All three products are created with a 1-year period, which equals the tier's 365 days. VAT, taxes and the store's own price steps can make the final price a store shows differ from these naira figures, and nobody can know it exactly in advance: set each product's price in each store as close to the figure as the store allows, and the app always shows the store's price. If a product's `referenceKobo` is set in the admin map it should read the new figure (299900, 599900, 999900); left empty, the Hub uses the plan's price.
 
 ### The order of a purchase (`src/features/store`)
 
