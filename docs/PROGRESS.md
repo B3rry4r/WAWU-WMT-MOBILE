@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 408.**
+**Launch tasks done: 176 of 410.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 6 | 0 | 0 | 0 |
+| verifying | 8 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -257,6 +257,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)
+- [STORE-SALE-NOTICE](../tasks/STORE-SALE-NOTICE.md) The creator is told of each store sale, with their 85% in naira (Hub) (You)
 - [SERVICES-FEEDBACK](../tasks/SERVICES-FEEDBACK.md) Listing a service stops feeling dead (tap feedback on the two doors, a pending listing on Me, back to the form after Become a creator) (You)
 - [SWEEP-R2](../tasks/SWEEP-R2.md) App sweep: three low rows from R2-MONEY and R2-AUTHME2 (beneficiary switch, tier checkout ring, selfie portrait guide) (You)
 - [TIER-OFFER](../tasks/TIER-OFFER.md) Right after sign-up a full screen offers the three tiers, once; it always has a way out (R-94) (You)
