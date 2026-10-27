@@ -47,11 +47,11 @@ A person never types a price: every price in the app is picked from the owner's 
 - [x] A saved price off the list shows the nearest list price and the line, and is not sent.
 - [x] The tip sheet is six tiles with "{name} gets ₦X" and no custom amount.
 - [x] A `400 price_not_on_list` refetches the list and shows the Hub's sentence.
-- [ ] Screenshots beside the design page, 390 wide: see Checks.
+- [x] Screenshots at 390 wide (dark, and the create step in light), looked at beside the design page; one defect found and fixed (the strip's edges faded into the page colour inside a ticket card, now the card's). See the round report.
 
 ## Checks
 
-See `history/PRICE-PICKER.md` for the round's EXIT lines and screenshot paths.
+The round's EXIT lines and the screenshot paths are in `history/PRICE-PICKER.md`.
 
 ## History
 
