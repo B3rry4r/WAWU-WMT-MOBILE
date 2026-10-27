@@ -80,6 +80,22 @@ const consumable = (product: Pick<StoreProductView, 'subscription'>): boolean =>
 const keyOf = (t: StoreTransaction): string | null => t.transactionId ?? t.purchaseToken;
 
 /**
+ * Purchases in flight on this phone. The store sheet takes the app to the background and back, and a payment it has just taken is in the
+ * store's list before the app has kept its intent or posted it. A recovery that ran then would post that payment WITHOUT its intent, and the
+ * Hub would make the person a credit for what they were buying (a late sale). So a recovery that is not a tapped Restore waits for them.
+ */
+let buying = 0;
+async function whileBuying<T>(run: () => Promise<T>): Promise<T> {
+  buying += 1;
+  try {
+    return await run();
+  } finally {
+    buying -= 1;
+  }
+}
+export const buyingNow = (): boolean => buying > 0;
+
+/**
  * A pass the Hub has: its kept room is let go and its id is remembered as delivered, so the store listing it again (it does, for ever, on the
  * App Store) is never mistaken for a payment the app has not seen complete (F-1). A transaction the store could not finish keeps its room, so the
  * next open finishes it; one with no room kept is only remembered.
@@ -151,7 +167,9 @@ function fromOutcome(outcome: SendOutcome & { finished?: boolean }): PurchaseRes
 }
 
 /** Opens the store sheet for one product and carries the purchase to the Hub. */
-export async function purchase(item: StoreItem, options: BuyOptions): Promise<PurchaseResult> {
+export const purchase = (item: StoreItem, options: BuyOptions): Promise<PurchaseResult> => whileBuying(() => purchaseOne(item, options));
+
+async function purchaseOne(item: StoreItem, options: BuyOptions): Promise<PurchaseResult> {
   const { product } = item;
   const isPass = product.kind === 'pass';
   const communityId = isPass ? (options.communityId ?? null) : null;
@@ -216,7 +234,9 @@ export type LadderOptions = Pick<BuyOptions, 'platform' | 'accountToken'> & { pa
  *    transaction at once (`./ladder/memory`), so a payment taken before the app was closed is still posted with its intent.
  * 4. The store transaction goes to `POST /store/purchases` with the `intentId`, and ONLY a 201 finishes it. Any other answer leaves it open.
  */
-export async function purchaseLadder(spec: LadderSpec, options: LadderOptions): Promise<PurchaseResult> {
+export const purchaseLadder = (spec: LadderSpec, options: LadderOptions): Promise<PurchaseResult> => whileBuying(() => ladderOne(spec, options));
+
+async function ladderOne(spec: LadderSpec, options: LadderOptions): Promise<PurchaseResult> {
   const payWith = options.payWith ?? 'store';
   const made = await postIntent(options.platform, spec, payWith);
   if (made.kind === 'not_open') return made;
@@ -239,7 +259,8 @@ export async function purchaseLadder(spec: LadderSpec, options: LadderOptions): 
     const outcome = await hand(options.platform, product, found, null, earlier);
     if (outcome.kind === 'granted') {
       await unbindIntent(options.accountToken, keyOf(found));
-      return { kind: 'earlier_purchase', purchase: outcome.purchase };
+      // With no intent kept for it the Hub made a credit (a late sale): that is told as a credit, not as a finished purchase.
+      return outcome.purchase.status === 'credited' ? { kind: 'credited', purchase: outcome.purchase } : { kind: 'earlier_purchase', purchase: outcome.purchase };
     }
     return outcome.kind === 'unreachable' || outcome.kind === 'grant_failed' ? { kind: outcome.kind } : { kind: 'already_owned' };
   }
@@ -288,6 +309,8 @@ export async function recover(
   options: { platform: Platform; all: boolean; transactions?: StoreTransaction[]; accountToken?: string | null; restoreRoom?: string | null },
 ): Promise<Recovery> {
   const result: Recovery = { granted: [], already: 0, left: 0, notOpen: false, unplaced: 0 };
+  // A purchase is being made right now: what the store lists is that purchase, and it is posted by the buy that made it (see `buying`).
+  if (!options.all && buying > 0) return result;
   const token = options.accountToken ?? null;
   const held = options.transactions ?? (await iap.owned());
   const done = await doneIds(token);

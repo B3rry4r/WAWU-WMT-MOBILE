@@ -7,11 +7,17 @@ export type HubProduct = {
   id: string;
   platform: 'android' | 'ios';
   storeProductId: string;
-  kind: 'points' | 'credits' | 'tier' | 'pass' | 'extra_products';
+  kind: 'points' | 'credits' | 'tier' | 'pass' | 'extra_products' | 'buy';
   title: string;
   subscription: boolean;
   grants: { points: number | null; credits: number | null; tierId: string | null; days: number | null; extraProducts?: number | null };
+  /** A ladder product (`wawu.buy.<naira>`, R-101): the list price it sells and the store's price for it. */
+  listPriceKobo?: number;
+  storePriceKobo?: number;
 };
+
+/** A store credit the stand-in lists (`GET /store/credits`). */
+export type HubCredit = { id: string; amountKobo: number; scope: 'question' | null; createdAt: string };
 
 export const hub = {
   open: true,
@@ -27,6 +33,18 @@ export const hub = {
   bodies: [] as Record<string, unknown>[],
   seen: new Map<string, Record<string, unknown>>(),
   extra: {} as Record<string, unknown>,
+  /** R-101: what `POST /store/intents` answers: 'ok' makes an intent; any other is a refusal code or 'network' / 'server'. */
+  intent: 'ok' as string,
+  intentMessage: 'The Hub said so.',
+  /** Every intent body the stand-in saw. */
+  intents: [] as Record<string, unknown>[],
+  /** The intents it made (id to body), so a purchase can be checked against one. */
+  made: new Map<string, Record<string, unknown>>(),
+  credits: [] as HubCredit[],
+  /** When true a purchase of a ladder product is answered as a late sale: kept as a store credit, nothing granted. */
+  late: false,
+  /** `GET /prices`: the list prices and the tips, with the store's price on each. */
+  prices: { prices: [] as { priceNaira: number; storePriceNaira: number | null }[], tips: [] as { priceNaira: number; storePriceNaira: number | null }[] },
   /** Any other route a screen reads, by `METHOD /path`: the data it answers with (200). */
   routes: {} as Record<string, unknown>,
   /** A route answered with a refusal in the Hub's shape, by `METHOD /path`; `from` is the read it starts at (1 = every read, 2 = the second on). */
@@ -43,6 +61,13 @@ export const hub = {
     this.bodies = [];
     this.seen = new Map();
     this.extra = {};
+    this.intent = 'ok';
+    this.intentMessage = 'The Hub said so.';
+    this.intents = [];
+    this.made = new Map();
+    this.credits = [];
+    this.late = false;
+    this.prices = { prices: [], tips: [] };
     this.routes = {};
     this.errors = {};
     this.reads = [];
@@ -62,6 +87,11 @@ const STATUS: Record<string, number> = {
   store_unreachable: 503,
   store_account_token_missing: 422,
   store_grant_failed: 500,
+  price_not_on_list: 400,
+  store_intent_target_not_found: 404,
+  store_intent_not_payable: 409,
+  store_intent_price_changed: 409,
+  store_credit_insufficient: 409,
 };
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -81,6 +111,17 @@ export function viewOf(product: HubProduct, alreadyGranted: boolean, communityId
   };
 }
 
+/** What a purchase of a ladder product looks like: the goods the intent was for, or (a late sale) a store credit and nothing granted. */
+function ladderView(product: HubProduct, again: boolean, intentId: string | null, intentBody: Record<string, unknown> | null, late: boolean) {
+  const base = viewOf(product, again, null);
+  if (late || !intentBody) {
+    return { ...base, status: 'credited', grant: { points: null, credits: null, tierId: null, extraProducts: null, until: null, communityId: null }, credit: { amountKobo: product.listPriceKobo ?? 0, message: 'This purchase could not be finished in time. You have a ₦' + String((product.listPriceKobo ?? 0) / 100) + ' credit to use on Who Made This.' }, buyKind: null, intentId: null, targetId: null };
+  }
+  const kind = intentBody.kind as 'content' | 'tip' | 'pass' | 'question';
+  const target = (intentBody.contentId ?? intentBody.creatorWawuId ?? intentBody.communityId ?? null) as string | null;
+  return { ...base, grant: { ...base.grant, until: kind === 'pass' ? '2026-12-01T00:00:00.000Z' : null, communityId: kind === 'pass' ? target : null }, buyKind: kind, intentId, targetId: target };
+}
+
 export function installHub(): void {
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = input instanceof Request ? input : new Request(String(input), init);
@@ -96,6 +137,30 @@ export function installHub(): void {
         data: { platform, available: hub.open, reason: hub.open ? null : hub.reason, accountToken: hub.accountToken, products: hub.open ? hub.products.filter((p) => p.platform === platform) : [] },
       });
     }
+    if (request.method === 'GET' && path === '/prices') return json(200, { statusCode: 200, message: 'OK', data: hub.prices });
+    if (request.method === 'GET' && path === '/store/credits') return json(200, { statusCode: 200, message: 'OK', data: { credits: hub.credits } });
+    if (request.method === 'POST' && path === '/store/intents') {
+      const body = (await request.json()) as Record<string, unknown>;
+      hub.intents.push(body);
+      if (hub.intent === 'network') throw new TypeError('Network request failed');
+      if (hub.intent === 'server') return json(500, { statusCode: 500, message: 'The server is having trouble.', data: null });
+      if (hub.intent !== 'ok') {
+        const status = STATUS[hub.intent] ?? 400;
+        return json(status, { statusCode: status, message: hub.intentMessage, data: null, reason: { code: hub.intent, message: hub.intentMessage } });
+      }
+      const product = hub.products.find((p) => p.kind === 'buy' && p.platform === body.platform && p.listPriceKobo === Number(body.listPriceNaira) * 100);
+      if (!product) return json(400, { statusCode: 400, message: 'That price is not on the list.', data: null, reason: { code: 'price_not_on_list', message: 'That price is not on the list.' } });
+      const intentId = `intent-${hub.made.size + 1}`;
+      hub.made.set(intentId, body);
+      const view: Record<string, unknown> = { intentId, productId: product.storeProductId, accountToken: hub.accountToken, expiresAt: '2026-11-01T01:00:00.000Z', purchase: null };
+      if (body.payWith === 'credit') {
+        const credit = hub.credits.filter((c) => (c.scope === 'question') === (body.kind === 'question') && c.amountKobo >= Number(body.listPriceNaira) * 100).sort((a, b) => a.amountKobo - b.amountKobo)[0];
+        if (!credit) return json(409, { statusCode: 409, message: 'No credit covers this.', data: null, reason: { code: 'store_credit_insufficient', message: 'No credit covers this.' } });
+        hub.credits = hub.credits.filter((c) => c !== credit);
+        view.purchase = { ...ladderView(product, false, intentId, body, false), paidWithCredit: credit.id };
+      }
+      return json(201, { statusCode: 201, message: 'Created', data: view });
+    }
     if (request.method === 'POST' && path === '/store/purchases') {
       const body = (await request.json()) as Record<string, unknown>;
       hub.bodies.push(body);
@@ -110,6 +175,11 @@ export function installHub(): void {
       const key = `${String(body.platform)}:${String(body.purchaseToken ?? body.transactionId)}`;
       const again = hub.seen.has(key);
       hub.seen.set(key, body);
+      if (product.kind === 'buy') {
+        const intentId = typeof body.intentId === 'string' ? body.intentId : null;
+        const intentBody = intentId ? (hub.made.get(intentId) ?? null) : null;
+        return json(201, { statusCode: 201, message: 'Created', data: { ...ladderView(product, again, intentId, intentBody, hub.late), ...hub.extra } });
+      }
       return json(201, { statusCode: 201, message: 'Created', data: { ...viewOf(product, again, (body.communityId as string | undefined) ?? null), ...hub.extra } });
     }
     const key = `${request.method} ${path}`;

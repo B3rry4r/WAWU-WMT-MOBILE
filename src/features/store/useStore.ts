@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 
 import { fetchCatalog, type StoreCatalog, type StoreKind, type StorePurchaseView } from './api';
-import { purchase, purchaseLadder, recover, type BuyOptions, type PurchaseResult } from './buy';
+import { purchase, purchaseLadder, recover, type BuyOptions, type PurchaseResult, type Recovery } from './buy';
 import * as iap from './iap';
 import type { LadderSpec, PayWith } from './ladder/api';
 import { restoredLine, waitingLine, type StoreItem, type StoreState } from './model';
@@ -109,6 +110,44 @@ export type StoreBuyer = {
 };
 
 /**
+ * The app coming back to the front (R-101): what the store still holds that the Hub was not given is handed over again, as it is when a
+ * screen opens. One listener serves every screen, and the screens that ask at the same moment share one answer, so a payment is posted once.
+ */
+let resumes = 0;
+const resumeListeners = new Set<(count: number) => void>();
+let resumeWatch: { remove: () => void } | null = null;
+function onResume(listener: (count: number) => void): () => void {
+  resumeListeners.add(listener);
+  if (!resumeWatch) {
+    let last = AppState.currentState;
+    resumeWatch = AppState.addEventListener('change', (next) => {
+      const back = next === 'active' && last !== 'active';
+      last = next;
+      if (!back) return;
+      resumes += 1;
+      for (const l of [...resumeListeners]) l(resumes);
+    });
+  }
+  return () => {
+    resumeListeners.delete(listener);
+    if (resumeListeners.size === 0) {
+      resumeWatch?.remove();
+      resumeWatch = null;
+    }
+  };
+}
+
+let sharedRecovery: { key: string; promise: Promise<Recovery> } | null = null;
+function recoverShared(key: string, run: () => Promise<Recovery>): Promise<Recovery> {
+  if (sharedRecovery?.key === key) return sharedRecovery.promise;
+  const promise = run().finally(() => {
+    if (sharedRecovery?.promise === promise) sharedRecovery = null;
+  });
+  sharedRecovery = { key, promise };
+  return promise;
+}
+
+/**
  * One purchase at a time. On opening, whatever the store still holds that the Hub was not given (a payment taken before the app was closed,
  * a slow payment that has since cleared) is handed over and finished, so nothing paid for is lost.
  */
@@ -124,6 +163,8 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
   const running = useRef(false);
   const recovering = useRef<string | null>(null);
   const alive = useRef(true);
+  const [resumed, setResumed] = useState(resumes);
+  useEffect(() => onResume(setResumed), []);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -136,10 +177,10 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
   const token = catalog?.accountToken ? catalog.accountToken : null;
   useEffect(() => {
     if (!products || !os || !owner || products.length === 0) return;
-    const once = `${owner}:${products.map((p) => p.storeProductId).join(',')}`;
+    const once = `${owner}:${resumed}:${products.map((p) => p.storeProductId).join(',')}`;
     if (recovering.current === once) return;
     recovering.current = once;
-    void recover(products, { platform: os, all: false, accountToken: token }).then((found) => {
+    void recoverShared(once, () => recover(products, { platform: os, all: false, accountToken: token })).then((found) => {
       if (!alive.current) return;
       // Said only when this phone knows it owes a pass payment it could not place; a finished pass the store still lists is never counted.
       if (found.unplaced > 0) setRestoreLine(waitingLine(found.unplaced));
@@ -147,7 +188,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
       setRecovered(found.granted);
       refreshAfterGrant();
     });
-  }, [products, os, owner, token]);
+  }, [products, os, owner, token, resumed]);
 
   const buy = useCallback<StoreBuyer['buy']>(
     async (item, options) => {

@@ -18,7 +18,7 @@ import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
-import { buyLabel } from '@/features/store/model';
+import { buyLabel, forDays } from '@/features/store/model';
 import { useLadder } from '@/features/store/ladder/useLadder';
 import { font, layout, space, useWawu } from '@/theme';
 
@@ -259,7 +259,7 @@ function Details({ room, pass, handle, price, withCard }: { room: RoomView; pass
   if (!withCard) return null;
   return (
     <GroupedList testID="pass-card">
-      {pass.sellsPass && price ? <KeyValueRow label="Price" value={price} testID="pass-price" /> : null}
+      {pass.sellsPass && price ? <KeyValueRow label="Price" value={[price, forDays(pass.periodDays)].filter(Boolean).join(' ')} testID="pass-price" /> : null}
       <KeyValueRow label="Members" value={String(room.memberCount)} testID="pass-members" />
       {handle ? <KeyValueRow label="Host" value={`@${handle}`} testID="pass-host" /> : null}
     </GroupedList>

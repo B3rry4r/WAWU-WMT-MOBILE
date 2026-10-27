@@ -19,7 +19,7 @@ export const CREDITED_LINE = 'This purchase could not be finished in time. You h
 export function intentRefusal(code: string, message: string): string {
   switch (code) {
     case 'price_not_on_list':
-      return message || 'That price is not on the list any more. Pick a price from the list and try again.';
+      return 'That price is not on the list any more. Pick a price from the list and try again.';
     case 'store_intent_price_changed':
       return 'The price changed. Check the new price, then try again. You were not charged.';
     case 'store_intent_target_not_found':

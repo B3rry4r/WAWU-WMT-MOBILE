@@ -4,6 +4,9 @@ import * as rtl from '@testing-library/react-native';
 import { userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// R-101: this file tests the wallet path (the website's and the web export's); on a phone the same actions are store purchases (store/__tests__/ladder*).
+import '@/features/store/testing/webPath';
+
 /*
  * Unlocking from the feed (HOME-12): the offer bar, H14 (the pay sheet), H15 (PIN), H16 (Unlocked), H17 (not enough) and H18 (paid,
  * still opening), on the real feed with the Hub as a stand-in `fetch`. The stand-in answers in the Hub's shapes, records every quote and
