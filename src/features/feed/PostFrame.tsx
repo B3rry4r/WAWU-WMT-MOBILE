@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
-import { nairaToKobo } from '@/api/kobo';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import type { FeedItem } from './api';
 import { useEngagement } from './engagement';
@@ -55,6 +55,8 @@ type FrameProps = PostProps & {
 
 /** One full-screen post: its media, the scrim, the rail, and the words and offer at the foot. */
 export function PostFrame({ item, kind, active, width, height, myId, chromeTop, onTip, onUnlock, unlocking, onOpen, backdrop, middle, above, corner, detail }: FrameProps) {
+  // In the app the offer shows the STORE's price for the piece, never the list price (R-101 point 10); on the web it is the list price.
+  const shown = useShownPrice();
   const [footHeight, setFootHeight] = useState(0);
   const [railTop, setRailTop] = useState(0);
   const onRailLayout = (e: LayoutChangeEvent) => {
@@ -99,7 +101,7 @@ export function PostFrame({ item, kind, active, width, height, myId, chromeTop, 
         {offer ? (
           <OfferBar
             offer={offer}
-            priceKobo={nairaToKobo(item.price)}
+            priceKobo={shown.kobo(item.price)}
             compact={width < metrics.compactBelow}
             onPress={onUnlock ? () => onUnlock(item) : undefined}
             busy={unlocking}

@@ -7,6 +7,8 @@ import { feeLines } from '@/features/events/buyModel';
 import { usePaymentFlow, type Engine, type FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 
 import { askUnlockQuote, fetchMedia, fetchUnlock, sendUnlock, unlockKey, type Unlock, type UnlockQuote } from './api';
+import { useLadder } from '@/features/store/ladder/useLadder';
+
 import { applyUnlock } from './patchFeed';
 
 /**
@@ -17,6 +19,9 @@ import { applyUnlock } from './patchFeed';
  */
 export function useUnlock(handlers: FlowHandlers) {
   const client = useQueryClient();
+  // R-101: in the Android and iOS apps an unlock is a store purchase on the price ladder. `ladder.native` is false on the web, which keeps the wallet.
+  const ladder = useLadder();
+  const [storeOpen, setStoreOpen] = useState(false);
   const itemRef = useRef<FeedItem | null>(null);
   const [item, setItem] = useState<FeedItem | null>(null);
 
@@ -40,9 +45,14 @@ export function useUnlock(handlers: FlowHandlers) {
     (post: FeedItem) => {
       itemRef.current = post;
       setItem(post);
+      if (ladder.native) {
+        ladder.buyer.clear();
+        setStoreOpen(true);
+        return;
+      }
       void openFlow();
     },
-    [openFlow],
+    [openFlow, ladder.native, ladder.buyer.clear],
   );
 
   /**
@@ -76,6 +86,10 @@ export function useUnlock(handlers: FlowHandlers) {
   /** H16's button, or the scrim: the sheet is done (the post was already opened up when the payment was paid). */
   const done = () => {
     flow.finish();
+    if (ladder.native) {
+      ladder.buyer.clear();
+      setStoreOpen(false);
+    }
   };
 
   return {
@@ -88,6 +102,8 @@ export function useUnlock(handlers: FlowHandlers) {
     fees: quote ? feeLines(quote.payment.fee) : [],
     balanceKobo,
     flow,
+    /** The store's side (R-101): set on a phone with a store, null on the web. */
+    store: ladder.native ? { ladder, open: storeOpen } : null,
   };
 }
 

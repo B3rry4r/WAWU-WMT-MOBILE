@@ -8,8 +8,9 @@ import type { components } from '@/api/schema.generated';
  * `GET /prices` (PRICE-LIST, R-101): the prices a person may set, and the six tips. The Hub's success body is
  * `{ statusCode, message, data }` and the contract types only `data`, so the call reads it.
  *
- * A list price may carry `storePriceNaira`, what a buyer pays in the store for it. The Hub does not serve it yet; when it does, the
- * picker's store note appears for that price and for no other (R-47: drawn only when built).
+ * A list price may carry `storePriceNaira`, what a buyer pays in the store for it (null when no store product sells that price). The
+ * picker's store note appears for that price and for no other (R-47: drawn only when built). The app's own buy screens read it with
+ * the phone's store (`useStorePrices`), so a buyer in the app is shown the store's price and never the list price (R-101 point 10).
  */
 export const pricesKey = ['prices'] as const;
 
@@ -33,8 +34,9 @@ function itemsOf(value: unknown): PriceItem[] {
   });
 }
 
-export async function fetchPrices(): Promise<Prices> {
-  const body = await unwrap(api.GET('/api/hub/prices'));
+/** `platform` asks for one store's prices (`storePriceNaira` is then that store's); without it the Hub gives the higher of the two. */
+export async function fetchPrices(platform?: 'android' | 'ios'): Promise<Prices> {
+  const body = await unwrap(api.GET('/api/hub/prices', { params: { query: platform ? { platform } : {} } }));
   const data = (body as { data?: { prices?: unknown; tips?: unknown } } | undefined)?.data;
   if (!data || typeof data !== 'object') throw unreadable();
   const out = { prices: itemsOf(data.prices), tips: itemsOf(data.tips) };
@@ -45,7 +47,7 @@ export async function fetchPrices(): Promise<Prices> {
 /** How long a read list is trusted: the admin changes it rarely, and a refused price refetches it at once. */
 export const PRICES_STALE_MS = 5 * 60 * 1000;
 
-export const pricesQuery = { queryKey: pricesKey, queryFn: fetchPrices, staleTime: PRICES_STALE_MS } as const;
+export const pricesQuery = { queryKey: pricesKey, queryFn: () => fetchPrices(), staleTime: PRICES_STALE_MS } as const;
 export const usePrices = () => useQuery(pricesQuery);
 
 /** The list prices in naira, in the Hub's order (ascending), or an empty list before the Hub has answered. */

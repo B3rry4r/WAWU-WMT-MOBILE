@@ -22,7 +22,7 @@ export type StorePurchaseView = components['schemas']['StorePurchaseView'];
 export type StoreKind = StoreProductView['kind'];
 export type Platform = 'android' | 'ios';
 
-const KINDS: StoreKind[] = ['points', 'credits', 'tier', 'pass', 'extra_products'];
+const KINDS: StoreKind[] = ['points', 'credits', 'tier', 'pass', 'extra_products', 'buy'];
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
 /** The catalog, or a refusal to draw an answer that is not whole (never half empty). */
@@ -50,7 +50,15 @@ export async function fetchCatalog(platform: Platform): Promise<StoreCatalog> {
 export const catalogQuery = (platform: Platform | null, owner: string | null) =>
   ({ queryKey: ['store', 'catalog', platform ?? 'none', owner ?? ''] as const, queryFn: () => fetchCatalog(platform as Platform), staleTime: 0, enabled: Boolean(platform) && Boolean(owner), retry: false }) as const;
 
-export type SendInput = { platform: Platform; productId: string; purchaseToken: string | null; transactionId: string | null; communityId: string | null };
+export type SendInput = {
+  platform: Platform;
+  productId: string;
+  purchaseToken: string | null;
+  transactionId: string | null;
+  communityId: string | null;
+  /** The intent a ladder purchase (`wawu.buy.<naira>`) was made against (`POST /store/intents`, R-101). Null for every other product. */
+  intentId?: string | null;
+};
 
 /** What the Hub came to on a purchase handed to it. Every outcome but `granted` leaves the store transaction open. */
 export type SendOutcome =
@@ -92,6 +100,7 @@ export async function sendPurchase(input: SendInput): Promise<SendOutcome> {
     ...(input.platform === 'android' && input.purchaseToken ? { purchaseToken: input.purchaseToken } : {}),
     ...(input.platform === 'ios' && input.transactionId ? { transactionId: input.transactionId } : {}),
     ...(input.communityId ? { communityId: input.communityId } : {}),
+    ...(input.intentId ? { intentId: input.intentId } : {}),
   };
   try {
     const data = (await unwrap(api.POST('/api/hub/store/purchases', { body }))) as unknown as Envelope<StorePurchaseView>;

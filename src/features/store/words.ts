@@ -9,6 +9,33 @@ export const STILL_CONFIRMING = 'The store has taken your payment and we are sti
 
 export const GRANT_FAILED = 'The store has your payment and we could not finish adding it yet. It is safe: open this screen again in a moment and we will finish it. Do not buy again.';
 
+export const CREDITED_LINE = 'This purchase could not be finished in time. You have a store credit to use on Who Made This.';
+
+/**
+ * What a refused intent is told as (R-101). The Hub's own sentence leads where it names the cause (a piece that is free, a creator who is
+ * not taking questions, one question already waiting); the app's words stand in when it sent none, and for the codes the app knows by heart.
+ * Nothing was charged on any of these: the store sheet had not opened.
+ */
+export function intentRefusal(code: string, message: string): string {
+  switch (code) {
+    case 'price_not_on_list':
+      return message || 'That price is not on the list any more. Pick a price from the list and try again.';
+    case 'store_intent_price_changed':
+      return 'The price changed. Check the new price, then try again. You were not charged.';
+    case 'store_intent_target_not_found':
+      return 'This is not available any more. You were not charged.';
+    case 'store_product_unknown':
+      return 'This price is not on sale in the store. You were not charged.';
+    case 'store_credit_insufficient':
+    case 'store_credit_unavailable':
+      return 'That credit can not pay for this. Pay in the store instead.';
+    case 'store_intent_not_payable':
+      return message || 'This can not be bought right now. You were not charged.';
+    default:
+      return message || 'This could not be started. You were not charged.';
+  }
+}
+
 /** The sentence for a result that is not a grant. `subscription` is true for a tier, which Restore purchases brings back. */
 export function said(result: PurchaseResult, os: Os | null, subscription: boolean): Said | null {
   switch (result.kind) {
@@ -53,5 +80,13 @@ export function said(result: PurchaseResult, os: Os | null, subscription: boolea
       return { tone: 'danger', line: result.message };
     case 'failed':
       return { tone: 'danger', line: 'That did not go through. Please try again.' };
+    case 'credited':
+      return { tone: 'warning', line: result.purchase.credit?.message || CREDITED_LINE };
+    case 'intent_refused':
+      return { tone: 'danger', line: intentRefusal(result.code, result.message) };
+    case 'not_started':
+      return { tone: 'danger', line: 'We could not start this. Check your connection and try again. You were not charged.' };
+    case 'earlier_purchase':
+      return { tone: 'warning', line: 'A payment you made earlier was still waiting, and it has now been finished. Tap to buy this one.' };
   }
 }

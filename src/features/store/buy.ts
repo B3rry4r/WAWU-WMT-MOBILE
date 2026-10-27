@@ -2,6 +2,8 @@ import type { Platform, SendInput, SendOutcome, StoreProductView, StorePurchaseV
 import { sendPurchase } from './api';
 import * as iap from './iap';
 import type { StoreCause, StoreTransaction } from './iap';
+import { postIntent, type LadderSpec, type PayWith } from './ladder/api';
+import { bindIntent, intentOf, unbindIntent } from './ladder/memory';
 import type { StoreItem } from './model';
 import { bindRoom, doneIds, forgetBuy, markDone, pendingBuy, rememberBuy, roomOf, unbindRoom } from './roomIntent';
 
@@ -49,7 +51,18 @@ export type PurchaseResult =
   | { kind: 'unknown_product' }
   | { kind: 'invalid'; message: string }
   | { kind: 'refused'; message: string }
-  | { kind: 'failed' };
+  | { kind: 'failed' }
+  /**
+   * R-101, a "late sale": the store has the payment and what it was for could not be given (the piece, creator or room is gone, or the
+   * intent ran out). The Hub made a store credit worth the price instead, and finished it. Never cash.
+   */
+  | { kind: 'credited'; purchase: StorePurchaseView }
+  /** The Hub would not make the intent (`POST /store/intents`), before any store sheet opened. Nothing was charged. */
+  | { kind: 'intent_refused'; code: string; message: string }
+  /** The Hub could not be reached to start the purchase. Nothing was charged. */
+  | { kind: 'not_started' }
+  /** The store still held an earlier payment for this price; it was handed over with its own intent and finished. Nothing new was bought. */
+  | { kind: 'earlier_purchase'; purchase: StorePurchaseView };
 
 export type BuyOptions = {
   platform: Platform;
@@ -99,8 +112,9 @@ async function hand(
   product: Pick<StoreProductView, 'storeProductId' | 'subscription'>,
   transaction: StoreTransaction,
   communityId: string | null,
+  intentId: string | null = null,
 ): Promise<SendOutcome & { finished?: boolean }> {
-  const outcome = await sendOnce({ platform, productId: product.storeProductId, purchaseToken: transaction.purchaseToken, transactionId: transaction.transactionId, communityId });
+  const outcome = await sendOnce({ platform, productId: product.storeProductId, purchaseToken: transaction.purchaseToken, transactionId: transaction.transactionId, communityId, intentId });
   if (outcome.kind !== 'granted') return outcome;
   return { ...outcome, finished: await iap.finish(transaction, consumable(product)) };
 }
@@ -127,7 +141,8 @@ function fromCause(cause: StoreCause): PurchaseResult {
 function fromOutcome(outcome: SendOutcome & { finished?: boolean }): PurchaseResult {
   switch (outcome.kind) {
     case 'granted':
-      return { kind: 'granted', purchase: outcome.purchase, finished: outcome.finished === true };
+      // A late sale (R-101): the Hub kept the payment and made a credit; the store transaction is finished like any other.
+      return outcome.purchase.status === 'credited' ? { kind: 'credited', purchase: outcome.purchase } : { kind: 'granted', purchase: outcome.purchase, finished: outcome.finished === true };
     case 'store_pending':
       return { kind: 'store_pending' };
     default:
@@ -186,6 +201,52 @@ export async function purchase(item: StoreItem, options: BuyOptions): Promise<Pu
     if (product.subscription) await forgetBuy(options.accountToken);
     if (isPass) await settle(options.accountToken, bought.transaction, outcome.finished === true);
   }
+  return fromOutcome(outcome);
+}
+
+export type LadderOptions = Pick<BuyOptions, 'platform' | 'accountToken'> & { payWith?: PayWith };
+
+/**
+ * Buying on the price ladder (R-101): a piece, a tip, a community pass or a paid question, each a `wawu.buy.<naira>` consumable. The order:
+ *
+ * 1. `POST /store/intents` says what the payment is for. Nothing is charged. The Hub may refuse here (the piece is free, their own, taken
+ *    down, the price moved), so a person is never charged for something the Hub will not give.
+ * 2. `payWith: credit` ends here: a credit that covers the price is spent whole and the Hub has already granted it (no store sheet).
+ * 3. The store sheet opens for the intent's product with the intent's account token; the intent is kept on the phone against the store's
+ *    transaction at once (`./ladder/memory`), so a payment taken before the app was closed is still posted with its intent.
+ * 4. The store transaction goes to `POST /store/purchases` with the `intentId`, and ONLY a 201 finishes it. Any other answer leaves it open.
+ */
+export async function purchaseLadder(spec: LadderSpec, options: LadderOptions): Promise<PurchaseResult> {
+  const payWith = options.payWith ?? 'store';
+  const made = await postIntent(options.platform, spec, payWith);
+  if (made.kind === 'not_open') return made;
+  if (made.kind === 'unreachable') return { kind: 'not_started' };
+  if (made.kind === 'refused') return { kind: 'intent_refused', code: made.code, message: made.message };
+  const { intent } = made;
+  if (payWith === 'credit') {
+    // The Hub spent the credit and granted the purchase in the same answer.
+    return intent.purchase ? { kind: 'granted', purchase: intent.purchase, finished: true } : { kind: 'failed' };
+  }
+  const product = { storeProductId: intent.productId, subscription: false } as const;
+  const bought = await iap.buy({ storeProductId: intent.productId, subscription: false, offerToken: null, accountToken: intent.accountToken, communityId: null, replace: null });
+  if (!bought.ok) {
+    if (bought.cause !== 'already_owned') return fromCause(bought.cause);
+    // The store still holds an earlier payment for this price (a consumable not yet finished): it is handed over with the intent it was
+    // bought for and finished first, and nothing new is bought now.
+    const found = (await iap.owned()).find((t) => t.productId === intent.productId);
+    if (!found) return { kind: 'already_owned' };
+    const earlier = await intentOf(options.accountToken, keyOf(found));
+    const outcome = await hand(options.platform, product, found, null, earlier);
+    if (outcome.kind === 'granted') {
+      await unbindIntent(options.accountToken, keyOf(found));
+      return { kind: 'earlier_purchase', purchase: outcome.purchase };
+    }
+    return outcome.kind === 'unreachable' || outcome.kind === 'grant_failed' ? { kind: outcome.kind } : { kind: 'already_owned' };
+  }
+  const key = keyOf(bought.transaction);
+  await bindIntent(options.accountToken, key, intent.intentId);
+  const outcome = await hand(options.platform, product, bought.transaction, null, intent.intentId);
+  if (outcome.kind === 'granted') await unbindIntent(options.accountToken, key);
   return fromOutcome(outcome);
 }
 
@@ -262,8 +323,12 @@ export async function recover(
         continue;
       }
     }
-    const outcome = await hand(options.platform, product, t, communityId);
+    // A ladder payment is handed over with the intent it was bought for, kept against its transaction (R-101); one with none kept is posted
+    // as it is, and the Hub makes the person a credit for it (a late sale), never losing the payment.
+    const intentId = product.kind === 'buy' ? await intentOf(token, keyOf(t)) : null;
+    const outcome = await hand(options.platform, product, t, communityId, intentId);
     if (outcome.kind === 'granted') {
+      if (product.kind === 'buy') await unbindIntent(token, keyOf(t));
       if (outcome.purchase.alreadyGranted) result.already += 1;
       else result.granted.push(outcome.purchase);
       if (fromRestore && !outcome.purchase.alreadyGranted) restoreTaken = true;

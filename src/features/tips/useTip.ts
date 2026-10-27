@@ -8,6 +8,8 @@ import { usePaymentFlow, type Engine, type FlowHandlers } from '@/features/feedp
 
 import { askTipQuote, fetchTip, sendTip, tipKey, type Tip, type TipQuote } from './api';
 import { usePrices } from '@/features/prices/api';
+import { useLadder } from '@/features/store/ladder/useLadder';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { nearestOf } from '@/features/prices/model';
 
 import { DEFAULT_TIP_KOBO, NOTE_MAX } from './model';
@@ -32,7 +34,12 @@ export function useTip(handlers: FlowHandlers) {
   const [note, setNote] = useState('');
   // The tiles are the Hub's tip list; the amount is always one of them (the nearest, when the admin's list moved since the sheet opened).
   const prices = usePrices();
-  const tips = (prices.data?.tips ?? []).map((t) => t.priceNaira);
+  // R-101: in the Android and iOS apps a tip is a store purchase on the price ladder, shown at the STORE's price. A tip the store sells no
+  // product for is not drawn. `ladder.native` is false on the web, which keeps the wallet.
+  const ladder = useLadder();
+  const shown = useShownPrice();
+  const listed = (prices.data?.tips ?? []).map((t) => t.priceNaira);
+  const tips = ladder.native ? listed.filter((n) => shown.kobo(n) !== null) : listed;
   const tipNaira = nearestOf(tips, chosen / 100);
   const amountKobo = tipNaira === null ? null : tips.includes(chosen / 100) ? chosen : tipNaira * 100;
   const trimmed = note.trim();
@@ -68,7 +75,7 @@ export function useTip(handlers: FlowHandlers) {
   const { ask } = flow;
 
   // The breakdown follows the amount: a tile is asked about at once.
-  const settled = open && flow.stage === null;
+  const settled = open && flow.stage === null && !ladder.native;
   useEffect(() => {
     if (!settled || amountKobo === null) return undefined;
     const timer = setTimeout(() => void ask(), 0);
@@ -83,12 +90,14 @@ export function useTip(handlers: FlowHandlers) {
     setTarget(who);
     setChosen(DEFAULT_TIP_KOBO);
     setNote('');
+    if (ladder.native) ladder.buyer.clear();
     setOpen(true);
-  }, []);
+  }, [ladder.native, ladder.buyer.clear]);
 
   const close = () => {
     flow.finish();
     setOpen(false);
+    if (ladder.native) ladder.buyer.clear();
   };
 
   return {
@@ -102,6 +111,8 @@ export function useTip(handlers: FlowHandlers) {
     /** Reading the tip list failed: the tiles say so and offer to try again. */
     tipsFailed: prices.isError && !prices.data,
     readTips: () => void prices.refetch(),
+    /** The tip list has been read and the store sells none of it (the ladder is not set up for tips). */
+    tipsNone: ladder.native && prices.isSuccess && shown.ready && tips.length === 0,
     note,
     amountKobo,
     /** Pick a tile. */
@@ -112,6 +123,8 @@ export function useTip(handlers: FlowHandlers) {
     fees: quote ? feeLines(quote.payment.fee) : [],
     balanceKobo,
     flow,
+    /** The store's side (R-101): set on a phone with a store, null on the web. */
+    store: ladder.native ? { ladder, shown } : null,
   };
 }
 

@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
+import { Banner } from '@/components/Banner';
 import { Button, IconButton } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
-import { KeyValueRow, ListRow } from '@/components/ListRow';
+import { KeyValueRow } from '@/components/ListRow';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -17,8 +18,8 @@ import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
-import { buyLabel, forDays, type StoreItem } from '@/features/store/model';
-import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
+import { buyLabel } from '@/features/store/model';
+import { useLadder } from '@/features/store/ladder/useLadder';
 import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchHostHandle, fetchPass, hostKey, passKey, type PassView } from './api';
@@ -113,12 +114,15 @@ function Plain({ onBack, children }: { onBack: () => void; children: ReactNode }
 function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView; pass: PassView; handle: string | null; onBack: () => void }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // The Hub says whether this person can buy: the room sells a pass and they are not its host. Nothing is asked of the store before.
-  const store = useStoreCatalog(['pass']);
-  const buyer = useStoreBuyer(pass.canBuy ? store.catalog : null);
-  const [chosen, setChosen] = useState<string | null>(null);
-  const items = store.state.kind === 'ready' ? store.state.items : [];
-  const selected = items.find((i) => i.product.id === chosen) ?? items[0] ?? null;
+  // R-101: a pass is a store purchase on the price ladder, at the room's list price (whole naira, on the Hub's list). The Hub says whether this
+  // person can buy: the room sells a pass and they are not its host. The price drawn is the store's for that list price, never the list price.
+  const ladder = useLadder();
+  const { buyer } = ladder;
+  const store = { state: ladder.state, refetch: ladder.refetch };
+  const naira = pass.priceKobo !== null && pass.priceKobo % 100 === 0 ? pass.priceKobo / 100 : null;
+  const selected = ladder.itemFor(naira);
+  const credit = ladder.creditFor('pass', naira);
+  const buyPass = (payWith?: 'credit') => (naira === null ? undefined : void buyer.buyLadder({ kind: 'pass', communityId: id, listPriceNaira: naira }, payWith));
   // A room that sells a pass and a person who cannot buy it: the host removed them (a pending row in a pass room, G-INBOX-24-6; R-63 has no
   // join request, and the host lets them back in with the existing approve). A removed member can still hold a pass that has days left (the
   // Hub keeps `active` true and turns `canBuy` and `canRenew` off), so the pass being active does not make them a member: what decides is
@@ -154,17 +158,18 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
     body = (
       <>
         <Joined headline="You’re in" line={runningLine(pass.passUntil)} />
-        {pass.canBuy ? <PassOptions items={items} selected={selected} onChoose={setChosen} /> : null}
         {problem ? <StoreUnready state={store.state} onRetry={store.refetch} testID="pass-store" /> : null}
         <SaidBanner said={buyer.said} testID="pass-said" />
+        {pass.canBuy && credit ? <CreditNote /> : null}
         <RestoreRow buyer={buyer} testID="pass-restore" communityId={id} />
       </>
     );
     footer = (
       <View style={styles.footerStack}>
         <Button label="Open the room" full onPress={enter} testID="pass-open" />
+        {pass.canBuy && credit ? <Button testID="pass-use-credit" label={buyer.busy ? 'Working...' : 'Use your credit'} variant="secondary" full loading={buyer.busy} disabled={buyer.busy} onPress={() => buyPass('credit')} /> : null}
         {pass.canBuy && selected ? (
-          <Button testID="pass-pay" label={buyer.busy ? 'Buying...' : buyLabel(selected, 'Renew')} variant="secondary" full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buyer.buy(selected, { communityId: id })} />
+          <Button testID="pass-pay" label={buyer.busy ? 'Buying...' : buyLabel(selected, 'Renew')} variant="secondary" full loading={buyer.busy} disabled={buyer.busy} onPress={() => buyPass()} />
         ) : null}
       </View>
     );
@@ -189,12 +194,12 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
         )}
         {store.state.kind === 'loading' ? (
           <StoreLoading testID="pass-quote-loading" label="Loading the price" />
-        ) : store.state.kind !== 'ready' || items.length === 0 ? (
+        ) : store.state.kind !== 'ready' || selected === null ? (
           <StoreUnready state={store.state.kind === 'ready' ? { kind: 'not_open', why: 'not_configured' } : store.state} onRetry={store.refetch} testID="pass-store" />
         ) : (
           <>
-            <PassOptions items={items} selected={selected} onChoose={setChosen} />
-            <Details room={room} pass={pass} handle={handle} selected={selected} withCard />
+            <Details room={room} pass={pass} handle={handle} price={selected?.price ?? null} withCard />
+            {credit ? <CreditNote /> : null}
           </>
         )}
         <SaidBanner said={buyer.said} testID="pass-said" />
@@ -202,7 +207,10 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
       </>
     );
     footer = selected ? (
-      <Button testID="pass-pay" label={buyer.busy ? 'Buying...' : buyLabel(selected, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buyer.buy(selected, { communityId: id })} />
+      <View style={styles.footerStack}>
+        {credit ? <Button testID="pass-use-credit" label={buyer.busy ? 'Working...' : 'Use your credit'} full loading={buyer.busy} disabled={buyer.busy} onPress={() => buyPass('credit')} /> : null}
+        <Button testID="pass-pay" label={buyer.busy ? 'Buying...' : buyLabel(selected, verb)} variant={credit ? 'secondary' : 'primary'} full loading={buyer.busy && !credit} disabled={buyer.busy} onPress={() => buyPass()} />
+      </View>
     ) : null;
   } else {
     // A private room that sells no pass: nothing here to pay for. The older join requests are not drawn (R-63).
@@ -221,24 +229,9 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   );
 }
 
-/** The price points the store sells a pass at, when there is more than one to choose from. */
-function PassOptions({ items, selected, onChoose }: { items: StoreItem[]; selected: StoreItem | null; onChoose: (id: string) => void }) {
-  if (items.length < 2) return null;
-  return (
-    <GroupedList testID="pass-options">
-      {items.map((item) => (
-        <ListRow
-          key={item.product.id}
-          testID={`pass-option-${item.product.id}`}
-          title={item.product.title}
-          subtitle={forDays(item.product.grants.days)}
-          trailing={<Text variant="body" style={font(700)}>{item.price}</Text>}
-          accessibilityLabel={`${item.product.title}, ${item.price}${item.product.id === selected?.product.id ? ', chosen' : ''}`}
-          onPress={() => onChoose(item.product.id)}
-        />
-      ))}
-    </GroupedList>
-  );
+/** R-101: a credit that covers the pass is offered first. A credit is never cash and can only be used on Who Made This. */
+function CreditNote() {
+  return <Banner tone="info" icon="Ticket" title="You have a credit" body="A credit from an earlier purchase pays for this pass. It can only be used on Who Made This." testID="pass-credit" />;
 }
 
 function Joined({ headline, line, pill = true }: { headline: string; line: string; pill?: boolean }) {
@@ -262,11 +255,11 @@ function Joined({ headline, line, pill = true }: { headline: string; line: strin
 }
 
 /** The price card: the store's own price for the pass, the members and the host. */
-function Details({ room, pass, handle, selected, withCard }: { room: RoomView; pass: PassView; handle: string | null; selected: StoreItem | null; withCard: boolean }) {
+function Details({ room, pass, handle, price, withCard }: { room: RoomView; pass: PassView; handle: string | null; price: string | null; withCard: boolean }) {
   if (!withCard) return null;
   return (
     <GroupedList testID="pass-card">
-      {pass.sellsPass && selected ? <KeyValueRow label="Price" value={[selected.price, forDays(selected.product.grants.days)].filter(Boolean).join(' ')} testID="pass-price" /> : null}
+      {pass.sellsPass && price ? <KeyValueRow label="Price" value={price} testID="pass-price" /> : null}
       <KeyValueRow label="Members" value={String(room.memberCount)} testID="pass-members" />
       {handle ? <KeyValueRow label="Host" value={`@${handle}`} testID="pass-host" /> : null}
     </GroupedList>

@@ -6,8 +6,9 @@ import { queryClient } from '@/api/query';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 
 import { fetchCatalog, type StoreCatalog, type StoreKind, type StorePurchaseView } from './api';
-import { purchase, recover, type BuyOptions, type PurchaseResult } from './buy';
+import { purchase, purchaseLadder, recover, type BuyOptions, type PurchaseResult } from './buy';
 import * as iap from './iap';
+import type { LadderSpec, PayWith } from './ladder/api';
 import { restoredLine, waitingLine, type StoreItem, type StoreState } from './model';
 import { said, type Said } from './words';
 
@@ -73,7 +74,16 @@ export function useStoreCatalog(kinds: readonly StoreKind[]): StoreCatalogResult
 
 /** Everything a grant can change on screen reads the Hub again (the points, the credits, the tier, the rooms). The catalog itself is left alone. */
 function refreshAfterGrant(): void {
-  void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'store' });
+  // The store credits (R-101) are read again too: a grant may have spent one, a late sale makes one.
+  void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'store' || q.queryKey[1] === 'credits' });
+}
+
+/** A price the Hub refused as moved or off its list: the list and the catalog are read again so the screen shows what is true now. */
+function refreshPrices(result: PurchaseResult): void {
+  if (result.kind !== 'intent_refused') return;
+  if (result.code !== 'price_not_on_list' && result.code !== 'store_intent_price_changed') return;
+  void queryClient.invalidateQueries({ queryKey: ['prices'] });
+  void queryClient.invalidateQueries({ queryKey: ['store', 'catalog'] });
 }
 
 export type StoreBuyer = {
@@ -88,6 +98,11 @@ export type StoreBuyer = {
   restoring: boolean;
   restoreLine: string | null;
   buy: (item: StoreItem, options?: Pick<BuyOptions, 'communityId' | 'replace'>) => Promise<PurchaseResult | null>;
+  /**
+   * R-101: a piece, a tip, a community pass or a paid question on the price ladder. The intent is made first; the store sheet opens (or, with
+   * `credit`, a credit is spent and there is no store sheet); only a 201 finishes the store transaction.
+   */
+  buyLadder: (spec: LadderSpec, payWith?: PayWith) => Promise<PurchaseResult | null>;
   /** With `communityId` (a room's pass screen), a pass payment this phone could not place is given to that room, one per tap. */
   restore: (options?: { communityId?: string | null }) => Promise<void>;
   clear: () => void;
@@ -161,6 +176,33 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     [os, token],
   );
 
+  const buyLadder = useCallback<StoreBuyer['buyLadder']>(
+    async (spec, payWith = 'store') => {
+      if (running.current || !os) return null;
+      running.current = true;
+      setBusy(true);
+      setLine(null);
+      setGranted(null);
+      try {
+        const result = await purchaseLadder(spec, { platform: os, accountToken: token, payWith });
+        if (!alive.current) return result;
+        if (result.kind === 'granted') {
+          setGranted(result.purchase);
+          refreshAfterGrant();
+        } else {
+          setLine(said(result, os, false));
+          if (result.kind === 'credited' || result.kind === 'earlier_purchase' || result.kind === 'unreachable' || result.kind === 'grant_failed') refreshAfterGrant();
+          refreshPrices(result);
+        }
+        return result;
+      } finally {
+        running.current = false;
+        if (alive.current) setBusy(false);
+      }
+    },
+    [os, token],
+  );
+
   const restore = useCallback<StoreBuyer['restore']>(async (options) => {
     if (running.current || !os || !products) return;
     running.current = true;
@@ -195,5 +237,5 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     setRestoreLine(null);
   }, []);
 
-  return { busy, said: line, granted, recovered, restoring, restoreLine, buy, restore, clear };
+  return { busy, said: line, granted, recovered, restoring, restoreLine, buy, buyLadder, restore, clear };
 }

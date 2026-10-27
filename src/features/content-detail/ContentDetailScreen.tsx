@@ -16,6 +16,7 @@ import { TipSheets } from '@/features/tips/TipSheets';
 import { useTip } from '@/features/tips/useTip';
 import { openIcon, openLabel } from '@/features/unlock/model';
 import { UnlockSheets } from '@/features/unlock/UnlockSheets';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { useUnlock } from '@/features/unlock/useUnlock';
 
 import type { Lesson } from './api';
@@ -95,6 +96,8 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
   const page = usePage(id, (line) => say(line));
   const tip = useTip(pay);
   const unlock = useUnlock(pay);
+  // In the app the price drawn is the store's, never the list price (R-101 point 10).
+  const shown = useShownPrice();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [rateOpen, setRateOpen] = useState(false);
@@ -248,7 +251,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
 
         {d.parentCourse && onOpenCourse ? <ParentCourseRow course={d.parentCourse} onPress={() => onOpenCourse(d.parentCourse!.id)} /> : null}
 
-        {locked && !course ? <PriceCard label={unlockLabel(kind)} priceKobo={priceKobo(p)} balanceKobo={balanceKobo} loading={unlock.asking} onUnlock={startUnlock} /> : null}
+        {locked && !course ? <PriceCard label={unlockLabel(kind)} priceKobo={shown.kobo(p.price)} store={shown.native} balanceKobo={balanceKobo} loading={unlock.asking} onUnlock={startUnlock} /> : null}
 
         {course && lessons.length > 0 ? (
           <>
@@ -311,8 +314,8 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
           onLayout={(e) => setFootHeight(e.nativeEvent.layout.height)}
           testID="detail-foot"
         >
-          <WalletLine balanceKobo={balanceKobo} />
-          <Button testID="detail-unlock" label={`Unlock course · ${formatNaira(priceKobo(p))}`} onPress={startUnlock} loading={unlock.asking} full />
+          {shown.native ? null : <WalletLine balanceKobo={balanceKobo} />}
+          {shown.kobo(p.price) === null ? null : <Button testID="detail-unlock" label={`Unlock course · ${formatNaira(shown.kobo(p.price) ?? 0)}`} onPress={startUnlock} loading={unlock.asking} full />}
         </View>
       ) : null}
 

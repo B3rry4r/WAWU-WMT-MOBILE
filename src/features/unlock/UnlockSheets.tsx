@@ -21,6 +21,7 @@ import { ICON_STROKE } from '@/components/icon';
 import { openIcon, openingLine, openLabel, PRICE_MOVED_TITLE, sheetSubtitle, tickOf, unlockedLine, unlockPayee, WALLET_NAME } from './model';
 import type { UnlockState } from './useUnlock';
 import { usePaySource } from '@/features/pay-source/usePaySource';
+import { StoreUnlockSheet } from './StoreUnlockSheet';
 
 /** H16's and H18's round mark: 72 across, its glyph stroked at 2.4 (design/_gen/home.js lines 138 and 140). */
 const MARK = layout.tapMin + space.s3xl - space.xs;
@@ -51,6 +52,8 @@ export function UnlockSheets({
   const paySource = usePaySource({ payment: quote?.payment ?? null, open: flow.payOpen, requote: flow.ask });
   const support = useOpenSupport();
   if (!item) return null;
+  // R-101: on a phone with a store the unlock is a store purchase; the wallet sheets below are the web's.
+  if (unlock.store) return unlock.store.open ? <StoreUnlockSheet item={item} ladder={unlock.store.ladder} onDone={unlock.done} /> : null;
 
   const view = flow.view;
   if (flow.stage === 'paid' && view) {

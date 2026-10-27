@@ -26,6 +26,10 @@ import { earnOf } from '@/features/prices/model';
 import { NOTE_MAX, getsWords, noteEcho, sentHeading, tipTitle, WALLET_NAME } from './model';
 import type { TipState } from './useTip';
 import { usePaySource } from '@/features/pay-source/usePaySource';
+import { StoreUnready } from '@/features/store/StoreParts';
+import { StoreBuySheet, storeLabel } from '@/features/store/ladder/StoreBuySheet';
+import type { Ladder } from '@/features/store/ladder/useLadder';
+import type { ShownPrice } from '@/features/store/ladder/usePrice';
 
 /** design/_gen/home.js `tipSheet`: the sheet's parts 14 apart, the chips 48 high with a 16 corner, the fields 50 high. */
 const SHEET_GAP = space.md + space.xs / 2;
@@ -51,7 +55,7 @@ function Notice({ line }: { line: string }) {
  * The chosen one is tinted with the accent and its "gets" line turns to the success colour. Payment is unchanged: what the fan pays
  * today is the tip itself, with the Hub's own fees added below in the breakdown.
  */
-function Tile({ naira, name, selected, onPress }: { naira: number; name: string | null | undefined; selected: boolean; onPress: () => void }) {
+function Tile({ naira, shownKobo, name, selected, onPress }: { naira: number; shownKobo?: number; name: string | null | undefined; selected: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const gets = getsWords(name);
@@ -59,7 +63,7 @@ function Tile({ naira, name, selected, onPress }: { naira: number; name: string 
     <Pressable
       testID={`tip-tile-${naira}`}
       accessibilityRole="button"
-      accessibilityLabel={`${formatNaira(naira * 100)}. ${gets} ${formatNaira(earnOf(naira) * 100)}`}
+      accessibilityLabel={`${formatNaira(shownKobo ?? naira * 100)}. ${gets} ${formatNaira(earnOf(naira) * 100)}`}
       accessibilityState={{ selected }}
       onPress={onPress}
       {...ring.handlers}
@@ -69,7 +73,7 @@ function Tile({ naira, name, selected, onPress }: { naira: number; name: string 
         ring.style,
       ]}
     >
-      <Money minorUnits={naira * 100} size={TILE_AMOUNT} weight={700} decimals={false} />
+      <Money minorUnits={shownKobo ?? naira * 100} size={TILE_AMOUNT} weight={700} decimals={false} />
       <View style={styles.gets}>
         <Text variant="caption" tone={selected ? 'success' : 'textMuted'} style={styles.getsText}>
           {gets}
@@ -105,7 +109,7 @@ function Tiles({ tip }: { tip: TipState }) {
     <View testID="tip-tiles" style={styles.tiles}>
       {tip.tips.map((naira) => (
         <View key={naira} style={styles.tileCell}>
-          <Tile naira={naira} name={tip.target?.name} selected={tip.amountKobo === naira * 100} onPress={() => tip.pick(naira * 100)} />
+          <Tile naira={naira} shownKobo={tip.store?.shown.kobo(naira) ?? undefined} name={tip.target?.name} selected={tip.amountKobo === naira * 100} onPress={() => tip.pick(naira * 100)} />
         </View>
       ))}
     </View>
@@ -262,6 +266,70 @@ function SentSheet({ tip }: { tip: TipState }) {
 }
 
 /**
+ * H26 and H28 for a phone with a store (R-101): a tip is a store purchase on the price ladder. The tiles are the Hub's tip list at the
+ * STORE's price with what the creator gets (85% of the list tip) beneath; there is no wallet, PIN, bank charge or note (the Hub's tip intent
+ * carries no note). A credit that covers the tip is offered first. The tip ends on H28 with what was paid and where.
+ */
+function StoreTipSheet({ tip, store }: { tip: TipState; store: { ladder: Ladder; shown: ShownPrice } }) {
+  const { ladder } = store;
+  const { buyer } = ladder;
+  const { target } = tip;
+  const naira = tip.amountKobo === null ? null : tip.amountKobo / 100;
+  const entry = ladder.itemFor(naira);
+  const credit = ladder.creditFor('tip', naira);
+  const name = target?.name?.trim() || null;
+
+  if (buyer.granted && naira !== null) {
+    const withCredit = Boolean(buyer.granted.paidWithCredit);
+    return (
+      <StatusSheet
+        visible
+        onClose={tip.close}
+        label="Tip sent"
+        testID="tip-sent"
+        mark={<Avatar name={name ?? undefined} hue={target?.hue} source={target?.avatarUrl ?? undefined} size={AVATAR} decorative />}
+        title={sentHeading(naira * 100, name)}
+        line={null}
+      >
+        <GroupedList testID="tip-total-paid">
+          {[<KeyValueRow key="paid" label="Total paid" value={withCredit ? 'Your credit' : (entry?.price ?? '')} />, <KeyValueRow key="with" label="Paid with" value={withCredit ? 'Who Made This' : storeLabel()} />]}
+        </GroupedList>
+        <Button testID="tip-done" label="Done" onPress={tip.close} full />
+      </StatusSheet>
+    );
+  }
+
+  const state = ladder.state;
+  let unready: ReactNode = null;
+  if (state.kind === 'ready') {
+    if (tip.tipsNone || (naira !== null && entry === null)) unready = <StoreUnready state={{ kind: 'not_open', why: 'not_configured' }} onRetry={ladder.refetch} testID="tip-store" />;
+  } else if (state.kind !== 'loading') {
+    unready = <StoreUnready state={state} onRetry={ladder.refetch} testID="tip-store" />;
+  }
+  return (
+    <StoreBuySheet
+      visible
+      testID="tip-sheet"
+      label="Tip"
+      head={{ title: tipTitle(target?.name), subtitle: naira === null ? undefined : `${getsWords(target?.name)} ${formatNaira(earnOf(naira) * 100)}` }}
+      price={entry?.price ?? null}
+      priceLabel="Tip"
+      actionLabel="Tip"
+      disabled={naira === null}
+      busy={buyer.busy}
+      said={buyer.said}
+      credit={credit ? { line: 'A credit from an earlier purchase pays for this tip.' } : null}
+      unready={unready}
+      onBuy={() => (naira === null || !target ? undefined : void buyer.buyLadder({ kind: 'tip', creatorWawuId: target.wawuId, listPriceNaira: naira }))}
+      onUseCredit={() => (naira === null || !target ? undefined : void buyer.buyLadder({ kind: 'tip', creatorWawuId: target.wawuId, listPriceNaira: naira }, 'credit'))}
+      onCancel={tip.close}
+    >
+      <Tiles tip={tip} />
+    </StoreBuySheet>
+  );
+}
+
+/**
  * H26, H27 and H28, and the states between: the tip sheet while the person chooses; the shared pay sheet when the wallet is too
  * low, the payment is still confirming, did not go through or cannot be tried; the shared PIN sheet over either; and "Tip sent".
  */
@@ -279,6 +347,8 @@ export function TipSheets({
   const { flow, quote, target } = tip;
   const paySource = usePaySource({ payment: quote?.payment ?? null, open: tip.open, requote: flow.ask });
   if (!tip.open || !target) return null;
+  // R-101: on a phone with a store a tip is a store purchase; the wallet sheets below are the web's.
+  if (tip.store) return <StoreTipSheet tip={tip} store={tip.store} />;
   if (flow.stage === 'paid') return <SentSheet tip={tip} />;
 
   const short = paySource === undefined && quote !== null && tip.balanceKobo !== null && quote.payment.totalKobo > tip.balanceKobo;

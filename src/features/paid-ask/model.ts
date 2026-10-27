@@ -81,6 +81,8 @@ export const refundLine = (totalKobo: number | null, from?: PaidFrom | null): st
 
 /** Where a refund lands: the buyer's own account when another currency paid, else the wallet. */
 const backTo = (from?: PaidFrom | null): string => (from ? `your ${accountNameOf(from.currency)}` : 'your wallet');
+/** I3 on a phone with a store (R-101 point 6): an unanswered question is not refunded to a wallet, it gives a question credit. Never cash. */
+export const creditLine = 'No reply in time? You get a question credit, to ask anyone at this price or less.';
 export const heldLine = (name: string | null | undefined): string => `Held by ${APP_NAME_COPY} until ${whoOf(name)} answers`;
 
 /** What the pay sheet says when the wallet is short (I6). */
