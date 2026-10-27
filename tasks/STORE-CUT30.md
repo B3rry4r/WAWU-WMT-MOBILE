@@ -36,6 +36,8 @@ Proof (27 Oct 2026, builder): `tsc` EXIT 0; `eslint` on every file changed clean
 
 Patch round 1 (27 Oct 2026, verifier V-SP-3, V-SP-7): the fee and shares rule above; with no keys `data.byHand` lists all 25 products. Tests: `store-cut30-shares.contract.spec.ts` (a credit pack before and after the switch), and the no-keys test. `tsc`, `eslint` on changed files, gates, `check_baseline`, `contract:build` EXIT 0; 29 suites, 383 tests on a seeded DB (store folder, price list, credit purchase and spend, the maps and route inventories).
 
+Patch round 2 (27 Oct 2026, verifier V-SP-9): a switch made while an earlier switch of the same store is still open (never switched back) inherits that switch's `priorFeeBps`, so shares stay on the original cut; the switch back restores it and closes every open switch of the store. Test: `store-cut30-shares.contract.spec.ts` (V-SP-9), red on `185c5e0` (priorFeeBps 3000), green now; store folder and price list 258 tests, gates and `check_baseline` EXIT 0.
+
 ## Read first
 
 `DECISIONS.md` R-101 point 9, R-39; STORE-BUY-HUB (the ladder, `storePriceKobo`); backend `src/store/cut30/`, `src/store/store-ladder.ts`, `src/price-list/store-price.service.ts`.
