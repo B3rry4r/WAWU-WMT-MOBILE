@@ -95,6 +95,7 @@ function conversion(id: string, status: 'pending' | 'completed' | 'failed', poin
 }
 const myPoints = () => ({
   balance: hub.balance,
+  cashablePoints: hub.cashable ?? hub.balance,
   nextExpiry: hub.pointsEmpty ? null : { points: 700, expiresAt: SOONER },
   lots: hub.pointsEmpty
     ? []
@@ -258,6 +259,21 @@ async function toConvert() {
 }
 
 describe('PT5 · your points', () => {
+  it('a person whose points are all bought has no Convert button and is told why; with cashable points the button is there', async () => {
+    hub.cashable = 0;
+    await renderRouter(routes, { initialUrl: '/points' });
+    await screen.findByTestId('points-lots');
+    expect(screen.queryByTestId('points-convert')).toBeNull();
+    expect(screen.getByTestId('points-bought-note')).toHaveTextContent("Points you bought can't be turned into cash.");
+  });
+
+  it('a person with cashable points sees the Convert button and no note', async () => {
+    await renderRouter(routes, { initialUrl: '/points' });
+    await screen.findByTestId('points-lots');
+    expect(screen.getByTestId('points-convert')).toBeTruthy();
+    expect(screen.queryByTestId('points-bought-note')).toBeNull();
+  });
+
   it('a user sees their balance, when each lot ends (the soonest marked) and the last movements in the Hub\'s words', async () => {
     await renderRouter(routes, { initialUrl: '/points' });
     await screen.findByTestId('points-lots');

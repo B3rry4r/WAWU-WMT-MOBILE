@@ -7357,8 +7357,8 @@ export interface paths {
          *
          *     `kind: points_pack` with a `packId` buys a points pack the same way
          *     (POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the
-         *     pack's points (plus the Founding Maker's bonus) is added once, ending
-         *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
+         *     pack's points (plus the Founding Maker's bonus) is added once, and never
+         *     ends (bought points never expire, R-101 point 7), and the answer is a `PointsPackPurchaseView`
          *     (`kind: "points_pack"`).
          *
          *     `kind: extra_products` (TIER-04, VF13) adds the settings' number of
@@ -8201,7 +8201,7 @@ export interface paths {
          *     body is the job as it was quoted plus `wallet.payment.totalKobo` and
          *     `wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One
          *     lot of the shortfall's points is added when the provider confirms the
-         *     debit, ending after the bought-points expiry. Answers 201 with the
+         *     debit, and it never ends (bought points never expire, R-101 point 7). Answers 201 with the
          *     purchase: `paid`, `pending` while the provider has not confirmed (poll
          *     `GET /points/shortfall/{id}`; it is never sent again) or `failed` when
          *     nothing moved. The same Idempotency-Key and body answer the first result
