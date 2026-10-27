@@ -1,4 +1,5 @@
 import { formatMoney } from '@/components/Money';
+import { accountNameOf, paidFromBackText, type PaidFrom } from '@/components/pay-sheet';
 
 import type { EventView } from './api';
 import { placeOf, watOf, whenLine } from './format';
@@ -78,12 +79,14 @@ type RefundOrder = Pick<WalletOrder, 'free' | 'ticketCount' | 'returned'>;
  * E11's second line, from the Hub's order: what came back to the buyer's Naira wallet, or that it is on its way, or that it could not be sent by itself.
  * A free order has no money to return, so it has no line (and no banner: the plain "not valid" note stands).
  */
-export function refundBannerBody(order: RefundOrder): string | null {
+export function refundBannerBody(order: RefundOrder, from?: PaidFrom | null): string | null {
   if (order.free) return null;
   const { returned } = order;
+  // PAY-FX (R-91): tickets paid from another currency's account go back to that account, in its currency.
+  const dest = from ? `your ${accountNameOf(from.currency)}` : 'your Naira wallet';
   if (returned.returned && returned.returnedKobo !== null) {
-    const sum = formatMoney(returned.returnedKobo, { decimals: false });
-    return order.ticketCount > 1 ? `${sum} for your ${order.ticketCount} tickets is back in your Naira wallet.` : `${sum} is back in your Naira wallet.`;
+    const sum = from ? paidFromBackText(from) : formatMoney(returned.returnedKobo, { decimals: false });
+    return order.ticketCount > 1 ? `${sum} for your ${order.ticketCount} tickets is back in ${dest}.` : `${sum} is back in ${dest}.`;
   }
-  return returned.holdStatus === 'released' ? 'Your refund could not be sent automatically.' : 'Your refund is on its way to your Naira wallet.';
+  return returned.holdStatus === 'released' ? 'Your refund could not be sent automatically.' : `Your refund is on its way to ${dest}.`;
 }

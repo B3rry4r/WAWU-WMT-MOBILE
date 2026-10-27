@@ -1,4 +1,4 @@
-import { checkedInLine, groupLine, holderLine, position, ticketHeadline, ticketPlace, ticketToOpen, ticketWhen } from '../ticketFormat';
+import { checkedInLine, groupLine, holderLine, position, ticketHeadline, ticketPlace, ticketToOpen, ticketWhen, refundBannerBody } from '../ticketFormat';
 import type { HeldEvent, HeldStub } from '../ticketsApi';
 
 const stub = (id: string, status: HeldStub['status'], checkedInAt: string | null = null): HeldStub => ({ id, status, checkedInAt });
@@ -108,5 +108,21 @@ describe('the tickets in one order and tier', () => {
   it('says nothing for a lone ticket, or one that is not among them', () => {
     expect(position({ id: 'a', siblings: [stub('a', 'valid')] })).toBeNull();
     expect(position({ id: 'zzz', siblings })).toBeNull();
+  });
+});
+
+describe('PAY-FX (R-91): the refund line names the account the tickets were paid from', () => {
+  const usd = { currency: 'USD', decimals: 2, totalMinor: 23, refundedMinor: 23 };
+  const back = { free: false, ticketCount: 2, returned: { holdStatus: 'refunded', returned: true, returnedKobo: 500000 } } as unknown as Parameters<typeof refundBannerBody>[0];
+  const moving = { free: false, ticketCount: 1, returned: { holdStatus: 'held', returned: false, returnedKobo: null } } as unknown as Parameters<typeof refundBannerBody>[0];
+
+  it('says what went back to the USD account, in dollars', () => {
+    expect(refundBannerBody(back, usd)).toBe('$0.23 for your 2 tickets is back in your USD account.');
+    expect(refundBannerBody(moving, usd)).toBe('Your refund is on its way to your USD account.');
+  });
+
+  it('a naira order reads as it always did', () => {
+    expect(refundBannerBody(back)).toBe('₦5,000 for your 2 tickets is back in your Naira wallet.');
+    expect(refundBannerBody(moving)).toBe('Your refund is on its way to your Naira wallet.');
   });
 });

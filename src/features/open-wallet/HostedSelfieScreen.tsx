@@ -237,6 +237,7 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
   return (
     <AuthFrame
       testID="open-wallet-selfie-hand-off"
+      poweredBy
       navTitle={NAV_TITLE}
       onBack={onBack}
       footer={<Button label="Continue to secure page" full loading={busy} onPress={() => void start()} testID="open-wallet-selfie-continue" />}

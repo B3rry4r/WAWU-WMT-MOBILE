@@ -175,28 +175,42 @@ describe('W1 · the Passes card', () => {
     expect((await app.screen.findByTestId('wallet-passes-when')).props.children).toBe('Sun 20 Dec 2026');
   });
 
-  it('a person without a tier sees no Passes card, and the rest of the tab is whole', async () => {
+  it('a person without a pass still sees the Passes card, empty, beside Points, and tapping it opens the tiers (owner, 26 Oct 2026, R-97)', async () => {
     fallback['GET /me/tier'] = tierView(null);
     const app = await bootWallet();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
-    await rtl.waitFor(() => expect(asked('/me/tier')).toBeGreaterThan(0));
+    expect(await app.screen.findByTestId('wallet-passes')).toBeTruthy();
+    expect(app.screen.getByText('Passes')).toBeTruthy();
+    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
+    expect(app.screen.getByTestId('wallet-passes-when').props.children).toBe('With Founding Maker');
+    // In the info row, where Points sits (WalletScreen.test.tsx checks the two together).
+    expect(rtl.within(app.screen.getByTestId('wallet-info-row')).getByTestId('wallet-passes')).toBeTruthy();
     await rtl.act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      rtl.fireEvent.press(app.screen.getByTestId('wallet-passes'));
     });
-    expect(app.screen.queryByTestId('wallet-passes')).toBeNull();
-    expect(app.screen.queryByText('Passes')).toBeNull();
+    expect(mockPushed).toEqual(['/tiers']);
   });
 
-  it('draws no Passes card when the Hub cannot say, and the balance is still there', async () => {
+  it('draws the empty Passes card when the Hub cannot say, and the balance is still there (not nothing)', async () => {
     fallback['GET /me/tier'] = refusal(500);
     const app = await bootWallet();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     await rtl.waitFor(() => expect(asked('/me/tier')).toBeGreaterThan(0));
-    await rtl.act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
-    expect(app.screen.queryByTestId('wallet-passes')).toBeNull();
+    expect(await app.screen.findByTestId('wallet-passes')).toBeTruthy();
+    expect(app.screen.getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
     expect(app.screen.queryByTestId('wallet-error')).toBeNull();
+    await rtl.act(async () => {
+      rtl.fireEvent.press(app.screen.getByTestId('wallet-passes'));
+    });
+    expect(mockPushed).toEqual(['/tiers']);
+  });
+
+  it('while the pass is still being read, a stand-in holds the place, never the empty card', async () => {
+    fallback['GET /me/tier'] = 'hold';
+    const app = await bootWallet();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    expect(await app.screen.findByTestId('wallet-passes-loading')).toBeTruthy();
+    expect(app.screen.queryByTestId('wallet-passes')).toBeNull();
   });
 });
 

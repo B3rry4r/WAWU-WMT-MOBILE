@@ -260,3 +260,25 @@ Sonnet builder (T1, small). Mobile `wmt/IAP-02` from `37a57493`; app only (no Hu
 | fingerprints (`expo-updates fingerprint:generate`) | EXIT 0, android `2e0e4d998b156d1c3ed97cb963577318e6a91a18`, ios `240378f19fb16a59d3be716e17e283dc02166f7a` (both unchanged) |
 
 NOT RUN: a phone, a real store sheet, Apple's sandbox, the GitHub Branch checks (the lead reads that run).
+
+## The merge with main (27 Oct 2026, merge agent m-IAP-UP): `wmt/IAP-02-up`
+
+`wmt/IAP-02` (`f7374618`) was 44 commits behind `origin/main` (`564c8c28`). One merge commit on the new branch `wmt/IAP-02-up`, no rebase, nothing pushed to `wmt/IAP-02` or `main`.
+
+| Conflict | How it was settled |
+|---|---|
+| `contract/SOURCE_COMMIT`, `src/api/schema.generated.ts` and the contract files | not hand-merged: `python3 scripts/api/sync_contract.py --backend /home/user/wawu-backend` (backend `origin/main` `02b66b5`, which holds both older sources, `d54b3e0` and `2cc4950`). The regenerated contract and client were identical to the merge's own result; only `SOURCE_COMMIT` changed |
+| `docs/PROGRESS.md`, `tasks/INDEX.md` | not hand-merged: `python3 scripts/tasks/check_tasks.py --write` |
+| `src/features/verify/TiersScreen.tsx` | IAP-02's `TierCard` takes the store's price (`price: string | null`); main only added `export` (for the tier offer). Both kept: `export function TierCard(... price ...)`, with `only` and `currency` staying gone |
+
+Where main's new code sold something, it was moved onto the store path, and nothing else of main's was changed.
+
+| Screen (main, 26 and 27 Oct) | In this lineage |
+|---|---|
+| Tier offer (TIER-OFFER, R-94, `src/features/tier-offer/`) | touched. Before: it drew the Hub's plan price through `TierCard`'s old `currency`, sent a dollar-billed person to the tiers sheet and the rest to the checkout. Now: `useStoreCatalog(['tier'])` joined to `GET /plans`; a tier is on the offer only when the store sells it and the price on it is the store's (`TierCard price`); the store being loaded, not open, unavailable or failed is drawn with the shared `StoreUnready` (the X or Not now stays in every state); Subscribe, for everyone, opens `/checkout?kind=tier&tier=<id>`, the store checkout the tiers sheet opens, whose Buy opens the store sheet and sends the purchase to the Hub (R-86). The route, `TierOfferBridge` and `offerStep` lose the `tiers` kind (nothing produces it now). X and Not now are unchanged |
+| Passes card (CAPITAL-OFF, R-97, `PassesTile`, Wallet) | checked, not touched: the empty card opens `/tiers`, the store tiers sheet (the Maker pass comes with Founding Maker); `passFlow.test.tsx` pins the push |
+| FX-POLISH, PAY-FX | checked, not touched: other currencies, Accounts, the pay sheet and the pay-source header serve paid content, tips, paid questions, event tickets, school and legal fees, which keep the wallet (R-86). No points, credits, tick, tier or pass is sold in any of them. `src/api/paySource.ts` still lists the community pass wallet routes (main added them); this lineage never calls those routes, so the entry is dead and harmless (a sweep candidate) |
+| ADS-LINK | checked, not touched: an ad opens a web link or nothing; it sells nothing |
+| Settings (Accounts row, Legal row) | checked, not touched: the merge kept IAP-02's removal of the "Use wallet for AI tools" row |
+
+Tests: new `src/features/tier-offer/__tests__/tierOfferStore.route.test.tsx` (the real root layout, offer route and store checkout; the Hub a stand-in `fetch`, `expo-iap` replaced at its boundary), red first (3 of 4 failed before the screen change: no store price on the offer, a dollar-billed Subscribe landing on the tiers sheet, no "Buying is not open yet"), green after. It pins: each tier shows the store's price and no naira; Subscribe reaches that tier's checkout; Buy sends the store request for that tier's product and the Hub is asked once; the wallet checkout is never asked and the only writes are marking the offer seen and the store purchase; the X still leaves the offer for good. Changed in main's `tierOffer.route.test.tsx` (the lineage's rule, R-86, decides it): the store and `expo-iap` stand-in added to its setup; the assertion that the offer draws the Hub's prices (`2,999` and so on) now asserts the store's prices; the dollar-billed case now expects the checkout, not the tiers sheet. Its other cases are untouched.

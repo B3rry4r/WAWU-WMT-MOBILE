@@ -6,7 +6,7 @@ import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, useWawu } from '@/theme';
 
 import type { MyPass } from '../api/pass';
-import { eventLine } from './model';
+import { eventLine, PASSES_EMPTY } from './model';
 
 /**
  * design/_gen/wallet.js line 46, `mini`: a 20 corner, padded 12 by 14, the parts 4 apart. The head is a 15 icon
@@ -14,20 +14,24 @@ import { eventLine } from './model';
  * Every line sits on the canvas's `line-height: normal`. The board's second line is the event's name (the Hub's, G-814, FIX-110); until an admin names the event the date line is there instead.
  */
 const TILE = { radius: 20, padV: 12, padH: 14, stack: 4, head: 12.5, headGap: 6, icon: 15, title: 18, titleTracking: -0.02, sub: 12 } as const;
-
 /**
  * W1's Passes card: the Hub's name for the person's pass and when the event is. Tapping it opens W44. It shares a row
  * with the Points card (DV2-02) and takes what room the row gives it.
+ *
+ * With no pass (`pass` null: the Hub has none for the person, or could not say) the card is still there, in the same place and size
+ * (owner, 26 Oct 2026, R-97): "Passes", "No pass yet", "With Founding Maker" (lead ruling, SWEEP-1026 round 2: both fit one line at 18 / 700 and 12 in half a row at 360, so the card is the 104 high the board draws, not a wrapped one). Tapping it opens the tiers (VF5) through
+ * `onPress`, where the pass is bought.
  */
-export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eventDate' | 'eventName'>; onPress: () => void }) {
+export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eventDate' | 'eventName'> | null; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const when = pass.eventName ?? eventLine(pass.eventDate);
+  const title = pass ? pass.name : PASSES_EMPTY.title;
+  const when = pass ? (pass.eventName ?? eventLine(pass.eventDate)) : PASSES_EMPTY.line;
   return (
     <Pressable
       testID="wallet-passes"
       accessibilityRole="button"
-      accessibilityLabel={`Passes, ${pass.name}, ${when}`}
+      accessibilityLabel={`Passes, ${title}, ${when}`}
       onPress={onPress}
       {...ring.handlers}
       style={[
@@ -51,7 +55,7 @@ export function PassesTile({ pass, onPress }: { pass: Pick<MyPass, 'name' | 'eve
         testID="wallet-passes-name"
         style={[font(700), { fontSize: TILE.title, letterSpacing: TILE.titleTracking * TILE.title, lineHeight: canvasNormalLineHeight(TILE.title) }]}
       >
-        {pass.name}
+        {title}
       </Text>
       <Text variant="body" tone="textMuted" numberOfLines={1} testID="wallet-passes-when" style={{ fontSize: TILE.sub, lineHeight: canvasNormalLineHeight(TILE.sub) }}>
         {when}

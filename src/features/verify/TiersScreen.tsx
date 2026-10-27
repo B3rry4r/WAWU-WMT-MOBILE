@@ -142,8 +142,11 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
 
 type Mark = 'best' | 'mine';
 
-/** One tier: its name and mark, its price (or the difference), what it gives, and the choice mark. The tier a person holds has no choice mark. */
-function TierCard({ tier, fallbackName, mark, on, price, onPress }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; price: string | null; onPress?: () => void }) {
+/**
+ * One tier: its name and mark, the STORE's price for it (R-86; null draws none, as on the tier a person holds), what it gives, and the choice mark. The tier a
+ * person holds has no choice mark. Exported for the tier offer (R-94), which draws the same card with the store's price and its own Subscribe under it.
+ */
+export function TierCard({ tier, fallbackName, mark, on, price, onPress }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; price: string | null; onPress?: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const name = tier?.name ?? fallbackName ?? '';

@@ -7,6 +7,7 @@ import { isApiError } from "@/api/errors";
 import { Banner } from "@/components/Banner";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { PoweredByNuvion } from "@/components/PoweredByNuvion";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { space } from "@/theme";
@@ -16,11 +17,12 @@ import { corridorsQuery, sourcesQuery } from "@/features/abroad/api";
 import { ChoiceSheet } from "@/features/open-wallet/ChoiceField";
 
 import { chainName, SHORT_NAME, WORD, type FxChain, type FxCode, type QuoteCode } from "../fx/amount";
-import { currenciesQuery } from "../fx/api";
+import { accountsQuery, currenciesQuery } from "../fx/api";
+import { CurrencyNote } from "../fx/CurrencyNote";
 import { FxBalanceCard } from "../fx/FxBalanceCard";
 import { FxDetailsSheet } from "../fx/FxDetailsSheet";
-import { ActionPill, PaidFromAbroad, Transactions } from "../fx/FxTabBody";
-import { maskedNumber } from "../fx/model";
+import { ActionPill, CryptoSection, PaidFromAbroad, Transactions } from "../fx/FxTabBody";
+import { addOptions, isCoinCode, maskedNumber } from "../fx/model";
 
 import {
   fetchAddable,
@@ -52,6 +54,9 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
   });
   // The Hub's switches: Swap is offered only while it is on (a failed read draws no Swap, R-47).
   const currencies = useQuery(currenciesQuery(owner));
+  // The coins they hold, drawn as the naira wallet's Crypto tab draws them (R-87): the same accounts the Hub lists, read as the fx home reads them.
+  const fxAccounts = useQuery(accountsQuery(owner));
+  const router = useRouter();
   // Send abroad (NUV-11, WALLET-42): offered on an account only while the Hub says sending abroad is on and lists an account to
   // send from in that currency (R-47: nothing is drawn that does not work).
   const corridors = useQuery(corridorsQuery(owner));
@@ -67,6 +72,10 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
 
   const held = new Set((accounts.data ?? []).map((a) => a.currency));
   const more = (addable.data ?? []).filter((c) => !held.has(c.code));
+  // The coins the Hub says can be opened (its own list, never one of ours), offered beside the currencies; a coin leads to W22, which picks its network.
+  const coins = addOptions(currencies.data ?? null, held).filter((o) => o.coin);
+  const options = [...more.map((c) => ({ value: c.code, label: c.name })), ...coins.map((o) => ({ value: o.value as string, label: o.label }))];
+  const fiat = (accounts.data ?? []).filter((a) => !isCoinCode(a.currency));
   const open = (accounts.data ?? []).filter((a) => a.status === "open");
   // History stays readable on a frozen account: its movements show even when no account is open (an account still opening has none).
   const withHistory = (accounts.data ?? []).filter(
@@ -89,6 +98,10 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
 
   const add = async (code: string) => {
     closeSheet();
+    if (coins.some((o) => o.value === code)) {
+      router.push({ pathname: "/crypto-receive", params: { coin: code } });
+      return;
+    }
     setBusy(true);
     setProblem(null);
     try {
@@ -119,6 +132,8 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
       />
     );
   }
+  // "Powered by Nuvion" (R-95) once on the screen: under the first account whose card is drawn (an opening one has no card).
+  const lineOn = fiat.find((account) => account.status !== "opening")?.id;
   if (accounts.data === undefined) {
     return (
       <View style={styles.body} testID="wallet-world-loading">
@@ -129,6 +144,20 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
   }
   return (
     <View style={styles.body} testID="wallet-world">
+      <CurrencyNote
+        owner={owner}
+        first={1}
+        adder={{
+          available: options.length > 0,
+          options: [...more.map((c) => ({ value: c.code as FxCode, label: c.name, coin: false })), ...coins],
+          accounts: fxAccounts.data ?? null,
+          // This screen has its own picker, whose button shows a spinner while the account is opening and takes no second tap.
+          opening: new Set<FxCode>(),
+          show: () => setPicking(true),
+          sheet: null,
+          notice: null,
+        }}
+      />
       {problem ? (
         <Banner
           tone="danger"
@@ -137,10 +166,11 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
           testID="wallet-world-problem"
         />
       ) : null}
-      {accounts.data.map((account) => (
+      {fiat.map((account) => (
         <AccountCard
           key={account.id}
           account={account}
+          poweredBy={account.id === lineOn}
           hidden={hidden}
           onToggleHidden={() => setHidden((was) => !was)}
           onRetry={() => void refresh()}
@@ -150,6 +180,7 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
           canSwap={swaps && account.status === "open"}
         />
       ))}
+      <CryptoSection currencies={currencies.data ?? null} accounts={fxAccounts.data ?? null} hidden={hidden} toNaira={false} />
       {withHistory.length > 0 ? (
         <Transactions
           owner={owner}
@@ -159,7 +190,7 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
           noun="account"
         />
       ) : null}
-      {more.length > 0 ? (
+      {options.length > 0 ? (
         <Button
           label="Add a currency"
           variant="secondary"
@@ -173,7 +204,7 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
         visible={sheetOpen}
         onClose={closeSheet}
         title="Add a currency"
-        options={more.map((c) => ({ value: c.code, label: c.name }))}
+        options={options}
         selected={null}
         onPick={(code) => void add(code)}
         testID="wallet-world-add"
@@ -196,6 +227,7 @@ export function AccountCard({
   hidden = false,
   onToggleHidden = () => undefined,
   onRetry = () => undefined,
+  poweredBy = false,
 }: {
   account: WorldAccount;
   canSendAbroad?: boolean;
@@ -203,6 +235,8 @@ export function AccountCard({
   hidden?: boolean;
   onToggleHidden?: () => void;
   onRetry?: () => void;
+  /** "Powered by Nuvion" under the card (R-95): the Wallet draws it on one account, not on every one. */
+  poweredBy?: boolean;
 }) {
   const router = useRouter();
   const [sheet, setSheet] = useState(false);
@@ -230,25 +264,28 @@ export function AccountCard({
   const frozen = account.status === "frozen";
   return (
     <View style={styles.account} testID={`wallet-world-${account.currency}`}>
-      <FxBalanceCard
-        label={`${name} balance`}
-        availableMinor={account.availableMinor}
-        code={code}
-        decimals={account.decimals}
-        hidden={hidden}
-        onToggleHidden={onToggleHidden}
-        line={
-          chain
-            ? `${account.currency} · ${chainName(chain)}`
-            : `${account.currency} account`
-        }
-        maskedNumber={number ? maskedNumber(number) : null}
-        copyValue={number}
-        detailsStatus={account.detailsStatus}
-        detailsNote={account.detailsNote}
-        onRetry={onRetry}
-        testID={`wallet-world-${account.currency}-card`}
-      />
+      <View>
+        <FxBalanceCard
+          label={`${name} balance`}
+          availableMinor={account.availableMinor}
+          code={code}
+          decimals={account.decimals}
+          hidden={hidden}
+          onToggleHidden={onToggleHidden}
+          line={
+            chain
+              ? `${account.currency} · ${chainName(chain)}`
+              : `${account.currency} account`
+          }
+          maskedNumber={number ? maskedNumber(number) : null}
+          copyValue={number}
+          detailsStatus={account.detailsStatus}
+          detailsNote={account.detailsNote}
+          onRetry={onRetry}
+          testID={`wallet-world-${account.currency}-card`}
+        />
+        {poweredBy ? <PoweredByNuvion style={styles.powered} hidden={sheet} /> : null}
+      </View>
       {frozen ? (
         <Banner
           tone="warning"
@@ -310,6 +347,8 @@ export function AccountCard({
 const styles = StyleSheet.create({
   body: { gap: space.lg },
   account: { gap: space.lg },
+  // Under the balance card, close to it, so it reads as that card's own line.
+  powered: { marginTop: space.sm },
   // The padding comes from `padded` on the Card: a `padding` here loses to the Card's own `paddingVertical`.
   card: { gap: space.md },
   actions: { flexDirection: "row", gap: space.sm, alignItems: "center" },

@@ -132,6 +132,10 @@ const hub = {
   enabled: true,
   mode: 'ok' as Mode,
   rate: 'ready' as 'ready' | 'unavailable',
+  /** Accounts the Hub cannot get a rate from (FX-POLISH P3): a quote from one is refused `rate_unavailable`. */
+  noRateFrom: [] as string[],
+  /** A quote the corridor will not take: its words and the range it gives. */
+  outOfRange: null as null | { message: string; minimumMinor: number; maximumMinor: number | null },
   /** The partner fee the Hub shows on a quote (R-10), in the sending currency's smallest unit; null: none configured. */
   partnerFee: 150 as number | null,
   /** WAWU's fee taken from the foreign account the money leaves (WALLET-42), in the sending currency's smallest unit. */
@@ -256,7 +260,9 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       side?: string;
     };
     hub.quotes.push(body);
-    if (hub.rate === 'unavailable')
+    if (hub.outOfRange && body.side !== 'receive')
+      return refuse(409, { code: 'amount_out_of_range', message: hub.outOfRange.message, minimumMinor: hub.outOfRange.minimumMinor, ...(hub.outOfRange.maximumMinor === null ? {} : { maximumMinor: hub.outOfRange.maximumMinor }), currency: 'GHS' });
+    if (hub.rate === 'unavailable' || hub.noRateFrom.includes(body.fromCurrency))
       return refuse(409, {
         code: 'rate_unavailable',
         message: 'We cannot get a rate for this pair of currencies right now. Try again later or send from another account.',
@@ -370,6 +376,8 @@ beforeEach(() => {
     enabled: true,
     mode: 'ok',
     rate: 'ready',
+    noRateFrom: [],
+    outOfRange: null,
     partnerFee: 150,
     feeMinor: 0,
     sources: null,
@@ -476,7 +484,8 @@ describe('send abroad', () => {
 
   it("a user types an amount and sees what the recipient gets from the Hub's quote, then reviews, pays with the PIN and reads the receipt", async () => {
     await toReview();
-    expect(hub.quotes).toEqual([
+    // The rate checks for each account (side "receive", the corridor's least) come first; what was typed is the one quote with side "send".
+    expect(hub.quotes.filter((q) => q.side === 'send')).toEqual([
       {
         recipientId: RECIPIENT.id,
         fromCurrency: 'USD',
@@ -537,14 +546,86 @@ describe('send abroad', () => {
     expect(hub.sends[1].key).toBe(hub.sends[0].key);
   });
 
-  it('a rate the Hub cannot give is said plainly and Continue stays off', async () => {
+  it('a rate the Hub cannot give is said before any amount is typed, and nothing is offered to send from', async () => {
     hub.rate = 'unavailable';
+    hub.recipients = [RECIPIENT];
+    await toAbroad();
+    await fireEvent.press(await screen.findByTestId(`abroad-recipient-${RECIPIENT.id}`));
+    expect(await screen.findByTestId('abroad-no-rate')).toBeTruthy();
+    expect(screen.getByText(/We cannot get a rate for this pair of currencies right now/)).toBeTruthy();
+    expect(screen.queryByTestId('abroad-sources-USD')).toBeNull();
+    expect(screen.queryByTestId('amount-key-1')).toBeNull();
+    expect(screen.getByTestId('abroad-continue').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('an account the Hub has no rate from is left out of Send from, with the reason, before an amount is typed', async () => {
+    hub.noRateFrom = ['NGN'];
+    await toAmount();
+    expect(screen.getByTestId('abroad-sources-USD')).toBeTruthy();
+    expect(screen.queryByTestId('abroad-sources-NGN')).toBeNull();
+    expect(screen.getByTestId('abroad-unrated-NGN').props.children).toBe('No rate from your Naira account to GHS right now, so it is not offered.');
+    // The one that can be quoted is the one in front, and what is typed is quoted from it.
+    for (const k of '5') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await screen.findByTestId('abroad-quote');
+    expect(hub.quotes.at(-1)).toMatchObject({ fromCurrency: 'USD', amountMinor: 500, side: 'send' });
+  });
+
+  it('shows the amount as it is typed: thousands grouped, the places of the currency', async () => {
     await toAmount();
     await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
-    for (const k of '10000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
-    expect(await screen.findByTestId('abroad-quote-refused')).toBeTruthy();
-    expect(screen.getByText(/We cannot get a rate for this pair of currencies right now/)).toBeTruthy();
+    for (const k of '1000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('$1,000');
+    await fireEvent.press(screen.getByTestId('amount-key-point'));
+    await fireEvent.press(screen.getByTestId('amount-key-5'));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('$1,000.50');
+  });
+
+  it('holding Delete clears everything typed', async () => {
+    await toAmount();
+    await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
+    for (const k of '123') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('$123');
+    await fireEvent(screen.getByTestId('amount-key-delete'), 'longPress');
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('$0');
+  });
+
+  it('switching the account to another currency clears an amount typed in the first', async () => {
+    await toAmount();
+    await fireEvent.press(screen.getByTestId('abroad-sources-NGN'));
+    for (const k of '5000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('₦5,000');
+    await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('$0');
+    // They receive: the amount is in cedis whichever account it is sent from, so changing the account keeps it.
+    await fireEvent.press(screen.getByRole('tab', { name: 'They receive' }));
+    for (const k of '40') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('GH₵40');
+    await fireEvent.press(screen.getByTestId('abroad-sources-NGN'));
+    expect(screen.getByTestId('abroad-amount').props.children).toBe('GH₵40');
+  });
+
+  it('says an amount over the balance is over the balance, before the Hub is asked', async () => {
+    await toAmount();
+    await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
+    const asked = hub.quotes.length;
+    for (const k of '5000') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(await screen.findByTestId('abroad-over-balance')).toBeTruthy();
+    expect(screen.getByText('That is more than the $1,000.00 in your US dollar account.')).toBeTruthy();
+    expect(screen.queryByText(/this corridor can deliver/)).toBeNull();
+    expect(hub.quotes).toHaveLength(asked);
     expect(screen.getByTestId('abroad-continue').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('says the most when an amount is over what the corridor delivers, and the least when it is under', async () => {
+    hub.outOfRange = { message: 'That is more than this corridor can deliver.', minimumMinor: 500, maximumMinor: 2_500_000 };
+    await toAmount();
+    await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
+    for (const k of '900') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    expect(await screen.findByText('That is more than this corridor can deliver. The most they can get is GH₵25,000.00.')).toBeTruthy();
+    expect(screen.queryByText(/The least/)).toBeNull();
+    hub.outOfRange = { message: 'That is less than this corridor can deliver.', minimumMinor: 500, maximumMinor: 2_500_000 };
+    await fireEvent.press(screen.getByTestId('amount-key-delete'));
+    expect(await screen.findByText('That is less than this corridor can deliver. The least they can get is GH₵5.00.')).toBeTruthy();
   });
 
   it('a quote that has run out, or an account with too little, is said on the review with nothing sent', async () => {

@@ -1,3 +1,10 @@
+/**
+ * The Passes card on W1 when the person has no event pass (owner, 26 Oct 2026, R-97): a section whose task is complete stays drawn with its
+ * empty state. The words are the owner's, so the tier they name is not read from the Hub (R-65 keeps tier names out of screens where the Hub
+ * sends them; here the sentence is the owner's).
+ */
+export const PASSES_EMPTY = { title: 'No pass yet', line: 'With Founding Maker' } as const;
+
 /** W44's date line while the Hub serves no day for the event (TIER-06, G-804). */
 export const DATE_TO_BE_ANNOUNCED = 'Date to be announced';
 

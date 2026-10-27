@@ -4,10 +4,13 @@ import {
   fieldsOf,
   formatMinor,
   isSettled,
+  overBalanceLine,
+  rangeLine,
   readHeldQuote,
   speedLine,
   statusLook,
   totalFromAccount,
+  typedAmountLine,
   wawuFeeText,
   type Field,
   type Rail,
@@ -184,5 +187,55 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 150 }))?.wawuFeeMinor).toBe(150);
     expect(readHeldQuote(JSON.stringify(quote))).not.toBeNull();
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 1.5 }))).toBeNull();
+  });
+});
+
+describe('send abroad · the amount as it is typed (FX-POLISH P6)', () => {
+  it('groups the whole part by thousands and pads the places to the currency once a point is typed', () => {
+    expect(typedAmountLine('NGN', '', 2)).toBe('₦0');
+    expect(typedAmountLine('NGN', '1000', 2)).toBe('₦1,000');
+    expect(typedAmountLine('GBP', '0.5', 2)).toBe('£0.50');
+    expect(typedAmountLine('GBP', '1250.', 2)).toBe('£1,250.00');
+    expect(typedAmountLine('GHS', '1234567.25', 2)).toBe('GH₵1,234,567.25');
+    expect(typedAmountLine('KES', '6328', 0)).toBe('KES 6,328');
+  });
+});
+
+describe('send abroad · the right sentence for an amount that does not go (FX-POLISH P3)', () => {
+  const refusal = (over: Partial<Parameters<typeof rangeLine>[0]>) => ({
+    code: 'amount_out_of_range',
+    message: 'That is more than this corridor can deliver.',
+    fields: [],
+    minimumMinor: 500,
+    maximumMinor: 2_500_000,
+    currency: 'GHS',
+    ...over,
+  });
+
+  it('says it is over the most when the corridor says more, and never quotes the least then', () => {
+    expect(rangeLine(refusal({}), 'send', 99_000_000, 'GHS')).toBe('That is more than this corridor can deliver. The most they can get is GH₵25,000.00.');
+  });
+
+  it('says it is under the least when the corridor says less', () => {
+    expect(rangeLine(refusal({ message: 'That is less than this corridor can deliver.' }), 'send', 10, 'GHS')).toBe(
+      'That is less than this corridor can deliver. The least they can get is GH₵5.00.',
+    );
+  });
+
+  it('reads the direction from what was typed when they receive that amount', () => {
+    expect(rangeLine(refusal({ message: 'x' }), 'receive', 100, 'GHS')).toContain('The least they can get is GH₵5.00.');
+    expect(rangeLine(refusal({ message: 'x' }), 'receive', 99_000_000, 'GHS')).toContain('The most they can get is GH₵25,000.00.');
+  });
+
+  it('with no most, a corridor can only have been under its least', () => {
+    expect(rangeLine(refusal({ message: '', maximumMinor: null }), 'send', 10, 'GHS')).toBe('That is less than this corridor can deliver. The least they can get is GH₵5.00.');
+  });
+
+  it('with no word on which way, it gives the whole range', () => {
+    expect(rangeLine(refusal({ message: 'Out of range.' }), 'send', 10, 'GHS')).toBe('Out of range. This corridor delivers from GH₵5.00 to GH₵25,000.00.');
+  });
+
+  it('says an amount over the balance is over the balance, with the balance', () => {
+    expect(overBalanceLine('British pound account', 73, 'GBP', 2)).toBe('That is more than the £0.73 in your British pound account.');
   });
 });

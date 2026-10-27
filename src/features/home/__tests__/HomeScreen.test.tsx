@@ -340,6 +340,24 @@ describe('the balance card without a balance', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toHaveTextContent('₦0.00'));
   });
 
+  // FIX-P6 L1: the card names the currency the Hub says is being opened, never Naira by default.
+  it('a USD wallet still opening says Dollar on the card, from the Hub\'s world block (FIX-P6 L1)', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null, world: { country: 'US', firstCurrency: 'USD', state: 'opening' } })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    expect(screen.getByText('Your account is opening')).toBeTruthy();
+    expect(screen.getByText('Dollar')).toBeTruthy();
+    expect(screen.queryByText('Naira')).toBeNull();
+  });
+
+  it('a Naira wallet still opening says Naira on the card (FIX-P6 L1)', async () => {
+    answers[T.wallet] = [ok({ state: 'opening', account: null })];
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance-opening')).toBeTruthy());
+    expect(screen.getByText('Naira')).toBeTruthy();
+    expect(screen.queryByText('Dollar')).toBeNull();
+  });
+
   it("an unreachable bank shows W6's title and the Hub's own sentence, never a figure, and Try again asks again", async () => {
     answers[T.balance] = [refuse(503, 'provider_unreachable', 'We could not reach your account. Try again in a moment.'), ok({ availableKobo: 100, asOf: '2026-10-07T10:00:00Z' })];
     const screen = await boot();

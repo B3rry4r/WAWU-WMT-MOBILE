@@ -2,7 +2,10 @@ import { useSyncExternalStore } from 'react';
 
 import { onSessionEnd } from '@/api/session';
 
+import type { PhotoPosition } from '@/lib/photoPosition';
+
 import type { ProfileForm } from './form';
+import type { PickedImage } from './pickImage';
 
 /**
  * What M8 holds while it is open, shared with M9 (a separate route above it):
@@ -11,7 +14,14 @@ import type { ProfileForm } from './form';
  */
 export type Draft = { account: string; base: ProfileForm; form: ProfileForm };
 
+/**
+ * A photo just chosen for the profile picture or the cover and not yet uploaded (R-96): the position screen shows it from the phone
+ * and its Save hands the position back through `place`, which uploads it. Cancel drops it and the old picture stays.
+ */
+export type PendingPhoto = { kind: 'avatar' | 'cover'; picked: PickedImage; place: (position: PhotoPosition | null) => void };
+
 let current: Draft | null = null;
+let pending: PendingPhoto | null = null;
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((listener) => listener());
@@ -42,8 +52,36 @@ export function rebaseDraft(change: (base: ProfileForm, form: ProfileForm) => Pr
 }
 
 export function clearDraft(): void {
+  dropPendingPhoto();
   if (!current) return;
   current = null;
+  emit();
+}
+
+export function readPendingPhoto(): PendingPhoto | null {
+  return pending;
+}
+
+/** Holds a chosen photo for the position screen; one already held is dropped first. */
+export function holdPendingPhoto(photo: PendingPhoto): void {
+  dropPendingPhoto();
+  pending = photo;
+  emit();
+}
+
+/** The photo has been handed on (Save): forgotten, and the phone's own copy is left for the upload to delete. */
+export function releasePendingPhoto(): void {
+  if (!pending) return;
+  pending = null;
+  emit();
+}
+
+/** The photo was not used (Cancel, a new choice, Edit profile closed): forgotten, and the phone's own copy of it is deleted. */
+export function dropPendingPhoto(): void {
+  if (!pending) return;
+  const { picked } = pending;
+  pending = null;
+  picked.discard?.();
   emit();
 }
 
@@ -54,4 +92,8 @@ function subscribe(listener: () => void): () => void {
 
 export function useDraft(): Draft | null {
   return useSyncExternalStore(subscribe, readDraft, readDraft);
+}
+
+export function usePendingPhoto(): PendingPhoto | null {
+  return useSyncExternalStore(subscribe, readPendingPhoto, readPendingPhoto);
 }

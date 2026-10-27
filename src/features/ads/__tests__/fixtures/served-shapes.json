@@ -1,0 +1,175 @@
+{
+ "about": "What GET /ads really answered on the local stack (Hub from backend wmt/ADS-LINK cb96006), for the three places, with ads booked from the dashboard UI (ADS-LINK round 2, R-92). Query strings of signed picture addresses are dropped. allFourOnAir: a landscape-only ad, a portrait-only ad, an ad with both shapes that opens a link and one with both that does nothing. bothOnly: the two with both shapes. noLinkOnly: the one that does nothing. eventWithBothShapes: an event ad that holds both shapes (beside the no-link ad).",
+ "ids": {
+  "landscapeOnly": "f8225300-c5df-4677-95cc-d5ade4204315",
+  "portraitOnly": "6b546add-86bc-429c-9792-bdacc9185d20",
+  "bothLink": "f7375fab-0f01-4c56-b640-73bf3da813ac",
+  "bothNone": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45"
+ },
+ "phases": {
+  "allFourOnAir": {
+   "explore": [
+    {
+     "id": "f8225300-c5df-4677-95cc-d5ade4204315",
+     "advertiser": "ADK2 Landscape only",
+     "headline": "Landscape only ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaLabel": "Visit landscape",
+     "ctaDestination": "link",
+     "ctaUrl": "https://acme.example.com/landscape?ref=wawu",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/1f32cd97-63df-4e49-b504-56024c56a36c.png"
+    },
+    {
+     "id": "f7375fab-0f01-4c56-b640-73bf3da813ac",
+     "advertiser": "ADK2 Both link",
+     "headline": "Both shapes link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaLabel": "Visit both",
+     "ctaDestination": "link",
+     "ctaUrl": "https://acme.example.com/both?ref=wawu",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/0001fee3-47bb-4a3c-add6-70fa54e3a409.png"
+    },
+    {
+     "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+     "advertiser": "ADK2 Both none",
+     "headline": "Both shapes no link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaDestination": "none",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/979498f6-b21c-4eb9-9af7-60f301fecce3.png"
+    }
+   ],
+   "today": {
+    "id": "f8225300-c5df-4677-95cc-d5ade4204315",
+    "advertiser": "ADK2 Landscape only",
+    "headline": "Landscape only ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaLabel": "Visit landscape",
+    "ctaDestination": "link",
+    "ctaUrl": "https://acme.example.com/landscape?ref=wawu",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/1f32cd97-63df-4e49-b504-56024c56a36c.png"
+   },
+   "tgif": {
+    "id": "6b546add-86bc-429c-9792-bdacc9185d20",
+    "advertiser": "ADK2 Portrait only",
+    "headline": "Portrait only ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaLabel": "Visit portrait",
+    "ctaDestination": "link",
+    "ctaUrl": "https://acme.example.com/portrait?ref=wawu",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/972b8684-b15c-4703-9120-77c52ceb7872.png"
+   }
+  },
+  "bothOnly": {
+   "explore": [
+    {
+     "id": "f7375fab-0f01-4c56-b640-73bf3da813ac",
+     "advertiser": "ADK2 Both link",
+     "headline": "Both shapes link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaLabel": "Visit both",
+     "ctaDestination": "link",
+     "ctaUrl": "https://acme.example.com/both?ref=wawu",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/0001fee3-47bb-4a3c-add6-70fa54e3a409.png"
+    },
+    {
+     "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+     "advertiser": "ADK2 Both none",
+     "headline": "Both shapes no link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaDestination": "none",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/979498f6-b21c-4eb9-9af7-60f301fecce3.png"
+    }
+   ],
+   "today": {
+    "id": "f7375fab-0f01-4c56-b640-73bf3da813ac",
+    "advertiser": "ADK2 Both link",
+    "headline": "Both shapes link ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaLabel": "Visit both",
+    "ctaDestination": "link",
+    "ctaUrl": "https://acme.example.com/both?ref=wawu",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/0001fee3-47bb-4a3c-add6-70fa54e3a409.png"
+   },
+   "tgif": {
+    "id": "f7375fab-0f01-4c56-b640-73bf3da813ac",
+    "advertiser": "ADK2 Both link",
+    "headline": "Both shapes link ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaLabel": "Visit both",
+    "ctaDestination": "link",
+    "ctaUrl": "https://acme.example.com/both?ref=wawu",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/f3476d4d-61fd-47c2-8a57-25fde56124db.png"
+   }
+  },
+  "noLinkOnly": {
+   "explore": [
+    {
+     "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+     "advertiser": "ADK2 Both none",
+     "headline": "Both shapes no link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaDestination": "none",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/979498f6-b21c-4eb9-9af7-60f301fecce3.png"
+    }
+   ],
+   "today": {
+    "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+    "advertiser": "ADK2 Both none",
+    "headline": "Both shapes no link ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaDestination": "none",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/979498f6-b21c-4eb9-9af7-60f301fecce3.png"
+   },
+   "tgif": {
+    "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+    "advertiser": "ADK2 Both none",
+    "headline": "Both shapes no link ad",
+    "subline": "Lagos · Sat 7 pm",
+    "ctaDestination": "none",
+    "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/1410ad21-a05c-413f-a271-3f6df5171d8b.png"
+   }
+  },
+  "eventWithBothShapes": {
+   "explore": [
+    {
+     "id": "67be4f6c-f6f0-450b-b7bf-cf5f7e8e7194",
+     "advertiser": "ADK2 event both",
+     "headline": "Gospel Night Live",
+     "subline": "Abuja · Sat 18 October",
+     "ctaLabel": "Get tickets",
+     "ctaDestination": "event",
+     "ctaDestinationId": "e2e2e2e2-0000-4000-8000-0000000000e1",
+     "artworkUrl": "https://cdn.example.com/ads/ev-landscape.png"
+    },
+    {
+     "id": "c1eea00c-cc02-4f35-8edb-4ead5b6e5d45",
+     "advertiser": "ADK2 Both none",
+     "headline": "Both shapes no link ad",
+     "subline": "Lagos · Sat 7 pm",
+     "ctaDestination": "none",
+     "artworkUrl": "http://127.0.0.1:9946/stack-bucket/ads/artwork/979498f6-b21c-4eb9-9af7-60f301fecce3.png"
+    }
+   ],
+   "today": {
+    "id": "67be4f6c-f6f0-450b-b7bf-cf5f7e8e7194",
+    "advertiser": "ADK2 event both",
+    "headline": "Gospel Night Live",
+    "subline": "Abuja · Sat 18 October",
+    "ctaLabel": "Get tickets",
+    "ctaDestination": "event",
+    "ctaDestinationId": "e2e2e2e2-0000-4000-8000-0000000000e1",
+    "artworkUrl": "https://cdn.example.com/ads/ev-landscape.png"
+   },
+   "tgif": {
+    "id": "67be4f6c-f6f0-450b-b7bf-cf5f7e8e7194",
+    "advertiser": "ADK2 event both",
+    "headline": "Gospel Night Live",
+    "subline": "Abuja · Sat 18 October",
+    "ctaLabel": "Get tickets",
+    "ctaDestination": "event",
+    "ctaDestinationId": "e2e2e2e2-0000-4000-8000-0000000000e1",
+    "artworkUrl": "https://cdn.example.com/ads/ev-portrait.png"
+   }
+  }
+ }
+}

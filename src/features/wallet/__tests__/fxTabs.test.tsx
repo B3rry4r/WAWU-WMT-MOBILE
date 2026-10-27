@@ -41,6 +41,9 @@ let walletState = 'open';
 /** The bank does not answer the naira balance: `503 provider_unreachable`, in the provider's own flavour of words. */
 let balanceDown = false;
 let sent: string[] = [];
+/** What GET /about answers (the provider's bank name); null leaves it unanswered, as before. A held answer is released by `releaseAbout`. */
+let aboutBank: string | null = null;
+let aboutHeld: Promise<void> | null = null;
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
@@ -63,6 +66,10 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return ok({ availableKobo: 48_525_075, asOf: '2026-10-07T09:00:00.000Z' });
   }
   if (path === '/money/transactions') return ok({ items: [], nextCursor: null });
+  if (path === '/about' && aboutBank !== null) {
+    if (aboutHeld) await aboutHeld;
+    return ok({ bankName: aboutBank, licenceLine: null, supportEmail: null });
+  }
   throw new Error(`no answer for ${request.method} ${path}`);
 }) as typeof fetch;
 
@@ -94,6 +101,8 @@ beforeEach(() => {
   walletState = 'open';
   balanceDown = false;
   sent = [];
+  aboutBank = null;
+  aboutHeld = null;
   mockCopied.length = 0;
   mockPushed.length = 0;
   mockVault.clear();
@@ -239,6 +248,74 @@ describe('W2 · a currency account', () => {
     expect(rtl.screen.getByText('$1 = ₦1,580.00')).toBeTruthy();
   });
 
+  // FIX-P6 round 3: a payment keeps the provider's rate block, and a line WAWU made is not a swap the person made. The Hub names such a line
+  // "Who Made This" with what it was for; the app draws that, with the rate as a detail line, and only the person's own conversion is "Swap to Naira".
+  const RATE = { fromCurrency: 'USD', toCurrency: 'NGN', rate: '1315.44', fromMinor: 23, toMinor: 30_000 };
+  const line = (id: string, over: Record<string, unknown>) => ({
+    id,
+    accountId: USD_ID,
+    currency: 'USD',
+    direction: 'out',
+    status: 'completed',
+    amountMinor: 23,
+    feeMinor: 0,
+    balanceAfterMinor: null,
+    description: '',
+    counterpartyName: null,
+    reference: id,
+    occurredAt: new Date(Date.now() - 60_000).toISOString(),
+    conversion: RATE,
+    ...over,
+  });
+
+  it('draws a payment that carries a rate block as the Hub names it, with the rate as detail, never as "Swap to Naira"', async () => {
+    hub.transactions = [
+      line('p1', { description: 'Unlock · Lighting night shoots', counterpartyName: 'Who Made This' }),
+      line('p2', { description: 'Tip · Tip to Cleo Okafor', counterpartyName: 'Who Made This' }),
+      line('p3', { description: 'Paid question · Question for Cleo Okafor', counterpartyName: 'Who Made This' }),
+      line('p4', { description: 'Event ticket · Lagos Photo Walk', counterpartyName: 'Who Made This' }),
+      line('p5', { direction: 'in', description: 'Refund · Question for Cleo Okafor', counterpartyName: 'Who Made This' }),
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Unlock · Lighting night shoots')).toBeTruthy();
+    for (const words of ['Tip · Tip to Cleo Okafor', 'Paid question · Question for Cleo Okafor', 'Event ticket · Lagos Photo Walk', 'Refund · Question for Cleo Okafor']) {
+      expect(rtl.screen.getByText(words)).toBeTruthy();
+    }
+    expect(rtl.screen.getAllByText('Who Made This')).toHaveLength(5);
+    expect(rtl.screen.queryByText(/Swap to|Swap from/)).toBeNull();
+    // the rate is still there, as a line under the words
+    expect(rtl.screen.getAllByText('$1 = ₦1,315.44')).toHaveLength(5);
+  });
+
+  it("still draws the person's own conversion as \"Swap to Naira\", with its rate", async () => {
+    hub.transactions = [
+      line('s1', { description: 'WAWU swap', counterpartyName: 'Own account' }),
+      line('s2', { direction: 'in', description: 'Swap', counterpartyName: null, conversion: { fromCurrency: 'NGN', toCurrency: 'USD', rate: '0.000741', fromMinor: 31_040, toMinor: 23 } }),
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Swap to Naira')).toBeTruthy();
+    expect(rtl.screen.getByText('Swap from Naira')).toBeTruthy();
+    expect(rtl.screen.getByText('$1 = ₦1,315.44')).toBeTruthy();
+    expect(rtl.screen.queryByText('Who Made This')).toBeNull();
+  });
+
+  // FIX-P6 L2: a payment from a Dollar account reads as the naira row does, what it paid for under the app's own name; the Hub sends both
+  // (a line WAWU made is never named by WAWU's internal account), and the app draws them as they come and invents no label of its own.
+  it('draws a payment from a Dollar account as the Hub names it: the app\'s name, then what was paid for', async () => {
+    hub.transactions = [
+      { id: 't3', accountId: USD_ID, currency: 'USD', direction: 'out', status: 'completed', amountMinor: 23, feeMinor: 0, balanceAfterMinor: null, description: 'Unlock · Lighting night shoots', counterpartyName: 'Who Made This', reference: 'wawu-pay-1', occurredAt: new Date(Date.now() - 60_000).toISOString(), conversion: null },
+      { id: 't4', accountId: USD_ID, currency: 'USD', direction: 'in', status: 'completed', amountMinor: 23, feeMinor: 0, balanceAfterMinor: null, description: 'Refund · Question for Cleo Okafor', counterpartyName: 'Who Made This', reference: 'wawu-ref-1', occurredAt: new Date(Date.now() - 120_000).toISOString(), conversion: null },
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Unlock · Lighting night shoots')).toBeTruthy();
+    expect(rtl.screen.getByText('Refund · Question for Cleo Okafor')).toBeTruthy();
+    expect(rtl.screen.getAllByText('Who Made This').length).toBeGreaterThanOrEqual(2);
+    expect(rtl.screen.queryByText(/operational|held money/i)).toBeNull();
+  });
+
   it('says there are no transactions yet, by its real cause, when the statement is empty', async () => {
     await boot();
     await openTab('Dollar');
@@ -301,5 +378,60 @@ describe('W3 · Crypto', () => {
     await openTab('Crypto');
     await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Get an address' }));
     expect(mockPushed).toEqual(['/crypto-receive']);
+  });
+});
+
+describe('R-95 · Powered by Nuvion on a foreign account (SWEEP-1026 rows 6, 7 and 8)', () => {
+  const lineCount = () => rtl.screen.queryAllByText('Powered by Nuvion').length;
+  const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+
+  it('draws the line once under a dollar account card, and not under it when the Hub names another bank', async () => {
+    aboutBank = 'Nuvion';
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    await rtl.cleanup();
+    queryClient.clear();
+    aboutBank = 'Loma Bank';
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    await rtl.waitFor(() => expect(sent.filter((s) => s === 'GET /about').length).toBe(2));
+    expect(lineCount()).toBe(0);
+    expect(rtl.screen.queryByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('a details sheet opened over the account shows the line once, not the page\u2019s and the sheet\u2019s (row 6)', async () => {
+    aboutBank = 'Nuvion';
+    await boot();
+    await openTab('Dollar');
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: /Get paid in dollars/ }));
+    expect(await rtl.screen.findByText('USD account details')).toBeTruthy();
+    await rtl.waitFor(() => expect(lineCount()).toBe(1));
+    // The page keeps the line's room under the sheet, so nothing moves; shut, the page has its line again.
+    expect(rtl.screen.getByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('keeps the line\u2019s room until GET /about answers, so the page does not jump when it is late (row 7)', async () => {
+    const { StyleSheet } = require('react-native') as typeof import('react-native');
+    const { text } = require('@/theme') as typeof import('@/theme');
+    aboutBank = 'Nuvion';
+    let release: () => void = () => undefined;
+    aboutHeld = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await boot();
+    await openTab('Dollar');
+    const room = await rtl.screen.findByTestId('powered-by-nuvion-room', { includeHiddenElements: true });
+    expect(lineCount()).toBe(0);
+    expect((StyleSheet.flatten(room.props.style) as { height: number }).height).toBe(text.caption.lineHeight);
+    await rtl.act(async () => {
+      release();
+    });
+    const line = await rtl.screen.findByText('Powered by Nuvion');
+    expect(rtl.screen.queryByTestId('powered-by-nuvion-room', { includeHiddenElements: true })).toBeNull();
+    expect(line).toBeTruthy();
   });
 });

@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -8,6 +7,7 @@ import { useFocusRing } from '@/components/focusRing';
 import { IconTile } from '@/components/IconTile';
 import { Icon } from '@/components/icon';
 import { gradientEnds } from '@/components/MediaCard';
+import { PositionedImage } from '@/components/PositionedImage';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { RoleRow, SkillChip } from '@/features/me/AboutTab';
@@ -44,7 +44,7 @@ export function VisitorTop({ coverUrl, top, canShare, onBack, onShare, onOpenMen
   return (
     <>
       <View testID="visitor-cover" style={[styles.cover, { height: coverHeight(top), backgroundColor: colors.surfaceSunken }]}>
-        {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
+        {coverUrl ? <PositionedImage uri={coverUrl} testID="visitor-cover-image" /> : null}
         <LinearGradient
           pointerEvents="none"
           colors={[colors.mediaBlack30, colors.mediaBlack0]}

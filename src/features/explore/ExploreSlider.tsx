@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
+import { openAd } from '@/features/ads/api';
 import { useAdReports } from '@/features/ads/useAd';
 import { ExploreFeaturedEvent, exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
 import { layout } from '@/theme';
@@ -104,8 +105,8 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
                 ad={slide.ad}
                 reserveRight={reserve}
                 onOpen={() => {
-                  reports.tapOf(slide.ad.id);
-                  onOpenEvent(slide.ad.ctaDestinationId);
+                  reports.tapOf(slide.ad);
+                  openAd(slide.ad, onOpenEvent);
                 }}
               />
             ) : (

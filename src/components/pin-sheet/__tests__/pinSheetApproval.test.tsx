@@ -38,6 +38,9 @@ describe('PIN sheet · fingerprint or face (FIX-108)', () => {
   it('a sheet that moves no money says its purpose in place of an amount', async () => {
     expect(approvalLine({ purpose: 'Turn on fingerprint for payments' })).toBe('Turn on fingerprint for payments');
     expect(approvalLine({ totalKobo: 2_502_575, purpose: 'the professional tick' })).toBe('₦25,025.75 for the professional tick');
+    // PAY-FX (R-91): a payment from another currency says what leaves the account, in its sign, not the naira price.
+    expect(approvalLine({ totalKobo: 30_000, payee: 'Chidi Eze', amountText: '$1.90' })).toBe('Approve $1.90 to Chidi Eze');
+    expect(approvalLine({ totalKobo: 30_000, purpose: 'a video call', amountText: '£1.50' })).toBe('£1.50 for a video call');
     await open({ approval: { purpose: 'Turn on fingerprint for payments' } });
     expect(await screen.findByText('Turn on fingerprint for payments')).toBeTruthy();
     expect(screen.queryByText(/₦/)).toBeNull();

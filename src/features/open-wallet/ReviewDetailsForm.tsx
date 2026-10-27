@@ -95,6 +95,7 @@ export function ReviewDetailsForm({ owner, held, onBack, onContinue }: ReviewDet
     <AuthFrame
       testID="open-wallet-details"
       scrollRef={scrollRef}
+      poweredBy
       navTitle={NAV_TITLE}
       onBack={onBack}
       footer={<Button label="Continue" full onPress={submit} testID="open-wallet-details-continue" />}

@@ -16,6 +16,7 @@ import { tickOf } from '@/features/chat/api';
 import { DayLabel, TextBubble } from '@/features/chat/Bubbles';
 import { hueFor } from '@/features/feed/model';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
+import { usePaidFromMany, type PaidFromRead } from '@/features/pay-source/usePaidFrom';
 import { readFailure } from '@/features/profile-edit/failure';
 import { fetchVisitorProfile, visitorKey } from '@/features/visitor/api';
 import { visitorName } from '@/features/visitor/model';
@@ -23,7 +24,7 @@ import { font, layout, space, useWawu } from '@/theme';
 
 import { fetchQuestion, fetchThread, questionKey, threadKey, type QuestionView, type ThreadDetail } from './api';
 import { AskSheets } from './AskSheets';
-import { answeredCard, composerLabel, followUpOf, headerLine, isWaiting, offTitle, refundedCard, threadEntries, waitingCard, whoOf, type AskTerms } from './model';
+import { answeredCard, composerLabel, followUpOf, headerLine, isOpen, isWaiting, offTitle, refundedCard, SOURCE_PENDING, threadEntries, waitingCard, whoOf, type AskTerms, type PaidFromState } from './model';
 import { AskComposer, ClosedComposer, FailedComposer, LockedComposer, StatusCardView, WaitingComposer } from './parts';
 import { useAsk } from './useAsk';
 import { useAskTerms } from './useAskTerms';
@@ -60,7 +61,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
       queryKey: threadKey(wawuId),
       queryFn: () => fetchThread(wawuId),
       retry: false,
-      refetchInterval: (query) => (focused && query.state.data && isWaiting(query.state.data.questions, Date.now()) ? THREAD_POLL_MS : false),
+      // Read again while a question is open, also past its time: the Hub pays it back after that, and the card must turn to "refunded" when it does, not on the next visit (SWEEP-1026 row 4).
+      refetchInterval: (query) => (focused && query.state.data && isOpen(query.state.data.questions) ? THREAD_POLL_MS : false),
     },
     cache,
   );
@@ -79,7 +81,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   const tick = other ? tickOf(other) : profile.data ? tickOf({ verification: profile.data.profile.verification }) : undefined;
 
   // A question the Hub refunded: where the money went is the wallet's own record (the hold), read for each, and again while it is on its way.
-  const refunded = useMemo(() => questions.filter((q) => q.mine && q.status === 'refunded'), [questions]);
+  // A question still waiting is read too (PAY-FX, R-91): its payment says which account paid, so the card names the one the money returns to.
+  const refunded = useMemo(() => questions.filter((q) => q.mine && (q.status === 'refunded' || q.status === 'awaiting_response')), [questions]);
   const records = useQueries({
     queries: refunded.map((q) => ({
       queryKey: questionKey(q.id),
@@ -88,9 +91,34 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
       staleTime: 60_000,
       refetchInterval: (query: { state: { data?: QuestionView } }) => (query.state.data?.status === 'refunding' ? 4000 : false),
     })),
-    combine: (results) => results.map((r) => r.data ?? null),
+    combine: (results) => results.map((r) => ({ record: r.data ?? null, pending: r.isPending })),
   });
-  const recordOf = (id: string): QuestionView | null => records[refunded.findIndex((q) => q.id === id)] ?? null;
+  const recordOf = (id: string): QuestionView | null => records[refunded.findIndex((q) => q.id === id)]?.record ?? null;
+  // A question that moved on from open to refunded while this screen was up: its wallet record was read while it waited (kept a minute),
+  // so it is read again, once, for the refund's amount and time (SWEEP-1026 row 4).
+  const lastStatus = useRef(new Map<string, string>());
+  useEffect(() => {
+    for (const q of questions) {
+      if (!q.mine) continue;
+      const before = lastStatus.current.get(q.id);
+      lastStatus.current.set(q.id, q.status);
+      if (before === 'awaiting_response' && q.status === 'refunded') void cache.invalidateQueries({ queryKey: questionKey(q.id) });
+    }
+  }, [questions, cache]);
+  // Which account paid is the PAYMENT's record (PAY-FX, R-91): the wallet's record of a question names the payment but not its source, so
+  // each payment is read once (`GET /money/payments/{id}`, kept five minutes) and the cards and stamps read the account from that.
+  const sources = usePaidFromMany(
+    records.map((r) => r?.record?.payment?.id ?? null),
+    cache,
+  );
+  // The account is known once the question's record and then its payment have been read (or could not be): until then it is not, and the
+  // lines that name the money wait for it (SWEEP-1026 row 3).
+  const sourceOf = (id: string): PaidFromRead => {
+    const at = refunded.findIndex((q) => q.id === id);
+    if (at < 0) return { from: null, settled: true };
+    if (records[at]?.pending) return { from: null, settled: false };
+    return sources[at] ?? { from: null, settled: true };
+  };
 
   const ask = useAsk(
     pay,
@@ -101,7 +129,11 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     focused,
   );
 
-  const entries = useMemo(() => threadEntries(questions, now), [questions, now]);
+  const fromOf = (id: string): PaidFromState => {
+    const read = sourceOf(id);
+    return read.settled ? read.from : SOURCE_PENDING;
+  };
+  const entries = useMemo(() => threadEntries(questions, now, fromOf), [questions, now, records, sources]); // eslint-disable-line react-hooks/exhaustive-deps
   const latest = useMemo(() => [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))[0] ?? null, [questions]);
   const waiting = isWaiting(questions, now);
   const sub = headerLine(latest);
@@ -166,10 +198,11 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
           const q = entry.question;
           const card =
             entry.status === 'awaiting_response'
-              ? waitingCard(q, name, now)
+              ? waitingCard(q, name, now, fromOf(q.id))
               : entry.status === 'responded'
                 ? answeredCard(name, entry.last ? followUpOf(terms, termsFailed) : null)
-                : refundedCard(q, name, recordOf(q.id), now);
+                : // The refund's words name the account, so they wait for the payment's record (the card says only "refunded" until then).
+                  refundedCard(q, name, sourceOf(q.id).settled ? recordOf(q.id) : null, now, sourceOf(q.id).from);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}
       </ScrollView>

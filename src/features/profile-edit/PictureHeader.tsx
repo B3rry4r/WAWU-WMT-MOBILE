@@ -1,11 +1,14 @@
-import { Image } from 'expo-image';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
-import { IconButton } from '@/components/Button';
+import { BottomSheet } from '@/components/BottomSheet';
+import { Button, IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
-import { radius, space, useWawu } from '@/theme';
+import { PositionedImage } from '@/components/PositionedImage';
+import { Text } from '@/components/Text';
+import { font, radius, space, useWawu } from '@/theme';
 
 /**
  * design/_gen/me.js line 36 (M8): a 110 high cover with a 20 corner; the 72
@@ -13,7 +16,9 @@ import { radius, space, useWawu } from '@/theme';
  * a 28 camera badge on the avatar ringed 3; a 42 glass camera 10 in from the
  * cover's right and bottom edges; 26 of room before the first field.
  */
-const headerMetrics = { cover: 110, avatar: 72, avatarRing: 4, avatarLeft: 16, avatarHang: 34, badge: 28, badgeRing: 3, badgeInset: -2, badgeIcon: 14, glassInset: 10, after: 26 } as const;
+/** How long the choice sheet takes to slide away: what it opens (the photo library, the position screen) waits for it, as a phone cannot show two at once. */
+export const SHEET_CLOSE_MS = 400;
+const headerMetrics = { pillH: 34, pillPad: 14, pillText: 13.5, cover: 110, avatar: 72, avatarRing: 4, avatarLeft: 16, avatarHang: 34, badge: 28, badgeRing: 3, badgeInset: -2, badgeIcon: 14, glassInset: 10, after: 26 } as const;
 
 export type PictureHeaderProps = {
   name: string;
@@ -24,40 +29,116 @@ export type PictureHeaderProps = {
   busy: 'avatar' | 'cover' | null;
   onPickAvatar: () => void;
   onPickCover: () => void;
+  /** Opens the position screen for a picture already chosen (R-96). Left out, no "Reposition" is drawn: there is nowhere to go (R-47). */
+  onReposition?: (kind: 'avatar' | 'cover') => void;
 };
 
-/** M8's top: the cover picture, and the avatar over its bottom edge, each with a camera button to change it. */
-export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPickAvatar, onPickCover }: PictureHeaderProps) {
+/**
+ * M8's top: the cover picture, and the avatar over its bottom edge. The cover has a camera button to change it and, once set, a
+ * Reposition. The avatar is one button: with a picture already set it offers "Choose a new photo" and "Reposition" (R-96); with none, it
+ * goes straight to choosing one.
+ */
+export function PictureHeader({ name, avatarUri, coverUri, canPick, busy, onPickAvatar, onPickCover, onReposition }: PictureHeaderProps) {
   const { colors } = useWawu();
-  const badgeRing = useFocusRing();
+  const avatarRing = useFocusRing();
+  const [choosing, setChoosing] = useState(false);
+  const later = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (later.current) clearTimeout(later.current);
+  }, []);
+  /** Closes the sheet, then does what was chosen once it has gone. */
+  const choose = (action: () => void) => {
+    setChoosing(false);
+    later.current = setTimeout(action, SHEET_CLOSE_MS);
+  };
+  const canMoveAvatar = Boolean(avatarUri && onReposition);
+  const avatarPress = canPick && canMoveAvatar ? () => setChoosing(true) : canPick ? onPickAvatar : canMoveAvatar ? () => onReposition?.('avatar') : null;
+  const avatarLabel = canPick ? (avatarUri ? 'Change profile picture' : 'Add a profile picture') : 'Reposition profile picture';
+  const picture = <Avatar name={name || undefined} size={headerMetrics.avatar} source={avatarUri ?? undefined} testID="edit-avatar" />;
   return (
     <View style={styles.root}>
       <View testID="edit-cover" style={[styles.cover, { backgroundColor: colors.surfaceSunken }]}>
-        {coverUri ? <Image source={{ uri: coverUri }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Your cover picture" /> : null}
-        {canPick ? (
+        {coverUri ? <PositionedImage uri={coverUri} accessibilityLabel="Your cover picture" testID="edit-cover-image" /> : null}
+        {canPick || (coverUri && onReposition) ? (
           <View style={styles.glass}>
-            <IconButton icon="Camera" label={coverUri ? 'Change cover picture' : 'Add a cover picture'} tone="glass" onPress={onPickCover} disabled={busy !== null} testID="edit-cover-pick" />
+            {coverUri && onReposition ? (
+              <RepositionPill label="Reposition cover picture" onPress={() => onReposition('cover')} disabled={busy !== null} testID="edit-cover-reposition" glass />
+            ) : null}
+            {canPick ? (
+              <IconButton icon="Camera" label={coverUri ? 'Change cover picture' : 'Add a cover picture'} tone="glass" onPress={onPickCover} disabled={busy !== null} testID="edit-cover-pick" />
+            ) : null}
           </View>
         ) : null}
       </View>
       <View style={[styles.avatarRing, { backgroundColor: colors.surfacePage }]}>
-        <Avatar name={name || undefined} size={headerMetrics.avatar} source={avatarUri ?? undefined} testID="edit-avatar" />
-        {canPick ? (
+        {avatarPress ? (
           <Pressable
             testID="edit-avatar-pick"
             accessibilityRole="button"
-            accessibilityLabel={avatarUri ? 'Change profile picture' : 'Add a profile picture'}
+            accessibilityLabel={avatarLabel}
+            accessibilityState={{ disabled: busy !== null }}
             disabled={busy !== null}
-            onPress={onPickAvatar}
-            hitSlop={space.sm}
-            {...badgeRing.handlers}
-            style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.surfacePage }, badgeRing.style]}
+            onPress={avatarPress}
+            {...avatarRing.handlers}
+            style={[styles.avatarButton, avatarRing.style]}
           >
-            <Icon name="Camera" size={headerMetrics.badgeIcon} color={colors.textOnAccent} strokeWidth={2.2} />
+            {picture}
+            {canPick ? (
+              <View pointerEvents="none" style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.surfacePage }]}>
+                <Icon name="Camera" size={headerMetrics.badgeIcon} color={colors.textOnAccent} strokeWidth={2.2} />
+              </View>
+            ) : null}
           </Pressable>
-        ) : null}
+        ) : (
+          picture
+        )}
       </View>
+      <BottomSheet visible={choosing} onClose={() => setChoosing(false)} label="Profile picture" testID="edit-avatar-sheet">
+        <Text variant="sheetTitle">Profile picture</Text>
+        <Button
+          label="Choose a new photo"
+          icon="ImagePlus"
+          full
+          onPress={() => choose(onPickAvatar)}
+          testID="edit-avatar-choose"
+        />
+        <Button
+          label="Reposition"
+          icon="Scan"
+          variant="outline"
+          full
+          onPress={() => choose(() => onReposition?.('avatar'))}
+          testID="edit-avatar-reposition"
+        />
+      </BottomSheet>
     </View>
+  );
+}
+
+/** A small pill on the cover that reads "Reposition"; a screen reader hears which picture it moves. Glass, like the camera beside it. */
+function RepositionPill({ label, onPress, disabled, testID, glass }: { label: string; onPress: () => void; disabled: boolean; testID: string; glass?: boolean }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={space.xs}
+      {...ring.handlers}
+      style={[
+        styles.pill,
+        glass ? { backgroundColor: colors.surfaceScrim } : { backgroundColor: colors.surfaceCard, borderColor: colors.borderStrong, borderWidth: StyleSheet.hairlineWidth },
+        ring.style,
+      ]}
+    >
+      <Text variant="body" style={[font(600), styles.pillText, { color: glass ? colors.textOnAccent : disabled ? colors.textDisabled : colors.textPrimary }]}>
+        Reposition
+      </Text>
+    </Pressable>
   );
 }
 
@@ -66,7 +147,10 @@ export const pictureHeaderMetrics = headerMetrics;
 const styles = StyleSheet.create({
   root: { marginBottom: headerMetrics.after },
   cover: { height: headerMetrics.cover, borderRadius: radius.media, overflow: 'hidden' },
-  glass: { position: 'absolute', right: headerMetrics.glassInset, bottom: headerMetrics.glassInset },
+  glass: { position: 'absolute', right: headerMetrics.glassInset, bottom: headerMetrics.glassInset, flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  avatarButton: { borderRadius: radius.chip },
+  pill: { height: headerMetrics.pillH, paddingHorizontal: headerMetrics.pillPad, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontSize: headerMetrics.pillText },
   avatarRing: {
     position: 'absolute',
     left: headerMetrics.avatarLeft - headerMetrics.avatarRing,
@@ -76,8 +160,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    right: headerMetrics.avatarRing + headerMetrics.badgeInset,
-    bottom: headerMetrics.avatarRing + headerMetrics.badgeInset,
+    right: headerMetrics.badgeInset,
+    bottom: headerMetrics.badgeInset,
     width: headerMetrics.badge,
     height: headerMetrics.badge,
     borderRadius: radius.chip,

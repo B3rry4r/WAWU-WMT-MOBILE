@@ -63,11 +63,15 @@ export type SettingsScreenProps = {
   onOpenClaimCode?: () => void;
   /** Wallet and PIN: W35 (WALLET-06). The row is drawn only when the screen has somewhere to open it (the route gives it). */
   onOpenWallet?: () => void;
+  /** Accounts and currencies (R-93 D3, FX-POLISH M1): the accounts held, and Add a currency. The route gives it only to a person with a wallet; without it the row is not drawn. */
+  onOpenAccounts?: () => void;
   /** Delete account (Z6, SETTINGS-05): the muted line under Sign out. Drawn only when the route gives a place to go. */
   onOpenDeleteAccount?: () => void;
   onOpenAbout: () => void;
   onOpenTerms: () => void;
   onOpenPolicy: () => void;
+  /** The Legal list (LEGAL-DOCS): the owner's nine documents. The row is drawn only where this is given. */
+  onOpenLegal?: () => void;
   /** After the phone has signed out: leaves Settings, which the route graph does not guard (SHARED-CHANGES SETTINGS-01 #3). */
   onSignedOut: () => void;
 };
@@ -134,6 +138,15 @@ export function SettingsScreen(props: SettingsScreenProps) {
             onPress={props.onOpenWallet}
           />
         ) : null}
+        {props.onOpenAccounts ? (
+          <ListRow
+            testID="settings-accounts"
+            lead={<IconTile icon="Coins" size={ROW_TILE} />}
+            title="Accounts and currencies"
+            subtitle="Your accounts, and add a currency"
+            onPress={props.onOpenAccounts}
+          />
+        ) : null}
       </GroupedList>
       <GroupedList testID="settings-preferences">
         {tgif.query.data ? (
@@ -160,6 +173,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
         <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
         <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
+        {props.onOpenLegal ? <ListRow testID="settings-legal" lead={<IconTile icon="Scale" size={ROW_TILE} />} title="Legal" onPress={props.onOpenLegal} /> : null}
       </GroupedList>
       <View style={styles.foot}>
         <Pressable

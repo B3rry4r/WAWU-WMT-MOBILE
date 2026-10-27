@@ -1,7 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text as NativeText, View, type StyleProp, type TextStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text as NativeText, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type TextStyle } from 'react-native';
 
 import { CurrencyFlag } from '@/components/CurrencyFlag';
 import { useFocusRing } from '@/components/focusRing';
+import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { rowMetrics } from '@/components/ListRow';
 import { SegmentedTabs, segmentMetrics } from '@/components/SegmentedTabs';
@@ -115,6 +118,8 @@ export type FxRowData = {
   id: string;
   title: string;
   subtitle: string;
+  /** A line under the words: the rate of a payment that was converted. A swap's own rate is its subtitle; a line with no rate has none. */
+  detail?: string;
   minor: number;
   code: QuoteCode;
   decimals: number;
@@ -123,6 +128,15 @@ export type FxRowData = {
   tone: 'in' | 'neutral';
   failed: boolean;
 };
+
+/**
+ * A line WAWU made (a payment for a naira price, its fee, a refund), which the Hub names "Who Made This" with what it was for ("Unlock ·
+ * the piece"), the way the naira history names the same movement (FIX-P6). The provider may still send the rate block it converted at; the
+ * line stays that payment, and the rate is only a detail under it. The person's own conversion has another party, never this name.
+ */
+export function madeByWawu(t: Pick<FxTransaction, 'counterpartyName'>): boolean {
+  return (t.counterpartyName ?? '').trim().replace(/\?$/, '').toLowerCase() === 'who made this';
+}
 
 /** One line of an account's statement, as W2 and W3 draw it: who or what, a line under it, the signed amount and the time. */
 export function fxRowOf(t: FxTransaction, decimalsOf: (code: QuoteCode) => number, now: Date): FxRowData {
@@ -134,23 +148,31 @@ export function fxRowOf(t: FxTransaction, decimalsOf: (code: QuoteCode) => numbe
   const when = rowTime(t.occurredAt, now) || clockTime(t.occurredAt);
   let title = t.counterpartyName?.trim() || t.description.trim() || (outgoing ? 'Sent' : 'Received');
   let subtitle = t.counterpartyName?.trim() ? t.description.trim() : '';
+  let detail: string | undefined;
   if (conv) {
     const from = conv.fromCurrency as QuoteCode;
     const to = conv.toCurrency as QuoteCode;
-    title = outgoing ? `Swap to ${SHORT_NAME[to]}` : `Swap from ${SHORT_NAME[from]}`;
-    subtitle =
+    const rate =
       rateLine({ fromCurrency: from, toCurrency: to, fromDecimals: decimalsOf(from), toDecimals: decimalsOf(to), rate: conv.rate }) ?? '';
+    if (madeByWawu(t)) {
+      // Not a swap the person made: the Hub's words stay, the rate is a detail.
+      detail = rate || undefined;
+    } else {
+      title = outgoing ? `Swap to ${SHORT_NAME[to]}` : `Swap from ${SHORT_NAME[from]}`;
+      subtitle = rate;
+    }
   }
   return {
     id: t.id,
     title,
     subtitle,
+    ...(detail ? { detail } : {}),
     minor: outgoing ? -t.amountMinor : t.amountMinor,
     code,
     decimals,
     meta: stateWord ? `${stateWord} · ${when}` : when,
-    icon: conv ? 'ArrowLeftRight' : outgoing ? 'ArrowUpRight' : 'ArrowDownLeft',
-    tone: !outgoing && !conv ? 'in' : 'neutral',
+    icon: conv && !madeByWawu(t) ? 'ArrowLeftRight' : outgoing ? 'ArrowUpRight' : 'ArrowDownLeft',
+    tone: !outgoing && (!conv || madeByWawu(t)) ? 'in' : 'neutral',
     failed: t.status === 'failed' || t.status === 'reversed',
   };
 }
@@ -160,7 +182,7 @@ const META_GAP = 5;
 const META = 12.5;
 
 export function FxTxRow({ row, testID }: { row: FxRowData; testID?: string }) {
-  const label = [row.title, row.subtitle, formatMinor(row.minor, row.code, row.decimals, { sign: true }), row.meta].filter(Boolean).join(', ');
+  const label = [row.title, row.subtitle, row.detail, formatMinor(row.minor, row.code, row.decimals, { sign: true }), row.meta].filter(Boolean).join(', ');
   return (
     <View testID={testID} accessible accessibilityLabel={label} style={styles.row}>
       <IconTile icon={row.icon} tone={row.tone} size={44} />
@@ -171,6 +193,11 @@ export function FxTxRow({ row, testID }: { row: FxRowData; testID?: string }) {
         {row.subtitle ? (
           <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.rowSub}>
             {row.subtitle}
+          </Text>
+        ) : null}
+        {row.detail ? (
+          <Text testID={testID ? `${testID}-detail` : undefined} variant="secondary" tone="textMuted" numberOfLines={1} style={styles.rowSub}>
+            {row.detail}
           </Text>
         ) : null}
       </View>
@@ -198,28 +225,102 @@ export function HoldPill({ left }: { left: number }) {
 
 export type WalletTab = { key: string; label: string };
 
-/** Up to four tabs are the board's own track; more than that (one per currency) is the same track, scrolled sideways. */
-export function WalletTabs({ tabs, value, onChange }: { tabs: readonly WalletTab[]; value: string; onChange: (key: string) => void }) {
-  if (tabs.length <= 4) {
+export type WalletTabsProps = {
+  tabs: readonly WalletTab[];
+  value: string;
+  onChange: (key: string) => void;
+  /** The last item, a plain "+ Add" that opens the add-a-currency choice. Left out, there is nothing to add and none is drawn (R-47). */
+  onAdd?: () => void;
+};
+
+/**
+ * Up to four tabs and nothing to add are the board's own track. More than that, or a "+ Add" at the end, is the same track scrolled
+ * sideways: it fades out at the edge while more is hidden past it, and the tab in front is brought into view (FX-POLISH P1).
+ */
+export function WalletTabs({ tabs, value, onChange, onAdd }: WalletTabsProps) {
+  if (tabs.length <= 4 && !onAdd) {
     return <SegmentedTabs testID="wallet-tabs" label="Accounts" items={tabs.map((t) => ({ value: t.key, label: t.label }))} value={value} onChange={onChange} />;
   }
-  return <ScrollTabs tabs={tabs} value={value} onChange={onChange} />;
+  return <ScrollTabs tabs={tabs} value={value} onChange={onChange} onAdd={onAdd} />;
 }
 
-function ScrollTabs({ tabs, value, onChange }: { tabs: readonly WalletTab[]; value: string; onChange: (key: string) => void }) {
+/** How far from the end the strip must be before the fade is gone, and how much of the tab before it is left showing when one is brought into view. */
+const FADE_WIDTH = 36;
+const END_SLACK = 4;
+const REVEAL_LEAD = 24;
+
+function ScrollTabs({ tabs, value, onChange, onAdd }: WalletTabsProps) {
   const { colors } = useWawu();
+  const scroller = useRef<ScrollView>(null);
+  const spots = useRef<Record<string, { x: number; width: number }>>({});
+  const [view, setView] = useState({ width: 0, content: 0, x: 0 });
+  const hiddenRight = view.content - view.width - view.x > END_SLACK;
+  const hiddenLeft = view.x > END_SLACK;
+
+  // What the layout callbacks need to know, read when they fire (a tab's own layout can arrive after the render that chose it).
+  const latest = useRef({ value, view });
+  useLayoutEffect(() => {
+    latest.current = { value, view };
+  });
+
+  const reveal = (key: string) => {
+    const spot = spots.current[key];
+    const now = latest.current.view;
+    if (!spot || now.width === 0) return;
+    if (spot.x < now.x || spot.x + spot.width > now.x + now.width) scroller.current?.scrollTo({ x: Math.max(0, spot.x - REVEAL_LEAD), animated: true });
+  };
+  useEffect(() => {
+    reveal(value);
+    // The tab in front is brought into view when it changes or the strip is first measured, never while the person is scrolling it.
+  }, [value, view.width, view.content]);
+
+  // A tab that is new (the one just added from "+ Add") has no place when it is chosen, and its layout can arrive after the strip's
+  // own size did: so its arrival is the moment to bring it into view when it is the one in front (SWEEP-1026 row 5).
+  const note = (key: string) => (e: LayoutChangeEvent) => {
+    const before = spots.current[key];
+    spots.current[key] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
+    if (key === latest.current.value && (!before || before.x !== e.nativeEvent.layout.x || before.width !== e.nativeEvent.layout.width)) reveal(key);
+  };
   return (
     <View testID="wallet-tabs" accessibilityRole="tablist" accessibilityLabel="Accounts" style={[styles.track, { backgroundColor: colors.surfaceSunken }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trackRow}>
+      <ScrollView
+        testID="wallet-tabs-scroll"
+        ref={scroller}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.trackRow}
+        scrollEventThrottle={16}
+        onLayout={(e) => setView((v) => ({ ...v, width: e.nativeEvent.layout.width }))}
+        onContentSizeChange={(width) => setView((v) => ({ ...v, content: width }))}
+        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => setView((v) => ({ ...v, x: e.nativeEvent.contentOffset.x }))}
+      >
         {tabs.map((tab) => (
-          <ScrollTab key={tab.key} tab={tab} selected={tab.key === value} onPress={() => onChange(tab.key)} />
+          <ScrollTab key={tab.key} tab={tab} selected={tab.key === value} onPress={() => onChange(tab.key)} onLayout={note(tab.key)} />
         ))}
+        {onAdd ? <AddTab onPress={onAdd} /> : null}
       </ScrollView>
+      {hiddenLeft ? <Fade side="left" color={colors.surfaceSunken} testID="wallet-tabs-fade-left" /> : null}
+      {hiddenRight ? <Fade side="right" color={colors.surfaceSunken} testID="wallet-tabs-fade-right" /> : null}
     </View>
   );
 }
 
-function ScrollTab({ tab, selected, onPress }: { tab: WalletTab; selected: boolean; onPress: () => void }) {
+/** The track's own colour fading out over the tabs at an edge: more is past it. The colour is the token's, with its alpha taken to nothing. */
+function Fade({ side, color, testID }: { side: 'left' | 'right'; color: string; testID: string }) {
+  const clear = `${color}00`;
+  return (
+    <LinearGradient
+      testID={testID}
+      pointerEvents="none"
+      colors={side === 'right' ? [clear, color] : [color, clear]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={[styles.fade, side === 'right' ? styles.fadeRight : styles.fadeLeft]}
+    />
+  );
+}
+
+function ScrollTab({ tab, selected, onPress, onLayout }: { tab: WalletTab; selected: boolean; onPress: () => void; onLayout: (e: LayoutChangeEvent) => void }) {
   const { colors, shadows } = useWawu();
   const ring = useFocusRing();
   return (
@@ -230,6 +331,7 @@ function ScrollTab({ tab, selected, onPress }: { tab: WalletTab; selected: boole
       accessibilityState={{ selected }}
       aria-selected={selected}
       onPress={onPress}
+      onLayout={onLayout}
       {...ring.handlers}
       style={[
         styles.tab,
@@ -245,6 +347,27 @@ function ScrollTab({ tab, selected, onPress }: { tab: WalletTab; selected: boole
   );
 }
 
+/** The last item of the strip: not a tab, so it is never selected and has no raised pill. */
+function AddTab({ onPress }: { onPress: () => void }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID="wallet-tab-add"
+      accessibilityRole="button"
+      accessibilityLabel="Add a currency"
+      onPress={onPress}
+      {...ring.handlers}
+      style={[styles.tab, styles.add, ring.style]}
+    >
+      <Icon name="Plus" size={segmentMetrics.font + 2} color={colors.accent} />
+      <Text variant="body" numberOfLines={1} style={[font(600), styles.tabLabel, { color: colors.accent }]}>
+        Add
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   coin: { alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   hold: { height: 34, borderRadius: radius.chip, paddingHorizontal: space.md, alignItems: 'center', justifyContent: 'center' },
@@ -254,15 +377,19 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: rowMetrics.title, letterSpacing: rowMetrics.titleTracking * rowMetrics.title },
   rowSub: { fontSize: rowMetrics.subtitle, marginTop: rowMetrics.subtitleGap },
   end: { alignItems: 'flex-end', gap: META_GAP },
-  track: { padding: segmentMetrics.trackPad, borderRadius: radius.chip, alignSelf: 'stretch' },
+  track: { padding: segmentMetrics.trackPad, borderRadius: radius.chip, alignSelf: 'stretch', overflow: 'hidden' },
   trackRow: { gap: segmentMetrics.between },
   tab: {
     height: segmentMetrics.height - 2 * segmentMetrics.trackPad,
-    paddingHorizontal: space.xl,
+    paddingHorizontal: space.lg,
     borderRadius: radius.chip,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  add: { flexDirection: 'row', gap: space.xs },
+  fade: { position: 'absolute', top: 0, bottom: 0, width: FADE_WIDTH },
+  fadeRight: { right: 0 },
+  fadeLeft: { left: 0 },
   tabLabel: { fontSize: segmentMetrics.font },
   lift: { ...(StyleSheet.absoluteFill as object), borderRadius: radius.chip },
 });

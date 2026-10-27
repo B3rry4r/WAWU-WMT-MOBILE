@@ -1440,6 +1440,50 @@
     ]
    }
   },
+  "/api/hub/me/tier-offer": {
+   "get": {
+    "operationId": "TierOfferController_get",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TierOfferView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "Whether to draw the offer now, and whether it has its close X. `no-store`: the answer is the caller's own.",
+    "tags": [
+     "TierOffer"
+    ]
+   }
+  },
+  "/api/hub/me/tier-offer/seen": {
+   "post": {
+    "operationId": "TierOfferController_seen",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TierOfferSeenView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The offer has been drawn for this person: it is not offered again, on any phone.",
+    "tags": [
+     "TierOffer"
+    ]
+   }
+  },
   "/api/hub/me/points": {
    "get": {
     "operationId": "PointsController_mine",
@@ -11401,6 +11445,28 @@
        "maximum": 9007199254740991,
        "type": "integer"
       }
+     },
+     {
+      "name": "sourceCurrency",
+      "required": false,
+      "in": "query",
+      "description": "PAY-FX (R-91): quote the price against the buyer's account in this\ncurrency (a firm quote for the exact naira price). Absent or `NGN`: the\nnaira wallet, as before.",
+      "schema": {
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD",
+       "type": "string"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "responses": {
@@ -11435,7 +11501,7 @@
       }
      },
      "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress",
+      "description": "reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined",
       "content": {
        "application/json": {
         "schema": {
@@ -11455,7 +11521,7 @@
       }
      },
      "503": {
-      "description": "reason.code: fees_not_set",
+      "description": "reason.code: fees_not_set, provider_unreachable",
       "content": {
        "application/json": {
         "schema": {
@@ -11470,7 +11536,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "What the pay sheet shows before the PIN (H14, H17): the price from the\nserver's own record of the item, the wallet provider's charge, the\ntotal, the balance and the shortfall, and a signed quote the payment\nsends back. Nothing is reserved. A total above MERCHANT_MAX_PER_TXN_KOBO\nis amount_out_of_range. A kind whose feature has not moved onto the\nwallet yet, or an item not priced in naira, is target_not_payable.\nWhile the running provider's fees are not set, fees_not_set before\nanything else (NUV-07); `withinDailyLimit` and `remainingTodayKobo` say\nwhere today's purchase limit stands. For a school fee (FIX-58), when the\npayer already has an open payment for the item (a second phone),\n`payment_in_progress` with `reason.paymentId`, as the payment itself\nanswers it: no live Pay is drawn. Every other kind is quoted as before.",
+    "summary": "What the pay sheet shows before the PIN (H14, H17): the price from the\nserver's own record of the item, the wallet provider's charge, the\ntotal, the balance and the shortfall, and a signed quote the payment\nsends back. Nothing is reserved. A total above MERCHANT_MAX_PER_TXN_KOBO\nis amount_out_of_range. A kind whose feature has not moved onto the\nwallet yet, or an item not priced in naira, is target_not_payable.\nWhile the running provider's fees are not set, fees_not_set before\nanything else (NUV-07); `withinDailyLimit` and `remainingTodayKobo` say\nwhere today's purchase limit stands. For a school fee (FIX-58), when the\npayer already has an open payment for the item (a second phone),\n`payment_in_progress` with `reason.paymentId`, as the payment itself\nanswers it: no live Pay is drawn. Every other kind is quoted as before.\n\nPAY-FX (R-91): with `sourceCurrency` (USD, GBP, EUR ...) the price stays\nnaira and the answer carries `source`: the firm amount the buyer's own\naccount in that currency pays for exactly that naira price, its fees and\nthe provider's real expiry; `quoteToken` is then that quote's, `totalKobo`\nthe naira price and `fee` zero. Absent (or `NGN`) is the naira wallet,\nexactly as before.",
     "tags": [
      "MoneyPayments"
     ],
@@ -11509,6 +11575,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -11574,7 +11651,7 @@
       }
      },
      "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress",
+      "description": "reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress, currency_not_supported, fx_account_not_open, rate_unavailable, provider_declined",
       "content": {
        "application/json": {
         "schema": {
@@ -11609,7 +11686,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Pay from the wallet: the price from the buyer's wallet to WAWU's own\naccount at the wallet provider (R-19, R-42), the provider's charge on\ntop (R-10), the 85/15 split of the price recorded with it (R-5). Answers\n201 with the payment: completed, pending when the provider has not\nconfirmed the debit yet (H18, E10; it is never sent again blindly), or\nfailed when the provider refused it and nothing moved. The same\nIdempotency-Key and body answer the first result again\n(`Idempotent-Replayed: true`) without checking the PIN. fees_not_set\ncomes before the wallet gate, the key and the PIN; limit_reached (WAWU's\nlimit or the provider's) before anything is sent.",
+    "summary": "Pay from the wallet: the price from the buyer's wallet to WAWU's own\naccount at the wallet provider (R-19, R-42), the provider's charge on\ntop (R-10), the 85/15 split of the price recorded with it (R-5). Answers\n201 with the payment: completed, pending when the provider has not\nconfirmed the debit yet (H18, E10; it is never sent again blindly), or\nfailed when the provider refused it and nothing moved. The same\nIdempotency-Key and body answer the first result again\n(`Idempotent-Replayed: true`) without checking the PIN. fees_not_set\ncomes before the wallet gate, the key and the PIN; limit_reached (WAWU's\nlimit or the provider's) before anything is sent.\n\nPAY-FX (R-91): with `sourceCurrency` the buyer's account in that currency\npays at the firm quote named by `quoteToken`; WAWU converts, the naira\nlands in its own account and the payee is credited as for a naira\npayment. A quote that has run out or been used is `409 quote_changed`\nwith a fresh one in `reason.paymentQuote`.",
     "tags": [
      "MoneyPayments"
     ],
@@ -25542,6 +25619,28 @@
     ]
    }
   },
+  "/api/hub/policies": {
+   "get": {
+    "operationId": "AboutController_policyList",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PolicyListView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The published documents in the owner's order: slug, title and effective\ndate, no text. Empty until the owner has published one.",
+    "tags": [
+     "About"
+    ]
+   }
+  },
   "/api/hub/policies/{slug}": {
    "get": {
     "operationId": "AboutController_policy",
@@ -25567,9 +25666,40 @@
       }
      }
     },
-    "summary": "`terms` or `privacy`; `available: false` until the owner fills it in.",
+    "summary": "One of the nine slugs; `available: false` until the owner fills it in.",
     "tags": [
      "About"
+    ]
+   }
+  },
+  "/api/hub/policies/accept": {
+   "post": {
+    "operationId": "PolicyAcceptanceController_accept",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AcceptPoliciesDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PolicyAcceptanceView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "PolicyAcceptance"
     ]
    }
   },
@@ -28067,6 +28197,17 @@
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "requestBody": {
@@ -28182,6 +28323,17 @@
       "in": "path",
       "schema": {
        "type": "string"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -28326,6 +28478,17 @@
        "maximum": 9007199254740991,
        "type": "integer"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "responses": {
@@ -28433,6 +28596,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -28596,6 +28770,17 @@
       "schema": {
        "type": "string"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "responses": {
@@ -28701,6 +28886,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -28872,6 +29068,17 @@
       "schema": {
        "type": "string"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "responses": {
@@ -28977,6 +29184,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -29159,6 +29377,17 @@
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "requestBody": {
@@ -29246,6 +29475,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -29362,6 +29602,17 @@
       "in": "path",
       "schema": {
        "type": "string"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -29495,6 +29746,17 @@
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
       }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
+      }
      }
     ],
     "requestBody": {
@@ -29602,6 +29864,17 @@
       "schema": {
        "type": "string",
        "pattern": "^[A-Za-z0-9_-]{8,128}$"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -29718,6 +29991,17 @@
       "in": "path",
       "schema": {
        "type": "string"
+      }
+     },
+     {
+      "name": "X-Pay-Source-Currency",
+      "in": "header",
+      "description": "Optional. The currency of the caller's own account that pays (USD, GBP, EUR ...). Absent, or NGN, is the naira wallet. The price stays naira; the quote answers with the firm amount in that currency in `source`, and the payment must name the same account. The Idempotency-Key is bound to it.",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^[A-Z]{3,5}$",
+       "example": "USD"
       }
      }
     ],
@@ -35898,6 +36182,12 @@
       "minimum": 1,
       "maximum": 9007199254740991
      },
+     "sourceCurrency": {
+      "type": "string",
+      "description": "PAY-FX (R-91): pay from the buyer's account in this currency instead of\nthe naira wallet. Absent (or `NGN`) is the naira wallet, exactly as\nbefore. Then `quoteToken` is the one the quote answered with\n`sourceCurrency` set, and `expectedTotalKobo` its `totalKobo`.",
+      "pattern": "^[A-Z]{3,5}$",
+      "example": "USD"
+     },
      "quoteToken": {
       "type": "string",
       "description": "`quoteToken` from that payment quote (MONEY-17, BACKEND_GAPS G-64): the\nserver checks it is its own, for this person and this price, and not\npast `expiresAt`; otherwise `409 quote_changed` with the new quote.",
@@ -38577,6 +38867,20 @@
      }
     }
    },
+   "AcceptPoliciesDto": {
+    "type": "object",
+    "properties": {
+     "how": {
+      "type": "string",
+      "enum": [
+       "signup"
+      ]
+     }
+    },
+    "required": [
+     "how"
+    ]
+   },
    "PolicySectionDto": {
     "type": "object",
     "properties": {
@@ -40090,30 +40394,45 @@
       "description": "Place, date and price as the team types them. Leave it out for no second line."
      },
      "ctaLabel": {
-      "type": "string"
+      "type": "string",
+      "description": "The button's words. Required for `event` and `link`; a `none` card has no\nbutton, so it must not carry one. Which of the two applies is checked in\nthe service, with the rest of the destination's rules."
      },
      "ctaDestination": {
       "type": "string",
-      "description": "What the button opens. The allow-list is the AdCtaDestination enum: `event` today.",
+      "description": "What a tap does (R-92): `link` opens `ctaUrl` in the phone's browser,\n`none` does nothing, `event` opens an event (kept for the campaigns that\nalready use it; the dashboard no longer offers it).",
       "enum": [
-       "event"
+       "event",
+       "link",
+       "none"
       ]
      },
      "ctaDestinationId": {
       "type": "string",
-      "description": "For `event`, an Event id. The event must be published and not over."
+      "description": "For `event` only, an Event id. The event must be published and not over."
+     },
+     "ctaUrl": {
+      "type": "string",
+      "description": "For `link` only: the https address the card opens, as the artwork link is\nchecked (public host, no password, no spaces, at most AD_LINK_URL_MAX),\nstored in its normal form."
      },
      "artworkUrl": {
       "type": "string",
       "nullable": true,
       "description": "An https link to the picture. REQUIRED (R-59): a campaign without artwork\nis refused with 422 \"Add artwork before you save this campaign\". It is\nchecked in the service, after the rest of the body has passed, so the\nrefusal is a 422 and not the validation pipe's 400."
+     },
+     "landscapeUrl": {
+      "type": "string",
+      "nullable": true,
+      "description": "The landscape picture (R-92): 16:9, 1920 x 1080, an https link (the one an\nupload to `POST /admin/ads/artwork` returns, or one that is hosted already).\nIt shows in the Explore slider AND on the Today strip. Optional; a booking\nneeds this, `portraitUrl` or both (422 \"Add artwork ...\" otherwise)."
+     },
+     "portraitUrl": {
+      "type": "string",
+      "nullable": true,
+      "description": "The portrait picture (R-92): 1080 x 2340, the shape of a phone screen. It\nshows in the TGIF full screen. Optional, as `landscapeUrl`."
      }
     },
     "required": [
      "headline",
-     "ctaLabel",
-     "ctaDestination",
-     "ctaDestinationId"
+     "ctaDestination"
     ]
    },
    "CreateAdCampaignDto": {
@@ -40124,6 +40443,7 @@
      },
      "placement": {
       "type": "string",
+      "description": "Only for a booking made with the single `creative.artworkUrl` (the body the\ndashboard sent until R-92's two shapes), where it is required: 400 without\nit. A booking made with `creative.landscapeUrl` or `portraitUrl` takes none,\nand is refused with 400 if one is sent: where it shows follows from its\npictures.",
       "enum": [
        "tgif_card",
        "today_slot",
@@ -40150,7 +40470,6 @@
     },
     "required": [
      "advertiser",
-     "placement",
      "startsAt",
      "endsAt",
      "creative"
@@ -40172,16 +40491,32 @@
      "ctaDestination": {
       "type": "string",
       "enum": [
-       "event"
+       "event",
+       "link",
+       "none"
       ]
      },
      "ctaDestinationId": {
       "type": "string"
      },
+     "ctaUrl": {
+      "type": "string",
+      "description": "A new address for a `link` card. Only a card that opens a link has one."
+     },
      "artworkUrl": {
       "type": "string",
       "nullable": true,
-      "description": "A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59)."
+      "description": "A new https link to the picture. Sending null, or leaving a campaign that has none without one, is refused with 422 (R-59). Only for a booking saved before the two shapes."
+     },
+     "landscapeUrl": {
+      "type": "string",
+      "nullable": true,
+      "description": "A new landscape picture (16:9, 1920 x 1080), or null to take it away. Sending\nit for a booking that has the single `artworkUrl` moves the booking to the\ntwo shapes: its own picture stays where it showed (as the landscape or the\nportrait picture) unless this request names that shape."
+     },
+     "portraitUrl": {
+      "type": "string",
+      "nullable": true,
+      "description": "A new portrait picture (1080 x 2340), or null to take it away."
      }
     }
    },
@@ -42298,6 +42633,55 @@
      "nextCursor"
     ]
    },
+   "PaymentSourceView": {
+    "type": "object",
+    "properties": {
+     "currency": {
+      "type": "string"
+     },
+     "decimals": {
+      "type": "number"
+     },
+     "amountMinor": {
+      "type": "integer"
+     },
+     "providerFeeMinor": {
+      "type": "integer"
+     },
+     "wawuFeeMinor": {
+      "type": "integer"
+     },
+     "totalMinor": {
+      "type": "integer"
+     },
+     "rate": {
+      "type": "string"
+     },
+     "availableMinor": {
+      "type": "integer",
+      "nullable": true
+     },
+     "shortfallMinor": {
+      "type": "integer",
+      "nullable": true
+     },
+     "expiresAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "currency",
+     "decimals",
+     "amountMinor",
+     "providerFeeMinor",
+     "wawuFeeMinor",
+     "totalMinor",
+     "rate",
+     "availableMinor",
+     "shortfallMinor",
+     "expiresAt"
+    ]
+   },
    "PaymentQuoteView": {
     "type": "object",
     "properties": {
@@ -42368,6 +42752,14 @@
      },
      "expiresAt": {
       "type": "string"
+     },
+     "source": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/PaymentSourceView"
+       }
+      ],
+      "nullable": true
      }
     },
     "required": [
@@ -42385,6 +42777,46 @@
      "remainingTodayKobo",
      "quoteToken",
      "expiresAt"
+    ]
+   },
+   "PaymentPaidFromView": {
+    "type": "object",
+    "properties": {
+     "currency": {
+      "type": "string"
+     },
+     "decimals": {
+      "type": "number"
+     },
+     "amountMinor": {
+      "type": "integer"
+     },
+     "providerFeeMinor": {
+      "type": "integer"
+     },
+     "wawuFeeMinor": {
+      "type": "integer"
+     },
+     "totalMinor": {
+      "type": "integer"
+     },
+     "rate": {
+      "type": "string"
+     },
+     "refundedMinor": {
+      "type": "integer",
+      "nullable": true
+     }
+    },
+    "required": [
+     "currency",
+     "decimals",
+     "amountMinor",
+     "providerFeeMinor",
+     "wawuFeeMinor",
+     "totalMinor",
+     "rate",
+     "refundedMinor"
     ]
    },
    "PaymentView": {
@@ -42465,6 +42897,14 @@
      },
      "completedAt": {
       "type": "string",
+      "nullable": true
+     },
+     "source": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/PaymentPaidFromView"
+       }
+      ],
       "nullable": true
      }
     },
@@ -46572,6 +47012,32 @@
      "checkoutBump",
      "actions",
      "caps"
+    ]
+   },
+   "TierOfferView": {
+    "type": "object",
+    "properties": {
+     "show": {
+      "type": "boolean"
+     },
+     "closeButton": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "show",
+     "closeButton"
+    ]
+   },
+   "TierOfferSeenView": {
+    "type": "object",
+    "properties": {
+     "seenAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "seenAt"
     ]
    },
    "UploadFormatView": {
@@ -56349,6 +56815,50 @@
      "supportEmail"
     ]
    },
+   "PolicySummaryView": {
+    "type": "object",
+    "properties": {
+     "slug": {
+      "type": "string",
+      "enum": [
+       "privacy",
+       "terms",
+       "cookies",
+       "creator-monetization",
+       "verification-refund",
+       "acceptable-use",
+       "partner-dpa",
+       "community-guidelines",
+       "disclaimer"
+      ]
+     },
+     "title": {
+      "type": "string"
+     },
+     "effectiveDate": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "slug",
+     "title",
+     "effectiveDate"
+    ]
+   },
+   "PolicyListView": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PolicySummaryView"
+      }
+     }
+    },
+    "required": [
+     "items"
+    ]
+   },
    "PolicySectionView": {
     "type": "object",
     "properties": {
@@ -56370,8 +56880,15 @@
      "slug": {
       "type": "string",
       "enum": [
+       "privacy",
        "terms",
-       "privacy"
+       "cookies",
+       "creator-monetization",
+       "verification-refund",
+       "acceptable-use",
+       "partner-dpa",
+       "community-guidelines",
+       "disclaimer"
       ]
      },
      "available": {
@@ -56398,6 +56915,50 @@
      "title",
      "effectiveDate",
      "sections"
+    ]
+   },
+   "PolicyAcceptedView": {
+    "type": "object",
+    "properties": {
+     "slug": {
+      "type": "string",
+      "enum": [
+       "privacy",
+       "terms",
+       "cookies",
+       "creator-monetization",
+       "verification-refund",
+       "acceptable-use",
+       "partner-dpa",
+       "community-guidelines",
+       "disclaimer"
+      ]
+     },
+     "effectiveDate": {
+      "type": "string"
+     },
+     "acceptedAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "slug",
+     "effectiveDate",
+     "acceptedAt"
+    ]
+   },
+   "PolicyAcceptanceView": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PolicyAcceptedView"
+      }
+     }
+    },
+    "required": [
+     "items"
     ]
    },
    "SchoolPayeeView": {
@@ -57035,16 +57596,24 @@
       "nullable": true
      },
      "ctaLabel": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
      },
      "ctaDestination": {
       "type": "string",
       "enum": [
-       "event"
+       "none",
+       "event",
+       "link"
       ]
      },
      "ctaDestinationId": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
+     },
+     "ctaUrl": {
+      "type": "string",
+      "nullable": true
      },
      "artworkUrl": {
       "type": "string"
@@ -57055,9 +57624,7 @@
      "advertiser",
      "headline",
      "subline",
-     "ctaLabel",
      "ctaDestination",
-     "ctaDestinationId",
      "artworkUrl"
     ]
    },
@@ -68027,18 +68594,46 @@
       "nullable": true
      },
      "ctaLabel": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
      },
      "ctaDestination": {
       "type": "string",
       "enum": [
-       "event"
+       "none",
+       "event",
+       "link"
       ]
      },
      "ctaDestinationId": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
+     },
+     "ctaUrl": {
+      "type": "string",
+      "nullable": true
      },
      "artworkUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "artworkPreviewUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "landscapeUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "landscapePreviewUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "portraitUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "portraitPreviewUrl": {
       "type": "string",
       "nullable": true
      }
@@ -68049,7 +68644,9 @@
      "ctaLabel",
      "ctaDestination",
      "ctaDestinationId",
-     "artworkUrl"
+     "artworkUrl",
+     "landscapeUrl",
+     "portraitUrl"
     ]
    },
    "AdEventView": {
@@ -68134,6 +68731,17 @@
        "explore_slider"
       ]
      },
+     "shows": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "tgif_card",
+        "today_slot",
+        "explore_slider"
+       ]
+      }
+     },
      "status": {
       "type": "string",
       "enum": [
@@ -68193,6 +68801,7 @@
      "id",
      "advertiser",
      "placement",
+     "shows",
      "status",
      "phase",
      "startsAt",
@@ -68539,6 +69148,17 @@
        "explore_slider"
       ]
      },
+     "shows": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "tgif_card",
+        "today_slot",
+        "explore_slider"
+       ]
+      }
+     },
      "status": {
       "type": "string",
       "enum": [
@@ -68600,6 +69220,7 @@
      "id",
      "advertiser",
      "placement",
+     "shows",
      "status",
      "phase",
      "startsAt",
@@ -68627,6 +69248,25 @@
     "required": [
      "campaign",
      "audit"
+    ]
+   },
+   "AdArtworkUploadView": {
+    "type": "object",
+    "properties": {
+     "artworkUrl": {
+      "type": "string"
+     },
+     "previewUrl": {
+      "type": "string"
+     },
+     "bytes": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "artworkUrl",
+     "previewUrl",
+     "bytes"
     ]
    },
    "AdDayCounts": {

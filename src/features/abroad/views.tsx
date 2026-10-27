@@ -19,12 +19,15 @@ import { space } from '@/theme';
 import type { Refusal } from './api';
 import {
   formatMinor,
+  overBalanceLine,
   PROVIDER_FEE_LINE,
+  rangeLine,
   rateLine,
   SCREEN_TITLE,
   speedLine,
   statusLook,
   totalFromAccount,
+  typedAmountLine,
   wawuFeeText,
   type AbroadSend,
   type Quote,
@@ -115,7 +118,12 @@ export type QuoteRead =
 
 export type AbroadAmountViewProps = {
   recipient: Recipient;
+  /** The accounts that can be quoted for this recipient (the ones the Hub has no rate for are in `unrated`). */
   sources: Read<Source[]>;
+  /** Accounts the Hub has no rate from for this recipient, with its words: said before an amount is typed, never offered. */
+  unrated?: readonly { currency: string; name: string; message: string }[];
+  /** The rate checks are still out: the accounts are not drawn until they are known. */
+  rating?: boolean;
   /** Null until the Hub has listed the accounts to send from (nothing is typed, quoted or shown in a currency before then). */
   fromCurrency: string | null;
   onFromCurrency: (currency: string) => void;
@@ -123,7 +131,11 @@ export type AbroadAmountViewProps = {
   onSide: (side: 'send' | 'receive') => void;
   /** The typed amount as text, in the currency the side names. */
   text: string;
+  /** The places the typed currency takes. */
+  decimals?: number;
   amountMinor: number;
+  /** The amount typed in what is sent is more than the account holds. */
+  over?: boolean;
   onKey: (key: string) => void;
   onDelete: () => void;
   onClear: () => void;
@@ -137,12 +149,8 @@ const SIDE_ITEMS = [
   { value: 'receive', label: 'They receive' },
 ] as const;
 
-function refusalLine(r: Refusal, fallback: string): string {
-  const money = (minor: number) => formatMinor(minor, r.currency ?? fallback);
-  if (r.code === 'amount_out_of_range' && r.minimumMinor !== null)
-    return `${r.message || 'That amount is out of range.'} The least is ${money(r.minimumMinor)}.`;
-  if (r.code === 'amount_out_of_range' && r.maximumMinor !== null)
-    return `${r.message || 'That amount is out of range.'} The most is ${money(r.maximumMinor)}.`;
+function refusalLine(r: Refusal, fallback: string, side: 'send' | 'receive', amountMinor: number, decimals: number): string {
+  if (r.code === 'amount_out_of_range' && (r.minimumMinor !== null || r.maximumMinor !== null)) return rangeLine(r, side, amountMinor, fallback, decimals);
   return r.message || 'This could not be quoted. Nothing was taken.';
 }
 
@@ -153,12 +161,23 @@ function refusalLine(r: Refusal, fallback: string): string {
 export function AbroadAmountView(p: AbroadAmountViewProps) {
   const sendCurrency = p.fromCurrency;
   const typedCurrency = p.side === 'send' && sendCurrency !== null ? sendCurrency : p.recipient.currency;
-  const shown = `${formatMinor(0, typedCurrency).replace(/[0-9.,]+$/, '')}${p.text === '' ? '0' : p.text}`;
+  const decimals = p.decimals ?? 2;
+  const shown = typedAmountLine(typedCurrency, p.text, decimals);
   const q = p.quote.state === 'ready' ? p.quote.quote : null;
   const chosen = p.sources.data?.find((s) => s.currency === sendCurrency);
 
+  const unrated = p.unrated ?? [];
   let quoteBlock;
-  if (p.quote.state === 'loading') {
+  if (p.over && chosen && chosen.availableMinor !== null) {
+    quoteBlock = (
+      <Banner
+        testID="abroad-over-balance"
+        tone="warning"
+        title="More than you have"
+        body={overBalanceLine(chosen.name, chosen.availableMinor, chosen.currency, chosen.decimals)}
+      />
+    );
+  } else if (p.quote.state === 'loading') {
     quoteBlock = <SkeletonRows count={1} testID="abroad-quote-loading" />;
   } else if (q) {
     const rate = rateLine(q);
@@ -197,7 +216,7 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
     );
   } else if (p.quote.state === 'refused') {
     quoteBlock = (
-      <Banner testID="abroad-quote-refused" tone="warning" title="This can't be quoted" body={refusalLine(p.quote.refusal, typedCurrency)} />
+      <Banner testID="abroad-quote-refused" tone="warning" title="This can't be quoted" body={refusalLine(p.quote.refusal, p.recipient.currency, p.side, p.amountMinor, p.recipient.currency === typedCurrency ? decimals : 2)} />
     );
   } else if (p.quote.state === 'unanswered') {
     quoteBlock = (
@@ -230,7 +249,7 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
           title={`To ${p.recipient.holderName}`}
           subtitle={p.recipient.summary}
         />
-        {p.sources.loading ? (
+        {p.sources.loading || p.rating ? (
           <SkeletonRows count={1} testID="abroad-sources-loading" />
         ) : p.sources.failed ? (
           <ErrorState
@@ -243,17 +262,24 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
         ) : (
           <View style={styles.section}>
             <Text variant="label">Send from</Text>
-            <FilterChips<string>
-              testID="abroad-sources"
-              label="Send from"
-              variant="option"
-              items={(p.sources.data ?? []).map((s) => ({
-                value: s.currency,
-                label: s.currency,
-              }))}
-              value={sendCurrency ?? ''}
-              onChange={p.onFromCurrency}
-            />
+            {(p.sources.data ?? []).length === 0 && unrated.length > 0 ? null : (
+              <FilterChips<string>
+                testID="abroad-sources"
+                label="Send from"
+                variant="option"
+                items={(p.sources.data ?? []).map((s) => ({
+                  value: s.currency,
+                  label: s.currency,
+                }))}
+                value={sendCurrency ?? ''}
+                onChange={p.onFromCurrency}
+              />
+            )}
+            {unrated.map((u) => (
+              <Text key={u.currency} variant="meta" tone="textMuted" testID={`abroad-unrated-${u.currency}`}>
+                {`No rate from your ${u.name} to ${p.recipient.currency} right now, so it is not offered.`}
+              </Text>
+            ))}
             {chosen ? (
               <Text variant="meta" tone="textMuted" testID="abroad-source-balance">
                 {chosen.availableMinor === null
@@ -263,12 +289,16 @@ export function AbroadAmountView(p: AbroadAmountViewProps) {
             ) : null}
           </View>
         )}
-        {sendCurrency === null ? (
+        {p.rating ? null : sendCurrency === null ? (
           // No account is listed yet (loading or failed above), or the person holds none to send from: no amount is drawn in a guessed currency.
           !p.sources.loading && !p.sources.failed ? (
-            <Text variant="secondary" tone="textMuted" testID="abroad-no-source">
-              You have no account to send from yet.
-            </Text>
+            unrated.length > 0 ? (
+              <Banner testID="abroad-no-rate" tone="warning" title="We can't price this send" body={unrated[0]?.message || 'We cannot get a rate for this pair of currencies right now. Try again later.'} />
+            ) : (
+              <Text variant="secondary" tone="textMuted" testID="abroad-no-source">
+                You have no account to send from yet.
+              </Text>
+            )
           ) : null
         ) : (
           <>

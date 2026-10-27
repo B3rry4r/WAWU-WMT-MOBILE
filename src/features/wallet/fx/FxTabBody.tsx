@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
+import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -20,6 +21,7 @@ import { chainList, SHORT_NAME, WORD, WORDS, type FxCode } from './amount';
 import { openAccount, transactionsQuery, type FxAccount, type FxCurrencies, type FxTransaction } from './api';
 import { FxDetailsSheet } from './FxDetailsSheet';
 import { FxBalanceCard } from './FxBalanceCard';
+import { beginOpening, endOpening, useOpening } from './opening';
 import {
   accountsIn,
   canOpen,
@@ -103,7 +105,7 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   const name = SHORT_NAME[code];
 
   if (!account) {
-    return <OpenCard code={code} allowed={canOpen(props.currencies, code)} onOpened={props.onRetry} />;
+    return <OpenCard code={code} owner={props.owner} allowed={canOpen(props.currencies, code)} />;
   }
   if (account.status === 'opening') {
     return (
@@ -120,20 +122,23 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   const swaps = swapOffered(props.currencies, props.accounts) && !frozen;
   return (
     <View style={styles.stack} testID={`fx-body-${code}`}>
-      <FxBalanceCard
-        label={`${name} balance`}
-        availableMinor={account.balance?.availableMinor ?? null}
-        code={code}
-        decimals={account.decimals}
-        hidden={props.hidden}
-        onToggleHidden={props.onToggleHidden}
-        line={bank ? `${code} account · ${bank}` : `${code} account`}
-        maskedNumber={number ? maskedNumber(number) : null}
-        copyValue={number}
-        detailsStatus={account.detailsStatus}
-        detailsNote={account.detailsNote}
-        onRetry={props.onRetry}
-      />
+      <View>
+        <FxBalanceCard
+          label={`${name} balance`}
+          availableMinor={account.balance?.availableMinor ?? null}
+          code={code}
+          decimals={account.decimals}
+          hidden={props.hidden}
+          onToggleHidden={props.onToggleHidden}
+          line={bank ? `${code} account · ${bank}` : `${code} account`}
+          maskedNumber={number ? maskedNumber(number) : null}
+          copyValue={number}
+          detailsStatus={account.detailsStatus}
+          detailsNote={account.detailsNote}
+          onRetry={props.onRetry}
+        />
+        <PoweredByNuvion style={styles.powered} hidden={sheet} />
+      </View>
       {frozen ? <Banner tone="warning" title="This account is frozen" body="Money can arrive, but it cannot be swapped or sent until it is opened again." testID="fx-frozen" /> : null}
       {swaps ? (
         <View style={styles.actions} testID="fx-actions">
@@ -150,21 +155,33 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
   );
 }
 
-/** The one thing a person with no account in a currency can do: open it, when the Hub lets them. Never a button for a switched-off one. */
-function OpenCard({ code, allowed, onOpened }: { code: FxCode; allowed: boolean; onOpened: () => void }) {
-  const [busy, setBusy] = useState(false);
+/**
+ * The one thing a person with no account in a currency can do: open it, when the Hub lets them. Never a button for a switched-off one.
+ * From the ask (here, or from "Add a currency") until the Hub has answered and the accounts are read again it says the account is opening
+ * (FX-POLISH L1), and it cannot be asked for twice.
+ */
+function OpenCard({ code, owner, allowed }: { code: FxCode; owner: string | null; allowed: boolean }) {
+  const key = owner ?? '';
+  const opening = useOpening(owner).has(code);
   const [problem, setProblem] = useState<string | null>(null);
   if (!allowed) return null;
+  if (opening) {
+    return (
+      <Card style={styles.state}>
+        <EmptyState testID="fx-opening" icon="Clock" title={`Your ${WORD[code]} account is opening`} message="It takes a short while." />
+      </Card>
+    );
+  }
   const open = async () => {
-    setBusy(true);
+    if (!beginOpening(key, code)) return;
     setProblem(null);
     try {
       await openAccount(code);
-      onOpened();
+      await queryClient.invalidateQueries({ queryKey: ['money', 'fx'] });
     } catch (error) {
       setProblem(sentenceOf(error, 'We couldn’t open it. Try again.'));
     } finally {
-      setBusy(false);
+      endOpening(key, code);
     }
   };
   return (
@@ -174,7 +191,7 @@ function OpenCard({ code, allowed, onOpened }: { code: FxCode; allowed: boolean;
         icon="Wallet"
         title={`Open a ${WORD[code]} account`}
         message={problem ?? `Get paid in ${WORDS[code]}, hold them, and swap to naira when you want.`}
-        action={{ label: busy ? 'Opening' : `Open ${WORD[code]} account`, onPress: () => void open() }}
+        action={{ label: `Open ${WORD[code]} account`, onPress: () => void open() }}
         actionVariant="primary"
       />
     </Card>
@@ -207,9 +224,6 @@ function CryptoBody(props: FxTabBodyProps) {
   const groups = coinGroups(props.currencies, props.accounts);
   const coinAccounts = groups.flatMap((g) => g.accounts);
   const coinsOpenable = COIN_ORDER.some((code) => canOpen(props.currencies, code));
-  const sends = Boolean(props.currencies?.products.cryptoSend) && coinAccounts.some((a) => a.status === 'open');
-  const swaps = swapOffered(props.currencies, props.accounts);
-  const first = groups.find((g) => g.accounts.some((a) => a.status === 'open'));
 
   if (groups.length === 0) {
     if (!coinsOpenable) return null;
@@ -228,16 +242,42 @@ function CryptoBody(props: FxTabBodyProps) {
   }
   return (
     <View style={styles.stack} testID="fx-body-crypto">
+      <CryptoSection currencies={props.currencies} accounts={props.accounts} hidden={props.hidden} />
+      <Transactions owner={props.owner} accounts={coinAccounts} currencies={props.currencies} allAccounts={props.accounts} noun="crypto" />
+      <PoweredByNuvion />
+    </View>
+  );
+}
+
+/**
+ * The coins a person holds and what they can do with them: Receive, Send and Swap, then each coin's holding. The Wallet's Crypto tab and
+ * the Wallet of a person outside Nigeria draw the same one (R-87). Nothing is drawn with no coin held. A person with a naira wallet swaps
+ * to naira; one without swaps between their own accounts.
+ */
+export function CryptoSection({ currencies, accounts, hidden, toNaira = true }: { currencies: FxCurrencies | null; accounts: readonly FxAccount[] | null; hidden: boolean; toNaira?: boolean }) {
+  const router = useRouter();
+  const groups = coinGroups(currencies, accounts);
+  if (groups.length === 0) return null;
+  const coinAccounts = groups.flatMap((g) => g.accounts);
+  const sends = Boolean(currencies?.products.cryptoSend) && coinAccounts.some((a) => a.status === 'open');
+  const swaps = swapOffered(currencies, accounts);
+  const first = groups.find((g) => g.accounts.some((a) => a.status === 'open'));
+  return (
+    <>
       <View style={styles.actions} testID="fx-actions">
         <ActionPill testID="fx-receive" icon="ArrowDownLeft" label="Receive" onPress={() => router.push('/crypto-receive')} />
         {sends ? <ActionPill testID="fx-send" icon="ArrowUpRight" label="Send" onPress={() => router.push('/crypto-send')} /> : null}
         {swaps && first ? (
-          <ActionRound testID="fx-swap" icon="ArrowLeftRight" label={`Swap ${first.code} to naira`} onPress={() => router.push({ pathname: '/swap', params: { from: first.code, to: 'NGN' } })} />
+          <ActionRound
+            testID="fx-swap"
+            icon="ArrowLeftRight"
+            label={toNaira ? `Swap ${first.code} to naira` : `Swap ${first.code}`}
+            onPress={() => router.push({ pathname: '/swap', params: toNaira ? { from: first.code, to: 'NGN' } : { from: first.code } })}
+          />
         ) : null}
       </View>
-      <Holdings groups={groups} hidden={props.hidden} onOpen={(code) => router.push({ pathname: '/crypto-receive', params: { coin: code } })} />
-      <Transactions owner={props.owner} accounts={coinAccounts} currencies={props.currencies} allAccounts={props.accounts} noun="crypto" />
-    </View>
+      <Holdings groups={groups} hidden={hidden} onOpen={(code) => router.push({ pathname: '/crypto-receive', params: { coin: code } })} />
+    </>
   );
 }
 
@@ -369,6 +409,8 @@ export function ActionRound({ icon, label, onPress, testID }: { icon: IconName; 
 
 const styles = StyleSheet.create({
   stack: { gap: space.lg },
+  // Under the balance card, close to it, so it reads as that card's own line.
+  powered: { marginTop: space.sm },
   state: { borderRadius: ACCT.radius, paddingVertical: space.md - 2, paddingHorizontal: space.lg },
   actions: { flexDirection: 'row', gap: ACTION.gap, alignItems: 'center' },
   pill: { flex: 1, height: ACTION.height, borderRadius: radius.chip, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingHorizontal: space.md },

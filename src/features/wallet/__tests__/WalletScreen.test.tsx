@@ -178,6 +178,8 @@ const ACTION_TILES = ['Add money', 'Send', 'Withdraw', 'Buy points', 'To cash'];
 const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'to-cash'];
 /** The Points card, as a button: the Hub's own balance and the day the soonest points end (`POINTS` below). */
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
+/** The Passes card is always drawn beside Points (owner, 26 Oct 2026, R-97); this suite gives it no pass, so it is the empty card. */
+const PASSES_BUTTON = 'Passes, No pass yet, With Founding Maker';
 const NOT_BUILT_IDS = [
   'wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row',
   'wallet-loading-bills', 'wallet-bills',
@@ -284,7 +286,7 @@ describe('W1 · Wallet · Naira', () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
     const asks = sent.length;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Hide balance' }));
@@ -367,7 +369,7 @@ describe('W1 · Wallet · Naira', () => {
     expect(second.screen.queryByTestId('wallet-points')).toBeNull();
   });
 
-  it('the Capital row is drawn when the Hub says Capital is on and served, or the person holds something, and opens Capital (NUV-12)', async () => {
+  it('the Capital row is drawn only for a person who holds something, and opens Capital; Capital being on does not draw it (NUV-12, R-97)', async () => {
     const off = await boot();
     expect(await off.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     await off.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(0));
@@ -380,18 +382,34 @@ describe('W1 · Wallet · Naira', () => {
     await none.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(1));
     expect(none.screen.queryByTestId('wallet-capital')).toBeNull();
     await none.cleanup();
-    // Switched off but the person holds something: the way out stays.
+    // The Hub takes orders (an admin switched Capital on) but the person holds nothing: still no row (R-97: WAWU offers no investments).
+    fallback['GET /capital/availability'] = ok({ available: true, holding: false });
+    const open = await boot();
+    expect(await open.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await open.waitFor(() => expect(asked('/capital/availability')).toBeGreaterThan(2));
+    expect(open.screen.queryByTestId('wallet-capital')).toBeNull();
+    expect(open.screen.queryByTestId('wallet-capital-card')).toBeNull();
+    expect(open.screen.queryByText(/Capital|fixed return|shares|invest/i)).toBeNull();
+    expect(open.screen.queryByLabelText(/Capital|fixed return|shares|invest/i)).toBeNull();
+    await open.cleanup();
+    // Switched off but the person holds something: the way out stays, and it opens Capital.
     fallback['GET /capital/availability'] = ok({ available: false, holding: true });
     const holder = await boot();
-    expect(await holder.screen.findByTestId('wallet-capital')).toBeTruthy();
-    await holder.cleanup();
-    fallback['GET /capital/availability'] = ok({ available: true, holding: false });
-    const on = await boot();
-    const row = await on.screen.findByTestId('wallet-capital');
+    const row = await holder.screen.findByTestId('wallet-capital');
     expect(row).toBeTruthy();
     mockPushed.length = 0;
     rtl.fireEvent.press(row);
     expect(mockPushed).toEqual(['/capital']);
+  });
+
+  it('the Passes card sits in the one row with the Points card, the same size, whether or not the person has a pass (owner, 26 Oct 2026, R-97)', async () => {
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-passes')).toBeTruthy();
+    const row = app.screen.getByTestId('wallet-info-row');
+    expect(rtl.within(row).getByTestId('wallet-points')).toBeTruthy();
+    expect(rtl.within(row).getByTestId('wallet-passes')).toBeTruthy();
+    expect(rtl.within(row).getByTestId('wallet-passes-name').props.children).toBe('No pass yet');
+    expect(rtl.within(row).getByTestId('wallet-passes-when').props.children).toBe('With Founding Maker');
   });
 
   it('a transaction row says who, what, how much and when, and a user can tap it to open that transaction (W27)', async () => {
@@ -501,7 +519,7 @@ describe('W5 · Wallet · new account', () => {
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-points', 'wallet-actions', 'wallet-no-transactions'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    expect(buttonNames(app).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
+    expect(buttonNames(app).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
   });
 });
 
@@ -778,7 +796,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app, { rows: true });
     // The settings icon, the card's own two buttons, the Points card, the two actions, See all and the two rows are the only ones pressable.
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
   });
 
@@ -836,5 +854,33 @@ describe('W1 · an open wallet with no PIN leads to Create your transaction PIN'
       await new Promise((resolve) => setTimeout(resolve, 30));
     });
     expect(mockPushed).toEqual([]);
+  });
+});
+
+describe('R-95 · Powered by Nuvion on the Wallet', () => {
+  const about = (bankName: string) => ok({ bankName, licenceLine: null, supportEmail: null });
+
+  it('draws the line once, under the balance card, when the Hub says the wallets run on Nuvion', async () => {
+    fallback['GET /about'] = about('Nuvion');
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    expect(await app.screen.findByText('Powered by Nuvion')).toBeTruthy();
+    expect(app.screen.getAllByText('Powered by Nuvion')).toHaveLength(1);
+  });
+
+  it('draws nothing when the Hub names another bank, and nothing when that read fails', async () => {
+    fallback['GET /about'] = about('Loma Bank');
+    const named = await boot();
+    expect(await named.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(asked('/about')).toBe(1));
+    expect(named.screen.queryByText('Powered by Nuvion')).toBeNull();
+    await rtl.cleanup();
+    const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+    queryClient.clear();
+    fallback['GET /about'] = refusal(500, 'internal', 'Something went wrong.');
+    const failed = await boot();
+    expect(await failed.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(asked('/about')).toBe(2));
+    expect(failed.screen.queryByText('Powered by Nuvion')).toBeNull();
   });
 });
