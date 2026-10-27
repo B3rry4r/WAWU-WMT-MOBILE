@@ -37,8 +37,9 @@ export function readMyPoints(value: unknown): MyPoints {
   if (next !== null && next !== undefined && (typeof next !== 'object' || !count(next.points) || !isTime(next.expiresAt))) throw unreadable('points');
   const lots = v.lots.map((lot): PointLot => {
     const l = lot as Partial<PointLot> | null;
-    if (!l || typeof l !== 'object' || !filled(l.id) || !count(l.points) || !isTime(l.expiresAt)) throw unreadable('points');
-    return { id: l.id, points: l.points, granted: count(l.granted) ? l.granted : l.points, source: l.source as PointLot['source'], label: typeof l.label === 'string' ? l.label : '', expiresAt: l.expiresAt };
+    if (!l || typeof l !== 'object' || !filled(l.id) || !count(l.points) || !(l.expiresAt === null || isTime(l.expiresAt))) throw unreadable('points');
+    // A lot of bought points never ends: `expiresAt` is null (R-101 point 7). Only bought points are not cashable.
+    return { id: l.id, points: l.points, granted: count(l.granted) ? l.granted : l.points, source: l.source as PointLot['source'], label: typeof l.label === 'string' ? l.label : '', expiresAt: l.expiresAt, cashable: l.cashable === true };
   });
   const movements = v.movements.map((row): PointMovement => {
     const m = row as Partial<PointMovement> | null;
@@ -47,6 +48,7 @@ export function readMyPoints(value: unknown): MyPoints {
   });
   return {
     balance: v.balance,
+    cashablePoints: count(v.cashablePoints) ? v.cashablePoints : 0,
     nextExpiry: next ? { points: next.points as number, expiresAt: next.expiresAt as string } : null,
     lots,
     lotCount: count(v.lotCount) ? v.lotCount : lots.length,
@@ -64,7 +66,7 @@ export async function fetchMyPoints(): Promise<MyPoints> {
 export const myPointsQuery = (owner: string | null) =>
   ({ queryKey: ['points', 'me', owner ?? ''] as const, queryFn: fetchMyPoints, staleTime: 0, enabled: Boolean(owner) }) as const;
 
-const BLOCKS = ['below_minimum', 'insufficient_points', 'above_maximum'] as const;
+const BLOCKS = ['below_minimum', 'insufficient_points', 'above_maximum', 'not_cashable'] as const;
 
 /** What a quote must hold for a conversion to carry it: whole-kobo money, a known block or none, and the token. */
 export function readConvertQuote(value: unknown): ConvertQuote {
@@ -75,6 +77,7 @@ export function readConvertQuote(value: unknown): ConvertQuote {
     typeof q === 'object' &&
     q.currency === 'NGN' &&
     count(q.balancePoints) &&
+    count(q.cashablePoints) &&
     count(q.minimumPoints) &&
     (q.maximumPoints === null || count(q.maximumPoints)) &&
     rate &&
@@ -142,7 +145,7 @@ export type ConvertOutcome =
   | { kind: 'no_wallet' }
   /** `409 quote_changed`: what the person was shown is not what is true now. `quote` is the new one (null when it cannot be read). */
   | { kind: 'quote_changed'; quote: ConvertQuote | null; message: string }
-  /** `422 below_minimum`, `402 insufficient_points`, `400 amount_out_of_range`, `409 currency_not_supported`: refused before the PIN, nothing held. */
+  /** `422 below_minimum`, `402 insufficient_points`, `422 points_not_cashable`, `400 amount_out_of_range`, `409 currency_not_supported`: refused before the PIN, nothing held. */
   | { kind: 'blocked'; code: string; message: string }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
@@ -161,7 +164,7 @@ export type ConvertInput = {
 
 const HTTP_CREATED = 201;
 const HTTP_SERVER_MIN = 500;
-const BLOCKED_CODES = ['below_minimum', 'insufficient_points', 'amount_out_of_range', 'currency_not_supported'];
+const BLOCKED_CODES = ['below_minimum', 'insufficient_points', 'points_not_cashable', 'amount_out_of_range', 'currency_not_supported'];
 
 type Reason = { code?: unknown; message?: unknown; triesLeft?: unknown; lockedUntil?: unknown; pointsQuote?: unknown };
 

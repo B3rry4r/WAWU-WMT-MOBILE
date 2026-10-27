@@ -25,9 +25,8 @@ export function lastsText(days: number): string {
   return days === 1 ? '1 day' : `${days} days`;
 }
 
-/** The line under PT4's title, once the Hub has said how long points last: "For AI tools. Points don't expire for 12 months." */
-export const blurbFor = (quote: Pick<PackQuote, 'expiryDays'> | null): string =>
-  quote ? `${BUY_WORDS.blurb} Points don't expire for ${lastsText(quote.expiryDays)}.` : BUY_WORDS.blurb;
+/** The line under PT4's title: "For AI tools. Points you buy never expire." Bought points never end (R-101 point 7), so it needs no quote. */
+export const blurbFor = (): string => `${BUY_WORDS.blurb} Points you buy never expire.`;
 
 /** The chip on a pack for a person whose tier adds points to every pack: "Founding +10%" (the tier's first word, the Hub's percent). */
 export function bonusChip(tierName: string | null, percent: number): string | null {

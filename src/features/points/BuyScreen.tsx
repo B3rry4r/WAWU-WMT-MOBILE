@@ -359,7 +359,7 @@ export function BuyScreen(props: BuyScreenProps) {
             {BUY_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="buy-blurb" style={styles.blurb}>
-            {blurbFor(quote)}
+            {blurbFor()}
           </Text>
         </View>
         <View testID="buy-packs" accessibilityRole="radiogroup" style={styles.packs}>

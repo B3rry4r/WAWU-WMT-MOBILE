@@ -60,10 +60,18 @@ export function PointsScreen({ onBack, onConvert, onBuy }: PointsScreenProps) {
       </PointsFrame>
     );
   }
+  // Nothing in the balance can be turned into cash (everything was bought, or there is nothing): no round Convert button, and a person who
+  // holds bought points is told why (R-101 point 7).
+  const noCash = points.data.cashablePoints === 0;
   const empty = points.data.balance === 0 && points.data.lots.length === 0 && points.data.movements.length === 0;
   return (
-    <PointsFrame title="Your points" onBack={onBack} action={action} gap={BODY_GAP} testID="points-screen">
+    <PointsFrame title="Your points" onBack={onBack} action={noCash ? undefined : action} gap={BODY_GAP} testID="points-screen">
       <BalanceCard points={points.data.balance} buy={{ label: 'Buy points', primary: empty, onPress: onBuy }} />
+      {noCash && points.data.balance > 0 ? (
+        <Text variant="muted" testID="points-bought-note">
+          {WORDS.boughtNotCash}
+        </Text>
+      ) : null}
       {empty ? (
         <View style={styles.empty}>
           <EmptyState testID="points-empty" icon="Sparkles" title={WORDS.emptyTitle} message={WORDS.emptyBody} />

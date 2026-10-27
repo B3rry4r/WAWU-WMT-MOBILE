@@ -74,7 +74,7 @@ export function readPackQuote(value: unknown): PackQuote {
     whole(q.bonusPercent) &&
     whole(q.bonusPoints) &&
     whole(q.totalPoints) &&
-    whole(q.expiryDays) &&
+    (q.expiryDays === null || whole(q.expiryDays)) &&
     pay &&
     whole(pay.priceKobo) &&
     whole(pay.totalKobo) &&
