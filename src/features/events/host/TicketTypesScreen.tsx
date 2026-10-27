@@ -175,7 +175,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
             {sold ? (
               <Button testID="ticket-types-done" label="Done" full onPress={onBack} />
             ) : (
-              <Button testID="ticket-types-save" label="Save ticket types" full disabled={!changed} onPress={review} />
+              <Button testID="ticket-types-save" label="Save ticket types" full disabled={!changed || priceList.length === 0} onPress={review} />
             )}
           </View>
           <ReviewSheet visible={confirm} onClose={() => setConfirm(false)} onConfirm={() => void send()} busy={sending} />

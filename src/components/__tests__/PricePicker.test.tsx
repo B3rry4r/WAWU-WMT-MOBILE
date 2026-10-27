@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { useState } from 'react';
 
 import { hub, installFetch, renderFrame } from '@/features/create/__helpers__/harness';
@@ -32,6 +32,13 @@ function Controlled({ start = null, onChange, storeNote, disabled }: { start?: n
   );
 }
 
+/** A person's scroll: touching the strip, then it stops on `x`. */
+const drag = async (scroll: ReturnType<typeof screen.getByTestId>, x: number) => {
+  await act(async () => {
+    fireEvent(scroll, 'scrollBeginDrag', { nativeEvent: { contentOffset: { x, y: 0 } } });
+    fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x, y: 0 } } });
+  });
+};
 const stops = () => screen.getAllByTestId(/^price-stop-\d+$/).map((s) => Number(String(s.props.testID).replace('price-stop-', '')));
 const selected = () => screen.getAllByTestId(/^price-stop-\d+$/).filter((s) => s.props.accessibilityState?.selected).map((s) => Number(String(s.props.testID).replace('price-stop-', '')));
 const earnLabel = () => screen.getByTestId('price-picker-earn').props.accessibilityLabel as string;
@@ -42,16 +49,18 @@ beforeEach(() => {
 });
 
 describe('PricePicker · the list', () => {
-  it('draws every list price, in the Hub\'s order, and starts on 2,500 when no price is chosen', async () => {
+  it('draws every list price in the Hub\'s order; with no price chosen nothing is selected or claimed, and the picker never calls onChange by itself', async () => {
     const onChange = jest.fn();
     await renderFrame(<Controlled onChange={onChange} />);
     expect(await screen.findByTestId('price-stop-2500')).toBeTruthy();
     expect(stops()).toEqual(LIST);
-    await waitFor(() => expect(selected()).toEqual([2500]));
-    // The screen is told what is drawn, once, so what it sends is what the person sees.
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith(2500);
-    expect(within(screen.getByTestId('price-picker-price')).getByText('₦2,500')).toBeTruthy();
+    expect(selected()).toEqual([]);
+    expect(screen.getByText('Pick a price')).toBeTruthy();
+    expect(screen.queryByTestId('price-picker-earn')).toBeNull();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('follows a list the admin changed: only the Hub\'s prices are drawn, in its order', async () => {
@@ -77,20 +86,54 @@ describe('PricePicker · the list', () => {
     await renderFrame(<Controlled start={2500} onChange={onChange} />);
     const scroll = await screen.findByTestId('price-picker-scroll');
     const index = LIST.indexOf(15_000);
-    await act(async () => {
-      fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: index * STEP + 6, y: 0 } } });
-    });
+    await drag(scroll, index * STEP + 6);
     expect(onChange).toHaveBeenLastCalledWith(15_000);
     expect(selected()).toEqual([15_000]);
     // Past either end holds at the ends of the list, never beyond it.
-    await act(async () => {
-      fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: 99999, y: 0 } } });
-    });
+    await drag(scroll, 99999);
     expect(onChange).toHaveBeenLastCalledWith(1_000_000);
-    await act(async () => {
-      fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: -50, y: 0 } } });
-    });
+    await drag(scroll, -50);
     expect(onChange).toHaveBeenLastCalledWith(100);
+  });
+});
+
+describe('PricePicker · the snap', () => {
+  it('takes the nearest stop to the middle: past half way to the next stop is the next one (round, not floor)', async () => {
+    const onChange = jest.fn();
+    await renderFrame(<Controlled start={100} onChange={onChange} />);
+    const scroll = await screen.findByTestId('price-picker-scroll');
+    const index = LIST.indexOf(2000);
+    await drag(scroll, index * STEP + STEP * 0.6);
+    expect(onChange).toHaveBeenLastCalledWith(2500);
+    await drag(scroll, index * STEP + STEP * 0.4);
+    expect(onChange).toHaveBeenLastCalledWith(2000);
+  });
+
+  it('a scroll the picker makes itself is never a choice: an off-list price and its line stay until the person picks', async () => {
+    const onChange = jest.fn();
+    await renderFrame(<Controlled start={1200} onChange={onChange} />);
+    const strip = await screen.findByTestId('price-picker-strip');
+    // The strip has a width, so the picker scrolls to the nearest price (1,000) by itself; the scroll events that causes arrive.
+    await act(async () => {
+      fireEvent(strip, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 70 } } });
+    });
+    const scroll = screen.getByTestId('price-picker-scroll');
+    const at = LIST.indexOf(1000) * STEP;
+    await act(async () => {
+      fireEvent.scroll(scroll, { nativeEvent: { contentOffset: { x: at / 2, y: 0 } } });
+      fireEvent.scroll(scroll, { nativeEvent: { contentOffset: { x: at, y: 0 } } });
+      fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: at, y: 0 } } });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    // The person's own scroll afterwards does choose: touching the strip takes it back from the picker at once.
+    await act(async () => {
+      fireEvent(scroll, 'scrollBeginDrag', { nativeEvent: { contentOffset: { x: at, y: 0 } } });
+      fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: LIST.indexOf(2000) * STEP, y: 0 } } });
+    });
+    expect(onChange).toHaveBeenLastCalledWith(2000);
+    expect(screen.queryByText('Pick a price from the list.')).toBeNull();
   });
 });
 
@@ -170,6 +213,8 @@ describe('PricePicker · a screen reader', () => {
     const onChange = jest.fn();
     await renderFrame(<Controlled start={2500} onChange={onChange} />);
     const strip = await screen.findByTestId('price-picker-strip');
+    // An accessible container, so a screen reader offers the adjustable control (its stops stay labelled buttons).
+    expect(strip.props.accessible).toBe(true);
     expect(strip.props.accessibilityRole).toBe('adjustable');
     expect(strip.props.accessibilityValue).toEqual({ text: '₦2,500' });
     await fireEvent(strip, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
@@ -178,6 +223,18 @@ describe('PricePicker · a screen reader', () => {
     await fireEvent(screen.getByTestId('price-picker-strip'), 'accessibilityAction', { nativeEvent: { actionName: 'decrement' } });
     expect(onChange).toHaveBeenLastCalledWith(2000);
     expect(screen.getByTestId('price-picker-strip').props.accessibilityValue).toEqual({ text: '₦2,000' });
+  });
+});
+
+describe('PricePicker · no price chosen yet', () => {
+  it('is adjustable too: the first increment or decrement chooses the stop it is centred on (2,500)', async () => {
+    const onChange = jest.fn();
+    await renderFrame(<Controlled onChange={onChange} />);
+    const strip = await screen.findByTestId('price-picker-strip');
+    expect(strip.props.accessibilityValue).toEqual({ text: 'No price chosen' });
+    await fireEvent(strip, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(2500);
   });
 });
 

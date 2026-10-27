@@ -206,20 +206,61 @@ describe('Paid messages (I21)', () => {
     await waitFor(() => expect(screen.queryByText('Saved')).toBeNull(), { timeout: NOTICE_MS + 1500 });
   });
 
-  it('a creator who never set anything sees the switch off and the strip on 2,500, and turning on sends that list price', async () => {
+  it('a creator who never set anything sees the switch off and no price chosen, and cannot turn on without picking one', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: null, earnPerMessageKobo: null, raiseToKobo: null }));
     answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: true, priceKobo: 250_000 }));
     await open();
     await screen.findByText('Take paid messages');
     expect(screen.getByText('Off')).toBeTruthy();
-    expect(await screen.findByTestId('price-stop-2500')).toBeTruthy();
-    await waitFor(() => expect(chosen()).toEqual([2500]));
+    await screen.findByTestId('price-stop-2500');
+    expect(chosen()).toEqual([]);
     await fireEvent.press(screen.getByTestId('paid-switch'));
+    expect(screen.getByText('On')).toBeTruthy();
+    expect(isDisabled(saveButton())).toBe(true);
+    await pick(2500);
     expect(screen.getByText('On · ₦2,500 a message')).toBeTruthy();
     expect(isDisabled(saveButton())).toBe(false);
     await fireEvent.press(saveButton());
     await waitFor(() => expect(puts()).toHaveLength(1));
     expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 24 });
+  });
+
+  it('a saved price off the list keeps Save off while only the reply time changes, so no off-list price is sent', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ priceKobo: 100_000, responseHours: 72 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await screen.findByTestId('price-stop-1000');
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
+    expect(isDisabled(saveButton())).toBe(true);
+    await fireEvent.press(saveButton());
+    expect(puts()).toHaveLength(0);
+    // Picking a list price turns Save on, and that price is what is sent.
+    await pick(1000);
+    expect(isDisabled(saveButton())).toBe(false);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 100_000, responseHours: 72 });
+  });
+
+  it('an unchanged price that is on the list is sent as before, and Save waits for the list to load', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${PRICES}`] = 'offline';
+    answers[`PUT ${SETTINGS}`] = ok(settings({ responseHours: 72 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
+    // The list is not known, so nothing proves 1,500 is on it: Save stays off.
+    expect(isDisabled(saveButton())).toBe(true);
+    answers[`GET ${PRICES}`] = prices();
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ['prices'] });
+    });
+    await waitFor(() => expect(isDisabled(saveButton())).toBe(false));
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 150_000, responseHours: 72 });
   });
 
   it('a price under the lowest the Hub allows is named and cannot be saved', async () => {

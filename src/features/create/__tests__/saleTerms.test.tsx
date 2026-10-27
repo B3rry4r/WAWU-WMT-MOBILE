@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
 import { servePrices } from '@/features/prices/__helpers__/prices';
 
@@ -54,11 +54,51 @@ describe('M24 · the price step no longer reads the sale terms', () => {
     details.setDetails({ title: 'The Freelancer\'s Pricing Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
     await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
     expect(await screen.findByTestId('price-stop-2500')).toBeTruthy();
-    for (const absent of ['Your share', 'Listing fee', 'You earn per sale']) expect(screen.queryByText(absent)).toBeNull();
+    for (const absent of ['Your share', 'You earn per sale']) expect(screen.queryByText(absent)).toBeNull();
     expect(screen.queryByTestId('price-presets-1000')).toBeNull();
+    // The earn figure is the picker's own (85% of the list price); the sale terms are read for the listing fee only.
+    expect(await screen.findByTestId('price-fee')).toBeTruthy();
+  });
+
+  it('draws the Listing fee as "Free" once the Hub has answered', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null));
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByText('Listing fee')).toBeTruthy();
+    expect(within(screen.getByTestId('price-fee')).getByText('Free')).toBeTruthy();
+  });
+
+  it('draws the Listing fee in naira when the Hub names one', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null, { listingFeeKobo: 50000 }));
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await within(await screen.findByTestId('price-fee')).findByText('₦500')).toBeTruthy();
+  });
+
+  it('draws no Listing fee until the Hub has answered, and still sends for review', async () => {
+    servePrices();
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    await screen.findByTestId('price-stop-2500');
     expect(screen.queryByTestId('price-terms')).toBeNull();
-    // The earn figure is the picker's own (85% of the list price), so the sale terms are never asked for on this step.
-    expect(hub.sent.some((s) => s.path === TERMS)).toBe(false);
+    expect(screen.queryByText('Listing fee')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBeFalsy());
+  });
+
+  it('draws the Listing fee on Paid only', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null));
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByTestId('price-fee')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Free'));
+    expect(screen.queryByTestId('price-terms')).toBeNull();
   });
 
   it('draws the picker on Paid only', async () => {

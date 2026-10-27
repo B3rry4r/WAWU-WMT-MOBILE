@@ -44,6 +44,8 @@ const metrics = {
 
 /** How long the strip rests before the price it stopped on is taken (the design's 60 ms). */
 export const SETTLE_MS = 60;
+/** How long the scroll events of a scroll the picker made itself are set aside: they are never a choice. A drag or touch lifts it at once. */
+export const DRIVEN_MS = 900;
 
 const KOBO = 100;
 const stepWidth = metrics.stop + metrics.stopGap;
@@ -54,9 +56,9 @@ const clear = (color: string): string => (/^#[0-9a-f]{6}$/i.test(color) ? `${col
 const offsetOf = (event: NativeSyntheticEvent<NativeScrollEvent>): number => event.nativeEvent.contentOffset.x;
 
 export type PricePickerProps = {
-  /** The price now, in whole naira. Null when none is chosen yet: the picker then starts on the design's stop and says so with `onChange`. */
+  /** The price now, in whole naira. Null when none is chosen yet: the strip is centred on the design's stop with nothing selected and no price claimed. */
   value: number | null;
-  /** The chosen list price, in whole naira. Called for every tap, scroll stop and shortcut, and once on its own when `value` is null. */
+  /** The chosen list price, in whole naira. Called only for a person's own tap, scroll or shortcut (or a screen reader's adjust), never by the picker itself. */
   onChange: (naira: number) => void;
   /** The small caps line over the price: "Your price", "Price per question". */
   label: string;
@@ -144,19 +146,36 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
   const placed = useRef<number | null>(null);
 
-  // A price not chosen yet starts on the design's stop, and the screen is told, so what is drawn is what is sent.
-  useEffect(() => {
-    if (value === null && selected !== null && !disabled) onChange(selected);
-  }, [value, selected, disabled, onChange]);
-
-  // The strip follows the chosen price: the first placement is at once, later ones glide.
+  // The strip follows the price: the first placement is at once, later ones glide. A scroll the picker makes itself is set aside (`ours`):
+  // only a person's own scroll, tap or shortcut may choose a price, so an off-list price is not quietly replaced.
+  const driven = useRef(false);
+  const drivenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lift = useCallback(() => {
+    driven.current = false;
+    if (drivenTimer.current) clearTimeout(drivenTimer.current);
+  }, []);
+  const glideTo = useCallback(
+    (x: number, animated: boolean) => {
+      lift();
+      driven.current = true;
+      drivenTimer.current = setTimeout(() => void (driven.current = false), DRIVEN_MS);
+      scroller.current?.scrollTo({ x, y: 0, animated });
+    },
+    [lift],
+  );
   const at = selected === null ? -1 : list.indexOf(selected);
   useEffect(() => {
     if (at < 0 || width === 0 || placed.current === at) return;
-    scroller.current?.scrollTo({ x: at * stepWidth, y: 0, animated: placed.current !== null });
+    glideTo(at * stepWidth, placed.current !== null);
     placed.current = at;
-  }, [at, width]);
-  useEffect(() => () => void (settle.current && clearTimeout(settle.current)), []);
+  }, [at, width, glideTo]);
+  useEffect(
+    () => () => {
+      if (settle.current) clearTimeout(settle.current);
+      if (drivenTimer.current) clearTimeout(drivenTimer.current);
+    },
+    [],
+  );
 
   const choose = useCallback(
     (naira: number) => {
@@ -177,16 +196,18 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
       placed.current = index;
       if (naira !== value || offList) onChange(naira);
       // Land on the stop exactly (a drag that ended between two).
-      if (Math.abs(x - index * stepWidth) > 1) scroller.current?.scrollTo({ x: index * stepWidth, y: 0, animated: true });
+      if (Math.abs(x - index * stepWidth) > 1) glideTo(index * stepWidth, true);
     },
-    [disabled, list, offList, onChange, value],
+    [disabled, list, offList, onChange, value, glideTo],
   );
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (driven.current) return;
     const x = offsetOf(event);
     if (settle.current) clearTimeout(settle.current);
     settle.current = setTimeout(() => takeOffset(x), SETTLE_MS);
   };
   const onEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (driven.current) return;
     if (settle.current) clearTimeout(settle.current);
     takeOffset(offsetOf(event));
   };
@@ -211,12 +232,14 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
     );
   }
 
-  const shown = offList ? selected : (value ?? selected);
+  // What is claimed: nothing before a price is chosen; the nearest list price (with the line) for one that is off the list.
+  const shown = value === null ? null : offList ? selected : value;
   const store = storeNote ? storePriceOf(prices.data, shown) : null;
   const into = colors[fadeInto];
   const edge = clear(into);
-  const spoken = `₦${shown.toLocaleString('en-NG')}`;
-  const bump = (direction: 1 | -1) => choose(stepOf(list, shown, direction));
+  const spoken = shown === null ? 'No price chosen' : `₦${shown.toLocaleString('en-NG')}`;
+  // Adjusting with no price chosen yet chooses the stop the strip is centred on; otherwise one list step.
+  const bump = (direction: 1 | -1) => choose(shown === null ? selected : stepOf(list, shown, direction));
 
   return (
     <View testID={testID} style={styles.root}>
@@ -224,23 +247,31 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
         <Text variant="label" tone="textMuted" style={styles.label}>
           {label}
         </Text>
-        <View testID={`${testID}-price`} accessibilityLiveRegion="polite" accessibilityLabel={`${label} ${spoken}`}>
-          <Money minorUnits={shown * KOBO} size={metrics.big} weight={700} decimals={false} testID={`${testID}-big`} />
+        <View testID={`${testID}-price`} accessibilityLiveRegion="polite" accessibilityLabel={`${label} ${spoken}`} style={styles.big}>
+          {shown === null ? (
+            <Text variant="h3" tone="textMuted" style={[font(700), styles.unpicked]}>
+              Pick a price
+            </Text>
+          ) : (
+            <Money minorUnits={shown * KOBO} size={metrics.big} weight={700} decimals={false} testID={`${testID}-big`} />
+          )}
         </View>
-        <View
-          testID={`${testID}-earn`}
-          accessible
-          accessibilityLabel={`You earn ${earnOf(shown).toLocaleString('en-NG')} naira ${earnSuffix}`}
-          style={[styles.earn, { backgroundColor: colors.successTint }]}
-        >
-          <Text variant="caption" tone="success" importantForAccessibility="no" style={[font(700), styles.earnText]}>
-            You earn
-          </Text>
-          <Money minorUnits={earnOf(shown) * KOBO} size={metrics.earn} weight={700} decimals={false} tone="success" />
-          <Text variant="caption" tone="success" importantForAccessibility="no" style={[font(700), styles.earnText]}>
-            {earnSuffix}
-          </Text>
-        </View>
+        {shown === null ? null : (
+          <View
+            testID={`${testID}-earn`}
+            accessible
+            accessibilityLabel={`You earn ${earnOf(shown).toLocaleString('en-NG')} naira ${earnSuffix}`}
+            style={[styles.earn, { backgroundColor: colors.successTint }]}
+          >
+            <Text variant="caption" tone="success" importantForAccessibility="no" style={[font(700), styles.earnText]}>
+              You earn
+            </Text>
+            <Money minorUnits={earnOf(shown) * KOBO} size={metrics.earn} weight={700} decimals={false} tone="success" />
+            <Text variant="caption" tone="success" importantForAccessibility="no" style={[font(700), styles.earnText]}>
+              {earnSuffix}
+            </Text>
+          </View>
+        )}
         {offList ? (
           <Text variant="caption" tone="textSecondary" testID={`${testID}-off-list`} accessibilityRole="alert" style={styles.offList}>
             {OFF_LIST_LINE}
@@ -252,7 +283,8 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
         testID={`${testID}-strip`}
         style={[styles.strip, { marginHorizontal: -bleed }]}
         onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
-        accessible={false}
+        // One adjustable control for a screen reader (increment and decrement move one list step); the stops inside stay labelled buttons.
+        accessible
         accessibilityRole="adjustable"
         accessibilityLabel={label}
         accessibilityValue={{ text: spoken }}
@@ -270,12 +302,14 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
           decelerationRate="fast"
           scrollEventThrottle={16}
           onScroll={onScroll}
+          onScrollBeginDrag={lift}
+          onTouchStart={lift}
           onMomentumScrollEnd={onEnd}
           onScrollEndDrag={onEnd}
           contentContainerStyle={[styles.row, { paddingHorizontal: Math.max(0, (width - metrics.stop) / 2) }]}
         >
           {list.map((naira) => (
-            <Stop key={naira} naira={naira} selected={naira === selected} disabled={disabled} onPress={() => choose(naira)} />
+            <Stop key={naira} naira={naira} selected={shown !== null && naira === selected} disabled={disabled} onPress={() => choose(naira)} />
           ))}
         </ScrollView>
         <LinearGradient pointerEvents="none" colors={[into, edge]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fade, styles.fadeLeft]} />
@@ -309,6 +343,8 @@ const styles = StyleSheet.create({
   root: { alignSelf: 'stretch', gap: space.md },
   loading: { alignSelf: 'stretch', gap: space.md },
   hero: { alignItems: 'center', gap: space.xs + space.xs / 2, paddingTop: space.xs },
+  unpicked: { fontSize: metrics.big / 2 },
+  big: { minHeight: metrics.big, justifyContent: 'center', alignItems: 'center' },
   label: { textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' },
   earn: {
     flexDirection: 'row',

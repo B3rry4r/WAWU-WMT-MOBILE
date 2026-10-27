@@ -1,22 +1,25 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
+import { Card, GroupedList } from '@/components/Card';
+import { KeyValueRow } from '@/components/ListRow';
 import { APP_NAME } from '@/components/BrandMark';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
+import { formatMoney } from '@/components/Money';
 import { PricePicker } from '@/components/PricePicker';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Text } from '@/components/Text';
-import { refetchIfNotOnList } from '@/features/prices/api';
+import { listOf, refetchIfNotOnList, usePrices } from '@/features/prices/api';
+import { stopOf } from '@/features/prices/model';
 import { font, space, useWawu } from '@/theme';
 
-import { allowanceKey, createContent, saveLessons, type LessonInput } from './api';
+import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
 import { CreateFrame } from './CreateFrame';
 import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
 import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
@@ -83,6 +86,13 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   const free = details.accessType === 'free';
   // The price picked, in whole naira: the picker only ever gives one on the Hub's list.
   const picked = free ? null : priceOf(details.price);
+  // The picker never chooses a price by itself, so this step starts a paid piece on the design's stop (₦2,500, or the nearest list price).
+  const start = stopOf(listOf(usePrices().data), null);
+  useEffect(() => {
+    if (!free && details.price === '' && start !== null) setDetails({ price: String(start) });
+  }, [free, details.price, start]);
+  // The listing fee is the Hub's (`GET /content/sale-terms`, FIX-110), drawn once it has answered.
+  const terms = useQuery({ queryKey: saleTermsKey(null), queryFn: () => fetchSaleTerms(null) });
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
@@ -174,7 +184,17 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
           earnSuffix="a sale"
         />
       )}
+      {!free && terms.data ? <ListingFeeCard terms={terms.data} /> : null}
     </CreateFrame>
+  );
+}
+
+/** M24's card under the price: the listing fee, "Free" when the Hub says 0 (FIX-110). */
+export function ListingFeeCard({ terms }: { terms: SaleTerms }) {
+  return (
+    <GroupedList testID="price-terms">
+      <KeyValueRow testID="price-fee" label="Listing fee" value={terms.listingFeeKobo === 0 ? 'Free' : formatMoney(terms.listingFeeKobo, { decimals: false })} />
+    </GroupedList>
   );
 }
 

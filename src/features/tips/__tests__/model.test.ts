@@ -15,10 +15,10 @@ describe('what the tip sheet decides', () => {
     expect(noteEcho(null)).toBeNull();
   });
 
-  it("says what the creator gets on a tile: 'Tife gets', or 'They get' without a name; and opens on the sheet's own 2,000", () => {
+  it("says what the creator gets on a tile: 'Tife gets', or 'They get' without a name; and opens on the design's 1,000", () => {
     expect(getsWords('Tife Adeola')).toBe('Tife gets');
     expect(getsWords(null)).toBe('They get');
     expect(getsWords('  ')).toBe('They get');
-    expect(DEFAULT_TIP_KOBO).toBe(200_000);
+    expect(DEFAULT_TIP_KOBO).toBe(100_000);
   });
 });

@@ -6,10 +6,10 @@ import { formatNaira } from '@/components/pay-sheet';
  */
 
 /**
- * The tip a sheet opens on, in kobo: the sheet's own ₦2,000 (the payment path is unchanged, PRICE-PICKER). The tiles are the Hub's tip list (`GET /prices`, R-101); when
+ * The tip a sheet opens on, in kobo: the design's ₦1,000 (PRICE-PICKER). The tiles are the Hub's tip list (`GET /prices`, R-101); when
  * the admin's list lacks this one, the sheet opens on the list's nearest tip.
  */
-export const DEFAULT_TIP_KOBO = 200_000;
+export const DEFAULT_TIP_KOBO = 100_000;
 
 /** The message that goes with a tip: 500 characters at most (the contract's `TipWalletDto.note`). */
 export const NOTE_MAX = 500;

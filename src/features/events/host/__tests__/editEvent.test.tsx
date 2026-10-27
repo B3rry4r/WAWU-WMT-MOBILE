@@ -499,6 +499,15 @@ describe('E18 · Ticket types', () => {
     expect(rtl.screen.queryByTestId('host-submitted')).toBeNull();
   });
 
+  it('Save stays off until the price list has loaded, so nothing is judged against an empty list', async () => {
+    serve([regular()], 0, (c) => (c.method === 'GET' && c.path === '/prices' ? { status: 500, body: { statusCode: 500, message: 'Try later' } } : undefined));
+    await bootTypes();
+    await type('host-ticket-0-quantity', '90');
+    expect(rtl.screen.getByTestId('ticket-types-save').props.accessibilityState.disabled).toBe(true);
+    await press('ticket-types-save');
+    expect(rtl.screen.queryByTestId('review-sheet')).toBeNull();
+  });
+
   it('never sends a price off the list: a saved type priced 1,200 shows the nearest list price, says to pick one, and Save is refused until one is picked', async () => {
     serve([tier('t1', 'regular', 'Regular', 1200, 100)], 0, (c) => (c.method === 'PUT' ? ok([]) : undefined));
     await bootTypes();

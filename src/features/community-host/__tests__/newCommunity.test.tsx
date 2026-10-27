@@ -120,16 +120,26 @@ const choosePrivate = async () => {
 const create = () => press('new-community-create');
 
 describe('I32: a private community is never made without a price (R-63)', () => {
-  it('a host who picks Private sees the price strip start on 2,500 with what they earn, and with no picture nothing is sent', async () => {
+  it('a host who picks Private sees no price chosen and is asked for one: nothing is sent, and the picker chose nothing itself', async () => {
     await boot();
     await choosePrivate();
-    expect((await until(() => rtl.screen.getByTestId('price-stop-2500'))).props.accessibilityState.selected).toBe(true);
-    expect(rtl.screen.getByTestId('price-picker-earn').props.accessibilityLabel).toBe('You earn 2,125 naira a pass');
+    await until(() => rtl.screen.getByTestId('price-stop-2500'));
+    expect(rtl.screen.getAllByTestId(/^price-stop-\d+$/).filter((n) => n.props.accessibilityState.selected)).toHaveLength(0);
     expect(rtl.screen.getByText('Price for 30 days')).toBeTruthy();
+    await create();
+    expect(await until(() => rtl.screen.getByText('Set a price for 30 days.'))).toBeTruthy();
+    expect(hub.rooms).toHaveLength(0);
+    expect(hub.presigns).toHaveLength(0);
+  });
+
+  it('a host who picks a price sees what they earn, and with no picture nothing is sent', async () => {
+    await boot();
+    await choosePrivate();
+    rtl.fireEvent.press(await until(() => rtl.screen.getByTestId('price-stop-2500')));
+    await until(() => expect(rtl.screen.getByTestId('price-picker-earn').props.accessibilityLabel).toBe('You earn 2,125 naira a pass'));
     await create();
     expect(await until(() => rtl.screen.getByText('A private community needs a cover picture.'))).toBeTruthy();
     expect(hub.rooms).toHaveLength(0);
-    expect(hub.presigns).toHaveLength(0);
   });
 
   it('a private community with a picked price but no picture is not sent either', async () => {
@@ -163,7 +173,8 @@ describe('I32: a private community is never made without a price (R-63)', () => 
     await choosePrivate();
     rtl.fireEvent.press(rtl.screen.getByTestId('new-community-picture'));
     await until(() => rtl.screen.getByTestId('new-community-picture-image'));
-    await until(() => rtl.screen.getByTestId('price-stop-2500'));
+    rtl.fireEvent.press(await until(() => rtl.screen.getByTestId('price-stop-2500')));
+    await until(() => expect(rtl.screen.getByTestId('price-stop-2500').props.accessibilityState.selected).toBe(true));
     const reads = () => hub.priceReads;
     const before = reads();
     await create();

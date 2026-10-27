@@ -499,6 +499,25 @@ describe('E13 to E15 · the wizard', () => {
     expect(props.onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('a send refused as 400 price_not_on_list reads the list again and shows the Hub\'s sentence, and the form stays', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦4,000 and ₦5,000.';
+    serve(true, (c) =>
+      c.method === 'POST' && c.path === '/events'
+        ? { status: 400, body: { statusCode: 400, message: sentence, reason: { code: 'price_not_on_list', message: sentence, nearestLowerNaira: 4000, nearestHigherNaira: 5000 } } }
+        : undefined,
+    );
+    await bootHost();
+    await fillBasics();
+    await fillWhen();
+    await fillTickets();
+    const reads = () => calls.filter((c) => c.method === 'GET' && c.path === '/prices').length;
+    const before = reads();
+    await press('host-send');
+    expect(await rtl.screen.findByText(sentence)).toBeTruthy();
+    await rtl.waitFor(() => expect(reads()).toBeGreaterThan(before));
+    expect(rtl.screen.queryByText('Sent for review')).toBeNull();
+  });
+
   it('sends a free ticket as 0 (R-8)', async () => {
     serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? ok(created) : undefined));
     await bootHost();

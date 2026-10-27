@@ -74,10 +74,15 @@ export function priceProblem(form: Form, settings: PaidMessageSettings): string 
   return null;
 }
 
-/** Whether Save can be pressed: nothing locked, a price that is in range (and present when the switch is on), a reply time chosen. */
-export function canSave(form: Form, settings: PaidMessageSettings): boolean {
+/**
+ * Whether Save can be pressed: nothing locked, a price that is in range (and present when the switch is on), a reply time chosen. With
+ * the Hub's price list given, a price that is not on it keeps Save off until a list price is picked (PRICE-PICKER: an off-list price is
+ * never sent), and so does a list that has not loaded, which proves nothing about the saved price.
+ */
+export function canSave(form: Form, settings: PaidMessageSettings, list?: readonly number[]): boolean {
   if (modeOf(settings.standing) === 'locked') return false;
   if (priceProblem(form, settings) !== null) return false;
+  if (list !== undefined && form.digits !== '' && !list.includes(Number(form.digits))) return false;
   if (form.enabled && form.digits === '') return false;
   return form.hours !== null;
 }

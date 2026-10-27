@@ -118,7 +118,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
           <Button
             label="Save"
             testID="paid-save"
-            disabled={!canSave(form, data)}
+            disabled={!canSave(form, data, list)}
             loading={save.isPending}
             onPress={() => {
               setNotice(null);

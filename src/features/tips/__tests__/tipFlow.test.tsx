@@ -281,12 +281,21 @@ async function enterPin(pin: string) {
 
 const tipButton = () => rtl.screen.findByRole('button', { name: /^Tip ₦/ });
 
-/** Opens H26 from the rail and waits for the breakdown of the chosen amount. */
-async function openSheet() {
+/**
+ * Opens H26 from the rail and waits for the breakdown of the chosen amount. The sheet opens on the design's ₦1,000 (PRICE-PICKER round 2);
+ * the payment tests below were written on ₦2,000, so unless `tile` is null the helper picks that tile first and waits for its quote.
+ */
+async function openSheet(tile: number | null = 2000) {
   const screen = await boot();
   await rtl.fireEvent.press(screen.getByTestId('tip-a'));
   await screen.findByTestId('tip-sheet');
   await tipButton();
+  if (tile !== null) {
+    await rtl.fireEvent.press(await screen.findByTestId(`tip-tile-${tile}`));
+    await screen.findByRole('button', { name: 'Tip ₦2,023.25' });
+    // The quote history starts at the ₦2,000 one, as it did when the sheet opened on it.
+    hub.quotes.splice(0, hub.quotes.length - 1);
+  }
   return screen;
 }
 
@@ -302,23 +311,23 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     expect(screen.queryByTestId('tip-a')).toBeNull();
   });
 
-  it('a user sees Tip Tife, ₦2,000 chosen, the breakdown from the Hub\'s quote, and the button "Tip ₦2,023.25"', async () => {
-    const screen = await openSheet();
+  it('a user sees Tip Tife, ₦1,000 chosen, the breakdown from the Hub\'s quote, and the button "Tip ₦1,023.25"', async () => {
+    const screen = await openSheet(null);
     expect(screen.getByText('Tip Tife')).toBeTruthy();
     expect(screen.getByText('Goes straight to their wallet. They see your name and note.')).toBeTruthy();
-    expect(screen.getByTestId('tip-tile-2000').props.accessibilityState.selected).toBe(true);
-    expect(hub.quotes).toEqual([{ amountKobo: 200000 }]);
+    expect(screen.getByTestId('tip-tile-1000').props.accessibilityState.selected).toBe(true);
+    expect(hub.quotes).toEqual([{ amountKobo: 100000 }]);
     const rows = screen.getByTestId('tip-breakdown');
-    expect(rtl.within(rows).getByLabelText('2,000 naira')).toBeTruthy();
+    expect(rtl.within(rows).getByLabelText('1,000 naira')).toBeTruthy();
     expect(rtl.within(rows).getByText('Bank charge')).toBeTruthy();
     expect(rtl.within(rows).getByLabelText('23 naira 25 kobo')).toBeTruthy();
-    expect(rtl.within(rows).getByLabelText('2,023 naira 25 kobo')).toBeTruthy();
+    expect(rtl.within(rows).getByLabelText('1,023 naira 25 kobo')).toBeTruthy();
     expect(screen.queryByText(/Dollar|USDT/)).toBeNull();
     expect(screen.queryByText(/Fintava/)).toBeNull();
   });
 
   it('shows the six tiles from the Hub\'s tip list, each with what the fan pays and what Tife gets (85%), and no field to type another amount', async () => {
-    const screen = await openSheet();
+    const screen = await openSheet(null);
     const tiles = screen.getAllByTestId(/^tip-tile-\d+$/).map((t) => String(t.props.testID).replace('tip-tile-', ''));
     expect(tiles).toEqual(['200', '500', '1000', '2000', '5000', '10000']);
     expect(screen.getByTestId('tip-tile-1000').props.accessibilityLabel).toBe('₦1,000. Tife gets ₦850');
@@ -443,6 +452,9 @@ describe('H26 to H28: paying', () => {
     await rtl.waitFor(() => expect(screen.queryByTestId('tip-sheet')).toBeNull());
     await rtl.fireEvent.press(screen.getByTestId('tip-a'));
     await tipButton();
+    // The sheet opens on ₦1,000 again: the same ₦2,000 is picked.
+    await rtl.fireEvent.press(await screen.findByTestId('tip-tile-2000'));
+    await screen.findByRole('button', { name: 'Tip ₦2,023.25' });
     await rtl.fireEvent.press(await tipButton());
     await screen.findByText(/^Approve /);
     await enterPin('4829');
@@ -452,12 +464,12 @@ describe('H26 to H28: paying', () => {
   });
 
   it('a wallet too low for the total shows Not enough in your Naira wallet with the shortfall, and no PIN', async () => {
-    hub.balanceKobo = 150_000;
+    hub.balanceKobo = 50_000;
     const pay = wired();
     const screen = await boot(pay);
     await rtl.fireEvent.press(screen.getByTestId('tip-a'));
     await screen.findByText('Not enough in your Naira wallet');
-    expect(screen.getByText('This costs ₦2,023.25. You have ₦1,500.00.')).toBeTruthy();
+    expect(screen.getByText('This costs ₦1,023.25. You have ₦500.00.')).toBeTruthy();
     await rtl.fireEvent.press(screen.getByText('Add ₦523.25'));
     expect(pay.onAddMoney).toHaveBeenCalledWith(52325);
     expect(hub.pays).toHaveLength(0);
@@ -552,7 +564,7 @@ describe('PAY-FX (R-91): the tip sheet for a buyer paying from a dollar account'
     await screen.findByTestId('source-total');
     const rows = screen.getByTestId('tip-breakdown');
     // The naira tip stays; the account and the firm amount come from the one piece the pay sheet draws.
-    expect(rtl.within(rows).getByLabelText('2,000 naira')).toBeTruthy();
+    expect(rtl.within(rows).getByLabelText('1,000 naira')).toBeTruthy();
     expect(rtl.within(rows).getByText('Pay from')).toBeTruthy();
     expect(rtl.within(rows).getByText('USD account')).toBeTruthy();
     expect(rtl.within(rows).getAllByText('$0.23').length).toBe(2);
@@ -576,7 +588,7 @@ describe('PAY-FX (R-91): the tip sheet for a buyer paying from a dollar account'
     await rtl.fireEvent.press(await screen.findByRole('button', { name: 'Tip $0.23' }));
     await screen.findByText('Approve $0.23 to Tife Adeola');
     await enterPin('4829');
-    await screen.findByText('₦2,000 sent to Tife');
+    await screen.findByText('₦1,000 sent to Tife');
     const total = rtl.within(screen.getByTestId('tip-total-paid'));
     expect(total.getByText('Total paid')).toBeTruthy();
     expect(total.getByText('$0.23')).toBeTruthy();
