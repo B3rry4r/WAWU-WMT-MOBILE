@@ -134,6 +134,64 @@ describe('VF13 · Add 5 more products in the store sheet', () => {
   });
 });
 
+describe('VF13 · the pack is offered only where the Hub would sell it (F1)', () => {
+  const mine = (over: Record<string, unknown>) => ({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 3, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...over });
+  const { packOffered } = require('../purchaseModel') as typeof import('../purchaseModel');
+
+  it('packOffered follows the Hub’s own rule: a running tier, and the pack lifts the limit above what is published', () => {
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
+    expect(packOffered({ state: 'ending', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
+    // Not a running tier: no tier at all, a tier that ended, or only a tick (the Hub refuses the pack to all three).
+    for (const state of ['none', 'ended'] as const) expect(packOffered({ state, productsAllowed: 3, productsUsed: 3 }, 5)).toBe(false);
+    expect(packOffered({ state: 'none', productsAllowed: 25, productsUsed: 25 }, 5)).toBe(false);
+    // Running, but five more would still leave fewer places than there are products published.
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 8 }, 5)).toBe(false);
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 7 }, 5)).toBe(true);
+    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 0)).toBe(false);
+  });
+
+  it('a person with only a verification tick (no tier) is not offered the pack, though the store has it, and nothing is asked of the store sheet', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'none', tier: null, productsAllowed: 25, productsUsed: 25, activeUntil: null });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 25 of 25');
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer-loading')).toBeNull();
+    expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
+    expect(rtl.screen.getByTestId('full-library')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a tier that has ended is not offered the pack either', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'ended', productsAllowed: 3, productsUsed: 25 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toBeTruthy();
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+  });
+
+  it('a tier that is ending still is', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'ending' });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-add')).toHaveTextContent('Add 5 · $4.99');
+  });
+
+  it('a pack that would still leave fewer places than there are products published is not offered', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ productsAllowed: 3, productsUsed: 9 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 9 of 3');
+    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+  });
+});
+
 describe('VF13 · the pack is offered only where the Hub would sell it (R-100, PACK-CAP)', () => {
   const mine = (over: Record<string, unknown>) => ({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 3, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...over });
   const QUOTE = 'GET /plans/purchases/quote';
@@ -209,6 +267,39 @@ describe('VF13 · the pack is offered only where the Hub would sell it (R-100, P
     expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
     expect(fakeStore.requests).toEqual([]);
     expect(hub.bodies).toHaveLength(0);
+  });
+
+
+  const walletlessNoTier = async (code: string, status: number) => {
+    serve();
+    refuse(code, 'Not for you.', status);
+    hub.routes['GET /me/tier'] = mine({ state: 'none', tier: null, productsAllowed: 3, productsUsed: 3, activeUntil: null });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    await rtl.waitFor(() => expect(hub.reads).toContain(QUOTE));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
+    expect(fakeStore.requests).toEqual([]);
+  };
+
+  it('a walletless person with no tier is not offered the pack when the Hub answers tier_required, and the store is never opened', async () => {
+    await walletlessNoTier('tier_required', 402);
+  });
+
+  it('a walletless person with no tier is not offered the pack even when an old Hub answers wallet_not_open, and the store is never opened', async () => {
+    await walletlessNoTier('wallet_not_open', 409);
+  });
+
+  it('an ended tier is not offered the pack even when the Hub (an old one) says the quote is fine, and the store is never opened', async () => {
+    serve();
+    hub.routes['GET /me/tier'] = mine({ state: 'ended', productsAllowed: 3, productsUsed: 3 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toBeTruthy();
+    await rtl.waitFor(() => expect(hub.reads).toContain(QUOTE));
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(fakeStore.requests).toEqual([]);
   });
 
   it('when the Hub cannot be asked just before the store sheet, the store is not opened and the person is told to try again', async () => {

@@ -1,3 +1,4 @@
+import type { MyTier } from '@/features/me/api';
 import { isApiError } from '@/api/errors';
 import { formatPoints } from '@/components/PointsFigure';
 import { lastsText } from '@/features/points/buyModel';
@@ -70,6 +71,15 @@ export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, ext
   const above = heldId === null ? [...tiers] : higherTiers(tiers, heldId);
   return above.filter((t) => t.products + extraProducts > used);
 };
+
+/**
+ * Whether the Hub would sell VF13's "Add 5 more products" to this person now, by the rule it refuses with (`limitOffers`, TIER-02): the pack is
+ * bought on a RUNNING tier (`active` or `ending`, never none, ended, or a verification tick alone, whose cap the pack does not raise) and it
+ * must lift the limit above what is published. The sheet keeps this check BESIDE the Hub's own answer (below, R-100): a store purchase cannot be
+ * refunded by WAWU on Apple, so the store sheet never opens for no tier or an ended one, even when the Hub that answers is an old one.
+ */
+export const packOffered = (mine: Pick<MyTier, 'state' | 'productsAllowed' | 'productsUsed'>, count: number): boolean =>
+  (mine.state === 'active' || mine.state === 'ending') && count > 0 && mine.productsAllowed + count > mine.productsUsed;
 
 /**
  * The Hub's refusals of the "Add 5 more products" pack on its quote (`GET /plans/purchases/quote?kind=extra_products`, R-100, PACK-CAP):

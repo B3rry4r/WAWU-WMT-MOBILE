@@ -19,7 +19,7 @@ import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space } from '@/theme';
 
 import { askPackOffered, plansQuery } from './purchaseApi';
-import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, packVerdictOf } from './purchaseModel';
+import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, packOffered, packVerdictOf } from './purchaseModel';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
 const MARK = 72;
@@ -125,8 +125,9 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   } else {
     const count = pack?.product.grants.extraProducts ?? 0;
     const running = mine.data.state === 'active' || mine.data.state === 'ending';
-    // The pack only where the Hub would sell it (its quote is not refused); `offer` is the product when it is drawn.
-    const offer = pack !== null && count > 0 && verdict.kind === 'offered' && refusal === null ? pack : null;
+    // The pack only where the Hub would sell it (its quote is not refused) AND this person has a running tier with room: the check is kept
+    // beside the Hub's answer so the store sheet never opens for no tier or an ended one, even when the Hub is an old one (R-100, round 4).
+    const offer = pack !== null && count > 0 && packOffered(mine.data, count) && verdict.kind === 'offered' && refusal === null ? pack : null;
     const packRefusedByRule = refusal !== null || (verdict.kind === 'refused' && verdict.code === PACK_NOT_ALLOWED);
     const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
     body = (
