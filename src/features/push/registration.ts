@@ -176,7 +176,7 @@ export async function forgetPush(waitMs = 3000): Promise<void> {
   }
 }
 
-/** Sets how a push is shown while the app is open: as a banner, with a sound only when Z2's Sound is on, and no badge. */
+/** Sets how a push is shown while the app is open: as a banner, with a sound only when Z2's Alert sound is on, and no badge. */
 export function installPushHandler(): void {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({

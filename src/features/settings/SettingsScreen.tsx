@@ -24,6 +24,7 @@ import { switchMetrics } from '@/components/Switch';
 import { SwitchRow, switchRowMetrics } from '@/components/SwitchRow';
 import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
+import { setThemeMusic, useThemeMusic } from '@/features/music/themeMusic';
 import { fetchPointsSettings, pointsSettingsKey, putPointsSettings, type PointsSettings } from '@/features/points/walletUseApi';
 
 /** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
@@ -49,6 +50,17 @@ export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
  */
 export const USE_WALLET_TITLE = 'Use wallet for AI tools';
 export const USE_WALLET_SUBTITLE = 'Pay for missing points from your wallet';
+
+/**
+ * R-99: the old "Sound / Taps and alerts" row promised tap sounds the app never makes. It is what it does: the sound a push makes when
+ * it arrives while the app is open (`installPushHandler` reads the switch). Notifications keep their own row.
+ */
+export const ALERT_SOUND_TITLE = 'Alert sound';
+export const ALERT_SOUND_SUBTITLE = "When something arrives while you're in the app";
+
+/** R-99: the WAWU theme, the website's song. It holds the same state as the round button above Create. */
+export const MUSIC_TITLE = 'Music';
+export const MUSIC_SUBTITLE = 'The WAWU theme';
 
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
@@ -81,7 +93,7 @@ export type SettingsScreenProps = {
 
 /**
  * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
- * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
+ * (the Hub holds it, so it follows the person to another phone); Alert sound, Music and Theme are this phone's own
  * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account (SETTINGS-05, Z6) is the muted
  * line under Sign out, each where Z2 draws it.
  */
@@ -101,6 +113,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
     valueOf: (settings) => settings.useWallet,
   });
   const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
+  const music = useThemeMusic();
   const [choosingTheme, setChoosingTheme] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -170,7 +183,8 @@ export function SettingsScreen(props: SettingsScreenProps) {
         ) : (
           <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
         )}
-        <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
+        <SwitchRow testID="settings-sound" title={ALERT_SOUND_TITLE} subtitle={ALERT_SOUND_SUBTITLE} on={prefs.sound} onChange={(next) => void setSound(next)} />
+        <SwitchRow testID="settings-music" title={MUSIC_TITLE} subtitle={MUSIC_SUBTITLE} on={music.on} busy={music.busy} onChange={(next) => void setThemeMusic(next)} />
         {useWallet.query.data ? (
           <SwitchRow
             testID="settings-use-wallet"

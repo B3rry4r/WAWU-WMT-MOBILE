@@ -1,0 +1,59 @@
+---
+id: THEME-MUSIC
+title: The WAWU theme plays in the app from a round button above Create, and the Sound row says what it does (R-99)
+owner: YOU
+area: OPS
+order: -166
+priority: launch
+repo: wawu-wmt-mobile
+type: mobile-screen
+status: review
+depends_on: []
+decisions: [R-99, R-47, R-37]
+passes: [V1, V4, V5, V6, V9]
+artboards: []
+tier: T1
+---
+# THEME-MUSIC · The WAWU theme plays in the app from a round button above Create
+
+## Current state
+
+As of 27 Oct 2026, built by a Sonnet builder (T1), mobile `wmt/THEME-MUSIC` from `origin/main` `564c8c28`. Not verified yet. No task before it is needed, so `depends_on` is empty.
+
+| # | What (source) | Outcome | Where |
+|---|---|---|---|
+| 1 | One theme player for the whole app, outside React (R-99; the website's `src/lib/sound.ts`) | Built. `expo-audio` `createAudioPlayer`, `loop = true`. The song is fetched with `expo-file-system` on the first tap only, into the app's documents folder (the phone does not empty it, so a person who left the music on hears it again without a second 8.7 MB download), downloaded beside its name and moved into place whole. Silence is the default. It pauses when the app leaves the screen (AppState) and plays again on return if it was on. Nothing is set for the background: `app.json`, `package.json` and the audio modes are untouched | `src/features/music/themeMusic.ts`, `themeTrack.ts` (`themeTrack.web.ts` plays the address in the browser build) |
+| 2 | On or off is remembered on the phone only | `loadMusic` and `saveMusic` beside Theme and Alert sound in `devicePrefs.ts` (key `wmt.pref.music`). The app resumes only if it was left on and the song is still on the phone; it never downloads at open | `src/features/settings/devicePrefs.ts` |
+| 3 | A piece with sound starting stops the song and the button shows off | Every piece plays through the feed's `VideoSurface` and `AudioSource`; both tell `pieceSound.ts` when `playing` turns on, and the theme player listens. It also cancels a start that was still downloading. Stopping this way is remembered as off | `src/features/feed/player/index.tsx`, `index.web.tsx`, `src/features/music/pieceSound.ts` |
+| 4 | The round button above Create | 44 across (`layout.tapMin`; the website's is 44 beside a 56 Create, the app's Create is 58): the Create button's circle family in the chrome surface with the hairline edge and the secondary ink, the accent only on the icon while it plays. Play when off, Pause when on, from the app's icon set; "Play music" and "Pause music"; a spinner while the first download runs; a failed download says so in a toast and the button stays on Play. It stands above Create on Create's vertical line with `space.md` between; with no Create (a member, or the Wallet tab) it is centred in Create's slot. Not drawn on Inbox, a piece's page, a chat or paid thread, a community, schools or the library | `src/features/music/MusicButton.tsx`, mounted by `src/app/(tabs)/_layout.tsx` (SHARED-CHANGES THEME-MUSIC #1) |
+| 5 | Settings rows (R-99) | "Sound / Taps and alerts" is now "Alert sound" / "When something arrives while you're in the app" (same switch, same `wmt.pref.sound`, `installPushHandler` still reads it); new "Music" / "The WAWU theme" row holds the button's state | `src/features/settings/SettingsScreen.tsx` |
+
+Changed assertion: `settingsScreens.test.tsx` "draws no tier on any row and no em-dash, and names the app, not WAWU" forbids the word WAWU anywhere on Settings; R-99 names the Music row's line "The WAWU theme", so that one phrase is removed from the text before the check (R-37 and R-99 meet here; the lead may rule which wins). No other existing test changed.
+
+Pictures: `music-creator-off.png`, `music-creator-on.png`, `music-member.png`, `settings-sound.png` in the builder's folder (web export, 390 by 844, dark).
+
+**NOT RUN:** a phone (sound on a real device; the player is proved against a stand-in for `expo-audio`, and the browser build played the song in the pictures); a real fetch of `wawuafrica.com/wawu-theme.mp3` (no agent calls that host; the pictures used a local copy of the track served in its place); the full `npm run check` (the merge agent runs it once per batch).
+
+## Read first
+
+- `docs/WORKFLOW.md`, `docs/roles/BUILDER.md`; `DECISIONS.md` R-99, R-47
+- The website's own build, read only: `src/lib/sound.ts`, `src/components/layout/SoundToggle.tsx` in wawuafrica
+
+## Goal
+
+The WAWU theme plays in the app the way it does on the website, from a button above Create, and Settings says what its sound rows do.
+
+## Scope
+
+`src/features/music/**` (new), `src/features/feed/player/index.tsx` and `index.web.tsx` (one call each), `src/features/settings/devicePrefs.ts` and `SettingsScreen.tsx`, `src/features/push/registration.ts` (a comment), `src/app/(tabs)/_layout.tsx` (SHARED-CHANGES THEME-MUSIC #1), `DECISIONS.md` R-99.
+
+## Capability checks
+
+- [x] A person taps the round button on Home and the WAWU theme plays on a loop; the song is fetched on that first tap only and played from the phone afterwards.
+- [x] While the song downloads the button shows it is working; a failed download says so in a toast and the button stays on Play.
+- [x] A person who left the music on hears it again the next time the app opens; one who left it off, or never turned it on, hears nothing.
+- [x] The song pauses when the app leaves the screen and plays again on return if it was on; it never plays in the background.
+- [x] A piece with sound starting stops the song and the button shows Play.
+- [x] The button stands above Create on the same vertical line; for a person with no Create button it takes Create's place.
+- [x] The button is not drawn where a person reads or talks.
+- [x] Settings has an "Alert sound" row (still the switch push notifications read) and a "Music" row that holds the button's state.

@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 400.**
+**Launch tasks done: 176 of 401.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 5 | 0 | 0 | 0 |
-| review | 232 | 0 | 0 | 0 |
+| review | 233 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -30,6 +30,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
+- [THEME-MUSIC](../tasks/THEME-MUSIC.md) The WAWU theme plays in the app from a round button above Create, and the Sound row says what it does (R-99) (You)
 - [SWEEP-1026](../tasks/SWEEP-1026.md) App sweep: the low rows independent verifiers logged on 26 Oct 2026 (ads tap, paid-question lines, strip, Nuvion line, Passes card, pinch, records) (You)
 - [FIX-P5](../tasks/FIX-P5.md) The four lows of the CHECK-3 fifth pass (tier offer first, one ad card size, ad link in a new tab on the web, Nuvion on a local stack) (You)
 - [FIX-P6](../tasks/FIX-P6.md) The two lows of the CHECK-3 sixth pass (Home names the currency being opened, a payment from a USD account is named by what it paid for) (You)

@@ -506,7 +506,8 @@ describe('Z2 · Settings', () => {
     serve();
     await boot();
     await screen.findByText('Lennox Emmanuel');
-    expect(JSON.stringify(screen.toJSON())).not.toMatch(/Tier|WAWU|Fintava|—/);
+    // R-99 (THEME-MUSIC) names the Music row's line "The WAWU theme": the song's own name, the one allowed use of the word on this screen.
+    expect(JSON.stringify(screen.toJSON()).split('The WAWU theme').join('')).not.toMatch(/Tier|WAWU|Fintava|—/);
     expect(screen.getByText('About Who Made This?')).toBeTruthy();
   });
 
