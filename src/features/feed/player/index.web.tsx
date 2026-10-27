@@ -1,5 +1,7 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
 
+import { pieceStartedSound } from '@/features/music/pieceSound';
+
 import { metrics } from '../look';
 import { peaksFrom } from '../model';
 
@@ -24,6 +26,8 @@ function usePlayback(ref: { current: Media | null }, playing: boolean, uri: stri
       el.pause();
       return;
     }
+    // R-99: a piece with sound takes the floor from the WAWU theme.
+    pieceStartedSound();
     el.play().catch(() => {
       el.muted = true;
       el.play().catch(() => undefined);

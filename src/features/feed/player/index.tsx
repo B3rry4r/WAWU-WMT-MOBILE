@@ -3,6 +3,8 @@ import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
 import { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { pieceStartedSound } from '@/features/music/pieceSound';
+
 import { metrics } from '../look';
 
 import type { AudioSourceProps, PlayerEvents, SeekRequest, VideoSurfaceProps } from './types';
@@ -72,8 +74,11 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
   useSeekOnce(seek, (to) => moveTo(player, to));
 
   useEffect(() => {
-    if (playing) player.play();
-    else player.pause();
+    if (playing) {
+      // R-99: a piece with sound takes the floor from the WAWU theme.
+      pieceStartedSound();
+      player.play();
+    } else player.pause();
   }, [player, playing]);
 
   return (
@@ -119,6 +124,8 @@ export function AudioSource({ uri, playing, seek, onTime, onEnded }: AudioSource
       player.pause();
       return;
     }
+    // R-99: a piece with sound takes the floor from the WAWU theme.
+    pieceStartedSound();
     // A file that played to its end starts again from the top, whatever the phone's player does at the end.
     if (finished.current) {
       finished.current = false;

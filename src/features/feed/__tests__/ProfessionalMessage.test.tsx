@@ -173,9 +173,9 @@ describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
     expect(screen.queryByTestId('card-message')).toBeNull();
   });
 
-  // SWEEP-R3 (R2-SOCIAL3 verifier, low 1; lead ruling): with Message hidden the lone Profile is a whole row. A viewer who sees the Create
-  // button (a creator account) gets the board's row (70 clear of the button), so it never runs under it; anyone else gets the whole 350.
-  // Beside Message the row keeps the board's two buttons and the same 70 clear.
+  // SWEEP-R3 (R2-SOCIAL3 verifier, low 1; lead ruling): with Message hidden the lone Profile is the board's row (70 clear of the Create button),
+  // so it never runs under it. It was the whole 350 for a viewer with no Create button; R-99 (THEME-MUSIC) puts the music button in Create's
+  // slot for that viewer, so that row stops short too. Beside Message the row keeps the board's two buttons and the same 70 clear.
   const paused = () => {
     answers['GET /paid-dm/creators/p1/availability'] = [ok({ creatorWawuId: 'p1', paused: true, pausedUntil: '2026-11-01T00:00:00Z' })];
   };
@@ -197,10 +197,10 @@ describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
     await rtl.waitFor(() => expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 }));
   });
 
-  it('a viewer with no Create button gets a lone Profile across the whole row', async () => {
+  it('a viewer with no Create button gets a lone Profile that stops short too, clear of the music button in Create\'s slot (R-99)', async () => {
     await (require('@/api/query') as typeof import('@/api/query')).queryClient.clear();
     const screen = await loneRow('user');
-    await rtl.waitFor(() => expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 0 }));
+    await rtl.waitFor(() => expect(screen.getByTestId('card-buttons')).toHaveStyle({ marginRight: 70 }));
   });
 
   it('keeps the board\'s two-button row beside Message', async () => {
