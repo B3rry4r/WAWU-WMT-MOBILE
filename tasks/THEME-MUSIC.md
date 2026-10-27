@@ -30,9 +30,7 @@ As of 27 Oct 2026, built by a Sonnet builder (T1), mobile `wmt/THEME-MUSIC` from
 
 Changed assertion: `settingsScreens.test.tsx` "draws no tier on any row and no em-dash, and names the app, not WAWU" forbids the word WAWU anywhere on Settings; R-99 names the Music row's line "The WAWU theme", so that one phrase is removed from the text before the check (R-37 and R-99 meet here; the lead may rule which wins). No other existing test changed.
 
-Pictures: `music-creator-off.png`, `music-creator-on.png`, `music-member.png`, `settings-sound.png` in the builder's folder (web export, 390 by 844, dark).
-
-**NOT RUN:** a phone (sound on a real device; the player is proved against a stand-in for `expo-audio`, and the browser build played the song in the pictures); a real fetch of `wawuafrica.com/wawu-theme.mp3` (no agent calls that host; the pictures used a local copy of the track served in its place); the full `npm run check` (the merge agent runs it once per batch).
+**NOT RUN:** the four pictures for the owner (`music-creator-off`, `music-creator-on`, `music-member`, `settings-sound`, web export at 390 by 844 dark): the disk had 1.3 GB free (the brief's floor for a web export is 2 GB), so no export was made; the positions are proved by `musicButton.test.tsx` (centres on one line, the gap, Create's slot without Create). A phone (sound on a real device; the player is proved against a stand-in for `expo-audio`). A real fetch of `wawuafrica.com/wawu-theme.mp3` (no agent calls that host). The full `npm run check` (the merge agent runs it once per batch).
 
 ## Read first
 
