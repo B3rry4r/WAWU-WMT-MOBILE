@@ -34,6 +34,8 @@ const SOONER = '2030-02-03T10:00:00.000Z';
 const hub = {
   mode: 'ok' as Mode,
   balance: 2350,
+  /** Earned and bonus points: the part of the balance that can be turned into cash (bought points never can). */
+  cashable: null as number | null,
   rateKobo: 40_000,
   minimum: 500,
   dollars: false,
@@ -55,9 +57,11 @@ function figures(points: number) {
   let blockedBy: string | null = null;
   if (points < hub.minimum) blockedBy = 'below_minimum';
   else if (points > hub.balance) blockedBy = 'insufficient_points';
+  else if (points > (hub.cashable ?? hub.balance)) blockedBy = 'not_cashable';
   return {
     currency: 'NGN',
     balancePoints: hub.balance,
+    cashablePoints: hub.cashable ?? hub.balance,
     minimumPoints: hub.minimum,
     maximumPoints: null,
     rate: { points: 1000, kobo: rate },
@@ -118,7 +122,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (hub.dollars) return refuse(409, { code: 'currency_not_supported', message: 'Points cannot be converted to cash in dollars yet.' });
     if (hub.noWallet) return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
     const asked = url.searchParams.get('points');
-    return ok(quote(asked === null ? hub.balance : Number(asked)));
+    return ok(quote(asked === null ? (hub.cashable ?? hub.balance) : Number(asked)));
   }
   if (path === '/points/convert' && request.method === 'POST') {
     const body = (await request.json()) as { points: number; quoteToken: string };
@@ -197,6 +201,7 @@ beforeEach(() => {
   Object.assign(hub, {
     mode: 'ok',
     balance: 2350,
+    cashable: null,
     rateKobo: 40_000,
     minimum: 500,
     dollars: false,
@@ -263,7 +268,7 @@ describe('PT5 · your points', () => {
     expect(lots[0]).toHaveTextContent('ends 3 Feb 2030', { exact: false });
     expect(lots[1]).toHaveTextContent('1,650', { exact: false });
     expect(lots[1]).toHaveTextContent('ends 14 Nov 2030', { exact: false });
-    expect(screen.getByText('The soonest-ending points are spent first.')).toBeTruthy();
+    expect(screen.getByText('The soonest-ending points are spent first, then the ones you bought.')).toBeTruthy();
     const moves = screen.getAllByTestId('points-movement');
     expect(moves).toHaveLength(3);
     expect(moves[0]).toHaveTextContent('Spent on Studio audio', { exact: false });
@@ -314,6 +319,22 @@ describe('PT5 · your points', () => {
 });
 
 describe('PT6 · convert to cash', () => {
+  it('bought points are not offered: the card and the field show only the cashable points, and the note is said once', async () => {
+    hub.cashable = 1000;
+    await toConvert();
+    expect(screen.getByTestId('convert-points').props.value).toBe('1,000');
+    expect(screen.getByTestId('convert-balance')).toHaveTextContent('1,000', { exact: false });
+    expect(screen.getByTestId('convert-balance')).not.toHaveTextContent('2,350', { exact: false });
+    expect(screen.getAllByText("Points you bought can't be turned into cash.")).toHaveLength(1);
+    await typePoints('1200', 'You can convert 1,000 points.');
+    expect(hub.converts).toHaveLength(0);
+  });
+
+  it('a person with no bought points sees no note', async () => {
+    await toConvert();
+    expect(screen.queryByText("Points you bought can't be turned into cash.")).toBeNull();
+  });
+
   it('a user opens Convert to cash and sees the whole balance quoted at the Hub\'s rate, with no line the Hub gives no figure for', async () => {
     await toConvert();
     expect(pathname()).toBe('/points-convert');

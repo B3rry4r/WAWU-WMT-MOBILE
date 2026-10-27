@@ -219,7 +219,7 @@ export function ConvertScreen(props: ConvertScreenProps) {
       if (!now.canConvert || quoteMoved(quote, now)) {
         setFresh(now);
         if (now.canConvert) setNotice(CHANGED_LINE);
-        else if (now.balancePoints !== quote.balancePoints) setNotice(BALANCE_MOVED_LINE);
+        else if (now.cashablePoints !== quote.cashablePoints) setNotice(BALANCE_MOVED_LINE);
         return;
       }
       attempt.current = { key: newRequestKey(), points: typed, quoteToken: now.quoteToken, sent: false };
@@ -405,7 +405,12 @@ export function ConvertScreen(props: ConvertScreenProps) {
           />
         ) : null}
         {failure ? <Banner testID="convert-failed" tone="danger" title="We couldn't convert your points" body={failure} /> : null}
-        {quote ? <BalanceCard points={quote.balancePoints} buy={{ label: 'Buy', onPress: props.onBuy, testID: 'convert-buy' }} testID="convert-balance" /> : null}
+        {quote ? <BalanceCard points={quote.cashablePoints} buy={{ label: 'Buy', onPress: props.onBuy, testID: 'convert-buy' }} testID="convert-balance" /> : null}
+        {quote && quote.balancePoints > quote.cashablePoints ? (
+          <Text variant="muted" testID="convert-bought-note">
+            {WORDS.boughtNotCash}
+          </Text>
+        ) : null}
         <PointsField digits={shownDigits} onChangeDigits={change} hint={hint} error={error} disabled={busy || pinOpen} testID="convert-points" />
         {quote ? (
           <GroupedList testID="convert-figures">

@@ -45,7 +45,7 @@ const hub = {
   tier: 'none' as 'none' | 'founding' | 'verify',
   balanceKobo: 48_525_075,
   shortfall: false,
-  expiryDays: 365,
+  expiryDays: null,
   priceDrift: 0,
   needed: null as number | null,
   quotes: [] as string[],
@@ -111,7 +111,7 @@ function purchase(status: string, body: Record<string, unknown>, method = 'walle
       status === 'awaiting_transfer'
         ? { accountNumber: '8100000417', accountName: 'Test Holder', bankName: 'Test MFB', bankCode: '090', priceKobo: quote.packMinor, bankChargeKobo: BANK_CHARGE, totalKobo: quote.payment.totalKobo, balanceKobo: 0, amountNeededKobo: hub.needed ?? quote.payment.totalKobo, expiresAt: '2099-01-01T00:00:00.000Z' }
         : null,
-    grant: status === 'paid' ? { points: quote.points, bonusPoints: quote.bonusPoints, totalPoints: quote.totalPoints, expiresAt: '2027-10-16T00:00:00.000Z' } : null,
+    grant: status === 'paid' ? { points: quote.points, bonusPoints: quote.bonusPoints, totalPoints: quote.totalPoints, expiresAt: null } : null,
     createdAt: '2026-10-16T09:42:00.000Z',
     paidAt: status === 'paid' ? '2026-10-16T09:42:05.000Z' : null,
   };
@@ -207,7 +207,7 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
-  Object.assign(hub, { mode: 'ok', tier: 'none', balanceKobo: 48_525_075, shortfall: false, expiryDays: 365, priceDrift: 0, needed: null, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0, points: 1240 });
+  Object.assign(hub, { mode: 'ok', tier: 'none', balanceKobo: 48_525_075, shortfall: false, expiryDays: null, priceDrift: 0, needed: null, quotes: [], buys: [], created: {}, purchase: null, polls: 0, payments: 0, points: 1240 });
   (require('../buyIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -256,7 +256,7 @@ describe('PT4 · the packs and the way to pay', () => {
     expect(hub.quotes).toEqual(['pack_m']);
     expect(screen.getByText('Pay ₦2,523.25')).toBeTruthy();
     expect(screen.getByTestId('buy-fees')).toHaveTextContent('₦2,500 + ₦23.25 Bank charge');
-    expect(screen.getByTestId('buy-blurb')).toHaveTextContent("For AI tools. Points don't expire for 12 months.");
+    expect(screen.getByTestId('buy-blurb')).toHaveTextContent("For AI tools. Points you buy never expire.");
     expect(screen.getByText('Who Made This? wallet')).toBeTruthy();
     expect(screen.getByText('₦485,250.75')).toBeTruthy();
     // POINTS-06 ruling: a wallet that covers the pack is paid from by the Hub, so Bank transfer is not offered.
