@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "africa.wawu.wmt",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#9411C9",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
