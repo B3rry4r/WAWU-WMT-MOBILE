@@ -21,32 +21,30 @@ const WORDS = { side: 24, between: 14, title: 34, tracking: -0.04, leading: 1.05
  */
 const BUTTONS = { between: 10, wordsAbove: 28 } as const;
 /**
- * The approved loop (R-98, owner, 27 Oct 2026): `assets/video/welcome-loop.mp4`, 1080 x 1920, 15 s, no sound, played as it
+ * The approved loop (R-98, owner, 27 Oct 2026): `assets/video/welcome-loop.mp4`, 1080 x 1920, 8 s, no sound, played as it
  * came (never re-encoded or trimmed). It carries the mark, so the screen draws no logo of its own.
  */
 export const WELCOME_VIDEO = require('../../../assets/video/welcome-loop.mp4') as number;
 /**
- * The fade laid over the video behind the words and buttons (R-98): clear at its top, the dark page colour at its foot, so that
- * area is darker and the words read on every frame of the loop. It starts `rise` above the headline (the words and the buttons
- * under them take their own room) and each stop is [place from its top (0 to 1), strength of the page colour]. Measured on the
- * loop's frames at 390 x 844 and 360 x 640, the brightest 1 in 100 pixels behind the headline and the line under it keep white
- * text at a contrast of 7.9 or more (with no fade: 1.0).
+ * The panel under the video (R-98, round 2): the words and the buttons sit in a solid panel in the video's own base purple
+ * (`surfaceWelcomeVideoBase`), so the loop's mark and its orbit are never under the words and the screen still reads as one
+ * full-screen video. The video's box is the room above the panel from the top of the screen, and `overlap` more behind the panel's
+ * top edge (the panel's negative top margin), so no sliver of the page shows between them. `top` is the room above the headline
+ * inside the panel. A short fade of `fade` from clear to the panel's colour lies on the video's last rows, ending at the panel's
+ * top edge; the loop's own edge is already that purple, so the seam does not show.
  */
-const FADE = {
-  rise: 180,
-  stops: [
-    [0, 0],
-    [0.2, 0.3],
-    [0.4, 0.75],
-    [0.55, 0.9],
-    [0.75, 0.97],
-    [1, 1],
-  ],
-} as const;
-/** The page colour at a strength from 0 to 1, built from the token (the word "transparent" blends through black on iOS). */
-const pageAt = (strength: number) => `${darkColors.surfacePage}${Math.round(strength * 255).toString(16).padStart(2, '0').toUpperCase()}`;
-const FADE_COLORS = FADE.stops.map(([, strength]) => pageAt(strength)) as unknown as readonly [string, string, ...string[]];
-const FADE_LOCATIONS = FADE.stops.map(([place]) => place) as unknown as readonly [number, number, ...number[]];
+const PANEL = { top: 20, overlap: 8, fade: 16 } as const;
+/** The fade's stops: [place from its top (0 to 1), strength of the panel's colour]. */
+const FADE_STOPS = [
+  [0, 0],
+  [0.4, 0.35],
+  [0.75, 0.8],
+  [1, 1],
+] as const;
+/** The panel's colour at a strength from 0 to 1, built from the token (the word "transparent" blends through black on iOS). */
+const baseAt = (strength: number) => `${darkColors.surfaceWelcomeVideoBase}${Math.round(strength * 255).toString(16).padStart(2, '0').toUpperCase()}`;
+const FADE_COLORS = FADE_STOPS.map(([, strength]) => baseAt(strength)) as unknown as readonly [string, string, ...string[]];
+const FADE_LOCATIONS = FADE_STOPS.map(([place]) => place) as unknown as readonly [number, number, ...number[]];
 
 export type WelcomeScreenProps = {
   /** Create an account: opens A2. */
@@ -56,11 +54,12 @@ export type WelcomeScreenProps = {
 };
 
 /**
- * A1: the screen a signed-out user first sees (R-98, owner, 27 Oct 2026): the approved loop plays full screen behind everything
- * (edge to edge, under the status bar, cropped to fill and never stretched, silent, looping, and only while A1 is the screen in
- * front), and the words and buttons sit at the bottom over a fade from clear to the dark page colour. The app draws no logo: the
- * video carries the mark. The page under the video is always the dark page colour, so nothing flashes before the first frame,
- * and the words and the status bar are always light, whatever the phone's theme.
+ * A1: the screen a signed-out user first sees (R-98, owner, 27 Oct 2026): the approved loop plays above a solid panel in its own
+ * base purple that holds the words and the buttons. The video fills the room from the top of the screen (under the status bar) to
+ * the panel, cropped to fill and never stretched, silent, looping, and only while A1 is the screen in front, so the mark and its
+ * orbit are fully in view above the headline on every phone and the screen reads as one full-screen video. The app draws no logo:
+ * the video carries the mark. The screen is that purple behind everything, so nothing flashes before the first frame, and the words
+ * and the status bar are always light, whatever the phone's theme.
  * "and bank it all in one app" is left out of the line under the title: it
  * implies a bank account for everyone, which nothing backs (G-34).
  */
@@ -79,23 +78,25 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
     else player.pause();
   }, [player, focused]);
   return (
-    <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfacePage }]}>
+    <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>
       {focused ? <StatusBar style="light" /> : null}
-      <View testID="welcome-video" pointerEvents="none" accessible accessibilityRole="image" accessibilityLabel={APP_NAME} style={StyleSheet.absoluteFill}>
-        <VideoView
-          testID="welcome-video-view"
-          player={player}
-          contentFit="cover"
-          nativeControls={false}
-          allowsPictureInPicture={false}
-          playsInline
-          // A texture view, as the feed's: it moves with the screen when another is pushed on this one.
-          surfaceType="textureView"
-          pointerEvents="none"
-          style={styles.video}
-        />
+      <View testID="welcome-stage" style={styles.stage}>
+        <View testID="welcome-video" pointerEvents="none" accessible accessibilityRole="image" accessibilityLabel={APP_NAME} style={StyleSheet.absoluteFill}>
+          <VideoView
+            testID="welcome-video-view"
+            player={player}
+            contentFit="cover"
+            nativeControls={false}
+            allowsPictureInPicture={false}
+            playsInline
+            // A texture view, as the feed's: it moves with the screen when another is pushed on this one.
+            surfaceType="textureView"
+            pointerEvents="none"
+            style={styles.video}
+          />
+        </View>
       </View>
-      <View testID="welcome-bottom" style={styles.bottom}>
+      <View testID="welcome-panel" style={[styles.panel, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>
         <LinearGradient
           testID="welcome-fade"
           pointerEvents="none"
@@ -133,13 +134,15 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
 }
 
 const styles = StyleSheet.create({
-  /** The words and buttons sit at the foot of the screen, as they always have; the video fills the rest behind them. */
-  root: { flex: 1, justifyContent: 'flex-end' },
-  /** Edge to edge. The 100% is for the web build: its `<video>` is a replaced element, which keeps its own size unless it is given one. */
+  root: { flex: 1 },
+  /** The video's box: all the room above the panel, from the top of the screen, and the panel's overlap under its top edge. */
+  stage: { flex: 1 },
+  /** Fills the box. The 100% is for the web build: its `<video>` is a replaced element, which keeps its own size unless it is given one. */
   video: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
-  bottom: { position: 'relative' },
-  /** From `rise` above the headline to the screen's foot, behind the words and the buttons. */
-  fade: { position: 'absolute', top: -FADE.rise, left: 0, right: 0, bottom: 0 },
+  /** Solid, over the video; the negative top margin gives the video's box `overlap` more under its top edge. */
+  panel: { marginTop: -PANEL.overlap, paddingTop: PANEL.top, zIndex: 1 },
+  /** Lies on the video's last rows, ending at the panel's top edge. */
+  fade: { position: 'absolute', top: -PANEL.fade, left: 0, right: 0, height: PANEL.fade },
   words: { paddingHorizontal: WORDS.side, paddingBottom: BUTTONS.wordsAbove },
   wordsText: { gap: WORDS.between },
   buttons: { paddingHorizontal: layout.gutter, gap: BUTTONS.between },
