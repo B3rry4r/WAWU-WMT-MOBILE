@@ -140,3 +140,5 @@ export const PACK_NOT_ALLOWED = 'pack_not_allowed';
 export const PACK_TIERS_LINE = 'Move up a tier to publish another.';
 /** Founding Maker at the cap (R-100's own sentence). */
 export const PACK_CAP_LINE = "That's the most products a profile can hold.";
+/** No running tier (the Hub answers `tier_required`): the pack is not offered; the way on is a tier, or taking something down. */
+export const PACK_TAKE_DOWN_LINE = 'Take something down to make room for a new one.';

@@ -21,7 +21,7 @@ import { font, radius, space } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
 import { QuoteBreakdown } from './planParts';
-import { naira, nextTiers, PACK_CAP_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, pinPurposeOf } from './purchaseModel';
+import { naira, nextTiers, PACK_CAP_LINE, PACK_NOT_ALLOWED, PACK_TAKE_DOWN_LINE, PACK_TIERS_LINE, pinPurposeOf } from './purchaseModel';
 import { usePlanPurchase } from './usePlanPurchase';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
@@ -110,8 +110,11 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
     const count = extra.count;
     const total = quote?.totalKobo ?? null;
     const up = nextTiers(plans.data?.tiers ?? [], mine.data?.tier?.id ?? null, mine.data?.extraProducts ?? 0, used).length > 0;
-    const packRefused = refusal !== null || (isApiError(purchase.quoteError) && purchase.quoteError.code === PACK_NOT_ALLOWED);
-    const refusedLine = up ? PACK_TIERS_LINE : PACK_CAP_LINE;
+    // The Hub answers eligibility first (R-100): `pack_not_allowed` (tier or cap) or `tier_required` (no running tier) hides the pack.
+    const quoteCode = isApiError(purchase.quoteError) ? purchase.quoteError.code : null;
+    const noTier = refusal === null && quoteCode === 'tier_required';
+    const packRefused = refusal !== null || quoteCode === PACK_NOT_ALLOWED || noTier;
+    const refusedLine = up ? PACK_TIERS_LINE : noTier ? PACK_TAKE_DOWN_LINE : PACK_CAP_LINE;
     body = packRefused ? (
       <>
         <View>

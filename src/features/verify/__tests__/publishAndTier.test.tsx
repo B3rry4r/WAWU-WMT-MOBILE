@@ -131,6 +131,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === '/plans/purchases/quote') {
     hub.quoteReads += 1;
+    // Eligibility comes first, wallet or none (R-100, round 4): no running tier is tier_required.
+    if (hub.packRule && (hub.tier === 'none' || hub.tier === 'ended')) return refuse(402, { code: 'tier_required', message: 'Extra products are added to a plan you have. Pick a plan first.' });
     const refused = packRefusal();
     if (refused) return refuse(409, { code: 'pack_not_allowed', message: refused });
     // Eligibility comes first: only a person the pack is for is asked about their wallet (R-100, round 3 M2).
@@ -482,6 +484,20 @@ describe('VF13 · the pack is sold only to Founding Maker, 20 products at most (
     expect(await screen.findByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.');
     expect(screen.queryByTestId('full-add')).toBeNull();
     expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByText('Open your wallet')).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('no tier and no wallet: the Hub answers tier_required first, so the pack stays hidden and nobody is led to open a wallet for it', async () => {
+    hub.packRule = true;
+    hub.tier = 'none';
+    hub.wallet = 'opening';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toBeTruthy();
+    expect(await screen.findByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.');
+    expect(screen.queryByTestId('full-add')).toBeNull();
+    expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByTestId('full-quote-error')).toBeNull();
     expect(screen.queryByText('Open your wallet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
