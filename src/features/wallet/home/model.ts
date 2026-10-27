@@ -1,5 +1,6 @@
 import { isApiError } from '@/api/errors';
 import { balanceProblem } from '@/api/money';
+import type { WorldProgress } from '@/features/open-wallet/api/world';
 
 import type { WalletHome, WalletTransaction } from '../api/home';
 import { rowTime } from '../history/lagosTime';
@@ -26,7 +27,8 @@ export type HomeView =
   | { kind: 'loading' }
   | { kind: 'wallet_error'; error: unknown }
   | { kind: 'no_wallet' }
-  | { kind: 'opening' }
+  /** `world` is the Hub's own word on a person who is opening from outside Nigeria (R-87): which currency their first account is. Absent for a Naira opening. */
+  | { kind: 'opening'; world?: WorldProgress }
   | { kind: 'unreachable'; message: string }
   | { kind: 'frozen'; message: string }
   | { kind: 'balance_error'; error: unknown }
@@ -48,7 +50,8 @@ export function homeView(wallet: Read<WalletHome>, balance: Read<{ availableKobo
   }
   const { state, account } = wallet.data;
   if (state === 'not_open') return { kind: 'no_wallet' };
-  if (state === 'opening') return { kind: 'opening' };
+  const world = wallet.data.world;
+  if (state === 'opening') return { kind: 'opening', ...(world ? { world } : {}) };
   if (!account && wallet.data.world) return { kind: 'world' };
   if (!account) return { kind: 'wallet_error', error: wallet.error };
   if (balance.data !== undefined) return { kind: 'ready', account, availableKobo: balance.data.availableKobo };
@@ -61,7 +64,7 @@ export function homeView(wallet: Read<WalletHome>, balance: Read<{ availableKobo
     case 'no_wallet':
       return { kind: 'no_wallet' };
     case 'opening':
-      return { kind: 'opening' };
+      return { kind: 'opening', ...(world ? { world } : {}) };
     default:
       return { kind: 'balance_error', error: balance.error };
   }

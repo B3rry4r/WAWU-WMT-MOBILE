@@ -1,6 +1,7 @@
 import type { FeedScope } from '@/features/feed/api';
 import type { TgifDay } from '@/features/tgif/api/tgif';
 import { cardOrder, cardText, compactCount, dateText } from '@/features/tgif/model';
+import type { QuoteCode } from '@/features/wallet/fx/amount';
 import { stateWords, type HomeView as WalletHomeView } from '@/features/wallet/home/model';
 
 import type { CreatorSuggestion } from './api';
@@ -85,6 +86,12 @@ export type MoneyCardState =
       title: string;
       message: string;
       action: 'open_wallet' | 'check_wallet' | 'retry_wallet' | 'retry_balance';
+      /**
+       * FIX-P6: the currency of the account being opened, set only while `opening`: the Hub's `world.firstCurrency` for a person opening
+       * from outside Nigeria (R-87), `NGN` for a Naira opening (no world block), `null` when the Hub has not said which one. The chip
+       * names it; where it is absent the card is the Naira card, as before.
+       */
+      currency?: QuoteCode | null;
     };
 
 const actions = {
@@ -100,7 +107,8 @@ export function moneyCard(view: WalletHomeView): MoneyCardState {
   if (view.kind === 'loading') return { kind: 'loading' };
   if (view.kind === 'ready') return { kind: 'figure', kobo: view.availableKobo };
   if (view.kind === 'world') return { kind: 'none' };
-  return { kind: 'notice', state: view.kind, ...stateWords(view), action: actions[view.kind] };
+  const currency = view.kind === 'opening' ? { currency: view.world ? view.world.firstCurrency : ('NGN' as const) } : {};
+  return { kind: 'notice', state: view.kind, ...stateWords(view), action: actions[view.kind], ...currency };
 }
 
 /** A read as Today needs to know it: still on its way, answered, or failed. */

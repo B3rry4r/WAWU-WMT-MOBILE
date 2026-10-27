@@ -248,6 +248,21 @@ describe('W2 · a currency account', () => {
     expect(rtl.screen.getByText('$1 = ₦1,580.00')).toBeTruthy();
   });
 
+  // FIX-P6 L2: a payment from a Dollar account reads as the naira row does, what it paid for under the app's own name; the Hub sends both
+  // (a line WAWU made is never named by WAWU's internal account), and the app draws them as they come and invents no label of its own.
+  it('draws a payment from a Dollar account as the Hub names it: the app\'s name, then what was paid for', async () => {
+    hub.transactions = [
+      { id: 't3', accountId: USD_ID, currency: 'USD', direction: 'out', status: 'completed', amountMinor: 23, feeMinor: 0, balanceAfterMinor: null, description: 'Unlock · Lighting night shoots', counterpartyName: 'Who Made This', reference: 'wawu-pay-1', occurredAt: new Date(Date.now() - 60_000).toISOString(), conversion: null },
+      { id: 't4', accountId: USD_ID, currency: 'USD', direction: 'in', status: 'completed', amountMinor: 23, feeMinor: 0, balanceAfterMinor: null, description: 'Refund · Question for Cleo Okafor', counterpartyName: 'Who Made This', reference: 'wawu-ref-1', occurredAt: new Date(Date.now() - 120_000).toISOString(), conversion: null },
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Unlock · Lighting night shoots')).toBeTruthy();
+    expect(rtl.screen.getByText('Refund · Question for Cleo Okafor')).toBeTruthy();
+    expect(rtl.screen.getAllByText('Who Made This').length).toBeGreaterThanOrEqual(2);
+    expect(rtl.screen.queryByText(/operational|held money/i)).toBeNull();
+  });
+
   it('says there are no transactions yet, by its real cause, when the statement is empty', async () => {
     await boot();
     await openTab('Dollar');
