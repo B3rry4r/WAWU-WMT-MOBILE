@@ -87,9 +87,11 @@ function useStoredTheme(): boolean {
  * goes back to the checklist, since the tabs are not open yet.
  * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
  * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
- * "Choose your tier" (TIER-OFFER, R-94, `/tier-offer`) comes once after the sign-up steps and before "Your bonus" and Home: the Hub says whether it is
- * this person's to see (a creator account not yet shown it, with no running tier), the tabs wait while it is on screen, and its X or Not now (by the
- * admin setting) or a Subscribe ends it; Subscribe's checkout is opened by `TierOfferBridge` once the offer is gone.
+ * "Choose your tier" (TIER-OFFER, R-94, `/tier-offer`) comes once, first, as soon as the sign-up's email, name and access-code steps are done: before
+ * "Set up your account" (A11) and the other setup steps, "Your bonus" and Home (FIX-P5, lead ruling 27 Oct 2026). The Hub says whether it is
+ * this person's to see (a creator account not yet shown it, with no running tier), every setup step and the tabs wait while it is on screen, and its
+ * X or Not now (by the admin setting) or a Subscribe ends it; Subscribe's checkout is opened by `TierOfferBridge` once the offer is gone, over the
+ * screen that took its place.
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
  * notification permission, registers the phone, and opens the screen a tapped notification is about.
  */
@@ -135,16 +137,16 @@ export default function RootLayout() {
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && offer.visible}>
           <Stack.Screen name="claim-offer" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && tierOffer.visible}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && tierOffer.visible}>
           <Stack.Screen name="tier-offer" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !tierOffer.visible && bonus.visible}>
           <Stack.Screen name="verify-bonus" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'interests'}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && gate.setupStep === 'interests'}>
           <Stack.Screen name="interests" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === 'follows'}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && gate.setupStep === 'follows'}>
           <Stack.Screen name="people-to-follow" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && gate.setupStep === null && !tierOffer.visible && !bonus.visible}>
@@ -153,7 +155,7 @@ export default function RootLayout() {
           <Stack.Screen name="shop-product" />
           <Stack.Screen name="hear-name" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !tierOffer.visible && !bonus.visible))}>
+        <Stack.Protected guard={signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && (gate.setupStep === 'creator_setup' || (gate.setupStep === null && !bonus.visible))}>
           <Stack.Screen name="creator-setup" />
           <Stack.Screen name="voice-intro" />
           <Stack.Screen name="voice-consent" />

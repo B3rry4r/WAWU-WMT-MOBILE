@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
 import { api, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
@@ -87,13 +88,25 @@ export function drawable(value: unknown): AdCard | null {
 export const adOpensSomething = (ad: AdCard): boolean => ad.ctaDestination !== 'none';
 
 /**
- * What a tap on the card does: `link` sends the phone's browser to the address (expo-linking; a browser that cannot be reached
- * is a tap that does nothing, never an error on screen), `event` hands the event's id to the screen's own way of opening one,
- * and `none` does nothing at all.
+ * Opens the advertiser's address. On a phone that is the phone's browser (expo-linking; a browser that cannot be reached is a tap that
+ * does nothing, never an error on screen). On the web build it is a new tab: expo-linking's web `openURL` sets `window.location`, which
+ * replaced the app's own tab and sent the person away from it (CHECK-3 fifth pass, L6).
+ */
+function openLink(url: string): void {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  void Linking.openURL(url).catch(() => undefined);
+}
+
+/**
+ * What a tap on the card does: `link` opens the address (`openLink`: the phone's browser, or a new tab on the web), `event` hands the
+ * event's id to the screen's own way of opening one, and `none` does nothing at all.
  */
 export function openAd(ad: AdCard, openEvent: (eventId: string) => void): void {
   if (ad.ctaDestination === 'event') openEvent(ad.ctaDestinationId);
-  else if (ad.ctaDestination === 'link') void Linking.openURL(ad.ctaUrl).catch(() => undefined);
+  else if (ad.ctaDestination === 'link') openLink(ad.ctaUrl);
 }
 
 /** The live card for a place; `null` when there is none (a 200 with `data: null`) or it cannot be drawn. */

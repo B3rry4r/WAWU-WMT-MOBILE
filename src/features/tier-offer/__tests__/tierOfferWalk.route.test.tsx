@@ -115,6 +115,7 @@ const { resetSignupGate } = require('@/features/auth/signupGate') as typeof impo
 const { setStarted } = require('@/features/auth/signupStore') as typeof import('@/features/auth/signupStore');
 const { resetOfferStep } = require('@/features/claim/offerStep') as typeof import('@/features/claim/offerStep');
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+const { ACCESS_KEY, REFRESH_KEY } = require('@/api/tokenStore') as typeof import('@/api/tokenStore');
 const { resetBonusStep } = require('@/features/verify/bonusStep') as typeof import('@/features/verify/bonusStep');
 const { setBonusGateDelaysForTests } = require('@/features/verify/bonusGate') as typeof import('@/features/verify/bonusGate');
 const { resetTierOffer } = require('../offerStep') as typeof import('../offerStep');
@@ -158,7 +159,8 @@ beforeEach(() => {
 });
 
 describe('a new creator is offered the tiers although the Hub first answered no (TIER-OFFER round 2, F1)', () => {
-  it('signs up, writes the account type, asks the Hub again, and shows the offer after A11 and before Home', async () => {
+  // FIX-P5 (R-94, lead ruling 27 Oct 2026): the offer comes first, before "Set up your account", so a person who works the checklist meets it too.
+  it('signs up, writes the account type, asks the Hub again, and shows the offer before A11 and before Home', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByTestId('welcome-sign-in')).toBeTruthy());
     setStarted({ channel: 'sms', maskedEmail: null, phoneNotSaved: false, emailCodeRequired: false, resendIn: 0, expiresIn: 600 });
@@ -168,15 +170,34 @@ describe('a new creator is offered the tiers although the Hub first answered no 
     await waitFor(() => expect(screen.getByTestId('claim-offer')).toBeTruthy());
     await fireEvent.press(screen.getByTestId('claim-offer-skip'));
 
-    await waitFor(() => expect(screen.getByTestId('creator-setup')).toBeTruthy());
-    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
-    await fireEvent.press(screen.getByTestId('setup-later'));
-
     await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    expect(screen.queryByTestId('creator-setup')).toBeNull();
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
     expect(calls['PUT /api/hub/users/me/account-type']).toBe(1);
     // The first answer was no (the Hub still held a fan when it was asked), the second yes: asked twice, not more.
     expect(calls['GET /api/hub/me/tier-offer']).toBe(2);
     await waitFor(() => expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1));
+
+    // The X goes on to A11, the checklist, still unfinished; Later then leaves it, and the offer does not come back.
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.getByTestId('creator-setup')).toBeTruthy());
+    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
+    await fireEvent.press(screen.getByTestId('setup-later'));
+    await waitFor(() => expect(screen.queryByTestId('creator-setup')).toBeNull());
+    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
+    expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1);
+  });
+
+  it('a creator who starts the app part-way through the checklist meets the offer before the checklist, not after it', async () => {
+    mockVault.set(ACCESS_KEY, tokenFor(ADA));
+    mockVault.set(REFRESH_KEY, 'stored-refresh');
+    hubType = 'creator';
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    expect(screen.queryByTestId('creator-setup')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.getByTestId('creator-setup')).toBeTruthy());
+    expect(calls['GET /api/hub/me/tier-offer']).toBe(2);
+    expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1);
   });
 });

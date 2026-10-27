@@ -7,12 +7,13 @@ import { readClaims } from '@/features/claim/tokenClaims';
 import { fetchTierOffer, markTierOfferSeen } from './api';
 
 /**
- * The tier offer (TIER-OFFER, R-94): a full screen that offers the three tiers once, after sign-up's own steps and before Home. It shows
+ * The tier offer (TIER-OFFER, R-94): a full screen that offers the three tiers once, first thing once the sign-up's email, name and access-code
+ * steps are done, before "Set up your account" and the other setup steps and before Home (FIX-P5, lead ruling 27 Oct 2026). It shows
  * and asks; it never decides who is offered it (the Hub does, `GET /me/tier-offer`: a creator account not yet shown it and holding no
  * running tier) and it never blocks the app.
  *
  *   - Once the sign-up gate is open (`asked`), the Hub is asked once per signed-in session. A new account has had its type copied to the
- *     Hub by then, and the sign-up's own steps (access code, A11 to A13) come first: the layout shows the offer only after them.
+ *     Hub by then. The email, name and access-code steps come first; the setup steps (A11 to A13) wait behind the offer.
  *   - The answer is waited for a short, bounded time (`TIER_OFFER_WAIT_MS`). An answer that fails or comes late means no offer this
  *     session; the next start asks again, because nothing was marked.
  *   - When the Hub does not say show while the sign-up has just written a creator account type to it (the write is what makes a new person

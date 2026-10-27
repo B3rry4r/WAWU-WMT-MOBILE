@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 398.**
+**Launch tasks done: 176 of 399.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 5 | 0 | 0 | 0 |
-| review | 230 | 0 | 0 | 0 |
+| review | 231 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -31,6 +31,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
 - [SWEEP-1026](../tasks/SWEEP-1026.md) App sweep: the low rows independent verifiers logged on 26 Oct 2026 (ads tap, paid-question lines, strip, Nuvion line, Passes card, pinch, records) (You)
+- [FIX-P5](../tasks/FIX-P5.md) The four lows of the CHECK-3 fifth pass (tier offer first, one ad card size, ad link in a new tab on the web, Nuvion on a local stack) (You)
 - [ADS-LINK](../tasks/ADS-LINK.md) An ad opens the advertiser's web link or does nothing; the Today strip is the Explore card; upload the picture (R-92) (You)
 - [GEO-03](../tasks/GEO-03.md) Every country in the app: a phone with its country code, a country of residence, and a region and city in the profile (You)
 - [LEGAL-DOCS](../tasks/LEGAL-DOCS.md) The owner's nine legal documents: one box at sign-up, a Legal list, one reader (You)

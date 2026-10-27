@@ -230,6 +230,8 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
         testID="explore-scroll"
         style={styles.scroll}
         contentContainerStyle={styles.content}
+        // No scrollbar on the web build: its 15 px came out of the ad slide's width (335 against the Today card's 350, FIX-P5, L3). Today hides it too.
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
       >
         {body}
