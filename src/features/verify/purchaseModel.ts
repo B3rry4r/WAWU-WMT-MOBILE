@@ -98,7 +98,7 @@ export type PackVerdict = { kind: 'checking' } | { kind: 'offered' } | { kind: '
 
 /**
  * What the Hub's answer to the pack's quote means. A quote that comes back, or one stopped only by a gate that is asked AFTER eligibility
- * (`wallet_not_open`, `fees_not_set`: the store path needs neither), means the Hub would sell the pack. A refusal is `pack_not_allowed` or
+ * (`wallet_not_open`: the store path needs no wallet) means the Hub would sell the pack. `fees_not_set` does not: the Hub answers it BEFORE it judges eligibility, so it says nothing about the person and the store stays closed (Apple cannot be refunded). A refusal is `pack_not_allowed` or
  * `tier_required`. Anything else (no network, the server failing) is `unknown`: the pack is not drawn and the store is not opened.
  */
 export function packVerdictOf(read: { isPending: boolean; isError: boolean; error: unknown }): PackVerdict {
@@ -106,7 +106,7 @@ export function packVerdictOf(read: { isPending: boolean; isError: boolean; erro
   if (!read.isError) return { kind: 'offered' };
   const error = read.error;
   if (isApiError(error)) {
-    if (error.code === 'wallet_not_open' || error.code === 'fees_not_set') return { kind: 'offered' };
+    if (error.code === 'wallet_not_open') return { kind: 'offered' };
     if (error.code === PACK_NOT_ALLOWED || error.code === 'tier_required') return { kind: 'refused', code: error.code, message: error.message };
   }
   return { kind: 'unknown' };

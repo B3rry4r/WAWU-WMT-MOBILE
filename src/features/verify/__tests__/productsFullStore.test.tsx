@@ -302,6 +302,29 @@ describe('VF13 · the pack is offered only where the Hub would sell it (R-100, P
     expect(fakeStore.requests).toEqual([]);
   });
 
+  it('fees_not_set means the Hub has not judged the person yet (it answers before eligibility): no offer, and the store stays closed', async () => {
+    serve();
+    refuse('fees_not_set', 'Fees are not set yet.');
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    await rtl.waitFor(() => expect(hub.reads).toContain(QUOTE));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a quote that answers fees_not_set just before the store sheet leaves the store closed and says to try again', async () => {
+    serve();
+    await sheet();
+    const add = await rtl.screen.findByTestId('full-add');
+    refuse('fees_not_set', 'Fees are not set yet.', 409, hub.reads.filter((r) => r === QUOTE).length + 1);
+    await rtl.act(async () => rtl.fireEvent.press(add));
+    expect(await rtl.screen.findByTestId('full-check-failed')).toHaveTextContent('We could not check this right now. Try again.');
+    expect(fakeStore.requests).toEqual([]);
+    expect(hub.bodies).toHaveLength(0);
+  });
+
   it('when the Hub cannot be asked just before the store sheet, the store is not opened and the person is told to try again', async () => {
     serve();
     await sheet();
