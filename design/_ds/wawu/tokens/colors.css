@@ -98,6 +98,12 @@
   --tgif-prayer-glow: rgba(148, 17, 201, 0.6);
   --tgif-takeaway-ground: var(--tgif-verse-ground);
   --tgif-takeaway-glow: rgba(255, 160, 60, 0.5);
+
+  /* The welcome screen's panel (R-98, WELCOME-VIDEO): the base purple the approved loop is drawn on, rgb(40, 12, 65), the most
+     common value of its edge pixels (6 columns each side and the first and last 2 rows, 16 frames over its 8 s; the file names no
+     colour matrix, so a player reads that edge as rgb(41, 11, 65) to rgb(43, 17, 67)). The panel under the video is this colour, so
+     the two read as one screen. The welcome screen is always dark, so this is set once and the light theme never overrides it. */
+  --surface-welcome-video-base: #280C41;
   --tgif-label: #E2B4F5;
   --tgif-warm-glow: rgba(255, 160, 60, 0.35);
 }
