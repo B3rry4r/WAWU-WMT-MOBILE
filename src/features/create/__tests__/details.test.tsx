@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+
+import { LIST, PRICES_PATH, servePrices } from '@/features/prices/__helpers__/prices';
 
 import { allowance, hub, installFetch, ok, refusal, renderFrame } from '../__helpers__/harness';
 
@@ -107,22 +108,24 @@ describe('M24 · Price and M37 · Free piece', () => {
   const open = async () => {
     haveFiles();
     filled();
+    servePrices();
     const calls = { back: jest.fn(), sent: jest.fn() };
     await renderFrame(<PriceScreen format="pdf" onBack={calls.back} onSent={calls.sent} />);
     return calls;
   };
   const send = () => screen.getByTestId('create-send');
+  /** A user picks a list price from the strip, once the Hub's list has loaded. */
+  const pick = async (naira: number) => fireEvent.press(await screen.findByTestId(`price-stop-${naira}`));
 
-  it('a user can type a price, and Send for review sends the piece with that price and both files', async () => {
+  it('a user can pick a price from the list, and Send for review sends the piece with that price and both files', async () => {
     hub.answers[`POST ${CREATE}`] = created();
     const calls = await open();
     expect(screen.getByText('Step 5 of 5')).toBeTruthy();
     expect(send().props.accessibilityState.disabled).toBe(true);
 
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3,0a00');
-    expect(screen.getByTestId('price-input').props.value).toBe('3,000');
-    // SWEEP-APP-4 row 146: M24 draws the sign touching the figure, no gap between them.
-    expect(StyleSheet.flatten(screen.getByTestId('price-field-box').props.style).gap).toBe(0);
+    await pick(3000);
+    expect(screen.queryByTestId('price-input')).toBeNull();
+    expect(screen.getByTestId('price-picker-earn').props.accessibilityLabel).toBe('You earn 2,550 naira a sale');
     expect(send().props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(send());
 
@@ -144,7 +147,7 @@ describe('M24 · Price and M37 · Free piece', () => {
   it('hands the files to the piece: nothing is given back to the Hub and the draft is empty', async () => {
     hub.answers[`POST ${CREATE}`] = created();
     await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '2500');
+    await pick(2500);
     await fireEvent.press(send());
     await waitFor(() => expect(details.getSent()).not.toBeNull());
     expect(hub.sent.filter((s) => s.path === RELEASE)).toEqual([]);
@@ -168,13 +171,12 @@ describe('M24 · Price and M37 · Free piece', () => {
     for (const absent of ['Dollar', 'USDT', 'Buyers abroad see it in dollars', 'You earn per sale', 'Your share', 'Listing fee']) {
       expect(screen.queryByText(new RegExp(absent))).toBeNull();
     }
-    expect(screen.queryByText('₦1,000')).toBeNull();
   });
 
   it('a user can pick Free (M37), see what it means, and Send for review sends a free piece at 0', async () => {
     hub.answers[`POST ${CREATE}`] = created();
     const calls = await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '9000');
+    await pick(5000);
     await fireEvent.press(screen.getByLabelText('Free'));
 
     expect(screen.getByText('Free for everyone')).toBeTruthy();
@@ -190,29 +192,42 @@ describe('M24 · Price and M37 · Free piece', () => {
     expect(posts()[0].body).toMatchObject({ accessType: 'free', price: 0 });
   });
 
-  it('keeps the typed price when the person flips to Free and back', async () => {
+  it('keeps the picked price when the person flips to Free and back', async () => {
     await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '1500');
+    await pick(1500);
     await fireEvent.press(screen.getByLabelText('Free'));
     await fireEvent.press(screen.getByLabelText('Paid'));
-    expect(screen.getByTestId('price-input').props.value).toBe('1,500');
+    expect((await screen.findByTestId('price-stop-1500')).props.accessibilityState.selected).toBe(true);
+    expect(details.getDetails().price).toBe('1500');
   });
 
-  it('refuses a price of nothing, zero or letters, and caps it at the most the Hub takes', async () => {
+  it('starts on 2,500 so there is always a list price to send, and sends only a price that is on the Hub\'s list', async () => {
+    hub.answers[`POST ${CREATE}`] = created();
+    const calls = await open();
+    expect((await screen.findByTestId('price-stop-2500')).props.accessibilityState.selected).toBe(true);
+    await waitFor(() => expect(send().props.accessibilityState.disabled).toBe(false));
+    expect(details.getDetails().price).toBe('2500');
+    await fireEvent.press(send());
+    await waitFor(() => expect(calls.sent).toHaveBeenCalledTimes(1));
+    expect(LIST).toContain((posts()[0].body as { price: number }).price);
+  });
+
+  it('a 400 price_not_on_list (an admin changed the list meanwhile) reads the list again and shows the Hub\'s sentence', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦2,000 and ₦2,500.';
+    hub.answers[`POST ${CREATE}`] = { status: 400, body: { statusCode: 400, message: sentence, data: null, reason: { code: 'price_not_on_list', message: sentence, nearestLowerNaira: 2000, nearestHigherNaira: 2500 } } };
     await open();
-    for (const typed of ['', '0', '000', 'abc']) {
-      await fireEvent.changeText(screen.getByTestId('price-input'), typed);
-      expect(send().props.accessibilityState.disabled).toBe(true);
-    }
-    await fireEvent.changeText(screen.getByTestId('price-input'), '99999999999');
-    expect(screen.getByTestId('price-input').props.value).toBe('10,000,000');
-    expect(send().props.accessibilityState.disabled).toBe(false);
+    await pick(3000);
+    const reads = () => hub.sent.filter((s) => s.method === 'GET' && s.path === PRICES_PATH).length;
+    const before = reads();
+    await fireEvent.press(send());
+    expect(await screen.findByText(sentence)).toBeTruthy();
+    await waitFor(() => expect(reads()).toBeGreaterThan(before));
   });
 
   it('sends once when the button is tapped twice', async () => {
     hub.answers[`POST ${CREATE}`] = 'hang';
     await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3000');
+    await pick(3000);
     await fireEvent.press(send());
     await fireEvent.press(send());
     await act(async () => undefined);
@@ -225,7 +240,7 @@ describe('M24 · Price and M37 · Free piece', () => {
       body: { statusCode: 402, message: 'Publishing needs a tier. Pick one to send this.', data: null, reason: { code: 'tier_required', message: 'Publishing needs a tier. Pick one to send this.' } },
     };
     const calls = await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3000');
+    await pick(3000);
     await fireEvent.press(send());
     expect(await screen.findByText('Publishing needs a tier. Pick one to send this.')).toBeTruthy();
     expect(calls.sent).not.toHaveBeenCalled();
@@ -242,7 +257,7 @@ describe('M24 · Price and M37 · Free piece', () => {
   it('says it could not send when the Hub cannot be reached, and keeps the piece', async () => {
     hub.answers[`POST ${CREATE}`] = 'offline';
     const calls = await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3000');
+    await pick(3000);
     await fireEvent.press(send());
     expect(await screen.findByTestId('price-failure')).toBeTruthy();
     expect(calls.sent).not.toHaveBeenCalled();
@@ -252,7 +267,7 @@ describe('M24 · Price and M37 · Free piece', () => {
   it('shows a refusal of the details in the Hub\'s words (a 400)', async () => {
     hub.answers[`POST ${CREATE}`] = refusal(400, 'Paid content must have a price greater than ₦0.');
     await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3000');
+    await pick(3000);
     await fireEvent.press(send());
     expect(await screen.findByText('Paid content must have a price greater than ₦0.')).toBeTruthy();
   });

@@ -1,6 +1,10 @@
 import { act, fireEvent, render, screen as native } from '@testing-library/react-native';
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { StatusBar, StyleSheet } from 'react-native';
+import { useVideoPlayer } from 'expo-video';
+import { createHash } from 'crypto';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { processColor, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootLayout from '@/app/_layout';
@@ -71,6 +75,7 @@ beforeEach(() => {
   requests = [];
   loginWorks = false;
   mockScheme = 'dark';
+  jest.mocked(useVideoPlayer).mockClear();
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL) => {
     const url = String(input instanceof Request ? input.url : input);
     requests.push(url);
@@ -94,44 +99,124 @@ describe('A1: welcome', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
-  it.each(['light', 'dark'] as const)('a user sees the vertical mark with its glow in the middle of the dark page, and no logo strip or photo, in the %s theme (R-90)', async (scheme) => {
+  /**
+   * R-98 replaces R-90 here. The two tests that followed ("a user sees the vertical mark with its glow in the middle of the dark
+   * page ..." and "a user sees the mark centred between the top safe area and the headline ...") pinned the mark picture, its glow,
+   * its spacers and its size, which are gone by the owner's ruling (27 Oct 2026); they are replaced by the tests below.
+   * Their lasting lines are kept: one image role named for the app, a layer that takes no touches, and no photo.
+   * Round 2 (owner, 27 Oct 2026, a new video and a bottom panel): the cases of round 1 that pinned the full-screen video under the
+   * words and the fade that started 180 above the headline (the whole-screen fill, `welcome-bottom`, the dark page colour behind it,
+   * the 15 s file's hash and size) are changed to the box above a panel, the panel, the new token and the 8 s file's hash and size.
+   */
+  const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
+  const PLAYER = () => jest.mocked(useVideoPlayer).mock.results.at(-1)?.value as { play: jest.Mock; pause: jest.Mock; loop: boolean; muted: boolean };
+  const flat = (testID: string) => StyleSheet.flatten(native.getByTestId(testID, { includeHiddenElements: true }).props.style);
+  const idsOf = (node: { children: unknown[] }) => node.children.map((child) => (typeof child === 'string' ? undefined : (child as { props: { testID?: string } }).props.testID));
+
+  it.each(['light', 'dark'] as const)('a user sees the approved video filling the screen above a bottom panel, with no logo drawn by the app, in the %s theme (R-98)', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
     const root = native.getByTestId('welcome');
-    expect(StyleSheet.flatten(root.props.style).backgroundColor).toBe(darkColors.surfacePage);
-    // One picture of the mark, glow included, drawn from the pre-rendered file.
-    const art = native.getByTestId('welcome-mark-art', { includeHiddenElements: true });
-    expect([art.props.source].flat()[0]).toEqual(require('../../assets/images/welcome-mark.png'));
-    expect(art.props.contentFit).toBe('contain');
+    // The screen is the video's own base purple behind everything, so nothing flashes before the first frame and any seam is purple.
+    expect(darkColors.surfaceWelcomeVideoBase).toBe('#280C41');
+    expect(StyleSheet.flatten(root.props.style).backgroundColor).toBe(darkColors.surfaceWelcomeVideoBase);
+    // The source is the approved asset itself, looping and silent.
+    const [source, setup] = jest.mocked(useVideoPlayer).mock.calls[0] as [unknown, (p: { loop: boolean; muted: boolean }) => void];
+    expect(source).toEqual(require('../../assets/video/welcome-loop.mp4'));
+    const fake = { loop: false, muted: false };
+    setup(fake);
+    expect(fake).toMatchObject({ loop: true, muted: true });
+    // The video's box is the room above the panel from the top of the screen (under the status bar), plus the overlap behind the
+    // panel's top edge; cropped to fill that box, never stretched; no controls.
+    expect(idsOf(root)).toEqual(['welcome-stage', 'welcome-panel']);
+    expect(flat('welcome-stage')).toMatchObject({ flex: 1 });
+    expect(flat('welcome-panel').marginTop).toBeLessThan(0);
+    expect(flat('welcome-panel').marginTop).toBeGreaterThanOrEqual(-24);
+    expect(idsOf(native.getByTestId('welcome-stage'))).toEqual(['welcome-video']);
+    const view = native.getByTestId('welcome-video-view', { includeHiddenElements: true });
+    expect(view.props.contentFit).toBe('cover');
+    expect(view.props.nativeControls).toBe(false);
+    expect(view.props.pointerEvents).toBe('none');
+    expect(view.props.player).toBe(PLAYER());
+    expect(flat('welcome-video-view')).toEqual({ ...FILL, width: '100%', height: '100%' });
+    expect(flat('welcome-video')).toEqual(FILL);
+    // Named for the app, once, as an image; the layer takes no touches.
     expect(screen.getAllByRole('image', { name: 'Who Made This?' })).toHaveLength(1);
-    // Out of the way of the buttons: the layer holding the mark takes no touches.
-    expect(native.getByTestId('welcome-stage').props.pointerEvents).toBe('none');
-    // No photo, no gradient laid over one, and the horizontal logo is gone.
-    expect(native.queryByTestId('welcome-cover', { includeHiddenElements: true })).toBeNull();
+    expect(native.getByTestId('welcome-video').props.pointerEvents).toBe('none');
+    // R-90's mark, its spacers and its glow, and the photo before it, are not drawn; nor the whole-screen layer of round 1.
+    for (const gone of ['welcome-mark', 'welcome-mark-art', 'welcome-above', 'welcome-below', 'welcome-cover', 'welcome-bottom']) {
+      expect(native.queryByTestId(gone, { includeHiddenElements: true })).toBeNull();
+    }
   });
 
-  it('a user sees the mark centred between the top safe area and the headline: equal room above and below, at least 16 below on a short phone', async () => {
+  it('plays the file the owner approved, byte for byte: 1080 x 1920, 8 s, no sound, never re-encoded (R-98)', () => {
+    const file = readFileSync(join(__dirname, '../../assets/video/welcome-loop.mp4'));
+    expect(file.length).toBe(2248484);
+    expect(createHash('sha256').update(file).digest('hex')).toBe('7635695f56be909a65fa3c5ffa45c9867a96e5d9157cf837edd9c0a7029080ef');
+  });
+
+  it('the video plays while the welcome screen is in front and pauses when another screen is on it, and plays again on Back (R-98)', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    const style = (testID: string) => StyleSheet.flatten(native.getByTestId(testID, { includeHiddenElements: true }).props.style);
-    // The stage is the room above the words (the layout gives it everything the words and buttons leave) and
-    // starts under the safe area; the mark sits between two spacers that share what the mark leaves.
-    const stage = native.getByTestId('welcome-stage', { includeHiddenElements: true });
-    expect(style('welcome-stage')).toMatchObject({ flex: 1, alignItems: 'center' });
-    expect(typeof style('welcome-stage').paddingTop).toBe('number');
-    expect(stage.children.map((child) => (typeof child === 'string' ? child : child.props.testID))).toEqual(['welcome-above', 'welcome-mark', 'welcome-below']);
-    expect(style('welcome-above').flex).toBe(1);
-    expect(style('welcome-below').flex).toBe(style('welcome-above').flex);
-    // The only difference between the spacers: a short phone keeps 16 below the mark, whatever the share.
-    expect(style('welcome-below').minHeight).toBe(16);
-    expect(style('welcome-above').minHeight).toBeUndefined();
-    // The mark is its own 190 x 207, never squeezed; its glow is drawn out past that box and takes no room.
-    expect(style('welcome-mark')).toMatchObject({ width: 190, height: 207, flexShrink: 0 });
-    expect(style('welcome-mark-art')).toMatchObject({ position: 'absolute', top: -80, left: -80, width: 350, height: 367 });
-    // The stage is the first of the three layers over the page, the words next, so the headline bounds it from below.
-    const layers = native.getByTestId('welcome').children.map((child) => (typeof child === 'string' ? undefined : child.props.testID));
-    expect(layers.filter(Boolean)).toEqual(['welcome-stage', 'welcome-words']);
+    await waitFor(() => expect(PLAYER().play).toHaveBeenCalledTimes(1));
+    expect(PLAYER().pause).not.toHaveBeenCalled();
+    await press('Create an account');
+    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
+    await waitFor(() => expect(PLAYER().pause).toHaveBeenCalledTimes(1));
+    expect(PLAYER().play).toHaveBeenCalledTimes(1);
+    await press('Back');
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(PLAYER().play).toHaveBeenCalledTimes(2));
+    expect(PLAYER().pause).toHaveBeenCalledTimes(1);
+  });
+
+  it('the words and buttons sit in a solid panel at the bottom in the video\'s base purple, with a short fade from clear to that colour above its top edge, and no blur (R-98)', async () => {
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    const panel = native.getByTestId('welcome-panel');
+    // The fade is the lowest of the panel's three parts, so the words and the buttons are drawn over it; the panel is drawn over the video.
+    expect(idsOf(panel)).toEqual(['welcome-fade', 'welcome-words', undefined]);
+    expect(flat('welcome-panel')).toMatchObject({ backgroundColor: darkColors.surfaceWelcomeVideoBase });
+    const fade = native.getByTestId('welcome-fade', { includeHiddenElements: true });
+    // Clear at the top and the panel's colour at the foot (the same colour at strength 0, never the word "transparent": it blends through black).
+    expect(fade.props.colors[0]).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}00`));
+    expect(fade.props.colors.at(-1)).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}FF`));
+    expect(fade.props.locations[0]).toBe(0);
+    expect(fade.props.locations.at(-1)).toBe(1);
+    expect(fade.props.startPoint[1]).toBeCloseTo(0);
+    expect(fade.props.endPoint[1]).toBeCloseTo(1);
+    // It only ever darkens: each stop is at least as strong as the one above it.
+    const strengths = fade.props.colors.map((c: number) => (c >>> 24) & 0xff);
+    expect([...strengths].sort((x, y) => x - y)).toEqual(strengths);
+    // It is short, sits on the video and ends at the panel's top edge, and takes no touches.
+    const { top, height } = flat('welcome-fade');
+    expect(height).toBeGreaterThan(0);
+    expect(height).toBeLessThanOrEqual(24);
+    expect(top).toBe(-height);
+    expect(flat('welcome-fade')).toMatchObject({ position: 'absolute', left: 0, right: 0 });
+    expect(fade.props.pointerEvents).toBe('none');
+    // No blur anywhere on the screen.
+    expect(JSON.stringify(native.toJSON())).not.toMatch(/blur/i);
+    expect(native.queryByTestId('welcome-blur', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('the words and buttons keep their copy, sizes and spacing, now inside the panel (R-98)', async () => {
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    expect(flat('welcome-words')).toMatchObject({ paddingHorizontal: 24, paddingBottom: 28 });
+    const title = StyleSheet.flatten(screen.getByText(HEADLINE).props.style);
+    expect(title).toMatchObject({ fontSize: 34, lineHeight: 34 * 1.05, letterSpacing: -0.04 * 34 });
+    expect(title.color).toBe(darkColors.textOnAccent);
+    const line = StyleSheet.flatten(screen.getByText('Sell your work and answer paid questions.').props.style);
+    expect(line).toMatchObject({ opacity: 0.8, lineHeight: 15 * 1.45 });
+    expect(line.color).toBe(darkColors.textOnAccent);
+    expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+    // The panel is the words and the two buttons (and the fade); both are in it, none beside it.
+    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-create'));
+    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-sign-in'));
+    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-words'));
   });
 
   it('says nothing that no source backs: no bank claim', async () => {

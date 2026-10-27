@@ -379,6 +379,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PriceListController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/wallet": {
         parameters: {
             query?: never;
@@ -7357,8 +7373,8 @@ export interface paths {
          *
          *     `kind: points_pack` with a `packId` buys a points pack the same way
          *     (POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the
-         *     pack's points (plus the Founding Maker's bonus) is added once, ending
-         *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
+         *     pack's points (plus the Founding Maker's bonus) is added once, and never
+         *     ends (bought points never expire, R-101 point 7), and the answer is a `PointsPackPurchaseView`
          *     (`kind: "points_pack"`).
          *
          *     `kind: extra_products` (TIER-04, VF13) adds the settings' number of
@@ -8082,7 +8098,8 @@ export interface paths {
         /**
          * PT6 before the PIN: the rate (1,000 points for so many kobo, from the
          *     config), the fewest points one conversion takes, the balance, and the
-         *     cash for `points` (the whole balance when none is asked). WAWU pays the
+         *     cash for `points` (all the cashable points when none is asked; points the
+         *     person bought are never cashable, `cashablePoints`). WAWU pays the
          *     provider's charge, so the person pays nothing to convert (R-31).
          *     `canConvert` and `blockedBy` say when the points asked cannot be
          *     converted as they are (below the minimum, more than the balance, more
@@ -8126,7 +8143,9 @@ export interface paths {
          *     quote_changed` with the new quote in `reason.pointsQuote`, and nothing
          *     is paid. A body with no token is a plain 400.
          *     Before the PIN, and changing nothing: `422 below_minimum`, `402
-         *     insufficient_points`, `400 amount_out_of_range` (more than one move
+         *     insufficient_points`, `422 points_not_cashable` (more than the person's
+         *     earned and bonus points: points they bought cannot be cashed out),
+         *     `400 amount_out_of_range` (more than one move
          *     carries), `409 quote_changed`, `409 currency_not_supported`, `409
          *     wallet_not_open`, `503 fees_not_set`.
          */
@@ -8198,7 +8217,7 @@ export interface paths {
          *     body is the job as it was quoted plus `wallet.payment.totalKobo` and
          *     `wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One
          *     lot of the shortfall's points is added when the provider confirms the
-         *     debit, ending after the bought-points expiry. Answers 201 with the
+         *     debit, and it never ends (bought points never expire, R-101 point 7). Answers 201 with the
          *     purchase: `paid`, `pending` while the provider has not confirmed (poll
          *     `GET /points/shortfall/{id}`; it is never sent again) or `failed` when
          *     nothing moved. The same Idempotency-Key and body answer the first result
@@ -9337,6 +9356,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/store/intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Says what a ladder purchase is for, BEFORE the store sheet opens
+         *     (STORE-BUY-HUB, R-101): a piece to unlock, a creator to tip or a room's
+         *     community pass, at a price on the price list. Nothing is charged or given
+         *     here. The answer is the store product to buy (`wawu.buy.<naira>`), the
+         *     person's account token (hand it to the store as for every purchase) and the
+         *     intent's id, which `POST /store/purchases` then carries as `intentId`. One
+         *     open intent per person, kind and target: asking again for the same thing
+         *     returns the same intent. It stays open 60 minutes; a sale made before then
+         *     still counts however late it is posted.
+         *
+         *     Refusals carry `reason.code`: `price_not_on_list` (400, with the nearest
+         *     list prices), `store_not_configured` (503), `store_disabled` (409),
+         *     `store_product_unknown` (404, no store product sells that price),
+         *     `store_intent_target_not_found` (404), `store_intent_not_payable` (409: free,
+         *     their own, already theirs, no pass, removed) and `store_intent_price_changed`
+         *     (409: the piece's or room's price is not the one named).
+         */
+        post: operations["StoreController_intent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/store/credits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The store credits the person can spend (STORE-BUY-HUB round 3): what they
+         *     paid for a purchase that could not be given because the piece, creator or
+         *     room was gone. Pay with one by `POST /store/intents` with `payWith: credit`.
+         */
+        get: operations["StoreController_creditList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/store/purchases": {
         parameters: {
             query?: never;
@@ -9359,6 +9433,17 @@ export interface paths {
          *     `store_purchase_invalid` (422), `store_purchase_pending`,
          *     `store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),
          *     `store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).
+         *
+         *     A ladder product (`wawu.buy.<naira>`) should carry the `intentId` from `POST
+         *     /store/intents`; the Hub checks the product is the intent's and the account
+         *     token is the person's, and grants what the intent names once per store
+         *     transaction. `store_purchase_other_intent` (409) when this store transaction was
+         *     already given for another intent. A payment the store has verified is never lost:
+         *     when the intent is missing, not the person's, used, expired, or the sale came before
+         *     it, the purchase is recorded with `flag: late_sale`, the fan gets a store credit worth
+         *     the product's list price, and the answer is `status: credited`. The same when the
+         *     piece, creator or room can no longer be bought (`flag: target_unavailable`). No
+         *     goods are given and no creator earns in either case.
          */
         post: operations["StoreController_buy"];
         delete?: never;
@@ -9396,6 +9481,10 @@ export interface components {
         CreateBlockedAccountDto: {
             /** Format: uuid */
             blockedWawuId: string;
+        };
+        PriceListView: {
+            prices: components["schemas"]["PriceListItem"][];
+            tips: components["schemas"]["PriceListItem"][];
         };
         ResolveAccountDto: {
             bankCode: string;
@@ -10118,7 +10207,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "points_not_cashable" | "tier_required" | "pack_not_allowed" | "price_not_on_list" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10173,12 +10262,18 @@ export interface components {
             limit?: "per_transaction" | "daily" | "monthly";
             /** @description below_minimum: the fewest points one conversion to cash takes (POINTS-04). */
             minimumPoints?: number;
-            /** @description below_minimum, insufficient_points: the points the person has now. */
+            /** @description below_minimum, insufficient_points, points_not_cashable: the points the person has now. */
             balancePoints?: number;
             /** @description insufficient_points: the points asked for. */
             neededPoints?: number;
             /** @description insufficient_points: neededPoints minus balancePoints. */
             shortfallPoints?: number;
+            /** @description price_not_on_list (R-101): the highest list price below the price sent, in whole naira; null when the price is under the lowest. */
+            nearestLowerNaira?: number | null;
+            /** @description price_not_on_list (R-101): the lowest list price above the price sent, in whole naira; null when the price is over the highest. */
+            nearestHigherNaira?: number | null;
+            /** @description points_not_cashable (POINTS-BOUGHT): the points the person can turn into cash now (earned and bonus points). */
+            cashablePoints?: number;
             /**
              * @description points_cap_reached (POINTS-03): which cap stopped the job.
              * @enum {string}
@@ -12033,6 +12128,47 @@ export interface components {
             /** @enum {string} */
             type: "view" | "tap" | "skip";
         };
+        StoreIntentDto: {
+            /**
+             * @description The store the app runs on.
+             * @enum {string}
+             */
+            platform: "android" | "ios";
+            /**
+             * @description `content` (unlock a piece), `tip` (tip a creator), `pass` (a community pass) or `question` (a paid question to a creator).
+             * @enum {string}
+             */
+            kind: "content" | "tip" | "pass" | "question";
+            /**
+             * Format: uuid
+             * @description The piece to unlock. Required for `content`.
+             */
+            contentId?: string;
+            /**
+             * Format: uuid
+             * @description The creator to tip, or to ask a question. Required for `tip` and `question`.
+             */
+            creatorWawuId?: string;
+            /** @description The question, 2,000 characters at most. Required for `question`, refused for any other kind. */
+            text?: string;
+            /**
+             * Format: uuid
+             * @description The room whose pass to buy. Required for `pass`.
+             */
+            communityId?: string;
+            /**
+             * @description The price in whole naira. Must be on the price list (`GET /prices`); a tip
+             *     must be on the tip list. A piece's or room's price must equal it.
+             */
+            listPriceNaira: number;
+            /**
+             * @description `store` (the default): the store sheet is opened and the purchase made
+             *     against this intent. `credit`: a store credit worth at least the price is
+             *     consumed whole and the purchase is granted at once, with no store sheet.
+             * @enum {string}
+             */
+            payWith?: "store" | "credit";
+        };
         StorePurchaseDto: {
             /**
              * @description The store the purchase was made in.
@@ -12050,6 +12186,12 @@ export interface components {
              * @description The room a community pass is bought for. Required for a pass product, refused for any other.
              */
             communityId?: string;
+            /**
+             * Format: uuid
+             * @description The intent this purchase was made against (`POST /store/intents`). Required
+             *     for a ladder product (`wawu.buy.<naira>`), refused for any other.
+             */
+            intentId?: string;
         };
         StoreProductGrantsDto: {
             /** @description points: a pack of the live plan, by id. */
@@ -12075,11 +12217,13 @@ export interface components {
              * @description Fixed once created.
              * @enum {string}
              */
-            kind: "points" | "credits" | "tier" | "pass" | "extra_products";
+            kind: "points" | "credits" | "tier" | "pass" | "extra_products" | "buy";
             title: string;
             grants: components["schemas"]["StoreProductGrantsDto"];
-            /** @description Kobo one purchase is worth before the store's share. Needed for credits and pass products. */
+            /** @description Kobo one purchase is worth before the store's share. Needed for credits, pass and `buy` (ladder) products; a ladder product's must be a list price. */
             referenceKobo?: number;
+            /** @description What the store charges in Nigeria, in kobo. Only for a `buy` (ladder) product. */
+            storePriceKobo?: number;
             active?: boolean;
             sortOrder?: number;
         };
@@ -12087,6 +12231,8 @@ export interface components {
             title?: string;
             grants?: components["schemas"]["StoreProductGrantsDto"];
             referenceKobo?: number;
+            /** @description What the store charges in Nigeria, in kobo. Only for a `buy` (ladder) product. */
+            storePriceKobo?: number;
             active?: boolean;
             sortOrder?: number;
         };
@@ -12502,6 +12648,15 @@ export interface components {
             count: number;
             amountKobo: number;
         };
+        StoreEarningWaitingView: {
+            /** @enum {string} */
+            kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
+            targetId: string;
+            title: string;
+            amountKobo: number;
+            earnedAt: string;
+            availableAt: string;
+        };
         EarningsView: {
             allTime: components["schemas"]["EarningsPeriodView"];
             month: string;
@@ -12509,6 +12664,7 @@ export interface components {
             waiting: components["schemas"]["EarningsWaitingView"];
             held: components["schemas"]["EarningsWaitingView"];
             walletOpen: boolean;
+            storeEarnings?: components["schemas"]["StoreEarningWaitingView"][] | null;
         };
         EarningContentView: {
             /** @enum {string} */
@@ -13383,7 +13539,8 @@ export interface components {
             /** @enum {string} */
             source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
             label: string;
-            expiresAt: string;
+            expiresAt: string | null;
+            cashable: boolean;
         };
         PointMovementView: {
             id: string;
@@ -13396,6 +13553,7 @@ export interface components {
         };
         MyPointsView: {
             balance: number;
+            cashablePoints: number;
             nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
             lots: components["schemas"]["PointLotView"][];
             lotCount: number;
@@ -14241,6 +14399,11 @@ export interface components {
             mediaJobId: string | null;
             createdAt: string;
             updatedAt: string;
+        };
+        PriceListItem: {
+            priceNaira: number;
+            priceKobo: number;
+            storePriceNaira: number | null;
         };
         DmSendInitResponse: {
             flutterwaveConfig: {
@@ -17255,7 +17418,7 @@ export interface components {
             bonusPercent: number;
             bonusPoints: number;
             totalPoints: number;
-            expiryDays: number;
+            expiryDays: number | null;
             /** @enum {string} */
             paymentKind: "points_pack";
             payment: components["schemas"]["PaymentQuoteView"];
@@ -17342,7 +17505,7 @@ export interface components {
             points: number;
             bonusPoints: number;
             totalPoints: number;
-            expiresAt: string;
+            expiresAt: string | null;
         };
         PointsPackPurchaseView: {
             id: string;
@@ -17381,7 +17544,7 @@ export interface components {
             amountMinor: number;
             products: number;
             /** @enum {string} */
-            status: "pending" | "failed" | "reversed" | "expired" | "paid" | "awaiting_transfer";
+            status: "pending" | "failed" | "reversed" | "expired" | "refunded" | "paid" | "awaiting_transfer";
             statusMessage: string | null;
             payment: components["schemas"]["PaymentView"] | null;
             transfer: components["schemas"]["PlanPurchaseTransferView"] | null;
@@ -17505,6 +17668,38 @@ export interface components {
             payment: components["schemas"]["PaymentView"];
             createdAt: string;
             paidAt: string | null;
+        };
+        StoreAdminNoticeView: {
+            id: string;
+            kind: string;
+            title: string;
+            body: string;
+            data: unknown;
+            createdAt: string;
+            readAt: string | null;
+        };
+        StoreAdminNoticePageView: {
+            items: components["schemas"]["StoreAdminNoticeView"][];
+            unread: number;
+        };
+        StoreCut30StatusView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            year: number;
+            totalUsdCents: number;
+            thresholdUsdCents: number;
+            ladder: 15 | 30;
+            crossedAt: string | null;
+            storeSync: string | null;
+        };
+        StoreCut30SwitchBackView: {
+            /** @enum {string} */
+            platform: "android" | "ios";
+            /** @enum {number} */
+            ladder: 15;
+            /** @enum {string} */
+            storeSync: "failed" | "done" | "no_keys" | "partial";
+            byHand: string[];
         };
         UnlockWalletQuoteView: {
             contentId: string;
@@ -17664,6 +17859,7 @@ export interface components {
             /** @enum {string} */
             currency: "NGN";
             balancePoints: number;
+            cashablePoints: number;
             minimumPoints: number;
             maximumPoints: number | null;
             rate: {
@@ -17676,7 +17872,7 @@ export interface components {
             wawuPaysProviderCharge: boolean;
             canConvert: boolean;
             /** @enum {string|null} */
-            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | null;
+            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | "not_cashable" | null;
             quoteToken: string;
             expiresAt: string;
         };
@@ -17743,7 +17939,7 @@ export interface components {
             payment: components["schemas"]["PaymentView"];
             grant: {
                 points: number;
-                expiresAt: string;
+                expiresAt: string | null;
             } | null;
             createdAt: string;
             paidAt: string | null;
@@ -18351,11 +18547,12 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass" | "buy";
             title: string;
             grants: components["schemas"]["StoreProductGrantsConfig"];
             resolved: components["schemas"]["StoreGrantsView"];
             referenceKobo: number | null;
+            storePriceKobo?: number | null;
             active: boolean;
             sortOrder: number;
             updatedBy: string | null;
@@ -18378,17 +18575,21 @@ export interface components {
         };
         AdminStorePurchaseView: {
             id: string;
-            wawuUserId: string;
+            wawuUserId: string | null;
             /** @enum {string} */
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass" | "buy";
             /** @enum {string} */
             status: "refunded" | "granted" | "revoked";
             environment: string;
             storeTransactionId: string;
             communityId: string | null;
+            /** @enum {string|null} */
+            buyKind?: "tip" | "content" | "pass" | "question" | null;
+            intentId?: string | null;
+            targetId?: string | null;
             currency: string | null;
             priceMicros: string | null;
             referenceKobo: number | null;
@@ -18417,10 +18618,12 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass" | "buy";
             title: string;
             subscription: boolean;
             grants: components["schemas"]["StoreGrantsView"];
+            listPriceKobo?: number | null;
+            storePriceKobo?: number | null;
         };
         StoreProductListView: {
             /** @enum {string} */
@@ -18438,6 +18641,14 @@ export interface components {
             extraProducts: number | null;
             until: string | null;
             communityId: string | null;
+            contentId?: string | null;
+            creatorWawuId?: string | null;
+            questionId?: string | null;
+        };
+        StoreCreditNoticeView: {
+            id: string;
+            amountKobo: number;
+            message: string;
         };
         StorePurchaseView: {
             id: string;
@@ -18445,14 +18656,37 @@ export interface components {
             platform: "android" | "ios";
             storeProductId: string;
             /** @enum {string} */
-            kind: "tier" | "extra_products" | "credits" | "points" | "pass";
+            kind: "tier" | "extra_products" | "credits" | "points" | "pass" | "buy";
             /** @enum {string} */
-            status: "refunded" | "granted" | "revoked";
+            status: "refunded" | "granted" | "revoked" | "credited";
             alreadyGranted: boolean;
             grant: components["schemas"]["StoreGrantedView"];
             purchasedAt: string;
             expiresAt: string | null;
             flag: string | null;
+            credit?: components["schemas"]["StoreCreditNoticeView"];
+            paidWithCredit?: string | null;
+            /** @enum {string|null} */
+            buyKind?: "tip" | "content" | "pass" | "question" | null;
+            intentId?: string | null;
+            targetId?: string | null;
+        };
+        StoreIntentView: {
+            intentId: string;
+            productId: string;
+            accountToken: string;
+            expiresAt: string;
+            purchase?: components["schemas"]["StorePurchaseView"];
+        };
+        StoreCreditView: {
+            id: string;
+            amountKobo: number;
+            /** @enum {string|null} */
+            scope: "question" | null;
+            createdAt: string;
+        };
+        StoreCreditListView: {
+            credits: components["schemas"]["StoreCreditView"][];
         };
         StoreWebhookAck: {
             received: boolean;
@@ -19279,6 +19513,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    PriceListController_read: {
+        parameters: {
+            query?: {
+                platform?: "android" | "ios";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListView"];
+                };
             };
         };
     };
@@ -33390,7 +33645,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, target_not_payable, pack_not_allowed, payment_in_progress */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -33483,7 +33738,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress */
+            /** @description reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, pack_not_allowed, payment_in_progress */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -35411,7 +35666,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: below_minimum */
+            /** @description reason.code: below_minimum, points_not_cashable */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -37355,6 +37610,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoreProductListView"];
+                };
+            };
+        };
+    };
+    StoreController_intent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreIntentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreIntentView"];
+                };
+            };
+        };
+    };
+    StoreController_creditList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreCreditListView"];
                 };
             };
         };

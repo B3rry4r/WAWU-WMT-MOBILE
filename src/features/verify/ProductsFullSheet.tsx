@@ -19,7 +19,7 @@ import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space } from '@/theme';
 
 import { askPackOffered, plansQuery } from './purchaseApi';
-import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, packOffered, packVerdictOf } from './purchaseModel';
+import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TAKE_DOWN_LINE, PACK_TIERS_LINE, packOffered, packVerdictOf } from './purchaseModel';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
 const MARK = 72;
@@ -147,7 +147,7 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
                   : PACK_CAP_LINE
                 : up
                   ? 'Move up a tier, or take something down.'
-                  : 'Take something down to make room for a new one.'}
+                  : PACK_TAKE_DOWN_LINE}
           </Text>
           {refusal !== null && refusal !== (up ? PACK_TIERS_LINE : PACK_CAP_LINE) ? (
             <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>

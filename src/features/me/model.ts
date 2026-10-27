@@ -231,6 +231,15 @@ export function liveListings(listings: readonly Listing[]): Listing[] {
   return listings.filter((listing) => listing.status === 'approved' && listing.listed);
 }
 
+/**
+ * The person's own listings a reviewer has not decided yet (P7, P8 "Under review"). Me's Services tab shows them to the person only,
+ * marked "Under review", so a listing just sent for review is not "No services yet" (SERVICES-FEEDBACK 2). The Hub lists a person's
+ * pending applications on their own route only; another person's profile is given live listings and never calls it.
+ */
+export function pendingListings(listings: readonly Listing[]): Listing[] {
+  return listings.filter((listing) => listing.status === 'pending');
+}
+
 /** A listing's title: the person's own headline, else the field it is listed in. */
 export function listingTitle(listing: Pick<Listing, 'headline' | 'category'>): string {
   return listing.headline.trim() || listing.category;

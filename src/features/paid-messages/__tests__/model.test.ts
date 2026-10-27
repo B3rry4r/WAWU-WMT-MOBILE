@@ -3,13 +3,12 @@ import {
   canSave,
   dayMonth,
   digitsFromKobo,
-  digitsOf,
   formOf,
   lockedBody,
   lockedTitle,
   modeOf,
   percentText,
-  priceInput,
+  priceNairaOf,
   priceKoboOf,
   priceProblem,
   saveBody,
@@ -53,19 +52,12 @@ describe('the paid message settings model', () => {
     expect(modeOf(standing({ state: 'paused' }))).toBe('locked');
   });
 
-  it('holds the price as the digits of naira, and draws them as money', () => {
+  it('holds the price as the digits of the list price picked, and reads it as whole naira', () => {
     expect(formOf(settings())).toEqual({ enabled: true, digits: '1500', hours: 24 });
     expect(formOf(settings({ priceKobo: null, enabled: false }))).toEqual({ enabled: false, digits: '', hours: 24 });
     expect(digitsFromKobo(1_000_000_000)).toBe('10000000');
-    expect(priceInput('1500')).toBe('₦1,500');
-    expect(priceInput('')).toBe('');
-  });
-
-  it('keeps only digits from what was typed, drops leading zeros, and stops at ten', () => {
-    expect(digitsOf('₦1,500')).toBe('1500');
-    expect(digitsOf('0075')).toBe('75');
-    expect(digitsOf('abc')).toBe('');
-    expect(digitsOf('123456789012')).toBe('1234567890');
+    expect(priceNairaOf({ enabled: true, digits: '1500', hours: 24 })).toBe(1500);
+    expect(priceNairaOf({ enabled: false, digits: '', hours: 24 })).toBeNull();
   });
 
   it('writes a share as a whole percent, never over the line it is under', () => {
@@ -105,6 +97,12 @@ describe('the paid message settings model', () => {
     expect(canSave({ enabled: true, digits: '', hours: 24 }, s)).toBe(false);
     expect(canSave({ enabled: false, digits: '', hours: 24 }, s)).toBe(true);
     expect(canSave({ enabled: true, digits: '49', hours: 24 }, s)).toBe(false);
+    // The price list (PRICE-PICKER): an off-list price keeps Save off while the switch is on, not when it is off.
+    const list = [500, 1000, 1500];
+    expect(canSave({ enabled: true, digits: '1200', hours: 24 }, s, list)).toBe(false);
+    expect(canSave({ enabled: false, digits: '1200', hours: 24 }, s, list)).toBe(true);
+    expect(canSave({ enabled: true, digits: '1500', hours: 24 }, s, list)).toBe(true);
+    expect(canSave({ enabled: true, digits: '1500', hours: 24 }, s, [])).toBe(false);
     expect(canSave({ enabled: true, digits: '1500', hours: null }, s)).toBe(false);
     expect(canSave({ enabled: true, digits: '1500', hours: 24 }, settings({ standing: standing({ state: 'paused', pausedUntil: '2026-10-03T09:00:00.000Z' }) }))).toBe(false);
   });
@@ -112,6 +110,10 @@ describe('the paid message settings model', () => {
   it('sends the price in kobo only when there is one', () => {
     expect(saveBody({ enabled: true, digits: '2500', hours: 48 })).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 48 });
     expect(saveBody({ enabled: false, digits: '', hours: 24 })).toEqual({ enabled: false, responseHours: 24 });
+    // With the switch off, an off-list price is left out (the Hub keeps the one it holds); a list price is sent.
+    expect(saveBody({ enabled: false, digits: '1200', hours: 24 }, [1000, 1500])).toEqual({ enabled: false, responseHours: 24 });
+    expect(saveBody({ enabled: false, digits: '1500', hours: 24 }, [1000, 1500])).toEqual({ enabled: false, priceKobo: 150_000, responseHours: 24 });
+    expect(saveBody({ enabled: true, digits: '1500', hours: 24 }, [1000, 1500])).toEqual({ enabled: true, priceKobo: 150_000, responseHours: 24 });
     expect(priceKoboOf({ enabled: true, digits: '50', hours: 24 })).toBe(5_000);
   });
 

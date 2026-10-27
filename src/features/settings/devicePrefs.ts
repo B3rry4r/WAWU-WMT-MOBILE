@@ -5,9 +5,11 @@ import { useSyncExternalStore } from 'react';
 import { setThemePick } from '@/theme/override';
 
 /**
- * Z2's Theme and Sound rows are choices about this phone, not about the account, so they are
- * kept on the phone and never sent anywhere: Theme is System, Light or Dark, and Sound is the
- * "Taps and alerts" switch. The browser build used for development keeps them in localStorage.
+ * Z2's Theme and Alert sound rows are choices about this phone, not about the account, so they are
+ * kept on the phone and never sent anywhere: Theme is System, Light or Dark, and Alert sound is the
+ * switch that lets a push shown while the app is open make a sound (R-99 renamed it from "Sound / Taps and alerts").
+ * Music, the WAWU theme, is a third choice of the same kind (`loadMusic`, `saveMusic`). The browser build used for
+ * development keeps them in localStorage.
  * Nothing here is a secret; the secure store is simply the one store the app already ships.
  */
 export type ThemeChoice = 'system' | 'light' | 'dark';
@@ -22,6 +24,8 @@ export const DEFAULT_PREFS: DevicePrefs = { theme: 'system', sound: false };
 
 export const THEME_KEY = 'wmt.pref.theme';
 export const SOUND_KEY = 'wmt.pref.sound';
+/** R-99: whether the person left the WAWU theme playing. It is read to start the song again when the app opens. */
+export const MUSIC_KEY = 'wmt.pref.music';
 
 const onWeb = Platform.OS === 'web';
 
@@ -47,6 +51,19 @@ export async function loadPrefs(): Promise<DevicePrefs> {
   } catch {
     return DEFAULT_PREFS;
   }
+}
+
+/** Whether the person left the WAWU theme on. Nothing saved, or an unreadable store, is off: silence is the default. */
+export async function loadMusic(): Promise<boolean> {
+  try {
+    return (await read(MUSIC_KEY)) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export async function saveMusic(on: boolean): Promise<void> {
+  await write(MUSIC_KEY, on ? 'on' : 'off');
 }
 
 /**

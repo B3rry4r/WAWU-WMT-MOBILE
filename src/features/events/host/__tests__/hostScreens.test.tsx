@@ -113,6 +113,7 @@ const serve = (verified: boolean, extra?: (c: Call) => Reply | undefined, tier: 
   handler = (c) => {
     const own = extra?.(c);
     if (own) return own;
+    if (c.path === '/prices') return ok(priceList);
     if (c.path === '/verification/me') return ok(tick(verified));
     if (c.path === '/me/tier') return ok(tierView(tier));
     if (c.path === '/plans') return ok(plansView());
@@ -123,6 +124,7 @@ const serve = (verified: boolean, extra?: (c: Call) => Reply | undefined, tier: 
 
 /** What serve() answers, as a function a handler can call for the paths it does not hold. */
 const serveOnce = (c: Call): Reply | undefined => {
+  if (c.path === '/prices') return ok(priceList);
   if (c.path === '/verification/me') return ok(tick(false));
   if (c.path === '/me/tier') return ok(tierView('none'));
   if (c.path === '/events/options') return ok(options);
@@ -134,6 +136,16 @@ async function bootHost(over: Record<string, unknown> = {}) {
   await render(<HostScreen {...props} />);
   return props;
 }
+
+/** The price list the Hub serves (R-101): what a ticket's picker offers. */
+const priceList = {
+  prices: [100, 200, 500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10_000, 12_000, 15_000].map((n) => ({ priceNaira: n, priceKobo: n * 100 })),
+  tips: [{ priceNaira: 200, priceKobo: 20_000 }],
+};
+/** A host picks a list price for ticket type `i` from its strip (once the list has loaded), and turns it Paid or Free with the switch above it. */
+const pick = async (i: number, naira: number) =>
+  rtl.fireEvent.press(await rtl.within(await rtl.screen.findByTestId(`host-ticket-${i}-picker`)).findByTestId(`price-stop-${naira}`));
+const access = (i: number, which: 'Paid' | 'Free') => rtl.fireEvent.press(rtl.within(rtl.screen.getByTestId(`host-ticket-${i}-access`)).getByLabelText(which));
 
 const type = (id: string, text: string) => rtl.fireEvent.changeText(rtl.screen.getByTestId(id), text);
 const press = (id: string) => rtl.fireEvent.press(rtl.screen.getByTestId(id));
@@ -164,7 +176,7 @@ async function fillWhen() {
 
 async function fillTickets() {
   await type('host-ticket-0-name', 'Regular');
-  await type('host-ticket-0-price', '5000');
+  await pick(0, 5000);
   await type('host-ticket-0-quantity', '100');
 }
 
@@ -470,11 +482,11 @@ describe('E13 to E15 · the wizard', () => {
     const props = await bootHost();
     await fillBasics();
     await fillWhen();
-    expect(await rtl.screen.findByText('You keep 85% of every ticket. Set price to ₦0 for a free event.')).toBeTruthy();
+    expect(await rtl.screen.findByText('You keep 85% of every ticket. Pick Free for a free event.')).toBeTruthy();
     await fillTickets();
     await press('host-add-ticket');
     await type('host-ticket-1-name', 'VIP');
-    await type('host-ticket-1-price', '12000');
+    await pick(1, 12_000);
     await type('host-ticket-1-quantity', '20');
     await press('host-send');
     expect(await rtl.screen.findByText('Sent for review')).toBeTruthy();
@@ -499,13 +511,32 @@ describe('E13 to E15 · the wizard', () => {
     expect(props.onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('a send refused as 400 price_not_on_list reads the list again and shows the Hub\'s sentence, and the form stays', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦4,000 and ₦5,000.';
+    serve(true, (c) =>
+      c.method === 'POST' && c.path === '/events'
+        ? { status: 400, body: { statusCode: 400, message: sentence, reason: { code: 'price_not_on_list', message: sentence, nearestLowerNaira: 4000, nearestHigherNaira: 5000 } } }
+        : undefined,
+    );
+    await bootHost();
+    await fillBasics();
+    await fillWhen();
+    await fillTickets();
+    const reads = () => calls.filter((c) => c.method === 'GET' && c.path === '/prices').length;
+    const before = reads();
+    await press('host-send');
+    expect(await rtl.screen.findByText(sentence)).toBeTruthy();
+    await rtl.waitFor(() => expect(reads()).toBeGreaterThan(before));
+    expect(rtl.screen.queryByText('Sent for review')).toBeNull();
+  });
+
   it('sends a free ticket as 0 (R-8)', async () => {
     serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? ok(created) : undefined));
     await bootHost();
     await fillBasics();
     await fillWhen();
     await type('host-ticket-0-name', 'Free pass');
-    await type('host-ticket-0-price', '0');
+    await access(0, 'Free');
     await type('host-ticket-0-quantity', '50');
     await press('host-send');
     await rtl.screen.findByText('Sent for review');
@@ -520,7 +551,7 @@ describe('E13 to E15 · the wizard', () => {
     await fillTickets();
     await press('host-add-ticket');
     await type('host-ticket-1-name', 'VIP');
-    await type('host-ticket-1-price', '12000');
+    await pick(1, 12_000);
     await press('host-send');
     expect(await rtl.screen.findByText('How many?')).toBeTruthy();
     expect(posts()).toHaveLength(0);

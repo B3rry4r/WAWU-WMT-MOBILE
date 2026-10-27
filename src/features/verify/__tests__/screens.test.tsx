@@ -37,6 +37,10 @@ const { BonusScreen } = require('../BonusScreen') as typeof import('../BonusScre
 const { ShopScreen } = require('../ShopScreen') as typeof import('../ShopScreen');
 const { DraftFormScreen } = require('../DraftFormScreen') as typeof import('../DraftFormScreen');
 
+const PRICE_LIST = {
+  prices: [100, 200, 500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10_000].map((n) => ({ priceNaira: n, priceKobo: n * 100 })),
+  tips: [{ priceNaira: 200, priceKobo: 20_000 }],
+};
 const PLANS = 'GET /api/hub/plans';
 const LIST = 'GET /api/hub/product-drafts';
 
@@ -157,6 +161,62 @@ describe('the draft form', () => {
     await fireEvent.press(screen.getByTestId('draft-save'));
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect(asked.find((a) => a.key === 'POST /api/hub/product-drafts')?.body).toEqual({ title: 'Brand deck', accessType: 'paid' });
+  });
+
+  it('a draft stays unpriced until the person picks: nothing is selected, none is saved, and picking saves that list price', async () => {
+    answers = { 'GET /api/hub/prices': ok(PRICE_LIST), 'POST /api/hub/product-drafts': ok(draft('n', { price: null }), 201), [LIST]: ok([]) };
+    const onSaved = jest.fn();
+    await render(frame(<DraftFormScreen onBack={jest.fn()} onSaved={onSaved} onDeleted={jest.fn()} />));
+    expect((await screen.findByTestId('price-stop-2500')).props.accessibilityState.selected).toBe(false);
+    expect(screen.queryByPlaceholderText('0')).toBeNull();
+    await fireEvent.changeText(screen.getByTestId('draft-title'), 'Brand deck');
+    await fireEvent.press(screen.getByTestId('draft-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(asked.find((a) => a.key === 'POST /api/hub/product-drafts')?.body).toEqual({ title: 'Brand deck', accessType: 'paid' });
+  });
+
+  it('picks the price from the Hub\'s list: the price picked is saved, and nothing is typed', async () => {
+    answers = { 'GET /api/hub/prices': ok(PRICE_LIST), 'POST /api/hub/product-drafts': ok(draft('n', { price: 3000 }), 201), [LIST]: ok([]) };
+    const onSaved = jest.fn();
+    await render(frame(<DraftFormScreen onBack={jest.fn()} onSaved={onSaved} onDeleted={jest.fn()} />));
+    await fireEvent.press(await screen.findByTestId('price-stop-3000'));
+    await fireEvent.changeText(screen.getByTestId('draft-title'), 'Brand deck');
+    await fireEvent.press(screen.getByTestId('draft-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(asked.find((a) => a.key === 'POST /api/hub/product-drafts')?.body).toEqual({ title: 'Brand deck', accessType: 'paid', price: 3000 });
+  });
+
+  it('a 400 price_not_on_list on save reads the list again and shows the Hub\'s sentence', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦2,500 and ₦3,000.';
+    answers = {
+      'GET /api/hub/prices': ok(PRICE_LIST),
+      'POST /api/hub/product-drafts': { status: 400, body: { statusCode: 400, message: sentence, data: null, reason: { code: 'price_not_on_list', message: sentence } } },
+    };
+    await render(frame(<DraftFormScreen onBack={jest.fn()} onSaved={jest.fn()} onDeleted={jest.fn()} />));
+    await fireEvent.press(await screen.findByTestId('price-stop-3000'));
+    await fireEvent.changeText(screen.getByTestId('draft-title'), 'Brand deck');
+    const reads = () => asked.filter((a) => a.key === 'GET /api/hub/prices').length;
+    const before = reads();
+    await fireEvent.press(screen.getByTestId('draft-save'));
+    expect(await screen.findByTestId('draft-problem')).toHaveTextContent(sentence);
+    await waitFor(() => expect(reads()).toBeGreaterThan(before));
+  });
+
+  it('a draft saved at an old price off the list shows the nearest list price selected with a note, and a rename sends no price', async () => {
+    answers = {
+      'GET /api/hub/prices': ok(PRICE_LIST),
+      'GET /api/hub/product-drafts/d1': ok(draft('d1', { title: 'Old name', price: 4500 })),
+      'PATCH /api/hub/product-drafts/d1': ok(draft('d1', { title: 'New name', price: 4500 })),
+      [LIST]: ok([]),
+    };
+    const onSaved = jest.fn();
+    await render(frame(<DraftFormScreen draftId="d1" onBack={jest.fn()} onSaved={onSaved} onDeleted={jest.fn()} />));
+    expect((await screen.findByTestId('price-stop-4000')).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('draft-title'), 'New name');
+    await fireEvent.press(screen.getByTestId('draft-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(asked.find((a) => a.key === 'PATCH /api/hub/product-drafts/d1')?.body).toEqual({ title: 'New name' });
   });
 
   it('shows the Hub\'s own words when the next draft is refused, and stays on the form', async () => {

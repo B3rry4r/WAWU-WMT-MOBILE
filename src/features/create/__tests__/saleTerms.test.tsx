@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+
+import { servePrices } from '@/features/prices/__helpers__/prices';
 
 import { allowance, hub, installFetch, ok, renderFrame } from '../__helpers__/harness';
 
@@ -13,13 +15,12 @@ installFetch();
 const { queryClient: appClient } = require('@/api/query') as typeof import('@/api/query');
 const { PriceScreen } = require('../PriceScreen') as typeof import('../PriceScreen');
 const { ReviewScreen } = require('../ReviewScreen') as typeof import('../ReviewScreen');
-const api = require('../api') as typeof import('../api');
 const draft = require('../draft') as typeof import('../draft');
 const details = require('../details') as typeof import('../details');
 
 /**
- * FIX-110 (G-ME-08-2, G-ME-08-3, G-FIX-78-1): M24's quick prices, "You earn per sale", "Your share" and "Listing fee", and M25's
- * "Usually takes", all from `GET /content/sale-terms`. Every figure is the Hub's; the app multiplies nothing.
+ * FIX-110: M25's "Usually takes" comes from `GET /content/sale-terms`. M24's quick prices, "Your share" and "Listing fee" were retired
+ * by PRICE-PICKER (R-101): the price is picked from `GET /prices` and "You earn" is 85% of the list price (R-5).
  */
 const TERMS = '/api/hub/content/sale-terms';
 const terms = (priceKobo: number | null, over: Record<string, unknown> = {}) => ({
@@ -45,90 +46,69 @@ beforeEach(() => {
   appClient.clear();
 });
 
-describe('M24 · the Hub\'s terms on the price step', () => {
-  const open = async () => {
+describe('M24 · the price step no longer reads the sale terms', () => {
+  it('draws the picker from the price list, and draws none of the old quick prices, share or listing fee', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null));
     haveFiles();
     details.setDetails({ title: 'The Freelancer\'s Pricing Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
     await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
-  };
-  const serve = () => {
+    expect(await screen.findByTestId('price-stop-2500')).toBeTruthy();
+    for (const absent of ['Your share', 'You earn per sale']) expect(screen.queryByText(absent)).toBeNull();
+    expect(screen.queryByTestId('price-presets-1000')).toBeNull();
+    // The earn figure is the picker's own (85% of the list price); the sale terms are read for the listing fee only.
+    expect(await screen.findByTestId('price-fee')).toBeTruthy();
+  });
+
+  it('draws the Listing fee as "Free" once the Hub has answered', async () => {
+    servePrices();
     hub.answers[`GET ${TERMS}`] = ok(terms(null));
-  };
-
-  it('a user sees the four quick prices, the share and "Free" for the listing fee, and taps a price in', async () => {
-    serve();
-    await open();
-    expect(await screen.findByTestId('price-presets-1000')).toBeTruthy();
-    for (const label of ['₦1,000', '₦2,500', '₦3,000', '₦5,000']) expect(screen.getByText(label)).toBeTruthy();
-    expect(screen.getByText('Your share')).toBeTruthy();
-    expect(screen.getByText('85%')).toBeTruthy();
-    expect(screen.getByText('Listing fee')).toBeTruthy();
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByText('Listing fee')).toBeTruthy();
     expect(within(screen.getByTestId('price-fee')).getByText('Free')).toBeTruthy();
-    // No price typed yet: no earn row (there is nothing to take a share of).
-    expect(screen.queryByText('You earn per sale')).toBeNull();
-
-    hub.answers[`GET ${TERMS}`] = ok(terms(300000));
-    await fireEvent.press(screen.getByTestId('price-presets-3000'));
-    expect(details.getDetails().price).toBe('3000');
-    expect(await screen.findByText('₦2,550')).toBeTruthy();
-    expect(screen.getByText('You earn per sale')).toBeTruthy();
-    // The price was sent to the Hub in kobo, as typed.
-    expect(hub.sent.some((s) => s.method === 'GET' && s.path === TERMS && String(s.body ?? '').length >= 0)).toBe(true);
   });
 
-  it('draws none of the four until the Hub has answered, and still sends for review', async () => {
-    // No answer for the terms route: the stand-in says 404.
-    await open();
-    await fireEvent.changeText(screen.getByTestId('price-input'), '3000');
+  it('draws the Listing fee in naira when the Hub names one', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null, { listingFeeKobo: 50000 }));
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await within(await screen.findByTestId('price-fee')).findByText('₦500')).toBeTruthy();
+  });
+
+  it('draws no Listing fee until the Hub has answered, and still sends for review', async () => {
+    servePrices();
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    await screen.findByTestId('price-stop-2500');
     expect(screen.queryByTestId('price-terms')).toBeNull();
-    expect(screen.queryByTestId('price-presets-3000')).toBeNull();
-    expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBeFalsy();
+    expect(screen.queryByText('Listing fee')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBeFalsy());
   });
 
-  it('shows a listing fee in naira when the Hub says there is one, and leaves a fractional preset out', async () => {
-    hub.answers[`GET ${TERMS}`] = ok(terms(null, { listingFeeKobo: 50000, presets: [100050, 250000].map((priceKobo) => ({ priceKobo })) }));
-    await open();
-    expect(await screen.findByText('₦500')).toBeTruthy();
-    expect(screen.getByText('₦2,500')).toBeTruthy();
-    expect(screen.queryByText('₦1,000.50')).toBeNull();
-    expect(screen.queryByText('₦1,001')).toBeNull();
-  });
-
-  it('asks once when the typing rests (SWEEP-APP-8): five digits typed fast are one read, not five', async () => {
-    serve();
-    // The reads are counted at the app's own call, with the price (whole kobo) each one asked about.
-    const asked = jest.spyOn(api, 'fetchSaleTerms');
-    const termsAsked = () => asked.mock.calls.map(([priceKobo]) => priceKobo);
-    try {
-      await open();
-      expect(await screen.findByTestId('price-terms')).toBeTruthy();
-      // The first read is for no price at all.
-      expect(termsAsked()).toEqual([null]);
-
-      hub.answers[`GET ${TERMS}`] = ok(terms(1234500));
-      for (const typed of ['1', '12', '123', '1234', '12345']) await fireEvent.changeText(screen.getByTestId('price-input'), typed);
-      // Five keys in, the Hub has not been asked about any of them.
-      expect(termsAsked()).toEqual([null]);
-
-      // Once the typing rests the Hub is asked, for the price that is there, once.
-      await waitFor(() => expect(termsAsked()).toEqual([null, 1234500]));
-      expect(await screen.findByText('₦10,493')).toBeTruthy();
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 700));
-      });
-      expect(termsAsked()).toEqual([null, 1234500]);
-    } finally {
-      asked.mockRestore();
-    }
-  });
-
-  it('draws the presets and the card on Paid only', async () => {
-    serve();
-    await open();
-    expect(await screen.findByTestId('price-terms')).toBeTruthy();
+  it('draws the Listing fee on Paid only', async () => {
+    servePrices();
+    hub.answers[`GET ${TERMS}`] = ok(terms(null));
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByTestId('price-fee')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Free'));
     expect(screen.queryByTestId('price-terms')).toBeNull();
-    expect(screen.queryByTestId('price-presets-1000')).toBeNull();
+  });
+
+  it('draws the picker on Paid only', async () => {
+    servePrices();
+    haveFiles();
+    details.setDetails({ title: 'The Playbook', description: 'x', category: 'business_entrepreneurship', accessType: 'paid', price: '' });
+    await renderFrame(<PriceScreen format="pdf" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByTestId('price-picker')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Free'));
+    expect(screen.queryByTestId('price-picker')).toBeNull();
   });
 });
 
@@ -153,6 +133,5 @@ describe('M25 · "Usually takes"', () => {
     expect(details.reviewWords(4)).toBe('About 4 hours');
     expect(details.reviewWords(24)).toBe('About a day');
     expect(details.reviewWords(72)).toBe('About 3 days');
-    expect(details.presetDigits([100000, 100050, 0, 250000])).toEqual(['1000', '2500']);
   });
 });

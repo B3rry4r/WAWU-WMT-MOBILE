@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { Card, GroupedList } from '@/components/Card';
@@ -9,6 +10,7 @@ import { Icon, VerifiedTick } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { Skeleton } from '@/components/Skeleton';
+import { toastMetrics } from '@/components/Toast';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
 
@@ -24,6 +26,8 @@ import { switchMetrics } from '@/components/Switch';
 import { SwitchRow, switchRowMetrics } from '@/components/SwitchRow';
 import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
+import { setThemeMusic, useThemeMusic } from '@/features/music/themeMusic';
+import { ThemeNotice } from '@/features/music/ThemeNotice';
 
 /** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
 const BODY_GAP = 12;
@@ -46,6 +50,17 @@ export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
  * G-POINTS-07-1: where "Use wallet" is switched (`GET` and `PUT /me/points/settings`). No board draws the row, so it is the TGIF switch's own
  * look, in the same group; the line says what the switch does, and nothing is taken from the wallet by switching it.
  */
+
+/**
+ * R-99: the old "Sound / Taps and alerts" row promised tap sounds the app never makes. It is what it does: the sound a push makes when
+ * it arrives while the app is open (`installPushHandler` reads the switch). Notifications keep their own row.
+ */
+export const ALERT_SOUND_TITLE = 'Alert sound';
+export const ALERT_SOUND_SUBTITLE = 'Alerts while the app is open';
+
+/** R-99: the website's theme song, worded "Our theme song" because the app never names WAWU (R-37). It holds the same state as the round button above Create. */
+export const MUSIC_TITLE = 'Music';
+export const MUSIC_SUBTITLE = 'Our theme song';
 
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';
@@ -78,7 +93,7 @@ export type SettingsScreenProps = {
 
 /**
  * Z2 · Settings. The header card is read from `GET /users/me`; TGIF is `GET` and `PATCH /settings/tgif`
- * (the Hub holds it, so it follows the person to another phone); Sound and Theme are this phone's own
+ * (the Hub holds it, so it follows the person to another phone); Alert sound, Music and Theme are this phone's own
  * choices and are kept on it. Wallet and PIN is WALLET-06's (W35, no tier: BRIEF, Z2), and Delete account (SETTINGS-05, Z6) is the muted
  * line under Sign out, each where Z2 draws it.
  */
@@ -92,6 +107,8 @@ export function SettingsScreen(props: SettingsScreenProps) {
     valueOf: (settings) => settings.show,
   });
   const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
+  const music = useThemeMusic();
+  const insets = useSafeAreaInsets();
   const [choosingTheme, setChoosingTheme] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -119,98 +136,103 @@ export function SettingsScreen(props: SettingsScreenProps) {
   };
 
   return (
-    <ScreenFrame idPrefix="settings" title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
-      <Header me={me.data} loading={me.isPending} onOpen={props.onOpenProfile} onRetry={() => void me.refetch()} />
-      <GroupedList testID="settings-account">
-        <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
-        <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
-        <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
-        {props.onOpenTier ? <ListRow testID="settings-tier" lead={<IconTile icon="BadgeCheck" size={ROW_TILE} />} title="Your tier" onPress={props.onOpenTier} /> : null}
-        {props.onOpenClaimCode ? (
-          <ListRow testID="settings-claim-code" lead={<IconTile icon="Ticket" size={ROW_TILE} />} title="Access code" subtitle="Claim a plan you paid for at an event" onPress={props.onOpenClaimCode} />
-        ) : null}
-        {props.onOpenWallet ? (
-          <ListRow
-            testID="settings-wallet"
-            lead={<IconTile icon="Wallet" size={ROW_TILE} />}
-            title="Wallet and PIN"
-            subtitle="PIN and account details"
-            onPress={props.onOpenWallet}
-          />
-        ) : null}
-        {props.onOpenAccounts ? (
-          <ListRow
-            testID="settings-accounts"
-            lead={<IconTile icon="Coins" size={ROW_TILE} />}
-            title="Accounts and currencies"
-            subtitle="Your accounts, and add a currency"
-            onPress={props.onOpenAccounts}
-          />
-        ) : null}
-      </GroupedList>
-      <GroupedList testID="settings-preferences">
-        {tgif.query.data ? (
-          <SwitchRow
-            testID="settings-tgif"
-            title={TGIF_TITLE}
-            subtitle={TGIF_SUBTITLE}
-            on={tgif.isOn('show')}
-            busy={tgif.busy.includes('show')}
-            onChange={(next) => void tgif.set('show', next)}
-          />
-        ) : (
-          <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
-        )}
-        <SwitchRow testID="settings-sound" title="Sound" subtitle="Taps and alerts" on={prefs.sound} onChange={(next) => void setSound(next)} />
-        <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
-      </GroupedList>
-      {tgif.failure ? (
-        <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
-          {tgif.failure}
-        </Text>
-      ) : null}
-      <GroupedList testID="settings-about">
-        <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
-        <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
-        <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
-        {props.onOpenLegal ? <ListRow testID="settings-legal" lead={<IconTile icon="Scale" size={ROW_TILE} />} title="Legal" onPress={props.onOpenLegal} /> : null}
-      </GroupedList>
-      <View style={styles.foot}>
-        <Pressable
-          testID="settings-sign-out"
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-          accessibilityState={{ busy: leaving }}
-          disabled={leaving}
-          onPress={() => void signOut()}
-        >
-          <Text variant="body" tone="danger" style={[font(600), { fontSize: footMetrics.signOut }]}>
-            {leaving ? 'Signing out' : 'Sign out'}
-          </Text>
-        </Pressable>
-        {problem ? (
-          <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem">
-            {problem}
+    <>
+      <ScreenFrame idPrefix="settings" title="Settings" onBack={props.onBack} gap={BODY_GAP} testID="settings-screen">
+        <Header me={me.data} loading={me.isPending} onOpen={props.onOpenProfile} onRetry={() => void me.refetch()} />
+        <GroupedList testID="settings-account">
+          <ListRow testID="settings-notifications" lead={<IconTile icon="Bell" size={ROW_TILE} />} title="Notifications" onPress={props.onOpenNotifications} />
+          <ListRow testID="settings-privacy" lead={<IconTile icon="Lock" size={ROW_TILE} />} title="Privacy" onPress={props.onOpenPrivacy} />
+          <ListRow testID="settings-password" lead={<IconTile icon="KeyRound" size={ROW_TILE} />} title="Password" onPress={props.onOpenPassword} />
+          {props.onOpenTier ? <ListRow testID="settings-tier" lead={<IconTile icon="BadgeCheck" size={ROW_TILE} />} title="Your tier" onPress={props.onOpenTier} /> : null}
+          {props.onOpenClaimCode ? (
+            <ListRow testID="settings-claim-code" lead={<IconTile icon="Ticket" size={ROW_TILE} />} title="Access code" subtitle="Claim a plan you paid for at an event" onPress={props.onOpenClaimCode} />
+          ) : null}
+          {props.onOpenWallet ? (
+            <ListRow
+              testID="settings-wallet"
+              lead={<IconTile icon="Wallet" size={ROW_TILE} />}
+              title="Wallet and PIN"
+              subtitle="PIN and account details"
+              onPress={props.onOpenWallet}
+            />
+          ) : null}
+          {props.onOpenAccounts ? (
+            <ListRow
+              testID="settings-accounts"
+              lead={<IconTile icon="Coins" size={ROW_TILE} />}
+              title="Accounts and currencies"
+              subtitle="Your accounts, and add a currency"
+              onPress={props.onOpenAccounts}
+            />
+          ) : null}
+        </GroupedList>
+        <GroupedList testID="settings-preferences">
+          {tgif.query.data ? (
+            <SwitchRow
+              testID="settings-tgif"
+              title={TGIF_TITLE}
+              subtitle={TGIF_SUBTITLE}
+              on={tgif.isOn('show')}
+              busy={tgif.busy.includes('show')}
+              onChange={(next) => void tgif.set('show', next)}
+            />
+          ) : (
+            <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
+          )}
+          <SwitchRow testID="settings-sound" title={ALERT_SOUND_TITLE} subtitle={ALERT_SOUND_SUBTITLE} on={prefs.sound} onChange={(next) => void setSound(next)} />
+          <SwitchRow testID="settings-music" title={MUSIC_TITLE} subtitle={MUSIC_SUBTITLE} on={music.on} busy={music.busy} onChange={(next) => void setThemeMusic(next)} />
+          <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
+        </GroupedList>
+        {tgif.failure ? (
+          <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
+            {tgif.failure}
           </Text>
         ) : null}
-        {props.onOpenDeleteAccount ? (
-          <Pressable testID="settings-delete-account" accessibilityRole="button" accessibilityLabel="Delete account" hitSlop={space.sm} onPress={props.onOpenDeleteAccount}>
-            <Text variant="secondary" tone="textMuted" style={{ fontSize: footMetrics.deleteAccount, lineHeight: canvasNormalLineHeight(footMetrics.deleteAccount) }}>
-              Delete account
+        <GroupedList testID="settings-about">
+          <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
+          <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
+          <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
+          {props.onOpenLegal ? <ListRow testID="settings-legal" lead={<IconTile icon="Scale" size={ROW_TILE} />} title="Legal" onPress={props.onOpenLegal} /> : null}
+        </GroupedList>
+        <View style={styles.foot}>
+          <Pressable
+            testID="settings-sign-out"
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            accessibilityState={{ busy: leaving }}
+            disabled={leaving}
+            onPress={() => void signOut()}
+          >
+            <Text variant="body" tone="danger" style={[font(600), { fontSize: footMetrics.signOut }]}>
+              {leaving ? 'Signing out' : 'Sign out'}
             </Text>
           </Pressable>
-        ) : null}
-      </View>
-      <ThemeSheet
-        visible={choosingTheme}
-        value={prefs.theme}
-        onPick={(choice) => {
-          void setTheme(choice);
-          setChoosingTheme(false);
-        }}
-        onClose={() => setChoosingTheme(false)}
-      />
-    </ScreenFrame>
+          {problem ? (
+            <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem">
+              {problem}
+            </Text>
+          ) : null}
+          {props.onOpenDeleteAccount ? (
+            <Pressable testID="settings-delete-account" accessibilityRole="button" accessibilityLabel="Delete account" hitSlop={space.sm} onPress={props.onOpenDeleteAccount}>
+              <Text variant="secondary" tone="textMuted" style={{ fontSize: footMetrics.deleteAccount, lineHeight: canvasNormalLineHeight(footMetrics.deleteAccount) }}>
+                Delete account
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+        <ThemeSheet
+          visible={choosingTheme}
+          value={prefs.theme}
+          onPick={(choice) => {
+            void setTheme(choice);
+            setChoosingTheme(false);
+          }}
+          onClose={() => setChoosingTheme(false)}
+        />
+      </ScreenFrame>
+      {/* R-99: a first download of the theme song that failed, started from the Music row (the button's own toast is under this screen). */}
+      <ThemeNotice offset={insets.bottom + toastMetrics.bottom} />
+    </>
   );
 }
 

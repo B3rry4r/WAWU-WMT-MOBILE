@@ -41,6 +41,7 @@ import {
   draftTileOf,
   headerBadgeOf,
   liveListings,
+  pendingListings,
   memberSinceLine,
   nameOf,
   openableLink,
@@ -427,10 +428,12 @@ function ServicesBody({ creator, onOpenListings, onOpenPaid }: { creator: boolea
   }
   const paid = creator ? paidMessagesOf(services.data) : null;
   const live = liveListings(listings.data);
-  if (!paid && live.length === 0) {
+  // The person's own listing that a reviewer has not decided yet: shown to them here, marked "Under review" (SERVICES-FEEDBACK 2).
+  const pending = pendingListings(listings.data);
+  if (!paid && live.length === 0 && pending.length === 0) {
     return <EmptyState testID="me-services-empty" icon="BriefcaseBusiness" title="No services yet" message="Paid messages and professional listings show here once they are on." />;
   }
-  return <ServicesTab paid={paid} listings={live} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} />;
+  return <ServicesTab paid={paid} listings={live} pending={pending} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} />;
 }
 
 type AboutBodyProps = {

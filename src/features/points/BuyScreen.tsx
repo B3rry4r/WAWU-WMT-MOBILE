@@ -18,7 +18,7 @@ import { font, radius, space, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { plansQuery, runningTierQuery } from './buyApi';
-import { bonusChip, BUY_WORDS, startingPack } from './buyModel';
+import { blurbFor, bonusChip, BUY_WORDS, startingPack } from './buyModel';
 import { PointsFrame } from './PointsFrame';
 
 const BODY_GAP = 12;
@@ -72,7 +72,7 @@ export function BuyScreen(props: BuyScreenProps) {
             {BUY_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="buy-blurb" style={styles.blurb}>
-            {BUY_WORDS.blurb}
+            {blurbFor()}
           </Text>
         </View>
         <View testID="buy-packs" accessibilityRole="radiogroup" style={styles.packs}>

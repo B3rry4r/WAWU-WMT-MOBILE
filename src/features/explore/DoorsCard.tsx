@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
@@ -8,7 +8,15 @@ import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 /** design/_gen/explore.js line 19, `door`: 13 by 14 inside, a 40 tile of 12 round, 12 to the words, a 15 title and a 12.5 line 2 under it, a 17 chevron. */
 export const doorMetrics = { padV: 13, padH: 14, iconToWords: 12, tile: 40, tileRadius: 12, glyph: 19, title: 15, sub: 12.5, subGap: 2, chevron: 17 } as const;
 
-export type Door = { id: string; icon: IconName; title: string; sub: string; onPress: () => void };
+export type Door = {
+  id: string;
+  icon: IconName;
+  title: string;
+  sub: string;
+  onPress: () => void;
+  /** The door's reads are on their way (SERVICES-FEEDBACK 1): the row keeps its pressed look and the app's spinner takes the icon's place in its tile (the Create button floats over the row's right end). */
+  busy?: boolean;
+};
 
 /**
  * X1 and X15's doors card, one row per door whose screen is built: Find a professional, Find a school, List your services.
@@ -33,16 +41,21 @@ function DoorRow({ door, first }: { door: Door; first: boolean }) {
       testID={`explore-door-${door.id}`}
       accessibilityRole="button"
       accessibilityLabel={`${door.title}, ${door.sub}`}
+      accessibilityState={{ busy: door.busy ?? false }}
       onPress={door.onPress}
       {...ring.handlers}
       style={({ pressed }) => [
         styles.row,
-        { backgroundColor: pressed ? colors.surfaceSunken : 'transparent', boxShadow: first ? [] : [{ offsetX: 0, offsetY: 1, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] },
+        { backgroundColor: pressed || door.busy ? colors.surfaceSunken : 'transparent', boxShadow: first ? [] : [{ offsetX: 0, offsetY: 1, blurRadius: 0, spreadDistance: 0, color: colors.borderHairline, inset: true }] },
         ring.style,
       ]}
     >
       <View style={[styles.tile, { backgroundColor: colors.accentTint }]}>
-        <Icon name={door.icon} size={doorMetrics.glyph} color={colors.accentFg} />
+        {door.busy ? (
+          <ActivityIndicator testID={`explore-door-${door.id}-busy`} size="small" color={colors.accentFg} />
+        ) : (
+          <Icon name={door.icon} size={doorMetrics.glyph} color={colors.accentFg} />
+        )}
       </View>
       <View style={styles.words}>
         <Text variant="body" style={styles.title}>

@@ -904,6 +904,40 @@
     ]
    }
   },
+  "/api/hub/prices": {
+   "get": {
+    "operationId": "PriceListController_read",
+    "parameters": [
+     {
+      "name": "platform",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "android",
+        "ios"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PriceListView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "PriceList"
+    ]
+   }
+  },
   "/api/hub/wallet": {
    "get": {
     "operationId": "WalletController_get",
@@ -27191,7 +27225,7 @@
       }
      },
      "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening, target_not_payable, payment_in_progress",
+      "description": "reason.code: wallet_not_open, wallet_opening, target_not_payable, pack_not_allowed, payment_in_progress",
       "content": {
        "application/json": {
         "schema": {
@@ -27342,7 +27376,7 @@
       }
      },
      "409": {
-      "description": "reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, payment_in_progress",
+      "description": "reason.code: wallet_not_open, wallet_opening, idempotency_key_reused, idempotency_in_progress, pin_not_set, quote_changed, target_not_payable, pack_not_allowed, payment_in_progress",
       "content": {
        "application/json": {
         "schema": {
@@ -27377,7 +27411,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Pays for a tier from the wallet, once: the tier and its dates, the bonus\npoints as one lot with its expiry, the event pass and the first Voice\nIntro are granted when the payment is confirmed, and the checkout bump's\npoints with them when it was bought. Answers 201 with the purchase:\n`paid`, `pending` while the provider has not confirmed the debit yet\n(poll `GET /plans/purchases/{id}`; it is never sent again), or `failed`\nwhen the provider refused it and nothing moved. The same Idempotency-Key\nand body answer the first result again (`Idempotent-Replayed: true`)\nwithout checking the PIN. Not enough money is `402 insufficient_funds`\nwith the shortfall; no wallet is `409 wallet_not_open`.\n\n`method: transfer` (TIER-05, VF6 \"transfer details shown\") confirms the\npurchase with the PIN at the quote the person saw and takes nothing. It\nanswers 201 with a `PlanTransferOrderView`, `awaiting_transfer`: the\nwallet's own account number, bank and account name, the Bank charge and\nthe amount still needed (the total less the available balance, never\nbelow 0). The purchase is paid from the wallet, once, the moment the\nbalance covers the total, and then reads like any other purchase under\nthe same id. A quote that changed is `409 quote_changed`; the time to send\nthe money (an admin setting) runs out as `expired`, with nothing taken.\nTwo requests for one item leave one waiting purchase.\n\n`kind: points_pack` with a `packId` buys a points pack the same way\n(POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the\npack's points (plus the Founding Maker's bonus) is added once, ending\nafter the bought-points expiry, and the answer is a `PointsPackPurchaseView`\n(`kind: \"points_pack\"`).\n\n`kind: extra_products` (TIER-04, VF13) adds the settings' number of\nproducts to the tier the person holds, the same way: from the wallet or\nby transfer, added once, kept by the account whatever happens to the tier\nafter, and answered as an `ExtraProductsPurchaseView`\n(`kind: \"extra_products\"`). Without a tier that is running it is `402\ntier_required` and nothing is taken.",
+    "summary": "Pays for a tier from the wallet, once: the tier and its dates, the bonus\npoints as one lot with its expiry, the event pass and the first Voice\nIntro are granted when the payment is confirmed, and the checkout bump's\npoints with them when it was bought. Answers 201 with the purchase:\n`paid`, `pending` while the provider has not confirmed the debit yet\n(poll `GET /plans/purchases/{id}`; it is never sent again), or `failed`\nwhen the provider refused it and nothing moved. The same Idempotency-Key\nand body answer the first result again (`Idempotent-Replayed: true`)\nwithout checking the PIN. Not enough money is `402 insufficient_funds`\nwith the shortfall; no wallet is `409 wallet_not_open`.\n\n`method: transfer` (TIER-05, VF6 \"transfer details shown\") confirms the\npurchase with the PIN at the quote the person saw and takes nothing. It\nanswers 201 with a `PlanTransferOrderView`, `awaiting_transfer`: the\nwallet's own account number, bank and account name, the Bank charge and\nthe amount still needed (the total less the available balance, never\nbelow 0). The purchase is paid from the wallet, once, the moment the\nbalance covers the total, and then reads like any other purchase under\nthe same id. A quote that changed is `409 quote_changed`; the time to send\nthe money (an admin setting) runs out as `expired`, with nothing taken.\nTwo requests for one item leave one waiting purchase.\n\n`kind: points_pack` with a `packId` buys a points pack the same way\n(POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the\npack's points (plus the Founding Maker's bonus) is added once, and never\nends (bought points never expire, R-101 point 7), and the answer is a `PointsPackPurchaseView`\n(`kind: \"points_pack\"`).\n\n`kind: extra_products` (TIER-04, VF13) adds the settings' number of\nproducts to the tier the person holds, the same way: from the wallet or\nby transfer, added once, kept by the account whatever happens to the tier\nafter, and answered as an `ExtraProductsPurchaseView`\n(`kind: \"extra_products\"`). Without a tier that is running it is `402\ntier_required` and nothing is taken.",
     "tags": [
      "PlanPurchases"
     ]
@@ -30177,7 +30211,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "PT6 before the PIN: the rate (1,000 points for so many kobo, from the\nconfig), the fewest points one conversion takes, the balance, and the\ncash for `points` (the whole balance when none is asked). WAWU pays the\nprovider's charge, so the person pays nothing to convert (R-31).\n`canConvert` and `blockedBy` say when the points asked cannot be\nconverted as they are (below the minimum, more than the balance, more\nthan one move carries), with the figures, instead of refusing. Nothing is\nheld. A person billed in dollars is `409 currency_not_supported`; with no\nwallet, `409 wallet_not_open`.",
+    "summary": "PT6 before the PIN: the rate (1,000 points for so many kobo, from the\nconfig), the fewest points one conversion takes, the balance, and the\ncash for `points` (all the cashable points when none is asked; points the\nperson bought are never cashable, `cashablePoints`). WAWU pays the\nprovider's charge, so the person pays nothing to convert (R-31).\n`canConvert` and `blockedBy` say when the points asked cannot be\nconverted as they are (below the minimum, more than the balance, more\nthan one move carries), with the figures, instead of refusing. Nothing is\nheld. A person billed in dollars is `409 currency_not_supported`; with no\nwallet, `409 wallet_not_open`.",
     "tags": [
      "PointsConvert"
     ],
@@ -30281,7 +30315,7 @@
       }
      },
      "422": {
-      "description": "reason.code: below_minimum",
+      "description": "reason.code: below_minimum, points_not_cashable",
       "content": {
        "application/json": {
         "schema": {
@@ -30316,7 +30350,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Turns points into cash in the wallet, once. The cash is worked out at the\nconfig's rate and rounded down; the points are held (soonest-ending lots\nfirst) and the cash is paid from WAWU's own account into the person's\nwallet; the points are spent only when the provider has confirmed it, and\ngo back to their lots if it did not move. Answers 201 with the\nconversion: `completed`, `pending` while the provider has not confirmed\nthe cash yet (the points stay on hold; poll `GET /points/convert/{id}`;\nit is never sent again), or `failed` when the cash did not move and the\npoints are back. The same Idempotency-Key and body answer the first\nresult again (`Idempotent-Replayed: true`) without checking the PIN.\nThe body carries the `quoteToken` of the quote the person was shown: the\nconversion is paid at that quote or not at all. If the rate, the\nminimum, the cap or the cash changed since (or the token is not this\nperson's, not for these points, or past its end), it is `409\nquote_changed` with the new quote in `reason.pointsQuote`, and nothing\nis paid. A body with no token is a plain 400.\nBefore the PIN, and changing nothing: `422 below_minimum`, `402\ninsufficient_points`, `400 amount_out_of_range` (more than one move\ncarries), `409 quote_changed`, `409 currency_not_supported`, `409\nwallet_not_open`, `503 fees_not_set`.",
+    "summary": "Turns points into cash in the wallet, once. The cash is worked out at the\nconfig's rate and rounded down; the points are held (soonest-ending lots\nfirst) and the cash is paid from WAWU's own account into the person's\nwallet; the points are spent only when the provider has confirmed it, and\ngo back to their lots if it did not move. Answers 201 with the\nconversion: `completed`, `pending` while the provider has not confirmed\nthe cash yet (the points stay on hold; poll `GET /points/convert/{id}`;\nit is never sent again), or `failed` when the cash did not move and the\npoints are back. The same Idempotency-Key and body answer the first\nresult again (`Idempotent-Replayed: true`) without checking the PIN.\nThe body carries the `quoteToken` of the quote the person was shown: the\nconversion is paid at that quote or not at all. If the rate, the\nminimum, the cap or the cash changed since (or the token is not this\nperson's, not for these points, or past its end), it is `409\nquote_changed` with the new quote in `reason.pointsQuote`, and nothing\nis paid. A body with no token is a plain 400.\nBefore the PIN, and changing nothing: `422 below_minimum`, `402\ninsufficient_points`, `422 points_not_cashable` (more than the person's\nearned and bonus points: points they bought cannot be cashed out),\n`400 amount_out_of_range` (more than one move\ncarries), `409 quote_changed`, `409 currency_not_supported`, `409\nwallet_not_open`, `503 fees_not_set`.",
     "tags": [
      "PointsConvert"
     ],
@@ -30540,7 +30574,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Buys exactly the shortfall of one job from the wallet, once (PT3). The\nbody is the job as it was quoted plus `wallet.payment.totalKobo` and\n`wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One\nlot of the shortfall's points is added when the provider confirms the\ndebit, ending after the bought-points expiry. Answers 201 with the\npurchase: `paid`, `pending` while the provider has not confirmed (poll\n`GET /points/shortfall/{id}`; it is never sent again) or `failed` when\nnothing moved. The same Idempotency-Key and body answer the first result\nagain (`Idempotent-Replayed: true`) without checking the PIN. Refused with\nnothing taken and the key given back: `422 points_cap_reached` (buying points would not\nlet the job run), `409 points_not_short` (the person has enough now),\n`409 quote_changed` with the new quote (the balance, the rate or the\nexpiry moved), `409 wallet_not_open`.",
+    "summary": "Buys exactly the shortfall of one job from the wallet, once (PT3). The\nbody is the job as it was quoted plus `wallet.payment.totalKobo` and\n`wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One\nlot of the shortfall's points is added when the provider confirms the\ndebit, and it never ends (bought points never expire, R-101 point 7). Answers 201 with the\npurchase: `paid`, `pending` while the provider has not confirmed (poll\n`GET /points/shortfall/{id}`; it is never sent again) or `failed` when\nnothing moved. The same Idempotency-Key and body answer the first result\nagain (`Idempotent-Replayed: true`) without checking the PIN. Refused with\nnothing taken and the key given back: `422 points_cap_reached` (buying points would not\nlet the job run), `409 points_not_short` (the person has enough now),\n`409 quote_changed` with the new quote (the balance, the rate or the\nexpiry moved), `409 wallet_not_open`.",
     "tags": [
      "PointsSpend"
     ],
@@ -33315,6 +33349,70 @@
     ]
    }
   },
+  "/api/hub/store/intents": {
+   "post": {
+    "operationId": "StoreController_intent",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StoreIntentDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StoreIntentView"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "Says what a ladder purchase is for, BEFORE the store sheet opens\n(STORE-BUY-HUB, R-101): a piece to unlock, a creator to tip or a room's\ncommunity pass, at a price on the price list. Nothing is charged or given\nhere. The answer is the store product to buy (`wawu.buy.<naira>`), the\nperson's account token (hand it to the store as for every purchase) and the\nintent's id, which `POST /store/purchases` then carries as `intentId`. One\nopen intent per person, kind and target: asking again for the same thing\nreturns the same intent. It stays open 60 minutes; a sale made before then\nstill counts however late it is posted.\n\nRefusals carry `reason.code`: `price_not_on_list` (400, with the nearest\nlist prices), `store_not_configured` (503), `store_disabled` (409),\n`store_product_unknown` (404, no store product sells that price),\n`store_intent_target_not_found` (404), `store_intent_not_payable` (409: free,\ntheir own, already theirs, no pass, removed) and `store_intent_price_changed`\n(409: the piece's or room's price is not the one named).",
+    "tags": [
+     "Store"
+    ]
+   }
+  },
+  "/api/hub/store/credits": {
+   "get": {
+    "operationId": "StoreController_creditList",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StoreCreditListView"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "wawu-id": []
+     }
+    ],
+    "summary": "The store credits the person can spend (STORE-BUY-HUB round 3): what they\npaid for a purchase that could not be given because the piece, creator or\nroom was gone. Pay with one by `POST /store/intents` with `payWith: credit`.",
+    "tags": [
+     "Store"
+    ]
+   }
+  },
   "/api/hub/store/purchases": {
    "post": {
     "operationId": "StoreController_buy",
@@ -33346,7 +33444,7 @@
       "wawu-id": []
      }
     ],
-    "summary": "Hands the Hub a purchase the store has just completed. The Hub asks the\nstore's own server about it (the app's word is never taken), then gives\nwhat was bought, once per store transaction: the same call again, a\nrestore, or the store's own notice arriving first all answer the same\npurchase with `alreadyGranted: true`. Send `purchaseToken` on `android`,\n`transactionId` on `ios`, and `communityId` for a pass.\n\nRefusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,\n`store_product_unknown` (404), `store_receipt_missing` (400),\n`store_purchase_invalid` (422), `store_purchase_pending`,\n`store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),\n`store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).",
+    "summary": "Hands the Hub a purchase the store has just completed. The Hub asks the\nstore's own server about it (the app's word is never taken), then gives\nwhat was bought, once per store transaction: the same call again, a\nrestore, or the store's own notice arriving first all answer the same\npurchase with `alreadyGranted: true`. Send `purchaseToken` on `android`,\n`transactionId` on `ios`, and `communityId` for a pass.\n\nRefusals carry `reason.code`: `store_not_configured` (503), `store_disabled`,\n`store_product_unknown` (404), `store_receipt_missing` (400),\n`store_purchase_invalid` (422), `store_purchase_pending`,\n`store_purchase_taken` (that purchase, or that subscription, was already used on another account, or was made with another account's token), `store_purchase_other_room` (409, a pass payment was first given to another room), `store_account_token_missing` (422, the purchase carries no account token),\n`store_pass_not_available`, `store_unreachable` (503, safe to repeat) and `store_grant_failed` (500, the store has the payment but the Hub could not finish; ask again).\n\nA ladder product (`wawu.buy.<naira>`) should carry the `intentId` from `POST\n/store/intents`; the Hub checks the product is the intent's and the account\ntoken is the person's, and grants what the intent names once per store\ntransaction. `store_purchase_other_intent` (409) when this store transaction was\nalready given for another intent. A payment the store has verified is never lost:\nwhen the intent is missing, not the person's, used, expired, or the sale came before\nit, the purchase is recorded with `flag: late_sale`, the fan gets a store credit worth\nthe product's list price, and the answer is `status: credited`. The same when the\npiece, creator or room can no longer be bought (`flag: target_unavailable`). No\ngoods are given and no creator earns in either case.",
     "tags": [
      "Store"
     ]
@@ -33460,6 +33558,27 @@
     },
     "required": [
      "blockedWawuId"
+    ]
+   },
+   "PriceListView": {
+    "type": "object",
+    "properties": {
+     "prices": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PriceListItem"
+      }
+     },
+     "tips": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PriceListItem"
+      }
+     }
+    },
+    "required": [
+     "prices",
+     "tips"
     ]
    },
    "ResolveAccountDto": {
@@ -35539,7 +35658,10 @@
        "question_already_waiting",
        "points_cap_reached",
        "points_not_short",
+       "points_not_cashable",
        "tier_required",
+       "pack_not_allowed",
+       "price_not_on_list",
        "add_money_unavailable",
        "fx_switched_off",
        "quote_expired",
@@ -35677,7 +35799,7 @@
      },
      "balancePoints": {
       "type": "integer",
-      "description": "below_minimum, insufficient_points: the points the person has now."
+      "description": "below_minimum, insufficient_points, points_not_cashable: the points the person has now."
      },
      "neededPoints": {
       "type": "integer",
@@ -35686,6 +35808,20 @@
      "shortfallPoints": {
       "type": "integer",
       "description": "insufficient_points: neededPoints minus balancePoints."
+     },
+     "nearestLowerNaira": {
+      "type": "integer",
+      "nullable": true,
+      "description": "price_not_on_list (R-101): the highest list price below the price sent, in whole naira; null when the price is under the lowest."
+     },
+     "nearestHigherNaira": {
+      "type": "integer",
+      "nullable": true,
+      "description": "price_not_on_list (R-101): the lowest list price above the price sent, in whole naira; null when the price is over the highest."
+     },
+     "cashablePoints": {
+      "type": "integer",
+      "description": "points_not_cashable (POINTS-BOUGHT): the points the person can turn into cash now (earned and bonus points)."
      },
      "cap": {
       "description": "points_cap_reached (POINTS-03): which cap stopped the job.",
@@ -40566,6 +40702,69 @@
      "type"
     ]
    },
+   "StoreIntentDto": {
+    "type": "object",
+    "properties": {
+     "platform": {
+      "description": "The store the app runs on.",
+      "enum": [
+       "android",
+       "ios"
+      ],
+      "type": "string"
+     },
+     "kind": {
+      "description": "`content` (unlock a piece), `tip` (tip a creator), `pass` (a community pass) or `question` (a paid question to a creator).",
+      "enum": [
+       "content",
+       "tip",
+       "pass",
+       "question"
+      ],
+      "type": "string"
+     },
+     "contentId": {
+      "type": "string",
+      "description": "The piece to unlock. Required for `content`.",
+      "format": "uuid"
+     },
+     "creatorWawuId": {
+      "type": "string",
+      "description": "The creator to tip, or to ask a question. Required for `tip` and `question`.",
+      "format": "uuid"
+     },
+     "text": {
+      "type": "string",
+      "description": "The question, 2,000 characters at most. Required for `question`, refused for any other kind.",
+      "minLength": 1,
+      "maxLength": 2000
+     },
+     "communityId": {
+      "type": "string",
+      "description": "The room whose pass to buy. Required for `pass`.",
+      "format": "uuid"
+     },
+     "listPriceNaira": {
+      "type": "integer",
+      "description": "The price in whole naira. Must be on the price list (`GET /prices`); a tip\nmust be on the tip list. A piece's or room's price must equal it.",
+      "minimum": 1,
+      "maximum": 1000000000
+     },
+     "payWith": {
+      "description": "`store` (the default): the store sheet is opened and the purchase made\nagainst this intent. `credit`: a store credit worth at least the price is\nconsumed whole and the purchase is granted at once, with no store sheet.",
+      "enum": [
+       "store",
+       "credit"
+      ],
+      "type": "string"
+     }
+    },
+    "required": [
+     "platform",
+     "kind",
+     "listPriceNaira"
+    ]
+   },
    "StorePurchaseDto": {
     "type": "object",
     "properties": {
@@ -40599,6 +40798,11 @@
      "communityId": {
       "type": "string",
       "description": "The room a community pass is bought for. Required for a pass product, refused for any other.",
+      "format": "uuid"
+     },
+     "intentId": {
+      "type": "string",
+      "description": "The intent this purchase was made against (`POST /store/intents`). Required\nfor a ladder product (`wawu.buy.<naira>`), refused for any other.",
       "format": "uuid"
      }
     },
@@ -40670,7 +40874,8 @@
        "credits",
        "tier",
        "pass",
-       "extra_products"
+       "extra_products",
+       "buy"
       ],
       "type": "string"
      },
@@ -40684,7 +40889,13 @@
      },
      "referenceKobo": {
       "type": "integer",
-      "description": "Kobo one purchase is worth before the store's share. Needed for credits and pass products.",
+      "description": "Kobo one purchase is worth before the store's share. Needed for credits, pass and `buy` (ladder) products; a ladder product's must be a list price.",
+      "minimum": 1,
+      "maximum": 2000000000
+     },
+     "storePriceKobo": {
+      "type": "integer",
+      "description": "What the store charges in Nigeria, in kobo. Only for a `buy` (ladder) product.",
       "minimum": 1,
       "maximum": 2000000000
      },
@@ -40718,6 +40929,12 @@
      },
      "referenceKobo": {
       "type": "integer",
+      "minimum": 1,
+      "maximum": 2000000000
+     },
+     "storePriceKobo": {
+      "type": "integer",
+      "description": "What the store charges in Nigeria, in kobo. Only for a `buy` (ladder) product.",
       "minimum": 1,
       "maximum": 2000000000
      },
@@ -42530,6 +42747,55 @@
      "amountKobo"
     ]
    },
+   "StoreEarningWaitingView": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "bill",
+       "content_unlock",
+       "tip",
+       "credit_pack",
+       "verification",
+       "legal_fee",
+       "school_fee",
+       "paid_dm",
+       "event_ticket",
+       "tier",
+       "tier_bump",
+       "points_pack",
+       "extra_products",
+       "points_shortfall",
+       "points_cash_out",
+       "community_pass"
+      ]
+     },
+     "targetId": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "earnedAt": {
+      "type": "string"
+     },
+     "availableAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "targetId",
+     "title",
+     "amountKobo",
+     "earnedAt",
+     "availableAt"
+    ]
+   },
    "EarningsView": {
     "type": "object",
     "properties": {
@@ -42550,6 +42816,13 @@
      },
      "walletOpen": {
       "type": "boolean"
+     },
+     "storeEarnings": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/StoreEarningWaitingView"
+      },
+      "nullable": true
      }
     },
     "required": [
@@ -46587,7 +46860,11 @@
       "type": "string"
      },
      "expiresAt": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
+     },
+     "cashable": {
+      "type": "boolean"
      }
     },
     "required": [
@@ -46596,7 +46873,8 @@
      "granted",
      "source",
      "label",
-     "expiresAt"
+     "expiresAt",
+     "cashable"
     ]
    },
    "PointMovementView": {
@@ -46642,6 +46920,9 @@
      "balance": {
       "type": "number"
      },
+     "cashablePoints": {
+      "type": "number"
+     },
      "nextExpiry": {
       "allOf": [
        {
@@ -46668,6 +46949,7 @@
     },
     "required": [
      "balance",
+     "cashablePoints",
      "nextExpiry",
      "lots",
      "lotCount",
@@ -50237,6 +50519,26 @@
      "mediaJobId",
      "createdAt",
      "updatedAt"
+    ]
+   },
+   "PriceListItem": {
+    "type": "object",
+    "properties": {
+     "priceNaira": {
+      "type": "number"
+     },
+     "priceKobo": {
+      "type": "integer"
+     },
+     "storePriceNaira": {
+      "type": "number",
+      "nullable": true
+     }
+    },
+    "required": [
+     "priceNaira",
+     "priceKobo",
+     "storePriceNaira"
     ]
    },
    "DmSendInitResponse": {
@@ -63343,7 +63645,8 @@
       "type": "integer"
      },
      "expiryDays": {
-      "type": "integer"
+      "type": "integer",
+      "nullable": true
      },
      "paymentKind": {
       "type": "string",
@@ -63728,7 +64031,8 @@
       "type": "integer"
      },
      "expiresAt": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -63899,6 +64203,7 @@
        "failed",
        "reversed",
        "expired",
+       "refunded",
        "paid",
        "awaiting_transfer"
       ]
@@ -64460,6 +64765,151 @@
      "payment",
      "createdAt",
      "paidAt"
+    ]
+   },
+   "StoreAdminNoticeView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "body": {
+      "type": "string"
+     },
+     "data": {},
+     "createdAt": {
+      "type": "string"
+     },
+     "readAt": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "title",
+     "body",
+     "data",
+     "createdAt",
+     "readAt"
+    ]
+   },
+   "StoreAdminNoticePageView": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/StoreAdminNoticeView"
+      }
+     },
+     "unread": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "unread"
+    ]
+   },
+   "StoreCut30StatusView": {
+    "type": "object",
+    "properties": {
+     "platform": {
+      "type": "string",
+      "enum": [
+       "android",
+       "ios"
+      ]
+     },
+     "year": {
+      "type": "number"
+     },
+     "totalUsdCents": {
+      "type": "number"
+     },
+     "thresholdUsdCents": {
+      "type": "number"
+     },
+     "ladder": {
+      "oneOf": [
+       {
+        "type": "number",
+        "enum": [
+         15
+        ]
+       },
+       {
+        "type": "number",
+        "enum": [
+         30
+        ]
+       }
+      ]
+     },
+     "crossedAt": {
+      "type": "string",
+      "nullable": true
+     },
+     "storeSync": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "platform",
+     "year",
+     "totalUsdCents",
+     "thresholdUsdCents",
+     "ladder",
+     "crossedAt",
+     "storeSync"
+    ]
+   },
+   "StoreCut30SwitchBackView": {
+    "type": "object",
+    "properties": {
+     "platform": {
+      "type": "string",
+      "enum": [
+       "android",
+       "ios"
+      ]
+     },
+     "ladder": {
+      "type": "number",
+      "enum": [
+       15
+      ]
+     },
+     "storeSync": {
+      "type": "string",
+      "enum": [
+       "failed",
+       "done",
+       "no_keys",
+       "partial"
+      ]
+     },
+     "byHand": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "platform",
+     "ladder",
+     "storeSync",
+     "byHand"
     ]
    },
    "UnlockWalletQuoteView": {
@@ -65133,6 +65583,9 @@
      "balancePoints": {
       "type": "number"
      },
+     "cashablePoints": {
+      "type": "number"
+     },
      "minimumPoints": {
       "type": "number"
      },
@@ -65175,7 +65628,8 @@
       "enum": [
        "below_minimum",
        "insufficient_points",
-       "above_maximum"
+       "above_maximum",
+       "not_cashable"
       ],
       "nullable": true
      },
@@ -65189,6 +65643,7 @@
     "required": [
      "currency",
      "balancePoints",
+     "cashablePoints",
      "minimumPoints",
      "maximumPoints",
      "rate",
@@ -65464,7 +65919,8 @@
         "type": "number"
        },
        "expiresAt": {
-        "type": "string"
+        "type": "string",
+        "nullable": true
        }
       },
       "required": [
@@ -68120,7 +68576,8 @@
        "extra_products",
        "credits",
        "points",
-       "pass"
+       "pass",
+       "buy"
       ]
      },
      "title": {
@@ -68133,6 +68590,10 @@
       "$ref": "#/components/schemas/StoreGrantsView"
      },
      "referenceKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "storePriceKobo": {
       "type": "integer",
       "nullable": true
      },
@@ -68236,7 +68697,8 @@
       "type": "string"
      },
      "wawuUserId": {
-      "type": "string"
+      "type": "string",
+      "nullable": true
      },
      "platform": {
       "type": "string",
@@ -68255,7 +68717,8 @@
        "extra_products",
        "credits",
        "points",
-       "pass"
+       "pass",
+       "buy"
       ]
      },
      "status": {
@@ -68273,6 +68736,24 @@
       "type": "string"
      },
      "communityId": {
+      "type": "string",
+      "nullable": true
+     },
+     "buyKind": {
+      "type": "string",
+      "enum": [
+       "tip",
+       "content",
+       "pass",
+       "question"
+      ],
+      "nullable": true
+     },
+     "intentId": {
+      "type": "string",
+      "nullable": true
+     },
+     "targetId": {
       "type": "string",
       "nullable": true
      },
@@ -68404,7 +68885,8 @@
        "extra_products",
        "credits",
        "points",
-       "pass"
+       "pass",
+       "buy"
       ]
      },
      "title": {
@@ -68415,6 +68897,14 @@
      },
      "grants": {
       "$ref": "#/components/schemas/StoreGrantsView"
+     },
+     "listPriceKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "storePriceKobo": {
+      "type": "integer",
+      "nullable": true
      }
     },
     "required": [
@@ -68492,6 +68982,18 @@
      "communityId": {
       "type": "string",
       "nullable": true
+     },
+     "contentId": {
+      "type": "string",
+      "nullable": true
+     },
+     "creatorWawuId": {
+      "type": "string",
+      "nullable": true
+     },
+     "questionId": {
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -68501,6 +69003,25 @@
      "extraProducts",
      "until",
      "communityId"
+    ]
+   },
+   "StoreCreditNoticeView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "message": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "amountKobo",
+     "message"
     ]
    },
    "StorePurchaseView": {
@@ -68526,7 +69047,8 @@
        "extra_products",
        "credits",
        "points",
-       "pass"
+       "pass",
+       "buy"
       ]
      },
      "status": {
@@ -68534,7 +69056,8 @@
       "enum": [
        "refunded",
        "granted",
-       "revoked"
+       "revoked",
+       "credited"
       ]
      },
      "alreadyGranted": {
@@ -68553,6 +69076,32 @@
      "flag": {
       "type": "string",
       "nullable": true
+     },
+     "credit": {
+      "$ref": "#/components/schemas/StoreCreditNoticeView",
+      "nullable": true
+     },
+     "paidWithCredit": {
+      "type": "string",
+      "nullable": true
+     },
+     "buyKind": {
+      "type": "string",
+      "enum": [
+       "tip",
+       "content",
+       "pass",
+       "question"
+      ],
+      "nullable": true
+     },
+     "intentId": {
+      "type": "string",
+      "nullable": true
+     },
+     "targetId": {
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -68566,6 +69115,74 @@
      "purchasedAt",
      "expiresAt",
      "flag"
+    ]
+   },
+   "StoreIntentView": {
+    "type": "object",
+    "properties": {
+     "intentId": {
+      "type": "string"
+     },
+     "productId": {
+      "type": "string"
+     },
+     "accountToken": {
+      "type": "string"
+     },
+     "expiresAt": {
+      "type": "string"
+     },
+     "purchase": {
+      "$ref": "#/components/schemas/StorePurchaseView",
+      "nullable": true
+     }
+    },
+    "required": [
+     "intentId",
+     "productId",
+     "accountToken",
+     "expiresAt"
+    ]
+   },
+   "StoreCreditView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "scope": {
+      "type": "string",
+      "enum": [
+       "question"
+      ],
+      "nullable": true
+     },
+     "createdAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "amountKobo",
+     "scope",
+     "createdAt"
+    ]
+   },
+   "StoreCreditListView": {
+    "type": "object",
+    "properties": {
+     "credits": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/StoreCreditView"
+      }
+     }
+    },
+    "required": [
+     "credits"
     ]
    },
    "StoreWebhookAck": {

@@ -1,12 +1,13 @@
 import { readConvertQuote, readConversion, readMyPoints } from '../api';
 import { readIntent } from '../intent';
-import { blockLine, cashText, digitsOf, endsFirst, endsOn, movementLine, movementLook, pointsInput, pointsOf, quoteMoved, rateText, signedPoints } from '../model';
+import { blockLine, cashText, digitsOf, endsFirst, endsLine, endsOn, movementLine, movementLook, pointsInput, pointsOf, quoteMoved, rateText, signedPoints } from '../model';
 
 const NOW = new Date('2026-10-17T12:00:00.000Z');
 
 const quote = (over: Record<string, unknown> = {}) => ({
   currency: 'NGN',
   balancePoints: 2350,
+  cashablePoints: 2350,
   minimumPoints: 500,
   maximumPoints: null,
   rate: { points: 1000, kobo: 40_000 },
@@ -69,10 +70,11 @@ describe('what a person is told, in Lagos time and in the Hub\'s figures', () =>
   });
 
   it('writes why points cannot be converted from the quote\'s own figures', () => {
-    const base = { balancePoints: 600, minimumPoints: 500, maximumPoints: 90_000 };
+    const base = { balancePoints: 600, cashablePoints: 250, minimumPoints: 500, maximumPoints: 90_000 };
     expect(blockLine({ ...base, blockedBy: 'below_minimum' })).toBe('The minimum is 500 points.');
     expect(blockLine({ ...base, blockedBy: 'insufficient_points' })).toBe('You have 600 points.');
     expect(blockLine({ ...base, blockedBy: 'above_maximum' })).toBe('The most you can convert at once is 90,000 points.');
+    expect(blockLine({ ...base, blockedBy: 'not_cashable' })).toBe('You can convert 250 points.');
     expect(blockLine({ ...base, blockedBy: null })).toBeNull();
   });
 
@@ -103,5 +105,27 @@ describe('what the screens refuse to draw half empty', () => {
     expect(readIntent({ ...good, points: 0 })).toBeNull();
     expect(readIntent({ ...good, key: '' })).toBeNull();
     expect(readIntent(null)).toBeNull();
+  });
+});
+
+describe('POINTS-BOUGHT · bought points never end and are never cashable (R-101 point 7)', () => {
+  const lot = (over: Record<string, unknown> = {}) => ({ id: 'a', points: 5, granted: 5, source: 'pack', label: 'Bought points', expiresAt: null, cashable: false, ...over });
+
+  it('reads a lot with no end, and a points answer that says what can be cashed out', () => {
+    const read = readMyPoints({ balance: 105, cashablePoints: 100, nextExpiry: null, lots: [lot(), lot({ id: 'b', source: 'tier_bonus', expiresAt: '2027-01-12T10:00:00.000Z', cashable: true, points: 100 })], movements: [] });
+    expect(read.cashablePoints).toBe(100);
+    expect(read.lots.map((l) => [l.expiresAt, l.cashable])).toEqual([[null, false], ['2027-01-12T10:00:00.000Z', true]]);
+    expect(() => readMyPoints({ balance: 5, nextExpiry: null, lots: [lot({ expiresAt: undefined })], movements: [] })).toThrow();
+  });
+
+  it('says a lot of bought points never expires and never draws it as the soonest to end', () => {
+    expect(endsLine(null, NOW)).toBe('never expires');
+    expect(endsFirst({ expiresAt: null }, { points: 400, expiresAt: '2027-01-12T10:00:00.000Z' })).toBe(false);
+  });
+
+  it('refuses a convert quote with no cashablePoints, and reads one blocked as not_cashable', () => {
+    const { cashablePoints: _drop, ...without } = quote();
+    expect(() => readConvertQuote(without)).toThrow();
+    expect(readConvertQuote(quote({ canConvert: false, blockedBy: 'not_cashable' })).blockedBy).toBe('not_cashable');
   });
 });

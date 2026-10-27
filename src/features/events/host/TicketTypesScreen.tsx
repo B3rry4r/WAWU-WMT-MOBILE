@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fieldMetrics } from '@/components/TextField';
+import { listOf, refetchIfNotOnList, usePrices } from '@/features/prices/api';
 import { layout, space, useWawu } from '@/theme';
 
 import { detailKey, eventsKey, fetchEvent, fetchOptions, fetchTickets, optionsKey, ticketsKey } from '../api';
@@ -56,6 +57,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
   // Read again on every visit: a ticket sold since E18 was drawn decides whether these types can change.
   const types = useQuery({ queryKey: ticketsKey(id), queryFn: () => fetchTickets(id), staleTime: 0 });
   const dash = useQuery({ queryKey: dashboardKey(id), queryFn: () => fetchDashboard(id), staleTime: 0, retry: false });
+  const priceList = listOf(usePrices().data);
 
   const [edits, setEdits] = useState<TicketDraft[] | null>(null);
   const [errors, setErrors] = useState<Errors>({});
@@ -84,7 +86,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
 
   const review = () => {
     if (!opts) return;
-    const found = ticketErrors(rows, opts.tickets);
+    const found = ticketErrors(rows, opts.tickets, priceList);
     setErrors(found);
     if (!hasErrors(found)) setConfirm(true);
   };
@@ -101,6 +103,8 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
     } catch (error) {
       if (!mounted.current) return;
       setConfirm(false);
+      // An admin changed the price list while the picker was open: read it again; the Hub's own sentence is shown below.
+      refetchIfNotOnList(client, error);
       if (isHostTierRefusal(error)) {
         setRefused(error as HostTierRefusal);
       } else {
@@ -171,7 +175,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
             {sold ? (
               <Button testID="ticket-types-done" label="Done" full onPress={onBack} />
             ) : (
-              <Button testID="ticket-types-save" label="Save ticket types" full disabled={!changed} onPress={review} />
+              <Button testID="ticket-types-save" label="Save ticket types" full disabled={!changed || priceList.length === 0} onPress={review} />
             )}
           </View>
           <ReviewSheet visible={confirm} onClose={() => setConfirm(false)} onConfirm={() => void send()} busy={sending} />

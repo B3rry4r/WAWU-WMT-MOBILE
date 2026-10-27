@@ -135,3 +135,6 @@ export function dayOf(iso: string | null | undefined, now: Date = new Date()): s
   const at = new Date(iso);
   return Number.isNaN(at.getTime()) ? null : dateWords(at, now);
 }
+
+/** No running tier (the Hub answers `tier_required`): the pack is not offered; the way on is a tier, or taking something down. */
+export const PACK_TAKE_DOWN_LINE = 'Take something down to make room for a new one.';

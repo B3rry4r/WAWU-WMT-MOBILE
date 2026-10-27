@@ -27,19 +27,12 @@ export function formOf(settings: PaidMessageSettings): Form {
   };
 }
 
-/** The price field's words: "₦1,500", or nothing while empty. Digits only, no leading zeros. */
-export function priceInput(digits: string): string {
-  return digits === '' ? '' : formatMoney(nairaToKobo(Number(digits)), { decimals: false });
+/** The price in whole naira, or null while none is chosen. */
+export function priceNairaOf(form: Form): number | null {
+  return form.digits === '' ? null : Number(form.digits);
 }
 
-/** What was typed into the price field, as digits: the glyph, commas and anything else are dropped. */
-export function digitsOf(typed: string): string {
-  const only = typed.replace(/\D/g, '').replace(/^0+/, '');
-  // Past the highest price the Hub takes is a figure nobody means: stop growing, so the field never overflows a number.
-  return only.slice(0, 10);
-}
-
-/** The typed price in kobo, or null while the field is empty. */
+/** The price in kobo, or null while none is chosen. */
 export function priceKoboOf(form: Form): number | null {
   return form.digits === '' ? null : nairaToKobo(Number(form.digits));
 }
@@ -81,20 +74,32 @@ export function priceProblem(form: Form, settings: PaidMessageSettings): string 
   return null;
 }
 
-/** Whether Save can be pressed: nothing locked, a price that is in range (and present when the switch is on), a reply time chosen. */
-export function canSave(form: Form, settings: PaidMessageSettings): boolean {
+/**
+ * Whether Save can be pressed: nothing locked, a price that is in range (and present when the switch is on), a reply time chosen. With
+ * the Hub's price list given and the switch on, a price that is not on it keeps Save off until a list price is picked (PRICE-PICKER: an
+ * off-list price is never sent), and so does a list that has not loaded, which proves nothing about the saved price. With the switch off
+ * Save is not held back by the price.
+ */
+export function canSave(form: Form, settings: PaidMessageSettings, list?: readonly number[]): boolean {
   if (modeOf(settings.standing) === 'locked') return false;
   if (priceProblem(form, settings) !== null) return false;
+  // With the switch off nothing is sold, so an old off-list price does not stop a creator turning paid messages off (`saveBody` leaves it out).
+  if (list !== undefined && form.enabled && form.digits !== '' && !list.includes(Number(form.digits))) return false;
   if (form.enabled && form.digits === '') return false;
   return form.hours !== null;
 }
 
-/** The body Save sends. The price goes only when there is one. */
-export function saveBody(form: Form): { enabled: boolean; priceKobo?: number; responseHours?: number } {
+/**
+ * The body Save sends. The price goes only when there is one. With the Hub's list given and the switch off, a price that is not on the
+ * list is left out: the Hub keeps the price it holds when none is sent (`PUT /paid-dm/settings` takes `enabled: false` with no price), so
+ * an old off-list price is never sent and the creator can still switch paid messages off.
+ */
+export function saveBody(form: Form, list?: readonly number[]): { enabled: boolean; priceKobo?: number; responseHours?: number } {
   const kobo = priceKoboOf(form);
+  const offList = list !== undefined && !form.enabled && form.digits !== '' && !list.includes(Number(form.digits));
   return {
     enabled: form.enabled,
-    ...(kobo === null ? {} : { priceKobo: kobo }),
+    ...(kobo === null || offList ? {} : { priceKobo: kobo }),
     ...(form.hours === null ? {} : { responseHours: form.hours }),
   };
 }

@@ -20,6 +20,9 @@ export function lastsText(days: number): string {
   return days === 1 ? '1 day' : `${days} days`;
 }
 
+/** The line under PT4's title: "For AI tools. Points you buy never expire." Bought points never end (R-101 point 7), so it needs no quote. */
+export const blurbFor = (): string => `${BUY_WORDS.blurb} Points you buy never expire.`;
+
 /** The chip on a pack for a person whose tier adds points to every pack: "Founding +10%" (the tier's first word, the Hub's percent). */
 export function bonusChip(tierName: string | null, percent: number): string | null {
   if (percent <= 0) return null;
