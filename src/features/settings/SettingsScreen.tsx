@@ -58,9 +58,9 @@ export const USE_WALLET_SUBTITLE = 'Pay for missing points from your wallet';
 export const ALERT_SOUND_TITLE = 'Alert sound';
 export const ALERT_SOUND_SUBTITLE = "When something arrives while you're in the app";
 
-/** R-99: the WAWU theme, the website's song. It holds the same state as the round button above Create. */
+/** R-99: the website's theme song, worded "Our theme song" because the app never names WAWU (R-37). It holds the same state as the round button above Create. */
 export const MUSIC_TITLE = 'Music';
-export const MUSIC_SUBTITLE = 'The WAWU theme';
+export const MUSIC_SUBTITLE = 'Our theme song';
 
 /** Said when the phone is signed out in memory but its secure store would not give up the saved sign-in. */
 export const STORE_REFUSED = 'You are signed out, but this phone could not remove your saved sign-in. Tap Sign out to try again.';

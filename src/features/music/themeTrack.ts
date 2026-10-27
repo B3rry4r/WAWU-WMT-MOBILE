@@ -26,7 +26,7 @@ export async function fetchTrack(): Promise<string> {
   const part = new File(Paths.document, PART);
   if (part.exists) part.delete();
   const got = await File.downloadFileAsync(THEME_URL, part);
-  if (!got.exists || !((got.size ?? 0) > 0)) throw new Error('The WAWU theme came down empty');
+  if (!got.exists || !((got.size ?? 0) > 0)) throw new Error('The theme song came down empty');
   const final = new File(Paths.document, NAME);
   await got.move(final, { overwrite: true });
   return final.uri;

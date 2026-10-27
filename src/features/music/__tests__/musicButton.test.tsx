@@ -72,9 +72,9 @@ describe('the music button', () => {
   });
 
   it('says so in a toast when the download failed, and the button stays on play', async () => {
-    mockState = { on: false, busy: false, notice: 'The WAWU theme could not be downloaded.' };
+    mockState = { on: false, busy: false, notice: 'Our theme song could not be downloaded.' };
     await render(<MusicLayer />);
-    expect(screen.getByText('The WAWU theme could not be downloaded.')).toBeTruthy();
+    expect(screen.getByText('Our theme song could not be downloaded.')).toBeTruthy();
     expect(screen.getByTestId('music-button').props.accessibilityLabel).toBe('Play music');
   });
 

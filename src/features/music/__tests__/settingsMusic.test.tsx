@@ -99,11 +99,19 @@ describe('Settings, Alert sound and Music', () => {
     expect(screen.getByText("When something arrives while you're in the app")).toBeTruthy();
   });
 
-  it('a "Music" row, "The WAWU theme", sits with the other switches', async () => {
+  it('a "Music" row, "Our theme song", sits with the other switches', async () => {
     await open();
-    expect(screen.getByTestId('settings-music').props.accessibilityLabel).toBe('Music, The WAWU theme');
+    expect(screen.getByTestId('settings-music').props.accessibilityLabel).toBe('Music, Our theme song');
     expect(screen.getByTestId('settings-music').props.accessibilityRole).toBe('switch');
     expect(checked('settings-music')).toBe(false);
+    expect(screen.getByText('Our theme song')).toBeTruthy();
+  });
+
+  it('names the app, not WAWU, on the Music row, the Alert sound row and the failed-download toast (R-37)', async () => {
+    await open();
+    const { THEME_FAILED } = require('@/features/music/themeMusic') as typeof import('@/features/music/themeMusic');
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/Tier|WAWU|Fintava|\u2014/);
+    expect(THEME_FAILED).not.toMatch(/WAWU|\u2014/);
   });
 
   it('the Music switch starts the song and holds the same state as the button', async () => {

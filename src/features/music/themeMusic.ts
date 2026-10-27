@@ -17,7 +17,8 @@ import { fetchTrack, savedTrack } from './themeTrack';
  * plays again on return if it was on. A piece with sound starting stops it (`pieceSound`). Whether it is on is kept on the
  * phone only (`devicePrefs`), so a person who left it on hears it when the app next opens.
  */
-export const THEME_FAILED = 'The WAWU theme could not be downloaded. Check your connection and try again.';
+/** Said in a toast, so it follows R-37: the app never names WAWU. */
+export const THEME_FAILED = 'Our theme song could not be downloaded. Check your connection and try again.';
 
 export type ThemeMusicState = {
   /** What the button and the Music row show: the song is on (playing, or paused only because the app is away). */
